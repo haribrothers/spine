@@ -1,0 +1,24 @@
+FROM node:20-alpine AS base
+RUN corepack enable
+
+FROM base AS deps
+WORKDIR /repo
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/config/package.json packages/config/package.json
+RUN pnpm install --frozen-lockfile --filter @spine/web...
+
+FROM base AS build
+WORKDIR /repo
+COPY --from=deps /repo /repo
+COPY . .
+RUN pnpm --filter @spine/web... build
+
+FROM base AS runtime
+WORKDIR /repo/apps/web
+ENV NODE_ENV=production
+COPY --from=build /repo /repo
+EXPOSE 3000
+CMD ["pnpm", "start"]

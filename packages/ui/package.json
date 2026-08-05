@@ -1,0 +1,26 @@
+{
+  "name": "@spine/ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@spine/config": "workspace:*",
+    "@types/react": "^19.0.0",
+    "eslint": "^9.17.0",
+    "typescript": "^5.7.0"
+  }
+}

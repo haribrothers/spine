@@ -1,0 +1,11 @@
+{
+  "extends": "@spine/config/tsconfig/base",
+  "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "rootDir": "./src"
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,23 @@
+FROM node:20-alpine AS base
+RUN corepack enable
+
+FROM base AS deps
+WORKDIR /repo
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+COPY apps/api/package.json apps/api/package.json
+COPY packages/shared/package.json packages/shared/package.json
+COPY packages/config/package.json packages/config/package.json
+RUN pnpm install --frozen-lockfile --filter @spine/api...
+
+FROM base AS build
+WORKDIR /repo
+COPY --from=deps /repo /repo
+COPY . .
+RUN pnpm --filter @spine/api... build
+
+FROM base AS runtime
+WORKDIR /repo
+ENV NODE_ENV=production
+COPY --from=build /repo /repo
+EXPOSE 4000
+CMD ["node", "apps/api/dist/main.js"]
