@@ -35,6 +35,7 @@ export * from "./components/label";
 export * from "./components/layout";
 export * from "./components/menubar";
 export * from "./components/money-input";
+export * from "./components/multi-select";
 export * from "./components/native-select";
 export * from "./components/navigation-menu";
 export * from "./components/otp-field";

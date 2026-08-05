@@ -67,6 +67,7 @@ export const nav: TopLevelSection[] = [
           { title: "InputGroup", href: "/components/input-group" },
           { title: "Textarea", href: "/components/textarea" },
           { title: "Select", href: "/components/select" },
+          { title: "MultiSelect", href: "/components/multi-select" },
           { title: "NativeSelect", href: "/components/native-select" },
           { title: "Combobox", href: "/components/combobox" },
           { title: "Command", href: "/components/command" },
