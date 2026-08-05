@@ -14,6 +14,13 @@ export default function LabelPage() {
         text and aria-describedby.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex w-64 flex-col gap-1.5">
+          <Label htmlFor="contact-name-demo">Contact name</Label>
+          <Input id="contact-name-demo" placeholder="Acme Contracting Ltd." />
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

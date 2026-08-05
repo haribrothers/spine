@@ -23,6 +23,10 @@ export default function DatePickerPage() {
         chrome, which is inconsistent across browsers and OSes.
       </DocLead>
 
+      <ComponentPreview>
+        <DatePickerDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

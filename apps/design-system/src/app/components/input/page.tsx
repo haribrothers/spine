@@ -12,6 +12,10 @@ export default function InputPage() {
         never placeholder-only.
       </DocLead>
 
+      <ComponentPreview>
+        <Input placeholder="Acme Contracting Ltd." className="w-64" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

@@ -31,6 +31,10 @@ export default function CollapsiblePage() {
         Accordion is built from — a togglable section on its own.
       </DocLead>
 
+      <ComponentPreview>
+        <CollapsibleDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Can be controlled or uncontrolled.", "Full keyboard navigation."]} />
       </DocSection>

@@ -13,6 +13,17 @@ export default function FieldPage() {
         label/control/helper-text triplet; Field/FieldGroup/FieldSet only handle layout.
       </DocLead>
 
+      <ComponentPreview>
+        <FieldSet className="w-96">
+          <FieldLegend>Site address</FieldLegend>
+          <FieldGroup>
+            <FormField label="Street">{(f) => <Input {...f} />}</FormField>
+            <FormField label="City">{(f) => <Input {...f} />}</FormField>
+          </FieldGroup>
+          <FieldDescription>Used on the invoice PDF and the job&apos;s public quote link.</FieldDescription>
+        </FieldSet>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["FieldGroup lays out its children in a responsive 2-column grid.", "FieldSet renders a real <fieldset>/<legend> pair for grouped, semantically related fields."]} />
       </DocSection>

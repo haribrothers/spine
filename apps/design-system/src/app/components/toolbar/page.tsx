@@ -10,6 +10,24 @@ export default function ToolbarPage() {
       <DocTitle>Toolbar</DocTitle>
       <DocLead>A container for grouping a set of controls, such as buttons, toggle groups, or dropdown menus.</DocLead>
 
+      <ComponentPreview>
+        <Toolbar>
+          <ToolbarToggleGroup type="multiple">
+            <ToolbarToggleItem value="bold" aria-label="Bold">
+              <Bold size={14} />
+            </ToolbarToggleItem>
+            <ToolbarToggleItem value="italic" aria-label="Italic">
+              <Italic size={14} />
+            </ToolbarToggleItem>
+            <ToolbarToggleItem value="underline" aria-label="Underline">
+              <Underline size={14} />
+            </ToolbarToggleItem>
+          </ToolbarToggleGroup>
+          <ToolbarSeparator />
+          <ToolbarButton>Clear formatting</ToolbarButton>
+        </Toolbar>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Supports horizontal and vertical orientation.", "Full keyboard navigation with roving tabindex across all toolbar controls."]} />
       </DocSection>

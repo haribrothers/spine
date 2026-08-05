@@ -25,6 +25,28 @@ export default function AlertDialogPage() {
         alongside the primary one.
       </DocLead>
 
+      <ComponentPreview>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="danger">Delete station</Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete this station?</AlertDialogTitle>
+              <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel asChild>
+                <Button variant="secondary">Cancel</Button>
+              </AlertDialogCancel>
+              <AlertDialogAction asChild>
+                <Button variant="danger">Delete</Button>
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

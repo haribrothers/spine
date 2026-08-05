@@ -4,7 +4,7 @@ export function ComponentPreview({
   code,
   children,
 }: {
-  code: string;
+  code?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -12,9 +12,11 @@ export function ComponentPreview({
       <div className="flex min-h-32 items-center justify-center bg-surface-sunken p-8">
         {children}
       </div>
-      <div className="border-t border-border">
-        <CodeBlock code={code} />
-      </div>
+      {code ? (
+        <div className="border-t border-border">
+          <CodeBlock code={code} />
+        </div>
+      ) : null}
     </div>
   );
 }

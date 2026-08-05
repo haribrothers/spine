@@ -9,6 +9,10 @@ export default function TextareaPage() {
       <DocTitle>Textarea</DocTitle>
       <DocLead>A multi-line text field — quote terms, job notes, expense descriptions.</DocLead>
 
+      <ComponentPreview>
+        <Textarea placeholder="Payment due within 14 days of invoice date." className="w-80" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

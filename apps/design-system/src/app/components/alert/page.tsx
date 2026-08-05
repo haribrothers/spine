@@ -14,6 +14,13 @@ export default function AlertPage() {
         action") — distinct from Toast (temporary/dismissible) and StatusChip (per-row status).
       </DocLead>
 
+      <ComponentPreview>
+        <Alert variant="warning" icon={<AlertTriangle />} className="w-96">
+          <AlertTitle>3 invoices overdue</AlertTitle>
+          <AlertDescription>Follow up with these contacts before month end.</AlertDescription>
+        </Alert>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

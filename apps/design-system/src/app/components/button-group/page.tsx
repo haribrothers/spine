@@ -9,6 +9,14 @@ export default function ButtonGroupPage() {
       <DocTitle>ButtonGroup</DocTitle>
       <DocLead>A row of related Buttons with joined edges — e.g. a view-switcher that isn't a Tabs navigation.</DocLead>
 
+      <ComponentPreview>
+        <ButtonGroup>
+          <Button variant="secondary">List</Button>
+          <Button variant="secondary">Board</Button>
+          <Button variant="secondary">Calendar</Button>
+        </ButtonGroup>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Automatically joins the edges of adjacent Button children via CSS, no per-child prop needed."]} />
       </DocSection>

@@ -17,6 +17,22 @@ export default function FormPage() {
         right choice for a single already-validated field outside a submitted form.
       </DocLead>
 
+      <ComponentPreview>
+        <Form className="w-72">
+          <RadixFormField name="email" className="mb-3 flex flex-col gap-1.5">
+            <Label>Email</Label>
+            <FormControl asChild>
+              <input type="email" required />
+            </FormControl>
+            <FormMessage match="valueMissing">Email is required.</FormMessage>
+            <FormMessage match="typeMismatch">Enter a valid email address.</FormMessage>
+          </RadixFormField>
+          <FormSubmit asChild>
+            <Button>Submit</Button>
+          </FormSubmit>
+        </Form>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

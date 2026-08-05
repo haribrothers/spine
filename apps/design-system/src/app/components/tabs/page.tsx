@@ -13,6 +13,25 @@ export default function TabsPage() {
         job's Overview/Milestones/Photos tabs.
       </DocLead>
 
+      <ComponentPreview>
+        <Tabs defaultValue="overview" className="w-full">
+          <TabsList>
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="milestones">Milestones</TabsTrigger>
+            <TabsTrigger value="photos">Photos</TabsTrigger>
+          </TabsList>
+          <TabsContent value="overview" className="text-[13px] text-on-surface">
+            Job overview content.
+          </TabsContent>
+          <TabsContent value="milestones" className="text-[13px] text-on-surface">
+            Milestone list.
+          </TabsContent>
+          <TabsContent value="photos" className="text-[13px] text-on-surface">
+            Site photos.
+          </TabsContent>
+        </Tabs>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

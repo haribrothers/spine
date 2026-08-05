@@ -9,6 +9,20 @@ export default function AvatarPage() {
       <DocTitle>Avatar</DocTitle>
       <DocLead>An image element with a fallback for representing a user or organization. Circular, initials-on-primary-fill by default, or an image when available.</DocLead>
 
+      <ComponentPreview>
+        <div className="flex items-center gap-3">
+          <Avatar size="sm">
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          <Avatar size="md">
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+          <Avatar size="lg">
+            <AvatarFallback>JD</AvatarFallback>
+          </Avatar>
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Automatic fallback while an image is loading or if it fails to load.", "Three sizes: sm, md, lg."]} />
       </DocSection>

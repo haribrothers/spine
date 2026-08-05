@@ -29,6 +29,25 @@ export default function DataTablePage() {
         only) is enough for embedded contexts like a quote's line items.
       </DocLead>
 
+      <ComponentPreview>
+        <DataTable<InvoiceRow>
+          rowKey={(row) => row.number}
+          searchKey={(row) => row.contact}
+          searchPlaceholder="Search by contact…"
+          columns={[
+            { key: "number", header: "Invoice", render: (row) => row.number },
+            { key: "contact", header: "Contact", render: (row) => row.contact },
+            { key: "total", header: "Total", align: "right", render: (row) => `$${row.total.toFixed(2)}` },
+            {
+              key: "status",
+              header: "Status",
+              render: (row) => <StatusChip status={row.status}>{row.status}</StatusChip>,
+            },
+          ]}
+          data={rows}
+        />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

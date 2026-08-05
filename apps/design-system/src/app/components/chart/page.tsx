@@ -30,6 +30,17 @@ export default function ChartPage() {
         same chart.
       </DocLead>
 
+      <ComponentPreview>
+        <ChartContainer config={config} className="h-64 w-full">
+          <BarChart data={data}>
+            <CartesianGrid vertical={false} />
+            <XAxis dataKey="month" tickLine={false} axisLine={false} />
+            <ChartTooltip content={<ChartTooltipContent />} />
+            <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
+          </BarChart>
+        </ChartContainer>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

@@ -12,6 +12,19 @@ export default function AccordionPage() {
         section of content — built from Collapsible. Single-open or multi-open.
       </DocLead>
 
+      <ComponentPreview>
+        <Accordion type="single" collapsible className="w-96">
+          <AccordionItem value="tax-inclusive">
+            <AccordionTrigger>What does tax-inclusive pricing mean?</AccordionTrigger>
+            <AccordionContent>The displayed price already contains tax.</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="retention">
+            <AccordionTrigger>What is retention?</AccordionTrigger>
+            <AccordionContent>A percentage withheld until the defect liability period ends.</AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

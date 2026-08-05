@@ -13,6 +13,12 @@ export default function FormFieldPage() {
         per screen.
       </DocLead>
 
+      <ComponentPreview>
+        <FormField label="Contact name" required className="w-72">
+          {(field) => <Input {...field} placeholder="Acme Contracting Ltd." />}
+        </FormField>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

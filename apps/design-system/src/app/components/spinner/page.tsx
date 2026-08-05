@@ -12,6 +12,14 @@ export default function SpinnerPage() {
         invoice…". Prefer Skeleton for content that has a known shape.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex items-center gap-3">
+          <Spinner size="sm" />
+          <Spinner size="md" />
+          <Spinner size="lg" />
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Three sizes: sm, md, lg.", "Respects prefers-reduced-motion by relying on the browser's own reduced-motion handling for CSS animation."]} />
       </DocSection>

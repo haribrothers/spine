@@ -12,6 +12,10 @@ export default function SliderPage() {
         percentage or retention percentage. Primary-filled track.
       </DocLead>
 
+      <ComponentPreview>
+        <Slider defaultValue={[10]} max={100} step={1} className="w-64" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Can be controlled or uncontrolled.", "Supports multiple thumbs for a range.", "Full keyboard navigation."]} />
       </DocSection>

@@ -12,6 +12,10 @@ export default function ProgressPage() {
         requirements met" or a job's cost-vs-budget. Primary-filled track.
       </DocLead>
 
+      <ComponentPreview>
+        <Progress value={72} className="w-64" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Provides context for screen reader users via aria-valuenow/aria-valuemax."]} />
       </DocSection>

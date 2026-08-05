@@ -13,6 +13,15 @@ export default function InputGroupPage() {
         search icon, or a trailing currency-code addon.
       </DocLead>
 
+      <ComponentPreview>
+        <InputGroup className="w-64">
+          <InputGroupAddon>
+            <Search />
+          </InputGroupAddon>
+          <InputGroupInput placeholder="Search invoices…" />
+        </InputGroup>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["The focus ring applies to the whole group, not just the inner input, so it reads as one control."]} />
       </DocSection>

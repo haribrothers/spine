@@ -13,6 +13,23 @@ export default function CommandPage() {
         CommandDialog.
       </DocLead>
 
+      <ComponentPreview>
+        <Command className="w-72 rounded-md border border-border">
+          <CommandInput placeholder="Search…" />
+          <CommandList>
+            <CommandEmpty>No results found.</CommandEmpty>
+            <CommandGroup>
+              <CommandItem>New quote</CommandItem>
+              <CommandItem>New invoice</CommandItem>
+            </CommandGroup>
+            <CommandSeparator />
+            <CommandGroup>
+              <CommandItem>Settings</CommandItem>
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Fuzzy, type-to-filter search across items and groups.", "Full keyboard navigation.", "Composable into a Combobox trigger or a full-screen CommandDialog."]} />
       </DocSection>

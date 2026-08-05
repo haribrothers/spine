@@ -17,6 +17,10 @@ export default function PaginationPage() {
       <DocTitle>Pagination</DocTitle>
       <DocLead>Numbered + prev/next, current page in a filled primary-colored pill.</DocLead>
 
+      <ComponentPreview>
+        <PaginationDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["A sliding window of page numbers centered on the current page.", "Prev/next buttons disable at the boundaries."]} />
       </DocSection>

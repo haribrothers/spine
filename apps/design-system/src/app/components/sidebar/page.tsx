@@ -61,6 +61,10 @@ export default function SidebarPage() {
         app.
       </DocLead>
 
+      <ComponentPreview>
+        <SidebarDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

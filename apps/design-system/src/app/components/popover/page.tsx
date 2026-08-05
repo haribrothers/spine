@@ -13,6 +13,17 @@ export default function PopoverPage() {
         interactive content, unlike Tooltip which is supplementary text only.
       </DocLead>
 
+      <ComponentPreview>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="secondary">Open popover</Button>
+          </PopoverTrigger>
+          <PopoverContent>
+            <p className="w-48 text-[13px] text-on-surface">Popover content goes here.</p>
+          </PopoverContent>
+        </Popover>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

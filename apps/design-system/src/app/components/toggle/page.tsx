@@ -13,6 +13,12 @@ export default function TogglePage() {
         Visually similar to Button but tracks on/off state rather than firing an action.
       </DocLead>
 
+      <ComponentPreview>
+        <Toggle aria-label="Bold">
+          <Bold size={16} />
+        </Toggle>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Can be controlled or uncontrolled.", "Supports disabled state."]} />
       </DocSection>

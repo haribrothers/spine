@@ -13,6 +13,16 @@ export default function OTPFieldPage() {
         with no OTP step — included in the catalogue for completeness.
       </DocLead>
 
+      <ComponentPreview>
+        <OTPField className="flex gap-2">
+          <OTPFieldInput />
+          <OTPFieldInput />
+          <OTPFieldInput />
+          <OTPFieldInput />
+          <OTPFieldHiddenInput name="otp" />
+        </OTPField>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

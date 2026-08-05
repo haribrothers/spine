@@ -13,6 +13,16 @@ export default function ScrollAreaPage() {
         code block).
       </DocLead>
 
+      <ComponentPreview>
+        <ScrollArea className="h-40 w-64 rounded-md border border-border p-3">
+          <div className="space-y-2 text-[13px] text-on-surface">
+            {Array.from({ length: 20 }, (_, i) => (
+              <p key={i}>Line item {i + 1}</p>
+            ))}
+          </div>
+        </ScrollArea>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Cross-browser consistent scrollbar styling.", "Scrollbars only appear when needed / on hover, matching each OS's own convention where relevant."]} />
       </DocSection>

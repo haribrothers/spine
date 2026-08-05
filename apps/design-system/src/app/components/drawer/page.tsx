@@ -23,6 +23,26 @@ export default function DrawerPage() {
         a quote's line-item editor.
       </DocLead>
 
+      <ComponentPreview>
+        <Drawer>
+          <DrawerTrigger asChild>
+            <Button variant="secondary">Edit line items</Button>
+          </DrawerTrigger>
+          <DrawerContent>
+            <DrawerHeader>
+              <DrawerTitle>Line items</DrawerTitle>
+              <DrawerDescription>Riverside Extension — Quote QUO-2026-0018</DrawerDescription>
+            </DrawerHeader>
+            <DrawerFooter>
+              <DrawerClose asChild>
+                <Button variant="secondary">Cancel</Button>
+              </DrawerClose>
+              <Button>Save</Button>
+            </DrawerFooter>
+          </DrawerContent>
+        </Drawer>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Anchors to the left or right edge via the side prop on DrawerContent.", "Same focus-trap and Escape-to-close behavior as Dialog."]} />
       </DocSection>

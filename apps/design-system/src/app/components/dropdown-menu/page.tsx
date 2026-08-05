@@ -23,6 +23,20 @@ export default function DropdownMenuPage() {
         button. A click-triggered floating action list — a table row's overflow menu.
       </DocLead>
 
+      <ComponentPreview>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary">Actions</Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Duplicate</DropdownMenuItem>
+            <DropdownMenuItem>Issue credit note</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem destructive>Void invoice</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

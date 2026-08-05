@@ -13,6 +13,25 @@ export default function HoverCardPage() {
         still supplementary.
       </DocLead>
 
+      <ComponentPreview>
+        <HoverCard>
+          <HoverCardTrigger className="text-[13px] text-primary underline underline-offset-2">
+            Acme Contracting Ltd.
+          </HoverCardTrigger>
+          <HoverCardContent>
+            <div className="flex items-center gap-2">
+              <Avatar size="sm">
+                <AvatarFallback>AC</AvatarFallback>
+              </Avatar>
+              <div className="text-[13px]">
+                <p className="font-medium text-on-surface">Acme Contracting Ltd.</p>
+                <p className="text-on-surface-muted">3 open invoices · $4,120 outstanding</p>
+              </div>
+            </div>
+          </HoverCardContent>
+        </HoverCard>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Configurable open/close delay.", "Supports hover and focus.", "Customize side, alignment, offsets, collision handling."]} />
       </DocSection>

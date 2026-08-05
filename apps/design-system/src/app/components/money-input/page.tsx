@@ -23,6 +23,10 @@ export default function MoneyInputPage() {
         in minor units, never a float.
       </DocLead>
 
+      <ComponentPreview>
+        <MoneyInputDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

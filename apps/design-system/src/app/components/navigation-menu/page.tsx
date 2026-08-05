@@ -20,6 +20,30 @@ export default function NavigationMenuPage() {
         the pattern for a vertical admin sidebar, don't reach for this there.
       </DocLead>
 
+      <ComponentPreview>
+        <NavigationMenu>
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>Product</NavigationMenuTrigger>
+              <NavigationMenuContent>
+                <ul className="grid w-48 gap-1 p-2">
+                  <li>
+                    <NavigationMenuLink href="#" className="block rounded-sm px-2 py-1.5 text-[13px] text-on-surface hover:bg-surface-sunken">
+                      Quotes
+                    </NavigationMenuLink>
+                  </li>
+                  <li>
+                    <NavigationMenuLink href="#" className="block rounded-sm px-2 py-1.5 text-[13px] text-on-surface hover:bg-surface-sunken">
+                      Invoices
+                    </NavigationMenuLink>
+                  </li>
+                </ul>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Can display simple links or rich dropdown content per top-level item.", "Full keyboard navigation.", "Accessible on both mouse and keyboard, including support for RTL direction."]} />
       </DocSection>

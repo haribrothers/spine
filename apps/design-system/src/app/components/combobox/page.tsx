@@ -29,6 +29,10 @@ export default function ComboboxPage() {
         rather than a dedicated Radix primitive, since Radix doesn't ship one.
       </DocLead>
 
+      <ComponentPreview>
+        <ComboboxDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

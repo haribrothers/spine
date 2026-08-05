@@ -9,6 +9,10 @@ export default function StatCardPage() {
       <DocTitle>StatCard</DocTitle>
       <DocLead>A Card variant for a single dashboard KPI — cash position, receivables, overdue count.</DocLead>
 
+      <ComponentPreview>
+        <StatCard label="Cash position" value="$48,210" trend={{ direction: "up", label: "+12% vs last month" }} className="w-64" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["An optional trend indicator colors green/red/neutral by direction, independent of financial-status semantics."]} />
       </DocSection>

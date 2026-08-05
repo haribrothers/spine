@@ -12,6 +12,19 @@ export default function RadioGroupPage() {
         checked at a time. E.g. tax-inclusive vs. tax-exclusive pricing.
       </DocLead>
 
+      <ComponentPreview>
+        <RadioGroup defaultValue="exclusive">
+          <label className="flex items-center gap-2">
+            <RadioGroupItem value="exclusive" />
+            <span className="text-[14px] text-on-surface">Tax-exclusive</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <RadioGroupItem value="inclusive" />
+            <span className="text-[14px] text-on-surface">Tax-inclusive</span>
+          </label>
+        </RadioGroup>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Full keyboard navigation.", "Can be controlled or uncontrolled."]} />
       </DocSection>

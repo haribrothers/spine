@@ -9,6 +9,21 @@ export default function CardPage() {
       <DocTitle>Card</DocTitle>
       <DocLead>The default container for grouped content — 12px radius, 1px border, no shadow.</DocLead>
 
+      <ComponentPreview>
+        <Card className="w-80">
+          <CardHeader>
+            <CardTitle>Invoice INV-2026-0042</CardTitle>
+            <CardDescription>Issued 5 Aug 2026, due 19 Aug 2026</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-[13px] text-on-surface-muted">Acme Contracting Ltd. — $1,240.00</p>
+          </CardContent>
+          <CardFooter>
+            <Button size="sm">View</Button>
+          </CardFooter>
+        </Card>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Composable sub-parts (Header, Title, Description, Content, Footer) — use only the ones a given card needs."]} />
       </DocSection>

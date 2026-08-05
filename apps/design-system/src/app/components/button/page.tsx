@@ -12,6 +12,15 @@ export default function ButtonPage() {
         is secondary, ghost, or a plain link.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant="primary">Save invoice</Button>
+          <Button variant="secondary">Cancel</Button>
+          <Button variant="danger">Void invoice</Button>
+          <Button variant="ghost">Dismiss</Button>
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

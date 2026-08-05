@@ -13,6 +13,17 @@ export default function TooltipPage() {
         carrier of required information, since mobile/touch has no hover.
       </DocLead>
 
+      <ComponentPreview>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon">
+              ?
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Retention is held until the defect liability period ends.</TooltipContent>
+        </Tooltip>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

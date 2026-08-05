@@ -13,6 +13,13 @@ export default function BadgePage() {
         semantic.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex items-center gap-3">
+          <Badge>Beta</Badge>
+          <Badge>12</Badge>
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Single neutral tone, no status-color variants — that's what StatusChip is for."]} />
       </DocSection>

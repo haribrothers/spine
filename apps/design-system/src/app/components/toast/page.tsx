@@ -43,6 +43,10 @@ export default function ToastPage() {
         belongs inline via HelperText.
       </DocLead>
 
+      <ComponentPreview>
+        <ToastDemo />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

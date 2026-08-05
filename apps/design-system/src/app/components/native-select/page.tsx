@@ -9,6 +9,14 @@ export default function NativeSelectPage() {
       <DocTitle>NativeSelect</DocTitle>
       <DocLead>A plain native {"<select>"} for simple flat option lists — reach for the Radix-based Select for richer chrome or grouping needs.</DocLead>
 
+      <ComponentPreview>
+        <NativeSelect defaultValue="usd" className="w-40">
+          <option value="usd">USD</option>
+          <option value="eur">EUR</option>
+          <option value="jpy">JPY</option>
+        </NativeSelect>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Uses the OS's own native dropdown chrome — the lightest-weight option when a custom-styled menu isn't needed."]} />
       </DocSection>

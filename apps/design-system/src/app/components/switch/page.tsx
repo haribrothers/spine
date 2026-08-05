@@ -9,6 +9,15 @@ export default function SwitchPage() {
       <DocTitle>Switch</DocTitle>
       <DocLead>A control that allows toggling between checked and not checked — e.g. "require owner approval" flags.</DocLead>
 
+      <ComponentPreview>
+        <label className="flex items-center gap-2">
+          <Switch defaultChecked />
+          <span className="text-[14px] text-on-surface">
+            Require owner approval above discount threshold
+          </span>
+        </label>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Full keyboard navigation.", "Can be controlled or uncontrolled."]} />
       </DocSection>

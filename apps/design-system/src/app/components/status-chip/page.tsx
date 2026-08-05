@@ -13,6 +13,15 @@ export default function StatusChipPage() {
         label; color alone never carries the meaning.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex flex-wrap items-center gap-3">
+          <StatusChip status="paid">Paid</StatusChip>
+          <StatusChip status="due-soon">Due in 3 days</StatusChip>
+          <StatusChip status="overdue">Overdue</StatusChip>
+          <StatusChip status="draft">Draft</StatusChip>
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

@@ -12,6 +12,13 @@ export default function SkeletonPage() {
         genuinely slow loads, not every async state.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-4 w-32" />
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["A plain sizable block — pass width/height utility classes to match the content it replaces."]} />
       </DocSection>

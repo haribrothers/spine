@@ -29,6 +29,29 @@ export default function TablePage() {
         DataTable for the richer variant with a search box and column-visibility toggle.
       </DocLead>
 
+      <ComponentPreview>
+        <Table<InvoiceRow>
+          rowKey={(row) => row.number}
+          columns={[
+            { key: "number", header: "Invoice", render: (row) => row.number, sortValue: (row) => row.number },
+            { key: "contact", header: "Contact", render: (row) => row.contact, sortValue: (row) => row.contact },
+            {
+              key: "total",
+              header: "Total",
+              align: "right",
+              render: (row) => `$${row.total.toFixed(2)}`,
+              sortValue: (row) => row.total,
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (row) => <StatusChip status={row.status}>{row.status}</StatusChip>,
+            },
+          ]}
+          data={rows}
+        />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

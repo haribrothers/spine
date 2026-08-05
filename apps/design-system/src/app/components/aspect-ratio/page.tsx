@@ -12,6 +12,10 @@ export default function AspectRatioPage() {
         thumbnails) to a fixed ratio so layout doesn't jump before the asset loads.
       </DocLead>
 
+      <ComponentPreview>
+        <AspectRatio ratio={16 / 9} className="w-64 overflow-hidden rounded-md bg-surface-sunken" />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Accepts any ratio, not just common presets — pass width / height."]} />
       </DocSection>

@@ -13,6 +13,13 @@ export default function CheckboxPage() {
         when checked.
       </DocLead>
 
+      <ComponentPreview>
+        <label className="flex items-center gap-2">
+          <Checkbox defaultChecked />
+          <span className="text-[14px] text-on-surface">Mark as billable to customer</span>
+        </label>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

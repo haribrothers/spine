@@ -10,6 +10,17 @@ export default function ToggleGroupPage() {
       <DocTitle>ToggleGroup</DocTitle>
       <DocLead>A set of two-state buttons that can be toggled on or off — a single-select icon row, e.g. a document view switcher.</DocLead>
 
+      <ComponentPreview>
+        <ToggleGroup type="single" defaultValue="list">
+          <ToggleGroupItem value="list" aria-label="List view">
+            <List size={16} />
+          </ToggleGroupItem>
+          <ToggleGroupItem value="grid" aria-label="Grid view">
+            <LayoutGrid size={16} />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Supports single or multiple selection.", "Full keyboard navigation, roving tabindex."]} />
       </DocSection>

@@ -9,6 +9,18 @@ export default function ResizablePage() {
       <DocTitle>Resizable</DocTitle>
       <DocLead>Accessible resizable panel groups and layouts, built on react-resizable-panels.</DocLead>
 
+      <ComponentPreview>
+        <ResizablePanelGroup className="h-48 rounded-md border border-border">
+          <ResizablePanel defaultSize={30}>
+            <div className="p-3 text-[13px] text-on-surface">Sidebar</div>
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={70}>
+            <div className="p-3 text-[13px] text-on-surface">Content</div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Supports horizontal and vertical orientation.", "Persists layout via the underlying library's own storage hooks if wired up.", "Optional visible grip handle."]} />
       </DocSection>

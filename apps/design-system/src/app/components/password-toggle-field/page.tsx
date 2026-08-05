@@ -12,6 +12,15 @@ export default function PasswordToggleFieldPage() {
         Spine's own sign-up/login screens (§5's email+password auth).
       </DocLead>
 
+      <ComponentPreview>
+        <PasswordToggleField>
+          <div className="relative w-64">
+            <PasswordToggleFieldInput placeholder="Password" />
+            <PasswordToggleFieldToggle />
+          </div>
+        </PasswordToggleField>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

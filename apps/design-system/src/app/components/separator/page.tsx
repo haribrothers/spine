@@ -13,6 +13,12 @@ export default function SeparatorPage() {
         boundary.
       </DocLead>
 
+      <ComponentPreview>
+        <div className="w-64">
+          <Separator />
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Supports horizontal and vertical orientation.", "Decorative by default (hidden from assistive tech) since it's usually a visual-only divider."]} />
       </DocSection>

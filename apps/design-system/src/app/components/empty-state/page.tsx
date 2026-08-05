@@ -13,6 +13,15 @@ export default function EmptyStatePage() {
         principle is "never a blank screen with no next action."
       </DocLead>
 
+      <ComponentPreview>
+        <EmptyState
+          icon={<Inbox />}
+          title="No quotes yet"
+          description="Create your first quote to start the enquiry-to-invoice workflow."
+          action={<Button>Create quote</Button>}
+        />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

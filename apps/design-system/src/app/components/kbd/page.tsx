@@ -9,6 +9,10 @@ export default function KbdPage() {
       <DocTitle>Kbd</DocTitle>
       <DocLead>A keyboard-shortcut hint — e.g. the ⌘K search trigger in this design system's own top bar.</DocLead>
 
+      <ComponentPreview>
+        <Kbd>⌘K</Kbd>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Renders a semantic <kbd> element with the library's mono-data styling."]} />
       </DocSection>

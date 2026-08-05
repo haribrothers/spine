@@ -21,6 +21,27 @@ export default function MenubarPage() {
         for completeness.
       </DocLead>
 
+      <ComponentPreview>
+        <Menubar>
+          <MenubarMenu>
+            <MenubarTrigger>File</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>New</MenubarItem>
+              <MenubarItem>Open…</MenubarItem>
+              <MenubarSeparator />
+              <MenubarItem destructive>Close</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+          <MenubarMenu>
+            <MenubarTrigger>Edit</MenubarTrigger>
+            <MenubarContent>
+              <MenubarItem>Undo</MenubarItem>
+              <MenubarItem>Redo</MenubarItem>
+            </MenubarContent>
+          </MenubarMenu>
+        </Menubar>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Full keyboard navigation with typeahead.", "Supports submenus, checkable items, and groups within each menu."]} />
       </DocSection>

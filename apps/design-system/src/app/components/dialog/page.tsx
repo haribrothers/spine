@@ -23,6 +23,28 @@ export default function DialogPage() {
         Drawer instead.
       </DocLead>
 
+      <ComponentPreview>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="danger">Void invoice</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Void this invoice?</DialogTitle>
+              <DialogDescription>
+                This cannot be undone. A reversing entry will be posted to the ledger.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="secondary">Cancel</Button>
+              </DialogClose>
+              <Button variant="danger">Void invoice</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[

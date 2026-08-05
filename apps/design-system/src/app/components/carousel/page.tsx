@@ -12,6 +12,22 @@ export default function CarouselPage() {
         a horizontally scrolling set of slides with prev/next controls.
       </DocLead>
 
+      <ComponentPreview>
+        <Carousel className="w-72">
+          <CarouselContent>
+            {["Site photo 1", "Site photo 2", "Site photo 3"].map((label) => (
+              <CarouselItem key={label}>
+                <div className="flex aspect-video items-center justify-center rounded-md bg-surface-sunken text-[13px] text-on-surface-muted">
+                  {label}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <CarouselPrevious />
+          <CarouselNext />
+        </Carousel>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Touch/swipe support on mobile.", "Prev/Next controls automatically disable at the ends.", "Options object passes through to embla-carousel directly."]} />
       </DocSection>

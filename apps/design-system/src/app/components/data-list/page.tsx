@@ -12,6 +12,18 @@ export default function DataListPage() {
         Table for one record rather than a collection.
       </DocLead>
 
+      <ComponentPreview>
+        <DataList
+          className="w-80"
+          items={[
+            { label: "Contact", value: "Acme Contracting Ltd." },
+            { label: "Issue date", value: "5 Aug 2026" },
+            { label: "Due date", value: "19 Aug 2026" },
+            { label: "Total", value: "$1,240.00" },
+          ]}
+        />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Renders as a definition list (<dl>) with a divider between rows.", "The value slot accepts any node, not just text."]} />
       </DocSection>

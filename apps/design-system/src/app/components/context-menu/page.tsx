@@ -19,6 +19,19 @@ export default function ContextMenuPage() {
         hand-roll a second menu visual language for it.
       </DocLead>
 
+      <ComponentPreview>
+        <ContextMenu>
+          <ContextMenuTrigger className="flex h-24 w-64 items-center justify-center rounded-md border border-dashed border-border text-[13px] text-on-surface-muted">
+            Right-click here
+          </ContextMenuTrigger>
+          <ContextMenuContent>
+            <ContextMenuItem>Duplicate</ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem destructive>Delete</ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Supports submenus, checkable items, and groups — the same sub-part shapes as DropdownMenu.", "Full keyboard navigation with typeahead."]} />
       </DocSection>

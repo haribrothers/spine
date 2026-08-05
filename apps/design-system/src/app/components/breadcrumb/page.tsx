@@ -9,6 +9,16 @@ export default function BreadcrumbPage() {
       <DocTitle>Breadcrumb</DocTitle>
       <DocLead>A trail of links showing the current page's ancestry. body-sm typography, muted grey with the current page in on-surface.</DocLead>
 
+      <ComponentPreview>
+        <Breadcrumb
+          items={[
+            { label: "Jobs", href: "/jobs" },
+            { label: "Riverside Extension", href: "/jobs/riverside" },
+            { label: "Milestones" },
+          ]}
+        />
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["The last item (no href) renders as plain, non-interactive text for the current page."]} />
       </DocSection>

@@ -13,6 +13,18 @@ export default function TypographyPage() {
         composes its own headings inline per component (Card's CardTitle, etc.).
       </DocLead>
 
+      <ComponentPreview>
+        <div className="flex flex-col gap-2">
+          <Display>Display</Display>
+          <H1>Heading 1</H1>
+          <H2>Heading 2</H2>
+          <H3>Heading 3</H3>
+          <Lead>Lead paragraph text, slightly larger and muted.</Lead>
+          <P>Regular body text.</P>
+          <Muted>Muted caption text.</Muted>
+        </div>
+      </ComponentPreview>
+
       <DocSection id="features" title="Features">
         <FeatureList items={["Seven presets — Display, H1, H2, H3, Lead, P, Muted — each a thin wrapper over a semantic HTML element with the matching DESIGN.md type-scale styling."]} />
       </DocSection>
