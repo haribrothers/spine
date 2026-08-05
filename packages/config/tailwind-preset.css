@@ -165,4 +165,13 @@
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  --duration-instant: var(--duration-instant);
+  --duration-fast: var(--duration-fast);
+  --duration-base: var(--duration-base);
+  --duration-slow: var(--duration-slow);
+
+  --ease-standard: var(--easing-standard);
+  --ease-decelerate: var(--easing-decelerate);
+  --ease-accelerate: var(--easing-accelerate);
 }

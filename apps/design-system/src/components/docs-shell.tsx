@@ -1,5 +1,6 @@
 "use client";
 
+import { TooltipProvider } from "@spine/ui";
 import { useState } from "react";
 import { TopBar } from "./top-bar";
 import { Sidebar } from "./sidebar";
@@ -10,14 +11,16 @@ export function DocsShell({ children }: { children: React.ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background">
-      <TopBar onSearchOpen={() => setSearchOpen(true)} />
-      <div className="mx-auto flex max-w-[1200px]">
-        <Sidebar />
-        <article className="min-w-0 flex-1 py-8">{children}</article>
-        <OnThisPage />
+    <TooltipProvider delayDuration={200}>
+      <div className="min-h-screen bg-background">
+        <TopBar onSearchOpen={() => setSearchOpen(true)} />
+        <div className="mx-auto flex max-w-[1200px]">
+          <Sidebar />
+          <article className="min-w-0 flex-1 py-8">{children}</article>
+          <OnThisPage />
+        </div>
+        <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
       </div>
-      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
-    </div>
+    </TooltipProvider>
   );
 }
