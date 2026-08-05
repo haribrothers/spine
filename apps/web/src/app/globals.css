@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "@spine/config/tailwind";
+@source "../../../../packages/ui/src";
 
 body {
   background: var(--color-background);
-  color: var(--color-foreground);
+  color: var(--color-on-surface);
+  font-family: var(--font-sans);
 }

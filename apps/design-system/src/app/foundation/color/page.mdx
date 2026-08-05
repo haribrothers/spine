@@ -1,0 +1,51 @@
+# Color
+
+The palette is deliberately restrained: one accent color (primary) for interactive elements, a warm neutral scale for everything structural, and a reserved four-color semantic palette for financial document status that is never repurposed for anything else. Toggle the theme switcher in the top bar to see the dark-mode values below.
+
+## Primary
+
+The single accent for buttons, links, active navigation state, and focus rings. Reserved for one primary action per screen.
+
+<ColorSwatchGrid swatches={[
+  { name: "Primary", variable: "--color-primary" },
+  { name: "Primary hover", variable: "--color-primary-hover" },
+]} />
+
+## Neutrals
+
+A warm-leaning stone scale rather than a cool blue-grey, so dense tables and forms don't read as clinical.
+
+<ColorSwatchGrid swatches={[
+  { name: "Neutral 50", variable: "--color-neutral-50" },
+  { name: "Neutral 100", variable: "--color-neutral-100" },
+  { name: "Neutral 200", variable: "--color-neutral-200" },
+  { name: "Neutral 300", variable: "--color-neutral-300" },
+  { name: "Neutral 500", variable: "--color-neutral-500" },
+  { name: "Neutral 700", variable: "--color-neutral-700" },
+  { name: "Neutral 900", variable: "--color-neutral-900" },
+]} />
+
+## Surfaces
+
+<ColorSwatchGrid swatches={[
+  { name: "Background", variable: "--color-background" },
+  { name: "Surface", variable: "--color-surface" },
+  { name: "Surface sunken", variable: "--color-surface-sunken" },
+  { name: "Border", variable: "--color-border" },
+  { name: "Border strong", variable: "--color-border-strong" },
+]} />
+
+## Financial status (reserved)
+
+These four map directly to invoice/quote/job status everywhere they appear — dashboards, the invoice list, AR aging, the PDF itself — and are never used for anything else. A re-themed `primary` color must never collide with these.
+
+<ColorSwatchGrid swatches={[
+  { name: "Paid", variable: "--color-paid" },
+  { name: "Paid background", variable: "--color-paid-bg" },
+  { name: "Due soon", variable: "--color-due-soon" },
+  { name: "Due soon background", variable: "--color-due-soon-bg" },
+  { name: "Overdue", variable: "--color-overdue" },
+  { name: "Overdue background", variable: "--color-overdue-bg" },
+  { name: "Draft", variable: "--color-draft" },
+  { name: "Draft background", variable: "--color-draft-bg" },
+]} />

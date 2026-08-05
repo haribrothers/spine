@@ -10,12 +10,14 @@
   },
   "scripts": {
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "react": "^19.0.0"
+    "@radix-ui/react-slot": "^1.1.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "react": "^19.0.0",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@spine/config": "workspace:*",

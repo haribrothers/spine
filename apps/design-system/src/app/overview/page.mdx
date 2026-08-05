@@ -1,0 +1,26 @@
+# Spine Design System
+
+Spine replaces the patchwork a small contractor or design studio already runs on with one tool that follows their actual workflow — enquiry, quote, job, invoice, payment, books — while a correct double-entry ledger runs invisibly underneath.
+
+This is the reference for `@spine/ui`, the component library every screen in Spine is built from, and the design tokens that back it. See [`docs/DESIGN.md`](https://github.com) in the repository for the full rationale behind every decision here.
+
+## Getting started
+
+Install the package inside the monorepo:
+
+<CodeBlock code={`pnpm add @spine/ui --filter your-app`} language="bash" />
+
+Import components directly — there is no build step for `@spine/ui`, it's consumed as TypeScript source across the workspace:
+
+<CodeBlock code={`import { Button } from "@spine/ui";
+
+export function Example() {
+  return <Button variant="primary">Save invoice</Button>;
+}`} />
+
+## Principles
+
+- **One primary action per screen.** The primary (filled blue) button variant is reserved for the single most important action on a page — everything else is secondary or ghost.
+- **Financial status is a reserved palette.** Paid, due-soon, overdue, and draft each have one meaning across the entire product and are never repurposed for a generic badge.
+- **Every token is overridable.** A self-hoster reskins Spine by overriding CSS custom properties, never by editing component source.
+- **44px touch targets on mobile.** Any control used in the field-companion app meets the 44×44px minimum, since field users are frequently one-handed or gloved on a job site.

@@ -1,0 +1,11 @@
+{
+  "extends": "@spine/config/tsconfig/nextjs",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "**/*.mdx", ".next/types/**/*.ts", "mdx-components.tsx"],
+  "exclude": ["node_modules"]
+}
