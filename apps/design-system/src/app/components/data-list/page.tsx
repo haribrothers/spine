@@ -1,6 +1,7 @@
 import { DataList } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
-import { DocLead, DocSection, DocTitle } from "@/components/doc-page";
+import { CodeBlock } from "@/components/code-block";
+import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
 
 export default function DataListPage() {
   return (
@@ -11,7 +12,22 @@ export default function DataListPage() {
         Table for one record rather than a collection.
       </DocLead>
 
-      <DocSection id="default" title="Default">
+      <DocSection id="features" title="Features">
+        <FeatureList items={["Renders as a definition list (<dl>) with a divider between rows.", "The value slot accepts any node, not just text."]} />
+      </DocSection>
+
+      <DocSection id="anatomy" title="Anatomy">
+        <CodeBlock code={`import { DataList } from "@spine/ui";
+
+export default () => <DataList items={[{ label: "Contact", value: "Acme Contracting Ltd." }]} />;`} />
+      </DocSection>
+
+      <DocSection id="api-reference" title="API Reference">
+        <ApiTable rows={[{ prop: "items", type: "{ label: string; value: ReactNode }[]" }]} />
+      </DocSection>
+
+      <DocSection id="examples" title="Examples">
+        <DocLead>Default</DocLead>
         <ComponentPreview
           code={`<DataList
   items={[
@@ -32,6 +48,16 @@ export default function DataListPage() {
             ]}
           />
         </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="accessibility" title="Accessibility">
+        <DocLead>
+          Uses the semantic{" "}
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<dl>"}</code>/
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<dt>"}</code>/
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<dd>"}</code>{" "}
+          elements so the label-value pairing is programmatically discoverable.
+        </DocLead>
       </DocSection>
     </div>
   );

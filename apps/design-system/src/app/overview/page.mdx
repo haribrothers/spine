@@ -1,8 +1,12 @@
 # Spine Design System
 
-Spine replaces the patchwork a small contractor or design studio already runs on with one tool that follows their actual workflow — enquiry, quote, job, invoice, payment, books — while a correct double-entry ledger runs invisibly underneath.
+Spine replaces the patchwork a small contractor or design studio already runs on — WhatsApp for contacts, Excel for quotes, a shoebox for receipts — with one tool that follows their actual workflow: enquiry, quote, job, invoice, payment, books. A correct double-entry ledger runs invisibly underneath every screen.
 
-This is the reference for `@spine/ui`, the component library every screen in Spine is built from, and the design tokens that back it. See [`docs/DESIGN.md`](https://github.com) in the repository for the full rationale behind every decision here.
+This is the reference for `@spine/ui`, the component library every screen in Spine is built from, and the design tokens that back it. It documents both the visual foundation (color, typography, spacing, motion) and the full component catalogue, with a working code sample for every example. See `docs/DESIGN.md` in the repository for the complete written rationale behind every decision referenced here.
+
+## Who this is for
+
+If you're building a screen inside `apps/web`, `apps/mobile`, or contributing to `@spine/ui` itself, this site is where you start — not Storybook (Spine deliberately doesn't use it), and not by reverse-engineering props from component source. Every component page shows its full API, a working example, and the accessibility behavior it inherits from its underlying Radix primitive.
 
 ## Getting started
 
@@ -10,7 +14,7 @@ Install the package inside the monorepo:
 
 <CodeBlock code={`pnpm add @spine/ui --filter your-app`} language="bash" />
 
-Import components directly — there is no build step for `@spine/ui`, it's consumed as TypeScript source across the workspace:
+Import components directly — there is no build step for `@spine/ui`, it's consumed as TypeScript source across the workspace, the same way every other internal package in the monorepo works:
 
 <CodeBlock code={`import { Button } from "@spine/ui";
 
@@ -18,9 +22,13 @@ export function Example() {
   return <Button variant="primary">Save invoice</Button>;
 }`} />
 
-## Principles
+Every component reads its colors, radii, spacing, and type scale from CSS custom properties defined in `packages/config/tailwind-preset.css` — nothing is hardcoded inline. That's what makes a self-hoster's re-theme (§S-10.4/S-10.5 of the PRD) a token swap rather than a fork.
 
-- **One primary action per screen.** The primary (filled blue) button variant is reserved for the single most important action on a page — everything else is secondary or ghost.
-- **Financial status is a reserved palette.** Paid, due-soon, overdue, and draft each have one meaning across the entire product and are never repurposed for a generic badge.
-- **Every token is overridable.** A self-hoster reskins Spine by overriding CSS custom properties, never by editing component source.
-- **44px touch targets on mobile.** Any control used in the field-companion app meets the 44×44px minimum, since field users are frequently one-handed or gloved on a job site.
+## What's here
+
+- **Foundation** — the raw design tokens: color, typography, spacing, icons, motion. Read this before building a new component, since every value here should already exist as a token.
+- **Layouts** — the five structural primitives (Box, Flex, Grid, Container, Section) every page composes from, plus the reference shells for each app family (Admin, Learner-equivalent, Mobile, this documentation site itself).
+- **Components** — the full `@spine/ui` catalogue, grouped the same way `docs/DESIGN.md`'s own Components section is grouped, so the two never drift apart: Primitives, Feedback & status, Data display, Overlays.
+- **Templates** — full sample screens composed from real components, showing how the pieces fit together in an actual Spine page rather than in isolation.
+
+See [Principles](/overview/principles) next for the rules every component and screen in Spine follows.

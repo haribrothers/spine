@@ -3,7 +3,8 @@
 import { DatePicker } from "@spine/ui";
 import { useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
-import { DocLead, DocSection, DocTitle } from "@/components/doc-page";
+import { CodeBlock } from "@/components/code-block";
+import { ApiTable, DocLead, DocSection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
 
 function DatePickerDemo() {
   const [date, setDate] = useState<Date>();
@@ -22,7 +23,40 @@ export default function DatePickerPage() {
         chrome, which is inconsistent across browsers and OSes.
       </DocLead>
 
-      <DocSection id="default" title="Default">
+      <DocSection id="features" title="Features">
+        <FeatureList
+          items={[
+            "A month-grid Calendar with prev/next navigation, no external date library dependency.",
+            "Hosted in a Popover, closes automatically on selection.",
+            "Field trigger shares Input/Select's chrome and height for a consistent form row.",
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="anatomy" title="Anatomy">
+        <CodeBlock
+          code={`import { DatePicker } from "@spine/ui";
+
+export default () => {
+  const [date, setDate] = useState<Date>();
+  return <DatePicker value={date} onChange={setDate} />;
+};`}
+        />
+      </DocSection>
+
+      <DocSection id="api-reference" title="API Reference">
+        <ApiTable
+          rows={[
+            { prop: "value", type: "Date" },
+            { prop: "onChange", type: "(date: Date) => void" },
+            { prop: "placeholder", type: "string", defaultValue: '"Pick a date"' },
+            { prop: "disabled", type: "boolean", defaultValue: "false" },
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="examples" title="Examples">
+        <DocLead>Default</DocLead>
         <ComponentPreview
           code={`const [date, setDate] = useState<Date>();
 
@@ -30,6 +64,16 @@ export default function DatePickerPage() {
         >
           <DatePickerDemo />
         </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="accessibility" title="Accessibility">
+        <KeyboardTable
+          rows={[
+            { keys: "Space", description: "Opens the calendar popover." },
+            { keys: "Esc", description: "Closes the calendar without changing the value." },
+            { keys: "Tab", description: "Moves focus between the prev-month button, next-month button, and day grid." },
+          ]}
+        />
       </DocSection>
     </div>
   );

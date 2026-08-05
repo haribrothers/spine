@@ -2,7 +2,8 @@
 
 import { StatusChip, Table } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
-import { DocLead, DocSection, DocTitle } from "@/components/doc-page";
+import { CodeBlock } from "@/components/code-block";
+import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
 
 interface InvoiceRow {
   number: string;
@@ -24,10 +25,58 @@ export default function TablePage() {
       <DocTitle>Table</DocTitle>
       <DocLead>
         Zero-radius, dense row height, sticky header, sortable columns, client-side pagination
-        — the primary vehicle for quote/invoice line items and the AR/AP aging report.
+        — the primary vehicle for quote/invoice line items and the AR/AP aging report. See
+        DataTable for the richer variant with a search box and column-visibility toggle.
       </DocLead>
 
-      <DocSection id="default" title="Default">
+      <DocSection id="features" title="Features">
+        <FeatureList
+          items={[
+            "Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.",
+            "Automatic client-side pagination once data exceeds pageSize.",
+            "Sticky header row stays visible while scrolling a tall table.",
+            "Alternating hover tint on rows.",
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="anatomy" title="Anatomy">
+        <CodeBlock
+          code={`import { Table } from "@spine/ui";
+
+export default () => (
+  <Table
+    columns={[{ key: "name", header: "Name", render: (row) => row.name }]}
+    data={rows}
+    rowKey={(row) => row.id}
+  />
+);`}
+        />
+      </DocSection>
+
+      <DocSection id="api-reference" title="API Reference">
+        <ApiTable
+          rows={[
+            { prop: "columns", type: "TableColumn<T>[]" },
+            { prop: "data", type: "T[]" },
+            { prop: "rowKey", type: "(row: T) => string" },
+            { prop: "pageSize", type: "number", defaultValue: "20" },
+          ]}
+          caption="TableColumn<T>"
+        />
+        <ApiTable
+          rows={[
+            { prop: "key", type: "string" },
+            { prop: "header", type: "string" },
+            { prop: "render", type: "(row: T) => ReactNode" },
+            { prop: "sortValue", type: "(row: T) => string | number | bigint" },
+            { prop: "align", type: "left | right", defaultValue: "left" },
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="examples" title="Examples">
+        <DocLead>Default</DocLead>
         <ComponentPreview
           code={`<Table
   rowKey={(row) => row.number}
@@ -67,6 +116,18 @@ export default function TablePage() {
             data={rows}
           />
         </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="accessibility" title="Accessibility">
+        <DocLead>
+          Uses a native{" "}
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<table>"}</code>{" "}
+          with proper <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<th>"}</code>{" "}
+          header cells, so row/column relationships are announced correctly by screen readers.
+          Sort buttons are real{" "}
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">{"<button>"}</code>{" "}
+          elements, keyboard-activatable.
+        </DocLead>
       </DocSection>
     </div>
   );

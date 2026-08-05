@@ -1,6 +1,7 @@
 import { StatusChip } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
-import { ApiTable, DocLead, DocSection, DocTitle } from "@/components/doc-page";
+import { CodeBlock } from "@/components/code-block";
+import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
 
 export default function StatusChipPage() {
   return (
@@ -12,7 +13,27 @@ export default function StatusChipPage() {
         label; color alone never carries the meaning.
       </DocLead>
 
-      <DocSection id="statuses" title="Statuses">
+      <DocSection id="features" title="Features">
+        <FeatureList
+          items={[
+            "The status prop only accepts the four reserved values — the type system enforces the reserved-palette rule, not just documentation.",
+            "Always renders as a pill shape, distinct from Badge's shape at a glance is intentional but not the sole signal — text is always present too.",
+          ]}
+        />
+      </DocSection>
+
+      <DocSection id="anatomy" title="Anatomy">
+        <CodeBlock code={`import { StatusChip } from "@spine/ui";
+
+export default () => <StatusChip status="paid">Paid</StatusChip>;`} />
+      </DocSection>
+
+      <DocSection id="api-reference" title="API Reference">
+        <ApiTable rows={[{ prop: "status", type: "paid | due-soon | overdue | draft", defaultValue: "draft" }]} />
+      </DocSection>
+
+      <DocSection id="examples" title="Examples">
+        <DocLead>Statuses</DocLead>
         <ComponentPreview
           code={`<StatusChip status="paid">Paid</StatusChip>
 <StatusChip status="due-soon">Due in 3 days</StatusChip>
@@ -28,10 +49,12 @@ export default function StatusChipPage() {
         </ComponentPreview>
       </DocSection>
 
-      <DocSection id="api" title="API">
-        <ApiTable
-          rows={[{ prop: "status", type: "paid | due-soon | overdue | draft", defaultValue: "draft" }]}
-        />
+      <DocSection id="accessibility" title="Accessibility">
+        <DocLead>
+          Color is never the sole carrier of meaning — the text label ("Paid", "Overdue") is
+          always rendered alongside the color, so the status reads correctly for colorblind
+          users and in grayscale print.
+        </DocLead>
       </DocSection>
     </div>
   );

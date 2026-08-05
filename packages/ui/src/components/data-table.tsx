@@ -1,0 +1,89 @@
+"use client";
+
+import { SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
+import { Button } from "./button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
+import { Input } from "./input";
+import { Table, type TableColumn } from "./table";
+
+export interface DataTableProps<T> {
+  columns: TableColumn<T>[];
+  data: T[];
+  rowKey: (row: T) => string;
+  pageSize?: number;
+  searchPlaceholder?: string;
+  searchKey?: (row: T) => string;
+  className?: string;
+}
+
+/**
+ * Table plus a search box and a column-visibility toggle — the richer
+ * layer for a full data-management screen (e.g. the invoice list), where
+ * plain Table (sortable + paginated only) is enough for embedded contexts
+ * like a quote's line items.
+ */
+export function DataTable<T>({
+  columns,
+  data,
+  rowKey,
+  pageSize,
+  searchPlaceholder = "Search…",
+  searchKey,
+  className,
+}: DataTableProps<T>) {
+  const [query, setQuery] = useState("");
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+
+  const filtered = searchKey && query ? data.filter((row) => searchKey(row).toLowerCase().includes(query.toLowerCase())) : data;
+  const visibleColumns = columns.filter((column) => !hidden.has(column.key));
+
+  return (
+    <div className={className}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        {searchKey ? (
+          <Input
+            placeholder={searchPlaceholder}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            className="w-64"
+          />
+        ) : (
+          <div />
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="sm">
+              <SlidersHorizontal size={14} />
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {columns.map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.key}
+                checked={!hidden.has(column.key)}
+                onCheckedChange={(checked) => {
+                  setHidden((current) => {
+                    const next = new Set(current);
+                    if (checked) next.delete(column.key);
+                    else next.add(column.key);
+                    return next;
+                  });
+                }}
+              >
+                {column.header}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      <Table columns={visibleColumns} data={filtered} rowKey={rowKey} pageSize={pageSize} />
+    </div>
+  );
+}
