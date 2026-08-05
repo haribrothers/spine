@@ -58,9 +58,9 @@ export function Combobox({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-[1000] w-[--radix-popover-trigger-width] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
+          className="z-[1000] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
         >
-          <CommandPrimitive shouldFilter>
+          <CommandPrimitive shouldFilter className="w-full">
             <CommandPrimitive.Input
               placeholder="Search…"
               className="w-full border-b border-border px-3 py-2 text-[14px] text-on-surface placeholder:text-on-surface-muted focus:outline-none"
