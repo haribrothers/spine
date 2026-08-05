@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, jsonb, timestamp } from "drizzle-orm/pg-core";
-import { organisations, users } from "./org";
+import { organization, user } from "./auth";
 
 /**
  * One entry per create/update/issue/void/delete on any financial document,
@@ -7,10 +7,10 @@ import { organisations, users } from "./org";
  */
 export const auditLog = pgTable("audit_log", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id")
+  orgId: text("org_id")
     .notNull()
-    .references(() => organisations.id, { onDelete: "cascade" }),
-  actorUserId: uuid("actor_user_id").references(() => users.id, { onDelete: "set null" }),
+    .references(() => organization.id, { onDelete: "cascade" }),
+  actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
   action: text("action").notNull(),
   entityType: text("entity_type").notNull(),
   entityId: uuid("entity_id").notNull(),

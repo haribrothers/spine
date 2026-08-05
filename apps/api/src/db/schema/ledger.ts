@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, bigint, timestamp, date, boolean, pgEnum, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organisations } from "./org";
+import { organization } from "./auth";
 
 export const accountTypeEnum = pgEnum("account_type", [
   "asset",
@@ -12,9 +12,9 @@ export const accountTypeEnum = pgEnum("account_type", [
 
 export const accounts = pgTable("accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id")
+  orgId: text("org_id")
     .notNull()
-    .references(() => organisations.id, { onDelete: "cascade" }),
+    .references(() => organization.id, { onDelete: "cascade" }),
   code: text("code").notNull(),
   name: text("name").notNull(),
   type: accountTypeEnum("type").notNull(),
@@ -42,9 +42,9 @@ export const journalEntries = pgTable(
   "journal_entries",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
+    orgId: text("org_id")
       .notNull()
-      .references(() => organisations.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     date: date("date").notNull(),
     narration: text("narration"),
     sourceType: text("source_type").notNull(),
@@ -87,9 +87,9 @@ export const journalLines = pgTable(
 
 export const fiscalPeriods = pgTable("fiscal_periods", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id")
+  orgId: text("org_id")
     .notNull()
-    .references(() => organisations.id, { onDelete: "cascade" }),
+    .references(() => organization.id, { onDelete: "cascade" }),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
   isClosed: boolean("is_closed").notNull().default(false),

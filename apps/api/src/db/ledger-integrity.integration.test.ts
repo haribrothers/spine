@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createDb, type Database } from "./client";
-import { accounts, journalEntries, journalLines, organisations } from "./schema";
+import { accounts, journalEntries, journalLines, organization } from "./schema";
 
 /**
  * Exercises the DB-level invariants from docs/spine-prd.md §6.3 directly —
@@ -20,7 +20,13 @@ describe("ledger integrity (requires local Postgres)", () => {
     const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
     db = createDb(databaseUrl);
 
-    const [org] = await db.insert(organisations).values({ name: "Integrity Test Org" }).returning();
+    // Ledger triggers don't care about Better Auth's org shape — just that
+    // organization.id resolves for the accounts/journal_entries FK. Insert
+    // directly rather than going through auth.api.createOrganization.
+    const [org] = await db
+      .insert(organization)
+      .values({ id: randomUUID(), name: "Integrity Test Org", slug: `test-org-${randomUUID()}`, createdAt: new Date() })
+      .returning();
     orgId = org!.id;
 
     const [bank, sales] = await db
@@ -39,7 +45,7 @@ describe("ledger integrity (requires local Postgres)", () => {
     // UPDATE/DELETE), which is what test cleanup needs but a real org's data
     // never should get.
     await db.execute(
-      sql`TRUNCATE journal_lines, journal_entries, accounts, organisations RESTART IDENTITY CASCADE`,
+      sql`TRUNCATE journal_lines, journal_entries, accounts, organization RESTART IDENTITY CASCADE`,
     );
   });
 
@@ -102,7 +108,7 @@ describe("ledger integrity (requires local Postgres)", () => {
 
     await expect(
       db.update(journalLines).set({ debit: 99999n }).where(eq(journalLines.entryId, entryId)),
-    ).rejects.toThrow(/immutable/);
+    ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/immutable/) } });
   });
 
   it("rejects deleting a committed journal entry", async () => {
@@ -121,8 +127,8 @@ describe("ledger integrity (requires local Postgres)", () => {
       ]);
     });
 
-    await expect(db.delete(journalEntries).where(eq(journalEntries.id, entryId))).rejects.toThrow(
-      /cannot be deleted/,
-    );
+    await expect(
+      db.delete(journalEntries).where(eq(journalEntries.id, entryId)),
+    ).rejects.toMatchObject({ cause: { message: expect.stringMatching(/cannot be deleted/) } });
   });
 });

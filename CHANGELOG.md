@@ -4,17 +4,28 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Status
 
-**Current phase:** Phase 0 · Foundation — in progress. Monorepo scaffold, Docker Compose shape, the money/tax core in `@spine/shared`, the full Postgres/Drizzle schema with a working, DB-enforced ledger, a documented local dev workflow, and a project README are in place. No auth yet.
+**Current phase:** Phase 0 · Foundation — in progress. Monorepo scaffold, Docker Compose shape, the money/tax core in `@spine/shared`, the full Postgres/Drizzle schema with a working DB-enforced ledger, a documented local dev workflow, a project README, and auth (Better Auth: email/password + organizations + JWT) are in place.
 
 ## Next up
 
-- Better Auth wiring (cookie sessions for web, JWT for mobile).
 - `@spine/ui` primitive set (button, input, select, combobox, date picker, table, dialog, drawer, tabs, toast, form fields, money input — full list in §F0), theme tokens, dark/light mode, Storybook, a11y pass.
 - First-run onboarding wizard shell (business profile, industry template, currency/FY, tax confirmation, CoA review, team invite) — skippable, settings stay editable later.
-- NestJS services/controllers on top of the schema (org, users, contacts, etc. — module stubs already exist).
+- Web-side Better Auth client wiring (Next.js server components forwarding the session cookie per §6.2) and a sign-up/login UI.
+- NestJS services/controllers on top of the schema (org, users, contacts, etc. — module stubs already exist), including the actual business-permission matrix from §2.1 (staff/field capability checks beyond org-membership roles).
 - CI pipeline (should run `test:integration` against a Postgres service container).
 
 ## Completed
+
+### 2026-08-05 — Auth: Better Auth with per-org roles, cookie sessions, and JWT for mobile
+- `apps/api` upgraded to NestJS v11 + Express v5 (from v10) to use the maintained `@thallesp/nestjs-better-auth` integration package — mounts Better Auth's own request handler, registers a global `AuthGuard` (every route requires a session by default; opt out per-route with `@AllowAnonymous()`), and exposes `@Session()`/`@OrgRoles()` decorators.
+- Better Auth now owns identity/org/session schema outright (`user`, `session`, `account`, `verification`, `organization`, `member`, `invitation`, `jwks`), generated via its own CLI (`@better-auth/cli generate`) rather than hand-written — replaces the hand-rolled `organisations`/`users`/`memberships`/`sessions` tables from the previous session. All other tables' org/user foreign keys (`accounts`, `journal_entries`, `fiscal_periods`, `number_sequences`, `audit_log`, `settings`) now reference Better Auth's `organization.id`/`user.id` (`text`, Postgres-generated UUIDs — not the app's own `uuid` columns).
+- Argon2id password hashing (`@node-rs/argon2`) plugged into Better Auth's `emailAndPassword.password.hash/verify`, replacing its scrypt default, per §10.3.
+- Organization plugin configured with three custom roles matching §2.1 exactly — `owner`, `staff`, `field` (not Better Auth's default owner/admin/member) — via `createAccessControl`. Every sign-up automatically becomes the owner of a brand-new organisation (`databaseHooks.user.create.after` calls `auth.api.createOrganization` server-side); there's no self-serve "create another org" or "join an existing org" path in v1, matching the PRD's single-org-per-signup onboarding model.
+- JWT plugin issues short-lived (15 min), JWKS-verifiable tokens via `/api/auth/token` for the mobile client, coexisting with cookie sessions for web — exactly the split specified in §5.
+- Seed script now signs up a real demo owner (`auth.api.signUpEmail`) rather than inserting an org row directly, so the seeded org is identical in shape to any real signup and exercises the same hook path.
+- Verified end-to-end against a live dev DB: sign-up creates the user + org + owner membership; the session cookie authenticates `/api/auth/get-session` and other protected Better Auth endpoints; unauthenticated requests to protected endpoints get a 401; `/api/auth/token` issues a working JWT.
+- Stories: Phase 0 exit criterion "a user can install via Docker, sign up..." (§12) — auth half of that is done; onboarding wizard is still open.
+- Phase: Phase 0 · Foundation
 
 ### 2026-08-05 — Dev infra compose, README, and `.env` loading for DB scripts
 - `docker-compose.dev.yml`: a separate, infra-only Compose file (Postgres + MinIO, `spine-dev` project name, distinct named volumes) for contributors running `apps/api`/`apps/web` natively via `pnpm dev` — kept apart from `docker-compose.yml`, which is the production stack that builds and runs `api`/`web` as containers behind Caddy. New root scripts: `dev:infra:up`, `dev:infra:down`, `dev:infra:reset`, `dev:infra:logs`, `db:migrate:dev`, `db:seed:dev`.

@@ -1,5 +1,5 @@
 import { pgTable, uuid, text, integer, timestamp, unique } from "drizzle-orm/pg-core";
-import { organisations } from "./org";
+import { organization } from "./auth";
 
 /**
  * One row per (org, document type). Allocating the next number requires a
@@ -10,9 +10,9 @@ export const numberSequences = pgTable(
   "number_sequences",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
+    orgId: text("org_id")
       .notNull()
-      .references(() => organisations.id, { onDelete: "cascade" }),
+      .references(() => organization.id, { onDelete: "cascade" }),
     documentType: text("document_type").notNull(),
     prefix: text("prefix").notNull(),
     padding: integer("padding").notNull().default(4),
