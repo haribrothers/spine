@@ -3,10 +3,21 @@
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import { forwardRef } from "react";
 import { cn } from "../lib/cn";
-import { DialogOverlay } from "./dialog";
 
 export const AlertDialog = AlertDialogPrimitive.Root;
 export const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
+
+const AlertDialogOverlay = forwardRef<
+  React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <AlertDialogPrimitive.Overlay
+    ref={ref}
+    className={cn("fixed inset-0 z-[1300] bg-black/30", className)}
+    {...props}
+  />
+));
+AlertDialogOverlay.displayName = "AlertDialogOverlay";
 
 /**
  * A modal requiring explicit confirmation before a critical/destructive
@@ -19,7 +30,7 @@ export const AlertDialogContent = forwardRef<
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Portal>
-    <DialogOverlay />
+    <AlertDialogOverlay />
     <AlertDialogPrimitive.Content
       ref={ref}
       className={cn(
