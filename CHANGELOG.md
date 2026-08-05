@@ -4,7 +4,7 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Status
 
-**Current phase:** Phase 0 · Foundation — in progress. Monorepo scaffold, Docker Compose shape, the money/tax core in `@spine/shared`, and the full Postgres/Drizzle schema with a working, DB-enforced ledger are in place. No auth yet.
+**Current phase:** Phase 0 · Foundation — in progress. Monorepo scaffold, Docker Compose shape, the money/tax core in `@spine/shared`, the full Postgres/Drizzle schema with a working, DB-enforced ledger, a documented local dev workflow, and a project README are in place. No auth yet.
 
 ## Next up
 
@@ -15,6 +15,16 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 - CI pipeline (should run `test:integration` against a Postgres service container).
 
 ## Completed
+
+### 2026-08-05 — Dev infra compose, README, and `.env` loading for DB scripts
+- `docker-compose.dev.yml`: a separate, infra-only Compose file (Postgres + MinIO, `spine-dev` project name, distinct named volumes) for contributors running `apps/api`/`apps/web` natively via `pnpm dev` — kept apart from `docker-compose.yml`, which is the production stack that builds and runs `api`/`web` as containers behind Caddy. New root scripts: `dev:infra:up`, `dev:infra:down`, `dev:infra:reset`, `dev:infra:logs`, `db:migrate:dev`, `db:seed:dev`.
+- Reverted the loopback port mapping added to `docker-compose.yml`'s `db` service in the previous session — that belongs on the dev-only file, not the production one.
+- `apps/api`'s `dev`/`start`/`db:*`/`test:integration` scripts now load `../../.env` via `dotenv-cli`, so `pnpm db:migrate:dev`/`db:seed:dev`/`pnpm dev` pick up the repo-root `.env` without each script needing `DATABASE_URL` exported manually.
+- `.env.development.example` — a dev-specific env template (`localhost` hostnames for Postgres/MinIO) distinct from `.env.example` (Docker network hostnames, for the production stack).
+- `README.md` — project overview, tech stack, repo layout, and a from-scratch local dev setup (clone → install → `dev:infra:up` → copy env → migrate → seed → `pnpm dev`), plus the separate production/self-hosting path and the non-negotiable architecture rules.
+- Verified the full README setup sequence end-to-end against freshly created containers: `dev:infra:reset` → `db:migrate:dev` → `db:seed:dev` → `pnpm dev` (API `/health` and web both responding).
+- Deleted the old dev Postgres container/volume from the previous session and rebuilt from scratch under the new dev compose file.
+- Phase: Phase 0 · Foundation
 
 ### 2026-08-05 — Postgres + Drizzle: identity/org schema and DB-enforced ledger core
 - Drizzle schema for identity & org (`organisations`, `users`, `memberships` with a 4-role enum, `sessions`, `settings`), `number_sequences` (§6.5 gapless numbering), and `audit_log` (§10.4).

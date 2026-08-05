@@ -1,0 +1,42 @@
+name: spine-dev
+
+# Local development infrastructure only — Postgres and MinIO as containers,
+# with ports published to the host so `apps/api`/`apps/web` run natively
+# via `pnpm dev` (fast HMR, no image rebuild per change) and just point at
+# these. This is NOT what self-hosters deploy — see docker-compose.yml for
+# the production stack (which builds and runs api/web as containers behind
+# Caddy). Usage: `pnpm dev:infra:up` / `pnpm dev:infra:down` (see README.md).
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: spine
+      POSTGRES_PASSWORD: spine
+      POSTGRES_DB: spine
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - spine_dev_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spine"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: spine
+      MINIO_ROOT_PASSWORD: spinespine
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - spine_dev_minio:/data
+
+volumes:
+  spine_dev_pgdata:
+  spine_dev_minio:

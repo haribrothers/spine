@@ -6,10 +6,6 @@ services:
       POSTGRES_USER: spine
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spine}
       POSTGRES_DB: spine
-    ports:
-      # Loopback-only, for local migrations/seeding/db:studio from the host.
-      # Not reachable from the network — safe to leave in for self-hosters.
-      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
