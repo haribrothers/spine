@@ -9,33 +9,41 @@ import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/componen
 
 function SidebarDemo() {
   const [active, setActive] = useState("dashboard");
+  const [collapsed, setCollapsed] = useState(false);
   return (
-    <Sidebar className="h-80">
-      <SidebarHeader>
-        <span className="text-[14px] font-semibold text-on-surface">Spine</span>
-      </SidebarHeader>
+    <Sidebar collapsed={collapsed} className="h-80">
+      <SidebarHeader
+        collapsed={collapsed}
+        onCollapsedChange={setCollapsed}
+        logo={<span className="truncate text-[14px] font-semibold text-on-surface">{collapsed ? "S" : "Spine"}</span>}
+      />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Overview</SidebarGroupLabel>
-          <SidebarNavItem icon={<LayoutDashboard />} active={active === "dashboard"} onClick={() => setActive("dashboard")}>
+          <SidebarGroupLabel collapsed={collapsed}>Overview</SidebarGroupLabel>
+          <SidebarNavItem
+            icon={<LayoutDashboard />}
+            active={active === "dashboard"}
+            collapsed={collapsed}
+            onClick={() => setActive("dashboard")}
+          >
             Dashboard
           </SidebarNavItem>
         </SidebarGroup>
         <SidebarGroup>
-          <SidebarGroupLabel>Sales</SidebarGroupLabel>
-          <SidebarNavItem icon={<FileText />} active={active === "quotes"} onClick={() => setActive("quotes")}>
+          <SidebarGroupLabel collapsed={collapsed}>Sales</SidebarGroupLabel>
+          <SidebarNavItem icon={<FileText />} active={active === "quotes"} collapsed={collapsed} onClick={() => setActive("quotes")}>
             Quotes
           </SidebarNavItem>
-          <SidebarNavItem icon={<Receipt />} active={active === "invoices"} onClick={() => setActive("invoices")}>
+          <SidebarNavItem icon={<Receipt />} active={active === "invoices"} collapsed={collapsed} onClick={() => setActive("invoices")}>
             Invoices
           </SidebarNavItem>
-          <SidebarNavItem icon={<Users />} active={active === "contacts"} onClick={() => setActive("contacts")}>
+          <SidebarNavItem icon={<Users />} active={active === "contacts"} collapsed={collapsed} onClick={() => setActive("contacts")}>
             Contacts
           </SidebarNavItem>
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <span className="text-[12px] text-on-surface-muted">Signed in as owner</span>
+        {!collapsed && <span className="text-[12px] text-on-surface-muted">Signed in as owner</span>}
       </SidebarFooter>
     </Sidebar>
   );
@@ -56,7 +64,8 @@ export default function SidebarPage() {
       <DocSection id="features" title="Features">
         <FeatureList
           items={[
-            "A collapsed prop switches to a 64px icon-only rail; SidebarNavItem hides its label automatically in that state.",
+            "A collapsed prop switches to a 64px icon-only rail; SidebarNavItem and SidebarGroupLabel hide their label automatically in that state.",
+            "SidebarHeader renders a built-in logo + collapse-toggle row when given a logo and/or onCollapsedChange — pass children instead for a fully custom header.",
             "Disabled nav items render greyed-out and non-interactive rather than being omitted, per the existing AppShell convention.",
           ]}
         />
@@ -67,12 +76,12 @@ export default function SidebarPage() {
           code={`import { Sidebar, SidebarHeader, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarNavItem, SidebarFooter } from "@spine/ui";
 
 export default () => (
-  <Sidebar>
-    <SidebarHeader />
+  <Sidebar collapsed={collapsed}>
+    <SidebarHeader collapsed={collapsed} onCollapsedChange={setCollapsed} logo={<Logo />} />
     <SidebarContent>
       <SidebarGroup>
-        <SidebarGroupLabel />
-        <SidebarNavItem icon={<Icon />} />
+        <SidebarGroupLabel collapsed={collapsed} />
+        <SidebarNavItem icon={<Icon />} collapsed={collapsed} />
       </SidebarGroup>
     </SidebarContent>
     <SidebarFooter />
@@ -85,6 +94,10 @@ export default () => (
         <ApiTable
           rows={[
             { prop: "Sidebar.collapsed", type: "boolean", defaultValue: "false" },
+            { prop: "SidebarHeader.logo", type: "ReactNode" },
+            { prop: "SidebarHeader.collapsed", type: "boolean", defaultValue: "false" },
+            { prop: "SidebarHeader.onCollapsedChange", type: "(collapsed: boolean) => void" },
+            { prop: "SidebarGroupLabel.collapsed", type: "boolean", defaultValue: "false" },
             { prop: "SidebarNavItem.icon", type: "ReactNode" },
             { prop: "SidebarNavItem.active", type: "boolean", defaultValue: "false" },
             { prop: "SidebarNavItem.disabled", type: "boolean", defaultValue: "false" },
@@ -94,14 +107,14 @@ export default () => (
       </DocSection>
 
       <DocSection id="examples" title="Examples">
-        <DocLead>Default</DocLead>
+        <DocLead>Default — click the collapse toggle in the header</DocLead>
         <ComponentPreview
-          code={`<Sidebar>
-  <SidebarHeader>Spine</SidebarHeader>
+          code={`<Sidebar collapsed={collapsed}>
+  <SidebarHeader collapsed={collapsed} onCollapsedChange={setCollapsed} logo={<Logo />} />
   <SidebarContent>
     <SidebarGroup>
-      <SidebarGroupLabel>Overview</SidebarGroupLabel>
-      <SidebarNavItem icon={<LayoutDashboard />} active>Dashboard</SidebarNavItem>
+      <SidebarGroupLabel collapsed={collapsed}>Overview</SidebarGroupLabel>
+      <SidebarNavItem icon={<LayoutDashboard />} active collapsed={collapsed}>Dashboard</SidebarNavItem>
     </SidebarGroup>
   </SidebarContent>
 </Sidebar>`}
@@ -111,7 +124,7 @@ export default () => (
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">
-        <DocLead>Each SidebarNavItem sets aria-current="page" when active, and remains a real, focusable, keyboard-activatable button even when collapsed to icon-only.</DocLead>
+        <DocLead>Each SidebarNavItem sets aria-current="page" when active, and remains a real, focusable, keyboard-activatable button even when collapsed to icon-only. The collapse toggle button carries an aria-label ("Expand sidebar" / "Collapse sidebar") since it's icon-only.</DocLead>
       </DocSection>
     </div>
   );

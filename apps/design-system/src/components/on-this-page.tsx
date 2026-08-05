@@ -16,11 +16,13 @@ export function OnThisPage() {
   useEffect(() => {
     const nodes = Array.from(document.querySelectorAll("article h2, article h3"));
     setHeadings(
-      nodes.map((node) => ({
-        id: node.id,
-        text: node.textContent ?? "",
-        level: node.tagName === "H2" ? 2 : 3,
-      })),
+      nodes
+        .filter((node) => node.id)
+        .map((node) => ({
+          id: node.id,
+          text: node.textContent ?? "",
+          level: node.tagName === "H2" ? 2 : 3,
+        })),
     );
   }, [pathname]);
 

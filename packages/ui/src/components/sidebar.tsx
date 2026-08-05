@@ -1,5 +1,6 @@
 "use client";
 
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "../lib/cn";
 
 export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
@@ -29,8 +30,58 @@ export function Sidebar({ collapsed = false, className, children, ...props }: Si
   );
 }
 
-export function SidebarHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex h-14 items-center gap-2 border-b border-border px-3", className)} {...props} />;
+export interface SidebarHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Logo (or any header content) shown alongside the collapse toggle. */
+  logo?: React.ReactNode;
+  collapsed?: boolean;
+  /** Renders the built-in collapse toggle button when provided — omit to hide it (e.g. a fixed-width, non-collapsible sidebar). */
+  onCollapsedChange?: (collapsed: boolean) => void;
+}
+
+/**
+ * The sidebar's header row. Pass `logo` + `onCollapsedChange` to get the
+ * built-in logo + collapse-toggle row for free; omit both and pass
+ * `children` instead for a fully custom header.
+ */
+export function SidebarHeader({
+  logo,
+  collapsed = false,
+  onCollapsedChange,
+  className,
+  children,
+  ...props
+}: SidebarHeaderProps) {
+  if (logo || onCollapsedChange) {
+    return (
+      <div
+        className={cn(
+          "flex h-14 shrink-0 items-center border-b border-border px-3",
+          collapsed ? "justify-center px-0" : "gap-2",
+          className,
+        )}
+        {...props}
+      >
+        {logo}
+        {!collapsed ? <div className="flex-1" /> : null}
+        {onCollapsedChange ? (
+          <button
+            type="button"
+            onClick={() => onCollapsedChange(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
+          >
+            {collapsed ? <PanelLeftOpen size={18} strokeWidth={2} /> : <PanelLeftClose size={18} strokeWidth={2} />}
+          </button>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex h-14 items-center gap-2 border-b border-border px-3", className)} {...props}>
+      {children}
+    </div>
+  );
 }
 
 export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
@@ -41,7 +92,12 @@ export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLD
   return <div className={cn("mb-4", className)} {...props} />;
 }
 
-export function SidebarGroupLabel({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export interface SidebarGroupLabelProps extends React.HTMLAttributes<HTMLDivElement> {
+  collapsed?: boolean;
+}
+
+export function SidebarGroupLabel({ collapsed = false, className, ...props }: SidebarGroupLabelProps) {
+  if (collapsed) return null;
   return (
     <div
       className={cn("mb-1 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted", className)}
