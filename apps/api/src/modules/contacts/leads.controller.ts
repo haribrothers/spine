@@ -27,7 +27,7 @@ export class LeadsController {
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = createLeadSchema.parse(body);
-    return this.leadsService.create(orgId, input);
+    return this.leadsService.create(orgId, session.user.id, input);
   }
 
   @Put(":id")
@@ -36,7 +36,7 @@ export class LeadsController {
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = updateLeadSchema.parse(body);
-    return this.leadsService.update(orgId, id, input);
+    return this.leadsService.update(orgId, id, session.user.id, input);
   }
 
   @Delete(":id")
@@ -44,6 +44,6 @@ export class LeadsController {
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.leadsService.delete(orgId, id);
+    return this.leadsService.delete(orgId, id, session.user.id);
   }
 }

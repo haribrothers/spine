@@ -19,6 +19,7 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
+import { Pencil } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
 
@@ -28,8 +29,9 @@ import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./typ
  * scope — this is a flat list, filterable being the board's cheaper
  * substitute for now. Stage uses Badge, not StatusChip: StatusChip is
  * reserved for financial *document* status (paid/due-soon/overdue/draft),
- * and a lead stage isn't that. "Add" is a Dialog (Issue 4), not an inline
- * form.
+ * and a lead stage isn't that. "Add"/"Edit" share the same Dialog (Issue 4
+ * pattern) — `editingId` set means editing via `PUT /leads/:id`, null means
+ * creating via `POST /leads`.
  */
 export function LeadsSection({
   contactId,
@@ -43,28 +45,53 @@ export function LeadsSection({
   onCreated?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
   const [stage, setStage] = useState<LeadStage>("new");
   const [amount, setAmount] = useState(0n);
   const [currency, setCurrency] = useState("USD");
   const [saving, setSaving] = useState(false);
 
-  async function handleAdd() {
+  function openAddDialog() {
+    setEditingId(null);
+    setTitle("");
+    setStage("new");
+    setAmount(0n);
+    setCurrency("USD");
+    setOpen(true);
+  }
+
+  function openEditDialog(lead: Lead) {
+    setEditingId(lead.id);
+    setTitle(lead.title ?? "");
+    setStage(lead.stage);
+    setAmount(BigInt(lead.valueAmount));
+    setCurrency(lead.valueCurrency);
+    setOpen(true);
+  }
+
+  async function handleSave() {
     setSaving(true);
     try {
-      await apiClient.post("/leads", {
-        contactId,
-        title: title || undefined,
-        stage,
-        valueAmount: amount.toString(),
-        valueCurrency: currency,
-      });
-      setTitle("");
-      setStage("new");
-      setAmount(0n);
+      if (editingId) {
+        await apiClient.put(`/leads/${editingId}`, {
+          title: title || null,
+          stage,
+          valueAmount: amount.toString(),
+          valueCurrency: currency,
+        });
+      } else {
+        await apiClient.post("/leads", {
+          contactId,
+          title: title || undefined,
+          stage,
+          valueAmount: amount.toString(),
+          valueCurrency: currency,
+        });
+      }
       setOpen(false);
       onChanged();
-      onCreated?.();
+      if (!editingId) onCreated?.();
     } finally {
       setSaving(false);
     }
@@ -86,7 +113,17 @@ export function LeadsSection({
                   · {(Number(lead.valueAmount) / 100).toLocaleString(undefined, { style: "currency", currency: lead.valueCurrency })}
                 </span>
               </div>
-              <Badge>{LEAD_STAGE_LABELS[lead.stage]}</Badge>
+              <div className="flex items-center gap-3">
+                <Badge>{LEAD_STAGE_LABELS[lead.stage]}</Badge>
+                <button
+                  type="button"
+                  aria-label={`Edit ${lead.title ?? "lead"}`}
+                  onClick={() => openEditDialog(lead)}
+                  className="text-on-surface-muted transition-colors hover:text-on-surface"
+                >
+                  <Pencil size={14} />
+                </button>
+              </div>
             </li>
           ))}
         </ul>
@@ -95,12 +132,12 @@ export function LeadsSection({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
           Add lead
         </Button>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add lead</DialogTitle>
+            <DialogTitle>{editingId ? "Edit lead" : "Add lead"}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <FormField label="Title">
@@ -133,8 +170,8 @@ export function LeadsSection({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Add lead"}
+            <Button disabled={saving} onClick={handleSave}>
+              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add lead"}
             </Button>
           </DialogFooter>
         </DialogContent>

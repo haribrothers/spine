@@ -3,8 +3,9 @@ import type { addressInputSchema, contactPersonInputSchema, createContactSchema,
 import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
-import type { Database } from "../../db/client";
+import type { Database, Transaction } from "../../db/client";
 import { addresses, contactPersons, contacts, journalLines } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
@@ -24,7 +25,10 @@ type AddressInput = z.infer<typeof addressInputSchema>;
  */
 @Injectable()
 export class ContactsService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   async list(orgId: string, options: { types?: ("customer" | "vendor" | "both")[]; search?: string; includeArchived?: boolean }) {
     const conditions = [eq(contacts.orgId, orgId)];
@@ -75,7 +79,7 @@ export class ContactsService {
    * than rejecting the request — the web layer decides whether to show a
    * confirmation before treating the create as final.
    */
-  async create(orgId: string, input: CreateContactInput) {
+  async create(orgId: string, actorUserId: string, input: CreateContactInput) {
     const duplicates = await this.findDuplicates(orgId, input.email ?? null, input.phone ?? null);
 
     const created = await this.db.transaction(async (tx) => {
@@ -99,33 +103,72 @@ export class ContactsService {
       }
 
       if (input.contactPersons?.length) {
-        await tx.insert(contactPersons).values(
-          input.contactPersons.map((person: ContactPersonInput) => ({
+        const insertedPersons = await tx
+          .insert(contactPersons)
+          .values(
+            input.contactPersons.map((person: ContactPersonInput) => ({
+              contactId: contact.id,
+              name: person.name,
+              title: person.title ?? null,
+              email: person.email ?? null,
+              phone: person.phone ?? null,
+              isPrimary: person.isPrimary ?? false,
+              logoFileId: person.logoFileId ?? null,
+            })),
+          )
+          .returning();
+        for (const person of insertedPersons) {
+          await this.auditLog.record(tx, {
+            orgId,
+            actorUserId,
+            action: "created",
+            entityType: "contact_person",
+            entityId: person.id,
             contactId: contact.id,
-            name: person.name,
-            title: person.title ?? null,
-            email: person.email ?? null,
-            phone: person.phone ?? null,
-            isPrimary: person.isPrimary ?? false,
-            logoFileId: person.logoFileId ?? null,
-          })),
-        );
+            changes: [{ field: "name", from: null, to: person.name }],
+          });
+        }
       }
       if (input.addresses?.length) {
-        await tx.insert(addresses).values(
-          input.addresses.map((address: AddressInput) => ({
+        const insertedAddresses = await tx
+          .insert(addresses)
+          .values(
+            input.addresses.map((address: AddressInput) => ({
+              contactId: contact.id,
+              type: address.type ?? "billing",
+              line1: address.line1,
+              line2: address.line2 ?? null,
+              city: address.city ?? null,
+              state: address.state ?? null,
+              postalCode: address.postalCode ?? null,
+              country: address.country ?? null,
+              isPrimary: address.isPrimary ?? false,
+            })),
+          )
+          .returning();
+        for (const address of insertedAddresses) {
+          await this.auditLog.record(tx, {
+            orgId,
+            actorUserId,
+            action: "created",
+            entityType: "address",
+            entityId: address.id,
             contactId: contact.id,
-            type: address.type ?? "billing",
-            line1: address.line1,
-            line2: address.line2 ?? null,
-            city: address.city ?? null,
-            state: address.state ?? null,
-            postalCode: address.postalCode ?? null,
-            country: address.country ?? null,
-            isPrimary: address.isPrimary ?? false,
-          })),
-        );
+            changes: [{ field: "line1", from: null, to: address.line1 }],
+          });
+        }
       }
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "contact",
+        entityId: contact.id,
+        contactId: contact.id,
+        changes: [{ field: "name", from: null, to: contact.name }],
+      });
+
       return contact;
     });
 
@@ -133,7 +176,7 @@ export class ContactsService {
     return { ...full, duplicateWarning: duplicates.length > 0 ? duplicates : undefined };
   }
 
-  async update(orgId: string, id: string, input: UpdateContactInput) {
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateContactInput) {
     const [existing] = await this.db
       .select()
       .from(contacts)
@@ -141,6 +184,16 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
+
+    // Read-before-write for the persons/addresses arrays too — needed to
+    // diff old-vs-new by id (see diffArrayById below), not just for the
+    // contact's own scalar fields.
+    const [existingPersons, existingAddresses] = await Promise.all([
+      input.contactPersons !== undefined
+        ? this.db.select().from(contactPersons).where(eq(contactPersons.contactId, id))
+        : Promise.resolve([]),
+      input.addresses !== undefined ? this.db.select().from(addresses).where(eq(addresses.contactId, id)) : Promise.resolve([]),
+    ]);
 
     await this.db.transaction(async (tx) => {
       await tx
@@ -159,43 +212,172 @@ export class ContactsService {
         })
         .where(eq(contacts.id, id));
 
+      // Only diff the contact's own scalar fields — `input` also carries
+      // `contactPersons`/`addresses` (handled as their own granular
+      // created/updated/removed entries below), which aren't real columns
+      // on `contacts` and would otherwise show up as a nonsensical
+      // "contactPersons: null -> [...]" noise entry.
+      const { contactPersons: _cp, addresses: _addr, ...scalarInput } = input;
+      const contactChanges = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>);
+      if (contactChanges.length) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "contact",
+          entityId: id,
+          contactId: id,
+          changes: contactChanges,
+        });
+      }
+
       if (input.contactPersons !== undefined) {
         await tx.delete(contactPersons).where(eq(contactPersons.contactId, id));
+        let insertedPersons: (typeof contactPersons.$inferSelect)[] = [];
         if (input.contactPersons.length) {
-          await tx.insert(contactPersons).values(
-            input.contactPersons.map((person: ContactPersonInput) => ({
-              contactId: id,
-              name: person.name,
-              title: person.title ?? null,
-              email: person.email ?? null,
-              phone: person.phone ?? null,
-              isPrimary: person.isPrimary ?? false,
-              logoFileId: person.logoFileId ?? null,
-            })),
-          );
+          insertedPersons = await tx
+            .insert(contactPersons)
+            .values(
+              input.contactPersons.map((person: ContactPersonInput) => ({
+                contactId: id,
+                name: person.name,
+                title: person.title ?? null,
+                email: person.email ?? null,
+                phone: person.phone ?? null,
+                isPrimary: person.isPrimary ?? false,
+                logoFileId: person.logoFileId ?? null,
+              })),
+            )
+            .returning();
         }
+        await this.recordArrayDiff(tx, {
+          orgId,
+          actorUserId,
+          contactId: id,
+          entityType: "contact_person",
+          before: existingPersons,
+          input: input.contactPersons,
+          after: insertedPersons,
+          displayField: "name",
+        });
       }
       if (input.addresses !== undefined) {
         await tx.delete(addresses).where(eq(addresses.contactId, id));
+        let insertedAddresses: (typeof addresses.$inferSelect)[] = [];
         if (input.addresses.length) {
-          await tx.insert(addresses).values(
-            input.addresses.map((address: AddressInput) => ({
-              contactId: id,
-              type: address.type ?? "billing",
-              line1: address.line1,
-              line2: address.line2 ?? null,
-              city: address.city ?? null,
-              state: address.state ?? null,
-              postalCode: address.postalCode ?? null,
-              country: address.country ?? null,
-              isPrimary: address.isPrimary ?? false,
-            })),
-          );
+          insertedAddresses = await tx
+            .insert(addresses)
+            .values(
+              input.addresses.map((address: AddressInput) => ({
+                contactId: id,
+                type: address.type ?? "billing",
+                line1: address.line1,
+                line2: address.line2 ?? null,
+                city: address.city ?? null,
+                state: address.state ?? null,
+                postalCode: address.postalCode ?? null,
+                country: address.country ?? null,
+                isPrimary: address.isPrimary ?? false,
+              })),
+            )
+            .returning();
         }
+        await this.recordArrayDiff(tx, {
+          orgId,
+          actorUserId,
+          contactId: id,
+          entityType: "address",
+          before: existingAddresses,
+          input: input.addresses,
+          after: insertedAddresses,
+          displayField: "line1",
+        });
       }
     });
 
     return this.getOne(orgId, id);
+  }
+
+  /**
+   * Whole-array-replace PUT means every write to contactPersons/addresses
+   * deletes and re-inserts the entire list (see this class's own top
+   * comment) — the re-inserted rows get brand-new ids even for entries the
+   * client sent an existing `id` on, so this can't diff by comparing ids
+   * after the fact. Instead it diffs the *input* array (which still carries
+   * each element's original `id`, or no `id` for a newly-added entry)
+   * against the row it matches in `before`, positionally paired with
+   * `after` (both arrays were built from the same `input` array in the
+   * same order, so `input[i]` corresponds to `after[i]`) to know each
+   * change's real post-insert row id for `entityId`.
+   *   - An input entry with an `id` matching a `before` row -> "updated"
+   *     if any field actually changed, using AuditLogService.diffFields.
+   *   - An input entry with no `id`, or an `id` not found in `before` ->
+   *     "created" (new-since-last-save, per the task brief's rule).
+   *   - A `before` row whose `id` has no matching entry in the input array
+   *     -> "removed".
+   */
+  private async recordArrayDiff<T extends { id: string }>(
+    tx: Transaction,
+    params: {
+      orgId: string;
+      actorUserId: string;
+      contactId: string;
+      entityType: "contact_person" | "address";
+      before: T[];
+      input: ({ id?: string } & Record<string, unknown>)[];
+      after: T[];
+      displayField: string;
+    },
+  ) {
+    const { orgId, actorUserId, contactId, entityType, before, input, after, displayField } = params;
+    const beforeById = new Map(before.map((row) => [row.id, row]));
+    const matchedBeforeIds = new Set<string>();
+
+    for (let i = 0; i < input.length; i++) {
+      const entry = input[i]!;
+      const afterRow = after[i];
+      const beforeRow = entry.id ? beforeById.get(entry.id) : undefined;
+
+      if (beforeRow) {
+        matchedBeforeIds.add(beforeRow.id);
+        const changes = AuditLogService.diffFields(beforeRow as unknown as Record<string, unknown>, entry);
+        if (changes.length && afterRow) {
+          await this.auditLog.record(tx, {
+            orgId,
+            actorUserId,
+            action: "updated",
+            entityType,
+            entityId: afterRow.id,
+            contactId,
+            changes,
+          });
+        }
+      } else if (afterRow) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "created",
+          entityType,
+          entityId: afterRow.id,
+          contactId,
+          changes: [{ field: displayField, from: null, to: entry[displayField] ?? null }],
+        });
+      }
+    }
+
+    for (const row of before) {
+      if (!matchedBeforeIds.has(row.id)) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "removed",
+          entityType,
+          entityId: row.id,
+          contactId,
+          changes: [{ field: displayField, from: (row as unknown as Record<string, unknown>)[displayField] ?? null, to: null }],
+        });
+      }
+    }
   }
 
   /**
@@ -205,7 +387,7 @@ export class ContactsService {
    * check needed), it's offered unconditionally rather than only when a
    * hard delete would fail.
    */
-  async archive(orgId: string, id: string) {
+  async archive(orgId: string, id: string, actorUserId: string) {
     const [existing] = await this.db
       .select()
       .from(contacts)
@@ -213,15 +395,26 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
-    const [updated] = await this.db
-      .update(contacts)
-      .set({ archivedAt: new Date(), updatedAt: new Date() })
-      .where(eq(contacts.id, id))
-      .returning();
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(contacts)
+        .set({ archivedAt: new Date(), updatedAt: new Date() })
+        .where(eq(contacts.id, id))
+        .returning();
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "archived",
+        entityType: "contact",
+        entityId: id,
+        contactId: id,
+      });
+      return row;
+    });
     return updated;
   }
 
-  async restore(orgId: string, id: string) {
+  async restore(orgId: string, id: string, actorUserId: string) {
     const [existing] = await this.db
       .select()
       .from(contacts)
@@ -229,11 +422,22 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
-    const [updated] = await this.db
-      .update(contacts)
-      .set({ archivedAt: null, updatedAt: new Date() })
-      .where(eq(contacts.id, id))
-      .returning();
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(contacts)
+        .set({ archivedAt: null, updatedAt: new Date() })
+        .where(eq(contacts.id, id))
+        .returning();
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "restored",
+        entityType: "contact",
+        entityId: id,
+        contactId: id,
+      });
+      return row;
+    });
     return updated;
   }
 
@@ -245,7 +449,7 @@ export class ContactsService {
    * contact, since the FK is RESTRICT and would fail anyway — this check
    * exists to return a clear 400 instead of a raw Postgres FK error.
    */
-  async delete(orgId: string, id: string) {
+  async delete(orgId: string, id: string, actorUserId: string) {
     const [existing] = await this.db
       .select()
       .from(contacts)
@@ -257,8 +461,34 @@ export class ContactsService {
     if (referenced) {
       throw new BadRequestException("Contact has financial ledger history and cannot be deleted — archive it instead");
     }
-    await this.db.delete(contacts).where(eq(contacts.id, id));
+    await this.db.transaction(async (tx) => {
+      // Record the "deleted" audit entry with contactId: null, not id — the
+      // row is about to be hard-deleted and audit_log.contact_id has
+      // ON DELETE CASCADE (see audit.ts's schema comment), so a row
+      // pointing at this contact would be cascade-deleted along with it in
+      // the same transaction, destroying the very entry meant to record
+      // the deletion. entityId still records which contact this was, for
+      // an org-wide audit view later; it just isn't reachable from
+      // GET /contacts/:id/history any more, correctly, since that contact
+      // no longer exists to have a history page.
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "contact",
+        entityId: id,
+        contactId: null,
+        changes: [{ field: "name", from: existing.name, to: null }],
+      });
+      await tx.delete(contacts).where(eq(contacts.id, id));
+    });
     return { id };
+  }
+
+  /** `GET /contacts/:id/history` — confirms the contact exists (org-scoped) before delegating to AuditLogService. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForContact(orgId, id);
   }
 
   private async findDuplicates(orgId: string, email: string | null, phone: string | null) {

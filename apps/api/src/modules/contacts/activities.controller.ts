@@ -46,7 +46,7 @@ export class ActivitiesController {
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = updateActivitySchema.parse(body);
-    return this.activitiesService.update(orgId, id, input);
+    return this.activitiesService.update(orgId, id, session.user.id, input);
   }
 
   @Post(":id/done")
@@ -54,7 +54,7 @@ export class ActivitiesController {
   @UseInterceptors(IdempotencyInterceptor)
   async markDone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.activitiesService.markDone(orgId, id);
+    return this.activitiesService.markDone(orgId, id, session.user.id);
   }
 
   @Post(":id/undone")
@@ -62,7 +62,7 @@ export class ActivitiesController {
   @UseInterceptors(IdempotencyInterceptor)
   async markUndone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.activitiesService.markUndone(orgId, id);
+    return this.activitiesService.markUndone(orgId, id, session.user.id);
   }
 
   @Delete(":id")
@@ -70,6 +70,6 @@ export class ActivitiesController {
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.activitiesService.delete(orgId, id);
+    return this.activitiesService.delete(orgId, id, session.user.id);
   }
 }

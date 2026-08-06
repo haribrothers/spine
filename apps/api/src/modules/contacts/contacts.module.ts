@@ -1,4 +1,5 @@
 import { Module } from "@nestjs/common";
+import { AuditModule } from "../audit/audit.module";
 import { ActivitiesController } from "./activities.controller";
 import { ActivitiesService } from "./activities.service";
 import { ContactsController } from "./contacts.controller";
@@ -17,6 +18,7 @@ import { LeadsService } from "./leads.service";
  * not), S-01.8 CSV import.
  */
 @Module({
+  imports: [AuditModule],
   controllers: [ContactsController, LeadsController, ActivitiesController],
   providers: [ContactsService, LeadsService, ActivitiesService],
   exports: [ContactsService, LeadsService, ActivitiesService],

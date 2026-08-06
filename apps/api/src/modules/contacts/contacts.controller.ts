@@ -42,13 +42,25 @@ export class ContactsController {
     return this.contactsService.getOne(orgId, id);
   }
 
+  /**
+   * S-10.6 / this task's audit-log instrumentation — a real read endpoint
+   * against real writes, scoped to Contacts (contact + its four sub-entity
+   * types). No `@OrgRoles` restriction, matching every other GET in this
+   * module — history is a read, not a mutation.
+   */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.contactsService.getHistory(orgId, id);
+  }
+
   @Post()
   @OrgRoles(["owner", "staff"])
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = createContactSchema.parse(body);
-    return this.contactsService.create(orgId, input);
+    return this.contactsService.create(orgId, session.user.id, input);
   }
 
   @Put(":id")
@@ -57,7 +69,7 @@ export class ContactsController {
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = updateContactSchema.parse(body);
-    return this.contactsService.update(orgId, id, input);
+    return this.contactsService.update(orgId, id, session.user.id, input);
   }
 
   @Post(":id/archive")
@@ -65,7 +77,7 @@ export class ContactsController {
   @UseInterceptors(IdempotencyInterceptor)
   async archive(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.contactsService.archive(orgId, id);
+    return this.contactsService.archive(orgId, id, session.user.id);
   }
 
   @Post(":id/restore")
@@ -73,7 +85,7 @@ export class ContactsController {
   @UseInterceptors(IdempotencyInterceptor)
   async restore(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.contactsService.restore(orgId, id);
+    return this.contactsService.restore(orgId, id, session.user.id);
   }
 
   @Delete(":id")
@@ -81,6 +93,6 @@ export class ContactsController {
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.contactsService.delete(orgId, id);
+    return this.contactsService.delete(orgId, id, session.user.id);
   }
 }

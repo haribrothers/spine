@@ -26,17 +26,31 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import type { Address, AddressType, Contact } from "./types";
 
 const TYPE_OPTIONS: AddressType[] = ["billing", "shipping", "site", "other"];
 
+/** `id` is optional — omitted for a newly-added row not yet sent to the array-replace PUT. */
+type AddressInput = {
+  id?: string;
+  type: AddressType;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
+  isPrimary: boolean;
+};
+
 /**
  * S-01.1 — "hold multiple addresses." Same whole-array-replace pattern as
  * ContactPersonsSection. "Add" is a Dialog (Issue 4) — its Select (address
  * type) is this section's own live exercise of the Select-inside-Dialog
- * z-index fix (Issue 3).
+ * z-index fix (Issue 3). Edit reuses the same Dialog, pre-filled, keyed off
+ * `editingId` the same way ContactPersonsSection does.
  */
 export function AddressesSection({
   contact,
@@ -48,6 +62,7 @@ export function AddressesSection({
   onCreated?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [type, setType] = useState<AddressType>("billing");
   const [line1, setLine1] = useState("");
   const [city, setCity] = useState("");
@@ -55,11 +70,11 @@ export function AddressesSection({
 
   const addresses = contact.addresses ?? [];
 
-  function toInput(a: Address) {
-    return { type: a.type, line1: a.line1, line2: a.line2, city: a.city, state: a.state, postalCode: a.postalCode, country: a.country, isPrimary: a.isPrimary };
+  function toInput(a: Address): AddressInput {
+    return { id: a.id, type: a.type, line1: a.line1, line2: a.line2, city: a.city, state: a.state, postalCode: a.postalCode, country: a.country, isPrimary: a.isPrimary };
   }
 
-  async function persist(next: ReturnType<typeof toInput>[]) {
+  async function persist(next: AddressInput[]) {
     setSaving(true);
     try {
       await apiClient.put(`/contacts/${contact.id}`, { addresses: next });
@@ -69,14 +84,29 @@ export function AddressesSection({
     }
   }
 
-  async function handleAdd() {
-    const next = [...addresses.map(toInput), { type, line1, line2: null, city: city || null, state: null, postalCode: null, country: null, isPrimary: addresses.length === 0 }];
-    await persist(next);
+  function openAddDialog() {
+    setEditingId(null);
+    setType("billing");
     setLine1("");
     setCity("");
-    setType("billing");
+    setOpen(true);
+  }
+
+  function openEditDialog(address: Address) {
+    setEditingId(address.id);
+    setType(address.type);
+    setLine1(address.line1);
+    setCity(address.city ?? "");
+    setOpen(true);
+  }
+
+  async function handleSave() {
+    const next = editingId
+      ? addresses.map(toInput).map((a) => (a.id === editingId ? { ...a, type, line1, city: city || null } : a))
+      : [...addresses.map(toInput), { type, line1, line2: null, city: city || null, state: null, postalCode: null, country: null, isPrimary: addresses.length === 0 }];
+    await persist(next);
     setOpen(false);
-    onCreated?.();
+    if (!editingId) onCreated?.();
   }
 
   async function handleRemove(id: string) {
@@ -98,40 +128,51 @@ export function AddressesSection({
                   {address.city ? `, ${address.city}` : ""}
                 </span>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Remove address"
-                    disabled={saving}
-                    className="text-on-surface-muted transition-colors hover:text-overdue"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove this address?</AlertDialogTitle>
-                    <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label="Edit address"
+                  disabled={saving}
+                  onClick={() => openEditDialog(address)}
+                  className="text-on-surface-muted transition-colors hover:text-on-surface"
+                >
+                  <Pencil size={14} />
+                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Remove address"
+                      disabled={saving}
+                      className="text-on-surface-muted transition-colors hover:text-overdue"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove this address?</AlertDialogTitle>
+                      <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
           Add address
         </Button>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add address</DialogTitle>
+            <DialogTitle>{editingId ? "Edit address" : "Add address"}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <FormField label="Type">
@@ -161,8 +202,8 @@ export function AddressesSection({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={!line1 || saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Add"}
+            <Button disabled={!line1 || saving} onClick={handleSave}>
+              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>

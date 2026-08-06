@@ -20,6 +20,7 @@ import {
   Spinner,
   Textarea,
 } from "@spine/ui";
+import { Pencil } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import type { Activity, ActivityType } from "./types";
 
@@ -27,7 +28,9 @@ const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
 
 /**
  * S-01.6 — "log a call or site visit against a contact with a follow-up
- * date." "Log activity" is a Dialog (Issue 4), not an inline form.
+ * date." "Log activity"/"Edit activity" share the same Dialog (Issue 4
+ * pattern) — `editingId` set means editing via `PUT /activities/:id`, null
+ * means creating via `POST /activities`.
  */
 export function ActivitiesSection({
   contactId,
@@ -41,27 +44,49 @@ export function ActivitiesSection({
   onCreated?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [type, setType] = useState<ActivityType>("call");
   const [notes, setNotes] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
-  async function handleAdd() {
+  function openAddDialog() {
+    setEditingId(null);
+    setType("call");
+    setNotes("");
+    setDueAt("");
+    setOpen(true);
+  }
+
+  function openEditDialog(activity: Activity) {
+    setEditingId(activity.id);
+    setType(activity.type);
+    setNotes(activity.notes ?? "");
+    setDueAt(activity.dueAt ? activity.dueAt.slice(0, 10) : "");
+    setOpen(true);
+  }
+
+  async function handleSave() {
     setSaving(true);
     try {
-      await apiClient.post("/activities", {
-        contactId,
-        type,
-        notes: notes || undefined,
-        dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-      });
-      setNotes("");
-      setDueAt("");
-      setType("call");
+      if (editingId) {
+        await apiClient.put(`/activities/${editingId}`, {
+          type,
+          notes: notes || null,
+          dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+        });
+      } else {
+        await apiClient.post("/activities", {
+          contactId,
+          type,
+          notes: notes || undefined,
+          dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+        });
+      }
       setOpen(false);
       onChanged();
-      onCreated?.();
+      if (!editingId) onCreated?.();
     } finally {
       setSaving(false);
     }
@@ -101,6 +126,14 @@ export function ActivitiesSection({
                   )}
                 </div>
                 {overdue && <Badge>Overdue</Badge>}
+                <button
+                  type="button"
+                  aria-label="Edit activity"
+                  onClick={() => openEditDialog(activity)}
+                  className="text-on-surface-muted transition-colors hover:text-on-surface"
+                >
+                  <Pencil size={14} />
+                </button>
               </li>
             );
           })}
@@ -110,12 +143,12 @@ export function ActivitiesSection({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
           Log activity
         </Button>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Log activity</DialogTitle>
+            <DialogTitle>{editingId ? "Edit activity" : "Log activity"}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <FormField label="Type">
@@ -145,8 +178,8 @@ export function ActivitiesSection({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Log activity"}
+            <Button disabled={saving} onClick={handleSave}>
+              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Log activity"}
             </Button>
           </DialogFooter>
         </DialogContent>

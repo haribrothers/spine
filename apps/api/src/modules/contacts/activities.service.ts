@@ -4,7 +4,8 @@ import { and, asc, desc, eq, isNull, lt } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities } from "../../db/schema";
+import { activities, leads } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
@@ -16,7 +17,23 @@ export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
  */
 @Injectable()
 export class ActivitiesService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+  ) {}
+
+  /**
+   * Audit's `contactId` is populated straight from `activity.contactId`
+   * when set; an activity linked only to a lead (no direct contactId) is
+   * resolved through that lead's own contactId instead, so an
+   * activity-on-a-lead still shows up in the owning contact's history tab.
+   */
+  private async resolveContactId(orgId: string, activity: { contactId: string | null; leadId: string | null }) {
+    if (activity.contactId) return activity.contactId;
+    if (!activity.leadId) return null;
+    const [lead] = await this.db.select({ contactId: leads.contactId }).from(leads).where(and(eq(leads.orgId, orgId), eq(leads.id, activity.leadId)));
+    return lead?.contactId ?? null;
+  }
 
   async list(orgId: string, filters: { contactId?: string; leadId?: string }) {
     const conditions = [eq(activities.orgId, orgId)];
@@ -41,61 +58,128 @@ export class ActivitiesService {
   }
 
   async create(orgId: string, userId: string, input: CreateActivityInput) {
-    const [created] = await this.db
-      .insert(activities)
-      .values({
-        orgId,
-        contactId: input.contactId ?? null,
-        leadId: input.leadId ?? null,
-        type: input.type,
-        notes: input.notes ?? null,
-        dueAt: input.dueAt ?? null,
-        assignedToUserId: input.assignedToUserId ?? userId,
-        createdByUserId: userId,
-      })
-      .returning();
+    const created = await this.db.transaction(async (tx) => {
+      const [activity] = await tx
+        .insert(activities)
+        .values({
+          orgId,
+          contactId: input.contactId ?? null,
+          leadId: input.leadId ?? null,
+          type: input.type,
+          notes: input.notes ?? null,
+          dueAt: input.dueAt ?? null,
+          assignedToUserId: input.assignedToUserId ?? userId,
+          createdByUserId: userId,
+        })
+        .returning();
+      if (activity) {
+        const contactId = await this.resolveContactId(orgId, activity);
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId: userId,
+          action: "created",
+          entityType: "activity",
+          entityId: activity.id,
+          contactId,
+          changes: [{ field: "type", from: null, to: activity.type }],
+        });
+      }
+      return activity;
+    });
     return created;
   }
 
-  async update(orgId: string, id: string, input: UpdateActivityInput) {
-    await this.getOne(orgId, id);
-    const [updated] = await this.db
-      .update(activities)
-      .set({
-        ...(input.type !== undefined ? { type: input.type } : {}),
-        ...(input.notes !== undefined ? { notes: input.notes } : {}),
-        ...(input.dueAt !== undefined ? { dueAt: input.dueAt } : {}),
-        ...(input.assignedToUserId !== undefined ? { assignedToUserId: input.assignedToUserId } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(activities.id, id))
-      .returning();
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateActivityInput) {
+    const existing = await this.getOne(orgId, id);
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(activities)
+        .set({
+          ...(input.type !== undefined ? { type: input.type } : {}),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.dueAt !== undefined ? { dueAt: input.dueAt } : {}),
+          ...(input.assignedToUserId !== undefined ? { assignedToUserId: input.assignedToUserId } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(activities.id, id))
+        .returning();
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      if (changes.length) {
+        const contactId = await this.resolveContactId(orgId, existing);
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "activity",
+          entityId: id,
+          contactId,
+          changes,
+        });
+      }
+      return row;
+    });
     return updated;
   }
 
-  async markDone(orgId: string, id: string) {
-    await this.getOne(orgId, id);
-    const [updated] = await this.db
-      .update(activities)
-      .set({ doneAt: new Date(), updatedAt: new Date() })
-      .where(eq(activities.id, id))
-      .returning();
+  async markDone(orgId: string, id: string, actorUserId: string) {
+    const existing = await this.getOne(orgId, id);
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(activities)
+        .set({ doneAt: new Date(), updatedAt: new Date() })
+        .where(eq(activities.id, id))
+        .returning();
+      const contactId = await this.resolveContactId(orgId, existing);
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "marked done",
+        entityType: "activity",
+        entityId: id,
+        contactId,
+      });
+      return row;
+    });
     return updated;
   }
 
-  async markUndone(orgId: string, id: string) {
-    await this.getOne(orgId, id);
-    const [updated] = await this.db
-      .update(activities)
-      .set({ doneAt: null, updatedAt: new Date() })
-      .where(eq(activities.id, id))
-      .returning();
+  async markUndone(orgId: string, id: string, actorUserId: string) {
+    const existing = await this.getOne(orgId, id);
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(activities)
+        .set({ doneAt: null, updatedAt: new Date() })
+        .where(eq(activities.id, id))
+        .returning();
+      const contactId = await this.resolveContactId(orgId, existing);
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "marked undone",
+        entityType: "activity",
+        entityId: id,
+        contactId,
+      });
+      return row;
+    });
     return updated;
   }
 
-  async delete(orgId: string, id: string) {
-    await this.getOne(orgId, id);
-    await this.db.delete(activities).where(eq(activities.id, id));
+  async delete(orgId: string, id: string, actorUserId: string) {
+    const existing = await this.getOne(orgId, id);
+    await this.db.transaction(async (tx) => {
+      const contactId = await this.resolveContactId(orgId, existing);
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "activity",
+        entityId: id,
+        contactId,
+        changes: [{ field: "type", from: existing.type, to: null }],
+      });
+      await tx.delete(activities).where(eq(activities.id, id));
+    });
     return { id };
   }
 

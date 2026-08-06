@@ -24,12 +24,15 @@ import {
   Input,
   Spinner,
 } from "@spine/ui";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactPerson } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
+/** `id` is optional — omitted for a newly-added row not yet sent to the array-replace PUT. */
+type PersonInput = { id?: string; name: string; title: string | null; email: string | null; phone: string | null; isPrimary: boolean; logoFileId: string | null };
 
 function initials(name: string) {
   return name
@@ -54,6 +57,12 @@ function initials(name: string) {
  * creates the person. `ContactLogo` is reused as the upload widget by
  * passing it a null fileId/synthetic name and reading its `onUploaded`
  * callback, rather than duplicating the upload mechanics.
+ *
+ * Edit reuses this exact same Dialog (one `open`/`editingId` pair of state
+ * — `editingId === null` means "adding", a set id means "editing that
+ * row"), pre-filled from the row's current values and calling `persist()`
+ * with that one array element's fields replaced in place rather than
+ * appended — not a second form.
  */
 export function ContactPersonsSection({
   contact,
@@ -65,6 +74,7 @@ export function ContactPersonsSection({
   onCreated?: () => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
   const [email, setEmail] = useState("");
@@ -73,11 +83,11 @@ export function ContactPersonsSection({
 
   const people = contact.contactPersons ?? [];
 
-  function toInput(p: ContactPerson) {
-    return { name: p.name, title: p.title, email: p.email, phone: p.phone, isPrimary: p.isPrimary, logoFileId: p.logoFileId };
+  function toInput(p: ContactPerson): PersonInput {
+    return { id: p.id, name: p.name, title: p.title, email: p.email, phone: p.phone, isPrimary: p.isPrimary, logoFileId: p.logoFileId };
   }
 
-  async function persist(next: ReturnType<typeof toInput>[]) {
+  async function persist(next: PersonInput[]) {
     setSaving(true);
     try {
       await apiClient.put(`/contacts/${contact.id}`, { contactPersons: next });
@@ -87,15 +97,33 @@ export function ContactPersonsSection({
     }
   }
 
-  async function handleAdd() {
-    const next = [...people.map(toInput), { name, title: title || null, email: email || null, phone: null, isPrimary: people.length === 0, logoFileId }];
-    await persist(next);
+  function openAddDialog() {
+    setEditingId(null);
     setName("");
     setTitle("");
     setEmail("");
     setLogoFileId(null);
+    setOpen(true);
+  }
+
+  function openEditDialog(person: ContactPerson) {
+    setEditingId(person.id);
+    setName(person.name);
+    setTitle(person.title ?? "");
+    setEmail(person.email ?? "");
+    setLogoFileId(person.logoFileId);
+    setOpen(true);
+  }
+
+  async function handleSave() {
+    const next = editingId
+      ? people.map(toInput).map((p) =>
+          p.id === editingId ? { ...p, name, title: title || null, email: email || null, logoFileId } : p,
+        )
+      : [...people.map(toInput), { name, title: title || null, email: email || null, phone: null, isPrimary: people.length === 0, logoFileId }];
+    await persist(next);
     setOpen(false);
-    onCreated?.();
+    if (!editingId) onCreated?.();
   }
 
   async function handleRemove(id: string) {
@@ -120,40 +148,51 @@ export function ContactPersonsSection({
                   {person.email && <span className="text-on-surface-muted"> · {person.email}</span>}
                 </div>
               </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${person.name}`}
-                    disabled={saving}
-                    className="text-on-surface-muted transition-colors hover:text-overdue"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Remove {person.name}?</AlertDialogTitle>
-                    <AlertDialogDescription>This removes the contact person from this contact. This cannot be undone.</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  aria-label={`Edit ${person.name}`}
+                  disabled={saving}
+                  onClick={() => openEditDialog(person)}
+                  className="text-on-surface-muted transition-colors hover:text-on-surface"
+                >
+                  <Pencil size={14} />
+                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={`Remove ${person.name}`}
+                      disabled={saving}
+                      className="text-on-surface-muted transition-colors hover:text-overdue"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Remove {person.name}?</AlertDialogTitle>
+                      <AlertDialogDescription>This removes the contact person from this contact. This cannot be undone.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </li>
           ))}
         </ul>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
           Add contact person
         </Button>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add contact person</DialogTitle>
+            <DialogTitle>{editingId ? "Edit contact person" : "Add contact person"}</DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-3">
             <ContactLogo name={name || "?"} fileId={logoFileId} editable onUploaded={(file) => setLogoFileId(file.id)} />
@@ -171,8 +210,8 @@ export function ContactPersonsSection({
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button disabled={!name || saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Add"}
+            <Button disabled={!name || saving} onClick={handleSave}>
+              {saving ? <Spinner size="sm" /> : editingId ? "Save changes" : "Add"}
             </Button>
           </DialogFooter>
         </DialogContent>

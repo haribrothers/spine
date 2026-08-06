@@ -38,6 +38,7 @@ import { ContactLogo } from "./contact-logo";
 import { ContactPersonsSection } from "./contact-persons-section";
 import { LeadsSection } from "./leads-section";
 import { ActivitiesSection } from "./activities-section";
+import { HistorySection } from "./history-section";
 import { useEntityToast } from "./entity-toast";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
@@ -378,6 +379,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="persons">
@@ -409,6 +411,9 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             onChanged={reloadActivities}
             onCreated={() => showToast("Activity logged", "The activity has been saved.")}
           />
+        </TabsContent>
+        <TabsContent value="history">
+          <HistorySection contactId={contactId} />
         </TabsContent>
       </Tabs>
 

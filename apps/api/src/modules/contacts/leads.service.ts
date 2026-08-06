@@ -5,6 +5,7 @@ import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { leads, type leadStageEnum } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
@@ -20,7 +21,10 @@ export type LeadStage = (typeof leadStageEnum.enumValues)[number];
  */
 @Injectable()
 export class LeadsService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+  ) {}
 
   async list(orgId: string, stage?: LeadStage) {
     const conditions = [eq(leads.orgId, orgId)];
@@ -51,45 +55,85 @@ export class LeadsService {
     return lead;
   }
 
-  async create(orgId: string, input: CreateLeadInput) {
-    const [created] = await this.db
-      .insert(leads)
-      .values({
-        orgId,
-        contactId: input.contactId,
-        stage: input.stage ?? "new",
-        valueAmount: input.valueAmount ?? 0n,
-        valueCurrency: input.valueCurrency,
-        source: input.source ?? null,
-        ownerUserId: input.ownerUserId ?? null,
-        title: input.title ?? null,
-      })
-      .returning();
+  async create(orgId: string, actorUserId: string, input: CreateLeadInput) {
+    const created = await this.db.transaction(async (tx) => {
+      const [lead] = await tx
+        .insert(leads)
+        .values({
+          orgId,
+          contactId: input.contactId,
+          stage: input.stage ?? "new",
+          valueAmount: input.valueAmount ?? 0n,
+          valueCurrency: input.valueCurrency,
+          source: input.source ?? null,
+          ownerUserId: input.ownerUserId ?? null,
+          title: input.title ?? null,
+        })
+        .returning();
+      if (lead) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "created",
+          entityType: "lead",
+          entityId: lead.id,
+          contactId: lead.contactId,
+          changes: [{ field: "title", from: null, to: lead.title }],
+        });
+      }
+      return lead;
+    });
     return created;
   }
 
-  async update(orgId: string, id: string, input: UpdateLeadInput) {
-    await this.getOne(orgId, id);
-    const [updated] = await this.db
-      .update(leads)
-      .set({
-        ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
-        ...(input.stage !== undefined ? { stage: input.stage } : {}),
-        ...(input.valueAmount !== undefined ? { valueAmount: input.valueAmount } : {}),
-        ...(input.valueCurrency !== undefined ? { valueCurrency: input.valueCurrency } : {}),
-        ...(input.source !== undefined ? { source: input.source } : {}),
-        ...(input.ownerUserId !== undefined ? { ownerUserId: input.ownerUserId } : {}),
-        ...(input.title !== undefined ? { title: input.title } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, id))
-      .returning();
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateLeadInput) {
+    const existing = await this.getOne(orgId, id);
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(leads)
+        .set({
+          ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
+          ...(input.stage !== undefined ? { stage: input.stage } : {}),
+          ...(input.valueAmount !== undefined ? { valueAmount: input.valueAmount } : {}),
+          ...(input.valueCurrency !== undefined ? { valueCurrency: input.valueCurrency } : {}),
+          ...(input.source !== undefined ? { source: input.source } : {}),
+          ...(input.ownerUserId !== undefined ? { ownerUserId: input.ownerUserId } : {}),
+          ...(input.title !== undefined ? { title: input.title } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(leads.id, id))
+        .returning();
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      if (changes.length) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "lead",
+          entityId: id,
+          contactId: existing.contactId,
+          changes,
+        });
+      }
+      return row;
+    });
     return updated;
   }
 
-  async delete(orgId: string, id: string) {
-    await this.getOne(orgId, id);
-    await this.db.delete(leads).where(eq(leads.id, id));
+  async delete(orgId: string, id: string, actorUserId: string) {
+    const existing = await this.getOne(orgId, id);
+    await this.db.transaction(async (tx) => {
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "lead",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "title", from: existing.title, to: null }],
+      });
+      await tx.delete(leads).where(eq(leads.id, id));
+    });
     return { id };
   }
 }
