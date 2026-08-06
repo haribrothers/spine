@@ -14,9 +14,9 @@ export function DocsShell({ children }: { children: React.ReactNode }) {
     <TooltipProvider delayDuration={200}>
       <div className="min-h-screen bg-background">
         <TopBar onSearchOpen={() => setSearchOpen(true)} />
-        <div className="mx-auto flex max-w-[1200px]">
+        <div className="mx-auto flex">
           <Sidebar />
-          <article className="min-w-0 flex-1 py-8">{children}</article>
+          <article className="min-w-0 mx-auto max-w-[858px] flex-1 py-8">{children}</article>
           <OnThisPage />
         </div>
         <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
