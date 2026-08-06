@@ -8,16 +8,20 @@ import { contacts } from "./contacts";
  *
  * First real write instrumentation lands scoped to Contacts (see
  * apps/api/src/modules/audit/audit-log.service.ts) — `entityType` is one of
- * "contact"/"contact_person"/"address"/"lead"/"activity" for that scope.
- * `contactId` is a nullable denormalized FK, populated for all five of
- * those entity types (equal to `entityId` when `entityType === "contact"`,
- * else the sub-entity's owning contact) so `GET /contacts/:id/history` can
- * query with one indexed WHERE instead of joining across four different
+ * "contact"/"contact_person"/"address"/"lead"/"activity" for that scope,
+ * plus "catalog_item" added when the Catalogue module (F2) landed.
+ * `contactId` is a nullable denormalized FK, populated for the five Contacts
+ * entity types (equal to `entityId` when `entityType === "contact"`, else
+ * the sub-entity's owning contact) so `GET /contacts/:id/history` can query
+ * with one indexed WHERE instead of joining across four different
  * sub-entity tables to find "which contact does this audit row belong to."
  * `onDelete: "cascade"` matches `journal_lines.contact_id`'s sibling
  * behavior for rows that only make sense in the context of a contact that
  * still exists — audit history for a hard-deleted contact has no page left
- * to render it on.
+ * to render it on. Non-Contacts entity types (e.g. "catalog_item") simply
+ * write `contactId: null` — there is no equivalent "list history for this
+ * catalog item" endpoint yet, so audit rows for it are written for a future
+ * org-wide audit view, not read back anywhere today.
  */
 export const auditLog = pgTable(
   "audit_log",

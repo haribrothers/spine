@@ -4,7 +4,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { auditLog, user } from "../../db/schema";
 
-export type AuditEntityType = "contact" | "contact_person" | "address" | "lead" | "activity";
+export type AuditEntityType = "contact" | "contact_person" | "address" | "lead" | "activity" | "catalog_item";
 
 /** A single before/after field change, as recorded in `audit_log.changes`. */
 export interface FieldChange {

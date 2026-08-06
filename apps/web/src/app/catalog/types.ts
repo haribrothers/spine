@@ -1,0 +1,33 @@
+/** Mirrors apps/api/src/db/schema/catalog.ts's row shape — apps/web has no generated SDK yet (packages/sdk is still empty), so this is hand-written to match the API's JSON response shape, following contacts/types.ts's own precedent. */
+export interface CatalogItem {
+  id: string;
+  orgId: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  category: string | null;
+  /** Minor units, serialized as a string over JSON — see MoneyInput's `value: bigint` contract; parse with `BigInt(...)`. */
+  defaultPriceAmount: string;
+  defaultPriceCurrency: string;
+  defaultTaxRatePercentage: number;
+  incomeAccountId: string | null;
+  expenseAccountId: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Mirrors apps/api/src/modules/org/accounts.service.ts's `listGroupedByType` response shape. */
+export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
+
+export interface Account {
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  parentId: string | null;
+  isSystem: boolean;
+}
+
+export type AccountsByType = Record<AccountType, Account[]>;

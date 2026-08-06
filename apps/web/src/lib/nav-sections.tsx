@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users } from "lucide-react";
+import { LayoutDashboard, Package, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -6,7 +6,7 @@ import type { AppShellNavSection } from "@spine/ui";
  * here rather than duplicated per-page now that Contacts is the second page
  * (after Dashboard) needing this array — Settings has no entry since it
  * opens as a dialog from the user menu, not a route. New top-level sections
- * (Catalogue, Quotes, ...) append here as their modules land.
+ * (Quotes, ...) append here as their modules land.
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
@@ -15,6 +15,9 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
   },
   {
     label: "Sales",
-    items: [{ href: "/contacts", label: "Contacts", icon: <Users /> }],
+    items: [
+      { href: "/contacts", label: "Contacts", icon: <Users /> },
+      { href: "/catalog", label: "Catalogue", icon: <Package /> },
+    ],
   },
 ];
