@@ -1,4 +1,4 @@
-import { type Money, money, roundHalfUp } from "../money/money";
+import { type Money, money, roundHalfUp } from "../money/money.ts";
 
 export interface TaxRate {
   readonly id: string;

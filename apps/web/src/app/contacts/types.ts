@@ -1,0 +1,83 @@
+/** Mirrors apps/api/src/db/schema/contacts.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape. */
+export type ContactType = "customer" | "vendor" | "both";
+export type AddressType = "billing" | "shipping" | "site" | "other";
+export type LeadStage = "new" | "qualified" | "proposal" | "won" | "lost";
+export type ActivityType = "call" | "meeting" | "note" | "task";
+
+export interface ContactPerson {
+  id: string;
+  contactId: string;
+  name: string;
+  title: string | null;
+  email: string | null;
+  phone: string | null;
+  isPrimary: boolean;
+}
+
+export interface Address {
+  id: string;
+  contactId: string;
+  type: AddressType;
+  line1: string;
+  line2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
+  isPrimary: boolean;
+}
+
+export interface Contact {
+  id: string;
+  orgId: string;
+  type: ContactType;
+  isCompany: boolean;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  notes: string | null;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  contactPersons?: ContactPerson[];
+  addresses?: Address[];
+  duplicateWarning?: Contact[];
+}
+
+export interface Lead {
+  id: string;
+  orgId: string;
+  contactId: string;
+  stage: LeadStage;
+  valueAmount: string;
+  valueCurrency: string;
+  source: string | null;
+  ownerUserId: string | null;
+  title: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Activity {
+  id: string;
+  orgId: string;
+  contactId: string | null;
+  leadId: string | null;
+  type: ActivityType;
+  notes: string | null;
+  dueAt: string | null;
+  doneAt: string | null;
+  assignedToUserId: string | null;
+  createdByUserId: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const LEAD_STAGES: LeadStage[] = ["new", "qualified", "proposal", "won", "lost"];
+export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
+  new: "New",
+  qualified: "Qualified",
+  proposal: "Proposal",
+  won: "Won",
+  lost: "Lost",
+};

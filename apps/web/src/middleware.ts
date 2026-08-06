@@ -7,7 +7,7 @@ const API_URL = process.env.API_URL ?? "http://localhost:4000";
 // only happens once, explicitly, from the signup flow's own redirect. A
 // returning user visiting /dashboard directly is never bounced back into
 // the wizard, per the "onboarding is not a gate" rule.
-const PROTECTED_PATHS = ["/dashboard", "/onboarding"];
+const PROTECTED_PATHS = ["/dashboard", "/onboarding", "/contacts"];
 const AUTH_PATHS = ["/login", "/signup"];
 
 async function hasSession(request: NextRequest): Promise<boolean> {
@@ -65,5 +65,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/", "/dashboard/:path*", "/onboarding/:path*", "/login", "/signup"],
+  matcher: ["/", "/dashboard/:path*", "/onboarding/:path*", "/contacts/:path*", "/login", "/signup"],
 };

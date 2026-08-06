@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, bigint, timestamp, date, boolean, pgEnum, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization } from "./auth";
+import { contacts } from "./contacts";
 
 export const accountTypeEnum = pgEnum("account_type", [
   "asset",
@@ -72,8 +73,18 @@ export const journalLines = pgTable(
       .references(() => accounts.id, { onDelete: "restrict" }),
     debit: bigint("debit", { mode: "bigint" }).notNull().default(sql`0`),
     credit: bigint("credit", { mode: "bigint" }).notNull().default(sql`0`),
-    /** Optional — enables AR aging and job profitability to be derived from the ledger, per §7.1. */
-    contactId: uuid("contact_id"),
+    /**
+     * Optional — enables AR aging and job profitability to be derived from
+     * the ledger, per §7.1. `onDelete: "restrict"` (not "cascade" or
+     * "set null"): a contact referenced by ledger history is financial
+     * record-keeping, and CLAUDE.md's "issued financial documents are
+     * never edited or deleted" spirit extends to not letting a contact
+     * silently vanish out from under posted journal lines. In practice
+     * this is close to moot — contacts.ts uses soft-delete (archivedAt)
+     * rather than hard delete for exactly this reason, so RESTRICT is a
+     * defensive backstop, not the primary safeguard.
+     */
+    contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "restrict" }),
     jobId: uuid("job_id"),
   },
   (table) => [

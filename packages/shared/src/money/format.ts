@@ -1,4 +1,4 @@
-import type { Money } from "./money";
+import type { Money } from "./money.ts";
 
 /**
  * Minor-unit precision per ISO 4217 for currencies commonly supported by
