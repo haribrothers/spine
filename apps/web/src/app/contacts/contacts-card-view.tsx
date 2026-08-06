@@ -12,12 +12,19 @@ const TYPE_LABELS: Record<Contact["type"], string> = {
   both: "Customer & vendor",
 };
 
-/** A grid of cards — logo/avatar, name, type badge, email/phone, corner dropdown trigger for row actions. */
-export function ContactsCardView({ contacts, onChanged }: { contacts: Contact[]; onChanged: () => void }) {
-  if (contacts.length === 0) {
-    return <p className="py-8 text-center text-[13px] text-on-surface-muted">No contacts match these filters.</p>;
-  }
-
+/**
+ * A grid of cards — logo/avatar, name, type badge, email/phone, corner
+ * dropdown trigger for row actions. The zero-contacts case is handled one
+ * level up by ContactsExplorer (EmptyState), so this always receives a
+ * non-empty `contacts` array.
+ */
+export function ContactsCardView({
+  contacts,
+  onChanged,
+}: {
+  contacts: Contact[];
+  onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
       {contacts.map((contact) => (

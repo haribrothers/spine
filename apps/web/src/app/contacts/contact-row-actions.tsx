@@ -27,7 +27,13 @@ import type { Contact } from "./types";
  * Archive calls the same endpoint the detail page uses, Delete is behind
  * the same AlertDialog confirmation pattern established there.
  */
-export function ContactRowActions({ contact, onChanged }: { contact: Contact; onChanged: () => void }) {
+export function ContactRowActions({
+  contact,
+  onChanged,
+}: {
+  contact: Contact;
+  onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,8 +42,9 @@ export function ContactRowActions({ contact, onChanged }: { contact: Contact; on
   async function handleArchiveOrRestore() {
     setBusy(true);
     try {
-      await apiClient.post(`/contacts/${contact.id}/${contact.archivedAt ? "restore" : "archive"}`);
-      onChanged();
+      const wasArchived = Boolean(contact.archivedAt);
+      await apiClient.post(`/contacts/${contact.id}/${wasArchived ? "restore" : "archive"}`);
+      onChanged(wasArchived ? "restored" : "archived", contact);
     } finally {
       setBusy(false);
     }
@@ -49,7 +56,7 @@ export function ContactRowActions({ contact, onChanged }: { contact: Contact; on
     try {
       await apiClient.delete(`/contacts/${contact.id}`);
       setConfirmOpen(false);
-      onChanged();
+      onChanged("deleted", contact);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete contact.");
     } finally {

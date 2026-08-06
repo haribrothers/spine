@@ -12,12 +12,19 @@ const TYPE_LABELS: Record<Contact["type"], string> = {
   both: "Customer & vendor",
 };
 
-/** The denser single-column List view — same data as Table, no search/sort chrome, smaller row height. */
-export function ContactsListView({ contacts, onChanged }: { contacts: Contact[]; onChanged: () => void }) {
-  if (contacts.length === 0) {
-    return <p className="py-8 text-center text-[13px] text-on-surface-muted">No contacts match these filters.</p>;
-  }
-
+/**
+ * The denser single-column List view — same data as Table, no search/sort
+ * chrome, smaller row height. The zero-contacts case is handled one level
+ * up by ContactsExplorer (EmptyState), so this always receives a non-empty
+ * `contacts` array.
+ */
+export function ContactsListView({
+  contacts,
+  onChanged,
+}: {
+  contacts: Contact[];
+  onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
+}) {
   return (
     <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
       {contacts.map((contact) => (

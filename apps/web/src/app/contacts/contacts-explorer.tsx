@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, MultiSelect, StatCard } from "@spine/ui";
+import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard } from "@spine/ui";
+import { Users } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import { ContactCreateDrawer } from "./contact-create-drawer";
 import { ContactsCardView } from "./contacts-card-view";
@@ -11,6 +12,7 @@ import { ContactsTable } from "./contacts-table";
 import { ContactsViewSwitcher, VIEW_STORAGE_KEY, type ContactView } from "./contacts-view-switcher";
 import type { Contact, ContactType, Lead } from "./types";
 import { useContactStats } from "./use-contact-stats";
+import { useEntityToast } from "./entity-toast";
 
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: "Customer" },
@@ -39,6 +41,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
+  const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
     const stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
@@ -80,14 +83,35 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       .catch(() => setLeads([]));
   }, []);
 
+  useEffect(() => {
+    // One-shot flag set by contact-detail.tsx right before it navigates
+    // back here on delete — that page unmounts immediately, so it has no
+    // moment of its own to show the toast (same pattern as
+    // "spine:contact-created" in contact-form.tsx).
+    if (typeof window === "undefined") return;
+    const deletedName = window.sessionStorage.getItem("spine:contact-deleted");
+    if (deletedName) {
+      window.sessionStorage.removeItem("spine:contact-deleted");
+      showToast("Contact deleted", `${deletedName} has been permanently removed.`);
+    }
+  }, []);
+
   const activeLeadCount = useMemo(
     () => (leads ? leads.filter((l) => l.stage !== "won" && l.stage !== "lost").length : null),
     [leads],
   );
   const stats = useContactStats(contacts, activeLeadCount);
 
-  function handleCreated() {
+  function handleCreated(contact: Contact) {
     loadContacts();
+    showToast("Contact created", `${contact.name} has been added to your contacts.`);
+  }
+
+  function handleRowChanged(action: "archived" | "restored" | "deleted", contact: Contact) {
+    loadContacts();
+    if (action === "archived") showToast("Contact archived", `${contact.name} has been archived.`);
+    else if (action === "restored") showToast("Contact restored", `${contact.name} is active again.`);
+    else showToast("Contact deleted", `${contact.name} has been permanently removed.`);
   }
 
   if (error) {
@@ -132,15 +156,44 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
 
       {!contacts ? (
         <ContactsSkeleton view={hydrated ? view : "table"} />
+      ) : contacts.length === 0 ? (
+        <div className="rounded-lg border border-border">
+          {typeFilter.length > 0 || statusFilter.length !== 1 || !statusFilter.includes("active") ? (
+            <EmptyState
+              icon={<Users />}
+              title="No contacts match these filters"
+              description="Try adjusting or clearing the filters above."
+              action={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setTypeFilter([]);
+                    setStatusFilter(["active"]);
+                  }}
+                >
+                  Clear filters
+                </Button>
+              }
+            />
+          ) : (
+            <EmptyState
+              icon={<Users />}
+              title="No contacts yet"
+              description="Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
+              action={<Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
+            />
+          )}
+        </div>
       ) : view === "list" ? (
-        <ContactsListView contacts={contacts} onChanged={loadContacts} />
+        <ContactsListView contacts={contacts} onChanged={handleRowChanged} />
       ) : view === "card" ? (
-        <ContactsCardView contacts={contacts} onChanged={loadContacts} />
+        <ContactsCardView contacts={contacts} onChanged={handleRowChanged} />
       ) : (
-        <ContactsTable contacts={contacts} onChanged={loadContacts} />
+        <ContactsTable contacts={contacts} onChanged={handleRowChanged} />
       )}
 
       <ContactCreateDrawer open={drawerOpen} onOpenChange={setDrawerOpen} onCreated={handleCreated} />
+      {toast}
     </div>
   );
 }

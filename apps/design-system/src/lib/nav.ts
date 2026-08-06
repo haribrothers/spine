@@ -123,6 +123,7 @@ export const nav: TopLevelSection[] = [
           { title: "Progress", href: "/components/progress" },
           { title: "Stepper", href: "/components/stepper" },
           { title: "Spinner", href: "/components/spinner" },
+          { title: "PageLoader", href: "/components/page-loader" },
           { title: "EmptyState", href: "/components/empty-state" },
           { title: "Skeleton", href: "/components/skeleton" },
         ],

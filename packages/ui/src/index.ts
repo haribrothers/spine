@@ -41,6 +41,7 @@ export * from "./components/multi-select";
 export * from "./components/native-select";
 export * from "./components/navigation-menu";
 export * from "./components/otp-field";
+export * from "./components/page-loader";
 export * from "./components/pagination";
 export * from "./components/password-toggle-field";
 export * from "./components/popover";

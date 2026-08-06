@@ -19,7 +19,13 @@ const TYPE_LABELS: Record<Contact["type"], string> = {
  * owns the `MultiSelect` filters and passes already-filtered `data` in)
  * rather than duplicated per view.
  */
-export function ContactsTable({ contacts, onChanged }: { contacts: Contact[]; onChanged: () => void }) {
+export function ContactsTable({
+  contacts,
+  onChanged,
+}: {
+  contacts: Contact[];
+  onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
+}) {
   const columns: TableColumn<Contact>[] = [
     {
       key: "name",

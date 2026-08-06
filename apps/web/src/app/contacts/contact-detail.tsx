@@ -157,6 +157,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
       });
       setEditing(false);
       await reloadContact();
+      showToast("Contact updated", `${name} has been saved.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save contact.");
     } finally {
@@ -174,6 +175,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     try {
       await apiClient.post(`/contacts/${contactId}/archive`);
       await reloadContact();
+      showToast("Contact archived", `${contact?.name ?? "This contact"} has been archived.`);
     } finally {
       setBusy(false);
     }
@@ -184,6 +186,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     try {
       await apiClient.post(`/contacts/${contactId}/restore`);
       await reloadContact();
+      showToast("Contact restored", `${contact?.name ?? "This contact"} is active again.`);
     } finally {
       setBusy(false);
     }
@@ -193,7 +196,14 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     setBusy(true);
     setDeleteError(null);
     try {
+      const deletedName = contact?.name ?? "Contact";
       await apiClient.delete(`/contacts/${contactId}`);
+      // Toast fires from the list page after this navigation, not here —
+      // this page is about to unmount, so a one-shot flag hands the message
+      // off the same way contact-form.tsx does for create.
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("spine:contact-deleted", deletedName);
+      }
       router.push("/contacts");
     } catch (err) {
       setDeleteError(
