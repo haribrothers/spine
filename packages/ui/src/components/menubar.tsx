@@ -29,7 +29,7 @@ export const MenubarTrigger = forwardRef<
   <MenubarPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex cursor-pointer select-none items-center rounded-sm px-2.5 py-1 text-[13px] font-medium text-on-surface outline-none data-[state=open]:bg-surface-sunken",
+      "flex cursor-pointer select-none items-center rounded-sm px-2.5 py-1 text-[13px] font-medium text-on-surface outline-none data-[state=open]:bg-surface-sunken focus-visible:ring-2 focus-visible:ring-primary",
       className,
     )}
     {...props}

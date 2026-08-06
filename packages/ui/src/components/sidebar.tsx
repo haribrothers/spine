@@ -162,7 +162,10 @@ export function SidebarNavItem({
       {...props}
     >
       <span className="shrink-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">{icon}</span>
-      {!collapsed && <span className="truncate">{children}</span>}
+      {/* When collapsed the label stays in the DOM but visually hidden, so
+          the icon-only rail still has an accessible name (rather than
+          unmounting it and leaving assistive tech with nothing to announce). */}
+      <span className={cn("truncate", collapsed && "sr-only")}>{children}</span>
     </button>
   );
 }

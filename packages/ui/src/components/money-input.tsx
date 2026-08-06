@@ -20,7 +20,7 @@ export interface MoneyInputProps
  * supports — the field can never hold more precision than the ledger does.
  */
 export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
-  ({ className, value, onValueChange, currency, error = false, onBlur, ...props }, ref) => {
+  ({ className, value, onValueChange, currency, error = false, onBlur, "aria-invalid": ariaInvalid, ...props }, ref) => {
     const [text, setText] = useState(() => toDecimalString({ amount: value, currency }));
 
     useEffect(() => {
@@ -32,6 +32,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
         ref={ref}
         type="text"
         inputMode="decimal"
+        aria-invalid={ariaInvalid ?? (error ? true : undefined)}
         value={text}
         onChange={(event) => {
           const next = event.target.value;

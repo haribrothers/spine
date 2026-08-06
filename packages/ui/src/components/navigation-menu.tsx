@@ -37,7 +37,7 @@ NavigationMenuList.displayName = "NavigationMenuList";
 export const NavigationMenuItem = NavigationMenuPrimitive.Item;
 
 export const navigationMenuTriggerStyle = cva(
-  "flex items-center gap-1 rounded-md px-3 py-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface focus:outline-none",
+  "flex items-center gap-1 rounded-md px-3 py-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface data-[state=open]:bg-surface-sunken data-[state=open]:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
 );
 
 export const NavigationMenuTrigger = forwardRef<

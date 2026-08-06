@@ -25,7 +25,8 @@ export default function AlertPage() {
         <FeatureList
           items={[
             "Four variants sharing the same background/text pairs as StatusChip's palette, plus info: info, warning, critical, success.",
-            "An optional leading icon, never the sole carrier of meaning.",
+            "A leading icon that defaults per variant (Info/AlertTriangle/AlertCircle/CheckCircle2) so color is never the only signal — pass icon={null} to opt out, or a custom icon to override.",
+            "critical renders role=\"alert\" (interrupts screen readers, for genuine errors); info/warning/success render role=\"status\" (polite announcement).",
           ]}
         />
       </DocSection>
@@ -47,7 +48,7 @@ export default () => (
         <ApiTable
           rows={[
             { prop: "variant", type: "info | warning | critical | success", defaultValue: "info" },
-            { prop: "icon", type: "ReactNode" },
+            { prop: "icon", type: "ReactNode", defaultValue: "a variant-appropriate default; pass null for none" },
           ]}
         />
       </DocSection>
@@ -69,9 +70,15 @@ export default () => (
 
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>
-          Use <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">role=&quot;alert&quot;</code> on the
-          root only for genuinely urgent, unsolicited messages that should interrupt a screen
-          reader user — most Alerts here are page-level context, not urgent interruptions.
+          The root sets <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">role=&quot;alert&quot;</code> automatically for the{" "}
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">critical</code> variant (an urgent, unsolicited message that
+          should interrupt a screen reader user) and <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">role=&quot;status&quot;</code> for
+          info/warning/success (page-level context, announced politely). All four variants share the
+          same <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">text-on-surface</code> text
+          color — only the background tint differs — so the default per-variant icon (see Features) is
+          what keeps the variant distinguishable without relying on color alone; every real call site in
+          the app previously omitted the icon prop entirely before this became a built-in default (WCAG AA
+          a11y pass, 2026-08-06).
         </DocLead>
       </DocSection>
     </div>

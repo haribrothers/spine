@@ -30,10 +30,31 @@ export interface CarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   options?: CarouselOptions;
 }
 
-/** Job/site photo galleries — a horizontally scrolling set of slides with prev/next controls, built on embla-carousel. */
+/**
+ * Job/site photo galleries — a horizontally scrolling set of slides with
+ * prev/next controls, built on embla-carousel. `role="region"` +
+ * `aria-roledescription="carousel"` on the root and `aria-live="polite"` on
+ * the slide track (see CarouselContent) let assistive tech announce slide
+ * changes; the scroll-snap animation duration respects
+ * `prefers-reduced-motion` (Embla's `duration` option, not a CSS
+ * transition, so it can't be handled via Tailwind's motion tokens alone).
+ */
 export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(
   ({ options, className, children, ...props }, ref) => {
-    const [carouselRef, api] = useEmblaCarousel(options);
+    const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+    useEffect(() => {
+      const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setPrefersReducedMotion(query.matches);
+      const listener = (event: MediaQueryListEvent) => setPrefersReducedMotion(event.matches);
+      query.addEventListener("change", listener);
+      return () => query.removeEventListener("change", listener);
+    }, []);
+
+    const [carouselRef, api] = useEmblaCarousel({
+      ...options,
+      duration: prefersReducedMotion ? 0 : options?.duration,
+    });
     const [canScrollPrev, setCanScrollPrev] = useState(false);
     const [canScrollNext, setCanScrollNext] = useState(false);
 
@@ -64,7 +85,13 @@ export const Carousel = forwardRef<HTMLDivElement, CarouselProps>(
           canScrollNext,
         }}
       >
-        <div ref={ref} className={cn("relative", className)} {...props}>
+        <div
+          ref={ref}
+          role="region"
+          aria-roledescription="carousel"
+          className={cn("relative", className)}
+          {...props}
+        >
           {children}
         </div>
       </CarouselContext.Provider>
@@ -87,7 +114,13 @@ CarouselContent.displayName = "CarouselContent";
 
 export const CarouselItem = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
-    <div ref={ref} className={cn("min-w-0 shrink-0 grow-0 basis-full", className)} {...props} />
+    <div
+      ref={ref}
+      role="group"
+      aria-roledescription="slide"
+      className={cn("min-w-0 shrink-0 grow-0 basis-full", className)}
+      {...props}
+    />
   ),
 );
 CarouselItem.displayName = "CarouselItem";

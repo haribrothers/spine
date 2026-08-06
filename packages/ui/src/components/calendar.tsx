@@ -844,8 +844,9 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChan
                 >
                   <button
                     type="button"
+                    aria-label={`Open ${format(day, "EEEE, MMMM d, yyyy")} in day view`}
                     className={cn(
-                      "flex h-6 w-6 items-center justify-center self-start rounded-full text-[12.5px] font-medium",
+                      "flex h-6 w-6 items-center justify-center self-start rounded-full text-[12.5px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                       isToday(day) ? "bg-primary text-white" : inMonth ? "text-on-surface" : "text-on-surface-muted",
                     )}
                     onClick={(e) => {
@@ -868,7 +869,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChan
                             onEventClick(instance);
                           }}
                           className={cn(
-                            "flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] font-medium",
+                            "flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             colors.bg,
                             colors.fg,
                           )}

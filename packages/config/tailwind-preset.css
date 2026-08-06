@@ -17,7 +17,14 @@
   --color-neutral-100: #f2f1ee;
   --color-neutral-200: #e7e5e0;
   --color-neutral-300: #d3d0c9;
-  --color-neutral-500: #8a8578;
+  /* WCAG AA a11y pass (2026-08-06): darkened from the original #8a8578
+     (3.68:1 on --color-surface, 3.26:1 on --color-draft-bg — both fail the
+     4.5:1 body-text minimum) to #726c5a, which clears 4.5:1 against every
+     surface this token is composited over (--color-surface,
+     --color-surface-sunken, --color-draft-bg) since it backs both
+     --color-on-surface-muted and --color-draft. Dark mode's #93907f already
+     passed and is unchanged. */
+  --color-neutral-500: #726c5a;
   --color-neutral-700: #4b473e;
   --color-neutral-900: #211f1a;
 
@@ -29,7 +36,21 @@
   --color-border: var(--color-neutral-200);
   --color-border-strong: var(--color-neutral-300);
 
-  --color-paid: #1a7f4b;
+  /* WCAG AA a11y pass (2026-08-06): Toast/Tooltip chrome is deliberately
+     "always dark" per docs/DESIGN.md's toast/tooltip spec (backgroundColor:
+     neutral-900, textColor: #FFFFFF) regardless of the app's light/dark
+     theme — but toast.tsx/tooltip.tsx were built with `bg-neutral-900`,
+     which is theme-*reactive* (neutral-900 flips to near-white in dark
+     mode), so white text became ~1.1:1 on white in dark mode. These two
+     fixed tokens hold the light-mode value in both themes so that chrome
+     stays dark-with-white-text as designed, independent of theme. */
+  --color-inverse-surface: #211f1a;
+  --color-inverse-on-surface: #ffffff;
+  --color-inverse-on-surface-muted: #d3d0c9;
+
+  /* WCAG AA a11y pass (2026-08-06): darkened from #1a7f4b (4.44:1 on
+     paid-bg — fails 4.5:1 at the 12px chip text size) to #177044 (5.40:1). */
+  --color-paid: #177044;
   --color-paid-bg: #e4f5eb;
   --color-due-soon: #9a6300;
   --color-due-soon-bg: #fcf0d4;
@@ -51,9 +72,14 @@
   --color-category-red-bg: #fbe6e4;
   --color-category-purple: #7c3aed;
   --color-category-purple-bg: #f1e9fe;
-  --color-category-teal: #0f7c7c;
+  /* WCAG AA a11y pass (2026-08-06): darkened from #0f7c7c (4.41:1 on
+     category-teal-bg — fails 4.5:1) to #0d6e6e (5.33:1). */
+  --color-category-teal: #0d6e6e;
   --color-category-teal-bg: #dff5f5;
-  --color-category-pink: #c4408a;
+  /* WCAG AA a11y pass (2026-08-06): darkened from #c4408a (3.93:1 on
+     category-pink-bg, fails 4.5:1) to #a63571 (5.19:1) — calendar.tsx
+     renders event-title text in this color on this background. */
+  --color-category-pink: #a63571;
   --color-category-pink-bg: #fbe4f1;
   --color-category-slate: var(--color-neutral-700);
   --color-category-slate-bg: var(--color-neutral-100);
@@ -212,6 +238,9 @@
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
   --color-surface-sunken: var(--color-surface-sunken);
+  --color-inverse-surface: var(--color-inverse-surface);
+  --color-inverse-on-surface: var(--color-inverse-on-surface);
+  --color-inverse-on-surface-muted: var(--color-inverse-on-surface-muted);
   --color-on-surface: var(--color-on-surface);
   --color-on-surface-muted: var(--color-on-surface-muted);
   --color-border: var(--color-border);

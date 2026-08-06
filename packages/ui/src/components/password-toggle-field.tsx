@@ -29,7 +29,7 @@ export const PasswordToggleFieldToggle = forwardRef<
   <PasswordToggleFieldPrimitive.Toggle
     ref={ref}
     className={cn(
-      "absolute right-2.5 top-1/2 -translate-y-1/2 text-on-surface-muted transition-colors hover:text-on-surface focus-visible:outline-none",
+      "absolute right-2.5 top-1/2 -translate-y-1/2 rounded-sm text-on-surface-muted transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       className,
     )}
     {...props}

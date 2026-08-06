@@ -21,7 +21,13 @@ export default function SpinnerPage() {
       </ComponentPreview>
 
       <DocSection id="features" title="Features">
-        <FeatureList items={["Three sizes: sm, md, lg.", "Respects prefers-reduced-motion by relying on the browser's own reduced-motion handling for CSS animation."]} />
+        <FeatureList
+          items={[
+            "Three sizes: sm, md, lg.",
+            "Respects prefers-reduced-motion by relying on the browser's own reduced-motion handling for CSS animation.",
+            "Wrapped in a role=\"status\" span with an aria-label — the bare <svg> icon carries aria-hidden, since an SVG has no implicit ARIA role and can't reliably carry its own accessible name in every screen reader.",
+          ]}
+        />
       </DocSection>
 
       <DocSection id="anatomy" title="Anatomy">
@@ -31,7 +37,12 @@ export default () => <Spinner />;`} />
       </DocSection>
 
       <DocSection id="api-reference" title="API Reference">
-        <ApiTable rows={[{ prop: "size", type: "sm | md | lg", defaultValue: "md" }]} />
+        <ApiTable
+          rows={[
+            { prop: "size", type: "sm | md | lg", defaultValue: "md" },
+            { prop: "label", type: "string", defaultValue: '"Loading"' },
+          ]}
+        />
       </DocSection>
 
       <DocSection id="examples" title="Examples">
@@ -46,7 +57,12 @@ export default () => <Spinner />;`} />
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">
-        <DocLead>Includes an aria-label of "Loading" — pair with a visually-hidden text description for a more specific announcement where useful.</DocLead>
+        <DocLead>
+          Renders <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">role=&quot;status&quot;</code> with
+          an <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">aria-label</code> of &quot;Loading&quot; by
+          default — pass a more specific <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">label</code>{" "}
+          (e.g. &quot;Sending invoice…&quot;) where useful, so assistive tech gets a polite announcement without focus moving anywhere.
+        </DocLead>
       </DocSection>
     </div>
   );

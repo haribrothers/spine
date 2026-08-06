@@ -9,7 +9,7 @@ colors:
   neutral-100: "#F2F1EE"
   neutral-200: "#E7E5E0"
   neutral-300: "#D3D0C9"
-  neutral-500: "#8A8578"
+  neutral-500: "#726C5A" # WCAG AA pass (2026-08-06): darkened from #8A8578, which was 3.68:1 on surface / 3.26:1 on draft-bg — both fail 4.5:1 body text
   neutral-700: "#4B473E"
   neutral-900: "#211F1A"
   background: "#FFFFFF"
@@ -19,7 +19,7 @@ colors:
   on-surface-muted: "{colors.neutral-500}"
   border: "{colors.neutral-200}"
   border-strong: "{colors.neutral-300}"
-  paid: "#1A7F4B"
+  paid: "#177044" # WCAG AA pass (2026-08-06): darkened from #1A7F4B, 4.44:1 on paid-bg — failed 4.5:1
   paid-bg: "#E4F5EB"
   due-soon: "#9A6300"
   due-soon-bg: "#FCF0D4"
@@ -39,9 +39,9 @@ colors:
   category-red-bg: "#FBE6E4"
   category-purple: "#7C3AED"
   category-purple-bg: "#F1E9FE"
-  category-teal: "#0F7C7C"
+  category-teal: "#0D6E6E" # WCAG AA pass (2026-08-06): darkened from #0F7C7C, 4.41:1 on category-teal-bg — failed 4.5:1
   category-teal-bg: "#DFF5F5"
-  category-pink: "#C4408A"
+  category-pink: "#A63571" # WCAG AA pass (2026-08-06): darkened from #C4408A, 3.93:1 on category-pink-bg — failed 4.5:1
   category-pink-bg: "#FBE4F1"
   category-slate: "{colors.neutral-700}"
   category-slate-bg: "{colors.neutral-100}"

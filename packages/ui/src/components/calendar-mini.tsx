@@ -33,6 +33,7 @@ export function MiniCalendar({ selected, onSelect, className }: MiniCalendarProp
   const month = viewDate.getMonth();
   const firstWeekday = new Date(year, month, 1).getDay();
   const totalDays = daysInMonth(year, month);
+  const today = new Date();
 
   const cells: (Date | null)[] = [
     ...Array.from({ length: firstWeekday }, () => null),
@@ -46,7 +47,7 @@ export function MiniCalendar({ selected, onSelect, className }: MiniCalendarProp
           type="button"
           aria-label="Previous month"
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <ChevronLeft size={16} />
         </button>
@@ -57,34 +58,40 @@ export function MiniCalendar({ selected, onSelect, className }: MiniCalendarProp
           type="button"
           aria-label="Next month"
           onClick={() => setViewDate(new Date(year, month + 1, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface"
+          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <ChevronRight size={16} />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div role="grid" aria-label={viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })} className="grid grid-cols-7 gap-1">
         {WEEKDAY_LABELS.map((label) => (
-          <div key={label} className="flex h-7 items-center justify-center text-[11px] font-medium text-on-surface-muted">
+          <div key={label} role="columnheader" aria-hidden="true" className="flex h-7 items-center justify-center text-[11px] font-medium text-on-surface-muted">
             {label}
           </div>
         ))}
-        {cells.map((date, index) =>
-          date ? (
+        {cells.map((date, index) => {
+          if (!date) return <div key={`empty-${index}`} role="presentation" />;
+          const isSelected = Boolean(selected && isSameDay(date, selected));
+          const isToday = isSameDay(date, today);
+          return (
             <button
               key={date.toISOString()}
               type="button"
+              role="gridcell"
+              aria-selected={isSelected}
+              aria-current={isToday ? "date" : undefined}
+              aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
               onClick={() => onSelect(date)}
               className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-on-surface transition-colors hover:bg-surface-sunken",
-                selected && isSameDay(date, selected) && "bg-primary text-white hover:bg-primary-hover",
+                "flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                isToday && !isSelected && "font-semibold text-primary",
+                isSelected && "bg-primary text-white hover:bg-primary-hover",
               )}
             >
               {date.getDate()}
             </button>
-          ) : (
-            <div key={`empty-${index}`} />
-          ),
-        )}
+          );
+        })}
       </div>
     </div>
   );

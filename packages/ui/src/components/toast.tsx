@@ -22,7 +22,16 @@ export const ToastViewport = forwardRef<
 ));
 ToastViewport.displayName = "ToastViewport";
 
-/** Dark chrome, auto-dismissing — confirms an action succeeded, per §F0. Never carries a validation error (that's HelperText's job). */
+/**
+ * Dark chrome, auto-dismissing — confirms an action succeeded, per §F0.
+ * Never carries a validation error (that's HelperText's job). Uses the
+ * `inverse-*` tokens rather than `neutral-900`/hardcoded white: this chrome
+ * is deliberately dark regardless of the app's light/dark theme, but
+ * `neutral-900` itself is theme-*reactive* (it flips to near-white in dark
+ * mode per docs/DESIGN.md's dark palette) — pairing it with hardcoded white
+ * text used to collapse to ~1.1:1 contrast in dark mode (WCAG AA a11y pass,
+ * 2026-08-06).
+ */
 export const Toast = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>
@@ -30,7 +39,7 @@ export const Toast = forwardRef<
   <ToastPrimitive.Root
     ref={ref}
     className={cn(
-      "flex items-center justify-between gap-3 rounded-md bg-neutral-900 px-3.5 py-2.5 text-white shadow-[0_4px_14px_rgba(33,31,26,0.16)] transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
+      "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-[0_4px_14px_rgba(33,31,26,0.16)] transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
       className,
     )}
     {...props}
@@ -50,7 +59,7 @@ export const ToastDescription = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitive.Description>
 >(({ className, ...props }, ref) => (
-  <ToastPrimitive.Description ref={ref} className={cn("text-[12px] text-neutral-300", className)} {...props} />
+  <ToastPrimitive.Description ref={ref} className={cn("text-[12px] text-inverse-on-surface-muted", className)} {...props} />
 ));
 ToastDescription.displayName = "ToastDescription";
 
@@ -61,7 +70,10 @@ export const ToastClose = forwardRef<
   <ToastPrimitive.Close
     ref={ref}
     aria-label="Dismiss"
-    className={cn("shrink-0 text-neutral-400 transition-colors hover:text-white", className)}
+    className={cn(
+      "shrink-0 rounded-sm text-inverse-on-surface-muted transition-colors hover:text-inverse-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inverse-on-surface",
+      className,
+    )}
     {...props}
   >
     <X size={14} />

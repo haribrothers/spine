@@ -16,11 +16,17 @@ export function Breadcrumb({ items, className }: { items: BreadcrumbItem[]; clas
           <Fragment key={`${item.label}-${index}`}>
             {index > 0 && <ChevronRight size={14} className="text-on-surface-muted" />}
             {item.href && !isLast ? (
-              <a href={item.href} className="text-on-surface-muted transition-colors hover:text-on-surface">
+              <a
+                href={item.href}
+                className="rounded-sm text-on-surface-muted transition-colors hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 {item.label}
               </a>
             ) : (
-              <span className={isLast ? "font-medium text-on-surface" : "text-on-surface-muted"}>
+              <span
+                aria-current={isLast ? "page" : undefined}
+                className={isLast ? "font-medium text-on-surface" : "text-on-surface-muted"}
+              >
                 {item.label}
               </span>
             )}

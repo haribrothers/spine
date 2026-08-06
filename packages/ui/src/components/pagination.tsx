@@ -26,7 +26,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
         aria-label="Previous page"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken disabled:pointer-events-none disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40"
       >
         <ChevronLeft size={16} />
       </button>
@@ -37,7 +37,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
           onClick={() => onPageChange(p)}
           aria-current={p === page ? "page" : undefined}
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-medium transition-colors",
+            "flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             p === page
               ? "bg-primary text-white"
               : "text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface",
@@ -51,7 +51,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
         aria-label="Next page"
         disabled={page >= pageCount}
         onClick={() => onPageChange(page + 1)}
-        className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken disabled:pointer-events-none disabled:opacity-40"
+        className="flex h-8 w-8 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:pointer-events-none disabled:opacity-40"
       >
         <ChevronRight size={16} />
       </button>

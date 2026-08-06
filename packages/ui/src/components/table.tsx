@@ -66,6 +66,15 @@ export function Table<T>({ columns, data, rowKey, pageSize = 20, className }: Ta
               {columns.map((column) => (
                 <th
                   key={column.key}
+                  aria-sort={
+                    column.sortValue
+                      ? sort?.key === column.key
+                        ? sort.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                      : undefined
+                  }
                   className={cn(
                     "whitespace-nowrap px-3 py-2 font-medium text-on-surface-muted",
                     column.align === "right" ? "text-right" : "text-left",
@@ -76,7 +85,7 @@ export function Table<T>({ columns, data, rowKey, pageSize = 20, className }: Ta
                       type="button"
                       onClick={() => toggleSort(column.key)}
                       className={cn(
-                        "inline-flex items-center gap-1 hover:text-on-surface",
+                        "inline-flex items-center gap-1 rounded-sm hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                         column.align === "right" && "flex-row-reverse",
                       )}
                     >

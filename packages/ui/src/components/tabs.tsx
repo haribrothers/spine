@@ -25,7 +25,7 @@ export const TabsTrigger = forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "relative -mb-px border-b-2 border-transparent px-1 py-2.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface data-[state=active]:border-primary data-[state=active]:text-primary focus-visible:outline-none",
+      "relative -mb-px rounded-t-sm border-b-2 border-transparent px-1 py-2.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface data-[state=active]:border-primary data-[state=active]:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
       className,
     )}
     {...props}
@@ -37,6 +37,10 @@ export const TabsContent = forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content ref={ref} className={cn("pt-4 focus-visible:outline-none", className)} {...props} />
+  <TabsPrimitive.Content
+    ref={ref}
+    className={cn("rounded-sm pt-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", className)}
+    {...props}
+  />
 ));
 TabsContent.displayName = "TabsContent";

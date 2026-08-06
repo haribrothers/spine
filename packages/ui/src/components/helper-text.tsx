@@ -13,6 +13,7 @@ export interface HelperTextProps extends React.HTMLAttributes<HTMLParagraphEleme
 export function HelperText({ className, error = false, ...props }: HelperTextProps) {
   return (
     <p
+      role={error ? "alert" : undefined}
       className={cn(
         "text-[13px]",
         error ? "text-overdue" : "text-on-surface-muted",

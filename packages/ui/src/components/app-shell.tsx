@@ -93,7 +93,10 @@ export function AppShellSidebar({
                     item,
                     <>
                       <span className="shrink-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">{item.icon}</span>
-                      {!collapsed && <span className="truncate">{item.label}</span>}
+                      {/* Kept in the DOM (not unmounted) when collapsed so the
+                          icon-only rail still has an accessible name — see the
+                          matching fix/comment in sidebar.tsx's SidebarNavItem. */}
+                      <span className={cn("truncate", collapsed && "sr-only")}>{item.label}</span>
                     </>,
                   )}
                 </SidebarNavItem>
