@@ -20,6 +20,7 @@ import { NumberingModule } from "./modules/numbering/numbering.module";
 import { FilesModule } from "./modules/files/files.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AuditModule } from "./modules/audit/audit.module";
+import { DemoDataModule } from "./modules/demo-data/demo-data.module";
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AuditModule } from "./modules/audit/audit.module";
     FilesModule,
     NotificationsModule,
     AuditModule,
+    DemoDataModule,
   ],
 })
 export class AppModule {}

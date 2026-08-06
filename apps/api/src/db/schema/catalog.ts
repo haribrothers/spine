@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, real, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, boolean, real, timestamp, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization } from "./auth";
 import { accounts } from "./ledger";
@@ -65,6 +65,8 @@ export const catalogItems = pgTable(
     defaultTaxRatePercentage: real("default_tax_rate_percentage").notNull().default(0),
     incomeAccountId: uuid("income_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     expenseAccountId: uuid("expense_account_id").references(() => accounts.id, { onDelete: "restrict" }),
+    /** Same demo-data marker as contacts.isDemo — see that column's comment. */
+    isDemo: boolean("is_demo").notNull().default(false),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -75,5 +77,6 @@ export const catalogItems = pgTable(
     index("catalog_items_org_name_idx").on(table.orgId, table.name),
     index("catalog_items_income_account_idx").on(table.incomeAccountId),
     index("catalog_items_expense_account_idx").on(table.expenseAccountId),
+    index("catalog_items_org_demo_idx").on(table.orgId, table.isDemo),
   ],
 );

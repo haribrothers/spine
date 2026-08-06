@@ -63,6 +63,16 @@ export default function OnboardingPage() {
     }
   }
 
+  async function handleUseDemoDefaults() {
+    setLoading(true);
+    try {
+      await apiClient.post("/demo-data/seed");
+      await markOnboardingStatus({ skipped: true });
+    } finally {
+      goToDashboard();
+    }
+  }
+
   async function handleFinish() {
     setLoading(true);
     try {
@@ -104,7 +114,7 @@ export default function OnboardingPage() {
       {step === "welcome" && (
         <WelcomeStep
           onStartManual={() => setStep("profile")}
-          onUseDemoDefaults={handleSkip}
+          onUseDemoDefaults={handleUseDemoDefaults}
           onSkip={handleSkip}
         />
       )}

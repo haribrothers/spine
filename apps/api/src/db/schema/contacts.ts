@@ -63,6 +63,14 @@ export const contacts = pgTable(
      * contact itself.
      */
     logoFileId: uuid("logo_file_id").references(() => files.id, { onDelete: "set null" }),
+    /**
+     * Marks a row created by the onboarding "load demo data" seeder (see
+     * apps/api/src/modules/demo-data) rather than by a real user action.
+     * Lets Settings offer a "delete all demo data" action that only ever
+     * touches these rows, never real customer/vendor data. Not surfaced in
+     * any list UI — it's purely a filter key for that one bulk-delete op.
+     */
+    isDemo: boolean("is_demo").notNull().default(false),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -72,6 +80,7 @@ export const contacts = pgTable(
     index("contacts_org_type_idx").on(table.orgId, table.type),
     index("contacts_org_email_idx").on(table.orgId, table.email),
     index("contacts_org_phone_idx").on(table.orgId, table.phone),
+    index("contacts_org_demo_idx").on(table.orgId, table.isDemo),
   ],
 );
 

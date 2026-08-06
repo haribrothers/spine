@@ -5,6 +5,7 @@ import {
   Building2,
   Calendar,
   Coins,
+  Database,
   ListOrdered,
   Percent,
   Search,
@@ -21,6 +22,7 @@ import { TaxPane } from "../app/settings/panes/tax-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { TeamPane } from "../app/settings/panes/team-pane";
+import { DataPane } from "../app/settings/panes/data-pane";
 
 interface SettingsSection {
   key: string;
@@ -38,6 +40,7 @@ const SECTIONS: SettingsSection[] = [
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
   { key: "team", label: "Team", icon: <Users size={16} />, render: () => <TeamPane /> },
+  { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];
 
 /**

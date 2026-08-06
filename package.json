@@ -16,7 +16,8 @@
     "dev:infra:reset": "docker compose -f docker-compose.dev.yml down -v && pnpm dev:infra:up",
     "dev:infra:logs": "docker compose -f docker-compose.dev.yml logs -f",
     "db:migrate:dev": "pnpm --filter @spine/api db:migrate",
-    "db:seed:dev": "pnpm --filter @spine/api db:seed"
+    "db:seed:dev": "pnpm --filter @spine/api db:seed",
+    "db:reset:dev": "pnpm --filter @spine/api db:reset"
   },
   "devDependencies": {
     "turbo": "^2.3.0",
