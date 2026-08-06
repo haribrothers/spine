@@ -88,7 +88,7 @@
 
   --color-background: #121110;
   --color-surface: #191815;
-  --color-surface-sunken: var(--color-neutral-50);
+  --color-surface-sunken: var(--color-neutral-200);
   --color-on-surface: var(--color-neutral-900);
   --color-on-surface-muted: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
@@ -139,7 +139,7 @@
 
     --color-background: #121110;
     --color-surface: #191815;
-    --color-surface-sunken: var(--color-neutral-50);
+    --color-surface-sunken: var(--color-neutral-200);
     --color-on-surface: var(--color-neutral-900);
     --color-on-surface-muted: var(--color-neutral-500);
     --color-border: var(--color-neutral-200);

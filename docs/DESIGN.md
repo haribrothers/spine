@@ -57,7 +57,7 @@ colors-dark:
   neutral-900: "#F3F2EE"
   background: "#121110"
   surface: "#191815"
-  surface-sunken: "{colors.neutral-50}"
+  surface-sunken: "{colors.neutral-200}"
   on-surface: "{colors.neutral-900}"
   on-surface-muted: "{colors.neutral-500}"
   border: "{colors.neutral-200}"

@@ -12,7 +12,7 @@ import { cn } from "../lib/cn";
  * 44px minimum target required for the mobile field-companion app.
  */
 export const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:border disabled:border-border disabled:bg-transparent disabled:text-on-surface-muted",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-[13px] font-semibold transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:cursor-not-allowed disabled:border disabled:border-border disabled:bg-transparent disabled:text-on-surface-muted",
   {
     variants: {
       variant: {
