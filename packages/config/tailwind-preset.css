@@ -35,6 +35,23 @@
   --color-info: var(--color-primary);
   --color-info-bg: #eaeffd;
 
+  --color-category-blue: #2954e5;
+  --color-category-blue-bg: #eaeffd;
+  --color-category-green: #1a7f4b;
+  --color-category-green-bg: #e4f5eb;
+  --color-category-amber: #9a6300;
+  --color-category-amber-bg: #fcf0d4;
+  --color-category-red: #b3261e;
+  --color-category-red-bg: #fbe6e4;
+  --color-category-purple: #7c3aed;
+  --color-category-purple-bg: #f1e9fe;
+  --color-category-teal: #0f7c7c;
+  --color-category-teal-bg: #dff5f5;
+  --color-category-pink: #c4408a;
+  --color-category-pink-bg: #fbe4f1;
+  --color-category-slate: var(--color-neutral-700);
+  --color-category-slate-bg: var(--color-neutral-100);
+
   --radius-none: 0px;
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -88,6 +105,23 @@
 
   --color-info: var(--color-primary);
   --color-info-bg: #181f35;
+
+  --color-category-blue: #6b8aff;
+  --color-category-blue-bg: #181f35;
+  --color-category-green: #4ade94;
+  --color-category-green-bg: #132a1e;
+  --color-category-amber: #f2b23d;
+  --color-category-amber-bg: #332506;
+  --color-category-red: #f17b72;
+  --color-category-red-bg: #3a1512;
+  --color-category-purple: #b79cfb;
+  --color-category-purple-bg: #241a3d;
+  --color-category-teal: #4fd1d1;
+  --color-category-teal-bg: #0f2c2c;
+  --color-category-pink: #eb8fc4;
+  --color-category-pink-bg: #3a1b2c;
+  --color-category-slate: var(--color-neutral-700);
+  --color-category-slate-bg: var(--color-neutral-100);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -122,6 +156,23 @@
 
     --color-info: var(--color-primary);
     --color-info-bg: #181f35;
+
+    --color-category-blue: #6b8aff;
+    --color-category-blue-bg: #181f35;
+    --color-category-green: #4ade94;
+    --color-category-green-bg: #132a1e;
+    --color-category-amber: #f2b23d;
+    --color-category-amber-bg: #332506;
+    --color-category-red: #f17b72;
+    --color-category-red-bg: #3a1512;
+    --color-category-purple: #b79cfb;
+    --color-category-purple-bg: #241a3d;
+    --color-category-teal: #4fd1d1;
+    --color-category-teal-bg: #0f2c2c;
+    --color-category-pink: #eb8fc4;
+    --color-category-pink-bg: #3a1b2c;
+    --color-category-slate: var(--color-neutral-700);
+    --color-category-slate-bg: var(--color-neutral-100);
   }
 }
 
@@ -156,6 +207,23 @@
 
   --color-info: var(--color-info);
   --color-info-bg: var(--color-info-bg);
+
+  --color-category-blue: var(--color-category-blue);
+  --color-category-blue-bg: var(--color-category-blue-bg);
+  --color-category-green: var(--color-category-green);
+  --color-category-green-bg: var(--color-category-green-bg);
+  --color-category-amber: var(--color-category-amber);
+  --color-category-amber-bg: var(--color-category-amber-bg);
+  --color-category-red: var(--color-category-red);
+  --color-category-red-bg: var(--color-category-red-bg);
+  --color-category-purple: var(--color-category-purple);
+  --color-category-purple-bg: var(--color-category-purple-bg);
+  --color-category-teal: var(--color-category-teal);
+  --color-category-teal-bg: var(--color-category-teal-bg);
+  --color-category-pink: var(--color-category-pink);
+  --color-category-pink-bg: var(--color-category-pink-bg);
+  --color-category-slate: var(--color-category-slate);
+  --color-category-slate-bg: var(--color-category-slate-bg);
 
   --radius-none: var(--radius-none);
   --radius-sm: var(--radius-sm);

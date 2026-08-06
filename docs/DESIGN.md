@@ -29,6 +29,22 @@ colors:
   draft-bg: "{colors.neutral-100}"
   info: "#2954E5"
   info-bg: "#EAEFFD"
+  category-blue: "#2954E5"
+  category-blue-bg: "#EAEFFD"
+  category-green: "#1A7F4B"
+  category-green-bg: "#E4F5EB"
+  category-amber: "#9A6300"
+  category-amber-bg: "#FCF0D4"
+  category-red: "#B3261E"
+  category-red-bg: "#FBE6E4"
+  category-purple: "#7C3AED"
+  category-purple-bg: "#F1E9FE"
+  category-teal: "#0F7C7C"
+  category-teal-bg: "#DFF5F5"
+  category-pink: "#C4408A"
+  category-pink-bg: "#FBE4F1"
+  category-slate: "{colors.neutral-700}"
+  category-slate-bg: "{colors.neutral-100}"
 colors-dark:
   primary: "#6B8AFF"
   primary-hover: "#88A1FF"
@@ -56,6 +72,22 @@ colors-dark:
   draft-bg: "{colors.neutral-100}"
   info: "#6B8AFF"
   info-bg: "#181F35"
+  category-blue: "#6B8AFF"
+  category-blue-bg: "#181F35"
+  category-green: "#4ADE94"
+  category-green-bg: "#132A1E"
+  category-amber: "#F2B23D"
+  category-amber-bg: "#332506"
+  category-red: "#F17B72"
+  category-red-bg: "#3A1512"
+  category-purple: "#B79CFB"
+  category-purple-bg: "#241A3D"
+  category-teal: "#4FD1D1"
+  category-teal-bg: "#0F2C2C"
+  category-pink: "#EB8FC4"
+  category-pink-bg: "#3A1B2C"
+  category-slate: "{colors.neutral-700}"
+  category-slate-bg: "{colors.neutral-100}"
 typography:
   display:
     fontFamily: Inter
@@ -287,6 +319,7 @@ Spine is also explicitly **self-hosted and white-labelable** (§S-10.4/S-10.5 of
 - **Background vs. surface:** `background` is the page canvas; `surface` is card/panel content, identical to background in light mode (flat, not tonal-layered) but distinct in dark mode (see below) so raised content still reads as a step up from the page.
 - **Financial-status semantics (reserved, domain-critical):** Paid (`#1A7F4B` on `#E4F5EB`), Due soon (`#9A6300` on `#FCF0D4`), Overdue (`#B3261E` on `#FBE6E4`), Draft (neutral, no color meaning — it hasn't happened yet). These map directly to invoice/quote/job status across every surface — dashboard stat cards, AR aging, the invoice list, the PDF itself — and are **never** repurposed for anything else, exactly the way the PRD's own domain treats a paid invoice as a fact, not a design opinion. A self-hoster may recolor `primary`; they must never be given an easy way to recolor these three, since a red "paid" chip would actively mislead someone glancing at their own books.
 - **Info (`#2954E5` on `#EAEFFD`):** neutral system messages only (e.g. "email queued for retry, SMTP is unreachable" per the PRD's graceful-degradation model) — intentionally the same hue as `primary` since both mean "the system, speaking calmly," but never used where a financial-status color would be the correct read.
+- **Event categories (`category-blue`/`green`/`amber`/`red`/`purple`/`teal`/`pink`/`slate`, each with a paired `-bg`):** a fixed, non-semantic palette for user-assigned labels on Calendar events (e.g. "Site visit," "Invoice due," "Internal") — deliberately a separate layer from the financial-status colors even though some hues overlap (`category-green`/`-red` reuse the same hex as `paid`/`overdue`), since an event's color is a user's free choice of label, not a system-derived fact the way a paid/overdue chip is. Calendar is the only component allowed to read these tokens for categorization; nothing else in the product should repurpose them for status.
 
 ### Dark mode
 

@@ -3,7 +3,7 @@
 import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { cn } from "../lib/cn";
-import { Calendar } from "./calendar";
+import { MiniCalendar } from "./calendar-mini";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
 
 export interface DatePickerProps {
@@ -34,7 +34,7 @@ export function DatePicker({ value, onChange, placeholder = "Pick a date", class
         </button>
       </PopoverTrigger>
       <PopoverContent align="start">
-        <Calendar
+        <MiniCalendar
           selected={value}
           onSelect={(date) => {
             onChange(date);
