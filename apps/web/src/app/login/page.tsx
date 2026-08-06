@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   Alert,
   AlertDescription,
@@ -46,7 +47,23 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
+      <Image
+        src="/spine-logo-horizontal.png"
+        alt="Spine"
+        width={140}
+        height={41}
+        priority
+        className="dark:hidden"
+      />
+      <Image
+        src="/spine-logo-horizontal-light.png"
+        alt="Spine"
+        width={140}
+        height={41}
+        priority
+        className="hidden dark:block"
+      />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Log in</CardTitle>

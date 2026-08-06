@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import Image from "next/image";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
 import { apiClient } from "../../lib/api-client";
 import { BusinessProfileStep, type BusinessProfileValue } from "./steps/business-profile-step";
 import { WelcomeStep } from "./steps/welcome-step";
@@ -13,9 +14,8 @@ import { TaxRateStep, type TaxRateValue } from "./steps/tax-rate-step";
 import { NumberingStep, type NumberingSequenceValue } from "./steps/numbering-step";
 import { ChartOfAccountsStep, type AccountsByType } from "./steps/chart-of-accounts-step";
 import { InviteTeamStep, type MemberRole } from "./steps/invite-team-step";
-import { WizardStepper, type WizardStepDef } from "./wizard-stepper";
 
-const STEP_DEFS: WizardStepDef[] = [
+const STEP_DEFS: StepperStepDef[] = [
   { key: "profile", label: "Business" },
   { key: "template", label: "Template" },
   { key: "currency", label: "Currency" },
@@ -75,9 +75,25 @@ export default function OnboardingPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 p-4 py-10">
+      <Image
+        src="/spine-logo-horizontal.png"
+        alt="Spine"
+        width={140}
+        height={41}
+        priority
+        className="dark:hidden"
+      />
+      <Image
+        src="/spine-logo-horizontal-light.png"
+        alt="Spine"
+        width={140}
+        height={41}
+        priority
+        className="hidden dark:block"
+      />
       {step !== "welcome" && (
         <div className="w-full max-w-2xl">
-          <WizardStepper steps={STEP_DEFS} currentIndex={currentIndex} />
+          <Stepper steps={STEP_DEFS} currentIndex={currentIndex} />
         </div>
       )}
 

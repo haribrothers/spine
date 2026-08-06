@@ -55,6 +55,7 @@ export * from "./components/slider";
 export * from "./components/spinner";
 export * from "./components/stat-card";
 export * from "./components/status-chip";
+export * from "./components/stepper";
 export * from "./components/switch";
 export * from "./components/table";
 export * from "./components/tabs";

@@ -117,6 +117,7 @@ export const nav: TopLevelSection[] = [
           { title: "Alert", href: "/components/alert" },
           { title: "Toast", href: "/components/toast" },
           { title: "Progress", href: "/components/progress" },
+          { title: "Stepper", href: "/components/stepper" },
           { title: "Spinner", href: "/components/spinner" },
           { title: "EmptyState", href: "/components/empty-state" },
           { title: "Skeleton", href: "/components/skeleton" },
