@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
+import { ContactLogo } from "./contact-logo";
 import { ContactRowActions } from "./contact-row-actions";
 import type { Contact } from "./types";
 
@@ -24,8 +25,9 @@ export function ContactsTable({ contacts, onChanged }: { contacts: Contact[]; on
       key: "name",
       header: "Name",
       render: (row) => (
-        <Link href={`/contacts/${row.id}`} className="font-medium text-on-surface hover:text-primary hover:underline">
-          {row.name}
+        <Link href={`/contacts/${row.id}`} className="flex items-center gap-2.5">
+          <ContactLogo name={row.name} fileId={row.logoFileId} size="md" editable={false} onUploaded={() => {}} />
+          <span className="font-medium text-on-surface hover:text-primary hover:underline">{row.name}</span>
         </Link>
       ),
       sortValue: (row) => row.name,
@@ -49,7 +51,12 @@ export function ContactsTable({ contacts, onChanged }: { contacts: Contact[]; on
     {
       key: "status",
       header: "Status",
-      render: (row) => (row.archivedAt ? <Badge>Archived</Badge> : null),
+      render: (row) =>
+        row.archivedAt ? (
+          <Badge>Archived</Badge>
+        ) : (
+          <Badge className="bg-transparent text-on-surface-muted">Active</Badge>
+        ),
     },
     {
       key: "actions",

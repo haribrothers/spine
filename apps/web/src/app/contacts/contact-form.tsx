@@ -5,7 +5,6 @@ import { useState } from "react";
 import {
   Alert,
   AlertDescription,
-  Button,
   Checkbox,
   FormField,
   Input,
@@ -14,10 +13,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../lib/api-client";
-import type { Contact, ContactType } from "./types";
+import { ContactLogo } from "./contact-logo";
+import type { Contact, ContactType, SpineFile } from "./types";
 
 const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
   { value: "customer", label: "Customer" },
@@ -32,13 +31,20 @@ const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
  * keeps the create step to what's required per F1's MUST, matching how the
  * API's create endpoint accepts them optionally but doesn't require them.
  *
- * Reused both as the (redirect-only) `/contacts/new` route's content and
- * inside the list page's create Drawer (see contact-create-drawer.tsx) —
- * `onSuccess` lets the drawer close itself and refresh the list instead of
- * this form always navigating away, while the bare-route usage (no
- * `onSuccess` passed) keeps its original navigate-to-detail behavior.
+ * Only ever rendered inside the list page's create Drawer now
+ * (contact-create-drawer.tsx) — `/contacts/new` just redirects into it. The
+ * submit button lives in the Drawer's own sticky DrawerFooter, not in this
+ * form's markup: the form has `id={formId}` and the footer's Save button
+ * references it via the standard HTML `form="..."` attribute, so a button
+ * physically outside the scrollable body can still submit it.
+ *
+ * The logo upload reuses `ContactLogo` exactly as contact-persons-section.tsx
+ * does for a new person: the contact doesn't have an id yet, so the file is
+ * uploaded independently up front and its id is held in local state, then
+ * included in the create payload once the rest of the form is submitted —
+ * not attached via a follow-up PUT the way an existing contact's logo is.
  */
-export function ContactForm({ onSuccess }: { onSuccess?: (contact: Contact) => void }) {
+export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId: string; onSubmittingChange?: (saving: boolean) => void; onSuccess?: (contact: Contact) => void }) {
   const router = useRouter();
   const [type, setType] = useState<ContactType>("customer");
   const [isCompany, setIsCompany] = useState(false);
@@ -47,12 +53,12 @@ export function ContactForm({ onSuccess }: { onSuccess?: (contact: Contact) => v
   const [phone, setPhone] = useState("");
   const [taxId, setTaxId] = useState("");
   const [website, setWebsite] = useState("");
-  const [saving, setSaving] = useState(false);
+  const [logoFileId, setLogoFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
+    onSubmittingChange?.(true);
     setError(null);
     try {
       const contact = await apiClient.post<Contact>("/contacts", {
@@ -63,6 +69,7 @@ export function ContactForm({ onSuccess }: { onSuccess?: (contact: Contact) => v
         phone: phone || undefined,
         taxId: taxId || undefined,
         website: website || undefined,
+        logoFileId: logoFileId || undefined,
       });
       if (onSuccess) {
         onSuccess(contact);
@@ -77,17 +84,24 @@ export function ContactForm({ onSuccess }: { onSuccess?: (contact: Contact) => v
       router.push(`/contacts/${contact.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create contact.");
-      setSaving(false);
+      onSubmittingChange?.(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
+    <form id={formId} onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
+
+      <ContactLogo
+        name={name || "New contact"}
+        fileId={logoFileId}
+        editable
+        onUploaded={(file: SpineFile) => setLogoFileId(file.id)}
+      />
 
       <FormField label="Type" required>
         {(field) => (
@@ -130,10 +144,6 @@ export function ContactForm({ onSuccess }: { onSuccess?: (contact: Contact) => v
       <FormField label="Website">
         {(field) => <Input {...field} type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />}
       </FormField>
-
-      <Button type="submit" disabled={saving} className="mt-1 self-start">
-        {saving ? <Spinner size="sm" /> : "Save contact"}
-      </Button>
     </form>
   );
 }

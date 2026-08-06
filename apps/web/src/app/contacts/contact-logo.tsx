@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage, Spinner } from "@spine/ui";
 import { Camera } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
+import { LogoCropDialog } from "./logo-crop-dialog";
 import type { SpineFile } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -19,13 +20,17 @@ function initials(name: string) {
 
 /**
  * A clickable avatar/logo slot — Phase 1's file-upload endpoint wired into
- * Phase 3's contact detail header. Clicking opens a native file picker,
- * uploads via `POST /files` (multipart), then calls `onUploaded` with the
- * new file's id so the caller can persist it onto `contact.logoFileId` via
- * the existing `PUT /contacts/:id`. `GET /files/:id` 302-redirects to a
- * signed URL — used directly as the `<img src>`, since the browser follows
- * the redirect transparently and the API's own session cookie already
- * authenticates the request (no separate token to thread through).
+ * Phase 3's contact detail header. Clicking opens a native file picker;
+ * the picked file is not uploaded immediately — it's first handed to
+ * `LogoCropDialog` (a 1:1 crop-and-resize step, see that file) and only
+ * the resulting cropped/compressed image is uploaded via `POST /files`
+ * (multipart). `onUploaded` fires with the new file's id exactly as
+ * before, so callers persist it onto `contact.logoFileId` via the
+ * existing `PUT /contacts/:id` unchanged. `GET /files/:id` 302-redirects
+ * to a signed URL — used directly as the `<img src>`, since the browser
+ * follows the redirect transparently and the API's own session cookie
+ * already authenticates the request (no separate token to thread
+ * through).
  */
 export function ContactLogo({
   name,
@@ -43,18 +48,39 @@ export function ContactLogo({
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pickedImageSrc, setPickedImageSrc] = useState<string | null>(null);
 
-  async function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
+  // Revoke the object URL whenever it's replaced/cleared, so picking
+  // several files in a row (cancel, pick again) doesn't leak blob: URLs.
+  useEffect(() => {
+    return () => {
+      if (pickedImageSrc) URL.revokeObjectURL(pickedImageSrc);
+    };
+  }, [pickedImageSrc]);
+
+  function handleFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    setError(null);
+    setPickedImageSrc(URL.createObjectURL(file));
+  }
+
+  function closeCropDialog() {
+    if (pickedImageSrc) URL.revokeObjectURL(pickedImageSrc);
+    setPickedImageSrc(null);
+  }
+
+  async function handleCropConfirm(croppedFile: File) {
     setUploading(true);
     setError(null);
     try {
-      const uploaded = await apiClient.upload<SpineFile>("/files", file);
+      const uploaded = await apiClient.upload<SpineFile>("/files", croppedFile);
       onUploaded(uploaded);
+      closeCropDialog();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not upload logo.");
+      throw err; // keep the dialog open so the user can retry Save
     } finally {
       setUploading(false);
     }
@@ -91,6 +117,14 @@ export function ContactLogo({
         />
       )}
       {error && <span className="text-[11px] text-overdue">{error}</span>}
+      {editable && (
+        <LogoCropDialog
+          open={pickedImageSrc !== null}
+          imageSrc={pickedImageSrc}
+          onCancel={closeCropDialog}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 }

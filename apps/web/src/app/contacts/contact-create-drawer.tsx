@@ -1,6 +1,17 @@
 "use client";
 
-import { Drawer, DrawerBody, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from "@spine/ui";
+import {
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  Spinner,
+} from "@spine/ui";
+import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ContactForm } from "./contact-form";
 import type { Contact } from "./types";
@@ -23,6 +34,8 @@ export function ContactCreateDrawer({
   onCreated: (contact: Contact) => void;
 }) {
   const router = useRouter();
+  const formId = useId();
+  const [saving, setSaving] = useState(false);
 
   function handleSuccess(contact: Contact) {
     onOpenChange(false);
@@ -42,8 +55,16 @@ export function ContactCreateDrawer({
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
-          <ContactForm onSuccess={handleSuccess} />
+          <ContactForm formId={formId} onSubmittingChange={setSaving} onSuccess={handleSuccess} />
         </DrawerBody>
+        <DrawerFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="submit" form={formId} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : "Save contact"}
+          </Button>
+        </DrawerFooter>
       </DrawerContent>
     </Drawer>
   );
