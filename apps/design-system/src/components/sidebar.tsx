@@ -11,7 +11,7 @@ export function Sidebar() {
   if (!activeTop) return null;
 
   return (
-    <nav className="w-56 shrink-0 space-y-6 py-8 pr-4">
+    <nav className="sticky top-14 h-[calc(100vh-3.5rem)] w-56 shrink-0 space-y-6 overflow-y-auto py-8 pr-4">
       {activeTop.sections.map((section) => (
         <div key={section.title}>
           <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted">

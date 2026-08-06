@@ -29,7 +29,7 @@ export function OnThisPage() {
   if (headings.length === 0) return null;
 
   return (
-    <nav className="w-48 shrink-0 py-8 pl-4">
+    <nav className="sticky top-14 h-[calc(100vh-3.5rem)] w-48 shrink-0 overflow-y-auto py-8 pl-4">
       <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted">
         On this page
       </h3>
