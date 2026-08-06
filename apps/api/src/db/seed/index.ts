@@ -2,7 +2,6 @@ import { auth } from "../../auth/auth";
 import { createDb } from "../client";
 import { member, organization } from "../schema";
 import { eq } from "drizzle-orm";
-import { seedChartOfAccounts } from "./chart-of-accounts";
 
 async function main() {
   const databaseUrl = process.env.DATABASE_URL;
@@ -18,8 +17,10 @@ async function main() {
 
   // Signing up (rather than inserting rows directly) exercises the same
   // path a real user takes and triggers the databaseHooks.user.create.after
-  // hook in src/auth/auth.ts, which creates the org and makes this user its
-  // owner — so the seeded org is identical in shape to any real signup.
+  // hook in src/auth/auth.ts, which creates the org, makes this user its
+  // owner, AND seeds the chart of accounts — so the seeded org is identical
+  // in shape to any real signup with no separate seedChartOfAccounts call
+  // needed here anymore.
   const signUpResult = await auth.api.signUpEmail({ body: { email, password, name } });
   const userId = signUpResult.user.id;
 
@@ -33,9 +34,7 @@ async function main() {
     throw new Error("Failed to find seed organisation");
   }
 
-  await seedChartOfAccounts(db, org.id);
-
-  console.log(`Seeded chart of accounts for org ${org.id} (${org.name})`);
+  console.log(`Seeded org ${org.id} (${org.name}) with chart of accounts via the signup hook`);
   console.log(`Demo owner login: ${email} / ${password}`);
   process.exit(0);
 }

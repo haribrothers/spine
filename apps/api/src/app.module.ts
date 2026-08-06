@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { auth } from "./auth/auth";
+import { DbModule } from "./db/db.module";
 import { HealthModule } from "./health/health.module";
 import { OrgModule } from "./modules/org/org.module";
 import { UsersModule } from "./modules/users/users.module";
@@ -23,6 +24,7 @@ import { AuditModule } from "./modules/audit/audit.module";
 @Module({
   imports: [
     AuthModule.forRoot({ auth, isGlobal: true }),
+    DbModule,
     HealthModule,
     OrgModule,
     UsersModule,
