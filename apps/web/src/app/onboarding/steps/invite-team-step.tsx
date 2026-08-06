@@ -20,6 +20,8 @@ export type MemberRole = "owner" | "staff" | "field";
 export interface InviteTeamStepProps {
   onInvite: (email: string, role: MemberRole) => Promise<void>;
   onFinish: () => void;
+  /** Hides the bottom "Skip/Finish" footer entirely — Settings has nothing to finish or skip, it just re-fetches the member list after each invite via onInvite. */
+  hideFooter?: boolean;
 }
 
 /**
@@ -29,7 +31,7 @@ export interface InviteTeamStepProps {
  * organization invitation API — see apps/api/src/modules/org/invitations.controller.ts),
  * so the list of invites sent so far is local UI state, not re-fetched.
  */
-export function InviteTeamStep({ onInvite, onFinish }: InviteTeamStepProps) {
+export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: InviteTeamStepProps) {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<MemberRole>("staff");
   const [sending, setSending] = useState(false);
@@ -101,9 +103,11 @@ export function InviteTeamStep({ onInvite, onFinish }: InviteTeamStepProps) {
         </ul>
       )}
 
-      <div className="mt-2 flex justify-end">
-        <Button onClick={onFinish}>{sent.length > 0 ? "Finish" : "Skip — finish setup"}</Button>
-      </div>
+      {!hideFooter && (
+        <div className="mt-2 flex justify-end">
+          <Button onClick={onFinish}>{sent.length > 0 ? "Finish" : "Skip — finish setup"}</Button>
+        </div>
+      )}
     </div>
   );
 }

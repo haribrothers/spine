@@ -106,6 +106,20 @@ export const member = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     role: text("role").default("member").notNull(),
     createdAt: timestamp("created_at").notNull(),
+    /**
+     * S-10.3 — "deactivate a user without deleting their history". This is
+     * deliberately an app-owned column on Better Auth's `member` table, not
+     * Better Auth's own admin-plugin `user.banned` field: that field is
+     * global/instance-wide (bans the person everywhere), whereas
+     * deactivation here must be per-organisation membership — it only
+     * revokes this org's access and must never touch journal lines, audit
+     * entries, or anything else keyed by `user_id`. Better Auth has no
+     * built-in per-membership disable, so this is the minimal addition.
+     * A deactivated member's session is rejected by an org-role check
+     * (deactivated members carry no usable role), not by deleting the row.
+     */
+    isActive: boolean("is_active").default(true).notNull(),
+    deactivatedAt: timestamp("deactivated_at"),
   },
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),

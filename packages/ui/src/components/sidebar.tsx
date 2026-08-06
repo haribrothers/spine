@@ -1,5 +1,6 @@
 "use client";
 
+import { Slot } from "@radix-ui/react-slot";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "../lib/cn";
 
@@ -111,10 +112,20 @@ export function SidebarFooter({ className, ...props }: React.HTMLAttributes<HTML
 }
 
 export interface SidebarNavItemProps extends React.HTMLAttributes<HTMLButtonElement> {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   active?: boolean;
   disabled?: boolean;
   collapsed?: boolean;
+  /**
+   * Render as the child element (e.g. a Next.js `<Link>`) instead of a
+   * `<button>`, via Radix Slot — lets a router-aware anchor carry these
+   * styles/active-state without @spine/ui depending on next/link. Slot
+   * requires exactly one child element, so in this mode pass the fully
+   * composed icon+label markup as `children` of that single element
+   * yourself (the `icon` prop is ignored — it only applies to the default
+   * `<button>` rendering).
+   */
+  asChild?: boolean;
 }
 
 /** A single sidebar row — icon + label, active state per the nav-item-active token. Disabled items render greyed-out, not omitted. */
@@ -123,20 +134,31 @@ export function SidebarNavItem({
   active = false,
   disabled = false,
   collapsed = false,
+  asChild = false,
   className,
   children,
   ...props
 }: SidebarNavItemProps) {
+  const itemClassName = cn(
+    "flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    active ? "bg-surface-sunken text-primary" : "text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface",
+    className,
+  );
+
+  if (asChild) {
+    return (
+      <Slot aria-current={active ? "page" : undefined} className={itemClassName} {...props}>
+        {children}
+      </Slot>
+    );
+  }
+
   return (
     <button
       type="button"
       disabled={disabled}
       aria-current={active ? "page" : undefined}
-      className={cn(
-        "flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
-        active ? "bg-surface-sunken text-primary" : "text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface",
-        className,
-      )}
+      className={itemClassName}
       {...props}
     >
       <span className="shrink-0 [&_svg]:h-[18px] [&_svg]:w-[18px]">{icon}</span>

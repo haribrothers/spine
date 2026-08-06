@@ -17,10 +17,12 @@ export interface FinancialYearStepProps {
   initialValue: FinancialYearValue;
   onSave: (value: FinancialYearValue) => Promise<void>;
   onSkip?: () => void;
+  /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
+  saveLabel?: string;
 }
 
 /** S-12.4 (financial year half). Month + day-of-month picker — sequences reset annually on this date per §14.3. */
-export function FinancialYearStep({ initialValue, onSave, onSkip }: FinancialYearStepProps) {
+export function FinancialYearStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: FinancialYearStepProps) {
   const [month, setMonth] = useState(initialValue.month || 1);
   const [day, setDay] = useState(initialValue.day || 1);
   const [saving, setSaving] = useState(false);
@@ -76,7 +78,7 @@ export function FinancialYearStep({ initialValue, onSave, onSkip }: FinancialYea
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : "Continue"}
+          {saving ? <Spinner size="sm" /> : saveLabel}
         </Button>
       </div>
     </div>

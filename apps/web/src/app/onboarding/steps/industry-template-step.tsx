@@ -27,6 +27,8 @@ export interface IndustryTemplateStepProps {
   initialValue: IndustryTemplate;
   onSave: (value: IndustryTemplate) => Promise<void>;
   onSkip?: () => void;
+  /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
+  saveLabel?: string;
 }
 
 /**
@@ -36,7 +38,7 @@ export interface IndustryTemplateStepProps {
  * a setting. The downstream effect (Construction surfacing
  * milestones/retention) is explicitly Phase 3 territory and not built here.
  */
-export function IndustryTemplateStep({ initialValue, onSave, onSkip }: IndustryTemplateStepProps) {
+export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: IndustryTemplateStepProps) {
   const [value, setValue] = useState<IndustryTemplate>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -77,7 +79,7 @@ export function IndustryTemplateStep({ initialValue, onSave, onSkip }: IndustryT
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : "Continue"}
+          {saving ? <Spinner size="sm" /> : saveLabel}
         </Button>
       </div>
     </div>

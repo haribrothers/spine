@@ -58,6 +58,10 @@ export const nav: TopLevelSection[] = [
           { title: "Section", href: "/layouts/section" },
         ],
       },
+      {
+        title: "Application shell",
+        items: [{ title: "AppShell", href: "/components/app-shell" }],
+      },
     ],
   },
   {

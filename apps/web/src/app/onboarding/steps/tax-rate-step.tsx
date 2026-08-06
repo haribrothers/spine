@@ -12,6 +12,8 @@ export interface TaxRateStepProps {
   initialValue: TaxRateValue;
   onSave: (value: TaxRateValue) => Promise<void>;
   onSkip?: () => void;
+  /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
+  saveLabel?: string;
 }
 
 /**
@@ -19,7 +21,7 @@ export interface TaxRateStepProps {
  * / inclusive-exclusive pricing is FEAT-08, explicitly out of scope here —
  * this step exists only so the first quote can price correctly.
  */
-export function TaxRateStep({ initialValue, onSave, onSkip }: TaxRateStepProps) {
+export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: TaxRateStepProps) {
   const [name, setName] = useState(initialValue.name || "Tax");
   const [percentage, setPercentage] = useState(String(initialValue.percentage ?? 0));
   const [saving, setSaving] = useState(false);
@@ -62,7 +64,7 @@ export function TaxRateStep({ initialValue, onSave, onSkip }: TaxRateStepProps) 
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : "Continue"}
+          {saving ? <Spinner size="sm" /> : saveLabel}
         </Button>
       </div>
     </div>

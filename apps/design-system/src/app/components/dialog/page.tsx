@@ -107,6 +107,7 @@ export default () => (
           <DocLead>Contains content to be rendered when the dialog is open, including a built-in close button.</DocLead>
           <ApiTable
             rows={[
+              { prop: "size", type: '"md" | "lg"', defaultValue: '"md"' },
               { prop: "onOpenAutoFocus", type: "(event: Event) => void" },
               { prop: "onCloseAutoFocus", type: "(event: Event) => void" },
               { prop: "onEscapeKeyDown", type: "(event: KeyboardEvent) => void" },
@@ -172,6 +173,41 @@ export default () => (
             </Dialog>
           </ComponentPreview>
         </DocSubsection>
+      </DocSection>
+
+      <DocSection id="sizes" title="Sizes">
+        <DocLead>
+          <code>size=&quot;lg&quot;</code> is a large, tall, unpadded panel for multi-pane content — e.g. a
+          settings dialog with a left nav list and a right content pane. Panes are responsible for their
+          own padding since the default padding is dropped at this size.
+        </DocLead>
+        <ComponentPreview
+          code={`<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="secondary">Open settings</Button>
+  </DialogTrigger>
+  <DialogContent size="lg">
+    <div className="flex h-full">
+      <div className="w-56 shrink-0 border-r border-border p-4">Nav</div>
+      <div className="flex-1 overflow-y-auto p-6">Content</div>
+    </div>
+  </DialogContent>
+</Dialog>`}
+        >
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary">Open settings</Button>
+            </DialogTrigger>
+            <DialogContent size="lg">
+              <div className="flex h-full">
+                <div className="w-56 shrink-0 border-r border-border p-4 text-[13px] text-on-surface-muted">
+                  Nav
+                </div>
+                <div className="flex-1 overflow-y-auto p-6 text-[13px] text-on-surface-muted">Content</div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </ComponentPreview>
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">

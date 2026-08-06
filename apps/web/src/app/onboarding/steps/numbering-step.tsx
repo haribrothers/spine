@@ -23,10 +23,12 @@ export interface NumberingStepProps {
   initialValue: NumberingSequenceValue[];
   onSave: (value: NumberingSequenceValue[]) => Promise<void>;
   onSkip?: () => void;
+  /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
+  saveLabel?: string;
 }
 
 /** S-10.5 / numbering step of the wizard — prefix + padding + starting number per document type, per §14.3's canonical list. */
-export function NumberingStep({ initialValue, onSave, onSkip }: NumberingStepProps) {
+export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: NumberingStepProps) {
   const [rows, setRows] = useState<NumberingSequenceValue[]>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -113,7 +115,7 @@ export function NumberingStep({ initialValue, onSave, onSkip }: NumberingStepPro
           </Button>
         )}
         <Button onClick={handleContinue} disabled={saving} className="ml-auto">
-          {saving ? <Spinner size="sm" /> : "Continue"}
+          {saving ? <Spinner size="sm" /> : saveLabel}
         </Button>
       </div>
     </div>
