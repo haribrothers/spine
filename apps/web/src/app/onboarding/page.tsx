@@ -76,7 +76,7 @@ export default function OnboardingPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 p-4 py-10">
-      <div className="flex w-full max-w-2xl items-center justify-between">
+      <div className="flex w-full max-w-2xl items-center justify-center">
         <Image
           src="/spine-logo-horizontal.png"
           alt="Spine"
@@ -93,8 +93,8 @@ export default function OnboardingPage() {
           priority
           className="hidden dark:block"
         />
-        <ThemeToggle />
       </div>
+      <ThemeToggle />
       {step !== "welcome" && (
         <div className="w-full max-w-2xl">
           <Stepper steps={STEP_DEFS} currentIndex={currentIndex} />
