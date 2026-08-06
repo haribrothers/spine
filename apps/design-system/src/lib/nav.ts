@@ -50,7 +50,13 @@ export const nav: TopLevelSection[] = [
     sections: [
       {
         title: "Structural primitives",
-        items: [{ title: "Box, Flex, Grid, Container, Section", href: "/layouts/primitives" }],
+        items: [
+          { title: "Box", href: "/layouts/box" },
+          { title: "Flex", href: "/layouts/flex" },
+          { title: "Grid", href: "/layouts/grid" },
+          { title: "Container", href: "/layouts/container" },
+          { title: "Section", href: "/layouts/section" },
+        ],
       },
     ],
   },
@@ -124,6 +130,7 @@ export const nav: TopLevelSection[] = [
           { title: "DataList", href: "/components/data-list" },
           { title: "Table", href: "/components/table" },
           { title: "DataTable", href: "/components/data-table" },
+          { title: "Calendar", href: "/components/calendar" },
           { title: "Chart", href: "/components/chart" },
           { title: "Carousel", href: "/components/carousel" },
           { title: "Avatar", href: "/components/avatar" },
