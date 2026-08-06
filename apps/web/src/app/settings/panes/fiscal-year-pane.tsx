@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { FinancialYearStep, type FinancialYearValue } from "../../onboarding/steps/financial-year-step";
 import { useSettingsValue } from "../use-settings-value";
@@ -21,22 +21,20 @@ export function FiscalYearPane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Financial year</CardTitle>
-        <CardDescription>Number sequences reset annually on this date by default.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <FinancialYearStep
-          initialValue={value}
-          saveLabel="Save"
-          onSave={async (v) => {
-            await apiClient.put("/org/settings/financial_year_start", { value: v });
-            setSaved(true);
-          }}
-        />
-      </CardContent>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Financial year</h2>
+        <p className="text-[13px] text-on-surface-muted">Number sequences reset annually on this date by default.</p>
+      </div>
+      <FinancialYearStep
+        initialValue={value}
+        saveLabel="Save"
+        onSave={async (v) => {
+          await apiClient.put("/org/settings/financial_year_start", { value: v });
+          setSaved(true);
+        }}
+      />
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </Card>
+    </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { IndustryTemplateStep, type IndustryTemplate } from "../../onboarding/steps/industry-template-step";
 import { useSettingsValue } from "../use-settings-value";
@@ -21,21 +21,19 @@ export function TemplatePane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Industry template</CardTitle>
-        <CardDescription>Pre-sets sensible defaults — you can change anything here at any time.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <IndustryTemplateStep
-          initialValue={value.template}
-          onSave={async (template) => {
-            await apiClient.put("/org/settings/industry_template", { value: { template } });
-            setSaved(true);
-          }}
-        />
-      </CardContent>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Industry template</h2>
+        <p className="text-[13px] text-on-surface-muted">Pre-sets sensible defaults — you can change anything here at any time.</p>
+      </div>
+      <IndustryTemplateStep
+        initialValue={value.template}
+        onSave={async (template) => {
+          await apiClient.put("/org/settings/industry_template", { value: { template } });
+          setSaved(true);
+        }}
+      />
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </Card>
+    </div>
   );
 }

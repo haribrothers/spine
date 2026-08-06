@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { ChartOfAccountsStep, type AccountsByType } from "../../onboarding/steps/chart-of-accounts-step";
 
@@ -39,28 +39,26 @@ export function AccountsPane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Chart of accounts</CardTitle>
-        <CardDescription>System accounts can&apos;t be renamed.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ChartOfAccountsStep
-          accounts={accounts}
-          onRename={async (accountId, name) => {
-            await apiClient.put(`/org/accounts/${accountId}`, { name });
-            setAccounts((prev) => {
-              if (!prev) return prev;
-              const next: AccountsByType = {};
-              for (const [type, rows] of Object.entries(prev)) {
-                next[type] = rows.map((row) => (row.id === accountId ? { ...row, name } : row));
-              }
-              return next;
-            });
-          }}
-          onContinue={() => {}}
-        />
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Chart of accounts</h2>
+        <p className="text-[13px] text-on-surface-muted">System accounts can&apos;t be renamed.</p>
+      </div>
+      <ChartOfAccountsStep
+        accounts={accounts}
+        onRename={async (accountId, name) => {
+          await apiClient.put(`/org/accounts/${accountId}`, { name });
+          setAccounts((prev) => {
+            if (!prev) return prev;
+            const next: AccountsByType = {};
+            for (const [type, rows] of Object.entries(prev)) {
+              next[type] = rows.map((row) => (row.id === accountId ? { ...row, name } : row));
+            }
+            return next;
+          });
+        }}
+        onContinue={() => {}}
+      />
+    </div>
   );
 }

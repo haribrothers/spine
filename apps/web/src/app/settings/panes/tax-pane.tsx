@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { TaxRateStep, type TaxRateValue } from "../../onboarding/steps/tax-rate-step";
 import { SavedToast } from "../saved-toast";
@@ -43,23 +43,21 @@ export function TaxPane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Default tax rate</CardTitle>
-        <CardDescription>Used to price a new quote or invoice line by default.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <TaxRateStep
-          initialValue={value}
-          saveLabel="Save"
-          onSave={async (v) => {
-            await apiClient.put("/org/tax/default-rate", v);
-            setValue(v);
-            setSaved(true);
-          }}
-        />
-      </CardContent>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Default tax rate</h2>
+        <p className="text-[13px] text-on-surface-muted">Used to price a new quote or invoice line by default.</p>
+      </div>
+      <TaxRateStep
+        initialValue={value}
+        saveLabel="Save"
+        onSave={async (v) => {
+          await apiClient.put("/org/tax/default-rate", v);
+          setValue(v);
+          setSaved(true);
+        }}
+      />
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </Card>
+    </div>
   );
 }

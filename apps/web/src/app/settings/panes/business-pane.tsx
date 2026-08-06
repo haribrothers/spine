@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { BusinessProfileStep, type BusinessProfileValue } from "../../onboarding/steps/business-profile-step";
 import { useSettingsValue } from "../use-settings-value";
@@ -31,22 +31,20 @@ export function BusinessPane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Business profile</CardTitle>
-        <CardDescription>Name, logo and address — shown on quotes and invoices.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <BusinessProfileStep
-          initialValue={value}
-          saveLabel="Save"
-          onSave={async (v) => {
-            await apiClient.put("/org/settings/business_profile", { value: v });
-            setSaved(true);
-          }}
-        />
-      </CardContent>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Business profile</h2>
+        <p className="text-[13px] text-on-surface-muted">Name, logo and address — shown on quotes and invoices.</p>
+      </div>
+      <BusinessProfileStep
+        initialValue={value}
+        saveLabel="Save"
+        onSave={async (v) => {
+          await apiClient.put("/org/settings/business_profile", { value: v });
+          setSaved(true);
+        }}
+      />
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </Card>
+    </div>
   );
 }

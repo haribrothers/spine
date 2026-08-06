@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  Alert,
-  AlertDescription,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Spinner,
-} from "@spine/ui";
+import { Alert, AlertDescription, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import type { MemberRow as MemberRowData } from "../../../lib/members";
 import { InviteTeamStep } from "../../onboarding/steps/invite-team-step";
@@ -68,44 +59,40 @@ export function TeamPane() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Team</CardTitle>
-          <CardDescription>Everyone with access to this organisation.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="critical" className="mb-3">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          {!members ? (
-            <div className="flex items-center justify-center py-8">
-              <Spinner />
-            </div>
-          ) : (
-            <div className="rounded-md border border-border-strong">
-              {members.map((member) => (
-                <MemberRow key={member.id} member={member} onDeactivate={handleDeactivate} onReactivate={handleReactivate} />
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[15px] font-semibold text-on-surface">Team</h2>
+          <p className="text-[13px] text-on-surface-muted">Everyone with access to this organisation.</p>
+        </div>
+        {error && (
+          <Alert variant="critical">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        {!members ? (
+          <div className="flex items-center justify-center py-8">
+            <Spinner />
+          </div>
+        ) : (
+          <div className="rounded-md border border-border-strong">
+            {members.map((member) => (
+              <MemberRow key={member.id} member={member} onDeactivate={handleDeactivate} onReactivate={handleReactivate} />
+            ))}
+          </div>
+        )}
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Invite a teammate</CardTitle>
-          <CardDescription>They&apos;ll receive an email invite to join this organisation.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InviteTeamStep
-            onInvite={(email, role) => apiClient.post("/org/invitations", { email, role })}
-            onFinish={reload}
-            hideFooter
-          />
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[15px] font-semibold text-on-surface">Invite a teammate</h2>
+          <p className="text-[13px] text-on-surface-muted">They&apos;ll receive an email invite to join this organisation.</p>
+        </div>
+        <InviteTeamStep
+          onInvite={(email, role) => apiClient.post("/org/invitations", { email, role })}
+          onFinish={reload}
+          hideFooter
+        />
+      </div>
     </div>
   );
 }

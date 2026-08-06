@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { CurrencyLocaleStep, type CurrencyLocaleValue } from "../../onboarding/steps/currency-locale-step";
 import { useSettingsValue } from "../use-settings-value";
@@ -21,22 +21,20 @@ export function CurrencyPane() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Currency & locale</CardTitle>
-        <CardDescription>Used for every document and report.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <CurrencyLocaleStep
-          initialValue={value}
-          saveLabel="Save"
-          onSave={async (v) => {
-            await apiClient.put("/org/settings/currency", { value: v });
-            setSaved(true);
-          }}
-        />
-      </CardContent>
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-[15px] font-semibold text-on-surface">Currency & locale</h2>
+        <p className="text-[13px] text-on-surface-muted">Used for every document and report.</p>
+      </div>
+      <CurrencyLocaleStep
+        initialValue={value}
+        saveLabel="Save"
+        onSave={async (v) => {
+          await apiClient.put("/org/settings/currency", { value: v });
+          setSaved(true);
+        }}
+      />
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </Card>
+    </div>
   );
 }
