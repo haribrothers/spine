@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Alert, AlertDescription, Button, FormField, Input, Spinner, Textarea } from "@spine/ui";
+import { BusinessLogoUpload } from "./business-logo-upload";
 
 export interface BusinessProfileValue {
   name: string;
@@ -20,11 +21,11 @@ export interface BusinessProfileStepProps {
 
 /**
  * Business profile step (S-12.2) — name, logo, address, industry text.
- * Logo is a URL field, not a file upload: no S3/MinIO upload endpoint
- * exists anywhere in the codebase yet (checked apps/api/src/modules/files —
- * stub only), so wiring real object-storage plumbing was out of scope for
- * this pass per the task brief. A user can paste a hosted logo URL now;
- * real upload is a files-module follow-up.
+ * Logo is a real upload via `BusinessLogoUpload` (pick → crop → `POST
+ * /files`, the same plumbing Contacts' `ContactLogo` uses) — `logoUrl`
+ * still just holds a URL string underneath (the `GET /files/:id` URL of
+ * the uploaded file), so the `business_profile` settings shape is
+ * unchanged from when it was a hand-typed URL field.
  */
 export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: BusinessProfileStepProps) {
   const [name, setName] = useState(initialValue.name ?? "");
@@ -61,10 +62,8 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         )}
       </FormField>
 
-      <FormField label="Logo URL" helperText="Paste a link to a hosted logo image. File upload isn't wired up yet.">
-        {(field) => (
-          <Input {...field} value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://..." />
-        )}
+      <FormField label="Logo">
+        {() => <BusinessLogoUpload logoUrl={logoUrl || undefined} onChange={(url) => setLogoUrl(url ?? "")} />}
       </FormField>
 
       <FormField label="Address">

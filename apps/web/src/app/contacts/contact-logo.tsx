@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage, Spinner } from "@spine/ui";
 import { Camera } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
-import { LogoCropDialog } from "./logo-crop-dialog";
+import { LogoCropDialog } from "../../lib/logo-crop-dialog";
 import type { SpineFile } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";

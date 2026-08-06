@@ -16,24 +16,25 @@ import { cropAndResizeImage } from "./crop-and-resize-image";
 
 /**
  * A focused, one-off crop step between "user picked a file" and "upload
- * fires" for `ContactLogo`. Locked to a 1:1 aspect ratio — logos/avatars
- * only ever render square/circular, so there's no aspect-ratio choice to
- * expose. Scoped to `apps/web/src/app/contacts/` rather than `@spine/ui`:
- * this is one small app-level composition of an existing Dialog primitive
- * plus a single third-party crop widget, not a generic reusable pattern
- * yet — the same call this session's prior entries made for the four
- * "Add X" dialogs (Dialog composition stays app-level unless/until a
- * second real consumer shows up).
+ * fires" — used by `ContactLogo` and the onboarding/Settings business logo
+ * upload. Locked to a 1:1 aspect ratio — logos/avatars only ever render
+ * square/circular, so there's no aspect-ratio choice to expose. Lives in
+ * `apps/web/src/lib/` (moved out of `apps/web/src/app/contacts/`, its
+ * original single consumer) since it's a generic Dialog + crop-widget
+ * composition with no Contacts-specific logic.
  */
 export function LogoCropDialog({
   open,
   imageSrc,
+  cropShape = "round",
   onCancel,
   onConfirm,
 }: {
   open: boolean;
   /** Object URL for the freshly-picked file. */
   imageSrc: string | null;
+  /** "round" for circular avatars (contacts), "rect" for square logos. Default "round". */
+  cropShape?: "round" | "rect";
   onCancel: () => void;
   /** Receives the cropped + resized File, ready to upload. */
   onConfirm: (file: File) => Promise<void> | void;
@@ -87,7 +88,7 @@ export function LogoCropDialog({
               crop={crop}
               zoom={zoom}
               aspect={1}
-              cropShape="round"
+              cropShape={cropShape}
               showGrid={false}
               onCropChange={setCrop}
               onZoomChange={setZoom}
