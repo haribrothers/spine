@@ -1,15 +1,46 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Checkbox, FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, Textarea } from "@spine/ui";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  Textarea,
+} from "@spine/ui";
 import { apiClient } from "../../lib/api-client";
 import type { Activity, ActivityType } from "./types";
 
 const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
 
-/** S-01.6 — "log a call or site visit against a contact with a follow-up date." */
-export function ActivitiesSection({ contactId, activities, onChanged }: { contactId: string; activities: Activity[] | null; onChanged: () => void }) {
-  const [adding, setAdding] = useState(false);
+/**
+ * S-01.6 — "log a call or site visit against a contact with a follow-up
+ * date." "Log activity" is a Dialog (Issue 4), not an inline form.
+ */
+export function ActivitiesSection({
+  contactId,
+  activities,
+  onChanged,
+  onCreated,
+}: {
+  contactId: string;
+  activities: Activity[] | null;
+  onChanged: () => void;
+  onCreated?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [type, setType] = useState<ActivityType>("call");
   const [notes, setNotes] = useState("");
   const [dueAt, setDueAt] = useState("");
@@ -28,8 +59,9 @@ export function ActivitiesSection({ contactId, activities, onChanged }: { contac
       setNotes("");
       setDueAt("");
       setType("call");
-      setAdding(false);
+      setOpen(false);
       onChanged();
+      onCreated?.();
     } finally {
       setSaving(false);
     }
@@ -77,44 +109,48 @@ export function ActivitiesSection({ contactId, activities, onChanged }: { contac
         <p className="text-[13px] text-on-surface-muted">No activities logged.</p>
       )}
 
-      {adding ? (
-        <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3">
-          <FormField label="Type">
-            {(field) => (
-              <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
-                <SelectTrigger {...field} className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      <span className="capitalize">{t}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
-          <FormField label="Notes">
-            {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}
-          </FormField>
-          <FormField label="Follow-up date" helperText="Leave blank if there's nothing to follow up on.">
-            {(field) => <Input {...field} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
-          </FormField>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Log activity"}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setAdding(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setAdding(true)}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
           Log activity
         </Button>
-      )}
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Log activity</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <FormField label="Type">
+              {(field) => (
+                <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
+                  <SelectTrigger {...field} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        <span className="capitalize">{t}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Notes">
+              {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />}
+            </FormField>
+            <FormField label="Follow-up date" helperText="Leave blank if there's nothing to follow up on.">
+              {(field) => <Input {...field} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
+            </FormField>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={saving} onClick={handleAdd}>
+              {saving ? <Spinner size="sm" /> : "Log activity"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

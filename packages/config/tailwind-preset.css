@@ -78,6 +78,21 @@
   --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
   --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Stacking order, low to high. `popover` (floating menus/selects/comboboxes)
+     sits ABOVE `modal` (dialog/drawer/alert-dialog) on purpose: a Select or
+     DropdownMenu opened from inside a Dialog/Drawer must always render above
+     that Dialog/Drawer, never behind it. `tooltip` is the ceiling — it must
+     win over everything, including a toast. See docs/DESIGN.md "Elevation &
+     Depth" for the source of truth; components should reference these
+     tokens (z-dropdown, z-popover, etc.) instead of hardcoding z-[N]. */
+  --z-dropdown: 1000;
+  --z-sticky-header: 1100;
+  --z-overlay: 1200;
+  --z-modal: 1300;
+  --z-popover: 1600;
+  --z-toast: 1700;
+  --z-tooltip: 1800;
 }
 
 :root[data-theme="dark"] {
@@ -248,4 +263,12 @@
   --ease-standard: var(--easing-standard);
   --ease-decelerate: var(--easing-decelerate);
   --ease-accelerate: var(--easing-accelerate);
+
+  --z-dropdown: var(--z-dropdown);
+  --z-sticky-header: var(--z-sticky-header);
+  --z-overlay: var(--z-overlay);
+  --z-modal: var(--z-modal);
+  --z-popover: var(--z-popover);
+  --z-toast: var(--z-toast);
+  --z-tooltip: var(--z-tooltip);
 }

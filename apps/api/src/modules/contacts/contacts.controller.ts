@@ -16,15 +16,24 @@ import { ContactsService } from "./contacts.service";
 export class ContactsController {
   constructor(private readonly contactsService: ContactsService) {}
 
+  /**
+   * `type` accepts repeated query params (`?type=customer&type=vendor`),
+   * matching Express's default query parser — a single value still arrives
+   * as a plain string, so it's normalized to an array here. NestJS/Express
+   * don't need special config for this shape (no `?types=a,b` CSV parsing
+   * needed), keeping this consistent with how every other array-ish query
+   * param in an Express app is conventionally handled.
+   */
   @Get()
   async list(
     @Session() session: UserSession,
-    @Query("type") type?: "customer" | "vendor" | "both",
+    @Query("type") type?: string | string[],
     @Query("search") search?: string,
     @Query("includeArchived") includeArchived?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.contactsService.list(orgId, { type, search, includeArchived: includeArchived === "true" });
+    const types = type === undefined ? undefined : (Array.isArray(type) ? type : [type]) as ("customer" | "vendor" | "both")[];
+    return this.contactsService.list(orgId, { types, search, includeArchived: includeArchived === "true" });
   }
 
   @Get(":id")

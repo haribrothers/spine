@@ -1,6 +1,7 @@
 import { pgTable, uuid, text, boolean, bigint, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
+import { files } from "./files";
 
 /**
  * Customer, vendor, or both — per PRD F1 ("MUST ... mark a contact as
@@ -44,6 +45,24 @@ export const contacts = pgTable(
     email: text("email"),
     phone: text("phone"),
     notes: text("notes"),
+    /**
+     * Targeted field additions (task brief Phase 4 — explicitly NOT a full
+     * Odoo/Zoho field clone). `taxId` is genuinely useful for invoicing a
+     * business contact; `website` is low-cost and commonly expected.
+     * `contact_persons.title` already covers job title, so no change there.
+     */
+    taxId: text("tax_id"),
+    website: text("website"),
+    /**
+     * Optional logo/avatar — a plain nullable FK to `files.id`, following
+     * this schema's own `journal_lines.contact_id` precedent for "this
+     * table is referenced from elsewhere" rather than a polymorphic
+     * association (see files.ts's comment). `onDelete: "set null"` so
+     * deleting the underlying file row (not currently exposed via any
+     * endpoint, but a safe default) never blocks or cascades onto the
+     * contact itself.
+     */
+    logoFileId: uuid("logo_file_id").references(() => files.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -76,6 +95,13 @@ export const contactPersons = pgTable(
     email: text("email"),
     phone: text("phone"),
     isPrimary: boolean("is_primary").notNull().default(false),
+    /**
+     * Optional photo — same nullable-FK-to-`files.id` pattern as
+     * `contacts.logoFileId` above (`onDelete: "set null"` for the same
+     * reason: deleting the underlying file row should never block or
+     * cascade onto the person).
+     */
+    logoFileId: uuid("logo_file_id").references(() => files.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

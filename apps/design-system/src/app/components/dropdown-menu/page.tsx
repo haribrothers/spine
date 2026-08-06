@@ -45,6 +45,7 @@ export default function DropdownMenuPage() {
             "Supports items, labels, groups, checkable items (single or multiple) and a separator.",
             "Focus is fully managed and customizable.",
             "Full keyboard navigation with typeahead.",
+            "Renders at the z-popover stacking tier, above Dialog/Drawer's z-modal tier — a DropdownMenu opened from inside a Dialog or Drawer always renders on top of it.",
           ]}
         />
       </DocSection>

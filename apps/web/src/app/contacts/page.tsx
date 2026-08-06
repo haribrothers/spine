@@ -1,19 +1,29 @@
-import { AppShellHeader, Button } from "@spine/ui";
-import Link from "next/link";
+import { AppShellHeader } from "@spine/ui";
 import { AppLayout } from "../../components/app-layout";
 import { getSession } from "../../lib/get-session";
 import { NAV_SECTIONS } from "../../lib/nav-sections";
-import { ContactsTable } from "./contacts-table";
+import { ContactsExplorer } from "./contacts-explorer";
 
 /**
  * S-01.1/S-01.2 — the contacts list (F1 MUST: store companies/individuals,
- * mark customer/vendor/both). Data loads client-side (ContactsTable) rather
- * than server-side here, since the list needs to re-fetch after a create
- * without a full page reload — matches the pattern already established by
- * the Settings dialog panes (apps/web/src/app/settings/panes/*).
+ * mark customer/vendor/both), rebuilt this session (Phase 2) with stat
+ * cards, a Table/List/Card view switcher, multiselect filters, and a
+ * Drawer-based create flow — see ContactsExplorer for the client-side
+ * state that used to live directly in this page's old ContactsTable.
+ *
+ * `?new=1` auto-opens the create Drawer (read server-side here, not
+ * client-side, so the very first paint already reflects it) — this is what
+ * `/contacts/new` now redirects to (see that route's own comment for the
+ * drawer-vs-route reasoning) and gives the drawer a shareable/bookmarkable
+ * URL of its own without a second route.
  */
-export default async function ContactsPage() {
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ new?: string }>;
+}) {
   const session = await getSession();
+  const { new: newParam } = await searchParams;
 
   return (
     <AppLayout
@@ -25,13 +35,8 @@ export default async function ContactsPage() {
         breadcrumb={[{ label: "Sales" }, { label: "Contacts" }]}
         title="Contacts"
         description="Customers and vendors you do business with."
-        action={
-          <Button asChild>
-            <Link href="/contacts/new">Add contact</Link>
-          </Button>
-        }
       />
-      <ContactsTable />
+      <ContactsExplorer initialDrawerOpen={newParam === "1"} />
     </AppLayout>
   );
 }

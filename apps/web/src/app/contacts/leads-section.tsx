@@ -1,7 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, FormField, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import {
+  Badge,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  MoneyInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@spine/ui";
 import { apiClient } from "../../lib/api-client";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
 
@@ -11,10 +28,21 @@ import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./typ
  * scope — this is a flat list, filterable being the board's cheaper
  * substitute for now. Stage uses Badge, not StatusChip: StatusChip is
  * reserved for financial *document* status (paid/due-soon/overdue/draft),
- * and a lead stage isn't that.
+ * and a lead stage isn't that. "Add" is a Dialog (Issue 4), not an inline
+ * form.
  */
-export function LeadsSection({ contactId, leads, onChanged }: { contactId: string; leads: Lead[] | null; onChanged: () => void }) {
-  const [adding, setAdding] = useState(false);
+export function LeadsSection({
+  contactId,
+  leads,
+  onChanged,
+  onCreated,
+}: {
+  contactId: string;
+  leads: Lead[] | null;
+  onChanged: () => void;
+  onCreated?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [stage, setStage] = useState<LeadStage>("new");
   const [amount, setAmount] = useState(0n);
@@ -34,8 +62,9 @@ export function LeadsSection({ contactId, leads, onChanged }: { contactId: strin
       setTitle("");
       setStage("new");
       setAmount(0n);
-      setAdding(false);
+      setOpen(false);
       onChanged();
+      onCreated?.();
     } finally {
       setSaving(false);
     }
@@ -65,47 +94,51 @@ export function LeadsSection({ contactId, leads, onChanged }: { contactId: strin
         <p className="text-[13px] text-on-surface-muted">No leads yet.</p>
       )}
 
-      {adding ? (
-        <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3">
-          <FormField label="Title">
-            {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
-          </FormField>
-          <FormField label="Stage">
-            {(field) => (
-              <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)}>
-                <SelectTrigger {...field} className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {LEAD_STAGES.map((s) => (
-                    <SelectItem key={s} value={s}>
-                      {LEAD_STAGE_LABELS[s]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
-          <FormField label="Estimated value">
-            {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
-          </FormField>
-          <FormField label="Currency">
-            {(field) => <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />}
-          </FormField>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Add lead"}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setAdding(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setAdding(true)}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
           Add lead
         </Button>
-      )}
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add lead</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <FormField label="Title">
+              {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
+            </FormField>
+            <FormField label="Stage">
+              {(field) => (
+                <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)}>
+                  <SelectTrigger {...field} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STAGES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {LEAD_STAGE_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Estimated value">
+              {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
+            </FormField>
+            <FormField label="Currency">
+              {(field) => <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />}
+            </FormField>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={saving} onClick={handleAdd}>
+              {saving ? <Spinner size="sm" /> : "Add lead"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

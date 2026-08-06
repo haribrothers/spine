@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { addressInputSchema, contactPersonInputSchema, createContactSchema, updateContactSchema } from "@spine/shared";
-import { and, asc, desc, eq, ilike, or } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -26,10 +26,10 @@ type AddressInput = z.infer<typeof addressInputSchema>;
 export class ContactsService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async list(orgId: string, options: { type?: "customer" | "vendor" | "both"; search?: string; includeArchived?: boolean }) {
+  async list(orgId: string, options: { types?: ("customer" | "vendor" | "both")[]; search?: string; includeArchived?: boolean }) {
     const conditions = [eq(contacts.orgId, orgId)];
-    if (options.type) {
-      conditions.push(eq(contacts.type, options.type));
+    if (options.types?.length) {
+      conditions.push(inArray(contacts.type, options.types));
     }
     let rows = await this.db
       .select()
@@ -89,6 +89,9 @@ export class ContactsService {
           email: input.email ?? null,
           phone: input.phone ?? null,
           notes: input.notes ?? null,
+          taxId: input.taxId ?? null,
+          website: input.website ?? null,
+          logoFileId: input.logoFileId ?? null,
         })
         .returning();
       if (!contact) {
@@ -104,6 +107,7 @@ export class ContactsService {
             email: person.email ?? null,
             phone: person.phone ?? null,
             isPrimary: person.isPrimary ?? false,
+            logoFileId: person.logoFileId ?? null,
           })),
         );
       }
@@ -148,6 +152,9 @@ export class ContactsService {
           ...(input.email !== undefined ? { email: input.email } : {}),
           ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.taxId !== undefined ? { taxId: input.taxId } : {}),
+          ...(input.website !== undefined ? { website: input.website } : {}),
+          ...(input.logoFileId !== undefined ? { logoFileId: input.logoFileId } : {}),
           updatedAt: new Date(),
         })
         .where(eq(contacts.id, id));
@@ -163,6 +170,7 @@ export class ContactsService {
               email: person.email ?? null,
               phone: person.phone ?? null,
               isPrimary: person.isPrimary ?? false,
+              logoFileId: person.logoFileId ?? null,
             })),
           );
         }

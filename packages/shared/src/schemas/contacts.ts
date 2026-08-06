@@ -13,6 +13,7 @@ export const contactPersonInputSchema = z.object({
   email: z.string().email().optional().nullable(),
   phone: z.string().optional().nullable(),
   isPrimary: z.boolean().optional(),
+  logoFileId: uuidSchema.optional().nullable(),
 });
 
 export const addressInputSchema = z.object({
@@ -42,6 +43,11 @@ export const createContactSchema = z.object({
   email: z.string().email().optional().nullable(),
   phone: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
+  // Targeted field additions (task brief Phase 4) — a tax ID for invoicing
+  // a business contact and a website, both optional free text.
+  taxId: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  logoFileId: uuidSchema.optional().nullable(),
   contactPersons: z.array(contactPersonInputSchema).optional(),
   addresses: z.array(addressInputSchema).optional(),
 });

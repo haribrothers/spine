@@ -1,16 +1,53 @@
 "use client";
 
 import { useState } from "react";
-import { Button, FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@spine/ui";
 import { Trash2 } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import type { Address, AddressType, Contact } from "./types";
 
 const TYPE_OPTIONS: AddressType[] = ["billing", "shipping", "site", "other"];
 
-/** S-01.1 — "hold multiple addresses." Same whole-array-replace pattern as ContactPersonsSection. */
-export function AddressesSection({ contact, onSaved }: { contact: Contact; onSaved: () => void }) {
-  const [adding, setAdding] = useState(false);
+/**
+ * S-01.1 — "hold multiple addresses." Same whole-array-replace pattern as
+ * ContactPersonsSection. "Add" is a Dialog (Issue 4) — its Select (address
+ * type) is this section's own live exercise of the Select-inside-Dialog
+ * z-index fix (Issue 3).
+ */
+export function AddressesSection({
+  contact,
+  onSaved,
+  onCreated,
+}: {
+  contact: Contact;
+  onSaved: () => void;
+  onCreated?: () => void;
+}) {
+  const [open, setOpen] = useState(false);
   const [type, setType] = useState<AddressType>("billing");
   const [line1, setLine1] = useState("");
   const [city, setCity] = useState("");
@@ -37,7 +74,9 @@ export function AddressesSection({ contact, onSaved }: { contact: Contact; onSav
     await persist(next);
     setLine1("");
     setCity("");
-    setAdding(false);
+    setType("billing");
+    setOpen(false);
+    onCreated?.();
   }
 
   async function handleRemove(id: string) {
@@ -59,58 +98,75 @@ export function AddressesSection({ contact, onSaved }: { contact: Contact; onSav
                   {address.city ? `, ${address.city}` : ""}
                 </span>
               </div>
-              <button
-                type="button"
-                aria-label="Remove address"
-                onClick={() => handleRemove(address.id)}
-                disabled={saving}
-                className="text-on-surface-muted transition-colors hover:text-overdue"
-              >
-                <Trash2 size={14} />
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Remove address"
+                    disabled={saving}
+                    className="text-on-surface-muted transition-colors hover:text-overdue"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Remove this address?</AlertDialogTitle>
+                    <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </li>
           ))}
         </ul>
       )}
 
-      {adding ? (
-        <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3">
-          <FormField label="Type">
-            {(field) => (
-              <Select value={type} onValueChange={(v) => setType(v as AddressType)}>
-                <SelectTrigger {...field} className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TYPE_OPTIONS.map((t) => (
-                    <SelectItem key={t} value={t}>
-                      <span className="capitalize">{t}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
-          <FormField label="Address line" required>
-            {(field) => <Input {...field} value={line1} onChange={(e) => setLine1(e.target.value)} />}
-          </FormField>
-          <FormField label="City">
-            {(field) => <Input {...field} value={city} onChange={(e) => setCity(e.target.value)} />}
-          </FormField>
-          <div className="flex gap-2">
-            <Button size="sm" disabled={!line1 || saving} onClick={handleAdd}>
-              {saving ? <Spinner size="sm" /> : "Add"}
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setAdding(false)}>
-              Cancel
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <Button size="sm" variant="secondary" className="self-start" onClick={() => setAdding(true)}>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button size="sm" variant="secondary" className="self-start" onClick={() => setOpen(true)}>
           Add address
         </Button>
-      )}
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add address</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <FormField label="Type">
+              {(field) => (
+                <Select value={type} onValueChange={(v) => setType(v as AddressType)}>
+                  <SelectTrigger {...field} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {TYPE_OPTIONS.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        <span className="capitalize">{t}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Address line" required>
+              {(field) => <Input {...field} value={line1} onChange={(e) => setLine1(e.target.value)} />}
+            </FormField>
+            <FormField label="City">
+              {(field) => <Input {...field} value={city} onChange={(e) => setCity(e.target.value)} />}
+            </FormField>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button disabled={!line1 || saving} onClick={handleAdd}>
+              {saving ? <Spinner size="sm" /> : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

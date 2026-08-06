@@ -1,6 +1,21 @@
 "use client";
 
-import { Select, SelectContent, SelectItem, SelectLabel, SelectGroup, SelectSeparator, SelectTrigger, SelectValue } from "@spine/ui";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectLabel,
+  SelectGroup,
+  SelectSeparator,
+  SelectTrigger,
+  SelectValue,
+} from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocSubsection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
@@ -39,6 +54,7 @@ export default function SelectPage() {
             "Full keyboard navigation.",
             "Supports custom placeholder content.",
             "Typeahead support.",
+            "Renders at the z-popover stacking tier, above Dialog/Drawer's z-modal tier — a Select opened from inside a Dialog or Drawer always renders on top of it, never hidden behind it. See the \"Inside a Dialog\" example below.",
           ]}
         />
       </DocSection>
@@ -151,6 +167,51 @@ export default () => (
               </SelectGroup>
             </SelectContent>
           </Select>
+        </ComponentPreview>
+
+        <DocLead>Inside a Dialog</DocLead>
+        <ComponentPreview
+          code={`<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="secondary">Open dialog</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Change status</DialogTitle>
+    </DialogHeader>
+    <Select defaultValue="draft">
+      <SelectTrigger className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="draft">Draft</SelectItem>
+        <SelectItem value="sent">Sent</SelectItem>
+        <SelectItem value="paid">Paid</SelectItem>
+      </SelectContent>
+    </Select>
+  </DialogContent>
+</Dialog>`}
+        >
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="secondary">Open dialog</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Change status</DialogTitle>
+              </DialogHeader>
+              <Select defaultValue="draft">
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                  <SelectItem value="paid">Paid</SelectItem>
+                </SelectContent>
+              </Select>
+            </DialogContent>
+          </Dialog>
         </ComponentPreview>
       </DocSection>
 

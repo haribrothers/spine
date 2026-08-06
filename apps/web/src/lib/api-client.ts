@@ -51,8 +51,43 @@ async function request<T>(
   return (await res.json()) as T;
 }
 
+/**
+ * Multipart upload — separate from `request()` since that always
+ * JSON-stringifies the body and sets `Content-Type: application/json`,
+ * neither of which is right for `multipart/form-data` (the browser must
+ * set its own `Content-Type` with the multipart boundary; letting `fetch`
+ * derive it from a `FormData` body, not setting it manually, is required).
+ * Still sends a fresh `Idempotency-Key` per call, matching every other
+ * mutating request.
+ */
+async function upload<T>(path: string, file: File): Promise<T> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Idempotency-Key": idempotencyKey() },
+    body: formData,
+  });
+
+  if (!res.ok) {
+    let message = `Upload failed (${res.status})`;
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    throw new Error(message);
+  }
+  return (await res.json()) as T;
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>("GET", path),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
+  delete: <T>(path: string) => request<T>("DELETE", path),
+  upload: <T>(path: string, file: File) => upload<T>(path, file),
 };

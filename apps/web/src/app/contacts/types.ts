@@ -12,6 +12,7 @@ export interface ContactPerson {
   email: string | null;
   phone: string | null;
   isPrimary: boolean;
+  logoFileId: string | null;
 }
 
 export interface Address {
@@ -27,6 +28,17 @@ export interface Address {
   isPrimary: boolean;
 }
 
+export interface SpineFile {
+  id: string;
+  orgId: string;
+  key: string;
+  originalFilename: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedByUserId: string | null;
+  createdAt: string;
+}
+
 export interface Contact {
   id: string;
   orgId: string;
@@ -36,6 +48,9 @@ export interface Contact {
   email: string | null;
   phone: string | null;
   notes: string | null;
+  taxId: string | null;
+  website: string | null;
+  logoFileId: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;

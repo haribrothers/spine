@@ -180,8 +180,9 @@ z-index:
   sticky-header: 1100
   overlay: 1200
   modal: 1300
-  toast: 1400
-  tooltip: 1500
+  popover: 1600
+  toast: 1700
+  tooltip: 1800
 icons:
   library: lucide
   size-sm: 16px
@@ -347,6 +348,8 @@ A **max-width grid (1200px)** governs the desktop app — dashboards, quote/invo
 ## Elevation & Depth
 
 Depth is conveyed primarily through **borders and a single tonal step (surface vs. background), not shadows** — a card is a bordered surface, not a floating shadowed box, consistent with the calm/understated brand personality: shadows read as "trying to look impressive," borders read as "organized." Reserve shadow for genuinely temporary, layered UI — dialogs, drawers, popovers, toasts — where a shadow correctly signals "this is above the page and will go away."
+
+**Stacking order** follows the `z-index` scale above, low to high: `dropdown` → `sticky-header` → `overlay` (a dialog/drawer's backdrop) → `modal` (the dialog/drawer panel itself) → `popover` (`Select`, `Combobox`, `MultiSelect`, `DropdownMenu`, `ContextMenu`, `Menubar`, `Popover`, `HoverCard`) → `toast` → `tooltip` (the ceiling). `popover` is deliberately layered **above** `modal`, not below it: any of those floating components can be triggered from inside a `Dialog`/`Drawer` (a `Select` field in a form dialog, a `DropdownMenu` action inside a drawer), and must always render on top of the modal that hosts it, never behind it. `tooltip` always wins over everything, including a toast. These are real CSS custom properties (`--z-dropdown` … `--z-tooltip` in `packages/config/tailwind-preset.css`, exposed as Tailwind utilities `z-dropdown`…`z-tooltip`) — components should use the utility class, never a hardcoded `z-[1000]`-style arbitrary value.
 
 ## Shapes
 
