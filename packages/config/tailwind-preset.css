@@ -3,6 +3,12 @@
  * Self-hosters reskin by overriding these — never by editing component
  * source (PRD §F0 / §S-10.4).
  */
+
+/* Tailwind's dark: variant defaults to prefers-color-scheme, which ignores
+   an in-app theme toggle. Theme state lives in next-themes' data-theme
+   attribute, so dark: is repointed here to track that instead. */
+@custom-variant dark (&:where([data-theme="dark"] *, [data-theme="dark"]));
+
 :root {
   --color-primary: #2954e5;
   --color-primary-hover: #2044c4;

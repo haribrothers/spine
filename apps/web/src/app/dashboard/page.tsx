@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@spin
 import { getSession } from "../../lib/get-session";
 import { SetupChecklist } from "./setup-checklist";
 import { SignOutButton } from "./sign-out-button";
+import { ThemeToggle } from "../../components/theme-toggle";
 
 /**
  * Real landing page for the sign-up/login flow and for the onboarding
@@ -18,6 +19,9 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 p-4 py-10">
+      <div className="flex w-full max-w-md justify-end">
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Dashboard</CardTitle>

@@ -18,6 +18,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
+import { ThemeToggle } from "../../components/theme-toggle";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -54,22 +55,25 @@ export default function SignupPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <Image
-        src="/spine-logo-horizontal.png"
-        alt="Spine"
-        width={140}
-        height={41}
-        priority
-        className="dark:hidden"
-      />
-      <Image
-        src="/spine-logo-horizontal-light.png"
-        alt="Spine"
-        width={140}
-        height={41}
-        priority
-        className="hidden dark:block"
-      />
+      <div className="flex w-full max-w-sm items-center justify-between">
+        <Image
+          src="/spine-logo-horizontal.png"
+          alt="Spine"
+          width={140}
+          height={41}
+          priority
+          className="dark:hidden"
+        />
+        <Image
+          src="/spine-logo-horizontal-light.png"
+          alt="Spine"
+          width={140}
+          height={41}
+          priority
+          className="hidden dark:block"
+        />
+        <ThemeToggle />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
