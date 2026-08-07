@@ -57,6 +57,7 @@ export default function TablePage() {
           items={[
             "Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.",
             "Automatic client-side pagination once data exceeds pageSize.",
+            "Set configurablePageSize to render a PaginationBar (rows-per-page select + summary) instead of a fixed pageSize.",
             "Sticky header row stays visible while scrolling a tall table.",
             "Alternating hover tint on rows.",
           ]}
@@ -84,6 +85,8 @@ export default () => (
             { prop: "data", type: "T[]" },
             { prop: "rowKey", type: "(row: T) => string" },
             { prop: "pageSize", type: "number", defaultValue: "20" },
+            { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
+            { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },
           ]}
           caption="TableColumn<T>"
         />

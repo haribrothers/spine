@@ -1,9 +1,10 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
 import { Pagination } from "./pagination";
+import { PaginationBar } from "./pagination-bar";
 
 export interface TableColumn<T> {
   key: string;
@@ -18,6 +19,9 @@ export interface TableProps<T> {
   data: T[];
   rowKey: (row: T) => string;
   pageSize?: number;
+  /** Lets the viewer change rows-per-page via a <select> instead of a fixed `pageSize`; overrides `pageSize` as the initial value. */
+  configurablePageSize?: boolean;
+  pageSizeOptions?: number[];
   className?: string;
 }
 
@@ -28,9 +32,28 @@ type SortDirection = "asc" | "desc";
  * client-side pagination — the primary vehicle for quote/invoice line
  * items and the AR/AP aging report, per docs/DESIGN.md.
  */
-export function Table<T>({ columns, data, rowKey, pageSize = 20, className }: TableProps<T>) {
+const DEFAULT_PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+
+export function Table<T>({
+  columns,
+  data,
+  rowKey,
+  pageSize: pageSizeProp,
+  configurablePageSize = false,
+  pageSizeOptions = DEFAULT_PAGE_SIZE_OPTIONS,
+  className,
+}: TableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
   const [page, setPage] = useState(1);
+  // configurablePageSize's <select> only ever offers pageSizeOptions, so the
+  // initial pageSize must be one of them too — otherwise the <select> falls
+  // back to displaying its first option while the real state stays at
+  // whatever pageSizeProp/20 was, silently mismatching the label shown.
+  const [pageSize, setPageSize] = useState(pageSizeProp ?? (configurablePageSize ? pageSizeOptions[0]! : 20));
+
+  useEffect(() => {
+    setPage(1);
+  }, [data, pageSize]);
 
   const sorted = useMemo(() => {
     if (!sort) return data;
@@ -126,8 +149,17 @@ export function Table<T>({ columns, data, rowKey, pageSize = 20, className }: Ta
           </tbody>
         </table>
       </div>
-      {pageCount > 1 && (
-        <Pagination page={page} pageCount={pageCount} onPageChange={setPage} className="self-end" />
+      {configurablePageSize ? (
+        <PaginationBar
+          page={page}
+          pageSize={pageSize}
+          pageSizeOptions={pageSizeOptions}
+          total={data.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : (
+        pageCount > 1 && <Pagination page={page} pageCount={pageCount} onPageChange={setPage} className="self-end" />
       )}
     </div>
   );

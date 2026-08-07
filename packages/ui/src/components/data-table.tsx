@@ -17,6 +17,8 @@ export interface DataTableProps<T> {
   data: T[];
   rowKey: (row: T) => string;
   pageSize?: number;
+  configurablePageSize?: boolean;
+  pageSizeOptions?: number[];
   searchPlaceholder?: string;
   searchKey?: (row: T) => string;
   className?: string;
@@ -33,6 +35,8 @@ export function DataTable<T>({
   data,
   rowKey,
   pageSize,
+  configurablePageSize,
+  pageSizeOptions,
   searchPlaceholder = "Search…",
   searchKey,
   className,
@@ -83,7 +87,14 @@ export function DataTable<T>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <Table columns={visibleColumns} data={filtered} rowKey={rowKey} pageSize={pageSize} />
+      <Table
+        columns={visibleColumns}
+        data={filtered}
+        rowKey={rowKey}
+        pageSize={pageSize}
+        configurablePageSize={configurablePageSize}
+        pageSizeOptions={pageSizeOptions}
+      />
     </div>
   );
 }

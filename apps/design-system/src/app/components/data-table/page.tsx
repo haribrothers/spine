@@ -82,6 +82,8 @@ export default () => (
             { prop: "searchKey", type: "(row: T) => string" },
             { prop: "searchPlaceholder", type: "string", defaultValue: '"Search…"' },
             { prop: "pageSize", type: "number" },
+            { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
+            { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },
           ]}
         />
       </DocSection>

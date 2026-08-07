@@ -90,6 +90,7 @@ export function CatalogTable({
       rowKey={(row) => row.id}
       searchPlaceholder="Search items"
       searchKey={(row) => `${row.name} ${row.category ?? ""} ${row.unit}`}
+      configurablePageSize
     />
   );
 }

@@ -138,7 +138,7 @@ export function AppShellHeader({ breadcrumb, title, description, action, classNa
 /** The scrollable main content region, capped to the design system's 1200px max-width container. */
 export function AppShellContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <main className={cn("flex-1 overflow-y-auto", className)} {...props}>
+    <main className={cn("min-h-0 flex-1 overflow-y-auto", className)} {...props}>
       <div className="mx-auto w-full max-w-[1200px] p-6 lg:p-8">{props.children}</div>
     </main>
   );

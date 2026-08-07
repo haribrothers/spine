@@ -43,6 +43,7 @@ export * from "./components/navigation-menu";
 export * from "./components/otp-field";
 export * from "./components/page-loader";
 export * from "./components/pagination";
+export * from "./components/pagination-bar";
 export * from "./components/password-toggle-field";
 export * from "./components/popover";
 export * from "./components/progress";

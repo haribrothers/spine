@@ -142,6 +142,7 @@ export const nav: TopLevelSection[] = [
           { title: "Avatar", href: "/components/avatar" },
           { title: "Breadcrumb", href: "/components/breadcrumb" },
           { title: "Pagination", href: "/components/pagination" },
+          { title: "PaginationBar", href: "/components/pagination-bar" },
           { title: "Sidebar", href: "/components/sidebar" },
           { title: "Resizable", href: "/components/resizable" },
         ],

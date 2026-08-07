@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard } from "@spine/ui";
+import { Alert, AlertDescription, Button, EmptyState, MultiSelect, PaginationBar, StatCard } from "@spine/ui";
 import { Users } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
+import { usePagination } from "../../lib/use-pagination";
 import { ContactCreateDrawer } from "./contact-create-drawer";
 import { ContactsCardView } from "./contacts-card-view";
 import { ContactsListView } from "./contacts-list-view";
@@ -102,6 +103,11 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   );
   const stats = useContactStats(contacts, activeLeadCount);
 
+  // Table view paginates itself (DataTable -> Table, configurablePageSize);
+  // List/Card have no built-in pagination, so this hook paginates the same
+  // filtered `contacts` array for those two views only.
+  const { page, pageSize, total, pageRows, setPage, setPageSize } = usePagination(contacts);
+
   function handleCreated(contact: Contact) {
     loadContacts();
     showToast("Contact created", `${contact.name} has been added to your contacts.`);
@@ -185,9 +191,15 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
           )}
         </div>
       ) : view === "list" ? (
-        <ContactsListView contacts={contacts} onChanged={handleRowChanged} />
+        <div className="flex flex-col gap-3">
+          <ContactsListView contacts={pageRows ?? []} onChanged={handleRowChanged} />
+          <PaginationBar page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        </div>
       ) : view === "card" ? (
-        <ContactsCardView contacts={contacts} onChanged={handleRowChanged} />
+        <div className="flex flex-col gap-3">
+          <ContactsCardView contacts={pageRows ?? []} onChanged={handleRowChanged} />
+          <PaginationBar page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+        </div>
       ) : (
         <ContactsTable contacts={contacts} onChanged={handleRowChanged} />
       )}

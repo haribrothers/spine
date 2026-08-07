@@ -82,6 +82,7 @@ export function ContactsTable({
       rowKey={(row) => row.id}
       searchPlaceholder="Search contacts"
       searchKey={(row) => `${row.name} ${row.email ?? ""} ${row.phone ?? ""}`}
+      configurablePageSize
     />
   );
 }

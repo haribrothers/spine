@@ -2,6 +2,12 @@
 @import "@spine/config/tailwind";
 @source "../../../../packages/ui/src";
 
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-on-surface);
