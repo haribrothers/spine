@@ -22,6 +22,8 @@ const TABLES = [
   "journal_entries",
   "fiscal_periods",
   "accounts",
+  "quote_lines",
+  "quotes",
   "catalog_items",
   "leads",
   "activities",

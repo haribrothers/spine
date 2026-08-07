@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
-import type { Database } from "../../db/client";
+import type { Database, Transaction } from "../../db/client";
 import { numberSequences } from "../../db/schema";
 
 /**
@@ -105,5 +105,58 @@ export class NumberingService {
       })
       .returning();
     return created;
+  }
+
+  /**
+   * Allocates the next gapless, permanent number for `documentType`, per
+   * CLAUDE.md ("Allocated inside the issuing transaction via a row lock on
+   * a sequence table"). MUST be called with `tx` being the same open
+   * transaction as the document-issuing write (e.g. QuotesService.send's
+   * `status: "draft" -> "sent"` update) — never call this outside a
+   * transaction, and never call it more than once per issuing transaction.
+   *
+   * `SELECT ... FOR UPDATE` locks the org+documentType row for the
+   * duration of the caller's transaction, so a concurrent `send` on a
+   * second quote blocks here until the first transaction commits or rolls
+   * back, guaranteeing no two documents of the same type in the same org
+   * ever receive the same number and no number is skipped. If no sequence
+   * row exists yet for this org+documentType, one is created inline using
+   * this module's own defaults (`NUMBERING_DEFAULTS`) rather than throwing
+   * — a fresh org that skipped the numbering onboarding step must still be
+   * able to issue its first quote.
+   */
+  async allocateNumber(tx: Transaction, orgId: string, documentType: NumberingDocumentType): Promise<string> {
+    const [locked] = await tx
+      .select()
+      .from(numberSequences)
+      .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType)))
+      .for("update");
+
+    const current =
+      locked ??
+      (
+        await tx
+          .insert(numberSequences)
+          .values({
+            orgId,
+            documentType,
+            prefix: NUMBERING_DEFAULTS[documentType].prefix,
+            padding: NUMBERING_DEFAULTS[documentType].padding,
+            nextValue: 1,
+          })
+          .returning()
+      )[0];
+
+    if (!current) {
+      throw new Error(`Failed to allocate a ${documentType} number for org ${orgId}`);
+    }
+
+    await tx
+      .update(numberSequences)
+      .set({ nextValue: current.nextValue + 1, updatedAt: new Date() })
+      .where(eq(numberSequences.id, current.id));
+
+    const padded = String(current.nextValue).padStart(current.padding, "0");
+    return current.yearToken ? `${current.prefix}-${current.yearToken}-${padded}` : `${current.prefix}-${padded}`;
   }
 }

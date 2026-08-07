@@ -1,0 +1,665 @@
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import { computeLineTax, money, roundHalfUp } from "@spine/shared";
+import { and, desc, eq } from "drizzle-orm";
+import type { z } from "zod";
+import { DATABASE } from "../../db/db.module";
+import type { Database, Transaction } from "../../db/client";
+import { quotes, quoteLines, contacts } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
+import { NumberingService } from "../numbering/numbering.service";
+import { SettingsService } from "../org/settings.service";
+
+export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
+export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
+
+/** Backs the org's discount-approval threshold (S-03.9) via the generic `settings` table, mirroring `default_tax_rate`'s exact convention (see tax.controller.ts). */
+const DISCOUNT_THRESHOLD_KEY = "discount_approval_threshold";
+
+export interface DiscountApprovalThreshold {
+  /** Decimal percentage, e.g. 15 for 15%. A quote's overall (blended) discount percentage at or above this requires owner approval. */
+  percentage: number;
+}
+
+const DEFAULT_DISCOUNT_THRESHOLD: DiscountApprovalThreshold = { percentage: 20 };
+
+interface ComputedLine {
+  sortOrder: number;
+  type: "item" | "heading" | "text";
+  catalogItemId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unitPriceAmount: bigint;
+  unitPriceCurrency: string;
+  discountPercentage: number;
+  taxRatePercentage: number;
+  lineSubtotalAmount: bigint;
+  lineTaxAmount: bigint;
+  lineTotalAmount: bigint;
+}
+
+interface ComputedTotals {
+  lines: ComputedLine[];
+  subtotalAmount: bigint;
+  discountAmount: bigint;
+  taxAmount: bigint;
+  totalAmount: bigint;
+  /** Blended discount as a percentage of the pre-discount subtotal, used against the approval threshold. 0 when the pre-discount subtotal is 0. */
+  overallDiscountPercentage: number;
+}
+
+/**
+ * Server-side computation of every line and document total from raw line
+ * input — the ONLY place quote totals are computed. Never trust a
+ * client-supplied total (CLAUDE.md). Uses `computeLineTax` (the existing
+ * shared tax engine) per line, exclusive-tax only (quotes don't currently
+ * support tax-inclusive pricing — no PRD story calls for it in Stage 1, and
+ * `computeLineTax`'s `inclusive` flag is available to wire up later without
+ * a schema change).
+ *
+ * Discount is applied to the line's pre-tax amount before tax is computed
+ * (tax is charged on the discounted price, the common convention) —
+ * `lineSubtotalAmount` is the post-discount, pre-tax amount; line quantity
+ * × unit price is rounded once at that point (half-up, per CLAUDE.md),
+ * matching computeLineTax's own "round once, at line level" rule.
+ * `heading`/`text` lines always compute to zero regardless of what junk
+ * values are in their quantity/price/discount/tax fields, since those
+ * fields are meaningless for non-`item` lines.
+ */
+function computeQuoteTotals(currency: string, lines: CreateQuoteInput["lines"]): ComputedTotals {
+  let subtotalAmount = 0n; // pre-discount
+  let discountAmount = 0n;
+  let taxAmount = 0n;
+  let totalAmount = 0n;
+
+  const computed: ComputedLine[] = lines.map((line, index) => {
+    if (line.type !== "item") {
+      return {
+        sortOrder: index,
+        type: line.type,
+        catalogItemId: line.catalogItemId ?? null,
+        name: line.name,
+        description: line.description ?? null,
+        quantity: 0,
+        unitPriceAmount: 0n,
+        unitPriceCurrency: currency,
+        discountPercentage: 0,
+        taxRatePercentage: 0,
+        lineSubtotalAmount: 0n,
+        lineTaxAmount: 0n,
+        lineTotalAmount: 0n,
+      };
+    }
+
+    const grossAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
+    const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (line.discountPercentage / 100));
+    const netAmount = grossAmount - lineDiscountAmount;
+
+    const taxResult = computeLineTax(
+      money(netAmount, currency),
+      line.taxRatePercentage > 0
+        ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
+        : [],
+      false,
+    );
+
+    subtotalAmount += grossAmount;
+    discountAmount += lineDiscountAmount;
+    taxAmount += taxResult.taxAmount.amount;
+    totalAmount += taxResult.total.amount;
+
+    return {
+      sortOrder: index,
+      type: "item",
+      catalogItemId: line.catalogItemId ?? null,
+      name: line.name,
+      description: line.description ?? null,
+      quantity: line.quantity,
+      unitPriceAmount: line.unitPriceAmount,
+      // Always the document's own currency, never a client-supplied
+      // per-line value — computeLineTax above already computed this line's
+      // tax/total assuming `currency`, and v1 has no multi-currency support
+      // (CLAUDE.md non-goals), so a line can never actually be priced in a
+      // different currency than its own quote. Silently normalizing here
+      // (rather than rejecting the request) matches this schema's existing
+      // permissive-input, server-computes-the-truth convention.
+      unitPriceCurrency: currency,
+      discountPercentage: line.discountPercentage,
+      taxRatePercentage: line.taxRatePercentage,
+      lineSubtotalAmount: netAmount,
+      lineTaxAmount: taxResult.taxAmount.amount,
+      lineTotalAmount: taxResult.total.amount,
+    };
+  });
+
+  const overallDiscountPercentage = subtotalAmount > 0n ? (Number(discountAmount) / Number(subtotalAmount)) * 100 : 0;
+
+  return { lines: computed, subtotalAmount, discountAmount, taxAmount, totalAmount, overallDiscountPercentage };
+}
+
+/**
+ * PRD F3 Stage 1 — quote CRUD, line items, and versioning. PDF rendering,
+ * email sending, the public accept/reject link, view/accept/reject event
+ * tracking, owner notifications, and quote->job/invoice conversion are all
+ * explicitly deferred to Stage 2/3 (see CHANGELOG). This service only
+ * implements: draft CRUD, send (number allocation + immutability), revise
+ * (versioning via parentQuoteId), and discount approval (S-03.9).
+ */
+@Injectable()
+export class QuotesService {
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+    private readonly numbering: NumberingService,
+    private readonly settings: SettingsService,
+  ) {}
+
+  private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
+    const value = await this.settings.get<DiscountApprovalThreshold>(orgId, DISCOUNT_THRESHOLD_KEY);
+    return value ?? DEFAULT_DISCOUNT_THRESHOLD;
+  }
+
+  async list(orgId: string, options: { status?: string; contactId?: string }) {
+    const conditions = [eq(quotes.orgId, orgId)];
+    if (options.contactId) conditions.push(eq(quotes.contactId, options.contactId));
+
+    const rows = await this.db
+      .select({
+        quote: quotes,
+        contactName: contacts.name,
+      })
+      .from(quotes)
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(and(...conditions))
+      .orderBy(desc(quotes.createdAt));
+
+    // "Superseded" isn't a stored status (see quotes.ts's schema comment) —
+    // derived here by checking whether any other quote's parentQuoteId
+    // points back at this row.
+    const supersededIds = new Set(
+      rows.map((r) => r.quote.parentQuoteId).filter((id): id is string => Boolean(id)),
+    );
+
+    let result = rows.map((r) => ({
+      ...r.quote,
+      contactName: r.contactName,
+      isExpired: isExpired(r.quote),
+      isSuperseded: supersededIds.has(r.quote.id),
+    }));
+
+    if (options.status) {
+      result = result.filter((q) => (options.status === "expired" ? q.isExpired : q.status === options.status));
+    }
+
+    return result;
+  }
+
+  async getOne(orgId: string, id: string) {
+    const [row] = await this.db
+      .select({ quote: quotes, contactName: contacts.name })
+      .from(quotes)
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!row) {
+      throw new NotFoundException("Quote not found");
+    }
+
+    const lines = await this.db
+      .select()
+      .from(quoteLines)
+      .where(eq(quoteLines.quoteId, id))
+      .orderBy(quoteLines.sortOrder);
+
+    const [supersededBy] = await this.db
+      .select({ id: quotes.id, version: quotes.version })
+      .from(quotes)
+      .where(and(eq(quotes.orgId, orgId), eq(quotes.parentQuoteId, id)));
+
+    return {
+      ...row.quote,
+      contactName: row.contactName,
+      isExpired: isExpired(row.quote),
+      isSuperseded: Boolean(supersededBy),
+      supersededByQuoteId: supersededBy?.id ?? null,
+      lines,
+    };
+  }
+
+  /** Creates a new draft (version 1, no parent). Always unnumbered — see quotes.ts's schema comment. */
+  /**
+   * `isDemo` is not part of `CreateQuoteInput`/`createQuoteSchema` — it's
+   * never client-settable (a real `POST /quotes` call can't mark its own
+   * quote as demo data). It exists solely for `DemoDataService` to call
+   * this same method directly (reusing real totals/threshold computation
+   * and audit-log writes rather than duplicating that logic) instead of
+   * hand-inserting rows, defaulting to `false` for every normal caller.
+   */
+  async create(orgId: string, actorUserId: string, input: CreateQuoteInput, isDemo = false) {
+    return this.persistDraft(orgId, actorUserId, input, { parentQuoteId: null, version: 1 }, isDemo);
+  }
+
+  /**
+   * Updates a DRAFT quote in place. A sent quote is immutable per
+   * CLAUDE.md ("Issued financial documents are never edited or deleted") —
+   * revising it means POST /quotes/:id/revise, which creates a new draft
+   * version instead. `full-replace` on lines: the client always sends the
+   * complete line array (matching Contacts' own nested contactPersons/
+   * addresses full-replace convention), so this deletes and re-inserts all
+   * lines rather than diffing them.
+   */
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateQuoteInput) {
+    const [existing] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Quote not found");
+    }
+    if (existing.status !== "draft") {
+      throw new BadRequestException("Only a draft quote can be edited. Revise it to create a new version instead.");
+    }
+
+    const currency = input.currency ?? existing.currency;
+    const totals = input.lines !== undefined ? computeQuoteTotals(currency, input.lines) : null;
+    const threshold = await this.getThreshold(orgId);
+
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(quotes)
+        .set({
+          ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
+          ...(input.currency !== undefined ? { currency: input.currency } : {}),
+          ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
+          ...(input.notes !== undefined ? { notes: input.notes } : {}),
+          ...(input.termsAndConditions !== undefined ? { termsAndConditions: input.termsAndConditions } : {}),
+          ...(totals
+            ? {
+                subtotalAmount: totals.subtotalAmount,
+                discountAmount: totals.discountAmount,
+                taxAmount: totals.taxAmount,
+                totalAmount: totals.totalAmount,
+                discountRequiresApproval: totals.overallDiscountPercentage >= threshold.percentage,
+                // A prior approval was only ever granted for the discount
+                // percentage that existed at approval time — editing the
+                // lines invalidates it regardless of which direction the
+                // discount moved (even a lower discount changes what was
+                // approved), so any edit to lines clears it and re-approval
+                // is required before this draft can be sent again. Without
+                // this, send()'s `discountRequiresApproval && !approvedByUserId`
+                // check would let a quote ship with a discount an owner
+                // never actually saw (S-03.9).
+                approvedByUserId: null,
+                approvedAt: null,
+              }
+            : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(quotes.id, id))
+        .returning();
+
+      if (input.lines !== undefined && totals) {
+        await tx.delete(quoteLines).where(eq(quoteLines.quoteId, id));
+        await insertLines(tx, id, totals.lines);
+      }
+
+      // `lines` is destructured out before diffing — it isn't a real column
+      // on `quotes` (so it always shows as a nonsensical "undefined -> [...]"
+      // change), and it also carries bigint fields (unitPriceAmount) that
+      // fail to JSON-serialize into audit_log.changes (a jsonb column),
+      // exactly like Contacts' own update() excludes contactPersons/
+      // addresses from its scalar-field diff for the same two reasons.
+      const { lines: _lines, ...scalarInput } = input;
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, scalarInput as Record<string, unknown>);
+      if (changes.length) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "quote",
+          entityId: id,
+          contactId: row?.contactId ?? existing.contactId,
+          changes,
+        });
+      }
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * Issues the quote: allocates its gapless number (via NumberingService,
+   * inside this same transaction, per CLAUDE.md's numbering rule) and
+   * flips status draft -> sent. Stage 1 deliberately does NOT send an
+   * email here — that's Stage 2, which will hook into this same endpoint
+   * (see CHANGELOG). Only a draft can be sent; sending is a one-way
+   * transition (no "un-send").
+   */
+  async send(orgId: string, id: string, actorUserId: string) {
+    const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Quote not found");
+    }
+
+    await this.db.transaction(async (tx) => {
+      // Re-select with a row lock inside the transaction — two concurrent
+      // `send` calls on the same quote must not both pass the draft/
+      // approval checks and both allocate a number (the first check above,
+      // before the transaction opens, is only a fast-path existence check;
+      // it cannot be trusted for the state guard below since it has no
+      // lock and the row could change between it and here).
+      const [existing] = await tx
+        .select()
+        .from(quotes)
+        .where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Quote not found");
+      }
+      if (existing.status !== "draft") {
+        throw new BadRequestException("Only a draft quote can be sent");
+      }
+      if (existing.discountRequiresApproval && !existing.approvedByUserId) {
+        throw new BadRequestException("This quote's discount requires owner approval before it can be sent");
+      }
+
+      const number = await this.numbering.allocateNumber(tx, orgId, "quote");
+      await tx
+        .update(quotes)
+        .set({ status: "sent", number, sentAt: new Date(), updatedAt: new Date() })
+        .where(eq(quotes.id, id));
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "sent",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: "draft", to: "sent" }],
+      });
+    });
+
+    return this.getOne(orgId, id);
+  }
+
+  /**
+   * S-03.8 — revises a SENT quote into a new draft version: copies every
+   * line and field into a fresh row with `parentQuoteId` pointing at the
+   * original and `version` incremented, without mutating the original at
+   * all (its own row, including its number, stays exactly as issued). The
+   * new version starts back at `status: "draft"` and `number: null` — it
+   * must go through `send` again to get its own number, exactly like any
+   * other draft. Only a `sent` (or `accepted`/`rejected`) quote can be
+   * revised; revising a draft makes no sense (just edit it via PUT).
+   */
+  async revise(orgId: string, id: string, actorUserId: string) {
+    const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Quote not found");
+    }
+
+    const revised = await this.db.transaction(async (tx) => {
+      // Row-locked re-select + the supersession check both happen inside
+      // this transaction, not before it — two concurrent `revise` calls on
+      // the same quote must not both see "not yet superseded" and both
+      // insert a competing next version. `quotes_parent_idx` is a plain
+      // index (not unique), so nothing at the DB level blocks this either;
+      // the lock here is the only guard.
+      const [existing] = await tx
+        .select()
+        .from(quotes)
+        .where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Quote not found");
+      }
+      if (existing.status === "draft") {
+        throw new BadRequestException("A draft quote has no history to revise — edit it directly instead");
+      }
+
+      const [alreadySuperseded] = await tx
+        .select({ id: quotes.id })
+        .from(quotes)
+        .where(and(eq(quotes.orgId, orgId), eq(quotes.parentQuoteId, id)));
+      if (alreadySuperseded) {
+        throw new BadRequestException("This quote has already been revised into a newer version");
+      }
+
+      const existingLines = await tx.select().from(quoteLines).where(eq(quoteLines.quoteId, id)).orderBy(quoteLines.sortOrder);
+
+      const [row] = await tx
+        .insert(quotes)
+        .values({
+          orgId,
+          contactId: existing.contactId,
+          status: "draft",
+          parentQuoteId: existing.id,
+          version: existing.version + 1,
+          validUntil: existing.validUntil,
+          currency: existing.currency,
+          subtotalAmount: existing.subtotalAmount,
+          discountAmount: existing.discountAmount,
+          taxAmount: existing.taxAmount,
+          totalAmount: existing.totalAmount,
+          discountRequiresApproval: existing.discountRequiresApproval,
+          notes: existing.notes,
+          termsAndConditions: existing.termsAndConditions,
+          createdByUserId: actorUserId,
+          // A revision of a demo quote must itself be demo data — otherwise
+          // it would survive DemoDataService.deleteAll's isDemo-scoped
+          // cleanup as an orphaned real-looking row.
+          isDemo: existing.isDemo,
+        })
+        .returning();
+
+      if (existingLines.length) {
+        await tx.insert(quoteLines).values(
+          existingLines.map((line) => ({
+            quoteId: row!.id,
+            sortOrder: line.sortOrder,
+            type: line.type,
+            catalogItemId: line.catalogItemId,
+            name: line.name,
+            description: line.description,
+            quantity: line.quantity,
+            unitPriceAmount: line.unitPriceAmount,
+            unitPriceCurrency: line.unitPriceCurrency,
+            discountPercentage: line.discountPercentage,
+            taxRatePercentage: line.taxRatePercentage,
+            lineSubtotalAmount: line.lineSubtotalAmount,
+            lineTaxAmount: line.lineTaxAmount,
+            lineTotalAmount: line.lineTotalAmount,
+          })),
+        );
+      }
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "revised",
+        entityType: "quote",
+        entityId: row!.id,
+        contactId: existing.contactId,
+        changes: [{ field: "parentQuoteId", from: null, to: existing.id }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, revised!.id);
+  }
+
+  /**
+   * S-03.9 — owner approves a quote whose blended discount met/exceeded the
+   * org's threshold. Owner-only, enforced via `@OrgRoles(["owner"])` on the
+   * controller route (server-side authorization per CLAUDE.md — the role
+   * check happens before this method is ever invoked, so it isn't repeated
+   * here). Meaningful on a draft (approval happens before send; `send()`
+   * itself blocks if a quote needs approval it hasn't received yet).
+   */
+  async approveDiscount(orgId: string, id: string, actorUserId: string) {
+    const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Quote not found");
+    }
+
+    const updated = await this.db.transaction(async (tx) => {
+      // Locked re-select, same reasoning as send()/revise() — two
+      // concurrent approvals must not both record a "discount_approved"
+      // audit entry for what should be a single approval event.
+      const [existing] = await tx
+        .select()
+        .from(quotes)
+        .where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Quote not found");
+      }
+      if (!existing.discountRequiresApproval) {
+        throw new BadRequestException("This quote's discount does not require approval");
+      }
+      if (existing.approvedByUserId) {
+        throw new BadRequestException("This quote's discount has already been approved");
+      }
+
+      const [row] = await tx
+        .update(quotes)
+        .set({ approvedByUserId: actorUserId, approvedAt: new Date(), updatedAt: new Date() })
+        .where(eq(quotes.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "discount_approved",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "approvedByUserId", from: null, to: actorUserId }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /** A draft can be hard-deleted — nothing references it yet (no ledger, no PDF, no email sent). A sent/accepted/rejected quote can never be deleted, only stay in its status, matching CLAUDE.md's "issued financial documents are never edited or deleted." */
+  async delete(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Quote not found");
+    }
+    if (existing.status !== "draft") {
+      throw new BadRequestException("Only a draft quote can be deleted");
+    }
+
+    await this.db.transaction(async (tx) => {
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: existing.status, to: null }],
+      });
+      await tx.delete(quoteLines).where(eq(quoteLines.quoteId, id));
+      await tx.delete(quotes).where(eq(quotes.id, id));
+    });
+    return { id };
+  }
+
+  private async persistDraft(
+    orgId: string,
+    actorUserId: string,
+    input: CreateQuoteInput,
+    versioning: { parentQuoteId: string | null; version: number },
+    isDemo = false,
+  ) {
+    const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
+    if (!contact) {
+      throw new BadRequestException("Contact not found");
+    }
+
+    const totals = computeQuoteTotals(input.currency, input.lines);
+    const threshold = await this.getThreshold(orgId);
+
+    const created = await this.db.transaction(async (tx) => {
+      const [quote] = await tx
+        .insert(quotes)
+        .values({
+          orgId,
+          contactId: input.contactId,
+          status: "draft",
+          parentQuoteId: versioning.parentQuoteId,
+          version: versioning.version,
+          validUntil: input.validUntil ?? null,
+          currency: input.currency,
+          subtotalAmount: totals.subtotalAmount,
+          discountAmount: totals.discountAmount,
+          taxAmount: totals.taxAmount,
+          totalAmount: totals.totalAmount,
+          discountRequiresApproval: totals.overallDiscountPercentage >= threshold.percentage,
+          notes: input.notes ?? null,
+          termsAndConditions: input.termsAndConditions ?? null,
+          createdByUserId: actorUserId,
+          isDemo,
+        })
+        .returning();
+
+      await insertLines(tx, quote!.id, totals.lines);
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "quote",
+        entityId: quote!.id,
+        contactId: input.contactId,
+        changes: [{ field: "status", from: null, to: "draft" }],
+      });
+
+      return quote;
+    });
+
+    return this.getOne(orgId, created!.id);
+  }
+}
+
+async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine[]) {
+  if (!lines.length) return;
+  await tx.insert(quoteLines).values(
+    lines.map((line) => ({
+      quoteId,
+      sortOrder: line.sortOrder,
+      type: line.type,
+      catalogItemId: line.catalogItemId,
+      name: line.name,
+      description: line.description,
+      quantity: line.quantity,
+      unitPriceAmount: line.unitPriceAmount,
+      unitPriceCurrency: line.unitPriceCurrency,
+      discountPercentage: line.discountPercentage,
+      taxRatePercentage: line.taxRatePercentage,
+      lineSubtotalAmount: line.lineSubtotalAmount,
+      lineTaxAmount: line.lineTaxAmount,
+      lineTotalAmount: line.lineTotalAmount,
+    })),
+  );
+}
+
+/**
+ * S-03.11 — "expired" is computed, not stored (see quotes.ts's schema
+ * comment for the full reasoning). Only a `sent` quote can be expired — a
+ * draft has no customer-facing validity yet, and accepted/rejected are
+ * terminal states that expiry shouldn't override.
+ */
+function isExpired(quote: typeof quotes.$inferSelect): boolean {
+  if (quote.status !== "sent" || !quote.validUntil) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const validUntil = new Date(quote.validUntil);
+  validUntil.setHours(0, 0, 0, 0);
+  return validUntil < today;
+}

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Package, Users } from "lucide-react";
+import { FileText, LayoutDashboard, Package, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -18,6 +18,7 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     items: [
       { href: "/contacts", label: "Contacts", icon: <Users /> },
       { href: "/catalog", label: "Catalogue", icon: <Package /> },
+      { href: "/quotes", label: "Quotes", icon: <FileText /> },
     ],
   },
 ];

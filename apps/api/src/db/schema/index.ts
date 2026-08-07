@@ -4,6 +4,7 @@ export * from "./numbering";
 export * from "./audit";
 export * from "./contacts";
 export * from "./catalog";
+export * from "./quotes";
 export * from "./files";
 export * from "./ledger";
 export * from "./idempotency";

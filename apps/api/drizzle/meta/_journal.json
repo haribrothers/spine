@@ -71,6 +71,20 @@
       "when": 1786047342604,
       "tag": "0009_loud_calypso",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1786105408449,
+      "tag": "0010_fast_mad_thinker",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786114660296,
+      "tag": "0011_rare_magneto",
+      "breakpoints": true
     }
   ]
 }
