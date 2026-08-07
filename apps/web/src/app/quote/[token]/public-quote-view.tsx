@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, Spinner, Textarea } from "@spine/ui";
+import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { CheckCircle2, XCircle } from "lucide-react";
 import type { PublicQuoteView as PublicQuoteViewData } from "./types";
@@ -205,17 +205,12 @@ export function PublicQuoteView({ token }: { token: string }) {
             You {quote.status} this quote
             {quote.respondedAt && <> on {new Date(quote.respondedAt).toLocaleString()}</>}.
           </p>
-          {quote.responseComment && <p className="text-[13px] text-on-surface-muted">&ldquo;{quote.responseComment}&rdquo;</p>}
+          {quote.responseComment && <RichTextContent html={quote.responseComment} className="text-on-surface-muted" />}
         </Card>
       ) : (
         <Card className="flex flex-col gap-3">
           <h3 className="text-[14px] font-semibold text-on-surface">Your decision</h3>
-          <Textarea
-            placeholder="Add an optional comment…"
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            rows={3}
-          />
+          <RichTextEditor value={comment} onValueChange={setComment} placeholder="Add an optional comment…" />
           {actionError && (
             <Alert variant="critical">
               <AlertDescription>{actionError}</AlertDescription>

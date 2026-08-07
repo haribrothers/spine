@@ -1,5 +1,6 @@
 import { GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
+import { parse } from "node-html-parser";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { quotes, quoteLines, quoteEvents, contacts } from "../../db/schema";
@@ -8,6 +9,20 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QuotePublicTokenService } from "./quote-public-token.service";
+
+/**
+ * The customer's accept/reject comment is rich text (HTML, from
+ * `RichTextEditor` on the public page) — the owner-notification email is
+ * plain text (`NotificationsService.notify`'s `text` field), so this strips
+ * markup down to its visible text before interpolating it, otherwise the
+ * owner would see literal `<p>`/`<strong>` tags in their inbox. Uses the
+ * same `node-html-parser` already a dependency for the PDF renderer's
+ * rich-text-to-PDF conversion, not a regex strip (fragile against nested/
+ * malformed tags).
+ */
+function stripHtmlToText(html: string): string {
+  return parse(html).textContent.trim();
+}
 
 /**
  * The deliberately reduced, public-safe projection of a quote — everything
@@ -215,7 +230,7 @@ export class PublicQuotesService {
         subject: `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? ""}`.trim(),
         text: [
           `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? ""} on ${businessName}.`,
-          comment ? `\nTheir comment: "${comment}"` : "",
+          comment ? `\nTheir comment: "${stripHtmlToText(comment)}"` : "",
         ].join("\n"),
       });
     }

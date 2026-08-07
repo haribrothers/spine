@@ -29,7 +29,17 @@ export const metadata: Metadata = {
 export default async function PublicQuotePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
   return (
-    <div className="min-h-screen overflow-y-auto bg-background">
+    // `globals.css` sets `html, body { height: 100%; overflow: hidden }`
+    // globally — a deliberate choice for the authenticated app, whose
+    // AppShell owns its own internal scroll region (see AppShell's `main`,
+    // `overflow-y-auto`) while the outer chrome stays fixed. This public
+    // page isn't inside that shell and has no internal scroll region of
+    // its own, so it inherited a non-scrollable `body` with content taller
+    // than the viewport — fixed by overriding back to a normal scrolling
+    // page, scoped to this route only via `fixed inset-0` + its own
+    // `overflow-y-auto`, rather than touching the global rule the rest of
+    // the app depends on.
+    <div className="fixed inset-0 overflow-y-auto bg-background">
       <PublicQuoteView token={token} />
     </div>
   );

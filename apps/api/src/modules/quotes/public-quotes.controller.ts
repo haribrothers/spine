@@ -56,10 +56,22 @@ export class PublicQuotesController {
   }
 }
 
+/**
+ * The comment is now rich text (HTML, from `RichTextEditor` on the public
+ * page) rather than plain text — a hard `.slice()` cutoff (the prior plain-
+ * text behavior) could truncate mid-tag and leave unbalanced markup. That's
+ * not an XSS risk (`RichTextContent`'s DOMPurify pass on display already
+ * drops anything malformed), but truncating at a fixed HTML-character
+ * length is still a poor user-facing limit — a comment with formatting
+ * "costs" more raw characters than the same plain text for no visible
+ * reason. Capped generously (8000 raw HTML chars, comfortably enough for
+ * the kind of short note this field is for) rather than truncated smartly,
+ * since HTML's raw length isn't a reliable proxy for its visible length.
+ */
 function normalizeComment(value: unknown): string | undefined {
   if (typeof value !== "string") return undefined;
   const trimmed = value.trim();
-  return trimmed.length ? trimmed.slice(0, 2000) : undefined;
+  return trimmed.length ? trimmed.slice(0, 8000) : undefined;
 }
 
 /** `req.ip` respects Express's `trust proxy` setting; falls back to the raw socket address. Both nullable — a public, unauthenticated caller's network info is best-effort provenance, not a hard requirement. */
