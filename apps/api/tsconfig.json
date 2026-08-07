@@ -4,7 +4,8 @@
     "rootDir": "./src",
     "outDir": "./dist",
     "allowImportingTsExtensions": true,
-    "rewriteRelativeImportExtensions": true
+    "rewriteRelativeImportExtensions": true,
+    "jsx": "react-jsx"
   },
   "include": ["src"]
 }

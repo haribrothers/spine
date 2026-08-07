@@ -1,0 +1,212 @@
+import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
+import { toDecimalString } from "@spine/shared";
+import type { quotes, quoteLines } from "../../db/schema";
+
+export interface QuotePdfBusinessProfile {
+  name: string;
+  logoUrl?: string;
+  address?: string;
+  industry?: string;
+}
+
+export interface QuotePdfData {
+  quote: typeof quotes.$inferSelect;
+  lines: (typeof quoteLines.$inferSelect)[];
+  contactName: string | null;
+  contactEmail: string | null;
+  business: QuotePdfBusinessProfile | null;
+  /** Base64 data URI for the org logo, resolved by QuotePdfService before render (React-PDF's <Image> needs a URL or a resolvable source, and CLAUDE.md's "byte-identical across environments" requirement rules out a live network fetch inside the renderer itself). Undefined when there is no logo or it could not be fetched — the header degrades to text-only. */
+  logoDataUri?: string;
+}
+
+const styles = StyleSheet.create({
+  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
+  businessBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logo: { width: 48, height: 48, objectFit: "contain", marginRight: 10 },
+  businessName: { fontSize: 14, fontWeight: 700 },
+  businessMeta: { fontSize: 9, color: "#555555", marginTop: 2 },
+  docTitleBlock: { alignItems: "flex-end" },
+  docTitle: { fontSize: 18, fontWeight: 700 },
+  docNumber: { fontSize: 10, color: "#555555", marginTop: 2 },
+  section: { marginBottom: 16 },
+  sectionLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
+  contactName: { fontSize: 11, fontWeight: 700 },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
+  metaCol: {},
+  table: { marginTop: 8 },
+  tableHeaderRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#333333",
+    paddingBottom: 4,
+    marginBottom: 4,
+  },
+  tableRow: { flexDirection: "row", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
+  headingRow: { paddingTop: 10, paddingBottom: 2 },
+  colName: { flex: 4 },
+  colQty: { flex: 1, textAlign: "right" },
+  colPrice: { flex: 1.4, textAlign: "right" },
+  colTax: { flex: 1, textAlign: "right" },
+  colTotal: { flex: 1.4, textAlign: "right" },
+  thText: { fontSize: 8, color: "#888888", textTransform: "uppercase", letterSpacing: 0.5 },
+  lineName: { fontSize: 10 },
+  lineNameHeading: { fontSize: 10, fontWeight: 700 },
+  lineDescription: { fontSize: 8.5, color: "#666666", marginTop: 1 },
+  totalsBlock: { marginTop: 16, alignSelf: "flex-end", width: 220 },
+  totalsRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
+  totalsLabel: { color: "#555555" },
+  totalsValue: { textAlign: "right" },
+  grandTotalRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    borderTopWidth: 1,
+    borderTopColor: "#333333",
+    marginTop: 4,
+    paddingTop: 4,
+  },
+  grandTotalLabel: { fontSize: 11, fontWeight: 700 },
+  grandTotalValue: { fontSize: 11, fontWeight: 700 },
+  footer: { marginTop: 28 },
+  footerLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
+  footerText: { fontSize: 9, color: "#333333", lineHeight: 1.4 },
+  pageFooter: {
+    position: "absolute",
+    bottom: 24,
+    left: 40,
+    right: 40,
+    fontSize: 8,
+    color: "#999999",
+    textAlign: "center",
+  },
+});
+
+function formatDate(value: Date | string | null): string {
+  if (!value) return "—";
+  const d = typeof value === "string" ? new Date(value) : value;
+  return d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+}
+
+/**
+ * Renders a quote purely from its own stored snapshot (`quotes`/
+ * `quote_lines` rows) — never re-reads `catalog_items`, per CLAUDE.md's
+ * "documents snapshot their data" rule. Every money value is formatted via
+ * `toDecimalString` from the shared money module (same formatter the web
+ * app uses), never a hand-rolled division, so this template can never
+ * silently misplace a decimal point.
+ */
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri }: QuotePdfData) {
+  const currency = quote.currency;
+  const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+
+  return (
+    <Document title={quote.number ?? "Quote"} author={business?.name ?? "Spine"}>
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header}>
+          <View style={styles.businessBlock}>
+            {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
+            <View>
+              <Text style={styles.businessName}>{business?.name ?? "Your business"}</Text>
+              {business?.address && <Text style={styles.businessMeta}>{business.address}</Text>}
+            </View>
+          </View>
+          <View style={styles.docTitleBlock}>
+            <Text style={styles.docTitle}>QUOTE</Text>
+            <Text style={styles.docNumber}>{quote.number ?? "DRAFT"}</Text>
+          </View>
+        </View>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaCol}>
+            <Text style={styles.sectionLabel}>Prepared for</Text>
+            <Text style={styles.contactName}>{contactName ?? "—"}</Text>
+            {contactEmail && <Text style={styles.businessMeta}>{contactEmail}</Text>}
+          </View>
+          <View style={styles.metaCol}>
+            <Text style={styles.sectionLabel}>Date issued</Text>
+            <Text style={styles.lineName}>{formatDate(quote.sentAt ?? quote.createdAt)}</Text>
+            {quote.validUntil && (
+              <>
+                <Text style={[styles.sectionLabel, { marginTop: 8 }]}>Valid until</Text>
+                <Text style={styles.lineName}>{formatDate(quote.validUntil)}</Text>
+              </>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.table}>
+          <View style={styles.tableHeaderRow}>
+            <Text style={[styles.colName, styles.thText]}>Description</Text>
+            <Text style={[styles.colQty, styles.thText]}>Qty</Text>
+            <Text style={[styles.colPrice, styles.thText]}>Unit price</Text>
+            <Text style={[styles.colTax, styles.thText]}>Tax</Text>
+            <Text style={[styles.colTotal, styles.thText]}>Total</Text>
+          </View>
+
+          {lines.map((line) => {
+            if (line.type !== "item") {
+              return (
+                <View key={line.id} style={styles.headingRow}>
+                  <Text style={styles.lineNameHeading}>{line.name}</Text>
+                  {line.description && <Text style={styles.lineDescription}>{line.description}</Text>}
+                </View>
+              );
+            }
+            return (
+              <View key={line.id} style={styles.tableRow}>
+                <View style={styles.colName}>
+                  <Text style={styles.lineName}>{line.name}</Text>
+                  {line.description && <Text style={styles.lineDescription}>{line.description}</Text>}
+                </View>
+                <Text style={styles.colQty}>{line.quantity}</Text>
+                <Text style={styles.colPrice}>{fmt(line.unitPriceAmount)}</Text>
+                <Text style={styles.colTax}>{line.taxRatePercentage > 0 ? `${line.taxRatePercentage}%` : "—"}</Text>
+                <Text style={styles.colTotal}>{fmt(line.lineTotalAmount)}</Text>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={styles.totalsBlock}>
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Subtotal</Text>
+            <Text style={styles.totalsValue}>{fmt(quote.subtotalAmount)}</Text>
+          </View>
+          {quote.discountAmount > 0n && (
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>Discount</Text>
+              <Text style={styles.totalsValue}>-{fmt(quote.discountAmount)}</Text>
+            </View>
+          )}
+          <View style={styles.totalsRow}>
+            <Text style={styles.totalsLabel}>Tax</Text>
+            <Text style={styles.totalsValue}>{fmt(quote.taxAmount)}</Text>
+          </View>
+          <View style={styles.grandTotalRow}>
+            <Text style={styles.grandTotalLabel}>Total</Text>
+            <Text style={styles.grandTotalValue}>{fmt(quote.totalAmount)}</Text>
+          </View>
+        </View>
+
+        {quote.notes && (
+          <View style={styles.footer}>
+            <Text style={styles.footerLabel}>Notes</Text>
+            <Text style={styles.footerText}>{quote.notes}</Text>
+          </View>
+        )}
+        {quote.termsAndConditions && (
+          <View style={styles.footer}>
+            <Text style={styles.footerLabel}>Terms &amp; conditions</Text>
+            <Text style={styles.footerText}>{quote.termsAndConditions}</Text>
+          </View>
+        )}
+
+        <Text
+          style={styles.pageFooter}
+          render={({ pageNumber, totalPages }) => `${quote.number ?? "Draft quote"} · Page ${pageNumber} of ${totalPages}`}
+          fixed
+        />
+      </Page>
+    </Document>
+  );
+}

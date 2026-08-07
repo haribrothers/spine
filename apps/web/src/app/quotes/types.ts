@@ -43,6 +43,8 @@ export interface Quote {
   termsAndConditions: string | null;
   createdByUserId: string | null;
   sentAt: string | null;
+  /** Set once the PDF generated at send time is persisted (Stage 2, S-03.3/S-03.4) — null on a draft, and possibly still null on a sent quote if persistence itself failed (logged server-side, not fatal). The "Download PDF" affordance doesn't need this directly — `GET /quotes/:id/pdf` renders live regardless — but it's useful to know a durable copy exists. */
+  pdfFileId: string | null;
   createdAt: string;
   updatedAt: string;
   /** Computed server-side at read time — see QuotesService's own comment on why "expired" is never stored. */

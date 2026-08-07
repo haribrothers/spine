@@ -85,6 +85,13 @@
       "when": 1786114660296,
       "tag": "0011_rare_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786117391169,
+      "tag": "0012_curly_tyrannus",
+      "breakpoints": true
     }
   ]
 }

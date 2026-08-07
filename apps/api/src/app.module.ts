@@ -21,11 +21,17 @@ import { FilesModule } from "./modules/files/files.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { DemoDataModule } from "./modules/demo-data/demo-data.module";
+import { QueueModule } from "./modules/queue/queue.module";
+import { EmailModule } from "./modules/email/email.module";
+import { PdfModule } from "./modules/pdf/pdf.module";
 
 @Module({
   imports: [
     AuthModule.forRoot({ auth, isGlobal: true }),
     DbModule,
+    QueueModule,
+    EmailModule,
+    PdfModule,
     HealthModule,
     OrgModule,
     UsersModule,

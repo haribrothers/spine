@@ -3,6 +3,7 @@ import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
+import { files } from "./files";
 
 /**
  * PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8).
@@ -105,6 +106,23 @@ export const quotes = pgTable(
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set once, in the same transaction as the status flip to `sent` — never touched again (a sent quote is immutable). */
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    /**
+     * PRD F3 Stage 2 (S-03.3/S-03.4) — the exact PDF generated at send time,
+     * persisted via `FilesService` (S3/MinIO) rather than regenerated on
+     * every download. Nullable: null on every draft (nothing to show yet —
+     * the web UI instead calls `GET /quotes/:id/pdf` for a live preview,
+     * which renders on demand from the current draft snapshot), and also
+     * null on a sent quote if PDF generation/upload itself failed at send
+     * time (send() must still succeed — number allocation is the
+     * irreversible, must-not-fail step; PDF persistence failing is
+     * logged, not fatal, matching the same graceful-degradation posture as
+     * the email attempt). Once set, this is the permanent "PDF as emailed"
+     * record for that quote version — a later PDF-template code change
+     * must never alter what a `sent` quote's stored PDF looks like, per
+     * CLAUDE.md's "documents snapshot their data" rule extended to
+     * rendered output, not just row data.
+     */
+    pdfFileId: uuid("pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     /** Same demo-data marker as contacts.isDemo/catalogItems.isDemo — see contacts.ts's isDemo comment. */
     isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -82,11 +82,12 @@ pnpm install
 pnpm dev:infra:up
 ```
 
-This starts two containers via `docker-compose.dev.yml`, separate from the
+This starts three containers via `docker-compose.dev.yml`, separate from the
 production stack in `docker-compose.yml`:
 
 - **Postgres** on `localhost:5432` (user/pass/db: `spine`/`spine`/`spine`)
 - **MinIO** on `localhost:9000` (API) and `localhost:9001` (console; login `spine` / `spinespine`)
+- **MailDev** on `localhost:1025` (SMTP) and `localhost:1080` (web UI — read quote emails here instead of a real inbox; nothing is ever actually delivered). Optional — leave `SMTP_HOST` blank in `.env` and email sending degrades gracefully (the quote still issues, the email queues for retry) if you don't need to see it locally.
 
 Data persists in Docker volumes (`spine-dev_spine_dev_pgdata`,
 `spine-dev_spine_dev_minio`) across restarts. Useful commands:

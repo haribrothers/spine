@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import { computeLineTax, money, roundHalfUp } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -9,6 +9,8 @@ import { quotes, quoteLines, contacts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
+import { QueueService } from "../queue/queue.service";
+import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
@@ -148,11 +150,14 @@ function computeQuoteTotals(currency: string, lines: CreateQuoteInput["lines"]):
  */
 @Injectable()
 export class QuotesService {
+  private readonly logger = new Logger(QuotesService.name);
+
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly settings: SettingsService,
+    private readonly queue: QueueService,
   ) {}
 
   private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
@@ -329,10 +334,23 @@ export class QuotesService {
   /**
    * Issues the quote: allocates its gapless number (via NumberingService,
    * inside this same transaction, per CLAUDE.md's numbering rule) and
-   * flips status draft -> sent. Stage 1 deliberately does NOT send an
-   * email here — that's Stage 2, which will hook into this same endpoint
-   * (see CHANGELOG). Only a draft can be sent; sending is a one-way
-   * transition (no "un-send").
+   * flips status draft -> sent. Only a draft can be sent; sending is a
+   * one-way transition (no "un-send").
+   *
+   * PRD F3 Stage 2 (S-03.4) hook point: after the transaction commits
+   * (number allocated, status flipped — the irreversible, must-not-fail
+   * part is already durable), this enqueues a `quote-send-email` pg-boss
+   * job (QuoteEmailWorker) to render+persist the PDF and email it to the
+   * contact. Enqueuing happens OUTSIDE the transaction and is not awaited
+   * for its own completion — per CLAUDE.md's graceful-degradation rule
+   * ("if SMTP is down, documents still issue and email queues for
+   * retry"), a slow/failed SMTP send (or SMTP being unconfigured at all)
+   * must never block or fail this request; pg-boss's own retry/backoff
+   * (configured in QueueService.send) handles the email attempt entirely
+   * out-of-band. If enqueuing itself throws (e.g. pg-boss's connection is
+   * down), that's logged and swallowed here too, for the same reason —
+   * the quote has already been irrevocably issued by this point and must
+   * be returned as a success to the caller regardless.
    */
   async send(orgId: string, id: string, actorUserId: string) {
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
@@ -378,6 +396,14 @@ export class QuotesService {
         changes: [{ field: "status", from: "draft", to: "sent" }],
       });
     });
+
+    try {
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id });
+    } catch (err) {
+      // Never let a queue-enqueue failure fail an already-committed send —
+      // see this method's own doc comment above.
+      this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
+    }
 
     return this.getOne(orgId, id);
   }

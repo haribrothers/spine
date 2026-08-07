@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import type { Response } from "express";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
+import { QuotePdfService } from "../pdf/quote-pdf.service";
 
 /**
  * Per §2.1's permission table, quotes are NOT "Manage contacts & catalogue"
@@ -16,7 +18,10 @@ import { QuotesService } from "./quotes.service";
 @Controller("quotes")
 @OrgRoles(["owner", "staff"])
 export class QuotesController {
-  constructor(private readonly quotesService: QuotesService) {}
+  constructor(
+    private readonly quotesService: QuotesService,
+    private readonly quotePdfService: QuotePdfService,
+  ) {}
 
   @Get()
   async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string) {
@@ -28,6 +33,26 @@ export class QuotesController {
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.quotesService.getOne(orgId, id);
+  }
+
+  /**
+   * PRD S-03.3 — streams a branded PDF of the quote, rendered live from its
+   * stored line/total snapshot on every call (not served from
+   * `pdfFileId`'s persisted copy, even after send — a live render and the
+   * persisted send-time copy are byte-identical for a `sent` quote, since
+   * its snapshot is immutable, so there's no correctness reason to prefer
+   * one over the other; rendering live keeps this one code path correct
+   * for both drafts, which have no persisted PDF yet, without a branch).
+   * `@OrgRoles(["owner","staff"])` inherited from the controller — quotes
+   * have no Field access at all per §2.1.
+   */
+  @Get(":id/pdf")
+  async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
+    const orgId = requireOrgId(session);
+    const { buffer, filename } = await this.quotePdfService.render(orgId, id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.send(buffer);
   }
 
   @Post()
@@ -47,9 +72,12 @@ export class QuotesController {
   }
 
   /**
-   * Stage 1's "issue" moment: allocates the gapless number and marks
-   * `sent`. No email is sent yet — that's Stage 2, which will hook into
-   * this same endpoint (see quotes.service.ts's own comment on `send`).
+   * The "issue" moment: allocates the gapless number and marks `sent`.
+   * PRD S-03.4 — also enqueues a `quote-send-email` pg-boss job that
+   * renders + persists the PDF and emails it to the quote's contact; see
+   * `quotes.service.ts`'s own comment on `send` for why that happens
+   * out-of-band (SMTP being down/unconfigured must never block this
+   * request or the number allocation it just performed).
    */
   @Post(":id/send")
   @UseInterceptors(IdempotencyInterceptor)

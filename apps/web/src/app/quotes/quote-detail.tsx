@@ -14,6 +14,21 @@ interface MemberRow {
   role: string;
 }
 
+/**
+ * `GET /quotes/:id/pdf` streams a binary PDF, not JSON — `apiClient` always
+ * JSON-parses responses, so this opens the route directly in a new tab
+ * instead. The browser's own cookie session (same-origin credentials,
+ * `credentials: "include"` equivalent for a plain navigation) authenticates
+ * the request exactly like every other API call from this app; no signed
+ * URL or token is needed since this hits the API origin directly, matching
+ * how `business-logo-upload.tsx` already builds `${API_URL}/files/:id}`
+ * URLs for the same reason.
+ */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+function quotePdfUrl(quoteId: string): string {
+  return `${API_URL}/quotes/${quoteId}/pdf`;
+}
+
 const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
   draft: "bg-draft-bg text-draft",
   sent: "bg-due-soon-bg text-due-soon",
@@ -70,7 +85,17 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     try {
       const updated = await apiClient.post<Quote>(`/quotes/${quote.id}/send`);
       setQuote(updated);
-      showToast("Quote marked as sent", `${updated.number} is now issued. No email has been sent — that's coming in a later update.`);
+      // The email itself is sent out-of-band via a queued job (pg-boss),
+      // never awaited by this request — see quotes.service.ts's `send()`
+      // comment for why. This toast can only honestly promise that sending
+      // was *queued*, not that it succeeded (SMTP might be unconfigured,
+      // or the send might still fail/retry after this response returns).
+      showToast(
+        "Quote marked as sent",
+        updated.contactName
+          ? `${updated.number} is now issued, and emailing it to ${updated.contactName} has been queued.`
+          : `${updated.number} is now issued, and emailing it to the contact has been queued.`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark this quote as sent.");
     } finally {
@@ -163,6 +188,12 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           </div>
 
           <div className="flex flex-wrap gap-2">
+            {/* PRD S-03.3 — live preview/download, rendered on demand from the quote's current snapshot (see quotes.controller.ts's GET /:id/pdf comment for why this is always a live render, even for a sent quote). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
+            <Button variant="secondary" asChild>
+              <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
+                {quote.status === "draft" ? "Preview PDF" : "Download PDF"}
+              </a>
+            </Button>
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/quotes/${quote.id}/edit`}>Edit</Link>
