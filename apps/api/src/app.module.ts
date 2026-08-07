@@ -1,4 +1,6 @@
 import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { auth } from "./auth/auth";
 import { DbModule } from "./db/db.module";
@@ -27,6 +29,15 @@ import { PdfModule } from "./modules/pdf/pdf.module";
 
 @Module({
   imports: [
+    // PRD §10.3 — "with rate limiting". App-wide default is generous (this
+    // guard applies to every route unless overridden); `PublicQuotesController`
+    // overrides it to a much tighter per-route limit via its own `@Throttle`
+    // decorator, since that's the one place an anonymous, zero-cost caller
+    // can reach the API at all. In-memory storage (the default, no `storage`
+    // option set) — no Redis, matching CLAUDE.md's single-host stack table;
+    // acceptable since this is a single-process deployment, so in-memory
+    // state doesn't need to be shared across instances.
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 300 }]),
     AuthModule.forRoot({ auth, isGlobal: true }),
     DbModule,
     QueueModule,
@@ -52,5 +63,6 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     AuditModule,
     DemoDataModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

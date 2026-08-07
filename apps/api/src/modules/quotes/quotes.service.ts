@@ -11,6 +11,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
+import { QuotePublicTokenService } from "./quote-public-token.service";
 
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
@@ -158,6 +159,7 @@ export class QuotesService {
     private readonly numbering: NumberingService,
     private readonly settings: SettingsService,
     private readonly queue: QueueService,
+    private readonly publicTokens: QuotePublicTokenService,
   ) {}
 
   private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
@@ -412,6 +414,15 @@ export class QuotesService {
    * down), that's logged and swallowed here too, for the same reason —
    * the quote has already been irrevocably issued by this point and must
    * be returned as a success to the caller regardless.
+   *
+   * PRD F3 Stage 3 (S-03.5) hook point: mints a fresh public-quote token
+   * (`QuotePublicTokenService.issue`) INSIDE the same transaction as the
+   * number allocation/status flip — a token must never exist for a send
+   * that ends up rolling back, exactly like the number itself. The token
+   * string travels to the email worker via the queued job's own data
+   * payload (not re-derived by the worker) so `QuoteEmailWorker` never
+   * needs to know how tokens are minted — it just builds a link with
+   * whatever token this method handed it.
    */
   async send(orgId: string, id: string, actorUserId: string) {
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
@@ -419,7 +430,7 @@ export class QuotesService {
       throw new NotFoundException("Quote not found");
     }
 
-    await this.db.transaction(async (tx) => {
+    const { token } = await this.db.transaction(async (tx) => {
       // Re-select with a row lock inside the transaction — two concurrent
       // `send` calls on the same quote must not both pass the draft/
       // approval checks and both allocate a number (the first check above,
@@ -461,10 +472,13 @@ export class QuotesService {
         contactId: existing.contactId,
         changes: [{ field: "status", from: "draft", to: "sent" }],
       });
+
+      const issued = await this.publicTokens.issue(tx, orgId, id);
+      return { token: issued.token };
     });
 
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id });
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
     } catch (err) {
       // Never let a queue-enqueue failure fail an already-committed send —
       // see this method's own doc comment above.
@@ -574,6 +588,14 @@ export class QuotesService {
         contactId: existing.contactId,
         changes: [{ field: "parentQuoteId", from: null, to: existing.id }],
       });
+
+      // A revised quote's prior version is now superseded — its old public
+      // link must stop working (a customer opening a stale emailed link
+      // should never be able to accept/view pricing that's no longer
+      // current). See QuotePublicTokenService's own doc comment on why
+      // tokens are reusable-until-resolved rather than one-time-use; being
+      // superseded is one of the resolutions that ends a token's life.
+      await this.publicTokens.revokeAllForQuote(tx, existing.id);
 
       return row;
     });

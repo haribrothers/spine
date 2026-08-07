@@ -14,6 +14,11 @@ export type AuditEntityType =
   | "quote"
   | "quote_line";
 
+// Note: public quote-response audit rows (S-03.6) use entityType "quote"
+// with actorUserId: null (the customer isn't a system user) — see
+// PublicQuotesService, which reuses this same service rather than adding a
+// new entity type for what is still, structurally, a quote mutation.
+
 /** A single before/after field change, as recorded in `audit_log.changes`. */
 export interface FieldChange {
   field: string;

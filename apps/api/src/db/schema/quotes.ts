@@ -119,6 +119,22 @@ export const quotes = pgTable(
     /** Set once, in the same transaction as the status flip to `sent` — never touched again (a sent quote is immutable). */
     sentAt: timestamp("sent_at", { withTimezone: true }),
     /**
+     * PRD F3 Stage 3 (S-03.6) — set once by the public accept/reject action,
+     * alongside the `status` flip to `accepted`/`rejected`. Denormalized
+     * onto the quote itself (duplicating what the corresponding
+     * `quote_events` row already records) so the detail page and any future
+     * report can read "when/what did the customer say" with a single-row
+     * fetch instead of joining `quote_events`, exactly mirroring why
+     * `discountRequiresApproval` is stored on the quote rather than always
+     * re-derived — a fast, denormalized fact about the quote as it stands
+     * today, with `quote_events` remaining the append-only source of truth
+     * for the full history (multiple views, the eventual accept/reject).
+     * Both null until a customer responds; never touched again afterward
+     * (a resolved quote's response is as permanent as its own `sentAt`).
+     */
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    responseComment: text("response_comment"),
+    /**
      * PRD F3 Stage 2 (S-03.3/S-03.4) — the exact PDF generated at send time,
      * persisted via `FilesService` (S3/MinIO) rather than regenerated on
      * every download. Nullable: null on every draft (nothing to show yet —
@@ -224,5 +240,116 @@ export const quoteLines = pgTable(
   (table) => [
     index("quote_lines_quote_idx").on(table.quoteId),
     index("quote_lines_catalog_item_idx").on(table.catalogItemId),
+  ],
+);
+
+/**
+ * PRD F3 Stage 3 (S-03.5/S-03.6, §10.3) — backs the public, unauthenticated
+ * "view this quote" link. Design: a stateless signed token (HMAC-SHA256 via
+ * `jose`, keyed on `AUTH_SECRET`, encoding quoteId + this row's `nonce` +
+ * an expiry claim — see `PublicQuoteTokenService`) PLUS this DB row, so a
+ * token is both verifiable without a DB round-trip (fast path: signature +
+ * expiry claim check) AND revocable early / auditable (this row: `revokedAt`
+ * lets `revise()` void a superseded quote's outstanding link; `expiresAt`
+ * here is the source of truth checked on every use, not just the JWT's own
+ * `exp` claim, so revocation and "issue a new link with a shorter fuse"
+ * both work without re-signing anything).
+ *
+ * Single-purpose (per §10.3's "signed, expiring, single-purpose tokens") is
+ * read here as "scoped to exactly one quote" — NOT one-time-use. A customer
+ * legitimately needs to open the emailed link, read the quote, maybe close
+ * the tab and re-open it a few times before deciding (S-03.5's own wording:
+ * "read the quote on my phone... so I don't need to download anything" —
+ * nothing in S-03.5/S-03.6 implies a single viewing). Consuming the token
+ * after one view would make the common "customer re-opens the email link a
+ * day later to double check a number" case fail with a dead link, which is
+ * worse UX than the token simply remaining valid until it naturally expires
+ * or the quote is resolved (accepted/rejected/revised/re-sent). So this
+ * token is reusable for GET (view) until `expiresAt`/`revokedAt`, and the
+ * accept/reject actions themselves are what make it terminal in practice —
+ * once the quote leaves `sent` status, `PublicQuotesService` rejects any
+ * further use of any token for that quote regardless of this row's own
+ * expiry, so there's no risk of a stale token re-triggering accept/reject.
+ *
+ * A fresh token+row is minted every time `send()` or a re-send happens; the
+ * previous version's row (if the quote being sent is itself a revision) is
+ * explicitly revoked by `revise()` — see quotes.service.ts.
+ */
+export const quotePublicTokens = pgTable(
+  "quote_public_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    /** The random nonce embedded in the signed JWT's own claims — looked up here on every request instead of trusting the JWT's claims alone, so revocation/expiry are enforced from durable state, not just what the token itself asserts. */
+    nonce: text("nonce").notNull().unique(),
+    quoteId: uuid("quote_id")
+      .notNull()
+      .references(() => quotes.id, { onDelete: "cascade" }),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    /** Null while live. Set by `revise()` when a newer version supersedes this token's quote, and could be set by a future "resend" affordance to void a prior link — never unset once written. */
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("quote_public_tokens_nonce_idx").on(table.nonce),
+    index("quote_public_tokens_quote_idx").on(table.quoteId),
+    index("quote_public_tokens_org_idx").on(table.orgId),
+  ],
+);
+
+/** A quote_events row's kind — one per public, customer-facing interaction Stage 3 tracks. */
+export const quoteEventTypeEnum = pgEnum("quote_event_type", ["viewed", "accepted", "rejected"]);
+
+/**
+ * PRD F3 Stage 3 (S-03.5/S-03.6/S-03.7) — one row per view/accept/reject on
+ * the public link, in order. This is the append-only log the PRD's own
+ * wording for these stories refers to as "view/accept/reject events"; it is
+ * ALSO what "the moment a quote is viewed or accepted" (S-03.7) fires an
+ * owner-notification email off of (`PublicQuotesService` writes a row here
+ * and calls `NotificationsService` in the same request, not a separate
+ * process reading this table later).
+ *
+ * `type: "viewed"` is recorded on EVERY successful public view, not only the
+ * first — see the token's own reusable-until-resolved design above: since a
+ * customer can legitimately view multiple times, each view is a real event
+ * worth its own row for the owner's activity trail (a "viewed 3 times"
+ * signal is more informative than deduplicating to one). The owner
+ * notification for "viewed" is still sent from every such row's insert per
+ * S-03.7's literal wording ("the moment a quote is viewed") — there's no
+ * PRD language calling for de-duplicating repeat-view notifications, though
+ * this is a reasonable follow-up if it proves noisy in practice (see
+ * CHANGELOG's "Next up" for this caveat).
+ *
+ * `comment` is set only on `accepted`/`rejected` rows (S-03.6's "optional
+ * comment"), always null on `viewed`. Quote-level resolution — `status`,
+ * `respondedAt`, `responseComment` on `quotes` itself — is ALSO written by
+ * the same accept/reject call (see quotes.ts's own comment on those
+ * columns for why both the event row and the denormalized quote columns
+ * exist side by side).
+ */
+export const quoteEvents = pgTable(
+  "quote_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    quoteId: uuid("quote_id")
+      .notNull()
+      .references(() => quotes.id, { onDelete: "cascade" }),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    type: quoteEventTypeEnum("type").notNull(),
+    /** Optional accept/reject comment (S-03.6) — always null for `viewed`. */
+    comment: text("comment"),
+    /** Provenance for a public, unauthenticated action — useful for the audit trail and for spotting abuse; both nullable since a proxy or odd client could omit either. */
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("quote_events_quote_idx").on(table.quoteId),
+    index("quote_events_org_idx").on(table.orgId),
+    index("quote_events_type_idx").on(table.type),
   ],
 );

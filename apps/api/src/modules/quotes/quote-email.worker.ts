@@ -12,9 +12,24 @@ import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
+/** Minimal HTML-escaping for the handful of values interpolated into this worker's own HTML email body — not a general-purpose sanitizer, just enough to keep a business/contact name from breaking the markup. */
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
 export interface QuoteSendEmailJobData {
   orgId: string;
   quoteId: string;
+  /**
+   * PRD F3 Stage 3 (S-03.4/S-03.5) — the signed public-quote token minted
+   * by `QuotesService.send()` in the same transaction as the number
+   * allocation, so this worker can build a real accept/reject link into
+   * the email body without knowing anything about how tokens are minted or
+   * verified. Optional only for backward compatibility with any job already
+   * sitting in the pg-boss queue from before this field existed (an
+   * in-flight deploy) — a normal `send()` call always supplies it now.
+   */
+  publicToken?: string;
 }
 
 /**
@@ -74,7 +89,7 @@ export class QuoteEmailWorker implements OnModuleInit {
   }
 
   async process(data: QuoteSendEmailJobData): Promise<void> {
-    const { orgId, quoteId } = data;
+    const { orgId, quoteId, publicToken } = data;
 
     const [row] = await this.db
       .select({ quote: quotes, contactName: contacts.name, contactEmail: contacts.email })
@@ -87,7 +102,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     }
 
     try {
-      await this.attemptSend(orgId, quoteId, row);
+      await this.attemptSend(orgId, quoteId, row, publicToken);
       await this.db
         .update(quotes)
         .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
@@ -113,6 +128,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     orgId: string,
     quoteId: string,
     row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
+    publicToken: string | undefined,
   ): Promise<void> {
     const { buffer, filename } = await this.pdf.render(orgId, quoteId);
 
@@ -148,6 +164,17 @@ export class QuoteEmailWorker implements OnModuleInit {
     const businessName = business?.name || "Spine";
     const quoteNumber = row.quote.number ?? "your quote";
 
+    // PRD S-03.4/S-03.5 — a real, web-facing accept/reject link, not the
+    // API's own /public/quotes/:token JSON endpoint (a customer should land
+    // on a real page, not raw JSON — the web route calls the API's public
+    // endpoint under the hood). `publicToken` is only ever absent for a job
+    // enqueued by an older deploy still sitting in the queue (see this
+    // field's own doc comment on QuoteSendEmailJobData) — the email still
+    // sends in that case, just without a link, rather than failing the
+    // whole attempt over a cosmetic omission.
+    const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+    const quoteLink = publicToken ? `${appUrl}/quote/${publicToken}` : null;
+
     await this.email.send({
       to: row.contactEmail,
       subject: `${businessName} sent you a quote (${quoteNumber})`,
@@ -155,9 +182,18 @@ export class QuoteEmailWorker implements OnModuleInit {
         `Hi ${row.contactName ?? "there"},`,
         "",
         `${businessName} has sent you a quote (${quoteNumber}), attached as a PDF.`,
+        ...(quoteLink ? ["", `View and respond to the quote online: ${quoteLink}`] : []),
         "",
         "This is an automated email — please reply directly to discuss the quote.",
       ].join("\n"),
+      html: quoteLink
+        ? [
+            `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
+            `<p>${escapeHtml(businessName)} has sent you a quote (${escapeHtml(quoteNumber)}), attached as a PDF.</p>`,
+            `<p><a href="${quoteLink}">View and respond to the quote online</a></p>`,
+            `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly to discuss the quote.</p>`,
+          ].join("\n")
+        : undefined,
       attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
     });
   }
