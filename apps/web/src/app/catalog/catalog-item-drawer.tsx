@@ -38,12 +38,24 @@ export function CatalogItemDrawer({
   const [saving, setSaving] = useState(false);
 
   function handleSuccess(saved: CatalogItem) {
+    setSaving(false);
     onOpenChange(false);
     onSaved(saved, item ? "updated" : "created");
   }
 
+  // The Drawer's content stays mounted across close/reopen (this component
+  // handles both create and edit in one long-lived instance, unlike
+  // ContactCreateDrawer's create-only, remount-per-open shape), so `saving`
+  // must be reset explicitly on close — otherwise a prior submit's `true`
+  // (set right before handleSuccess/onOpenChange(false) fire) leaks into
+  // the next open as a stuck spinner with no label.
+  function handleOpenChange(next: boolean) {
+    if (!next) setSaving(false);
+    onOpenChange(next);
+  }
+
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={handleOpenChange}>
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>{item ? "Edit item" : "Add item"}</DrawerTitle>
@@ -57,7 +69,7 @@ export function CatalogItemDrawer({
           <CatalogForm formId={formId} item={item} onSubmittingChange={setSaving} onSuccess={handleSuccess} />
         </DrawerBody>
         <DrawerFooter>
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
+          <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={saving}>
             Cancel
           </Button>
           <Button type="submit" form={formId} disabled={saving}>

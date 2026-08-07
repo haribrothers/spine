@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
   AlertDescription,
+  Combobox,
   FormField,
   Input,
   MoneyInput,
@@ -17,6 +18,17 @@ import { apiClient } from "../../lib/api-client";
 import type { AccountsByType, CatalogItem } from "./types";
 
 const NO_ACCOUNT = "none";
+
+/**
+ * Seed list for the currency Combobox — same fixed set
+ * currency-locale-step.tsx (org onboarding/Settings) already offers, kept
+ * in sync deliberately rather than importing across those route trees.
+ * `allowCreate` isn't set on the currency Combobox (unlike unit/category)
+ * since currency is a real ISO 4217 code validated server-side
+ * (currencyCodeSchema), not an open-ended vocabulary — a currency missing
+ * from this list should be added here, not typed ad hoc per item.
+ */
+const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
 interface CurrencyLocaleValue {
   code: string;
@@ -62,7 +74,28 @@ export function CatalogForm({
   const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
   const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
+  const [existingUnits, setExistingUnits] = useState<string[]>([]);
+  const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Suggestion source for the Unit/Category comboboxes below — every
+  // distinct value already in use across the org's catalogue (including
+  // archived items, since a unit/category used on an archived item is
+  // still a real, previously-typed value worth suggesting again).
+  // Self-contained (this form fetches its own list rather than taking one
+  // as a prop) per this component's own "no document context" design so
+  // it stays reusable verbatim from a future Quotes inline "+ New item".
+  useEffect(() => {
+    apiClient
+      .get<CatalogItem[]>("/catalog-items?includeArchived=true")
+      .then((rows) => {
+        setExistingUnits(Array.from(new Set(rows.map((row) => row.unit).filter(Boolean))).sort());
+        setExistingCategories(
+          Array.from(new Set(rows.map((row) => row.category).filter((c): c is string => Boolean(c)))).sort(),
+        );
+      })
+      .catch(() => {});
+  }, []);
 
   // Pre-fill currency/tax rate from org defaults, but only for a brand-new
   // item — an existing item's own stored values always win (they may have
@@ -98,7 +131,7 @@ export function CatalogForm({
         description: description || undefined,
         unit,
         category: category || undefined,
-        defaultPriceAmount: priceAmount,
+        defaultPriceAmount: priceAmount.toString(),
         defaultPriceCurrency: currency,
         defaultTaxRatePercentage: taxRatePercentage,
         incomeAccountId: incomeAccountId === NO_ACCOUNT ? undefined : incomeAccountId,
@@ -116,6 +149,15 @@ export function CatalogForm({
 
   const incomeAccounts = accounts?.income ?? [];
   const expenseAccounts = accounts?.expense ?? [];
+  const unitOptions = useMemo(() => existingUnits.map((u) => ({ value: u, label: u })), [existingUnits]);
+  const categoryOptions = useMemo(() => existingCategories.map((c) => ({ value: c, label: c })), [existingCategories]);
+  // The org's current default currency always appears even if it isn't in
+  // the fixed common-currency list, so a non-default org default is still
+  // selectable without falling back to free text.
+  const currencyOptions = useMemo(() => {
+    const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
+    return codes.map((code) => ({ value: code, label: code }));
+  }, [currency]);
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
@@ -135,11 +177,31 @@ export function CatalogForm({
 
       <div className="grid grid-cols-2 gap-4">
         <FormField label="Unit" required helperText="e.g. hour, sq ft, each">
-          {(field) => <Input {...field} value={unit} onChange={(e) => setUnit(e.target.value)} required />}
+          {(field) => (
+            <Combobox
+              {...field}
+              options={unitOptions}
+              value={unit}
+              onValueChange={setUnit}
+              allowCreate
+              placeholder="Select or type a unit…"
+              emptyText="Type to create a new unit."
+            />
+          )}
         </FormField>
 
         <FormField label="Category" helperText="Free text, optional">
-          {(field) => <Input {...field} value={category} onChange={(e) => setCategory(e.target.value)} />}
+          {(field) => (
+            <Combobox
+              {...field}
+              options={categoryOptions}
+              value={category}
+              onValueChange={setCategory}
+              allowCreate
+              placeholder="Select or type a category…"
+              emptyText="Type to create a new category."
+            />
+          )}
         </FormField>
       </div>
 
@@ -152,14 +214,7 @@ export function CatalogForm({
 
         <FormField label="Currency" required>
           {(field) => (
-            <Input
-              {...field}
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase())}
-              maxLength={3}
-              className="uppercase"
-              required
-            />
+            <Combobox {...field} options={currencyOptions} value={currency} onValueChange={setCurrency} />
           )}
         </FormField>
       </div>

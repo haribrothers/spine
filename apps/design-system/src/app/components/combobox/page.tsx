@@ -18,6 +18,25 @@ function ComboboxDemo() {
   return <Combobox options={contacts} value={value} onValueChange={setValue} placeholder="Select a contact…" />;
 }
 
+const units = [
+  { value: "hour", label: "hour" },
+  { value: "sq-ft", label: "sq ft" },
+  { value: "each", label: "each" },
+];
+
+function ComboboxCreatableDemo() {
+  const [value, setValue] = useState<string>("");
+  return (
+    <Combobox
+      options={units}
+      value={value}
+      onValueChange={setValue}
+      placeholder="Select or type a unit…"
+      allowCreate
+    />
+  );
+}
+
 export default function ComboboxPage() {
   return (
     <div>
@@ -40,6 +59,7 @@ export default function ComboboxPage() {
             "Keyboard navigable — arrow keys move the highlight, Enter selects.",
             "Hosted in a Popover, matching the field's trigger width.",
             "Shows a configurable empty state when no options match.",
+            "Optional allowCreate mode: typing a value with no matching option offers a \"Create '…'\" row, for open-ended, org-defined vocabularies (e.g. a catalogue item's unit or category) rather than a fixed list.",
           ]}
         />
       </DocSection>
@@ -70,6 +90,7 @@ export default () => {
             { prop: "placeholder", type: "string", defaultValue: '"Select…"' },
             { prop: "emptyText", type: "string", defaultValue: '"No results found."' },
             { prop: "disabled", type: "boolean", defaultValue: "false" },
+            { prop: "allowCreate", type: "boolean", defaultValue: "false" },
           ]}
         />
       </DocSection>
@@ -87,6 +108,21 @@ export default () => {
 />`}
         >
           <ComboboxDemo />
+        </ComponentPreview>
+
+        <DocLead>Creatable (allowCreate)</DocLead>
+        <ComponentPreview
+          code={`const [value, setValue] = useState("");
+
+<Combobox
+  options={units}
+  value={value}
+  onValueChange={setValue}
+  placeholder="Select or type a unit…"
+  allowCreate
+/>`}
+        >
+          <ComboboxCreatableDemo />
         </ComponentPreview>
       </DocSection>
 
