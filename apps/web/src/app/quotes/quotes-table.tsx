@@ -3,6 +3,7 @@
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
+import { QuoteRowActions } from "./quote-row-actions";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 
 const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
@@ -13,7 +14,7 @@ const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
 };
 
 /** The (only) list view for Quotes — a flat table, matching Catalogue's own "no view switcher" precedent for a module without pipeline/relationship complexity. */
-export function QuotesTable({ quotes }: { quotes: Quote[] }) {
+export function QuotesTable({ quotes, onDeleted }: { quotes: Quote[]; onDeleted: (quote: Quote) => void }) {
   const columns: TableColumn<Quote>[] = [
     {
       key: "number",
@@ -57,6 +58,15 @@ export function QuotesTable({ quotes }: { quotes: Quote[] }) {
         </span>
       ),
       sortValue: (row) => Number(row.totalAmount),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          <QuoteRowActions quote={row} onDeleted={onDeleted} />
+        </div>
+      ),
     },
   ];
 

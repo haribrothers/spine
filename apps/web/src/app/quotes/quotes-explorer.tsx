@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard } fr
 import { FileText } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../lib/api-client";
+import { useEntityToast } from "./entity-toast";
 import { QuotesSkeleton } from "./quotes-skeleton";
 import { QuotesTable } from "./quotes-table";
 import type { Quote } from "./types";
@@ -29,6 +30,7 @@ export function QuotesExplorer() {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const { show: showToast, toast } = useEntityToast();
 
   const stats = useQuoteStats(quotes);
 
@@ -48,6 +50,11 @@ export function QuotesExplorer() {
     if (!statusFilter.length) return quotes;
     return quotes.filter((q) => statusFilter.includes(q.status) || (statusFilter.includes("expired") && q.isExpired));
   }, [quotes, statusFilter]);
+
+  function handleDeleted(quote: Quote) {
+    loadQuotes();
+    showToast("Quote deleted", `${quote.number ?? "Draft quote"} has been permanently removed.`);
+  }
 
   if (error) {
     return (
@@ -108,8 +115,9 @@ export function QuotesExplorer() {
           )}
         </div>
       ) : (
-        <QuotesTable quotes={filteredQuotes} />
+        <QuotesTable quotes={filteredQuotes} onDeleted={handleDeleted} />
       )}
+      {toast}
     </div>
   );
 }
