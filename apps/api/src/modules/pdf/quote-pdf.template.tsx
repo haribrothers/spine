@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { toDecimalString } from "@spine/shared";
 import type { quotes, quoteLines } from "../../db/schema";
+import { renderRichTextForPdf } from "./rich-text-to-pdf";
 
 export interface QuotePdfBusinessProfile {
   name: string;
@@ -70,6 +71,7 @@ const styles = StyleSheet.create({
   footer: { marginTop: 28 },
   footerLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
   footerText: { fontSize: 9, color: "#333333", lineHeight: 1.4 },
+  footerParagraph: { fontSize: 9, color: "#333333", lineHeight: 1.4, marginBottom: 4 },
   pageFooter: {
     position: "absolute",
     bottom: 24,
@@ -188,16 +190,21 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
         </View>
 
+        {/* notes/termsAndConditions are HTML now (RichTextEditor) — React-PDF's
+            <Text> only accepts plain strings/nested <Text>, so this walks the
+            editor's own small tag set into Text/View/Link rather than
+            printing raw markup. See rich-text-to-pdf.tsx for the full
+            reasoning. */}
         {quote.notes && (
           <View style={styles.footer}>
             <Text style={styles.footerLabel}>Notes</Text>
-            <Text style={styles.footerText}>{quote.notes}</Text>
+            {renderRichTextForPdf(quote.notes, { paragraph: styles.footerParagraph, text: styles.footerText })}
           </View>
         )}
         {quote.termsAndConditions && (
           <View style={styles.footer}>
             <Text style={styles.footerLabel}>Terms &amp; conditions</Text>
-            <Text style={styles.footerText}>{quote.termsAndConditions}</Text>
+            {renderRichTextForPdf(quote.termsAndConditions, { paragraph: styles.footerParagraph, text: styles.footerText })}
           </View>
         )}
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Spinner, Textarea } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, RichTextEditor, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
@@ -160,10 +160,10 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
       <Card className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Notes" helperText="Visible to the customer on the quote.">
-            {() => <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={4} />}
+            {(field) => <RichTextEditor {...field} value={notes} onValueChange={setNotes} placeholder="Notes for the customer…" />}
           </FormField>
           <FormField label="Terms & conditions">
-            {() => <Textarea value={terms} onChange={(e) => setTerms(e.target.value)} rows={4} />}
+            {(field) => <RichTextEditor {...field} value={terms} onValueChange={setTerms} placeholder="Payment terms, validity, etc…" />}
           </FormField>
         </div>
       </Card>

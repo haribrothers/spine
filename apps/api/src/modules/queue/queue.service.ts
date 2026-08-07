@@ -1,5 +1,8 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from "@nestjs/common";
 import { PgBoss, type Job as PgBossJob } from "pg-boss";
+import { sql } from "drizzle-orm";
+import { DATABASE } from "../../db/db.module";
+import type { Database } from "../../db/client";
 
 /**
  * Thin wrapper around `pg-boss` (PRD stack table: "pg-boss (Postgres-backed
@@ -30,6 +33,8 @@ import { PgBoss, type Job as PgBossJob } from "pg-boss";
 export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
   private boss: PgBoss | null = null;
+
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async onModuleInit() {
     const databaseUrl = process.env.DATABASE_URL;
@@ -88,4 +93,57 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       }
     });
   }
+
+  /**
+   * Read-only listing of a queue's not-yet-completed jobs, for the "pending
+   * emails" view (S-03.4 follow-up) — queries `pgboss.job` directly rather
+   * than `PgBoss.fetch()`, since `fetch()` claims/dequeues jobs (moves them
+   * to `active`), which would be a real side effect for what's meant to be
+   * a passive status check. pg-boss has no public "peek without claiming"
+   * API, so a direct read against its own schema (which it documents as
+   * stable/inspectable — `pgboss.job` is not a private implementation
+   * detail, other pg-boss tooling like its own dashboard reads it the same
+   * way) is the correct approach here, not a hack around the library.
+   * Filtered to `created`/`retry`/`active` — `completed`/`cancelled`/
+   * `failed` are terminal and each already has its own durable signal
+   * elsewhere (`quotes.emailStatus`), so this view is specifically "what's
+   * still in flight," not a full job history.
+   */
+  async listPendingJobs(queueName: string, orgId: string): Promise<QueueJobSummary[]> {
+    const result = await this.db.execute<{
+      id: string;
+      data: unknown;
+      state: string;
+      retry_count: number;
+      retry_limit: number;
+      created_on: Date;
+      start_after: Date;
+    }>(sql`
+      SELECT id, data, state, retry_count, retry_limit, created_on, start_after
+      FROM pgboss.job
+      WHERE name = ${queueName}
+        AND state IN ('created', 'retry', 'active')
+        AND data->>'orgId' = ${orgId}
+      ORDER BY created_on ASC
+    `);
+    return result.map((row) => ({
+      id: row.id,
+      data: row.data,
+      state: row.state,
+      retryCount: row.retry_count,
+      retryLimit: row.retry_limit,
+      createdOn: row.created_on,
+      startAfter: row.start_after,
+    }));
+  }
+}
+
+export interface QueueJobSummary {
+  id: string;
+  data: unknown;
+  state: string;
+  retryCount: number;
+  retryLimit: number;
+  createdOn: Date;
+  startAfter: Date;
 }

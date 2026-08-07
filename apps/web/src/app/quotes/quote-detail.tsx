@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Badge, Button, Card, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
+import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../lib/api-client";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
@@ -38,15 +39,15 @@ const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
 
 /**
  * Read-only-ish detail view for a quote — full line breakdown, totals, and
- * status. Stage 1 has no PDF/email/public-link, so this page (not a
- * customer-facing share link) is the only place a quote's contents are
- * ever viewed. Offers: Edit (draft only, routes to the builder), Mark as
- * sent (draft only — see quotes.service.ts's own comment on why this
- * isn't labeled "Send", to avoid implying an email that Stage 1 doesn't
- * send), Revise (sent/accepted/rejected, not yet superseded), and Approve
- * discount (owner only, when `discountRequiresApproval` and not yet
- * approved) — S-03.9's affordance, deliberately a single button rather
- * than a richer approval workflow, per the task brief's own scope note.
+ * status. There's no public customer-facing share link yet (Stage 3), so
+ * this page is the only place a quote's contents are ever viewed. Offers:
+ * Edit (draft only, routes to the builder), Send Quote (draft only — issues
+ * the quote, allocates its number, and queues the email; label reads
+ * "Send Quote" now that email sending is real, per Stage 2), Revise (sent/
+ * accepted/rejected, not yet superseded), and Approve discount (owner only,
+ * when `discountRequiresApproval` and not yet approved) — S-03.9's
+ * affordance, deliberately a single button rather than a richer approval
+ * workflow, per the task brief's own scope note.
  */
 export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; currentUserId: string | null }) {
   const router = useRouter();
@@ -66,6 +67,18 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   useEffect(() => {
     load();
   }, [load]);
+
+  // Item 7, user feedback — the email is sent by a queued worker, out of
+  // band from the request that triggered it (see handleMarkAsSent's own
+  // comment), so this page's initial load can catch it mid-"pending".
+  // Poll while pending so "was the email sent?" resolves on its own without
+  // a manual refresh — stops as soon as the status reaches a terminal
+  // "sent"/"failed" (or there's nothing to poll for, e.g. a draft).
+  useEffect(() => {
+    if (quote?.emailStatus !== "pending") return;
+    const interval = setInterval(load, 4000);
+    return () => clearInterval(interval);
+  }, [quote?.emailStatus, load]);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -166,6 +179,19 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Explicit back button, matching contact-detail.tsx's exact pattern
+          (the AppShellHeader breadcrumb above this component already offers
+          "Quotes", but a one-click back affordance next to the identity it
+          returns from reads clearer for a detail page one level deep). */}
+      <button
+        type="button"
+        onClick={() => router.push("/quotes")}
+        className="flex w-fit items-center gap-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface"
+      >
+        <ArrowLeft size={14} />
+        Back to quotes
+      </button>
+
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
@@ -201,7 +227,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             )}
             {canEdit && !needsApproval && (
               <Button onClick={handleMarkAsSent} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Mark as sent"}
+                {busy ? <Spinner size="sm" /> : "Send Quote"}
               </Button>
             )}
             {canRevise && (
@@ -233,6 +259,41 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <p className="text-[13px] text-on-surface-muted">
             Discount approved {quote.approvedAt ? new Date(quote.approvedAt).toLocaleString() : ""}.
           </p>
+        )}
+
+        {/* Item 7, user feedback — "was the email sent?" without needing the
+            Email queue screen. Nothing renders on a draft (emailStatus is
+            null until Send Quote is clicked). */}
+        {quote.emailStatus === "pending" && (
+          <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
+            <Clock size={14} className="shrink-0" />
+            Sending email to {quote.contactName ?? "the contact"}…
+          </p>
+        )}
+        {quote.emailStatus === "sent" && (
+          <p className="flex items-center gap-1.5 text-[13px] text-paid">
+            <CheckCircle2 size={14} className="shrink-0" />
+            Emailed to {quote.contactName ?? "the contact"}
+            {quote.emailSentAt && <> on {new Date(quote.emailSentAt).toLocaleString()}</>}.
+          </p>
+        )}
+        {quote.emailStatus === "failed" && (
+          <Alert variant="critical">
+            <AlertDescription className="flex flex-col gap-1">
+              <span className="flex items-center gap-1.5 font-medium">
+                <XCircle size={14} className="shrink-0" />
+                Email delivery failed
+              </span>
+              {quote.emailError && <span className="text-[13px]">{quote.emailError}</span>}
+              <span className="text-[13px]">
+                Check the{" "}
+                <Link href="/quotes/email-queue" className="underline hover:text-on-surface">
+                  email queue
+                </Link>{" "}
+                — a retry may still be in progress.
+              </span>
+            </AlertDescription>
+          </Alert>
         )}
       </Card>
 
@@ -276,13 +337,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           {quote.notes && (
             <div>
               <h3 className="text-[13px] font-semibold text-on-surface-muted">Notes</h3>
-              <p className="whitespace-pre-wrap text-[14px] text-on-surface">{quote.notes}</p>
+              <RichTextContent html={quote.notes} />
             </div>
           )}
           {quote.termsAndConditions && (
             <div>
               <h3 className="text-[13px] font-semibold text-on-surface-muted">Terms & conditions</h3>
-              <p className="whitespace-pre-wrap text-[14px] text-on-surface">{quote.termsAndConditions}</p>
+              <RichTextContent html={quote.termsAndConditions} />
             </div>
           )}
         </Card>

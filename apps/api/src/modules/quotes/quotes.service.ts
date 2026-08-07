@@ -186,11 +186,33 @@ export class QuotesService {
       rows.map((r) => r.quote.parentQuoteId).filter((id): id is string => Boolean(id)),
     );
 
+    // rootQuoteId (item 4, user feedback) — walks each row's parentQuoteId
+    // chain up to its version-1 ancestor, so the web list page can group
+    // every version of "the same quote" together without reconstructing
+    // the chain client-side. Computed here (over the already-fetched page
+    // of rows, an in-memory Map lookup — not a recursive SQL CTE) since a
+    // single org's quote count is small enough that this is cheap, and it
+    // keeps QuotesService as the one place that understands versioning
+    // topology, matching isSuperseded's own precedent just above.
+    const byId = new Map(rows.map((r) => [r.quote.id, r.quote]));
+    function resolveRootId(quoteId: string): string {
+      let current = byId.get(quoteId);
+      const seen = new Set<string>();
+      while (current?.parentQuoteId && !seen.has(current.id)) {
+        seen.add(current.id);
+        const parent = byId.get(current.parentQuoteId);
+        if (!parent) break; // parent outside this page/org — stop, current is the best-known root
+        current = parent;
+      }
+      return current?.id ?? quoteId;
+    }
+
     let result = rows.map((r) => ({
       ...r.quote,
       contactName: r.contactName,
       isExpired: isExpired(r.quote),
       isSuperseded: supersededIds.has(r.quote.id),
+      rootQuoteId: resolveRootId(r.quote.id),
     }));
 
     if (options.status) {
@@ -198,6 +220,45 @@ export class QuotesService {
     }
 
     return result;
+  }
+
+  /**
+   * Item 7 (user feedback) — joins pg-boss's own pending-job rows (from
+   * `QueueService.listPendingJobs`, already org-scoped) against `quotes`
+   * for display (quote number, contact name) — the job's own `data` blob
+   * only carries `quoteId`, nothing human-readable.
+   */
+  async enrichEmailQueueJobs(orgId: string, jobs: { id: string; data: unknown; state: string; retryCount: number; retryLimit: number; createdOn: Date; startAfter: Date }[]) {
+    const quoteIds = jobs
+      .map((job) => (job.data as { quoteId?: string } | null)?.quoteId)
+      .filter((id): id is string => Boolean(id));
+    if (!quoteIds.length) return [];
+
+    const rows = await this.db
+      .select({ id: quotes.id, number: quotes.number, contactName: contacts.name })
+      .from(quotes)
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(eq(quotes.orgId, orgId));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+
+    return jobs
+      .map((job) => {
+        const quoteId = (job.data as { quoteId?: string } | null)?.quoteId;
+        const quote = quoteId ? byId.get(quoteId) : undefined;
+        if (!quote) return null; // job for a quote outside this org, or since deleted
+        return {
+          jobId: job.id,
+          quoteId: quote.id,
+          quoteNumber: quote.number,
+          contactName: quote.contactName,
+          state: job.state,
+          retryCount: job.retryCount,
+          retryLimit: job.retryLimit,
+          createdOn: job.createdOn,
+          startAfter: job.startAfter,
+        };
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
   }
 
   async getOne(orgId: string, id: string) {
@@ -383,7 +444,12 @@ export class QuotesService {
       const number = await this.numbering.allocateNumber(tx, orgId, "quote");
       await tx
         .update(quotes)
-        .set({ status: "sent", number, sentAt: new Date(), updatedAt: new Date() })
+        // emailStatus: "pending" here, not left null — the detail page
+        // should show "sending…" immediately, not a blank/unknown state,
+        // for the window between this commit and the queue worker actually
+        // picking the job up. The worker (quote-email.worker.ts) owns every
+        // subsequent transition to "sent"/"failed".
+        .set({ status: "sent", number, sentAt: new Date(), emailStatus: "pending", updatedAt: new Date() })
         .where(eq(quotes.id, id));
 
       await this.auditLog.record(tx, {

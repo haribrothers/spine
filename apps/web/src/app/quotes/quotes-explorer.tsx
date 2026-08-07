@@ -1,14 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard } from "@spine/ui";
-import { FileText } from "lucide-react";
+import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
+import { FileText, Mail } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../lib/api-client";
 import { useEntityToast } from "./entity-toast";
 import { QuotesSkeleton } from "./quotes-skeleton";
 import { QuotesTable } from "./quotes-table";
-import type { Quote } from "./types";
+import type { ContactOption, Quote } from "./types";
 import { useQuoteStats } from "./use-quote-stats";
 
 const STATUS_OPTIONS = [
@@ -18,6 +18,8 @@ const STATUS_OPTIONS = [
   { value: "rejected", label: "Rejected" },
   { value: "expired", label: "Expired" },
 ];
+
+const ALL_CONTACTS = "__all__";
 
 /**
  * The Quotes list page's client-side body (PRD F3 Stage 1) — a stat-card
@@ -30,20 +32,43 @@ export function QuotesExplorer() {
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
+  const [contacts, setContacts] = useState<ContactOption[]>([]);
   const { show: showToast, toast } = useEntityToast();
 
   const stats = useQuoteStats(quotes);
 
   const loadQuotes = useCallback(() => {
+    const query = contactFilter !== ALL_CONTACTS ? `?contactId=${contactFilter}` : "";
     apiClient
-      .get<Quote[]>("/quotes")
+      .get<Quote[]>(`/quotes${query}`)
       .then(setQuotes)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load quotes."));
-  }, []);
+  }, [contactFilter]);
 
   useEffect(() => {
     loadQuotes();
   }, [loadQuotes]);
+
+  // Item 5, user feedback — filter by contact. Fetched once (not scoped to
+  // "only contacts with a quote") since the point of the filter is to find
+  // a contact's quotes, and the Combobox's own search-as-you-type already
+  // makes a full contact list easy to navigate, matching contact-picker.tsx's
+  // own precedent for the quote builder's contact field.
+  useEffect(() => {
+    apiClient
+      .get<ContactOption[]>("/contacts")
+      .then(setContacts)
+      .catch(() => {});
+  }, []);
+
+  const contactOptions = useMemo(
+    () => [
+      { value: ALL_CONTACTS, label: "All contacts" },
+      ...contacts.filter((c) => !c.archivedAt).map((c) => ({ value: c.id, label: c.name })),
+    ],
+    [contacts],
+  );
 
   const filteredQuotes = useMemo(() => {
     if (!quotes) return null;
@@ -74,29 +99,52 @@ export function QuotesExplorer() {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <MultiSelect
-          options={STATUS_OPTIONS}
-          value={statusFilter}
-          onValueChange={setStatusFilter}
-          placeholder="Status"
-          className="w-40"
-        />
-        <Button asChild>
-          <Link href="/quotes/new">New quote</Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <MultiSelect
+            options={STATUS_OPTIONS}
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            placeholder="Status"
+            className="w-40"
+          />
+          <Combobox
+            options={contactOptions}
+            value={contactFilter}
+            onValueChange={setContactFilter}
+            placeholder="All contacts"
+            className="w-48"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="secondary" asChild>
+            <Link href="/quotes/email-queue">
+              <Mail size={14} />
+              Email queue
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/quotes/new">New quote</Link>
+          </Button>
+        </div>
       </div>
 
       {!filteredQuotes ? (
         <QuotesSkeleton />
       ) : filteredQuotes.length === 0 ? (
         <div className="rounded-lg border border-border">
-          {statusFilter.length ? (
+          {statusFilter.length || contactFilter !== ALL_CONTACTS ? (
             <EmptyState
               icon={<FileText />}
               title="No quotes match these filters"
-              description="Try adjusting or clearing the status filter above."
+              description="Try adjusting or clearing the filters above."
               action={
-                <Button variant="secondary" onClick={() => setStatusFilter([])}>
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setStatusFilter([]);
+                    setContactFilter(ALL_CONTACTS);
+                  }}
+                >
                   Clear filters
                 </Button>
               }

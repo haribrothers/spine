@@ -22,6 +22,10 @@ export interface DataTableProps<T> {
   searchPlaceholder?: string;
   searchKey?: (row: T) => string;
   className?: string;
+  /** Passed straight through to `Table` — see that component's own doc comment for grouped/expandable-row mode. */
+  groupBy?: (row: T) => string;
+  groupPrimary?: (rows: T[]) => T;
+  groupMemberLabel?: (row: T) => React.ReactNode;
 }
 
 /**
@@ -40,6 +44,9 @@ export function DataTable<T>({
   searchPlaceholder = "Search…",
   searchKey,
   className,
+  groupBy,
+  groupPrimary,
+  groupMemberLabel,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -94,6 +101,9 @@ export function DataTable<T>({
         pageSize={pageSize}
         configurablePageSize={configurablePageSize}
         pageSizeOptions={pageSizeOptions}
+        groupBy={groupBy}
+        groupPrimary={groupPrimary}
+        groupMemberLabel={groupMemberLabel}
       />
     </div>
   );

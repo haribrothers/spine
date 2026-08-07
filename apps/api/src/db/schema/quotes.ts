@@ -40,6 +40,18 @@ export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepte
 export const quoteLineTypeEnum = pgEnum("quote_line_type", ["item", "heading", "text"]);
 
 /**
+ * PRD F3 Stage 2 (S-03.4) — surfaces the outcome of the queued send-email
+ * job on the quote itself, so the detail page can answer "was the email
+ * sent?" without anyone needing to inspect pg-boss's own job table
+ * directly. `null` means no email has ever been attempted (every draft,
+ * and briefly a freshly-sent quote before its queued job has run yet).
+ * `pending` covers both "still queued" and "currently retrying" — the
+ * detail page doesn't need to distinguish those, both read as "in
+ * progress" to a user. `sent`/`failed` are terminal.
+ */
+export const quoteEmailStatusEnum = pgEnum("quote_email_status", ["pending", "sent", "failed"]);
+
+/**
  * A quote (PRD F3). Versioning follows CLAUDE.md's "Key design decisions to
  * preserve": revising a SENT quote creates a new row with `parentQuoteId`
  * pointing at the prior version and `version` incremented, rather than
@@ -123,6 +135,22 @@ export const quotes = pgTable(
      * rendered output, not just row data.
      */
     pdfFileId: uuid("pdf_file_id").references(() => files.id, { onDelete: "set null" }),
+    /**
+     * Written by the queue worker (`quote-email.worker.ts`), not by
+     * `send()` itself — `send()` only ever sets this to `pending` right
+     * before enqueuing, so the detail page has an immediate, honest
+     * "in progress" state to show rather than `null` (which would read as
+     * "nothing is happening" during the window before the worker picks the
+     * job up). The worker flips it to `sent` on success or `failed` (with
+     * `emailError` set) once pg-boss's retries are exhausted — never
+     * touched again after that, matching every other "terminal state" field
+     * on this table.
+     */
+    emailStatus: quoteEmailStatusEnum("email_status"),
+    /** Set only when emailStatus is `failed` — the last attempt's error message, for the detail page's "why" (e.g. "SMTP is not configured", "contact has no email address on file"). Cleared (set back to null) if a future retry path re-sends and succeeds. */
+    emailError: text("email_error"),
+    /** Set once, when the worker's SMTP send call actually succeeds — distinct from `sentAt` (which marks when the quote was ISSUED, not when the email was delivered; a send can succeed instantly then take minutes to actually deliver via a retried job). */
+    emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
     /** Same demo-data marker as contacts.isDemo/catalogItems.isDemo — see contacts.ts's isDemo comment. */
     isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

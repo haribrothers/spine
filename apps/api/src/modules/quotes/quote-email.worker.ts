@@ -25,7 +25,11 @@ export interface QuoteSendEmailJobData {
  * `pnpm --filter @spine/api dev`/`start` starts this worker automatically,
  * no separate command required.
  *
- * Does two things per job, in order:
+ * Does two things per job, in order (inside `attemptSend`, called by
+ * `process` — see that method for the `quotes.emailStatus`/`emailError`/
+ * `emailSentAt` bookkeeping wrapped around it, which is what makes the
+ * outcome visible on the quote detail page rather than only in pg-boss's
+ * own job table):
  *  1. Renders the quote's PDF (via `QuotePdfService`, the exact same
  *     renderer `GET /quotes/:id/pdf` uses) and persists it through
  *     `FilesService`, then stores that file's id on `quotes.pdfFileId` —
@@ -38,11 +42,11 @@ export interface QuoteSendEmailJobData {
  *     fails, this method throws — pg-boss's own retry/backoff (configured
  *     in `QueueService.send`) handles re-attempting a transient SMTP
  *     failure. A permanently unconfigured SMTP server will exhaust its
- *     retries and the job ends up `failed` in pg-boss's own job table,
- *     which is the correct, honest outcome (see CHANGELOG for what
- *     "success" here does NOT mean — there's no admin-facing "email
- *     failed" indicator on the quote itself, only pg-boss's own job
- *     state, a known gap noted in this stage's CHANGELOG entry).
+ *     retries and the job ends up `failed` in pg-boss's own job table AND
+ *     `quotes.emailStatus = "failed"` with `emailError` set to the last
+ *     attempt's message — both the quote detail page and (for a cross-quote
+ *     view) `GET /quotes/email-queue` can now answer "did this send?"
+ *     without inspecting pg-boss directly.
  *
  * Critically, PDF persistence (step 1) is attempted even when SMTP is
  * unconfigured — a "Download PDF" affordance should still get the
@@ -82,6 +86,34 @@ export class QuoteEmailWorker implements OnModuleInit {
       return;
     }
 
+    try {
+      await this.attemptSend(orgId, quoteId, row);
+      await this.db
+        .update(quotes)
+        .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
+        .where(eq(quotes.id, quoteId));
+    } catch (err) {
+      // Written on EVERY failed attempt, not only the final one — the plain
+      // `Job<T>` pg-boss hands to a `work()` handler has no `retryCount`/
+      // `retryLimit` (only `JobWithMetadata<T>`, fetched separately, does),
+      // so this handler genuinely cannot tell "this was the last retry"
+      // from "another attempt is still coming". Writing "failed" here and
+      // flipping it back to "sent" if a later retry succeeds (the `try`
+      // branch above) is more honest than staying silent about a real
+      // failed attempt, at the cost of `emailStatus` briefly reading
+      // "failed" mid-retry rather than "pending" the whole time — an
+      // accepted tradeoff given the API's actual shape.
+      const message = err instanceof Error ? err.message : String(err);
+      await this.db.update(quotes).set({ emailStatus: "failed", emailError: message }).where(eq(quotes.id, quoteId));
+      throw err; // re-throw so pg-boss's own retry/backoff still applies
+    }
+  }
+
+  private async attemptSend(
+    orgId: string,
+    quoteId: string,
+    row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
+  ): Promise<void> {
     const { buffer, filename } = await this.pdf.render(orgId, quoteId);
 
     // Persist the PDF (best-effort — logged, not fatal, matching
