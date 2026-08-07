@@ -20,7 +20,7 @@ export function PageLoader({ label = "Loading", fullScreen = false, className, .
     <div
       className={cn(
         "flex items-center justify-center bg-surface/70 backdrop-blur-[1px]",
-        fullScreen ? "fixed inset-0 z-overlay" : "absolute inset-0 z-dropdown",
+        fullScreen ? "fixed inset-0 z-[var(--z-overlay)]" : "absolute inset-0 z-[var(--z-dropdown)]",
         className,
       )}
       {...props}

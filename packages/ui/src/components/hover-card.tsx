@@ -18,7 +18,7 @@ export const HoverCardContent = forwardRef<
       align={align}
       sideOffset={sideOffset}
       className={cn(
-        "z-popover w-64 rounded-md border border-border bg-surface p-3 shadow-[0_4px_14px_rgba(33,31,26,0.10)] outline-none",
+        "z-[var(--z-popover)] w-64 rounded-md border border-border bg-surface p-3 shadow-[0_4px_14px_rgba(33,31,26,0.10)] outline-none",
         className,
       )}
       {...props}

@@ -71,7 +71,7 @@ export function MultiSelect({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-popover w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
+          className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
         >
           <div role="listbox" aria-multiselectable="true" className="max-h-64 overflow-y-auto p-1">
             {options.map((option) => {
