@@ -27,6 +27,13 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-07 — Email queue moved from a standalone page into a popup dialog
+
+- Follow-up user request: the `/quotes/email-queue` page (added the same session, item 7 below) is now a `Dialog` (`email-queue-dialog.tsx`, `size="lg"`), not a separate route. The standalone page/route directory was deleted.
+- Two trigger points, sharing one implementation: `EmailQueueButton` (a ready-made toolbar button, used on the quotes list) and `EmailQueueDialog` directly with a custom `trigger` (used inline inside `quote-detail.tsx`'s failed-email alert, replacing the text link that used to navigate away).
+- Polling (every 10s) now only runs while the dialog is actually open, not for as long as some page happened to be mounted — a real behavior improvement over the old standalone page, not just a visual change.
+- **Verified**: `pnpm --filter @spine/web typecheck`/`lint`/`build` all clean; the production build confirms `/quotes/email-queue` no longer exists as a route, and `/quotes`/`/quotes/[id]` both shrank slightly (the dialog is shared/bundled once instead of a duplicated page).
+
 ### 2026-08-07 — Quotes UX feedback: navigation, email visibility, version grouping, contact filter, a new RichTextEditor component
 
 - Eight items of direct user feedback on the Quotes module (Stage 1/2), addressed in one session:

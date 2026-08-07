@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
-import { FileText, Mail } from "lucide-react";
+import { FileText } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../lib/api-client";
+import { EmailQueueButton } from "./email-queue-dialog";
 import { useEntityToast } from "./entity-toast";
 import { QuotesSkeleton } from "./quotes-skeleton";
 import { QuotesTable } from "./quotes-table";
@@ -116,12 +117,7 @@ export function QuotesExplorer() {
           />
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="secondary" asChild>
-            <Link href="/quotes/email-queue">
-              <Mail size={14} />
-              Email queue
-            </Link>
-          </Button>
+          <EmailQueueButton />
           <Button asChild>
             <Link href="/quotes/new">New quote</Link>
           </Button>

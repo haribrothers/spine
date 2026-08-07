@@ -7,6 +7,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../lib/api-client";
+import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
 
@@ -286,10 +287,13 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               </span>
               {quote.emailError && <span className="text-[13px]">{quote.emailError}</span>}
               <span className="text-[13px]">
-                Check the{" "}
-                <Link href="/quotes/email-queue" className="underline hover:text-on-surface">
-                  email queue
-                </Link>{" "}
+                <EmailQueueDialog
+                  trigger={
+                    <button type="button" className="underline hover:text-on-surface">
+                      Check the email queue
+                    </button>
+                  }
+                />{" "}
                 — a retry may still be in progress.
               </span>
             </AlertDescription>
