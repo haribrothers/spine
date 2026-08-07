@@ -136,6 +136,7 @@ export const nav: TopLevelSection[] = [
           { title: "DataList", href: "/components/data-list" },
           { title: "Table", href: "/components/table" },
           { title: "DataTable", href: "/components/data-table" },
+          { title: "TableSkeleton", href: "/components/table-skeleton" },
           { title: "Calendar", href: "/components/calendar" },
           { title: "Chart", href: "/components/chart" },
           { title: "Carousel", href: "/components/carousel" },

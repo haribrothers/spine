@@ -61,6 +61,7 @@ export * from "./components/status-chip";
 export * from "./components/stepper";
 export * from "./components/switch";
 export * from "./components/table";
+export * from "./components/table-skeleton";
 export * from "./components/tabs";
 export * from "./components/textarea";
 export * from "./components/toast";

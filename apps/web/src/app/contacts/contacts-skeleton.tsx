@@ -1,5 +1,15 @@
-import { Card, Skeleton } from "@spine/ui";
+import { Card, Skeleton, TableSkeleton } from "@spine/ui";
 import type { ContactView } from "./contacts-view-switcher";
+
+/** Mirrors ContactsTable's own `columns` (header text, order, alignment) so the loading state never drifts out of sync with the real table. */
+const TABLE_COLUMNS = [
+  { key: "name", header: "Name", width: "w-40" },
+  { key: "type", header: "Type", width: "w-20" },
+  { key: "email", header: "Email", width: "w-48" },
+  { key: "phone", header: "Phone", width: "w-28" },
+  { key: "status", header: "Status", width: "w-16" },
+  { key: "actions", header: "", width: "w-6", align: "right" as const },
+];
 
 /** Loading placeholders shaped like the view currently selected, replacing the old full-page `<Spinner />`. */
 export function ContactsSkeleton({ view }: { view: ContactView }) {
@@ -36,17 +46,11 @@ export function ContactsSkeleton({ view }: { view: ContactView }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <Skeleton className="h-10 w-64" />
-      <div className="flex flex-col gap-2 rounded-lg border border-border p-2">
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-2 py-2">
-            <Skeleton className="h-4 w-40" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-8 w-24" />
       </div>
+      <TableSkeleton columns={TABLE_COLUMNS} />
     </div>
   );
 }
