@@ -334,7 +334,7 @@ MUST define named tax rates with a percentage. MUST support tax-inclusive and ta
 MUST maintain a double-entry ledger with a seeded chart of accounts. MUST allow the owner to view journal entries and drill from any report figure to source document. MUST produce: Profit & Loss, Balance Sheet, Trial Balance, AR Aging, AP Aging, Tax Summary, Job Profitability. MUST allow date-range selection and CSV export. SHOULD support closing a fiscal period to block back-dated entries. SHOULD allow adding custom accounts. MAY support cash vs accrual toggle *(default accrual)*.
 
 **F10 Platform**
-MUST support user invitation, role assignment and deactivation. MUST write an audit log entry for every create, update, issue, void and delete on financial documents. MUST provide backup and restore scripts covering database and files. MUST support org branding (logo, colours, document footer). MUST provide seed/demo data toggled by env var. SHOULD provide health endpoints and structured logs. SHOULD provide an in-app upgrade notice. MAY provide anonymous, opt-in usage telemetry — off by default.
+MUST support user invitation, role assignment and deactivation. MUST write an audit log entry for every create, update, issue, void and delete on financial documents. MUST provide backup and restore scripts covering database and files. MUST support org branding (logo, colours, document footer). MUST provide seed/demo data toggled by env var. MUST provide an in-app notification centre — a persisted, per-user, org-scoped feed of business events (starting with quote viewed/accepted/rejected; any later module can add its own event types through the same mechanism) with read/unread state and a badge count, reachable from a bell icon in the app shell and opening as a side panel/drawer listing recent notifications newest-first. Notifications MUST be delivered to every user with visibility into the event per the existing permission model (§2.1), not owner-only — email notification (already built) stays owner-only per S-03.7's own wording, but the in-app feed is not restricted to owners, since a staff member with quote access has the same reason to see it. SHOULD let a user mark all as read. SHOULD provide health endpoints and structured logs. SHOULD provide an in-app upgrade notice. MAY provide anonymous, opt-in usage telemetry — off by default.
 
 **F11 Mobile field companion**
 MUST authenticate and scope to assigned jobs. MUST capture and upload site photos with job association, offline-queued. MUST submit expenses with a receipt photo, offline-queued. MUST update milestone status. MUST let a field user open a quote and capture on-screen customer acceptance. SHOULD show today's jobs and contact numbers with tap-to-call. SHOULD indicate pending-sync count clearly. MUST NOT allow invoice creation or ledger access.
@@ -511,6 +511,9 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-10.8 | As a self-hoster, I want a backup command producing one restorable archive, so my data is safe |
 | S-10.9 | As a self-hoster, I want upgrades to run migrations automatically and safely, so I'm not afraid to update |
 | S-10.10 | As an evaluator, I want to load demo data with one flag, so I can see the product working before committing |
+| S-10.11 | As an owner or staff member, I want an in-app panel of recent notifications (quote viewed/accepted/rejected today, and whatever future events other modules add), with unread tracking, so I don't have to rely on email alone to notice something needs my attention |
+
+*Acceptance highlights (S-10.11):* a bell icon in the app shell shows an unread count; opening it slides in a right-side panel/drawer listing notifications newest-first, each with a type, a human-readable message, a timestamp, and (where applicable) a link to the source record (e.g. the quote). Marking one as read (by opening it, or via a "mark all read" action) persists — the unread count must survive a page reload and a different device/session for the same user. Delivery is org- and permission-scoped: a notification about a quote is visible to every user who could see that quote per §2.1, not just the owner. This is additive to email notification (S-03.7 and any future email-notify story) — the two channels share the same trigger point (`NotificationsService.notify`-equivalent) but are independent; a user with no email access to check still sees the in-app panel, and email keeps working even if a user never opens the panel.
 
 ### FEAT-11 · Mobile Field Companion
 
@@ -631,9 +634,9 @@ Building the library here rather than per-feature costs roughly two extra weeks 
 Nothing in this script is customer-facing, so it's not a substitute for Phase 1 — it's proof that five weeks produced a real, working foundation rather than five weeks of scaffolding nobody can see. Worth recording as a short screen capture; it's also the natural seed for the eventual README demo.
 
 ### Phase 1 · Sales Spine *(4 weeks)*
-Contacts, leads, activities, catalogue, quotes with lines and versioning, PDF rendering, email sending, public quote link with accept/reject, quote events, and the **dashboard setup checklist** (first customer / item / quote) now that those actions exist.
-**Stories:** S-01.1 → S-01.8 · S-02.1 → S-02.4 · S-03.1 → S-03.9 · S-03.11 · S-10.4 · S-12.9
-**Exit:** staff can quote a customer, the customer accepts by link, and the owner is notified. First screenshot-worthy milestone.
+Contacts, leads, activities, catalogue, quotes with lines and versioning, PDF rendering, email sending, public quote link with accept/reject, quote events, the in-app notification centre (bell icon + side panel, starting with quote view/accept/reject events), and the **dashboard setup checklist** (first customer / item / quote) now that those actions exist.
+**Stories:** S-01.1 → S-01.8 · S-02.1 → S-02.4 · S-03.1 → S-03.9 · S-03.11 · S-10.4 · S-10.11 · S-12.9
+**Exit:** staff can quote a customer, the customer accepts by link, the owner is notified by email, and any user with quote visibility sees it in the in-app notification panel. First screenshot-worthy milestone.
 
 ### Phase 2 · Money In *(3 weeks)*
 Invoices (draft → issue → void), credit notes, payments with multi-invoice allocation, advances, receipts, journal postings for all of the above, AR aging, receivables dashboard.
