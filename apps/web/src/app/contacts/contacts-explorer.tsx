@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, EmptyState, MultiSelect, PaginationBar, StatCard } from "@spine/ui";
-import { Users } from "lucide-react";
+import { Upload, Users } from "lucide-react";
 import { apiClient } from "../../lib/api-client";
 import { usePagination } from "../../lib/use-pagination";
 import { ContactCreateDrawer } from "./contact-create-drawer";
@@ -11,6 +11,7 @@ import { ContactsListView } from "./contacts-list-view";
 import { ContactsSkeleton } from "./contacts-skeleton";
 import { ContactsTable } from "./contacts-table";
 import { ContactsViewSwitcher, VIEW_STORAGE_KEY, type ContactView } from "./contacts-view-switcher";
+import { ImportContactsDialog } from "./import/import-contacts-dialog";
 import type { Contact, ContactType, Lead } from "./types";
 import { useContactStats } from "./use-contact-stats";
 import { useEntityToast } from "./entity-toast";
@@ -42,6 +43,13 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   const [typeFilter, setTypeFilter] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
+  const [importOpen, setImportOpen] = useState(false);
+  // Deliberately separate from `contacts` above, which is filtered by the
+  // page's own type/status controls (default excludes archived) — the
+  // import wizard's duplicate check needs every contact regardless of
+  // those filters, or an archived contact's email/phone match would be
+  // missed and the same person re-imported as a new active contact.
+  const [allContactsForImport, setAllContactsForImport] = useState<Contact[]>([]);
   const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
@@ -120,6 +128,21 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
     else showToast("Contact deleted", `${contact.name} has been permanently removed.`);
   }
 
+  function handleImported(createdCount: number) {
+    loadContacts();
+    showToast("Contacts imported", `${createdCount} contact${createdCount === 1 ? "" : "s"} added from CSV.`);
+  }
+
+  function handleImportOpenChange(next: boolean) {
+    setImportOpen(next);
+    if (next) {
+      apiClient
+        .get<Contact[]>("/contacts?includeArchived=true")
+        .then(setAllContactsForImport)
+        .catch(() => setAllContactsForImport([]));
+    }
+  }
+
   if (error) {
     return (
       <Alert variant="critical">
@@ -156,6 +179,10 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
         </div>
         <div className="flex items-center gap-2">
           <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
+          <Button variant="secondary" onClick={() => handleImportOpenChange(true)}>
+            <Upload size={14} />
+            Import CSV
+          </Button>
           <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>
         </div>
       </div>
@@ -205,6 +232,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       )}
 
       <ContactCreateDrawer open={drawerOpen} onOpenChange={setDrawerOpen} onCreated={handleCreated} />
+      <ImportContactsDialog open={importOpen} onOpenChange={handleImportOpenChange} existingContacts={allContactsForImport} onImported={handleImported} />
       {toast}
     </div>
   );

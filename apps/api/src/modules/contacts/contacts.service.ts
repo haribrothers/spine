@@ -176,6 +176,31 @@ export class ContactsService {
     return { ...full, duplicateWarning: duplicates.length > 0 ? duplicates : undefined };
   }
 
+  /**
+   * S-01.8 CSV import — a thin loop over the existing `create()`, not a
+   * separate bulk-insert path. Row mapping/validation/duplicate review
+   * already happened client-side (the import wizard shows the user a
+   * preview before submit); by the time this runs, each row is just a
+   * normal `CreateContactInput`. Reusing `create()` means every row gets
+   * the exact same duplicate-detection, audit-log write, and transaction
+   * behavior as a single manual create — no parallel logic to keep in
+   * sync. One row's failure (e.g. a race against a duplicate created by
+   * another concurrent import row, or a DB constraint) doesn't abort the
+   * rest of the batch — each is independent and reported per-row.
+   */
+  async importMany(orgId: string, actorUserId: string, rows: CreateContactInput[]) {
+    const results: { index: number; contact?: Awaited<ReturnType<ContactsService["create"]>>; error?: string }[] = [];
+    for (const [index, input] of rows.entries()) {
+      try {
+        const contact = await this.create(orgId, actorUserId, input);
+        results.push({ index, contact });
+      } catch (err) {
+        results.push({ index, error: err instanceof Error ? err.message : "Failed to create contact" });
+      }
+    }
+    return results;
+  }
+
   async update(orgId: string, id: string, actorUserId: string, input: UpdateContactInput) {
     const [existing] = await this.db
       .select()
