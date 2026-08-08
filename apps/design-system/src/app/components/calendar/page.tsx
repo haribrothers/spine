@@ -436,6 +436,25 @@ export default function Example() {
             a single instance.
           </p>
         </DocSubsection>
+        <DocSubsection id="mini-calendar-props" title="MiniCalendar">
+          <DocLead>
+            The plain month-grid picker Calendar's own toolbar hosts in a Popover (and DatePicker
+            hosts too) — also usable standalone, as the /meetings page (S-01.9) does for its
+            always-visible sidebar mini-calendar.
+          </DocLead>
+          <ApiTable
+            rows={[
+              { prop: "selected", type: "Date" },
+              { prop: "onSelect", type: "(date: Date) => void" },
+              { prop: "className", type: "string" },
+              {
+                prop: "headerAction",
+                type: "ReactNode",
+                description: "Rendered at the right end of the month-nav header row, after the next-month button — e.g. a panel-collapse toggle when MiniCalendar anchors a larger sidebar.",
+              },
+            ]}
+          />
+        </DocSubsection>
       </DocSection>
 
       <DocSection id="examples" title="Examples">

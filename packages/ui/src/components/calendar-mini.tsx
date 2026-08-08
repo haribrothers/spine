@@ -18,6 +18,8 @@ export interface MiniCalendarProps {
   selected?: Date;
   onSelect: (date: Date) => void;
   className?: string;
+  /** Extra content rendered at the right end of the month-nav header row, after the "next month" button — e.g. a panel-collapse toggle when this MiniCalendar anchors a larger sidebar. Omit for the plain month-picker usage (DatePicker, Calendar's own toolbar popover). */
+  headerAction?: React.ReactNode;
 }
 
 /**
@@ -27,7 +29,7 @@ export interface MiniCalendarProps {
  * month-picker inside the full scheduling Calendar's toolbar (calendar.tsx)
  * — kept in its own file so Calendar can import it without a self-import.
  */
-export function MiniCalendar({ selected, onSelect, className }: MiniCalendarProps) {
+export function MiniCalendar({ selected, onSelect, className, headerAction }: MiniCalendarProps) {
   const [viewDate, setViewDate] = useState(selected ?? new Date());
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -43,25 +45,28 @@ export function MiniCalendar({ selected, onSelect, className }: MiniCalendarProp
   return (
     <div className={cn("w-64", className)}>
       <div className="mb-2 flex items-center justify-between">
-        <button
-          type="button"
-          aria-label="Previous month"
-          onClick={() => setViewDate(new Date(year, month - 1, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <ChevronLeft size={16} />
-        </button>
-        <span className="text-[13px] font-semibold text-on-surface">
-          {viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
-        </span>
-        <button
-          type="button"
-          aria-label="Next month"
-          onClick={() => setViewDate(new Date(year, month + 1, 1))}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        >
-          <ChevronRight size={16} />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            aria-label="Previous month"
+            onClick={() => setViewDate(new Date(year, month - 1, 1))}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            type="button"
+            aria-label="Next month"
+            onClick={() => setViewDate(new Date(year, month + 1, 1))}
+            className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          >
+            <ChevronRight size={16} />
+          </button>
+          <span className="text-[13px] font-semibold text-on-surface">
+            {viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })}
+          </span>
+        </div>
+        {headerAction}
       </div>
       <div role="grid" aria-label={viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })} className="grid grid-cols-7 gap-1">
         {WEEKDAY_LABELS.map((label) => (

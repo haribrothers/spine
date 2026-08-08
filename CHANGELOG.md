@@ -33,6 +33,14 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-09 — MiniCalendar: put the collapse icon on the same row as the month nav
+
+- Follow-up to the toggle-placement fix below — the icon was inside the mini-calendar panel, but on its own row above the month header rather than sharing it with the `< >`/"Aug 2026" row, per a reference screenshot of the target layout (arrows + month grouped left, action icon pushed far right, single row).
+- `MiniCalendar` (`@spine/ui`) gained an optional `headerAction?: ReactNode` prop, rendered at the end of its existing month-nav header row — and that row's layout changed from three evenly `justify-between`-spaced items (prev, label, next) to two groups (`prev + next + label` on the left, `headerAction` pushed right via the row's own `justify-between`), so the arrows and label now sit tightly together the way the reference shows. Fully backward compatible — every other `MiniCalendar` usage (`DatePicker`, `Calendar`'s own toolbar popover) omits the prop and renders unchanged. Documented in `apps/design-system/src/app/components/calendar/page.tsx` with a new `MiniCalendar` API subsection (it had no dedicated one before, despite being an exported `@spine/ui` component) per CLAUDE.md's docs-drift rule.
+- `/meetings`'s sidebar now passes the collapse button as `MiniCalendar`'s `headerAction` instead of wrapping `MiniCalendar` in an extra header row of its own.
+- Verified: `pnpm --filter @spine/ui typecheck`/`lint`, `@spine/web typecheck`/`lint`/`build`, `@spine/design-system typecheck`/`lint`/`build` all clean. Live via Playwright: the collapse icon now renders on the same row as the prev/next arrows and "August 2026" label, at the far right, matching the reference layout.
+- Stories: S-01.9 (UI polish, no new story).
+
 ### 2026-08-09 — Meetings sidebar: move the collapse toggle into the mini-calendar header
 
 - User didn't like the collapse button's placement (a standalone button floating to the left of the whole calendar, outside both the toolbar and the sidebar). Moved it to match the reference screenshot exactly — inside the mini-calendar panel's own header, top-right, next to where the month label sits.

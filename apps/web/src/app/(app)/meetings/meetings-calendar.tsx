@@ -320,19 +320,15 @@ export function MeetingsCalendar() {
         </div>
       ) : (
         <aside className="hidden w-72 shrink-0 flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex">
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center justify-end">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={toggleSidebar}
-                aria-label="Hide calendar sidebar"
-              >
+          <MiniCalendar
+            selected={date}
+            onSelect={setDate}
+            headerAction={
+              <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label="Hide calendar sidebar">
                 <PanelRightClose size={16} />
               </Button>
-            </div>
-            <MiniCalendar selected={date} onSelect={setDate} />
-          </div>
+            }
+          />
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
