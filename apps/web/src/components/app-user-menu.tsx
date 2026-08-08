@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@spine/ui";
 import { ChevronDown, Laptop, LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -100,26 +102,19 @@ export function AppUserMenu({ name, email, collapsed }: { name: string; email: s
             <Settings size={14} className="mr-2" />
             Settings
           </DropdownMenuItem>
-          <div className="flex items-center gap-1 px-2 py-1.5">
-            {THEME_OPTIONS.map(({ value, label, icon: Icon }) => {
-              const active = mounted && theme === value;
-              return (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setTheme(value)}
-                  className={
-                    active
-                      ? "flex flex-1 flex-col items-center gap-1 rounded-sm bg-surface-sunken px-2 py-1.5 text-primary"
-                      : "flex flex-1 flex-col items-center gap-1 rounded-sm px-2 py-1.5 text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
-                  }
-                >
+          <div className="px-2 py-1.5">
+            <ToggleGroup
+              type="single"
+              value={mounted ? theme : undefined}
+              onValueChange={(value) => value && setTheme(value)}
+              className="w-full rounded-sm bg-surface-sunken p-0.5"
+            >
+              {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
+                <ToggleGroupItem key={value} value={value} aria-label={label} className="h-7 flex-1 px-0">
                   <Icon size={14} />
-                  <span className="text-[10px] font-medium">{label}</span>
-                </button>
-              );
-            })}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
           </div>
           <DropdownMenuSeparator />
           <DropdownMenuItem destructive disabled={signingOut} onSelect={handleSignOut}>
