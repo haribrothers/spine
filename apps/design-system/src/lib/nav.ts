@@ -134,6 +134,7 @@ export const nav: TopLevelSection[] = [
         items: [
           { title: "Card", href: "/components/card" },
           { title: "StatCard", href: "/components/stat-card" },
+          { title: "Kanban", href: "/components/kanban" },
           { title: "DataList", href: "/components/data-list" },
           { title: "Table", href: "/components/table" },
           { title: "DataTable", href: "/components/data-table" },

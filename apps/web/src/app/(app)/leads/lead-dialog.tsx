@@ -1,0 +1,215 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Combobox,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  MoneyInput,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@spine/ui";
+import { Trash2 } from "lucide-react";
+import { apiClient } from "../../../lib/api-client";
+import { LEAD_STAGE_LABELS, LEAD_STAGES, type Contact, type Lead, type LeadStage } from "../contacts/types";
+
+/**
+ * Create/edit dialog for a lead from the pipeline board (leads-board.tsx).
+ * Same Issue-4 "one dialog, editingLead set means edit" pattern as
+ * contacts/leads-section.tsx's per-contact dialog, but this one also picks
+ * the contact (that dialog is always scoped to one contact already) via
+ * Combobox, since the board spans every contact in the org.
+ */
+export function LeadDialog({
+  open,
+  onOpenChange,
+  lead,
+  contacts,
+  defaultStage,
+  onSaved,
+  onDeleted,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Present = editing; null = creating a new lead. */
+  lead: Lead | null;
+  contacts: Contact[];
+  /** Stage to preselect when creating (e.g. the column the user clicked "Add" from). */
+  defaultStage?: LeadStage;
+  onSaved: (lead: Lead) => void;
+  onDeleted: (leadId: string) => void;
+}) {
+  const [contactId, setContactId] = useState("");
+  const [title, setTitle] = useState("");
+  const [stage, setStage] = useState<LeadStage>("new");
+  const [amount, setAmount] = useState(0n);
+  const [currency, setCurrency] = useState("USD");
+  const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    if (lead) {
+      setContactId(lead.contactId);
+      setTitle(lead.title ?? "");
+      setStage(lead.stage);
+      setAmount(BigInt(lead.valueAmount));
+      setCurrency(lead.valueCurrency);
+    } else {
+      setContactId("");
+      setTitle("");
+      setStage(defaultStage ?? "new");
+      setAmount(0n);
+      setCurrency("USD");
+    }
+  }, [open, lead, defaultStage]);
+
+  const contactOptions = contacts.map((c) => ({ value: c.id, label: c.name }));
+  const canSave = contactId.length > 0 && !saving;
+
+  async function handleSave() {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      if (lead) {
+        const updated = await apiClient.put<Lead>(`/leads/${lead.id}`, {
+          contactId,
+          title: title || null,
+          stage,
+          valueAmount: amount.toString(),
+          valueCurrency: currency,
+        });
+        onSaved(updated);
+      } else {
+        const created = await apiClient.post<Lead>("/leads", {
+          contactId,
+          title: title || undefined,
+          stage,
+          valueAmount: amount.toString(),
+          valueCurrency: currency,
+        });
+        onSaved(created);
+      }
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!lead) return;
+    setDeleting(true);
+    try {
+      await apiClient.delete(`/leads/${lead.id}`);
+      onDeleted(lead.id);
+      setConfirmDelete(false);
+      onOpenChange(false);
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{lead ? "Edit lead" : "Add lead"}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-3">
+            <FormField label="Contact">
+              {(field) => (
+                <Combobox
+                  {...field}
+                  options={contactOptions}
+                  value={contactId}
+                  onValueChange={setContactId}
+                  placeholder="Select a contact…"
+                />
+              )}
+            </FormField>
+            <FormField label="Title">
+              {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
+            </FormField>
+            <FormField label="Stage">
+              {(field) => (
+                <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)}>
+                  <SelectTrigger {...field} className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_STAGES.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {LEAD_STAGE_LABELS[s]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Estimated value">
+              {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
+            </FormField>
+            <FormField label="Currency">
+              {(field) => (
+                <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />
+              )}
+            </FormField>
+          </div>
+          <DialogFooter className="justify-between">
+            {lead ? (
+              <Button variant="ghost" onClick={() => setConfirmDelete(true)} className="text-overdue hover:text-overdue">
+                <Trash2 size={14} />
+                Delete
+              </Button>
+            ) : (
+              <span />
+            )}
+            <div className="flex gap-2">
+              <Button variant="secondary" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button disabled={!canSave} onClick={handleSave}>
+                {saving ? <Spinner size="sm" /> : lead ? "Save changes" : "Add lead"}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this lead?</AlertDialogTitle>
+            <AlertDialogDescription>This can't be undone. The contact itself is not affected.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={deleting} onClick={handleDelete}>
+              {deleting ? <Spinner size="sm" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
+  );
+}

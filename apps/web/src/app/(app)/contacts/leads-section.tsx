@@ -24,14 +24,13 @@ import { apiClient } from "../../../lib/api-client";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
 
 /**
- * S-01.4 — "create a lead with an estimated value and stage." S-01.5's
- * pipeline board (kanban by stage) is explicitly deferred per this task's
- * scope — this is a flat list, filterable being the board's cheaper
- * substitute for now. Stage uses Badge, not StatusChip: StatusChip is
- * reserved for financial *document* status (paid/due-soon/overdue/draft),
- * and a lead stage isn't that. "Add"/"Edit" share the same Dialog (Issue 4
- * pattern) — `editingId` set means editing via `PUT /leads/:id`, null means
- * creating via `POST /leads`.
+ * S-01.4 — "create a lead with an estimated value and stage." This is the
+ * per-contact flat list; the org-wide kanban board (S-01.5) lives at
+ * /leads (see leads/leads-board.tsx). Stage uses Badge, not StatusChip:
+ * StatusChip is reserved for financial *document* status
+ * (paid/due-soon/overdue/draft), and a lead stage isn't that. "Add"/"Edit"
+ * share the same Dialog (Issue 4 pattern) — `editingId` set means editing
+ * via `PUT /leads/:id`, null means creating via `POST /leads`.
  */
 export function LeadsSection({
   contactId,

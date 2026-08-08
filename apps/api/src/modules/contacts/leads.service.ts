@@ -14,10 +14,9 @@ export type LeadStage = (typeof leadStageEnum.enumValues)[number];
 /**
  * Leads CRUD. Stage is the fixed enum from db/schema/contacts.ts (see that
  * file's comment on why true per-org configurable stages are deferred).
- * `listByStage` groups results for a simple list/table view filterable by
- * stage — the underlying data model (this grouping, plus `valueAmount`
- * already on each row) is what a future kanban pipeline board would
- * consume directly, per the task brief's explicit scope split.
+ * `list(orgId)` with no stage filter returns every lead in the org, which
+ * is what the /leads kanban board (S-01.5, apps/web's leads-board.tsx)
+ * groups into columns client-side.
  */
 @Injectable()
 export class LeadsService {
