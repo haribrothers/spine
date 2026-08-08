@@ -13,7 +13,9 @@ export type AuditEntityType =
   | "meeting"
   | "catalog_item"
   | "quote"
-  | "quote_line";
+  | "quote_line"
+  | "invoice"
+  | "invoice_line";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

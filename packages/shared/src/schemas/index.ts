@@ -3,3 +3,4 @@ export * from "./contacts.ts";
 export * from "./meetings.ts";
 export * from "./catalog.ts";
 export * from "./quotes.ts";
+export * from "./invoices.ts";
