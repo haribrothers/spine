@@ -27,6 +27,7 @@ import { createDb } from "./client";
  */
 const TABLES = [
   "audit_log",
+  "notifications",
   "journal_lines",
   "journal_entries",
   "fiscal_periods",

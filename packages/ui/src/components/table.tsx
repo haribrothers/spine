@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
@@ -207,8 +207,8 @@ export function Table<T>({
               ? pageGroups.map((group) => {
                   const isExpanded = expanded.has(group.key);
                   return (
-                    <>
-                      <tr key={rowKey(group.primary)} className="border-b border-border last:border-0 hover:bg-surface-sunken">
+                    <Fragment key={group.key}>
+                      <tr className="border-b border-border last:border-0 hover:bg-surface-sunken">
                         {columns.map((column, columnIndex) => (
                           <td
                             key={column.key}
@@ -259,7 +259,7 @@ export function Table<T>({
                             ))}
                           </tr>
                         ))}
-                    </>
+                    </Fragment>
                   );
                 })
               : pageRows.map((row) => (

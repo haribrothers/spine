@@ -132,6 +132,11 @@ export class PublicQuotesService {
 
     const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
     const businessName = business?.name || "Your supplier";
+    // recipientRoles: ["owner", "staff"] — matches QuotesController's own
+    // access to quotes (@OrgRoles(["owner", "staff"]), no Field access at
+    // all per §2.1) per S-10.11's acceptance highlight: an in-app
+    // notification about a quote is visible to every user who could see
+    // that quote, not owner-only like the pre-S-10.11 email channel was.
     void this.notifications.notify(verified.orgId, {
       subject: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? ""}`.trim(),
       text: [
@@ -139,6 +144,12 @@ export class PublicQuotesService {
         "",
         "No action needed — this is just a heads up while it's fresh.",
       ].join("\n"),
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "quote_viewed",
+        message: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? "your quote"}.`,
+        link: `/quotes/${view.id}`,
+      },
     });
 
     return view;
@@ -232,6 +243,12 @@ export class PublicQuotesService {
           `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? ""} on ${businessName}.`,
           comment ? `\nTheir comment: "${stripHtmlToText(comment)}"` : "",
         ].join("\n"),
+        recipientRoles: ["owner", "staff"],
+        inApp: {
+          type: "quote_accepted",
+          message: `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? "your quote"}.`,
+          link: `/quotes/${view.id}`,
+        },
       });
     }
     // A rejection is deliberately not a separate owner-notification path in

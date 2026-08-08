@@ -5,6 +5,7 @@ export * from "./audit";
 export * from "./contacts";
 export * from "./catalog";
 export * from "./quotes";
+export * from "./notifications";
 export * from "./files";
 export * from "./ledger";
 export * from "./idempotency";
