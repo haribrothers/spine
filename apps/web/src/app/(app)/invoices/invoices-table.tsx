@@ -1,0 +1,96 @@
+"use client";
+
+import { Badge, DataTable, type TableColumn } from "@spine/ui";
+import { toDecimalString } from "@spine/shared/money";
+import Link from "next/link";
+import { InvoiceRowActions } from "./invoice-row-actions";
+import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
+
+const STATUS_BADGE_CLASS: Record<Invoice["status"], string> = {
+  draft: "bg-draft-bg text-draft",
+  issued: "bg-due-soon-bg text-due-soon",
+  void: "bg-overdue-bg text-overdue",
+};
+
+/**
+ * The list view for Invoices — mirrors quotes-table.tsx MINUS the
+ * version-grouping logic. Invoices don't have versions/parentQuoteId
+ * (that's a quotes-only concept from S-03.x's revision flow); every row
+ * here stands alone.
+ */
+export function InvoicesTable({ invoices, onDeleted }: { invoices: Invoice[]; onDeleted: (invoice: Invoice) => void }) {
+  const columns: TableColumn<Invoice>[] = [
+    {
+      key: "number",
+      header: "Number",
+      render: (row) => (
+        <Link href={`/invoices/${row.id}`} className="flex items-center gap-1.5 font-medium text-on-surface hover:text-primary hover:underline">
+          {row.number ? row.number : <span className="italic text-on-surface-muted">— (unissued draft)</span>}
+        </Link>
+      ),
+      sortValue: (row) => row.number ?? "",
+    },
+    {
+      key: "contact",
+      header: "Contact",
+      render: (row) => row.contactName ?? "—",
+      sortValue: (row) => row.contactName ?? "",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => (
+        <div className="flex items-center gap-1.5">
+          <Badge className={STATUS_BADGE_CLASS[row.status]}>{INVOICE_STATUS_LABELS[row.status]}</Badge>
+          {row.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
+        </div>
+      ),
+    },
+    {
+      key: "dueDate",
+      header: "Due date",
+      render: (row) => (row.dueDate ? new Date(row.dueDate).toLocaleDateString() : "—"),
+      sortValue: (row) => row.dueDate ?? "",
+    },
+    {
+      key: "total",
+      header: "Total",
+      render: (row) => (
+        <span className="font-mono tabular-nums">
+          {toDecimalString({ amount: BigInt(row.totalAmount), currency: row.currency })} {row.currency}
+        </span>
+      ),
+      sortValue: (row) => Number(row.totalAmount),
+    },
+    {
+      key: "balanceDue",
+      header: "Balance due",
+      render: (row) => (
+        <span className="font-mono tabular-nums">
+          {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
+        </span>
+      ),
+      sortValue: (row) => Number(row.balanceDue),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          <InvoiceRowActions invoice={row} onDeleted={onDeleted} />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={invoices}
+      rowKey={(row) => row.id}
+      searchPlaceholder="Search invoices"
+      searchKey={(row) => `${row.number ?? ""} ${row.contactName ?? ""}`}
+      configurablePageSize
+    />
+  );
+}
