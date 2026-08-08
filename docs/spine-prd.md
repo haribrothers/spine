@@ -238,7 +238,7 @@ spine/
 
 ### 6.8 Configuration
 
-Single `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Optional with sane defaults: SMTP block, S3 block, `CURRENCY`, `LOCALE`, `TZ`. The app must boot and be usable with only the three required variables — email and file upload degrade gracefully rather than crashing.
+Single `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Optional with sane defaults: SMTP block, S3 block, `CURRENCY`, `LOCALE`, `TZ`, VAPID keypair (§S-10.12, browser push). The app must boot and be usable with only the three required variables — email, file upload, and browser push all degrade gracefully rather than crashing.
 
 ---
 
@@ -512,8 +512,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-10.9 | As a self-hoster, I want upgrades to run migrations automatically and safely, so I'm not afraid to update |
 | S-10.10 | As an evaluator, I want to load demo data with one flag, so I can see the product working before committing |
 | S-10.11 | As an owner or staff member, I want an in-app panel of recent notifications (quote viewed/accepted/rejected today, and whatever future events other modules add), with unread tracking, so I don't have to rely on email alone to notice something needs my attention |
+| S-10.12 | As an owner or staff member, I want a native browser/OS notification when something needs my attention, even if Spine isn't the tab I'm looking at or isn't open at all, so I don't have to keep the app in view to notice |
 
 *Acceptance highlights (S-10.11):* a bell icon in the app shell shows an unread count; opening it slides in a right-side panel/drawer listing notifications newest-first, each with a type, a human-readable message, a timestamp, and (where applicable) a link to the source record (e.g. the quote). Marking one as read (by opening it, or via a "mark all read" action) persists — the unread count must survive a page reload and a different device/session for the same user. Delivery is org- and permission-scoped: a notification about a quote is visible to every user who could see that quote per §2.1, not just the owner. This is additive to email notification (S-03.7 and any future email-notify story) — the two channels share the same trigger point (`NotificationsService.notify`-equivalent) but are independent; a user with no email access to check still sees the in-app panel, and email keeps working even if a user never opens the panel.
+
+*Acceptance highlights (S-10.12):* uses the W3C Push API + a service worker, not a foreground-only `Notification()` popup — it must fire even when the Spine tab is backgrounded, minimized, or closed entirely (as long as the browser process is running), which is the whole point relative to S-10.11's in-tab badge. A user opts in explicitly (browser permission prompt triggered by an explicit in-app action, never on page load unprompted) and can revoke from Settings; a user who never opts in keeps getting the S-10.11 in-app panel and email unaffected — this is a third, independent delivery channel layered onto the same `NotificationsService.notify()` trigger point as S-10.11/S-03.7, not a replacement. Multiple devices/browsers per user are supported (each is its own push subscription; revoking one doesn't affect others). Clicking a delivered notification focuses/opens the app to the relevant record's link. Per §6.8's "boot with only 3 required env vars" rule, push is optional-with-graceful-degradation: no VAPID keys configured means the push channel is silently disabled (subscribe UI hidden or shows "not configured"), not a boot failure or error toast — self-hosters who don't want this capability don't have to set it up. Self-hoster docs cover generating a VAPID keypair for `.env`.
 
 ### FEAT-11 · Mobile Field Companion
 
@@ -635,7 +638,7 @@ Nothing in this script is customer-facing, so it's not a substitute for Phase 1 
 
 ### Phase 1 · Sales Spine *(4 weeks)*
 Contacts, leads, activities, catalogue, quotes with lines and versioning, PDF rendering, email sending, public quote link with accept/reject, quote events, the in-app notification centre (bell icon + side panel, starting with quote view/accept/reject events), and the **dashboard setup checklist** (first customer / item / quote) now that those actions exist.
-**Stories:** S-01.1 → S-01.8 · S-02.1 → S-02.4 · S-03.1 → S-03.9 · S-03.11 · S-10.4 · S-10.11 · S-12.9
+**Stories:** S-01.1 → S-01.8 · S-02.1 → S-02.4 · S-03.1 → S-03.9 · S-03.11 · S-10.4 · S-10.11 · S-10.12 · S-12.9
 **Exit:** staff can quote a customer, the customer accepts by link, the owner is notified by email, and any user with quote visibility sees it in the in-app notification panel. First screenshot-worthy milestone.
 
 ### Phase 2 · Money In *(3 weeks)*
