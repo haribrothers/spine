@@ -39,6 +39,7 @@ import { ContactPersonsSection } from "./contact-persons-section";
 import { LeadsSection } from "./leads-section";
 import { ActivitiesSection } from "./activities-section";
 import { HistorySection } from "./history-section";
+import { TimelineSection } from "./timeline-section";
 import { useEntityToast } from "./entity-toast";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
@@ -54,11 +55,13 @@ const TYPE_OPTIONS: { value: ContactType; label: string }[] = [
 ];
 
 /**
- * S-01.3's deferred-scope note: PRD SHOULDs a unified timeline (quotes,
- * invoices, payments, activities) here — quotes/invoices don't exist yet,
- * so this shows only what's real: the contact's own fields, persons,
- * addresses, leads, and activities. Not a fake timeline stitched from
- * nothing.
+ * S-01.3 is now live in the "Timeline" tab (timeline-section.tsx) — a
+ * merged, chronological feed of quote lifecycle events and logged
+ * activities (which already cover "note" per ActivityType). Invoices and
+ * payments don't exist yet (Phase 2), so they're not in the feed yet
+ * either — nothing here is a placeholder or fabricated event, only what's
+ * real today, with the feed structured so invoice/payment events slot in
+ * as their own source once those modules land.
  *
  * Phase 3 redesign (this session, replacing the two-column layout from the
  * immediately-prior session): a back button + header (logo/avatar, name,
@@ -383,8 +386,9 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         </div>
       )}
 
-      <Tabs defaultValue="persons">
+      <Tabs defaultValue="timeline">
         <TabsList>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="persons">Contact persons</TabsTrigger>
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
@@ -392,6 +396,9 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
+        <TabsContent value="timeline">
+          <TimelineSection contactId={contactId} />
+        </TabsContent>
         <TabsContent value="persons">
           <ContactPersonsSection
             contact={contact}
