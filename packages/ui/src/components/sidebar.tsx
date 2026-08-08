@@ -89,8 +89,12 @@ export function SidebarContent({ className, ...props }: React.HTMLAttributes<HTM
   return <div className={cn("flex-1 overflow-y-auto p-2", className)} {...props} />;
 }
 
-export function SidebarGroup({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-4", className)} {...props} />;
+export interface SidebarGroupProps extends React.HTMLAttributes<HTMLDivElement> {
+  collapsed?: boolean;
+}
+
+export function SidebarGroup({ collapsed = false, className, ...props }: SidebarGroupProps) {
+  return <div className={cn("mb-4 flex flex-col gap-0.5", collapsed && "items-center", className)} {...props} />;
 }
 
 export interface SidebarGroupLabelProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -140,7 +144,8 @@ export function SidebarNavItem({
   ...props
 }: SidebarNavItemProps) {
   const itemClassName = cn(
-    "flex w-full items-center gap-2.5 rounded-sm px-2 py-1.5 text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    "flex items-center rounded-sm text-[13px] font-medium transition-colors disabled:pointer-events-none disabled:opacity-40",
+    collapsed ? "h-9 w-9 justify-center" : "w-full gap-2.5 px-2 py-1.5",
     active ? "bg-surface-sunken text-primary" : "text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface",
     className,
   );

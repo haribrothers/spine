@@ -18,7 +18,7 @@ function SidebarDemo() {
         logo={<span className="truncate text-[14px] font-semibold text-on-surface">{collapsed ? "S" : "Spine"}</span>}
       />
       <SidebarContent>
-        <SidebarGroup>
+        <SidebarGroup collapsed={collapsed}>
           <SidebarGroupLabel collapsed={collapsed}>Overview</SidebarGroupLabel>
           <SidebarNavItem
             icon={<LayoutDashboard />}
@@ -29,7 +29,7 @@ function SidebarDemo() {
             Dashboard
           </SidebarNavItem>
         </SidebarGroup>
-        <SidebarGroup>
+        <SidebarGroup collapsed={collapsed}>
           <SidebarGroupLabel collapsed={collapsed}>Sales</SidebarGroupLabel>
           <SidebarNavItem icon={<FileText />} active={active === "quotes"} collapsed={collapsed} onClick={() => setActive("quotes")}>
             Quotes
@@ -69,6 +69,7 @@ export default function SidebarPage() {
         <FeatureList
           items={[
             "A collapsed prop switches to a 64px icon-only rail; SidebarNavItem and SidebarGroupLabel hide their label automatically in that state.",
+            "When collapsed, SidebarNavItem becomes a centered 36px square (icon centered inside) rather than a full-width row — pass collapsed to the enclosing SidebarGroup too so it centers its items in the rail.",
             "SidebarHeader renders a built-in logo + collapse-toggle row when given a logo and/or onCollapsedChange — pass children instead for a fully custom header.",
             "Disabled nav items render greyed-out and non-interactive rather than being omitted, per the existing AppShell convention.",
           ]}
@@ -101,6 +102,7 @@ export default () => (
             { prop: "SidebarHeader.logo", type: "ReactNode" },
             { prop: "SidebarHeader.collapsed", type: "boolean", defaultValue: "false" },
             { prop: "SidebarHeader.onCollapsedChange", type: "(collapsed: boolean) => void" },
+            { prop: "SidebarGroup.collapsed", type: "boolean", defaultValue: "false" },
             { prop: "SidebarGroupLabel.collapsed", type: "boolean", defaultValue: "false" },
             { prop: "SidebarNavItem.icon", type: "ReactNode" },
             { prop: "SidebarNavItem.active", type: "boolean", defaultValue: "false" },

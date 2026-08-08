@@ -9,7 +9,7 @@ import {
   AvatarFallback,
   type AppShellNavSection,
 } from "@spine/ui";
-import { FileText, LayoutDashboard, Receipt, Settings, Users } from "lucide-react";
+import { Bell, ChevronDown, FileText, HelpCircle, LayoutDashboard, Receipt, Settings, Users } from "lucide-react";
 import { useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
@@ -60,12 +60,35 @@ function AppShellDemo() {
             </a>
           )}
           userMenu={
-            <div className={collapsed ? "flex justify-center" : "flex items-center gap-2"}>
-              <Avatar size="sm">
-                <AvatarFallback>JD</AvatarFallback>
-              </Avatar>
-              {!collapsed && <span className="text-[12px] text-on-surface-muted">Jordan Diaz</span>}
-            </div>
+            collapsed ? (
+              <div className="flex flex-col items-center gap-1">
+                <button aria-label="Help" className="flex h-9 w-9 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                  <HelpCircle size={16} />
+                </button>
+                <button aria-label="Notifications" className="flex h-9 w-9 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                  <Bell size={16} />
+                </button>
+                <Avatar size="sm">
+                  <AvatarFallback>JD</AvatarFallback>
+                </Avatar>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <button className="flex min-w-0 flex-1 items-center gap-2 rounded-sm px-1.5 py-1.5 text-left hover:bg-surface-sunken">
+                  <Avatar size="sm">
+                    <AvatarFallback>JD</AvatarFallback>
+                  </Avatar>
+                  <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-on-surface">Jordan Diaz</span>
+                  <ChevronDown size={14} className="shrink-0 text-on-surface-muted" />
+                </button>
+                <button aria-label="Help" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                  <HelpCircle size={16} />
+                </button>
+                <button aria-label="Notifications" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface">
+                  <Bell size={16} />
+                </button>
+              </div>
+            )
           }
         />
         <AppShellContent>

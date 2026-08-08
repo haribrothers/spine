@@ -7,6 +7,7 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { AppShell, AppShellContent, AppShellSidebar, type AppShellNavSection } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
+import { HelpButton } from "./help-button";
 import { NotificationBell } from "./notification-bell";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
@@ -41,12 +42,15 @@ export interface AppLayoutProps {
  * persistence) since that's presentation state specific to this web app,
  * not something @spine/ui's AppShell primitives need to know about.
  *
- * `NotificationBell` (PRD S-10.11) is placed here, in the sidebar footer
- * above `AppUserMenu`, deliberately — it's the ONLY persistent, always-
- * visible chrome in the app (confirmed before adding it: `AppShell`/
- * `AppShellContent` render per-page content that scrolls away entirely;
- * there is no app-wide top bar to put it in instead), so this is the one
- * place a bell icon can live once and appear on every authenticated page.
+ * `NotificationBell` (PRD S-10.11) and `HelpButton` live here, in the
+ * sidebar footer beside `AppUserMenu`, deliberately — it's the ONLY
+ * persistent, always-visible chrome in the app (confirmed before adding it:
+ * `AppShell`/`AppShellContent` render per-page content that scrolls away
+ * entirely; there is no app-wide top bar to put it in instead), so this is
+ * the one place these icons can live once and appear on every authenticated
+ * page. Expanded: help + notifications sit in a row to the right of the
+ * profile row. Collapsed: help, notifications, and the profile avatar stack
+ * vertically, help on top.
  */
 export function AppLayout({ sections, userName, userEmail, children }: AppLayoutProps) {
   const pathname = usePathname();
@@ -78,10 +82,21 @@ export function AppLayout({ sections, userName, userEmail, children }: AppLayout
           </Link>
         )}
         userMenu={
-          <div className="flex flex-col gap-1">
-            <NotificationBell collapsed={hydrated ? collapsed : false} />
-            <AppUserMenu name={userName} email={userEmail} collapsed={hydrated ? collapsed : false} />
-          </div>
+          (hydrated ? collapsed : false) ? (
+            <div className="flex flex-col items-center gap-1">
+              <HelpButton collapsed />
+              <NotificationBell collapsed />
+              <AppUserMenu name={userName} email={userEmail} collapsed />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <AppUserMenu name={userName} email={userEmail} collapsed={false} />
+              </div>
+              <HelpButton collapsed={false} />
+              <NotificationBell collapsed={false} />
+            </div>
+          )
         }
       />
       <AppShellContent>{children}</AppShellContent>

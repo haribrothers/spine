@@ -11,7 +11,10 @@ import { NotificationDrawer } from "./notification-drawer";
  * page (confirmed before building this: `AppShell`/`AppShellContent` render
  * per-page content that scrolls away; there is no app-wide top bar). Placed
  * as a sibling to `AppUserMenu`, not inside it, so it stays reachable with
- * one click rather than nested in the user dropdown.
+ * one click rather than nested in the user dropdown. Always icon-only (no
+ * text label) — it sits beside the profile row when expanded and stacks
+ * above it when collapsed, so there's no width to spare for a label either
+ * way.
  *
  * Polls the unread COUNT independently of the drawer's own list fetch — a
  * cheap `{ count }` request every 20s regardless of whether the drawer is
@@ -46,8 +49,8 @@ export function NotificationBell({ collapsed }: { collapsed: boolean }) {
         aria-label={hasUnread ? `Notifications (${unreadCount} unread)` : "Notifications"}
         className={
           collapsed
-            ? "relative flex w-full items-center justify-center rounded-sm py-1.5 text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
-            : "relative flex w-full items-center gap-2.5 rounded-sm px-1.5 py-1.5 text-left text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
+            ? "relative flex h-9 w-9 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
+            : "relative flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface"
         }
       >
         <span className="relative shrink-0">
@@ -63,7 +66,6 @@ export function NotificationBell({ collapsed }: { collapsed: boolean }) {
             </span>
           )}
         </span>
-        {!collapsed && <span className="text-[13px] font-medium">Notifications</span>}
       </button>
       <NotificationDrawer open={drawerOpen} onOpenChange={setDrawerOpen} onUnreadChange={loadCount} />
     </>

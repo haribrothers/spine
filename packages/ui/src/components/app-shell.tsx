@@ -83,7 +83,7 @@ export function AppShellSidebar({
       <SidebarHeader collapsed={collapsed} onCollapsedChange={onCollapsedChange} logo={logo} />
       <SidebarContent>
         {sections.map((section) => (
-          <SidebarGroup key={section.label}>
+          <SidebarGroup key={section.label} collapsed={collapsed}>
             <SidebarGroupLabel collapsed={collapsed}>{section.label}</SidebarGroupLabel>
             {section.items.map((item) => {
               const active = isActive(item.href);
