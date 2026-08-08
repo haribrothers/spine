@@ -50,7 +50,7 @@ import { Switch } from "./switch";
 import { Textarea } from "./textarea";
 import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 
-export type { CalendarEvent, CalendarEventColor, CalendarRecurrenceRule, CalendarRecurrenceFrequency, CalendarRecurrenceEnd } from "../lib/calendar-utils";
+export type { CalendarEvent, CalendarEventColor, CalendarEventInstance, CalendarRecurrenceRule, CalendarRecurrenceFrequency, CalendarRecurrenceEnd } from "../lib/calendar-utils";
 export { CALENDAR_EVENT_COLORS } from "../lib/calendar-utils";
 
 export type CalendarView = "day" | "week" | "month" | "agenda";
@@ -118,6 +118,16 @@ export interface CalendarProps {
   onDateChange: (date: Date) => void;
   /** When provided, the built-in event editor shows an optional "Contact" field (a searchable Combobox over these options) and round-trips the choice via CalendarEvent.contactId. Omit entirely for a calendar with no contact concept — the field simply doesn't render. */
   contactOptions?: { value: string; label: string }[];
+  /**
+   * Ids of events that should render as non-draggable, non-resizable
+   * markers — clicking one calls `onReadOnlyEventClick` instead of opening
+   * the built-in editor. For events from a source this calendar doesn't
+   * own the lifecycle of (e.g. a read-only overlay of another record type
+   * alongside the calendar's real events) — see `onReadOnlyEventClick`.
+   */
+  readOnlyEventIds?: Set<string>;
+  /** Required when `readOnlyEventIds` is set — called with the clicked instance instead of opening the built-in editor. */
+  onReadOnlyEventClick?: (instance: CalendarEventInstance) => void;
   className?: string;
 }
 
@@ -141,6 +151,8 @@ export function Calendar({
   date,
   onDateChange,
   contactOptions,
+  readOnlyEventIds,
+  onReadOnlyEventClick,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -158,6 +170,10 @@ export function Calendar({
   };
 
   const handleEventClick = (instance: CalendarEventInstance) => {
+    if (readOnlyEventIds?.has(instance.event.id)) {
+      onReadOnlyEventClick?.(instance);
+      return;
+    }
     setEditorState({ mode: "edit", instance });
   };
 
@@ -173,6 +189,11 @@ export function Calendar({
   const handleDelete = (eventId: string) => {
     onEventDelete?.(eventId);
     setEditorState(null);
+  };
+
+  const handleEventUpdate = (event: CalendarEvent) => {
+    if (readOnlyEventIds?.has(event.id)) return;
+    onEventUpdate?.(event);
   };
 
   return (
@@ -193,7 +214,8 @@ export function Calendar({
             events={events}
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
-            onEventUpdate={(e) => onEventUpdate?.(e)}
+            onEventUpdate={handleEventUpdate}
+            readOnlyEventIds={readOnlyEventIds}
           />
         )}
         {view === "week" && (
@@ -202,7 +224,8 @@ export function Calendar({
             events={events}
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
-            onEventUpdate={(e) => onEventUpdate?.(e)}
+            onEventUpdate={handleEventUpdate}
+            readOnlyEventIds={readOnlyEventIds}
           />
         )}
         {view === "month" && (
@@ -381,6 +404,7 @@ interface TimeGridProps {
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance) => void;
   onEventUpdate: (event: CalendarEvent) => void;
+  readOnlyEventIds?: Set<string>;
 }
 
 /**
@@ -390,7 +414,7 @@ interface TimeGridProps {
  * so touch works and live feedback (the draft block following the pointer)
  * is simple to render — see calendar.tsx's module doc for why.
  */
-function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate }: TimeGridProps) {
+function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: TimeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<TimeGridDragState | null>(null);
   const dragRef = useRef<TimeGridDragState | null>(null);
@@ -614,6 +638,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate }: T
                     slot={slot}
                     gridHeight={gridHeight}
                     isDragging={drag?.instanceId === slot.instance.instanceId}
+                    isReadOnly={readOnlyEventIds?.has(slot.instance.event.id) ?? false}
                     onEventClick={onEventClick}
                     onMoveStart={(e) => beginMove(slot.instance, dayIndex, e)}
                     onResizeStart={(edge, e) => beginResize(slot.instance, dayIndex, edge, e)}
@@ -662,12 +687,13 @@ interface TimeGridEventProps {
   slot: CalendarLayoutSlot;
   gridHeight: number;
   isDragging: boolean;
+  isReadOnly?: boolean;
   onEventClick: (instance: CalendarEventInstance) => void;
   onMoveStart: (e: React.PointerEvent) => void;
   onResizeStart: (edge: "start" | "end", e: React.PointerEvent) => void;
 }
 
-function TimeGridEvent({ slot, gridHeight, isDragging, onEventClick, onMoveStart, onResizeStart }: TimeGridEventProps) {
+function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onMoveStart, onResizeStart }: TimeGridEventProps) {
   const { instance, column, columnCount } = slot;
   const dayBase = startOfDay(instance.occurrenceStart);
   const top = minutesToY(diffMinutes(instance.occurrenceStart, dayBase), gridHeight);
@@ -689,8 +715,8 @@ function TimeGridEvent({ slot, gridHeight, isDragging, onEventClick, onMoveStart
         colors.border,
         isDragging && "opacity-60",
       )}
-      style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)` }}
-      onPointerDown={onMoveStart}
+      style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)`, cursor: isReadOnly ? "pointer" : undefined }}
+      onPointerDown={isReadOnly ? (e) => e.stopPropagation() : onMoveStart}
       onClick={() => onEventClick(instance)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -705,14 +731,18 @@ function TimeGridEvent({ slot, gridHeight, isDragging, onEventClick, onMoveStart
       </div>
       {height > 32 && <span className="block truncate opacity-80">{format(instance.occurrenceStart, "h:mm a")}</span>}
 
-      <div
-        className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
-        onPointerDown={(e) => onResizeStart("start", e)}
-      />
-      <div
-        className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
-        onPointerDown={(e) => onResizeStart("end", e)}
-      />
+      {!isReadOnly && (
+        <>
+          <div
+            className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
+            onPointerDown={(e) => onResizeStart("start", e)}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-1.5 cursor-ns-resize"
+            onPointerDown={(e) => onResizeStart("end", e)}
+          />
+        </>
+      )}
     </div>
   );
 }
@@ -727,11 +757,19 @@ interface DayLikeViewProps {
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance) => void;
   onEventUpdate: (event: CalendarEvent) => void;
+  readOnlyEventIds?: Set<string>;
 }
 
-function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpdate }: DayLikeViewProps) {
+function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: DayLikeViewProps) {
   return (
-    <TimeGrid days={[date]} events={events} onSlotCreate={onSlotCreate} onEventClick={onEventClick} onEventUpdate={onEventUpdate} />
+    <TimeGrid
+      days={[date]}
+      events={events}
+      onSlotCreate={onSlotCreate}
+      onEventClick={onEventClick}
+      onEventUpdate={onEventUpdate}
+      readOnlyEventIds={readOnlyEventIds}
+    />
   );
 }
 
@@ -739,7 +777,7 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpda
 // Week view
 // ---------------------------------------------------------------------------
 
-function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpdate }: DayLikeViewProps) {
+function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: DayLikeViewProps) {
   const days = useMemo(() => eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) }), [date]);
 
   return (
@@ -762,7 +800,14 @@ function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpd
           ))}
         </div>
       </div>
-      <TimeGrid days={days} events={events} onSlotCreate={onSlotCreate} onEventClick={onEventClick} onEventUpdate={onEventUpdate} />
+      <TimeGrid
+        days={days}
+        events={events}
+        onSlotCreate={onSlotCreate}
+        onEventClick={onEventClick}
+        onEventUpdate={onEventUpdate}
+        readOnlyEventIds={readOnlyEventIds}
+      />
     </div>
   );
 }

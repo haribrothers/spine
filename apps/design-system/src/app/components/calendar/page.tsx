@@ -1,6 +1,6 @@
 "use client";
 
-import { Calendar, type CalendarEvent, type CalendarView } from "@spine/ui";
+import { Badge, Button, Calendar, type CalendarEvent, type CalendarEventInstance, type CalendarView } from "@spine/ui";
 import { useMemo, useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
@@ -240,6 +240,68 @@ function ContactLinkDemo() {
   );
 }
 
+function ReadOnlyOverlayDemo() {
+  const [events, setEvents] = useState<CalendarEvent[]>(() => [
+    {
+      id: "kickoff",
+      title: "Project kickoff",
+      start: atTime(0, 9, 0),
+      end: atTime(0, 10, 0),
+      color: "blue",
+    },
+  ]);
+  const [view, setView] = useState<CalendarView>("week");
+  const [date, setDate] = useState(new Date());
+  const [detail, setDetail] = useState<CalendarEventInstance | null>(null);
+
+  const readOnlyEvent: CalendarEvent = useMemo(
+    () => ({
+      id: "activity-follow-up",
+      title: "Follow-up call: confirm delivery date",
+      start: atTime(0, 13, 0),
+      end: atTime(0, 13, 30),
+      color: "slate",
+    }),
+    [],
+  );
+  const allEvents = useMemo(() => [...events, readOnlyEvent], [events, readOnlyEvent]);
+  const readOnlyEventIds = useMemo(() => new Set([readOnlyEvent.id]), [readOnlyEvent.id]);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="text-[13px] text-on-surface-muted">
+        The grey "Follow-up call" block can't be dragged or resized — click it (instead of the blue
+        "Project kickoff" event) to see the read-only detail popover.
+      </p>
+      <div className="h-[420px] w-full">
+        <Calendar
+          events={allEvents}
+          view={view}
+          onViewChange={setView}
+          date={date}
+          onDateChange={setDate}
+          onEventCreate={(event) => setEvents((prev) => [...prev, event])}
+          onEventUpdate={(event) => setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))}
+          onEventDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
+          readOnlyEventIds={readOnlyEventIds}
+          onReadOnlyEventClick={setDetail}
+        />
+      </div>
+      {detail && (
+        <div className="flex items-center justify-between rounded-md border border-border bg-surface-sunken px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Badge>Read-only</Badge>
+            <span className="text-[13px] text-on-surface">{detail.event.title}</span>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setDetail(null)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CalendarPage() {
   return (
     <div>
@@ -271,6 +333,7 @@ export default function CalendarPage() {
             "Prev / Today / Next navigation, scoped to the active view's step size.",
             "Fully controlled — the caller owns events, view, and date; drag/resize/create interaction state stays internal.",
             "Optional contactOptions prop adds a Contact field to the event editor (a searchable Combobox) so an event can optionally link to an external record — first used by the /meetings page (S-01.9) to schedule meetings against a CRM contact.",
+            "Optional readOnlyEventIds + onReadOnlyEventClick let a caller overlay events from another source Calendar shouldn't let the user drag/resize/edit through its own dialog — a matching id skips move/resize entirely and routes clicks to the caller's own handler instead of the built-in editor. First used to overlay activities (calls/notes/tasks with a due date, no time range) alongside real scheduled meetings.",
           ]}
         />
       </DocSection>
@@ -322,6 +385,16 @@ export default function Example() {
                 prop: "contactOptions",
                 type: "{ value: string; label: string }[]",
                 description: "When set, the event editor shows an optional Contact field and round-trips the pick via CalendarEvent.contactId. Omit for a calendar with no contact concept.",
+              },
+              {
+                prop: "readOnlyEventIds",
+                type: "Set<string>",
+                description: "Events whose id is in this set skip drag/resize and route clicks to onReadOnlyEventClick instead of the built-in editor.",
+              },
+              {
+                prop: "onReadOnlyEventClick",
+                type: "(instance: CalendarEventInstance) => void",
+                description: "Required alongside readOnlyEventIds — called instead of opening the editor.",
               },
               { prop: "className", type: "string" },
             ]}
@@ -408,6 +481,19 @@ export default function Example() {
           </DocLead>
           <ComponentPreview>
             <ContactLinkDemo />
+          </ComponentPreview>
+        </DocSubsection>
+
+        <DocSubsection id="read-only-overlay" title="Read-only overlay">
+          <DocLead>
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">readOnlyEventIds</code> +{" "}
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">onReadOnlyEventClick</code> overlay
+            events from a source Calendar shouldn't let the user edit through its own dialog — the
+            /meetings page (S-01.9) uses this to show activities (calls/notes/tasks with a due date,
+            no real time range) as inert markers alongside real, draggable meetings.
+          </DocLead>
+          <ComponentPreview>
+            <ReadOnlyOverlayDemo />
           </ComponentPreview>
         </DocSubsection>
       </DocSection>
