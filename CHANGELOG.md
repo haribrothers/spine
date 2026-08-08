@@ -33,6 +33,13 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-09 — Meetings sidebar: move the collapse toggle into the mini-calendar header
+
+- User didn't like the collapse button's placement (a standalone button floating to the left of the whole calendar, outside both the toolbar and the sidebar). Moved it to match the reference screenshot exactly — inside the mini-calendar panel's own header, top-right, next to where the month label sits.
+- Collapsing the sidebar removes that button from view along with the rest of the panel, so a re-expand affordance still has to exist somewhere: when collapsed, the `aside` shrinks to a thin `w-10` vertical strip (not fully removed from the layout) containing just the same toggle icon, docked to the right edge in roughly the same spot — not moved to the main Calendar's own toolbar, which would've been more consistently placed but wouldn't match the reference layout.
+- Verified: `pnpm --filter @spine/web typecheck`/`lint`/`build` clean. Live via Playwright: the icon renders inside the mini-calendar's header when expanded, clicking it collapses to the thin strip (calendar grid reflows to fill the freed width), and clicking the strip's icon re-expands back to the full panel.
+- Stories: S-01.9 (UI polish, no new story).
+
 ### 2026-08-09 — S-01.9 follow-up: Odoo-style multi-calendar sidebar, activity overlay, collapsible rail
 
 - User asked for a right-side sidebar closer to Odoo's calendar: multiple toggleable "calendars," a checkbox to overlay activities, and a collapsible panel. This app has no external calendar sync, so "multiple calendars" was grounded in real data rather than fabricated: each org member becomes a toggleable calendar (real `GET /org/members` + each meeting's existing `organizerUserId`), not a placeholder concept.

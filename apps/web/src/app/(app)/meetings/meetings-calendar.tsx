@@ -292,18 +292,6 @@ export function MeetingsCalendar() {
 
   return (
     <div className="flex h-[calc(100vh-220px)] min-h-[480px] gap-4">
-      <div className="flex flex-col gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          className="self-end lg:self-auto"
-          onClick={toggleSidebar}
-          aria-label={sidebarCollapsed ? "Show calendar sidebar" : "Hide calendar sidebar"}
-        >
-          {sidebarCollapsed ? <PanelRightOpen size={16} /> : <PanelRightClose size={16} />}
-        </Button>
-      </div>
-
       <Calendar
         className="min-w-0 flex-1"
         events={events}
@@ -319,9 +307,32 @@ export function MeetingsCalendar() {
         onReadOnlyEventClick={setActivityDetail}
       />
 
-      {!sidebarCollapsed && (
+      {sidebarCollapsed ? (
+        <div className="hidden w-10 shrink-0 justify-center rounded-lg border border-border bg-surface pt-3 lg:flex">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleSidebar}
+            aria-label="Show calendar sidebar"
+          >
+            <PanelRightOpen size={16} />
+          </Button>
+        </div>
+      ) : (
         <aside className="hidden w-72 shrink-0 flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex">
-          <MiniCalendar selected={date} onSelect={setDate} />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={toggleSidebar}
+                aria-label="Hide calendar sidebar"
+              >
+                <PanelRightClose size={16} />
+              </Button>
+            </div>
+            <MiniCalendar selected={date} onSelect={setDate} />
+          </div>
 
           <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
             <div className="flex items-center gap-2">
