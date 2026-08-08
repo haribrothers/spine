@@ -1,40 +1,67 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox } from "@spine/ui";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, Spinner } from "@spine/ui";
 import { apiClient } from "../../lib/api-client";
 
-const CHECKLIST_ITEMS = [
-  { key: "first_customer", label: "Add your first customer" },
-  { key: "first_item", label: "Create your first item" },
-  { key: "first_quote", label: "Send your first quote" },
+interface ChecklistStatus {
+  hasCustomer: boolean;
+  hasItem: boolean;
+  hasSentQuote: boolean;
+  dismissed: boolean;
+}
+
+const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed">; label: string; href: string }[] = [
+  { key: "hasCustomer", label: "Add your first customer", href: "/contacts" },
+  { key: "hasItem", label: "Create your first item", href: "/catalog" },
+  { key: "hasSentQuote", label: "Send your first quote", href: "/quotes" },
 ];
 
 /**
- * Persistent, dismissible setup checklist (S-12.9 / PRD F12). Judgment
- * call, documented per task brief: contacts/catalog/quotes have no
- * schema/UI yet anywhere in the codebase (checked apps/api/src/modules —
- * empty stubs), so there is nothing real to check completion against.
- * This renders the three example items as static, always-unchecked
- * placeholders — NOT wired to detect real completion, which is explicitly
- * deferred to whenever those modules exist. Only the dismiss action is
- * real, persisted as the `dashboard_checklist_dismissed` org setting so it
- * survives a reload/relogin. Once contacts/catalog/quotes land, replace
- * the static `false` completion states here with real queries and this
- * component doesn't need to change shape, only its data source.
+ * Persistent, dismissible setup checklist (S-12.9). Wired to real
+ * completion checks via `GET /dashboard/checklist` — one call returns both
+ * the three completion flags and the persisted dismissed state, so a
+ * failure of the single request has one obvious fallback (render nothing
+ * further, per the `error` state below) rather than two separately-timed
+ * fetches whose failure/success combinations multiply. Demo-seeded data
+ * doesn't count toward any item (see `DashboardService`'s own comment) —
+ * this is asking "have you done this for real," not "does data exist."
+ *
+ * Dismissal writes through `POST /dashboard/checklist/dismiss`, not
+ * `PUT /org/settings/:key` — that route is owner-only, but every org
+ * member sees and can dismiss this checklist (see
+ * `DashboardService.dismissChecklist`'s comment).
+ *
+ * All three checked auto-dismisses (persisted, same as the manual Dismiss
+ * action) rather than leaving a fully-ticked card sitting on the
+ * dashboard forever. Guarded by `autoDismissSent` so a remount while the
+ * write is still in flight (or already succeeded but the fetched
+ * `dismissed` hasn't caught up yet) doesn't fire a redundant PUT per visit.
  */
 export function SetupChecklist() {
-  const [dismissed, setDismissed] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<ChecklistStatus | null>(null);
+  const [error, setError] = useState(false);
+  const autoDismissSent = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     apiClient
-      .get<{ key: string; value: { dismissed: boolean } | null }>("/org/settings/dashboard_checklist_dismissed")
+      .get<ChecklistStatus>("/dashboard/checklist")
       .then((res) => {
-        if (!cancelled) setDismissed(res.value?.dismissed ?? false);
+        if (cancelled) return;
+        setStatus(res);
+        const allDone = res.hasCustomer && res.hasItem && res.hasSentQuote;
+        if (allDone && !res.dismissed && !autoDismissSent.current) {
+          autoDismissSent.current = true;
+          apiClient.post("/dashboard/checklist/dismiss").catch((err) => {
+            autoDismissSent.current = false;
+            console.error("Failed to auto-dismiss setup checklist", err);
+          });
+        }
       })
       .catch(() => {
-        if (!cancelled) setDismissed(false);
+        if (!cancelled) setError(true);
       });
     return () => {
       cancelled = true;
@@ -42,13 +69,16 @@ export function SetupChecklist() {
   }, []);
 
   async function handleDismiss() {
-    setDismissed(true);
-    await apiClient.put("/org/settings/dashboard_checklist_dismissed", { value: { dismissed: true } });
+    setStatus((current) => (current ? { ...current, dismissed: true } : current));
+    try {
+      await apiClient.post("/dashboard/checklist/dismiss");
+    } catch (err) {
+      console.error("Failed to dismiss setup checklist", err);
+    }
   }
 
-  if (dismissed !== false) {
-    return null;
-  }
+  if (error) return null;
+  if (status?.dismissed) return null;
 
   return (
     <Card className="w-full max-w-md">
@@ -57,14 +87,23 @@ export function SetupChecklist() {
         <CardDescription>A few things to do before your first real transaction.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        <ul className="flex flex-col gap-2">
-          {CHECKLIST_ITEMS.map((item) => (
-            <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
-              <Checkbox checked={false} disabled />
-              {item.label}
-            </li>
-          ))}
-        </ul>
+        {!status ? (
+          <div className="flex justify-center py-4">
+            <Spinner size="sm" />
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {CHECKLIST_ITEMS.map((item) => {
+              const done = status[item.key];
+              return (
+                <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
+                  <Checkbox checked={done} disabled />
+                  {done ? <span className="text-on-surface-muted line-through">{item.label}</span> : <Link href={item.href}>{item.label}</Link>}
+                </li>
+              );
+            })}
+          </ul>
+        )}
         <Button variant="ghost" size="sm" className="self-start" onClick={handleDismiss}>
           Dismiss
         </Button>
