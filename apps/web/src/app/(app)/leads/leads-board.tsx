@@ -358,6 +358,7 @@ export function LeadsBoard() {
         onOpenChange={setDialogOpen}
         lead={editingLead}
         contacts={contacts}
+        leads={leads}
         defaultStage={createStage}
         onSaved={handleSaved}
         onDeleted={handleDeleted}

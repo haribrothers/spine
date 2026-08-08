@@ -49,12 +49,18 @@ interface CurrencyLocaleValue {
  * defaults to the org's configured default (GET /org/settings/currency,
  * same endpoint/shape quote-builder.tsx already uses) rather than a
  * hardcoded "USD", and is a searchable Combobox instead of free text.
+ * Source is also a creatable Combobox (allowCreate) rather than plain free
+ * text — its options are every distinct `source` value already used across
+ * the org's leads (derived from the `leads` prop, not a new endpoint),
+ * so a user can pick a value already in use or type a brand-new one; there
+ * is no fixed enum for this field anywhere in the schema.
  */
 export function LeadDialog({
   open,
   onOpenChange,
   lead,
   contacts,
+  leads,
   defaultStage,
   onSaved,
   onDeleted,
@@ -64,6 +70,8 @@ export function LeadDialog({
   /** Present = editing; null = creating a new lead. */
   lead: Lead | null;
   contacts: Contact[];
+  /** Every lead in the org, used only to suggest previously-used Source values — not re-fetched here since the board already has them loaded. */
+  leads: Lead[] | null;
   /** Stage to preselect when creating (e.g. the column the user clicked "Add" from). */
   defaultStage?: LeadStage;
   onSaved: (lead: Lead) => void;
@@ -109,6 +117,19 @@ export function LeadDialog({
     const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
     return codes.map((code) => ({ value: code, label: code }));
   }, [currency]);
+
+  const sourceOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const values: string[] = [];
+    for (const l of leads ?? []) {
+      if (l.source && !seen.has(l.source)) {
+        seen.add(l.source);
+        values.push(l.source);
+      }
+    }
+    if (source && !seen.has(source)) values.push(source);
+    return values.sort((a, b) => a.localeCompare(b)).map((value) => ({ value, label: value }));
+  }, [leads, source]);
 
   const contactOptions = contacts.map((c) => ({ value: c.id, label: c.name }));
   const canSave = contactId.length > 0 && !saving;
@@ -207,7 +228,14 @@ export function LeadDialog({
             </div>
             <FormField label="Source">
               {(field) => (
-                <Input {...field} value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. referral, website, cold call" />
+                <Combobox
+                  {...field}
+                  options={sourceOptions}
+                  value={source}
+                  onValueChange={setSource}
+                  placeholder="Select or type a source…"
+                  allowCreate
+                />
               )}
             </FormField>
           </div>

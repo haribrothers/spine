@@ -33,6 +33,13 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-08 — Lead dialog: Source is now a creatable Combobox, not plain text
+
+- Follow-up to the Source-field fix below: user asked for Source to be a `Combobox` with `allowCreate` rather than a free-text `Input` — matching the same "open-ended, org-defined vocabulary" pattern the Combobox docs page already calls out (e.g. a catalogue item's unit).
+- `lead-dialog.tsx` now takes an additional `leads` prop (the board's already-loaded full list, passed down from `leads-board.tsx` — no new fetch) and derives `sourceOptions` as the sorted, deduplicated set of every distinct `source` value already used across the org's leads, plus the current lead's own value if it isn't already in that set (covers editing a lead whose source no other lead shares). The Source field is now `<Combobox options={sourceOptions} value={source} onValueChange={setSource} allowCreate />` — pick a previously-used value, or type a new one and select "Create '…'" to use it.
+- Verified: `pnpm --filter @spine/web typecheck`/`lint` clean. Live against a fresh isolated test org (2 leads seeded with sources "Referral"/"Trade show", cleaned up after): opening the edit dialog showed the Source trigger displaying "Referral" (not blank), opening it listed both existing sources with "Referral" checked, typing "Google Ads" (not in the list) showed a "Create 'Google Ads'" row, and selecting it + Save changes persisted — confirmed via a fresh `GET /leads` showing `"source": "Google Ads"` on that lead afterward.
+- Stories: S-01.5 (dialog fix, no new story).
+
 ### 2026-08-08 — Lead dialog: fix missing Source field, currency now a Combobox defaulting to the org's setting
 
 - User-reported gap in the pipeline board's create/edit dialog (`lead-dialog.tsx`, from the redesign below): `source` has existed on the `leads` table/schema/API since S-01.4, but the board's dialog never exposed it — no way to record how a lead came in. Currency was also a raw 3-letter free-text `Input` defaulting to a hardcoded `"USD"`, ignoring the org's actual configured default (`GET /org/settings/currency`, §S-10.1/S-12.4).
