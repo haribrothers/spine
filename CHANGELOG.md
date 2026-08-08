@@ -33,6 +33,12 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-08 — Fix apps/design-system drift: Table's row-grouping wasn't documented
+
+- User noticed the Table component's docs page had no mention of the `groupBy`/`groupPrimary`/`groupMemberLabel` grouping feature added during the Quotes session (used for quote version grouping) — a real violation of CLAUDE.md's rule that `apps/design-system` must never drift behind `packages/ui`'s actual exports.
+- Added the three props to Table's `TableColumn<T>`/`TableProps<T>` API reference tables, a Features-list bullet, and a new "Grouped rows" example under Examples using a realistic quote-versions dataset (mirroring `apps/web/src/app/quotes/quotes-table.tsx`'s actual usage — same `groupPrimary` "newest version wins" logic, same `groupMemberLabel` version badge) so the docs page demonstrates the real intended usage, not a synthetic one.
+- Verified: `pnpm --filter @spine/design-system typecheck`/`lint` pass; a full clean-cache `next build` succeeds (an initial build attempt failed on unrelated stale `.next` cache artifacts for `/500`, `/components/empty-state`, `/components/toast` — confirmed unrelated to this change by clearing `.next` and rebuilding clean, which succeeded end-to-end including `/components/table`).
+
 ### 2026-08-08 — S-01.8: import contacts from CSV
 
 - Last remaining Phase 1 story per the PRD's own list (`S-01.1 → S-01.8`) — a 3-step wizard (upload → map columns → preview & confirm), not a fixed-header-template approach, since real CSV exports from other CRMs/spreadsheets rarely share one header convention. Column mapping is auto-guessed by loose header-name matching (case/punctuation-insensitive aliases) but always shown and overridable before any row is touched.

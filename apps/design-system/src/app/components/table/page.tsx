@@ -1,6 +1,6 @@
 "use client";
 
-import { StatusChip, Table } from "@spine/ui";
+import { Badge, StatusChip, Table } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
@@ -18,6 +18,35 @@ const rows: InvoiceRow[] = [
   { number: "INV-2026-0044", contact: "Coastal Fabrication Co.", total: 3120, status: "overdue" },
   { number: "INV-2026-0045", contact: "Delta Electrical Services", total: 450, status: "draft" },
 ];
+
+interface QuoteRow {
+  id: string;
+  rootQuoteId: string;
+  number: string | null;
+  version: number;
+  contact: string;
+  total: number;
+  status: "draft" | "sent" | "accepted" | "rejected";
+}
+
+const quoteRows: QuoteRow[] = [
+  { id: "q1", rootQuoteId: "fam-1", number: "QUO-0012", version: 1, contact: "Acme Contracting Ltd.", total: 4200, status: "rejected" },
+  { id: "q2", rootQuoteId: "fam-1", number: "QUO-0012-R1", version: 2, contact: "Acme Contracting Ltd.", total: 3800, status: "accepted" },
+  { id: "q3", rootQuoteId: "fam-2", number: "QUO-0013", version: 1, contact: "Brightline Interiors", total: 1560, status: "sent" },
+  { id: "q4", rootQuoteId: "fam-3", number: null, version: 1, contact: "Coastal Fabrication Co.", total: 920, status: "draft" },
+];
+
+const QUOTE_STATUS_BADGE_CLASS: Record<QuoteRow["status"], string> = {
+  draft: "bg-draft-bg text-draft",
+  sent: "bg-due-soon-bg text-due-soon",
+  accepted: "bg-paid-bg text-paid",
+  rejected: "bg-overdue-bg text-overdue",
+};
+
+/** The newest version of a quote family renders as the group's primary/collapsed row. */
+function quoteGroupPrimary(familyRows: QuoteRow[]): QuoteRow {
+  return familyRows.reduce((newest, row) => (row.version > newest.version ? row : newest));
+}
 
 export default function TablePage() {
   return (
@@ -60,6 +89,7 @@ export default function TablePage() {
             "Set configurablePageSize to render a PaginationBar (rows-per-page select + summary) instead of a fixed pageSize.",
             "Sticky header row stays visible while scrolling a tall table.",
             "Alternating hover tint on rows.",
+            "Set groupBy to cluster rows that share a key (e.g. every version of the same quote) into one expandable group instead of showing every row flat — sorting and pagination then operate over groups, not raw rows.",
           ]}
         />
       </DocSection>
@@ -87,6 +117,9 @@ export default () => (
             { prop: "pageSize", type: "number", defaultValue: "20" },
             { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
             { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },
+            { prop: "groupBy", type: "(row: T) => string" },
+            { prop: "groupPrimary", type: "(rows: T[]) => T" },
+            { prop: "groupMemberLabel", type: "(row: T) => ReactNode" },
           ]}
           caption="TableColumn<T>"
         />
@@ -140,6 +173,66 @@ export default () => (
               },
             ]}
             data={rows}
+          />
+        </ComponentPreview>
+
+        <DocLead>
+          Grouped rows — every version of the same quote (Quotes' own revision history, §S-03.8)
+          collapses into one row showing the newest version, with older/superseded versions
+          expandable underneath via the chevron. Sorting and pagination operate over the three
+          groups shown here, not the four underlying rows.
+        </DocLead>
+        <ComponentPreview
+          code={`function groupPrimary(familyRows) {
+  return familyRows.reduce((newest, row) => (row.version > newest.version ? row : newest));
+}
+
+<Table
+  rowKey={(row) => row.id}
+  columns={[
+    { key: "number", header: "Number", render: (row) => row.number ?? "— (unsent draft)" },
+    { key: "contact", header: "Contact", render: (row) => row.contact, sortValue: (row) => row.contact },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{row.status}</Badge>,
+    },
+    {
+      key: "total",
+      header: "Total",
+      align: "right",
+      render: (row) => \`$\${row.total.toFixed(2)}\`,
+      sortValue: (row) => row.total,
+    },
+  ]}
+  data={quoteRows}
+  groupBy={(row) => row.rootQuoteId}
+  groupPrimary={groupPrimary}
+  groupMemberLabel={(row) => <Badge className="bg-transparent text-on-surface-muted">v{row.version}</Badge>}
+/>`}
+        >
+          <Table<QuoteRow>
+            rowKey={(row) => row.id}
+            columns={[
+              { key: "number", header: "Number", render: (row) => row.number ?? "— (unsent draft)" },
+              { key: "contact", header: "Contact", render: (row) => row.contact, sortValue: (row) => row.contact },
+              {
+                key: "status",
+                header: "Status",
+                render: (row) => <Badge className={QUOTE_STATUS_BADGE_CLASS[row.status]}>{row.status}</Badge>,
+              },
+              {
+                key: "total",
+                header: "Total",
+                align: "right",
+                render: (row) => `$${row.total.toFixed(2)}`,
+                sortValue: (row) => row.total,
+              },
+            ]}
+            data={quoteRows}
+            groupBy={(row) => row.rootQuoteId}
+            groupPrimary={quoteGroupPrimary}
+            groupMemberLabel={(row) => <Badge className="bg-transparent text-on-surface-muted">v{row.version}</Badge>}
           />
         </ComponentPreview>
       </DocSection>
