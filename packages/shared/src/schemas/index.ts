@@ -4,3 +4,4 @@ export * from "./meetings.ts";
 export * from "./catalog.ts";
 export * from "./quotes.ts";
 export * from "./invoices.ts";
+export * from "./payments.ts";
