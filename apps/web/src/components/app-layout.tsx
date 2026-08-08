@@ -13,10 +13,9 @@ import { NotificationBell } from "./notification-bell";
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
 // Routes that opt out of AppShellContent's default 1200px reading-width cap
-// — wide-by-nature content (a multi-column board today; a dense table could
-// join later) rather than form/prose pages, where the cap exists to keep
-// text/forms readable and would only waste space here.
-const FULL_WIDTH_ROUTES = ["/leads"];
+// — wide-by-nature content (a multi-column board or a scheduling calendar,
+// not a form/prose page) where the cap would only waste space.
+const FULL_WIDTH_ROUTES = ["/leads", "/meetings"];
 
 function AppLogo({ collapsed }: { collapsed: boolean }) {
   const { resolvedTheme } = useTheme();

@@ -52,6 +52,8 @@ export interface CalendarEvent {
   description?: string;
   location?: string;
   recurrence?: CalendarRecurrenceRule;
+  /** Optional link to an external "contact" record — Calendar has no opinion on what a contact is, only an id/label pair supplied via CalendarProps.contactOptions. Omit both if the consuming app has no contact concept. */
+  contactId?: string;
 }
 
 /**

@@ -203,6 +203,43 @@ function RecurrenceDemo() {
   );
 }
 
+const SAMPLE_CONTACTS = [
+  { value: "acme", label: "Acme Contracting Ltd." },
+  { value: "brightline", label: "Brightline Interiors" },
+  { value: "coastal", label: "Coastal Fabrication Co." },
+];
+
+function ContactLinkDemo() {
+  const [events, setEvents] = useState<CalendarEvent[]>(() => [
+    {
+      id: "site-visit",
+      title: "Site visit — foundation inspection",
+      start: atTime(0, 10, 0),
+      end: atTime(0, 11, 0),
+      color: "green",
+      contactId: "acme",
+    },
+  ]);
+  const [view, setView] = useState<CalendarView>("week");
+  const [date, setDate] = useState(new Date());
+
+  return (
+    <div className="h-[480px] w-full">
+      <Calendar
+        events={events}
+        view={view}
+        onViewChange={setView}
+        date={date}
+        onDateChange={setDate}
+        contactOptions={SAMPLE_CONTACTS}
+        onEventCreate={(event) => setEvents((prev) => [...prev, event])}
+        onEventUpdate={(event) => setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)))}
+        onEventDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
+      />
+    </div>
+  );
+}
+
 export default function CalendarPage() {
   return (
     <div>
@@ -233,6 +270,7 @@ export default function CalendarPage() {
             "A mini month-picker in the toolbar (built on the same MiniCalendar DatePicker uses) to jump the visible range to any date.",
             "Prev / Today / Next navigation, scoped to the active view's step size.",
             "Fully controlled — the caller owns events, view, and date; drag/resize/create interaction state stays internal.",
+            "Optional contactOptions prop adds a Contact field to the event editor (a searchable Combobox) so an event can optionally link to an external record — first used by the /meetings page (S-01.9) to schedule meetings against a CRM contact.",
           ]}
         />
       </DocSection>
@@ -280,6 +318,11 @@ export default function Example() {
               { prop: "onViewChange", type: "(view: CalendarView) => void" },
               { prop: "date", type: "Date" },
               { prop: "onDateChange", type: "(date: Date) => void" },
+              {
+                prop: "contactOptions",
+                type: "{ value: string; label: string }[]",
+                description: "When set, the event editor shows an optional Contact field and round-trips the pick via CalendarEvent.contactId. Omit for a calendar with no contact concept.",
+              },
               { prop: "className", type: "string" },
             ]}
           />
@@ -300,6 +343,7 @@ export default function Example() {
               { prop: "location", type: "string" },
               { prop: "description", type: "string" },
               { prop: "recurrence", type: "CalendarRecurrenceRule" },
+              { prop: "contactId", type: "string", description: "Set via the editor's Contact field when CalendarProps.contactOptions is provided." },
             ]}
           />
         </DocSubsection>
@@ -350,6 +394,20 @@ export default function Example() {
           </DocLead>
           <ComponentPreview>
             <RecurrenceDemo />
+          </ComponentPreview>
+        </DocSubsection>
+
+        <DocSubsection id="contact-link" title="Linked to a contact">
+          <DocLead>
+            Passing <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">contactOptions</code> adds
+            an optional Contact field to the event editor — click the existing "Site visit" event
+            below and note the Contact field pre-filled to "Acme Contracting Ltd.", or create a new
+            event and pick a contact yourself. This is how the /meetings page (S-01.9) links a
+            scheduled meeting to a CRM contact, which then also surfaces on that contact's own
+            Timeline tab.
+          </DocLead>
+          <ComponentPreview>
+            <ContactLinkDemo />
           </ComponentPreview>
         </DocSubsection>
       </DocSection>

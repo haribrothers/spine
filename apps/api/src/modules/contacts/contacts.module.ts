@@ -6,21 +6,22 @@ import { ContactsController } from "./contacts.controller";
 import { ContactsService } from "./contacts.service";
 import { LeadsController } from "./leads.controller";
 import { LeadsService } from "./leads.service";
+import { MeetingsController } from "./meetings.controller";
+import { MeetingsService } from "./meetings.service";
 
 /**
  * First real business/domain module in this codebase (everything before
- * was infrastructure). Covers PRD F1 Contacts & CRM's MUST-level stories
- * (S-01.1, S-01.2, S-01.4, S-01.6, S-01.7) per this task's scope — contacts
- * (customer/vendor/both, persons, addresses), leads (fixed-stage pipeline),
- * and activities (call/meeting/note/task + overdue follow-ups). Deferred:
- * S-01.3 unified timeline (nothing to show yet — quotes/invoices/payments
- * don't exist), S-01.5 pipeline board UI (data model is here, board is
- * not), S-01.8 CSV import.
+ * was infrastructure). Covers all of PRD FEAT-01 Contacts & CRM's stories:
+ * contacts (customer/vendor/both, persons, addresses), leads (fixed-stage
+ * pipeline), activities (call/meeting/note/task + overdue follow-ups), and
+ * meetings (S-01.9 — scheduled calendar events, optionally linked to a
+ * contact; distinct from activities' own "meeting" type, see
+ * meetings.ts's schema comment).
  */
 @Module({
   imports: [AuditModule],
-  controllers: [ContactsController, LeadsController, ActivitiesController],
-  providers: [ContactsService, LeadsService, ActivitiesService],
-  exports: [ContactsService, LeadsService, ActivitiesService],
+  controllers: [ContactsController, LeadsController, ActivitiesController, MeetingsController],
+  providers: [ContactsService, LeadsService, ActivitiesService, MeetingsService],
+  exports: [ContactsService, LeadsService, ActivitiesService, MeetingsService],
 })
 export class ContactsModule {}

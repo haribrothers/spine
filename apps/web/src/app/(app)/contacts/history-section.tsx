@@ -12,6 +12,7 @@ const ENTITY_LABELS: Record<AuditEntry["entityType"], string> = {
   address: "an address",
   lead: "a lead",
   activity: "an activity",
+  meeting: "a meeting",
 };
 
 const ACTION_VERBS: Record<string, string> = {

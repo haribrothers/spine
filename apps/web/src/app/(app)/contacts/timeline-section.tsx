@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Badge, EmptyState, Spinner, Timeline, type TimelineItemData } from "@spine/ui";
 import { formatDistanceToNow } from "date-fns";
-import { CheckSquare, FileText, History, Phone, StickyNote, Users } from "lucide-react";
+import { CalendarDays, CheckSquare, FileText, History, Phone, StickyNote, Users } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import type { Meeting } from "../meetings/types";
 import type { Activity, ActivityType } from "./types";
 
 /** Mirrors apps/web/src/app/(app)/quotes/types.ts's Quote shape — a local subset, since this section only needs a handful of fields. */
@@ -37,11 +38,12 @@ function quoteLabel(quote: QuoteSummary) {
 /**
  * S-01.3 — "see every quote, invoice, payment and note for a contact on one
  * timeline." Invoices and payments don't exist yet (Phase 2), so this
- * merges what's real today — quote lifecycle events and logged activities
- * (which already cover "note", per ActivityType) — into one chronological
- * feed via the generic @spine/ui Timeline component. Structured so an
- * invoice/payment event source can be added alongside quotes/activities
- * later without reshaping this component, not as a placeholder.
+ * merges what's real today — quote lifecycle events, logged activities
+ * (which already cover "note", per ActivityType), and (per S-01.9)
+ * scheduled meetings — into one chronological feed via the generic
+ * @spine/ui Timeline component. Structured so an invoice/payment event
+ * source can be added alongside these later without reshaping this
+ * component, not as a placeholder.
  *
  * Quote events are derived from each quote's own timestamp fields
  * (createdAt/sentAt/updatedAt-on-terminal-status) rather than a new
@@ -49,19 +51,24 @@ function quoteLabel(quote: QuoteSummary) {
  * the public accept/reject link's view/accept/reject tracking, not a
  * general lifecycle log, and there's no per-contact read endpoint for it;
  * the quote's own fields are sufficient to build "created / sent / accepted
- * / rejected" without inventing data.
+ * / rejected" without inventing data. A meeting's timeline timestamp is its
+ * `startAt` (when it happens/happened), not `createdAt` (when it was
+ * scheduled) — the scheduled time is what's meaningful for "where do we
+ * stand," matching how a quote's own events use their real event times.
  */
 export function TimelineSection({ contactId }: { contactId: string }) {
   const [quotes, setQuotes] = useState<QuoteSummary[] | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
+  const [meetings, setMeetings] = useState<Meeting[] | null>(null);
 
   useEffect(() => {
     apiClient.get<QuoteSummary[]>(`/quotes?contactId=${contactId}`).then(setQuotes);
     apiClient.get<Activity[]>(`/activities?contactId=${contactId}`).then(setActivities);
+    apiClient.get<Meeting[]>(`/meetings?contactId=${contactId}`).then(setMeetings);
   }, [contactId]);
 
   const items = useMemo<TimelineItemData[] | null>(() => {
-    if (quotes === null || activities === null) return null;
+    if (quotes === null || activities === null || meetings === null) return null;
 
     const events: (TimelineItemData & { at: string })[] = [];
 
@@ -121,6 +128,16 @@ export function TimelineSection({ contactId }: { contactId: string }) {
       });
     }
 
+    for (const meeting of meetings) {
+      events.push({
+        id: `meeting-${meeting.id}`,
+        icon: <CalendarDays size={14} />,
+        title: `Meeting: ${meeting.title}`,
+        description: meeting.location ?? meeting.description ?? undefined,
+        at: meeting.startAt,
+      });
+    }
+
     return events
       .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
       .map(({ at, ...item }) => ({
@@ -129,7 +146,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
           <span title={new Date(at).toLocaleString()}>{formatDistanceToNow(new Date(at), { addSuffix: true })}</span>
         ),
       }));
-  }, [quotes, activities]);
+  }, [quotes, activities, meetings]);
 
   return (
     <section className="flex flex-col gap-3">
@@ -143,7 +160,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
           <EmptyState
             icon={<History />}
             title="Nothing yet"
-            description="Quotes and logged activities for this contact will show up here."
+            description="Quotes, logged activities, and scheduled meetings for this contact will show up here."
           />
         </div>
       )}

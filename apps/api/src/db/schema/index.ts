@@ -3,6 +3,7 @@ export * from "./org";
 export * from "./numbering";
 export * from "./audit";
 export * from "./contacts";
+export * from "./meetings";
 export * from "./catalog";
 export * from "./quotes";
 export * from "./notifications";

@@ -31,6 +31,7 @@ import {
   layoutOverlappingEvents,
 } from "../lib/calendar-utils";
 import { Button } from "./button";
+import { Combobox } from "./combobox";
 import {
   Dialog,
   DialogContent,
@@ -115,6 +116,8 @@ export interface CalendarProps {
   onViewChange: (view: CalendarView) => void;
   date: Date;
   onDateChange: (date: Date) => void;
+  /** When provided, the built-in event editor shows an optional "Contact" field (a searchable Combobox over these options) and round-trips the choice via CalendarEvent.contactId. Omit entirely for a calendar with no contact concept — the field simply doesn't render. */
+  contactOptions?: { value: string; label: string }[];
   className?: string;
 }
 
@@ -137,6 +140,7 @@ export function Calendar({
   onViewChange,
   date,
   onDateChange,
+  contactOptions,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -221,6 +225,7 @@ export function Calendar({
         onClose={() => setEditorState(null)}
         onSave={handleSave}
         onDelete={handleDelete}
+        contactOptions={contactOptions}
       />
     </div>
   );
@@ -989,6 +994,7 @@ interface CalendarEventEditorProps {
   onClose: () => void;
   onSave: (event: CalendarEvent) => void;
   onDelete: (eventId: string) => void;
+  contactOptions?: { value: string; label: string }[];
 }
 
 function toLocalInputValue(date: Date): string {
@@ -1000,7 +1006,7 @@ function fromLocalInputValue(value: string): Date {
   return new Date(value);
 }
 
-function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEventEditorProps) {
+function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions }: CalendarEventEditorProps) {
   const isEdit = state?.mode === "edit";
   const baseEvent: CalendarEvent | null = isEdit ? state.instance.event : null;
 
@@ -1011,6 +1017,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEvent
   const [color, setColor] = useState<CalendarEventColor>("blue");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
+  const [contactId, setContactId] = useState("");
   const [recurs, setRecurs] = useState(false);
   const [frequency, setFrequency] = useState<CalendarRecurrenceFrequency>("weekly");
   const [endType, setEndType] = useState<"date" | "count">("count");
@@ -1028,6 +1035,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEvent
       setColor(event.color);
       setLocation(event.location ?? "");
       setDescription(event.description ?? "");
+      setContactId(event.contactId ?? "");
       setRecurs(!!event.recurrence);
       if (event.recurrence) {
         setFrequency(event.recurrence.frequency);
@@ -1047,6 +1055,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEvent
       setColor("blue");
       setLocation("");
       setDescription("");
+      setContactId("");
       setRecurs(false);
       setFrequency("weekly");
       setEndType("count");
@@ -1070,6 +1079,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEvent
       color,
       location: location.trim() || undefined,
       description: description.trim() || undefined,
+      contactId: contactId || undefined,
       recurrence: recurs
         ? {
             frequency,
@@ -1105,6 +1115,19 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete }: CalendarEvent
                 autoFocus
               />
             </Field>
+
+            {contactOptions && (
+              <Field>
+                <Label htmlFor="calendar-event-contact">Contact</Label>
+                <Combobox
+                  id="calendar-event-contact"
+                  options={contactOptions}
+                  value={contactId}
+                  onValueChange={setContactId}
+                  placeholder="None"
+                />
+              </Field>
+            )}
 
             <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
               <Label htmlFor="calendar-event-allday" className="font-medium">

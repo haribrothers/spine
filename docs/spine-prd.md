@@ -374,8 +374,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-01.6 | As staff, I want to log a call or site visit against a contact with a follow-up date, so nothing is forgotten |
 | S-01.7 | As staff, I want a list of overdue follow-ups on my dashboard, so I act on them |
 | S-01.8 | As an owner, I want to import contacts from CSV, so migrating from a spreadsheet takes minutes |
+| S-01.9 | As staff, I want to schedule and view meetings with contacts on a calendar, so I can plan my week and never miss a commitment |
 
 *Acceptance highlights:* duplicate detection warns on matching phone or email but does not block. Deleting a contact with financial documents is blocked; deactivation is offered instead.
+
+*Acceptance highlights (S-01.9):* a dedicated `/meetings` page reuses the existing `Calendar` component (Day/Week/Month/Agenda, drag to create/move/resize, recurrence) plus `MiniCalendar` as a side month-picker, matching the app's existing Outlook-style scheduling UI rather than inventing a new one. A meeting optionally links to a contact via a picker in the create/edit form — meetings aren't required to have a contact (e.g. an internal team meeting). A meeting linked to a contact appears on that contact's Timeline tab (S-01.3) as a new event type, alongside quotes and activities. Meetings are stored in their own table, separate from `activities` — a real calendar event needs a time range and optional recurrence that `activities`' flat, single-due-date model was never designed to hold; `activities`' own `meeting` type is unaffected and continues to serve quick call/meeting logging without a scheduled time range. External calendar sync (Google/Outlook) is explicitly **out of scope for v1** — self-hosted only, no OAuth/external API dependency, consistent with the PRD's existing caution around external integrations (§1.5's "no bank feed auto-import").
 
 ### FEAT-02 · Catalogue
 

@@ -89,7 +89,7 @@ export interface Activity {
 }
 
 /** Mirrors apps/api/src/modules/audit/audit-log.service.ts's `listForContact` row shape. */
-export type AuditEntityType = "contact" | "contact_person" | "address" | "lead" | "activity";
+export type AuditEntityType = "contact" | "contact_person" | "address" | "lead" | "activity" | "meeting";
 
 export interface AuditFieldChange {
   field: string;

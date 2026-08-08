@@ -10,6 +10,7 @@ export type AuditEntityType =
   | "address"
   | "lead"
   | "activity"
+  | "meeting"
   | "catalog_item"
   | "quote"
   | "quote_line";
