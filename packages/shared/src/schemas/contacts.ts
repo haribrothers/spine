@@ -52,7 +52,28 @@ export const createContactSchema = z.object({
   addresses: z.array(addressInputSchema).optional(),
 });
 
-export const updateContactSchema = createContactSchema.partial().extend({
+/**
+ * Deliberately NOT `createContactSchema.partial()` — zod's `.partial()`
+ * only marks a field optional, it doesn't stop a `ZodDefault` from firing
+ * when the field is absent from the request body. `isCompany`'s
+ * `.default(false)` on the create schema would silently resolve every
+ * partial update that omits `isCompany` (e.g. a logo-only PUT) to `false`,
+ * even though `ContactsService.update()` already correctly gates the write
+ * behind `input.isCompany !== undefined` — that check is defeated upstream
+ * once the default has already filled it in. Redeclaring the shape here
+ * with plain `.optional()` (no `.default()`) keeps "absent from the
+ * request" genuinely distinguishable from "explicitly set."
+ */
+export const updateContactSchema = z.object({
+  type: contactTypeSchema.optional(),
+  isCompany: z.boolean().optional(),
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional().nullable(),
+  phone: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  taxId: z.string().optional().nullable(),
+  website: z.string().optional().nullable(),
+  logoFileId: uuidSchema.optional().nullable(),
   contactPersons: z.array(contactPersonInputSchema).optional(),
   addresses: z.array(addressInputSchema).optional(),
 });
