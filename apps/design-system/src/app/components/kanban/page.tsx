@@ -65,7 +65,6 @@ function KanbanDemo() {
               meta={stageLeads.length}
               subtitle={total > 0 ? formatMoney(total) : undefined}
               className={isLost ? "border-overdue bg-overdue-bg" : undefined}
-              width={220}
               onDrop={(cardId) => moveLead(cardId, id)}
             >
               {stageLeads.map((lead) => (
@@ -113,6 +112,7 @@ export default function KanbanPage() {
             "title/meta/subtitle are free-form ReactNode, not fixed to \"name + count\" — meta is typically a count, subtitle a running value total, but neither is required.",
             "A column being dragged over highlights (border-primary + bg-info-bg) so the drop target is obvious; a column can also take its own className to signal a distinct state (e.g. a \"Lost\" stage tinted with the overdue tokens).",
             "KanbanCard's onClick is untouched by drag handling (native drag/click are distinguished by the browser's own movement threshold), so cards can open an edit dialog on click while still being draggable.",
+            "Columns flex to fill the board's full width by default (floored at minWidth, 200px) — a handful of stages spread out to use all available space with no unnecessary scrolling; pass a fixed width to opt a column out of flexing instead.",
           ]}
         />
       </DocSection>
@@ -151,6 +151,14 @@ export default () => (
           only cards inside a column do" actually holds — without an explicit height on an ancestor,
           a bare <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">h-full</code> collapses to zero.
         </DocLead>
+        <DocLead>
+          Width works the same way in reverse: columns flex to fill whatever width the board is
+          given, so a page hosting a wide board should also opt out of{" "}
+          <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">AppShellContent</code>'s
+          default 1200px cap via its <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">fullWidth</code> prop
+          (the Leads pipeline page does this) — otherwise the columns simply flex to fill a
+          narrower-than-necessary 1200px column instead of the real viewport.
+        </DocLead>
       </DocSection>
 
       <DocSection id="api-reference" title="API Reference">
@@ -161,7 +169,8 @@ export default () => (
             { prop: "KanbanColumn meta", type: "ReactNode", description: "Shown beside the title — typically a count." },
             { prop: "KanbanColumn subtitle", type: "ReactNode", description: "Shown below the title — typically a value total." },
             { prop: "KanbanColumn onDrop", type: "(cardId: string) => void" },
-            { prop: "KanbanColumn width", type: "number", defaultValue: "272" },
+            { prop: "KanbanColumn width", type: "number", description: "Fixed width in px — when set, the column no longer flexes." },
+            { prop: "KanbanColumn minWidth", type: "number", defaultValue: "200", description: "Floor width in px when width is omitted (flexible mode)." },
             { prop: "KanbanCard id", type: "string" },
             { prop: "KanbanCard onClick", type: "() => void", description: "Free for the caller — e.g. opening an edit dialog." },
           ]}

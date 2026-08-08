@@ -128,7 +128,8 @@ export default function AppShellPage() {
       <DocSection id="features" title="Features">
         <FeatureList
           items={[
-            "Compound API — AppShell (frame), AppShellSidebar (nav rail), AppShellHeader (breadcrumb/title/description/action), AppShellContent (scrollable main region, capped to the 1200px container width) — composed per page rather than configured through one large props object.",
+            "Compound API — AppShell (frame), AppShellSidebar (nav rail), AppShellHeader (breadcrumb/title/description/action), AppShellContent (scrollable main region, capped to the 1200px container width by default) — composed per page rather than configured through one large props object.",
+            "AppShellContent's fullWidth prop opts a page out of the 1200px cap for content that's wide by nature (a multi-column board, a dense table) rather than form/prose — the cap exists to keep reading-width content comfortable, and just wastes space on content designed to fill the screen.",
             "Nav content is entirely caller-supplied via a `sections` prop (grouped items with icon/label/href) — AppShell has no built-in opinion about which pages exist in a given app.",
             "Collapse toggle is real (built on Sidebar's existing collapsed state) and typically persisted by the consuming app (e.g. to localStorage) so it survives navigation — AppShell itself is stateless and takes `collapsed`/`onCollapsedChange` as controlled props.",
             "renderLink stays router-agnostic — pass a Next.js `<Link>` (or any anchor) so @spine/ui never depends on next/link directly.",
@@ -180,6 +181,7 @@ export default () => (
             { prop: "AppShellHeader.title", type: "string" },
             { prop: "AppShellHeader.description", type: "string" },
             { prop: "AppShellHeader.action", type: "ReactNode" },
+            { prop: "AppShellContent.fullWidth", type: "boolean", defaultValue: "false", description: "Opts out of the default 1200px max-width cap." },
           ]}
         />
       </DocSection>

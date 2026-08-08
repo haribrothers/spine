@@ -56,10 +56,23 @@ export interface KanbanColumnProps extends Omit<React.HTMLAttributes<HTMLDivElem
   subtitle?: React.ReactNode;
   /** Called with the dragged card's id when a card is dropped on this column. No-op (e.g. dropping back on the origin column) is the caller's responsibility to detect. */
   onDrop?: (cardId: string) => void;
-  /** Fixed column width; defaults to a comfortable card width. */
+  /**
+   * Fixed column width in px. When set, the column never grows/shrinks
+   * (`flex: 0 0 <width>px`) — use this for a board with many columns where
+   * a consistent card width matters more than fitting the viewport.
+   * When omitted (the default), the column instead flexes to fill the
+   * board's row (`flex: 1 1 0`, floored at `minWidth`) so a handful of
+   * columns spread out to use the full available width with no
+   * unnecessary horizontal scroll — falling back to the board's own
+   * `overflow-x-auto` only once columns would drop below that floor.
+   */
   width?: number;
+  /** Floor width in px when `width` is omitted (flexible mode). Ignored if `width` is set. */
+  minWidth?: number;
   children?: React.ReactNode;
 }
+
+const DEFAULT_MIN_WIDTH = 200;
 
 /**
  * One column of a KanbanBoard. The column chrome (header, border) has a
@@ -73,7 +86,8 @@ export function KanbanColumn({
   meta,
   subtitle,
   onDrop,
-  width = 272,
+  width,
+  minWidth = DEFAULT_MIN_WIDTH,
   className,
   children,
   ...props
@@ -88,7 +102,7 @@ export function KanbanColumn({
         isOver ? "border-primary bg-info-bg" : "border-border bg-surface-sunken",
         className,
       )}
-      style={{ width, flex: `0 0 ${width}px` }}
+      style={width ? { width, flex: `0 0 ${width}px` } : { flex: "1 1 0%", minWidth }}
       onDragOver={(e) => {
         if (!draggedId) return;
         e.preventDefault();

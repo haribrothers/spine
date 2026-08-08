@@ -135,11 +135,24 @@ export function AppShellHeader({ breadcrumb, title, description, action, classNa
   );
 }
 
-/** The scrollable main content region, capped to the design system's 1200px max-width container. */
-export function AppShellContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+export interface AppShellContentProps extends React.HTMLAttributes<HTMLDivElement> {
+  /**
+   * Opts this page out of the design system's default 1200px reading-width
+   * cap — for pages whose content is wide by nature (a multi-column board,
+   * a dense table) rather than form/prose content, where capping width just
+   * wastes screen real estate on a large monitor. The page's own inner
+   * content is still free to declare its own min-width and scroll
+   * independently (e.g. Kanban) — this prop only removes the outer cap,
+   * it doesn't guarantee everything fits without scrolling.
+   */
+  fullWidth?: boolean;
+}
+
+/** The scrollable main content region, capped to the design system's 1200px max-width container by default — see `fullWidth` to opt out. */
+export function AppShellContent({ className, fullWidth = false, ...props }: AppShellContentProps) {
   return (
     <main className={cn("min-h-0 flex-1 overflow-y-auto", className)} {...props}>
-      <div className="mx-auto w-full max-w-[1200px] p-6 lg:p-8">{props.children}</div>
+      <div className={cn("mx-auto w-full p-6 lg:p-8", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{props.children}</div>
     </main>
   );
 }

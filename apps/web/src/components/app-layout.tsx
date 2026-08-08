@@ -12,6 +12,12 @@ import { NotificationBell } from "./notification-bell";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
+// Routes that opt out of AppShellContent's default 1200px reading-width cap
+// — wide-by-nature content (a multi-column board today; a dense table could
+// join later) rather than form/prose pages, where the cap exists to keep
+// text/forms readable and would only waste space here.
+const FULL_WIDTH_ROUTES = ["/leads"];
+
 function AppLogo({ collapsed }: { collapsed: boolean }) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -56,6 +62,7 @@ export function AppLayout({ sections, userName, userEmail, children }: AppLayout
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const fullWidth = FULL_WIDTH_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
 
   useEffect(() => {
     const stored = window.localStorage.getItem(COLLAPSE_STORAGE_KEY);
@@ -99,7 +106,7 @@ export function AppLayout({ sections, userName, userEmail, children }: AppLayout
           )
         }
       />
-      <AppShellContent>{children}</AppShellContent>
+      <AppShellContent fullWidth={fullWidth}>{children}</AppShellContent>
     </AppShell>
   );
 }
