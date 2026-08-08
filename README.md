@@ -15,8 +15,13 @@ the owner never has to think in debits and credits. See
 
 ## Status
 
-Early build — Phase 0 (Foundation) is in progress. See
-[`CHANGELOG.md`](CHANGELOG.md) for what's actually landed vs. planned.
+Phase 0 (Foundation) is complete — monorepo scaffold, auth, the `@spine/ui`
+component library and its docs app, the ledger/money/tax core, onboarding,
+Settings, and Files. Phase 1 (Sales Spine) is underway: Contacts & CRM,
+Catalogue, and Quotes (including PDF rendering, email sending, and the
+public accept/reject link) are complete, plus an in-app notification centre
+and browser push notifications. See [`CHANGELOG.md`](CHANGELOG.md) for the
+full phase-by-phase breakdown of what's landed vs. planned.
 
 ## Tech stack
 
@@ -41,18 +46,19 @@ Full rationale for each choice is in PRD §5.
 ```
 spine/
 ├─ apps/
-│  ├─ api/        # NestJS — REST API, Drizzle schema & migrations
-│  ├─ web/        # Next.js
-│  └─ mobile/     # Expo (not yet scaffolded)
+│  ├─ api/            # NestJS — REST API, Drizzle schema & migrations
+│  ├─ web/            # Next.js
+│  ├─ design-system/  # @spine/ui's living docs app (component pages, not Storybook)
+│  └─ mobile/         # Expo (not yet scaffolded)
 ├─ packages/
 │  ├─ shared/     # money, tax engine, zod schemas, shared types
 │  ├─ ui/         # @spine/ui — Radix + Tailwind component library
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
 ├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile (production)
-├─ docs/          # spine-prd.md — the product spec
+├─ docs/          # spine-prd.md — the product spec; DESIGN.md — the design system spec
 ├─ scripts/       # seed.ts
 ├─ docker-compose.yml       # production stack (builds api/web, runs behind Caddy)
-├─ docker-compose.dev.yml   # local dev infra only (Postgres + MinIO)
+├─ docker-compose.dev.yml   # local dev infra only (Postgres, MinIO, MailDev)
 └─ .env.example
 ```
 
@@ -66,7 +72,7 @@ below instead — that path never requires Node or pnpm on the host.)
 
 - Node.js 20+
 - [pnpm](https://pnpm.io/installation) (`corepack enable` is the easiest way to get the pinned version)
-- Docker (for Postgres and MinIO — you do not need Postgres installed locally)
+- Docker (for Postgres, MinIO, and MailDev — you do not need any of these installed locally)
 
 ### 1. Clone and install
 
@@ -109,6 +115,16 @@ The development example points `DATABASE_URL` at `localhost:5432`, since
 not inside Docker. (`.env.example`, by contrast, uses the Docker network
 hostname `db:5432` and is for the production compose stack — see below.)
 
+Everything besides the three required variables (`DATABASE_URL`,
+`AUTH_SECRET`, `APP_URL`) is optional and degrades gracefully when left
+blank — including `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`, which enable
+browser push notifications (S-10.12). To test push locally, generate a
+keypair and paste both values in:
+
+```bash
+npx web-push generate-vapid-keys
+```
+
 ### 4. Run migrations and seed data
 
 ```bash
@@ -125,11 +141,16 @@ of accounts (PRD §14.2).
 pnpm dev
 ```
 
-This runs `apps/api` and `apps/web` in parallel via Turborepo, with
-hot-reload. API defaults to `:4000`, web to `:3000`.
+This runs `apps/api`, `apps/web`, and `apps/design-system` in parallel via
+Turborepo, with hot-reload.
 
 - API health check: `http://localhost:4000/health`
 - Web: `http://localhost:3000`
+- Design system docs (the `@spine/ui` component library's living spec — props,
+  usage examples, one page per component, not Storybook): `http://localhost:3100`
+
+To run just one of these (e.g. only the API while you work on a script),
+use `pnpm --filter @spine/api dev` instead.
 
 ### Everyday commands
 
@@ -174,12 +195,21 @@ the host.
 ```bash
 cp .env.example .env      # edit the 3 required values
 docker compose --profile minimal up -d
+docker compose exec api pnpm --filter @spine/api db:migrate
 ```
 
 The app boots with only three required environment variables
 (`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`) — see PRD §6.8. Use the `full`
 profile instead of `minimal` to also run MinIO and an optional Cloudflare
 Tunnel sidecar.
+
+The `db:migrate` step is currently manual (run it once after the first
+`up`, and again after pulling any update that adds a migration) — a
+one-command install script (S-10.7) and automatic migrate-on-upgrade
+(S-10.9) are planned for Phase 6, once the rest of the product exists to
+install. `scripts/backup.sh`/`restore.sh` (S-10.8) don't exist yet either;
+until Phase 6, back up by running `pg_dump` against the `db` container and
+copying the MinIO/S3 bucket contents yourself.
 
 ## Architecture notes worth knowing before contributing
 

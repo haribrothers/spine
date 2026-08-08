@@ -1,4 +1,8 @@
 FROM node:20-alpine AS base
+# See docker/Dockerfile.api's identical comment — better-auth declares
+# better-sqlite3 as a peer dep even though this app never uses it, and
+# pnpm still needs a C toolchain + Python to build its native addon.
+RUN apk add --no-cache python3 make g++
 RUN corepack enable
 
 FROM base AS deps

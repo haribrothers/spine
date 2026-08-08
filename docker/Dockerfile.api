@@ -1,4 +1,10 @@
 FROM node:20-alpine AS base
+# better-auth/drizzle-orm declare better-sqlite3 as a peer dep (one of
+# several drivers Drizzle supports) even though this app only ever uses
+# the Postgres driver — pnpm still attempts to build its native addon
+# during install, which needs a C toolchain + Python that bare
+# node:20-alpine doesn't ship.
+RUN apk add --no-cache python3 make g++
 RUN corepack enable
 
 FROM base AS deps
@@ -13,7 +19,13 @@ FROM base AS build
 WORKDIR /repo
 COPY --from=deps /repo /repo
 COPY . .
-RUN pnpm --filter @spine/api... build
+# @spine/api's own "build" script is a plain `nest build` — it doesn't
+# know how to build its workspace dependencies, so @spine/shared (compiled
+# to dist/, not run from .ts source in production — see its package.json)
+# must build first, explicitly, rather than relying on --filter's
+# dependency selection to also trigger it.
+RUN pnpm --filter @spine/shared build
+RUN pnpm --filter @spine/api build
 
 FROM base AS runtime
 WORKDIR /repo
