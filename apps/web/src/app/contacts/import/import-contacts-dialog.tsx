@@ -61,6 +61,7 @@ export function ImportContactsDialog({
   const [mapping, setMapping] = useState<ColumnMapping>({});
   const [rows, setRows] = useState<ImportRow[]>([]);
   const [results, setResults] = useState<ImportRowResult[]>([]);
+  const [dragActive, setDragActive] = useState(false);
 
   function reset() {
     setStep("upload");
@@ -186,7 +187,25 @@ export function ImportContactsDialog({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 pb-5">
           {step === "upload" && (
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border py-16 text-center transition-colors hover:border-primary hover:bg-surface-sunken">
+            <label
+              className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed py-16 text-center transition-colors ${
+                dragActive ? "border-primary bg-surface-sunken" : "border-border hover:border-primary hover:bg-surface-sunken"
+              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragActive(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragActive(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleFile(file);
+              }}
+            >
               <FileUp size={32} className="text-on-surface-muted" />
               <div>
                 <p className="text-[13px] font-medium text-on-surface">Click to choose a CSV file</p>
@@ -260,16 +279,16 @@ export function ImportContactsDialog({
                 {duplicateCount > 0 && <Badge className="bg-due-soon/10 text-due-soon">{duplicateCount} possible duplicates</Badge>}
               </div>
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full border-collapse text-[13px]">
+                <table className="w-full min-w-[720px] border-collapse text-[13px]">
                   <thead className="sticky top-0 bg-surface-sunken">
                     <tr>
                       <th className="w-10 px-3 py-2"></th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Row</th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Name</th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Type</th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Email</th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Phone</th>
-                      <th className="px-3 py-2 text-left font-medium text-on-surface-muted">Status</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Row</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Name</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Type</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Email</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Phone</th>
+                      <th className="whitespace-nowrap px-3 py-2 text-left font-medium text-on-surface-muted">Status</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -278,21 +297,21 @@ export function ImportContactsDialog({
                         <td className="px-3 py-2">
                           <Checkbox checked={row.included} disabled={row.errors.length > 0} onCheckedChange={() => toggleRowIncluded(row.rowNumber)} />
                         </td>
-                        <td className="px-3 py-2 text-on-surface-muted">{row.rowNumber}</td>
-                        <td className="px-3 py-2 text-on-surface">{row.name || "—"}</td>
-                        <td className="px-3 py-2 text-on-surface">{row.type ?? "—"}</td>
-                        <td className="px-3 py-2 text-on-surface">{row.email ?? "—"}</td>
-                        <td className="px-3 py-2 text-on-surface">{row.phone ?? "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-on-surface-muted">{row.rowNumber}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-on-surface">{row.name || "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-on-surface">{row.type ?? "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-on-surface">{row.email ?? "—"}</td>
+                        <td className="whitespace-nowrap px-3 py-2 text-on-surface">{row.phone ?? "—"}</td>
                         <td className="px-3 py-2">
                           {row.errors.length > 0 ? (
-                            <span className="inline-flex items-center gap-1 text-overdue">
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap text-overdue">
                               <AlertTriangle size={12} />
                               {row.errors.join("; ")}
                             </span>
                           ) : row.duplicateOf.length > 0 ? (
-                            <span className="text-due-soon">Possible duplicate of {row.duplicateOf.join(", ")}</span>
+                            <span className="whitespace-nowrap text-due-soon">Possible duplicate of {row.duplicateOf.join(", ")}</span>
                           ) : (
-                            <span className="text-on-surface-muted">Ready</span>
+                            <span className="whitespace-nowrap text-on-surface-muted">Ready</span>
                           )}
                         </td>
                       </tr>
