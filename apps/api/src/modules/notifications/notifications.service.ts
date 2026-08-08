@@ -4,6 +4,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { member, notifications, user } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
+import { PushService } from "./push.service";
 
 export const NOTIFY_EMAIL_QUEUE = "notify-email";
 
@@ -20,12 +21,15 @@ export interface NotifyEmailJobData {
  * "As an owner, I want to be notified the moment a quote is viewed or
  * accepted"). Two delivery channels, both driven by one `notify()` call:
  * email (the original Stage 3 channel, reusing `EmailService`/`QueueService`
- * pg-boss infrastructure) and, since PRD S-10.11 (added 2026-08-08), a
- * persisted in-app row read by `NotificationsController`'s
- * list/unread-count/mark-read endpoints and shown in the web app's bell +
- * drawer. The in-app channel is additive, not a replacement — every
- * existing caller that doesn't pass `inApp` keeps working exactly as
- * before, email-only.
+ * pg-boss infrastructure), a persisted in-app row (PRD S-10.11, added
+ * 2026-08-08) read by `NotificationsController`'s list/unread-count/mark-read
+ * endpoints and shown in the web app's bell + drawer, and browser/OS push
+ * (PRD S-10.12, added 2026-08-08) via `PushService` — fires even when the
+ * tab is backgrounded or closed, for every device the recipient opted in
+ * from. Each channel is additive: every existing caller that doesn't pass
+ * `inApp` keeps working exactly as before, email-only, and push is a no-op
+ * for any recipient with no subscribed device (or when no VAPID keys are
+ * configured at all, per §6.8's graceful-degradation rule).
  *
  * Deliberately generic: `notify(orgId, params)` looks up org members
  * matching `recipientRoles` and queues one email per match (unchanged
@@ -41,6 +45,7 @@ export class NotificationsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
+    private readonly push: PushService,
   ) {}
 
   /**
@@ -100,6 +105,14 @@ export class NotificationsService {
             link: link ?? null,
           })),
         );
+
+        if (this.push.isConfigured()) {
+          await Promise.all(
+            recipients.map((recipient) =>
+              this.push.sendToUser(orgId, recipient.userId, { title: params.subject, body: message, link }),
+            ),
+          );
+        }
       }
     } catch (err) {
       this.logger.error(

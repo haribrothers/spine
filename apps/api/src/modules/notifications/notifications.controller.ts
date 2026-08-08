@@ -1,8 +1,9 @@
-import { Controller, Get, Param, Post, Query, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query, UseInterceptors } from "@nestjs/common";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { NotificationsService } from "./notifications.service";
+import { PushService, pushSubscriptionSchema } from "./push.service";
 
 /**
  * PRD S-10.11 — every authenticated org member reads their OWN
@@ -19,7 +20,10 @@ import { NotificationsService } from "./notifications.service";
  */
 @Controller("notifications")
 export class NotificationsController {
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(
+    private readonly notifications: NotificationsService,
+    private readonly push: PushService,
+  ) {}
 
   @Get()
   async list(@Session() session: UserSession, @Query("unreadOnly") unreadOnly?: string, @Query("limit") limit?: string) {
@@ -50,6 +54,38 @@ export class NotificationsController {
   async markAllRead(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     await this.notifications.markAllRead(orgId, session.user.id);
+    return { ok: true };
+  }
+
+  /**
+   * PRD S-10.12 — the web app's subscribe UI hides itself (or shows
+   * "not configured") when `configured` is false, per the acceptance
+   * highlight that push must degrade gracefully with no VAPID keys set.
+   */
+  @Get("push/public-key")
+  pushPublicKey() {
+    return { configured: this.push.isConfigured(), publicKey: this.push.getPublicKey() };
+  }
+
+  @Get("push/subscriptions")
+  async listPushSubscriptions(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.push.listForUser(orgId, session.user.id);
+  }
+
+  @Post("push/subscribe")
+  @UseInterceptors(IdempotencyInterceptor)
+  async subscribePush(@Session() session: UserSession, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = pushSubscriptionSchema.parse(body);
+    await this.push.subscribe(orgId, session.user.id, input);
+    return { ok: true };
+  }
+
+  @Delete("push/subscribe")
+  async unsubscribePush(@Session() session: UserSession, @Query("endpoint") endpoint: string) {
+    const orgId = requireOrgId(session);
+    await this.push.unsubscribe(orgId, session.user.id, endpoint);
     return { ok: true };
   }
 }

@@ -3,6 +3,7 @@ import { EmailModule } from "../email/email.module";
 import { NotificationsController } from "./notifications.controller";
 import { NotificationsService } from "./notifications.service";
 import { NotifyEmailWorker } from "./notify-email.worker";
+import { PushService } from "./push.service";
 
 /**
  * PRD F3 Stage 3 (S-03.7) + S-10.11 (added 2026-08-08) — real
@@ -18,7 +19,7 @@ import { NotifyEmailWorker } from "./notify-email.worker";
 @Module({
   imports: [EmailModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotifyEmailWorker],
-  exports: [NotificationsService],
+  providers: [NotificationsService, NotifyEmailWorker, PushService],
+  exports: [NotificationsService, PushService],
 })
 export class NotificationsModule {}

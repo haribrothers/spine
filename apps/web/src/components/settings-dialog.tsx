@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  Bell,
   Building2,
   Calendar,
   Coins,
@@ -23,6 +24,7 @@ import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { TeamPane } from "../app/settings/panes/team-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
+import { PushPane } from "../app/settings/panes/push-pane";
 
 interface SettingsSection {
   key: string;
@@ -40,6 +42,7 @@ const SECTIONS: SettingsSection[] = [
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
   { key: "team", label: "Team", icon: <Users size={16} />, render: () => <TeamPane /> },
+  { key: "push", label: "Browser notifications", icon: <Bell size={16} />, render: () => <PushPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];
 
