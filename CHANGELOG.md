@@ -33,6 +33,13 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-08 — Kanban column minWidth raised 200px → 275px
+
+- User asked for a wider column floor. Changed `DEFAULT_MIN_WIDTH` in `packages/ui/src/components/kanban.tsx` from 200 to 275 (still overridable per-column via the existing `minWidth` prop, or bypassed entirely via `width` for a fixed non-flexing column) and updated the matching default in the design-system Kanban docs page's feature list and API table.
+- Practical effect on the leads pipeline specifically: at a standard ~1440px laptop viewport, 5 columns × 275px + gaps now slightly exceeds the available width, so the board falls back to its horizontal scroll (previously fit at 200px) — this is the expected, correct behavior per the flex-then-scroll design from the fix below, not a regression; wider monitors (≳1500px content width) still fit all 5 without scrolling.
+- Verified: `pnpm --filter @spine/ui typecheck`/`lint`, `@spine/web typecheck`, `@spine/design-system typecheck`/`lint` all clean. Live against a fresh isolated test org (5 leads across all 5 stages, cleaned up after): confirmed via Playwright that each column measures exactly 275px at a 1440px viewport, the board correctly scrolls horizontally to reveal the Lost column, and the page itself still doesn't scroll vertically while doing so (`document.documentElement.scrollHeight === window.innerHeight` held throughout).
+- Stories: S-01.5 (styling tweak, no new story).
+
 ### 2026-08-08 — Fix: Lost column was pushed off-screen; Pipeline page now full width
 
 - User reported the Lost column wasn't visible on the pipeline board. Root cause: `KanbanColumn` (from the redesign below) always used a fixed 272px width, and 5 columns × 272px + gaps reliably exceeded the ~1136px of content width `AppShellContent`'s 1200px reading-width cap left after the sidebar and page padding — Lost was rendering, just scrolled off the right edge of `KanbanBoard`'s `overflow-x-auto` row with only a thin native scrollbar as the (easy to miss) hint that more columns existed.

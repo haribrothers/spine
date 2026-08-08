@@ -72,7 +72,7 @@ export interface KanbanColumnProps extends Omit<React.HTMLAttributes<HTMLDivElem
   children?: React.ReactNode;
 }
 
-const DEFAULT_MIN_WIDTH = 200;
+const DEFAULT_MIN_WIDTH = 275;
 
 /**
  * One column of a KanbanBoard. The column chrome (header, border) has a

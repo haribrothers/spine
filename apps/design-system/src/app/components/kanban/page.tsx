@@ -112,7 +112,7 @@ export default function KanbanPage() {
             "title/meta/subtitle are free-form ReactNode, not fixed to \"name + count\" — meta is typically a count, subtitle a running value total, but neither is required.",
             "A column being dragged over highlights (border-primary + bg-info-bg) so the drop target is obvious; a column can also take its own className to signal a distinct state (e.g. a \"Lost\" stage tinted with the overdue tokens).",
             "KanbanCard's onClick is untouched by drag handling (native drag/click are distinguished by the browser's own movement threshold), so cards can open an edit dialog on click while still being draggable.",
-            "Columns flex to fill the board's full width by default (floored at minWidth, 200px) — a handful of stages spread out to use all available space with no unnecessary scrolling; pass a fixed width to opt a column out of flexing instead.",
+            "Columns flex to fill the board's full width by default (floored at minWidth, 275px) — a handful of stages spread out to use all available space with no unnecessary scrolling; pass a fixed width to opt a column out of flexing instead.",
           ]}
         />
       </DocSection>
@@ -170,7 +170,7 @@ export default () => (
             { prop: "KanbanColumn subtitle", type: "ReactNode", description: "Shown below the title — typically a value total." },
             { prop: "KanbanColumn onDrop", type: "(cardId: string) => void" },
             { prop: "KanbanColumn width", type: "number", description: "Fixed width in px — when set, the column no longer flexes." },
-            { prop: "KanbanColumn minWidth", type: "number", defaultValue: "200", description: "Floor width in px when width is omitted (flexible mode)." },
+            { prop: "KanbanColumn minWidth", type: "number", defaultValue: "275", description: "Floor width in px when width is omitted (flexible mode)." },
             { prop: "KanbanCard id", type: "string" },
             { prop: "KanbanCard onClick", type: "() => void", description: "Free for the caller — e.g. opening an edit dialog." },
           ]}
