@@ -33,6 +33,14 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-08 — Lead dialog: fix missing Source field, currency now a Combobox defaulting to the org's setting
+
+- User-reported gap in the pipeline board's create/edit dialog (`lead-dialog.tsx`, from the redesign below): `source` has existed on the `leads` table/schema/API since S-01.4, but the board's dialog never exposed it — no way to record how a lead came in. Currency was also a raw 3-letter free-text `Input` defaulting to a hardcoded `"USD"`, ignoring the org's actual configured default (`GET /org/settings/currency`, §S-10.1/S-12.4).
+- Added a **Source** text input (`FormField` + `Input`, placeholder "e.g. referral, website, cold call") wired to the existing `source` column both ways.
+- Replaced the currency `Input` with a `Combobox` — same `COMMON_CURRENCIES` list and pattern `quotes/quote-builder.tsx` already uses (kept as a duplicated small array rather than a shared import, matching how `quote-builder.tsx` itself doesn't import it from anywhere either). On create (not edit — an existing lead keeps its stored currency), the dialog now fetches `GET /org/settings/currency` and pre-selects the org's default instead of always starting at USD.
+- Verified: `pnpm --filter @spine/web typecheck`/`lint` clean. Live end-to-end against a fresh isolated test org (created, currency setting set to EUR via `PUT /org/settings/currency`, cleaned up after): opening "Add lead" showed the Currency Combobox pre-filled to "EUR" (not USD), and a lead created with a filled-in Source persisted both fields correctly — confirmed via a fresh `GET /leads` showing `"valueCurrency": "EUR"` and `"source": "Website contact form"` on the created row, not just browser-side state.
+- Stories: S-01.5 (dialog fix, no new story).
+
 ### 2026-08-08 — Leads pipeline board redesign: reusable Kanban primitive + search/filter/sort/view settings
 
 - Follow-up to the same day's initial S-01.5 board (below): the user asked for the board to match a reference kanban screenshot's toolbar (search, filter, sort, view-settings) and interaction details (board itself never scrolls, only cards do; a dedicated "Add lead" affordance; clicking a card opens an edit dialog; the Lost column visually distinct), plus for the kanban mechanics themselves to become a proper `@spine/ui` component with design-system docs rather than living only in `apps/web`.

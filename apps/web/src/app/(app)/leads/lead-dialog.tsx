@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,12 +31,24 @@ import { Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Contact, type Lead, type LeadStage } from "../contacts/types";
 
+// Same list quote-builder.tsx uses for its currency Combobox — kept in sync
+// manually since neither module imports from the other.
+const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
+
+interface CurrencyLocaleValue {
+  code: string;
+  locale: string;
+}
+
 /**
  * Create/edit dialog for a lead from the pipeline board (leads-board.tsx).
  * Same Issue-4 "one dialog, editingLead set means edit" pattern as
  * contacts/leads-section.tsx's per-contact dialog, but this one also picks
  * the contact (that dialog is always scoped to one contact already) via
- * Combobox, since the board spans every contact in the org.
+ * Combobox, since the board spans every contact in the org. Currency
+ * defaults to the org's configured default (GET /org/settings/currency,
+ * same endpoint/shape quote-builder.tsx already uses) rather than a
+ * hardcoded "USD", and is a searchable Combobox instead of free text.
  */
 export function LeadDialog({
   open,
@@ -62,6 +74,7 @@ export function LeadDialog({
   const [stage, setStage] = useState<LeadStage>("new");
   const [amount, setAmount] = useState(0n);
   const [currency, setCurrency] = useState("USD");
+  const [source, setSource] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -74,14 +87,28 @@ export function LeadDialog({
       setStage(lead.stage);
       setAmount(BigInt(lead.valueAmount));
       setCurrency(lead.valueCurrency);
+      setSource(lead.source ?? "");
     } else {
       setContactId("");
       setTitle("");
       setStage(defaultStage ?? "new");
       setAmount(0n);
-      setCurrency("USD");
+      setSource("");
+      // Org default currency, matching quote-builder.tsx's own pre-fill —
+      // only for a brand-new lead; editing keeps the lead's stored currency.
+      apiClient
+        .get<{ key: string; value: CurrencyLocaleValue | null }>("/org/settings/currency")
+        .then((res) => {
+          if (res.value?.code) setCurrency(res.value.code);
+        })
+        .catch(() => {});
     }
   }, [open, lead, defaultStage]);
+
+  const currencyOptions = useMemo(() => {
+    const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
+    return codes.map((code) => ({ value: code, label: code }));
+  }, [currency]);
 
   const contactOptions = contacts.map((c) => ({ value: c.id, label: c.name }));
   const canSave = contactId.length > 0 && !saving;
@@ -97,6 +124,7 @@ export function LeadDialog({
           stage,
           valueAmount: amount.toString(),
           valueCurrency: currency,
+          source: source || null,
         });
         onSaved(updated);
       } else {
@@ -106,6 +134,7 @@ export function LeadDialog({
           stage,
           valueAmount: amount.toString(),
           valueCurrency: currency,
+          source: source || undefined,
         });
         onSaved(created);
       }
@@ -166,12 +195,19 @@ export function LeadDialog({
                 </Select>
               )}
             </FormField>
-            <FormField label="Estimated value">
-              {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
-            </FormField>
-            <FormField label="Currency">
+            <div className="flex gap-3">
+              <FormField label="Estimated value" className="flex-1">
+                {(field) => <MoneyInput {...field} value={amount} onValueChange={setAmount} currency={currency} />}
+              </FormField>
+              <FormField label="Currency">
+                {(field) => (
+                  <Combobox {...field} options={currencyOptions} value={currency} onValueChange={setCurrency} className="w-28" />
+                )}
+              </FormField>
+            </div>
+            <FormField label="Source">
               {(field) => (
-                <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />
+                <Input {...field} value={source} onChange={(e) => setSource(e.target.value)} placeholder="e.g. referral, website, cold call" />
               )}
             </FormField>
           </div>
