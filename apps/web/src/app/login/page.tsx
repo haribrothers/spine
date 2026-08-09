@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -21,7 +21,25 @@ import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
 
 export default function LoginPage() {
+  return (
+    // useSearchParams (for the accept-invite "next" redirect) requires a
+    // Suspense boundary — Next.js bails out the whole route's static
+    // prerender otherwise. Everything else here has no reason to suspend,
+    // so the fallback only shows for the instant it takes to read the URL.
+    <Suspense>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Set by accept-invite when an invited person without a session needs to
+  // log in first (Better Auth's acceptInvitation/getInvitation both require
+  // an authenticated session matching the invited email) — send them back
+  // to finish accepting instead of the default /dashboard landing.
+  const next = searchParams.get("next");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +62,7 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push(next && next.startsWith("/") ? next : "/dashboard");
   }
 
   return (

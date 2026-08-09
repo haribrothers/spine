@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -21,9 +21,27 @@ import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
 
 export default function SignupPage() {
+  return (
+    // useSearchParams (inviteId/email for the invited-user variant) needs a
+    // Suspense boundary or Next.js bails out this route's static prerender.
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  );
+}
+
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  // Set by accept-invite's "Create account" link — when present, this
+  // signup is for an existing org invite, not a brand-new org: lock the
+  // email to the invited address and land back on the accept screen
+  // afterward instead of the onboarding wizard, which assumes a fresh org.
+  const inviteId = searchParams.get("inviteId");
+  const invitedEmail = searchParams.get("email");
+
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(invitedEmail ?? "");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,6 +61,11 @@ export default function SignupPage() {
 
     if (signUpError) {
       setError(signUpError.message ?? "Could not create your account. Please try again.");
+      return;
+    }
+
+    if (inviteId) {
+      router.push(`/accept-invite/${inviteId}`);
       return;
     }
 
@@ -78,7 +101,7 @@ export default function SignupPage() {
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
           <CardDescription>
-            Sets up a new organisation with you as the owner.
+            {inviteId ? "Finish creating your account to accept the invitation." : "Sets up a new organisation with you as the owner."}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -110,6 +133,7 @@ export default function SignupPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  disabled={Boolean(invitedEmail)}
                   required
                 />
               )}
@@ -136,7 +160,7 @@ export default function SignupPage() {
 
           <p className="mt-4 text-center text-[13px] text-on-surface-muted">
             Already have an account?{" "}
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href={inviteId ? `/login?next=/accept-invite/${inviteId}` : "/login"} className="text-primary hover:underline">
               Log in
             </Link>
           </p>

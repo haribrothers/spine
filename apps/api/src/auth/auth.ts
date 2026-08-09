@@ -7,6 +7,7 @@ import { organization } from "better-auth/plugins/organization";
 import { and, eq } from "drizzle-orm";
 import { createDb } from "../db/client";
 import { member, organization as organizationTable, session as sessionTable, user as userTable } from "../db/schema";
+import { EmailService } from "../modules/email/email.service";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
@@ -58,6 +59,33 @@ export const auth = betterAuth({
       // Invited members join an existing org; nobody self-serves a second
       // one in v1.
       allowUserToCreateOrganization: false,
+      /**
+       * Without this, POST /org/invitations (InvitationsController, wrapping
+       * auth.api.createInvitation) still creates the `invitation` row but
+       * the plugin silently skips sending anything — no error, no log, just
+       * a real invite an invitee never learns about. `EmailService` is a
+       * plain class with no DI dependencies (only reads process.env
+       * internally, same as this file's own `createDb` usage), so it's
+       * constructed directly here rather than injected — this module lives
+       * outside Nest's DI graph entirely.
+       *
+       * Better Auth does not generate the accept-invitation URL itself (see
+       * this option's own doc comment in node_modules) — id is the
+       * invitation's own id, used to build the link to the web app's
+       * accept-invite page, which calls auth.api.acceptInvitation with it.
+       */
+      sendInvitationEmail: async (data) => {
+        const emailService = new EmailService();
+        if (!emailService.isConfigured()) return;
+        const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+        const acceptUrl = `${appUrl}/accept-invite/${data.id}`;
+        await emailService.send({
+          to: data.email,
+          subject: `${data.inviter.user.name} invited you to join ${data.organization.name} on Spine`,
+          text: `${data.inviter.user.name} invited you to join ${data.organization.name} as ${data.role}.\n\nAccept the invitation: ${acceptUrl}\n\nIf you weren't expecting this, you can ignore this email.`,
+          html: `<p>${data.inviter.user.name} invited you to join <strong>${data.organization.name}</strong> as <strong>${data.role}</strong>.</p><p><a href="${acceptUrl}">Accept the invitation</a></p><p>If you weren't expecting this, you can ignore this email.</p>`,
+        });
+      },
     }),
     jwt({
       jwt: {

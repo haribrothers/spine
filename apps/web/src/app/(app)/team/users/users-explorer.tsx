@@ -3,20 +3,27 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Spinner } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import type { InvitationRow as InvitationRowData } from "../../../../lib/invitations";
 import type { MemberRow as MemberRowData } from "../../../../lib/members";
 import { InviteTeamStep } from "../../../onboarding/steps/invite-team-step";
+import { InvitationRow } from "./invitation-row";
 import { TransferPrimaryOwnerDialog } from "./transfer-primary-owner-dialog";
 import { UserRow } from "./user-row";
 
 export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) {
   const [members, setMembers] = useState<MemberRowData[] | null>(null);
+  const [invitations, setInvitations] = useState<InvitationRowData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
 
   const reload = useCallback(async () => {
     try {
-      const rows = await apiClient.get<MemberRowData[]>("/org/members");
-      setMembers(rows);
+      const [memberRows, invitationRows] = await Promise.all([
+        apiClient.get<MemberRowData[]>("/org/members"),
+        apiClient.get<InvitationRowData[]>("/org/invitations"),
+      ]);
+      setMembers(memberRows);
+      setInvitations(invitationRows);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load users.");
     }
@@ -71,6 +78,25 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
           </div>
         )}
       </div>
+
+      {invitations && invitations.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-[15px] font-semibold text-on-surface">Pending invites</h2>
+            <p className="text-[13px] text-on-surface-muted">Invited but haven&apos;t joined yet.</p>
+          </div>
+          <div className="rounded-md border border-border-strong">
+            {invitations.map((invitation) => (
+              <InvitationRow
+                key={invitation.id}
+                invitation={invitation}
+                onResend={(id) => run(() => apiClient.post(`/org/invitations/${id}/resend`), "Could not resend invite.")}
+                onCancel={(id) => run(() => apiClient.delete(`/org/invitations/${id}`), "Could not cancel invite.")}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-1">
