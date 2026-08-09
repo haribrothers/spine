@@ -50,6 +50,13 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-09 — Fix: `pnpm db:reset` was silently skipping `invoices`/`invoice_lines`/`payments`/`payment_allocations`
+
+- User asked whether the tables added this session were covered by the dev DB reset script. They weren't — `apps/api/src/db/reset.ts`'s hardcoded `TABLES` list (used for its single `TRUNCATE ... CASCADE` statement, not a migration replay) was last updated before Invoices/Payments existed, so a reset would leave those four tables' rows behind entirely undetected — no error, since `TRUNCATE` simply doesn't touch a table that isn't named in its own statement.
+- **Fixed**: added `invoice_lines`, `invoices`, `payment_allocations`, `payments` to `TABLES`, placed near the existing quote-related entries. Cross-checked programmatically against every `pgTable(...)` name across `apps/api/src/db/schema/*.ts` to confirm no other table has silently drifted out of sync the same way — none had; this was the only gap.
+- Verified: `pnpm --filter @spine/api typecheck` clean. Live against the real local dev Postgres: seeded a fresh org with demo data (5 invoices, 2 payments, confirmed present via direct SQL row counts), ran `pnpm db:reset`, and confirmed via a follow-up SQL query that `invoices`/`payments`/`invoice_lines`/`payment_allocations` — along with every other table checked (`quotes`, `contacts`, `organization`, `journal_lines`, `accounts`) — were all correctly emptied (`Truncated 33 tables + 12 pg-boss tables`, no FK errors).
+- Stories: none (infra bug fix, no new scope).
+
 ### 2026-08-09 — Demo data now covers Invoices + Payments — 5 seeded invoices (draft/issued/void/partial/paid) and 2 real payments
 
 - User asked whether demo data included the two modules that landed earlier this same day (Invoices, Payments Stage 1) — it didn't; `DemoDataService` was last touched before either module existed, and PRD §11.3's own seed-data spec explicitly calls for "invoices with partial payments" as part of the demo dataset. This session closes that gap for everything currently buildable — retention/jobs (Phase 3) and vendor bills/expenses (Phase 4) genuinely aren't yet, see "Next up".
