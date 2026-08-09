@@ -169,12 +169,30 @@ Database-specific, scoped to `apps/api`:
 pnpm --filter @spine/api db:generate       # generate a new migration from schema changes
 pnpm --filter @spine/api db:migrate        # apply pending migrations
 pnpm --filter @spine/api db:studio         # open Drizzle Studio against your dev DB
-pnpm --filter @spine/api test:integration  # ledger-integrity tests — requires dev infra running
+pnpm --filter @spine/api test:integration  # requires dev infra running — see below on which DB this hits
 ```
 
 Schema lives in `apps/api/src/db/schema/`; after changing it, run
 `db:generate` to produce a migration file in `apps/api/drizzle/`, review the
 generated SQL, then `db:migrate` to apply it.
+
+**`test:integration` runs against a separate `spine_test` database, not your
+dev DB** — some integration tests (e.g. the ledger-integrity suite) `TRUNCATE`
+real tables including `organization ... CASCADE` as part of their own
+cleanup, which would otherwise delete every org/user/session in whatever
+database is pointed at. `.env.test` (repo root, checked into git — no
+secrets in it, just a DB name) overrides `DATABASE_URL` to
+`spine_test` for this one script only; `apps/api/package.json`'s
+`test:integration` script loads it. One-time setup, after your `db`
+container is up:
+
+```bash
+docker exec spine-dev-db-1 psql -U spine -d spine -c "CREATE DATABASE spine_test;"
+pnpm --filter @spine/api exec dotenv -e ../../.env.test -e ../../.env -- drizzle-kit migrate
+```
+
+Re-run the second command after any schema change to keep `spine_test`'s
+schema in sync with `spine`'s.
 
 ### Resetting your local database
 
