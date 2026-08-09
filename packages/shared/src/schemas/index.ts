@@ -7,3 +7,4 @@ export * from "./invoices.ts";
 export * from "./payments.ts";
 export * from "./permissions.ts";
 export * from "./teams.ts";
+export * from "./user-profile.ts";

@@ -23,13 +23,18 @@ export class FilesController {
   constructor(private readonly filesService: FilesService) {}
 
   /**
-   * Owner+staff can upload, matching `@OrgRoles(["owner", "staff"])` on
-   * every other mutating Contacts endpoint. `FileInterceptor` (multer,
-   * from `@nestjs/platform-express` — already a dependency, main.ts already
-   * uses this platform adapter) parses the `multipart/form-data` body
-   * itself; it does not depend on Nest's global body parser, which is
-   * disabled in main.ts only so Better Auth can read the raw request
-   * stream for its own (non-multipart) routes.
+   * Owner+staff+field can upload. Originally owner+staff only (matching
+   * every other mutating Contacts endpoint); widened to include field once
+   * this became the same endpoint a personal avatar upload
+   * (Profile & Preferences, PRD S-10.17 — "every user regardless of role")
+   * goes through, and site-photo capture (F11) already implies field needs
+   * upload access generally, not just avatars.
+   *
+   * `FileInterceptor` (multer, from `@nestjs/platform-express` — already a
+   * dependency, main.ts already uses this platform adapter) parses the
+   * `multipart/form-data` body itself; it does not depend on Nest's global
+   * body parser, which is disabled in main.ts only so Better Auth can read
+   * the raw request stream for its own (non-multipart) routes.
    *
    * `IdempotencyInterceptor` runs after `FileInterceptor` in the decorator
    * list, so by the time it reads `request.headers`/`request.session` the
@@ -38,7 +43,7 @@ export class FilesController {
    * stores), so it works unmodified here.
    */
   @Post()
-  @OrgRoles(["owner", "staff"])
+  @OrgRoles(["owner", "staff", "field"])
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_UPLOAD_BYTES } }), IdempotencyInterceptor)
   async upload(
     @Session() session: UserSession,

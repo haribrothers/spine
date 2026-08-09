@@ -19,6 +19,15 @@ export const user = pgTable("user", {
     .defaultNow()
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
+  /**
+   * S-10.17 — personal preference, app-owned column on Better Auth's `user`
+   * table (same pattern as `member.isActive`/`deactivatedAt` below: Better
+   * Auth has no concept of this, so it's a minimal addition rather than a
+   * separate one-row-per-user table). "system"/"light"/"dark", not enforced
+   * by a DB check — validated at the app/Zod layer, matching this schema's
+   * general preference for keeping small enum-ish fields as plain text.
+   */
+  themePreference: text("theme_preference").default("system").notNull(),
 });
 
 export const session = pgTable(

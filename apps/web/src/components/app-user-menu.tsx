@@ -14,7 +14,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@spine/ui";
-import { ChevronDown, Laptop, LogOut, Moon, Settings, Sun } from "lucide-react";
+import { ChevronDown, Laptop, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { authClient } from "../lib/auth-client";
 import { SettingsDialog } from "./settings-dialog";
@@ -98,6 +98,17 @@ export function AppUserMenu({ name, email, collapsed }: { name: string; email: s
             Dialog down before it ever opens. Flipping external state from
             onSelect avoids that pitfall entirely.
           */}
+          {/*
+            Profile & Preferences is a real route, not a dialog (PRD
+            S-10.17 — every role, unlike Settings which is Owner-only) — a
+            plain router.push is safe here, unlike Settings' onSelect above,
+            since navigation doesn't need the deferred-unmount workaround a
+            nested DialogTrigger would.
+          */}
+          <DropdownMenuItem onSelect={() => router.push("/profile")}>
+            <UserCircle size={14} className="mr-2" />
+            Profile &amp; Preferences
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
             <Settings size={14} className="mr-2" />
             Settings
