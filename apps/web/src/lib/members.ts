@@ -5,6 +5,7 @@ export interface MemberRow {
   email: string;
   role: "owner" | "staff" | "field" | string;
   isActive: boolean;
+  isPrimaryOwner: boolean;
   deactivatedAt: string | null;
   createdAt: string;
 }

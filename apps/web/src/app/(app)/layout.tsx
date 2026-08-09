@@ -1,6 +1,7 @@
 import { AppLayout } from "../../components/app-layout";
+import { getMyMembership } from "../../lib/get-my-membership";
 import { getSession } from "../../lib/get-session";
-import { NAV_SECTIONS } from "../../lib/nav-sections";
+import { NAV_SECTIONS, TEAM_NAV_SECTION } from "../../lib/nav-sections";
 
 /**
  * Shared chrome for every authenticated page (dashboard, quotes, contacts,
@@ -14,10 +15,11 @@ import { NAV_SECTIONS } from "../../lib/nav-sections";
  * here rather than duplicated in every page.tsx.
  */
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const [session, membership] = await Promise.all([getSession(), getMyMembership()]);
+  const sections = membership?.role === "owner" ? [...NAV_SECTIONS, TEAM_NAV_SECTION] : NAV_SECTIONS;
 
   return (
-    <AppLayout sections={NAV_SECTIONS} userName={session?.user?.name ?? "Signed in"} userEmail={session?.user?.email ?? ""}>
+    <AppLayout sections={sections} userName={session?.user?.name ?? "Signed in"} userEmail={session?.user?.email ?? ""}>
       {children}
     </AppLayout>
   );

@@ -1,4 +1,4 @@
-import { Banknote, CalendarDays, FileText, LayoutDashboard, Package, Receipt, Target, Users } from "lucide-react";
+import { Banknote, CalendarDays, FileText, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -40,3 +40,21 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     ],
   },
 ];
+
+/**
+ * Owner-only — Users/Teams/Permissions management. Kept separate from
+ * NAV_SECTIONS (not just another entry in it) because it's the one section
+ * that must be filtered out entirely for non-Owners: apps/(app)/layout.tsx
+ * appends this only when getMyMembership() confirms role === "owner". Real
+ * routes (not the Settings dialog) per PRD §9 S-10.18 — deep-linkable to a
+ * specific user or team, with room for a privilege-matrix UI a dialog pane
+ * can't comfortably hold. Every page under team/* independently re-checks
+ * Owner status server-side too — hiding this link is not access control.
+ */
+export const TEAM_NAV_SECTION: AppShellNavSection = {
+  label: "Team",
+  items: [
+    { href: "/team/users", label: "Users", icon: <UserCog /> },
+    { href: "/team/teams", label: "Teams", icon: <Shield /> },
+  ],
+};

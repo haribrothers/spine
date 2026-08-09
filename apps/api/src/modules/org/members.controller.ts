@@ -28,6 +28,16 @@ export class MembersController {
     return this.membersService.list(orgId);
   }
 
+  /**
+   * The caller's own role/isPrimaryOwner in the active org. Must come
+   * before `:id/teams` below — otherwise Nest would match "me" as `:id`.
+   */
+  @Get("me")
+  async getMe(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.membersService.getMe(orgId, session.user.id);
+  }
+
   @Get(":id/teams")
   @OrgRoles(["owner"])
   async getTeams(@Session() session: UserSession, @Param("id") id: string) {

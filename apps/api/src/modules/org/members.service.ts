@@ -49,6 +49,26 @@ export class MembersService {
     return rows.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
   }
 
+  /**
+   * The caller's own membership row for the active org. Role is never
+   * cached on the session (Better Auth resolves it fresh per-request via
+   * getActiveMember), so this is the endpoint the web app calls to decide
+   * whether to show the Owner-only Users/Teams nav section — hiding a nav
+   * link is not access control, but it's still useful UI signal, and every
+   * `team/*` page independently re-checks this server-side too.
+   */
+  async getMe(orgId: string, userId: string): Promise<MemberRow> {
+    const [row] = await this.db
+      .select(this.memberRowSelection)
+      .from(member)
+      .innerJoin(user, eq(member.userId, user.id))
+      .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+    if (!row) {
+      throw new BadRequestException("Not a member of this organisation");
+    }
+    return row;
+  }
+
   private async getRow(memberId: string): Promise<MemberRow> {
     const [row] = await this.db
       .select(this.memberRowSelection)
