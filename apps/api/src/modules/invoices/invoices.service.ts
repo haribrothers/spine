@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
 import { computeLineTax, money, roundHalfUp } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -9,6 +9,8 @@ import { invoices, invoiceLines, contacts, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
+import { QueueService } from "../queue/queue.service";
+import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
@@ -113,18 +115,23 @@ function computeInvoiceTotals(currency: string, lines: CreateInvoiceInput["lines
 /**
  * PRD F5 Stage 1 (Phase 2 · Money In) — invoice CRUD, issue (with ledger
  * posting per §7.2 "Invoice issued") and void (with a reversing posting per
- * §7.2/CLAUDE.md). Advances, credit notes, quote/milestone conversion, and
- * reminders are later stages (see CHANGELOG). This service implements:
- * draft CRUD, issue (number allocation + immutability + journal posting),
- * and void (reason required + reversing entry).
+ * §7.2/CLAUDE.md), and emailing the invoice as a PDF (S-05.7). Advances,
+ * credit notes, quote/milestone conversion, and reminders are later stages
+ * (see CHANGELOG). This service implements: draft CRUD, issue (number
+ * allocation + immutability + journal posting), void (reason required +
+ * reversing entry), and sendEmail (a deliberately separate action from
+ * issue — see that method's own doc comment).
  */
 @Injectable()
 export class InvoicesService {
+  private readonly logger = new Logger(InvoicesService.name);
+
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
+    private readonly queue: QueueService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -395,6 +402,55 @@ export class InvoicesService {
     });
 
     return this.getOne(orgId, result!.id);
+  }
+
+  /**
+   * S-05.7 — queues an `invoice-send-email` pg-boss job (InvoiceEmailWorker)
+   * to render+persist the PDF and email it to the invoice's contact.
+   * Deliberately a SEPARATE action from `issue()`, not auto-triggered by
+   * it — unlike QuotesService.send (which issues and emails in one call),
+   * the user explicitly asked for issuing and emailing an invoice to be
+   * two distinct steps, so a business can issue without immediately
+   * notifying the customer. Only an issued invoice can be emailed (a
+   * draft has no permanent number/snapshot yet, matching quotes' own
+   * "only send an issued document" posture).
+   *
+   * `emailStatus` is set to "pending" here, before enqueuing — same
+   * "show 'sending…' immediately, not a blank state" reasoning as
+   * QuotesService.send's own comment on the identical field. Enqueuing
+   * itself is not awaited for completion and any enqueue-time failure is
+   * logged and swallowed, not thrown — this action must not fail or block
+   * on a transient queue issue once the caller has been told sending
+   * started.
+   */
+  async sendEmail(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Invoice not found");
+    }
+    if (existing.status !== "issued") {
+      throw new BadRequestException("Only an issued invoice can be emailed");
+    }
+
+    await this.db.update(invoices).set({ emailStatus: "pending", updatedAt: new Date() }).where(eq(invoices.id, id));
+
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "email_queued",
+      entityType: "invoice",
+      entityId: id,
+      contactId: existing.contactId,
+      changes: [{ field: "emailStatus", from: existing.emailStatus, to: "pending" }],
+    });
+
+    try {
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id });
+    } catch (err) {
+      this.logger.error(`Failed to enqueue invoice-send-email job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
+    }
+
+    return this.getOne(orgId, id);
   }
 
   /**

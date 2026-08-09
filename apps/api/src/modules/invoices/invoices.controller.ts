@@ -70,6 +70,14 @@ export class InvoicesController {
     return this.invoicesService.issue(orgId, id, session.user.id, body?.revenueAccountId);
   }
 
+  /** S-05.7 — queues emailing the invoice PDF to its contact. Deliberately separate from `issue` — see InvoicesService.sendEmail's own doc comment. */
+  @Post(":id/send-email")
+  @UseInterceptors(IdempotencyInterceptor)
+  async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.invoicesService.sendEmail(orgId, id, session.user.id);
+  }
+
   /** S-05.8 — void with a required reason; posts a reversing journal entry. */
   @Post(":id/void")
   @UseInterceptors(IdempotencyInterceptor)

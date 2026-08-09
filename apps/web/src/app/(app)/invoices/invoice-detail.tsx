@@ -20,7 +20,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useEntityToast } from "./entity-toast";
@@ -73,6 +73,16 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     load();
   }, [load]);
 
+  // S-05.7's email is sent by a queued worker, out of band from the
+  // request that triggered it (see handleSendEmail's own comment) — same
+  // polling pattern as quote-detail.tsx's own emailStatus effect, so "was
+  // it sent?" resolves on its own without a manual refresh.
+  useEffect(() => {
+    if (invoice?.emailStatus !== "pending") return;
+    const interval = setInterval(load, 4000);
+    return () => clearInterval(interval);
+  }, [invoice?.emailStatus, load]);
+
   async function handleIssue() {
     if (!invoice) return;
     setBusy(true);
@@ -83,6 +93,26 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       showToast("Invoice issued", `${updated.number} has been issued and posted to the ledger.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not issue this invoice.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendEmail() {
+    if (!invoice) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`);
+      setInvoice(updated);
+      showToast(
+        "Emailing invoice",
+        updated.contactName
+          ? `Sending ${updated.number} to ${updated.contactName} has been queued.`
+          : `Sending ${updated.number} has been queued.`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not email this invoice.");
     } finally {
       setBusy(false);
     }
@@ -141,6 +171,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const canEdit = invoice.status === "draft";
   const canIssue = invoice.status === "draft";
   const canVoid = invoice.status === "issued";
+  const canSendEmail = invoice.status === "issued";
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
   const canRecordPayment = invoice.status === "issued" && balanceDue > 0n;
@@ -197,6 +228,11 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 Record payment
               </Button>
             )}
+            {canSendEmail && (
+              <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Email invoice"}
+              </Button>
+            )}
             {canVoid && (
               <Button variant="ghost" onClick={() => setVoidOpen(true)} disabled={busy}>
                 Void
@@ -214,6 +250,32 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           <Alert variant="warning">
             <AlertDescription>
               Voided{invoice.voidedAt && <> on {new Date(invoice.voidedAt).toLocaleString()}</>}: {invoice.voidReason}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* S-05.7 — "was the email sent?", same pattern as quote-detail.tsx's own emailStatus block. Nothing renders until Email invoice has been clicked at least once (emailStatus is null until then). */}
+        {invoice.emailStatus === "pending" && (
+          <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
+            <Clock size={14} className="shrink-0" />
+            Sending email to {invoice.contactName ?? "the contact"}…
+          </p>
+        )}
+        {invoice.emailStatus === "sent" && (
+          <p className="flex items-center gap-1.5 text-[13px] text-paid">
+            <CheckCircle2 size={14} className="shrink-0" />
+            Emailed to {invoice.contactName ?? "the contact"}
+            {invoice.emailSentAt && <> on {new Date(invoice.emailSentAt).toLocaleString()}</>}.
+          </p>
+        )}
+        {invoice.emailStatus === "failed" && (
+          <Alert variant="critical">
+            <AlertDescription className="flex flex-col gap-1">
+              <span className="flex items-center gap-1.5 font-medium">
+                <XCircle size={14} className="shrink-0" />
+                Email delivery failed
+              </span>
+              {invoice.emailError && <span className="text-[13px]">{invoice.emailError}</span>}
             </AlertDescription>
           </Alert>
         )}

@@ -2,6 +2,8 @@
 export type InvoiceStatus = "draft" | "issued" | "void";
 export type InvoiceType = "standard" | "advance" | "progress";
 export type InvoiceLineType = "item" | "heading" | "text";
+/** Mirrors quotes' own QuoteEmailStatus — null until `sendEmail()` is called (S-05.7), then "pending" immediately, flipped to "sent"/"failed" by the queue worker. */
+export type InvoiceEmailStatus = "pending" | "sent" | "failed";
 
 export interface InvoiceLine {
   id: string;
@@ -50,6 +52,9 @@ export interface Invoice {
   journalEntryId: string | null;
   voidJournalEntryId: string | null;
   pdfFileId: string | null;
+  emailStatus: InvoiceEmailStatus | null;
+  emailError: string | null;
+  emailSentAt: string | null;
   createdAt: string;
   updatedAt: string;
   /** Computed server-side at read time (S-05.9) — only an issued invoice past its due date with a balance still owing. Never stored. */

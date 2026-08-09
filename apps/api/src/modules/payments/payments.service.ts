@@ -1,5 +1,6 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createPaymentSchema } from "@spine/shared";
+import { toDecimalString } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -8,8 +9,15 @@ import { payments, paymentAllocations, invoices, contacts, accounts } from "../.
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
+import { EmailService } from "../email/email.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import { SettingsService } from "../org/settings.service";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 /**
  * PRD F6 Stage 1 (Phase 2 · Money In) — record a payment against a contact,
@@ -17,15 +25,22 @@ export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
  * S-06.5), or leave it fully/partially unallocated as customer credit
  * (S-06.4). S-06.3 (oldest-first suggestion) is `suggestAllocation` below.
  * Receipt PDF (S-06.6) and the receivables/AR-aging view (S-06.7) are a
- * later stage (see CHANGELOG).
+ * later stage (see CHANGELOG). `create()` also sends a payment-confirmation
+ * email to the paying contact and an in-app + email notification to the
+ * org, see its own doc comment.
  */
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
+    private readonly email: EmailService,
+    private readonly notifications: NotificationsService,
+    private readonly settings: SettingsService,
   ) {}
 
   async list(orgId: string, options: { contactId?: string }) {
@@ -251,7 +266,94 @@ export class PaymentsService {
       return payment;
     });
 
+    await this.sendConfirmation(orgId, created!.id, contact, input.amount, totalAllocated);
+
     return this.getOne(orgId, created!.id);
+  }
+
+  /**
+   * Fires after `create()`'s transaction has committed — the payment and
+   * its ledger posting are already durable, so neither delivery channel
+   * failing may ever undo or block what already happened (same posture as
+   * `QuotesService.send()`'s own email enqueue and every
+   * `NotificationsService.notify()` call elsewhere in this codebase).
+   * Never throws.
+   *
+   * Two independent channels, matching what was actually asked for:
+   *  1. A confirmation email direct to the paying contact (S-06.6's own
+   *     framing — "so the customer has proof" — read here as a plain-text/
+   *     HTML summary rather than a PDF attachment; `PaymentPdfService`
+   *     doesn't exist yet, that's the rest of S-06.6, tracked separately
+   *     in CHANGELOG). Skipped silently (not an error) if the contact has
+   *     no email on file or SMTP isn't configured — graceful degradation,
+   *     not a hard requirement to record the payment.
+   *  2. An org notification via the existing, already-generic
+   *     `NotificationsService.notify()` (email to owner/staff + an in-app
+   *     row) — the same primitive S-03.7's quote-viewed/accepted
+   *     notifications already use, extended here to a new "payment
+   *     received" event type rather than inventing a parallel mechanism.
+   */
+  private async sendConfirmation(
+    orgId: string,
+    paymentId: string,
+    contact: { id: string; name: string; email: string | null },
+    amount: bigint,
+    totalAllocated: bigint,
+  ): Promise<void> {
+    const [payment] = await this.db.select().from(payments).where(eq(payments.id, paymentId));
+    if (!payment) return; // shouldn't happen — just committed — but never let a confirmation failure surface as a real error
+
+    const currency = payment.currency;
+    const amountText = `${toDecimalString({ amount, currency })} ${currency}`;
+    const unallocated = amount - totalAllocated;
+
+    const business = await this.settings.get<{ name?: string }>(orgId, "business_profile");
+    const businessName = business?.name || "Spine";
+
+    if (contact.email && this.email.isConfigured()) {
+      try {
+        const allocationLine =
+          totalAllocated > 0n
+            ? `${toDecimalString({ amount: totalAllocated, currency })} ${currency} was applied to your invoice${totalAllocated === amount ? "" : "s"}.`
+            : null;
+        const creditLine =
+          unallocated > 0n ? `${toDecimalString({ amount: unallocated, currency })} ${currency} is held as credit on your account.` : null;
+
+        await this.email.send({
+          to: contact.email,
+          subject: `${businessName} received your payment (${payment.number ?? ""})`.trim(),
+          text: [
+            `Hi ${contact.name},`,
+            "",
+            `${businessName} has received your payment of ${amountText}${payment.number ? ` (${payment.number})` : ""}.`,
+            ...(allocationLine ? ["", allocationLine] : []),
+            ...(creditLine ? ["", creditLine] : []),
+            "",
+            "This is an automated confirmation — please reply directly with any questions.",
+          ].join("\n"),
+          html: [
+            `<p>Hi ${escapeHtml(contact.name)},</p>`,
+            `<p>${escapeHtml(businessName)} has received your payment of ${escapeHtml(amountText)}${payment.number ? ` (${escapeHtml(payment.number)})` : ""}.</p>`,
+            ...(allocationLine ? [`<p>${escapeHtml(allocationLine)}</p>`] : []),
+            ...(creditLine ? [`<p>${escapeHtml(creditLine)}</p>`] : []),
+            `<p style="color:#888;font-size:12px;">This is an automated confirmation — please reply directly with any questions.</p>`,
+          ].join("\n"),
+        });
+      } catch (err) {
+        this.logger.warn(`Could not send payment confirmation email for payment ${paymentId}: ${(err as Error).message}`);
+      }
+    }
+
+    void this.notifications.notify(orgId, {
+      subject: `Payment received from ${contact.name}`,
+      text: `${contact.name} paid ${amountText}${payment.number ? ` (${payment.number})` : ""}.`,
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "payment_received",
+        message: `${contact.name} paid ${amountText}.`,
+        link: `/payments/${paymentId}`,
+      },
+    });
   }
 
   /**
