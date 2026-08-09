@@ -2,9 +2,11 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, journalLines, leads, quotes, settings } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, journalLines, leads, payments, quotes, settings } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
+import { InvoicesService } from "../invoices/invoices.service";
+import { PaymentsService } from "../payments/payments.service";
 
 type DemoContactSeed = {
   type: "customer" | "vendor" | "both";
@@ -242,11 +244,97 @@ const DEMO_QUOTES: DemoQuoteSeed[] = [
   },
 ];
 
+type DemoInvoiceLineSeed = {
+  /** Index into DEMO_CATALOG_ITEMS. */
+  catalogItemIndex: number;
+  quantity: number;
+};
+
+type DemoInvoiceSeed = {
+  /** Index into DEMO_CONTACTS. */
+  contactIndex: number;
+  dueInDays: number;
+  notes?: string;
+  lines: DemoInvoiceLineSeed[];
+  /** "draft" leaves it unissued. "issued" issues it with no payment yet (shows up as fully outstanding, and overdue if dueInDays is negative). "partiallyPaid" issues it then records one payment for part of the total. "paidInFull" issues it then pays it off completely. "voided" issues it then voids it with a reason — demonstrates S-05.8's reversing entry in the demo set. */
+  outcome: "draft" | "issued" | "partiallyPaid" | "paidInFull" | "voided";
+  /** Only meaningful for "partiallyPaid" — fraction (0-1) of the total to pay. */
+  partialPaymentFraction?: number;
+};
+
+/**
+ * PRD §11.3's own seed-data spec calls for "invoices in every status" and
+ * "invoices with partial payments" — this covers everything Phase 2 ·
+ * Money In can actually produce today (draft/issued/void, plus partial and
+ * full payment via real allocations). Retention and jobs are explicitly
+ * NOT faked here — those require Phase 3 (Jobs & Construction Billing),
+ * which doesn't exist yet; fabricating a retention amount on a demo
+ * invoice today would misrepresent what the product can currently do, the
+ * same principle DEMO_QUOTES' own comment applies to accepted/rejected
+ * quote status.
+ *
+ * Reuses catalogue items/contacts already seeded above by index, same
+ * convention as DEMO_QUOTES. Each invoice is independent of the demo
+ * quotes (no `sourceQuoteId` wiring to a specific seeded quote) — S-03.10
+ * (quote → invoice conversion) isn't built yet, so there is no real
+ * conversion action to seed through; wiring a fake `sourceQuoteId` by hand
+ * would claim a conversion happened that didn't.
+ */
+const DEMO_INVOICES: DemoInvoiceSeed[] = [
+  {
+    contactIndex: 2, // Priya Nair — kitchen renovation, won lead
+    dueInDays: -12,
+    notes: "Kitchen renovation — final invoice.",
+    lines: [
+      { catalogItemIndex: 1, quantity: 60 }, // General labour
+      { catalogItemIndex: 10, quantity: 220 }, // Flooring installation (LVP)
+      { catalogItemIndex: 9, quantity: 350 }, // Interior painting
+    ],
+    outcome: "paidInFull",
+  },
+  {
+    contactIndex: 0, // Harborview Construction Co.
+    dueInDays: -5,
+    notes: "Marina office fit-out — progress bill 1 of 3.",
+    lines: [
+      { catalogItemIndex: 1, quantity: 100 }, // General labour
+      { catalogItemIndex: 8, quantity: 400 }, // Drywall installation & finishing
+    ],
+    outcome: "partiallyPaid",
+    partialPaymentFraction: 0.5,
+  },
+  {
+    contactIndex: 6, // Bluewater Hospitality Group
+    dueInDays: 21,
+    notes: "Hotel lobby renovation — deposit invoice.",
+    lines: [{ catalogItemIndex: 2, quantity: 20 }], // Project management
+    outcome: "issued",
+  },
+  {
+    contactIndex: 3, // Sunstone Retail Fitouts
+    dueInDays: 30,
+    notes: "Storefront remodel — location 1, draft pending final measurements.",
+    lines: [
+      { catalogItemIndex: 11, quantity: 4 }, // Window installation
+      { catalogItemIndex: 14, quantity: 1 }, // Waste disposal & site cleanup
+    ],
+    outcome: "draft",
+  },
+  {
+    contactIndex: 12, // Ridgeline Equipment Rental (both customer+vendor)
+    dueInDays: 15,
+    notes: "Duplicate billing — voided, corrected invoice raised separately.",
+    lines: [{ catalogItemIndex: 13, quantity: 5 }], // Equipment rental — mini excavator
+    outcome: "voided",
+  },
+];
+
 /**
  * Onboarding "load demo data" seeding + Settings "delete all demo data",
  * covering every module that exists today: Contacts (F1), Catalogue (F2),
- * and Quotes (F3 Stage 1) — see WelcomeStep's own comment (now updated) on
- * why Jobs/Invoices/Payments aren't seeded yet. Each demo contact gets one
+ * Quotes (F3 Stage 1), and Invoices + Payments (F5/F6 Stage 1, Phase 2 ·
+ * Money In) — see WelcomeStep's own comment (now updated) on why Jobs
+ * (Phase 3) and vendor bills/expenses (Phase 4) still aren't seeded. Each demo contact gets one
  * contact person, one address, one lead, and one activity, so the contact
  * detail page (persons/addresses tabs, Leads tab, Activities tab) has
  * something real to show rather than a bare shell — matching what a
@@ -268,10 +356,18 @@ const DEMO_QUOTES: DemoQuoteSeed[] = [
  * `leads`/`activities` have no `isDemo` column of their own — both FK to
  * `contacts.id` with `onDelete: "cascade"`, so deleting a demo contact
  * (deleteAll below) already removes its lead/activity/person/address rows
- * transitively. `quote_lines` is the same story relative to `quotes`
- * (`onDelete: "cascade"`). Only `contacts`/`catalog_items`/`quotes` need
- * their own `isDemo` flag since they're the roots being selected for
- * deletion.
+ * transitively. `quote_lines`/`invoice_lines` are the same story relative
+ * to `quotes`/`invoices` (`onDelete: "cascade"`). Only
+ * `contacts`/`catalog_items`/`quotes`/`invoices`/`payments` need their own
+ * `isDemo` flag since they're the roots being selected for deletion.
+ *
+ * Invoices and payments follow the exact same "seed via the real service"
+ * principle as quotes (see above) — `InvoicesService.create`/`.issue`/
+ * `.void` and `PaymentsService.create` are called directly rather than
+ * hand-inserting rows, so a seeded "issued" demo invoice has a genuine
+ * `INV-0001`-style number and a real §7.2 journal posting, and a seeded
+ * "partially paid" demo invoice's `amountPaid`/balance came from an actual
+ * allocation, not a hand-set column. See `seedInvoices` below.
  */
 @Injectable()
 export class DemoDataService {
@@ -279,6 +375,8 @@ export class DemoDataService {
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly quotesService: QuotesService,
+    private readonly invoicesService: InvoicesService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   async seed(orgId: string, actorUserId: string) {
@@ -491,8 +589,9 @@ export class DemoDataService {
     });
 
     const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds);
+    const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds);
 
-    return { ...result, ...quotesResult };
+    return { ...result, ...quotesResult, ...invoicesResult };
   }
 
   /**
@@ -586,26 +685,156 @@ export class DemoDataService {
   }
 
   /**
+   * Same "runs after the transaction above commits, calls the real
+   * service" reasoning as `seedQuotes` — `InvoicesService.create`/`.issue`/
+   * `.void` and `PaymentsService.create` each open their own transactions.
+   * Independent of the seeded quotes (no `sourceQuoteId` wiring — see
+   * DEMO_INVOICES' own comment on why).
+   */
+  private async seedInvoices(orgId: string, actorUserId: string, contactIds: string[], catalogItemIds: string[]) {
+    let invoicesCreated = 0;
+    let invoicesIssued = 0;
+    let invoicesVoided = 0;
+    let paymentsCreated = 0;
+
+    const [currencySetting] = await this.db
+      .select()
+      .from(settings)
+      .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+    const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
+
+    for (const seed of DEMO_INVOICES) {
+      const contactId = contactIds[seed.contactIndex];
+      if (!contactId) continue;
+
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + seed.dueInDays);
+
+      const lines = seed.lines
+        .map((line) => {
+          const item = DEMO_CATALOG_ITEMS[line.catalogItemIndex];
+          const catalogItemId = catalogItemIds[line.catalogItemIndex];
+          if (!item || !catalogItemId) return null;
+          return {
+            type: "item" as const,
+            catalogItemId,
+            name: item.name,
+            description: item.description,
+            quantity: line.quantity,
+            unitPriceAmount: item.priceAmount,
+            discountPercentage: 0,
+            taxRatePercentage: 0,
+          };
+        })
+        .filter((line): line is NonNullable<typeof line> => line !== null);
+      if (!lines.length) continue;
+
+      const invoice = await this.invoicesService.create(
+        orgId,
+        actorUserId,
+        {
+          contactId,
+          type: "standard",
+          currency: currencyCode,
+          dueDate,
+          notes: seed.notes ?? null,
+          lines,
+        },
+        true, // isDemo
+      );
+      invoicesCreated++;
+
+      if (seed.outcome === "draft") continue;
+
+      const issued = await this.invoicesService.issue(orgId, invoice.id, actorUserId);
+      invoicesIssued++;
+
+      if (seed.outcome === "voided") {
+        await this.invoicesService.void(orgId, issued.id, actorUserId, "Duplicate billing — corrected invoice raised separately.");
+        invoicesVoided++;
+        continue;
+      }
+
+      if (seed.outcome === "partiallyPaid" || seed.outcome === "paidInFull") {
+        const total = BigInt(issued.totalAmount);
+        const payAmount = seed.outcome === "paidInFull" ? total : (total * BigInt(Math.round((seed.partialPaymentFraction ?? 0.5) * 100))) / 100n;
+        if (payAmount > 0n) {
+          await this.paymentsService.create(
+            orgId,
+            actorUserId,
+            {
+              contactId,
+              date: new Date(),
+              method: "bank_transfer",
+              reference: null,
+              currency: currencyCode,
+              amount: payAmount,
+              allocations: [{ invoiceId: issued.id, amount: payAmount }],
+            },
+            undefined, // bankAccountId — default to the seeded "Bank Account"
+            true, // isDemo
+          );
+          paymentsCreated++;
+        }
+      }
+    }
+
+    return { invoicesCreated, invoicesIssued, invoicesVoided, paymentsCreated };
+  }
+
+  /**
    * Hard-deletes every row tagged `isDemo: true` for this org. Deleting a
    * demo contact cascades onto its contact_persons/addresses/leads/
    * activities automatically (see this class's own top comment on why
    * those tables carry no `isDemo` column of their own); deleting a demo
-   * quote cascades onto its own `quote_lines` the same way. Demo contacts
-   * are guaranteed to carry no ledger history (nothing posts to the ledger
-   * yet), so the same "blocked if referenced" check ContactsService.delete
-   * applies to real contacts doesn't apply here — but it's still checked
-   * defensively in case a future module lets a real document reference a
-   * demo contact/item before this action is used again.
+   * quote/invoice cascades onto its own `quote_lines`/`invoice_lines` the
+   * same way.
    *
-   * Quotes are deleted FIRST, before contacts — `quotes.contactId` is
-   * `onDelete: "restrict"` (see quotes.ts's schema comment), so deleting a
-   * demo contact while one of its demo quotes still exists would fail with
-   * a raw Postgres FK-violation error. Catalogue items have no such
-   * ordering constraint (`quote_lines.catalogItemId` is `onDelete: "set
-   * null"`), so they're still safe to delete in any order relative to
-   * quotes/contacts.
+   * Deletion order matters and is now stricter than it was before Phase 2:
+   * **payments, then invoices, then quotes, then contacts, then catalogue
+   * items.** `payment_allocations.invoiceId` is `onDelete: "restrict"`
+   * (payments.ts's own schema comment), so a demo payment allocated
+   * against a demo invoice must go first. `invoices.contactId`/
+   * `quotes.contactId` are both `onDelete: "restrict"` too, so both
+   * document types must go before their contact.
+   *
+   * Unlike quotes (which never post to the ledger), a demo invoice that
+   * was issued or paid DID post real, immutable `journal_lines` rows
+   * (§6.3 — journal entries/lines can never be deleted, only reversed).
+   * Deleting the `invoices`/`payments` rows themselves is still fine —
+   * `journal_lines`/`journal_entries` reference their source document by
+   * `sourceId` alone (a plain uuid column, no FK — see ledger.ts), not the
+   * other way around, so removing an invoice doesn't touch its journal
+   * history; that history simply becomes a permanent, correctly-labeled
+   * record of a demo transaction that happened, exactly as it would for a
+   * real one. The one thing this means: a demo CONTACT referenced by that
+   * now-permanent journal history (`journal_lines.contact_id`, also
+   * `onDelete: "restrict"`) genuinely cannot be hard-deleted afterward —
+   * the same "blocked if referenced" check this method already had
+   * defensively (for a hypothetical future module) is now a real,
+   * expected outcome for any demo contact that had an issued/paid demo
+   * invoice: its financial-document rows (invoice, payment) ARE removed,
+   * but the contact record itself is left behind, matching exactly how a
+   * real contact with real ledger history behaves (ContactsService.delete
+   * offers deactivation instead). Since every demo invoice/payment row is
+   * itself always removed regardless (only the CONTACT can get stuck),
+   * `status()` below checking for a leftover demo contact would report
+   * `hasDemoData: true` forever after a single issued/paid demo invoice
+   * existed even once — so `status()` deliberately checks demo
+   * quotes/invoices/catalog items only, not contacts, matching what a
+   * fresh "load demo data" click actually needs to know ("is there a full
+   * demo dataset to clear before reseeding", not "is there any leftover
+   * row anywhere").
    */
   async deleteAll(orgId: string, actorUserId: string) {
+    const demoPayments = await this.db
+      .select({ id: payments.id, number: payments.number, contactId: payments.contactId })
+      .from(payments)
+      .where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true)));
+    const demoInvoices = await this.db
+      .select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId })
+      .from(invoices)
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true)));
     const demoQuotes = await this.db
       .select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId })
       .from(quotes)
@@ -620,6 +849,32 @@ export class DemoDataService {
       .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)));
 
     await this.db.transaction(async (tx) => {
+      for (const payment of demoPayments) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "payment",
+          entityId: payment.id,
+          contactId: payment.contactId,
+          changes: [{ field: "number", from: payment.number, to: null }],
+        });
+        await tx.delete(payments).where(eq(payments.id, payment.id));
+      }
+
+      for (const invoice of demoInvoices) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "invoice",
+          entityId: invoice.id,
+          contactId: invoice.contactId,
+          changes: [{ field: "number", from: invoice.number, to: null }],
+        });
+        await tx.delete(invoices).where(eq(invoices.id, invoice.id));
+      }
+
       for (const quote of demoQuotes) {
         await this.auditLog.record(tx, {
           orgId,
@@ -662,15 +917,17 @@ export class DemoDataService {
       }
     });
 
-    return { contactsDeleted: demoContacts.length, catalogItemsDeleted: demoItems.length, quotesDeleted: demoQuotes.length };
+    return {
+      contactsDeleted: demoContacts.length,
+      catalogItemsDeleted: demoItems.length,
+      quotesDeleted: demoQuotes.length,
+      invoicesDeleted: demoInvoices.length,
+      paymentsDeleted: demoPayments.length,
+    };
   }
 
+  /** See deleteAll's own doc comment on why this deliberately doesn't check for a leftover demo contact. */
   async status(orgId: string) {
-    const [demoContact] = await this.db
-      .select({ id: contacts.id })
-      .from(contacts)
-      .where(and(eq(contacts.orgId, orgId), eq(contacts.isDemo, true)))
-      .limit(1);
     const [demoItem] = await this.db
       .select({ id: catalogItems.id })
       .from(catalogItems)
@@ -681,6 +938,11 @@ export class DemoDataService {
       .from(quotes)
       .where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true)))
       .limit(1);
-    return { hasDemoData: Boolean(demoContact || demoItem || demoQuote) };
+    const [demoInvoice] = await this.db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true)))
+      .limit(1);
+    return { hasDemoData: Boolean(demoItem || demoQuote || demoInvoice) };
   }
 }

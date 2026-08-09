@@ -141,7 +141,15 @@ export class PaymentsService {
    * (0020_payment_allocation_limits.sql) enforces the same invariant as
    * the actual source of truth.
    */
-  async create(orgId: string, actorUserId: string, input: CreatePaymentInput, bankAccountId?: string) {
+  /**
+   * `isDemo` mirrors InvoicesService.create/QuotesService.create's own
+   * convention: never client-settable via the controller (which never
+   * passes it), exists solely so DemoDataService can tag a seeded payment
+   * — the tag is what `deleteAll` selects on to remove exactly the demo
+   * rows it created and nothing else. See demo-data.service.ts's
+   * `seedInvoices`.
+   */
+  async create(orgId: string, actorUserId: string, input: CreatePaymentInput, bankAccountId?: string, isDemo = false) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -189,7 +197,7 @@ export class PaymentsService {
           currency: input.currency,
           amount: input.amount,
           createdByUserId: actorUserId,
-          isDemo: false,
+          isDemo,
         })
         .returning();
 
