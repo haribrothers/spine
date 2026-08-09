@@ -1,11 +1,12 @@
 import { randomUUID } from "node:crypto";
+import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
 import { eq } from "drizzle-orm";
 import { createDb } from "../db/client";
-import { member, session as sessionTable } from "../db/schema";
+import { member, organization as organizationTable, session as sessionTable, user as userTable } from "../db/schema";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
 import { hashPassword, verifyPassword } from "./password";
@@ -16,6 +17,7 @@ if (!databaseUrl) {
 }
 
 const db = createDb(databaseUrl);
+const authLogger = new Logger("Auth");
 
 /**
  * Cookie sessions for web, JWT for mobile — per docs/spine-prd.md §5. The
@@ -70,23 +72,60 @@ export const auth = betterAuth({
          * "join an existing org" self-serve path in v1 (§12 Phase 0 exit:
          * "sign up ... complete the onboarding wizard"). Invited members are
          * added to an existing org separately, never through this hook.
+         *
+         * MUST NOT let this fail silently. `databaseHooks.user.create.after`
+         * runs after the `user` row is already committed — if
+         * `createOrganization`/`seedChartOfAccounts` throws and this hook
+         * lets that propagate uncaught, Better Auth's own hook runner may
+         * swallow it (observed live: a real account ended up with a `user`
+         * row, zero `organization`/`member` rows, and a session whose
+         * `activeOrganizationId` pointed at nothing — every
+         * `@OrgRoles()`-guarded request then 403'd with "You are not a
+         * member of this organization" forever, with no way to recover
+         * short of manual DB surgery). Since a user with no org is
+         * completely unusable regardless (S-01.1 onward assumes one), the
+         * only sound recovery is to delete the just-created user on
+         * failure, so the whole signup genuinely fails end-to-end and the
+         * client sees a real error — leaving them free to retry with the
+         * same email — rather than a phantom "successful" signup that's
+         * broken forever.
          */
         after: async (user) => {
-          const org = await auth.api.createOrganization({
-            body: {
-              name: `${user.name}'s Organisation`,
-              slug: `org-${randomUUID()}`,
-              userId: user.id,
-            },
-          });
+          let createdOrgId: string | undefined;
+          try {
+            const org = await auth.api.createOrganization({
+              body: {
+                name: `${user.name}'s Organisation`,
+                slug: `org-${randomUUID()}`,
+                userId: user.id,
+              },
+            });
+            if (!org?.id) {
+              throw new Error("auth.api.createOrganization returned no organisation id");
+            }
+            createdOrgId = org.id;
 
-          // Every org needs a chart of accounts to post anything to the
-          // ledger — without this, a real signup produced a functionally
-          // broken org (no accounts to post to, nothing for the onboarding
-          // wizard's CoA-review step to show). Previously this only ran
-          // from the standalone seed script, never from real signup.
-          if (org?.id) {
+            // Every org needs a chart of accounts to post anything to the
+            // ledger — without this, a real signup produced a functionally
+            // broken org (no accounts to post to, nothing for the onboarding
+            // wizard's CoA-review step to show). Previously this only ran
+            // from the standalone seed script, never from real signup.
             await seedChartOfAccounts(db, org.id);
+          } catch (err) {
+            authLogger.error(
+              `Signup for ${user.email} (user ${user.id}) failed to create its organisation — deleting the orphaned user${createdOrgId ? " and organisation" : ""} row(s) so signup fails cleanly instead of leaving a permanently broken account`,
+              err instanceof Error ? err.stack : String(err),
+            );
+            // member cascades on user delete (onDelete: "cascade"), but
+            // `organization` has no FK back to the user/member that created
+            // it, so it would otherwise leak as a permanent, empty,
+            // unowned org — deleted explicitly here when we got far enough
+            // to have created one.
+            if (createdOrgId) {
+              await db.delete(organizationTable).where(eq(organizationTable.id, createdOrgId));
+            }
+            await db.delete(userTable).where(eq(userTable.id, user.id));
+            throw err;
           }
         },
       },

@@ -1,13 +1,15 @@
 import { eq, inArray } from "drizzle-orm";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { auth } from "./auth";
 import { createDb, type Database } from "../db/client";
-import { accounts, member, session as sessionTable, user } from "../db/schema";
+import { accounts, member, organization, session as sessionTable, user } from "../db/schema";
+import * as chartOfAccountsModule from "../db/seed/chart-of-accounts";
 
 /**
- * Regression coverage for two real bugs found while wiring the onboarding
- * wizard's signup path — both would otherwise silently break every fresh
- * signup:
+ * Regression coverage for three real bugs found in the signup path — all
+ * would otherwise silently break either every fresh signup, or one
+ * specific unlucky one, with no way for the affected user to recover
+ * short of manual DB surgery:
  *
  *  1. Chart-of-accounts seeding was only wired into the standalone seed
  *     script, never the real `databaseHooks.user.create.after` hook a real
@@ -15,6 +17,14 @@ import { accounts, member, session as sessionTable, user } from "../db/schema";
  *  2. `session.activeOrganizationId` stayed `null` after signup — Better
  *     Auth's organization plugin doesn't set it on org creation, so every
  *     `@OrgRoles()`-guarded endpoint would 403 a brand-new owner.
+ *  3. If org creation (or chart-of-accounts seeding) throws inside that
+ *     same hook, the `user` row it runs after was already committed —
+ *     found live in the dev DB: a real account had a `user` row, zero
+ *     `organization`/`member` rows, and a session pointing at a
+ *     nonexistent org, 403ing "You are not a member of this organization"
+ *     on every guarded request, forever. The hook now deletes the
+ *     orphaned user on failure so the whole signup fails loudly instead —
+ *     see auth.ts's own doc comment on this exact incident.
  *
  * Requires the `db` service from docker-compose.dev.yml running locally.
  */
@@ -59,5 +69,32 @@ describe("signup (requires local Postgres)", () => {
     const [signupSession] = await db.select().from(sessionTable).where(eq(sessionTable.userId, userId));
     expect(signupSession).toBeDefined();
     expect(signupSession!.activeOrganizationId).toBe(orgId);
+  });
+
+  it("deletes the orphaned user instead of leaving a broken account when org setup fails mid-signup", async () => {
+    const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
+    db = createDb(databaseUrl);
+
+    const email = `signup-fail-test-${Date.now()}@example.com`;
+
+    // Force exactly the failure mode found live: createOrganization
+    // succeeds, but the hook's own follow-up work throws.
+    const seedSpy = vi.spyOn(chartOfAccountsModule, "seedChartOfAccounts").mockRejectedValueOnce(new Error("simulated seed failure"));
+
+    await expect(
+      auth.api.signUpEmail({
+        body: { email, password: "testpassword123", name: "Signup Fail Test" },
+      }),
+    ).rejects.toThrow();
+
+    seedSpy.mockRestore();
+
+    // The whole point: no orphaned user, no dangling org/member/session —
+    // the failed signup must leave NO trace, not a half-created account.
+    const [orphanedUser] = await db.select().from(user).where(eq(user.email, email));
+    expect(orphanedUser).toBeUndefined();
+
+    const danglingOrgs = await db.select().from(organization).where(eq(organization.name, "Signup Fail Test's Organisation"));
+    expect(danglingOrgs).toHaveLength(0);
   });
 });
