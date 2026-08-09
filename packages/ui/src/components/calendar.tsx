@@ -1139,7 +1139,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
   return (
     <Dialog open={!!state} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogHeader>
             <DialogTitle>{isEdit ? "Edit event" : "New event"}</DialogTitle>
             <DialogDescription>
