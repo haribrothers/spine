@@ -1075,8 +1075,19 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
     if (state.mode === "edit") {
       const event = state.instance.event;
       setTitle(event.title);
-      setStart(state.instance.occurrenceStart);
-      setEnd(state.instance.occurrenceEnd);
+      // Editing a recurring event always rewrites the WHOLE series (see this
+      // dialog's own "Editing a recurring event updates the entire series"
+      // copy, and handleSave below, which has no per-occurrence branch) —
+      // so the form must seed start/end from the series' own anchor
+      // (event.start/end), never from the specific occurrence that was
+      // clicked. Using occurrenceStart/End here was a real bug: clicking
+      // any occurrence other than the first and saving (even with no
+      // changes) silently moved the entire series' start date to whichever
+      // occurrence happened to be clicked, since handleSubmit below just
+      // writes `start`/`end` straight onto the returned event with the same
+      // `id`.
+      setStart(event.start);
+      setEnd(event.end);
       setAllDay(!!event.allDay);
       setColor(event.color);
       setLocation(event.location ?? "");

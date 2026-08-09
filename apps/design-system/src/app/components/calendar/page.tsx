@@ -482,7 +482,15 @@ export default function Example() {
         <DocSubsection id="recurrence" title="Recurrence">
           <DocLead>
             A daily standup (20 occurrences) and a monthly invoicing run (repeating for a year),
-            shown in Month view where the recurrence icon marks each expanded instance.
+            shown in Month view where the recurrence icon marks each expanded instance. Clicking
+            ANY occurrence — not just the first — opens the same editor and always edits the whole
+            series (per the editor&apos;s own &quot;Editing a recurring event updates the entire
+            series&quot; copy); there is no per-occurrence override. The editor seeds its
+            start/end fields from the series&apos; own <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">event.start</code>/
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">event.end</code>, never
+            from the clicked occurrence&apos;s own computed date — otherwise saving with no
+            changes after clicking a later occurrence would silently shift the entire series&apos;
+            start date to that occurrence.
           </DocLead>
           <ComponentPreview>
             <RecurrenceDemo />
