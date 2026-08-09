@@ -7,6 +7,15 @@ import type { AppShellNavSection } from "@spine/ui";
  * (after Dashboard) needing this array — Settings has no entry since it
  * opens as a dialog from the user menu, not a route. New top-level sections
  * (Quotes, ...) append here as their modules land.
+ *
+ * "Billing" is a deliberate second section, not folded into "Sales" —
+ * mirrors the PRD's own phase naming (`docs/spine-prd.md` §12: Phase 1 is
+ * "Sales Spine", Phase 2 is "Money In", not part of Sales) and its
+ * enquiry → quote → job → invoice → payment → books workflow, where a
+ * quote is a sales document but an invoice is a financial one. This is
+ * also the natural home for Payments/AR-aging/receivables once those get
+ * their own pages (currently payment recording lives inside the invoice
+ * detail page — see CHANGELOG).
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
@@ -21,7 +30,10 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
       { href: "/meetings", label: "Meetings", icon: <CalendarDays /> },
       { href: "/catalog", label: "Catalogue", icon: <Package /> },
       { href: "/quotes", label: "Quotes", icon: <FileText /> },
-      { href: "/invoices", label: "Invoices", icon: <Receipt /> },
     ],
+  },
+  {
+    label: "Billing",
+    items: [{ href: "/invoices", label: "Invoices", icon: <Receipt /> }],
   },
 ];

@@ -50,6 +50,12 @@ Tracks what's been built and what's next, phase by phase per `docs/spine-prd.md`
 
 ## Completed
 
+### 2026-08-09 — Invoices moved to its own "Billing" sidebar section
+
+- User asked whether Invoices belonged under "Sales" or somewhere else. Moved it to a new "Billing" section (`apps/web/src/lib/nav-sections.tsx`) rather than leaving it grouped with Contacts/Pipeline/Meetings/Catalogue/Quotes — matches the PRD's own phase naming (`docs/spine-prd.md` §12: Phase 1 "Sales Spine" vs. Phase 2 "Money In", not part of Sales) and its enquiry → quote → job → invoice → payment → books workflow, where a quote is a sales document but an invoice is a financial one. Also the natural home for Payments/AR-aging/receivables once those get their own pages. Updated all four invoice page breadcrumbs (`page.tsx`, `[id]/page.tsx`, `new/page.tsx`, `[id]/edit/page.tsx`) from "Sales" to "Billing" to match.
+- Verified: `pnpm --filter @spine/web typecheck`/`lint`/`build` all clean.
+- Stories: none (nav/IA change, no new scope).
+
 ### 2026-08-09 — Fix: `pnpm db:reset` was silently skipping `invoices`/`invoice_lines`/`payments`/`payment_allocations`
 
 - User asked whether the tables added this session were covered by the dev DB reset script. They weren't — `apps/api/src/db/reset.ts`'s hardcoded `TABLES` list (used for its single `TRUNCATE ... CASCADE` statement, not a migration replay) was last updated before Invoices/Payments existed, so a reset would leave those four tables' rows behind entirely undetected — no error, since `TRUNCATE` simply doesn't touch a table that isn't named in its own statement.

@@ -6,7 +6,7 @@ export default function InvoicesPage() {
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Sales" }, { label: "Invoices" }]}
+        breadcrumb={[{ label: "Billing" }, { label: "Invoices" }]}
         title="Invoices"
         description="Build multi-line invoices, issue them to post to the ledger, and track balances due."
       />

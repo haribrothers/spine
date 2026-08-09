@@ -7,7 +7,7 @@ export default async function EditInvoicePage({ params }: { params: Promise<{ id
   return (
     <>
       <AppShellHeader
-        breadcrumb={[{ label: "Sales" }, { label: "Invoices", href: "/invoices" }, { label: "Edit" }]}
+        breadcrumb={[{ label: "Billing" }, { label: "Invoices", href: "/invoices" }, { label: "Edit" }]}
         title="Edit invoice"
         description="Only a draft can be edited — an issued invoice is immutable per CLAUDE.md."
       />

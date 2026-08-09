@@ -6,7 +6,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
 
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Sales" }, { label: "Invoices", href: "/invoices" }, { label: "Detail" }]} title="Invoice" />
+      <AppShellHeader breadcrumb={[{ label: "Billing" }, { label: "Invoices", href: "/invoices" }, { label: "Detail" }]} title="Invoice" />
       <InvoiceDetail invoiceId={id} />
     </>
   );
