@@ -19,14 +19,25 @@ import { requireOrgId } from "./settings.controller";
  */
 @Controller("org/invitations")
 export class InvitationsController {
+  /**
+   * PRD §2.1 — Owner is granted only by promoting an existing Staff member
+   * (MembersController.promote), never at invite time. Better Auth's own
+   * createInvitation would otherwise allow this (its own check only blocks
+   * inviting the creatorRole if the CALLER isn't already that role — an
+   * Owner inviting another Owner passes it fine), so this is enforced
+   * ourselves rather than relying on the plugin.
+   */
   @Post()
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
   async invite(
     @Session() session: UserSession,
     @Req() request: Request,
-    @Body() body: { email: string; role: "owner" | "staff" | "field" },
+    @Body() body: { email: string; role: "staff" | "field" },
   ) {
+    if ((body.role as string) === "owner") {
+      throw new BadRequestException("Owner can only be granted by promoting an existing Staff member, not by invite.");
+    }
     const orgId = requireOrgId(session);
     const invitation = await auth.api.createInvitation({
       body: {

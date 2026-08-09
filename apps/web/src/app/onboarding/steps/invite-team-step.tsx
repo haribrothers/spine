@@ -15,7 +15,10 @@ import {
   Spinner,
 } from "@spine/ui";
 
-export type MemberRole = "owner" | "staff" | "field";
+// "owner" deliberately excluded — per PRD §2.1, Owner is only granted by
+// promoting an existing Staff member (Users page) once they've joined, not
+// at invite time. The API rejects role: "owner" on this endpoint too.
+export type MemberRole = "staff" | "field";
 
 export interface InviteTeamStepProps {
   onInvite: (email: string, role: MemberRole) => Promise<void>;
@@ -81,7 +84,6 @@ export function InviteTeamStep({ onInvite, onFinish, hideFooter = false }: Invit
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="owner">Owner</SelectItem>
                 <SelectItem value="staff">Staff</SelectItem>
                 <SelectItem value="field">Field</SelectItem>
               </SelectContent>
