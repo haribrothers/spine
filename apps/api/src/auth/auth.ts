@@ -4,10 +4,11 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { createDb } from "../db/client";
 import { member, organization as organizationTable, session as sessionTable, user as userTable } from "../db/schema";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
+import { seedDefaultTeam } from "../db/seed/default-team";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -111,6 +112,24 @@ export const auth = betterAuth({
             // wizard's CoA-review step to show). Previously this only ran
             // from the standalone seed script, never from real signup.
             await seedChartOfAccounts(db, org.id);
+
+            // PRD §2.1/§7 — the first signup on a fresh instance is always
+            // this org's Primary Owner (super-admin). auth.api.createOrganization
+            // creates the member row (role: "owner", per creatorRole above)
+            // but Better Auth's organization plugin has no concept of
+            // "primary owner" — set directly via Drizzle, same pattern as
+            // the session hook below backfilling activeOrganizationId.
+            // allowUserToCreateOrganization: false guarantees this call is
+            // always exactly one brand-new org's first (and only) member,
+            // so there is no ambiguity about who the Primary Owner is.
+            await db
+              .update(member)
+              .set({ isPrimaryOwner: true })
+              .where(and(eq(member.organizationId, org.id), eq(member.userId, user.id)));
+
+            // Seed the "General Staff" team so a newly invited Staff user
+            // has sensible default access with zero extra owner setup.
+            await seedDefaultTeam(db, org.id);
           } catch (err) {
             authLogger.error(
               `Signup for ${user.email} (user ${user.id}) failed to create its organisation — deleting the orphaned user${createdOrgId ? " and organisation" : ""} row(s) so signup fails cleanly instead of leaving a permanently broken account`,

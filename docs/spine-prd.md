@@ -38,7 +38,7 @@ Service and project-based small businesses with 1–20 people: construction and 
 
 Explicitly out of scope, and it matters that they stay out:
 
-- Multi-tenant SaaS hosting — one instance serves one business
+- Multi-tenant SaaS hosting — one instance serves one business (see §4.2 for the related, deferred idea of one *owner account* managing several separate instances/orgs)
 - Payroll, HR, attendance
 - Inventory with stock valuation, warehouses, or manufacturing
 - Marketing automation, email campaigns, lead scoring
@@ -56,30 +56,36 @@ Several of these are good v2 candidates. None are needed to make the product use
 
 | Persona | Reality | Primary jobs |
 |---|---|---|
-| **Owner** | Runs the business, approves everything, is the person feeling the pain today | Sees pipeline, approves quotes and discounts, checks who owes money, reads P&L |
+| **Owner** | Runs the business, approves everything, is the person feeling the pain today. An instance can have more than one Owner (see §2.1) | Sees pipeline, approves quotes and discounts, checks who owes money, reads P&L, manages users/teams/permissions |
 | **Office staff** | Admin/accounts person, may be part-time | Creates contacts, quotes and invoices, records payments and expenses, chases receivables |
 | **Field crew** | On site, on a phone, often with poor signal | Captures site photos, submits expenses, marks milestones complete, gets a customer's signature on a quote |
 | **Customer** | External, no account | Opens a link, reads the quote, accepts or rejects it |
 
 ### 2.1 Permission model
 
-Four roles in v1, enforced server-side. Role is per-user, per-organisation.
+Role is per-user, per-organisation, enforced server-side on every endpoint. There are two fixed roles (**Owner**, **Field**) and one configurable tier (**Staff**, subdivided by **Teams**), plus the external **Customer** link role.
 
-| Capability | Owner | Staff | Field | Customer (link) |
+**Owners.** The first user to sign up on a fresh instance becomes the **Primary Owner** — the instance's super-admin. Signup is single-use: after the first user, every other account is created by invite, never by public registration. A Primary Owner or any other Owner can promote a Staff user to Owner; all Owners have equal, full access to everything in the organisation — there is no per-owner content ownership or restriction in v1 (see §4.2 for that as a deferred v2 idea). The Primary Owner cannot be demoted or removed by any other user, including another Owner — only by themselves, and only via an explicit transfer-of-primary-ownership action, never a silent removal. This exists so a single instance can never be left without an unambiguous super-admin.
+
+**Field** stays a fixed, non-customisable role — deliberately narrow and mobile-safe, so an owner can never accidentally widen a field user's access to financial data (this protects §S-11.8's "mobile hides all financial reports" rule).
+
+**Staff and Teams.** Staff is not a single fixed capability set. Owners create named **Teams** (e.g. "Accounts", "Site Crew A"), each with its own configurable privilege matrix drawn from the capability list below. A Staff user can belong to more than one Team; where Teams disagree, the user's effective permission for a given capability is the union of what any of their Teams grant (most-permissive-wins). This is the v1 permissions UI — Owners manage Users, Teams, and each Team's privilege matrix from a dedicated area of the app (§8 F10, §9 FEAT-10 S-10.13 → S-10.18).
+
+| Capability | Owner | Staff (Team-configurable, defaults shown) | Field (fixed) | Customer (link) |
 |---|:---:|:---:|:---:|:---:|
-| View dashboard & reports | ✅ | Partial | ❌ | ❌ |
-| Manage contacts & catalogue | ✅ | ✅ | View | ❌ |
-| Create/edit quotes | ✅ | ✅ | ❌ | ❌ |
-| Approve quote above discount threshold | ✅ | ❌ | ❌ | ❌ |
-| Create invoices, record payments | ✅ | ✅ | ❌ | ❌ |
-| Submit expense | ✅ | ✅ | ✅ | ❌ |
-| Approve expense | ✅ | ✅ | ❌ | ❌ |
-| Upload site photos, update milestone status | ✅ | ✅ | ✅ | ❌ |
-| View ledger / journals | ✅ | ❌ | ❌ | ❌ |
-| Manage users, settings, tax rules | ✅ | ❌ | ❌ | ❌ |
+| View dashboard & reports | ✅ | Partial (default) | ❌ | ❌ |
+| Manage contacts & catalogue | ✅ | ✅ (default) | View | ❌ |
+| Create/edit quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Approve quote above discount threshold | ✅ | ❌ (default; Owner-only in practice, but Team-configurable) | ❌ | ❌ |
+| Create invoices, record payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Submit expense | ✅ | ✅ (default) | ✅ | ❌ |
+| Approve expense | ✅ | ✅ (default) | ❌ | ❌ |
+| Upload site photos, update milestone status | ✅ | ✅ (default) | ✅ | ❌ |
+| View ledger / journals | ✅ | ❌ (default) | ❌ | ❌ |
+| Manage users, teams, permissions, org settings, tax rules | ✅ | ❌, not Team-configurable — Owner-only | ❌ | ❌ |
 | View & accept a specific quote | — | — | — | ✅ |
 
-"Partial" for staff means: receivables and their own activity, not P&L or balance sheet. Owners can widen this per-user later; v1 keeps it fixed to avoid a permissions UI.
+"Partial" for the Staff default means: receivables and their own activity, not P&L or balance sheet. Every row except "Manage users, teams, permissions, org settings, tax rules" is configurable per Team — that row is a hard Owner-only capability regardless of Team configuration, since it is the capability that could otherwise be used to grant itself broader access. The table above shows the **default** Team ("General Staff") an instance seeds on first run; Owners are free to create additional Teams with narrower or broader (within the configurable rows) grants.
 
 ---
 
@@ -104,7 +110,12 @@ CRM & contacts · product/service catalogue · quotes with versioning and public
 
 ### 4.2 Deferred
 
-Bank reconciliation · recurring invoices · purchase orders · timesheets · inventory · statutory filing · customer portal · multi-currency · advanced permissions · plugin/extension API · public REST API for third parties.
+Bank reconciliation · recurring invoices · purchase orders · timesheets · inventory · statutory filing · customer portal · multi-currency · plugin/extension API · public REST API for third parties.
+
+Two additional items are explicitly deferred to v2, noted here in more detail because they're easy to half-build by accident while implementing the v1 permission model in §2.1:
+
+- **Multi-org support.** One owner account managing several separate organisations/instances from a single login, with an org-switcher and per-org staff/team assignment. v1 stays single-org-per-instance (§1.5) — a self-hoster who wants a second business runs a second instance. Revisit only if real usage shows the deployment overhead of a second instance is the actual blocker, not before.
+- **Cross-owner content ownership.** Tracking which Owner created a given record and requiring explicit grant before another Owner can edit or delete it. Deferred because it's only meaningful once multi-owner or multi-org scenarios need that separation — v1's multiple Owners (§2.1) are intentionally symmetric with equal, unrestricted access to everything in the org. Don't add creator-based restrictions to Owner-level access without revisiting this decision explicitly.
 
 ---
 
@@ -247,7 +258,9 @@ Single `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Optional with
 Core entities. Every table carries `id (uuid)`, `org_id`, `created_at`, `updated_at`, `created_by`.
 
 **Identity & org**
-`organisations` · `users` · `memberships (user, org, role)` · `sessions` · `settings` · `number_sequences` · `audit_log`
+`organisations` · `users` · `memberships (user, org, role: owner|staff|field, is_primary_owner)` · `teams (org_id, name)` · `team_memberships (user_id, team_id)` · `team_privileges (team_id, capability, granted)` · `sessions` · `settings` · `number_sequences` · `audit_log`
+
+`memberships.role` stays the coarse tier (Owner / Staff / Field) that fixes the non-configurable boundaries in §2.1 (e.g. Field's fixed capability set, Owner's blanket access). `team_memberships` and `team_privileges` only apply to `role = staff` rows — they're how the Staff tier's configurable privilege matrix from §2.1 is stored. Exactly one membership row per organisation may have `is_primary_owner = true`; enforced by a partial unique index, not application logic alone, since this is a super-admin invariant worth protecting at the database layer.
 
 **CRM**
 `contacts (type: customer|vendor|both, name, is_company)` · `contact_persons` · `addresses` · `leads (stage, value, source, owner)` · `activities (call|meeting|note|task, due_at, done_at)`
@@ -335,6 +348,8 @@ MUST maintain a double-entry ledger with a seeded chart of accounts. MUST allow 
 
 **F10 Platform**
 MUST support user invitation, role assignment and deactivation. MUST write an audit log entry for every create, update, issue, void and delete on financial documents. MUST provide backup and restore scripts covering database and files. MUST support org branding (logo, colours, document footer). MUST provide seed/demo data toggled by env var. MUST provide an in-app notification centre — a persisted, per-user, org-scoped feed of business events (starting with quote viewed/accepted/rejected; any later module can add its own event types through the same mechanism) with read/unread state and a badge count, reachable from a bell icon in the app shell and opening as a side panel/drawer listing recent notifications newest-first. Notifications MUST be delivered to every user with visibility into the event per the existing permission model (§2.1), not owner-only — email notification (already built) stays owner-only per S-03.7's own wording, but the in-app feed is not restricted to owners, since a staff member with quote access has the same reason to see it. SHOULD let a user mark all as read. SHOULD provide health endpoints and structured logs. SHOULD provide an in-app upgrade notice. MAY provide anonymous, opt-in usage telemetry — off by default.
+
+MUST support multiple Owners per organisation, with exactly one designated Primary Owner (the original signup) who cannot be demoted or removed by any other user (§2.1). MUST let any Owner promote a Staff user to Owner. MUST let Owners create named Teams and configure a per-Team privilege matrix governing the Staff-tier capabilities listed in §2.1; Field and Owner remain fixed, non-configurable roles. MUST enforce every Team-configurable capability server-side from the same source of truth the permissions UI reads from — the UI and the enforcement layer MUST NOT drift. MUST provide a personal Profile & Preferences page, reachable by every user regardless of role, for editing one's own name, email, password, avatar and preferences, independent of organisation-level Settings. MUST present Users, Teams, and Permissions management as its own top-level, Owner-only area of the app navigation, distinct from the organisation Settings surface.
 
 **F11 Mobile field companion**
 MUST authenticate and scope to assigned jobs. MUST capture and upload site photos with job association, offline-queued. MUST submit expenses with a receipt photo, offline-queued. MUST update milestone status. MUST let a field user open a quote and capture on-screen customer acceptance. SHOULD show today's jobs and contact numbers with tap-to-call. SHOULD indicate pending-sync count clearly. MUST NOT allow invoice creation or ledger access.
@@ -516,10 +531,24 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-10.10 | As an evaluator, I want to load demo data with one flag, so I can see the product working before committing |
 | S-10.11 | As an owner or staff member, I want an in-app panel of recent notifications (quote viewed/accepted/rejected today, and whatever future events other modules add), with unread tracking, so I don't have to rely on email alone to notice something needs my attention |
 | S-10.12 | As an owner or staff member, I want a native browser/OS notification when something needs my attention, even if Spine isn't the tab I'm looking at or isn't open at all, so I don't have to keep the app in view to notice |
+| S-10.13 | As an owner, I want to create named Teams and assign staff members to one or more of them, so I can group people the way my business is actually organised |
+| S-10.14 | As an owner, I want to configure which capabilities each Team has from a privilege matrix, so I can grant exactly the access a given group needs, no more |
+| S-10.15 | As an owner, I want to promote a staff member to Owner, so trusted people can share full administrative responsibility |
+| S-10.16 | As the Primary Owner, I want my super-admin status protected from removal by anyone else, so the instance can never end up without an unambiguous administrator |
+| S-10.17 | As any user, I want a personal Profile & Preferences page to edit my name, email, password and avatar, so I can manage my own account independent of organisation-wide Settings |
+| S-10.18 | As an owner, I want Users, Teams, and Permissions management to live in their own top-level area of the app (its own sidebar section, not buried in the Settings dialog), so administering people and access feels proportionate to how often I need it |
 
 *Acceptance highlights (S-10.11):* a bell icon in the app shell shows an unread count; opening it slides in a right-side panel/drawer listing notifications newest-first, each with a type, a human-readable message, a timestamp, and (where applicable) a link to the source record (e.g. the quote). Marking one as read (by opening it, or via a "mark all read" action) persists — the unread count must survive a page reload and a different device/session for the same user. Delivery is org- and permission-scoped: a notification about a quote is visible to every user who could see that quote per §2.1, not just the owner. This is additive to email notification (S-03.7 and any future email-notify story) — the two channels share the same trigger point (`NotificationsService.notify`-equivalent) but are independent; a user with no email access to check still sees the in-app panel, and email keeps working even if a user never opens the panel.
 
 *Acceptance highlights (S-10.12):* uses the W3C Push API + a service worker, not a foreground-only `Notification()` popup — it must fire even when the Spine tab is backgrounded, minimized, or closed entirely (as long as the browser process is running), which is the whole point relative to S-10.11's in-tab badge. A user opts in explicitly (browser permission prompt triggered by an explicit in-app action, never on page load unprompted) and can revoke from Settings; a user who never opts in keeps getting the S-10.11 in-app panel and email unaffected — this is a third, independent delivery channel layered onto the same `NotificationsService.notify()` trigger point as S-10.11/S-03.7, not a replacement. Multiple devices/browsers per user are supported (each is its own push subscription; revoking one doesn't affect others). Clicking a delivered notification focuses/opens the app to the relevant record's link. Per §6.8's "boot with only 3 required env vars" rule, push is optional-with-graceful-degradation: no VAPID keys configured means the push channel is silently disabled (subscribe UI hidden or shows "not configured"), not a boot failure or error toast — self-hosters who don't want this capability don't have to set it up. Self-hoster docs cover generating a VAPID keypair for `.env`.
+
+*Acceptance highlights (S-10.13 / S-10.14 — Teams & privilege matrix):* a Team is `{ name, org_id }` plus a set of `team_privileges` rows, one per configurable capability in §2.1's table, each a boolean grant. Every fresh instance seeds one default Team ("General Staff") with the default grants shown in §2.1 so a newly invited Staff user has sensible access with zero extra owner setup — Owners are not required to configure Teams before inviting anyone. A Staff user may belong to multiple Teams; effective access to a capability is `true` if any of their Teams grants it (most-permissive-wins, no explicit-deny concept in v1). Removing a user's last Team does not delete the user — it leaves them with no Staff-tier capabilities beyond whatever the platform grants by default (view own profile, etc.) until reassigned. The capability list itself is the same one enforced server-side per endpoint (§10.3) — the UI never invents a capability the API doesn't also check, so the matrix can't drift from actual enforcement.
+
+*Acceptance highlights (S-10.15 / S-10.16 — Owner promotion & Primary Owner protection):* promoting a Staff user to Owner is available to any existing Owner, changes `memberships.role` to `owner`, and immediately grants full access with no Team involvement (Owner is not Team-configurable, §2.1). Demoting an Owner back to Staff is likewise available to any other Owner, **except** the Primary Owner may never be demoted or removed by anyone but themselves. The Primary Owner flag can only move via an explicit "Transfer primary ownership" action performed by the current Primary Owner, naming a successor who must already be an Owner; this is a deliberate, confirmed action (not a side effect of role editing), and the instance is never left with zero or more than one Primary Owner — enforced by the partial unique index in §7.
+
+*Acceptance highlights (S-10.17 — Profile & Preferences):* a page reachable from the user menu (distinct from the Owner-only organisation Settings dialog) where any user — Owner, Staff, or Field — edits their own name, email, password, and avatar, and sets personal preferences (theme, per S-00.2/S-00.3, moves here rather than staying dialog-only). Changing email re-verifies per Better Auth's existing flow; changing password requires the current password. No approval needed — this is self-service for one's own account, not an admin action.
+
+*Acceptance highlights (S-10.18 — dedicated Users/Teams/Permissions area):* Users, Teams, and the privilege matrix move out of the Settings dialog's `TeamPane` into their own routed pages under a new top-level sidebar section (Owner-only, hidden entirely for Staff/Field), so the feature has real URLs (deep-linkable to a specific user or Team) and enough room for a matrix UI that a settings-dialog pane can't comfortably hold. Organisation-level configuration (business profile, tax, numbering, branding, etc.) stays in the existing Settings dialog — this split is by *kind* of setting (people/access vs. org configuration), not a wholesale move of Settings to routed pages.
 
 ### FEAT-11 · Mobile Field Companion
 
@@ -620,22 +649,24 @@ Target: under five minutes from clone to first quote on a machine that already h
 Estimates assume one experienced developer working part-time; halve them for full-time.
 
 ### Phase 0 · Foundation *(5 weeks)*
-Monorepo, Docker Compose, Postgres, Drizzle migrations, Better Auth, organisation setup wizard, users & roles, numbering sequences, audit log, ledger core with chart of accounts seed, shared money & tax packages, CI pipeline — **plus the `@spine/ui` component library**: full primitive set (button, input, select, combobox, date picker, table, dialog, drawer, tabs, toast, form fields, money input, and the rest of §F0), theme tokens, dark/light mode with persistence, at least two presets, Storybook documentation, and an accessibility pass per component. Also delivers the **first-run onboarding wizard shell** — business profile, industry template picker, currency/financial year, tax rate confirmation, chart-of-accounts review, and team invite — since every dependency it touches (org, tax, numbering, ledger, users) is built in this phase.
+Monorepo, Docker Compose, Postgres, Drizzle migrations, Better Auth, organisation setup wizard, users & roles including multi-Owner support with a protected Primary Owner, Teams with a configurable privilege matrix for the Staff tier, a dedicated Users/Teams/Permissions area in the app navigation, a personal Profile & Preferences page, numbering sequences, audit log, ledger core with chart of accounts seed, shared money & tax packages, CI pipeline — **plus the `@spine/ui` component library**: full primitive set (button, input, select, combobox, date picker, table, dialog, drawer, tabs, toast, form fields, money input, and the rest of §F0), theme tokens, dark/light mode with persistence, at least two presets, Storybook documentation, and an accessibility pass per component. Also delivers the **first-run onboarding wizard shell** — business profile, industry template picker, currency/financial year, tax rate confirmation, chart-of-accounts review, and team invite — since every dependency it touches (org, tax, numbering, ledger, users) is built in this phase.
 
 Building the library here rather than per-feature costs roughly two extra weeks up front, but every later phase draws from a finished, documented set instead of inventing components mid-feature — Phase 1 alone needs a dozen of them for quotes. It also means theming and dark mode apply everywhere from the first screen, rather than getting bolted on after the fact.
 
-**Stories:** S-00.1 → S-00.7 · S-09.1 · S-10.1 · S-10.2 · S-10.3 · S-10.5 · S-10.6 · S-12.1 · S-12.2 · S-12.4 → S-12.7 · S-12.10 · S-12.11
-**Exit:** a user can install via Docker, sign up, complete the onboarding wizard end-to-end (or skip it), invite a colleague, and switch the app between light and dark mode. The ledger accepts a manually triggered balanced entry and rejects an unbalanced one. Every component in §F0 is in Storybook with light/dark and theme-preset variants.
+**Stories:** S-00.1 → S-00.7 · S-09.1 · S-10.1 → S-10.3 · S-10.5 · S-10.6 · S-10.13 → S-10.18 · S-12.1 · S-12.2 · S-12.4 → S-12.7 · S-12.10 · S-12.11
+**Exit:** a user can install via Docker, sign up (becoming the Primary Owner), complete the onboarding wizard end-to-end (or skip it), invite a colleague, promote them to Owner, create a Team with a custom privilege matrix, edit their own profile, and switch the app between light and dark mode. The ledger accepts a manually triggered balanced entry and rejects an unbalanced one. Every component in §F0 is in Storybook with light/dark and theme-preset variants.
 
 **Exit demo (scripted, ~5 min, run for stakeholders before Phase 1 starts):**
 1. `git clone` → `docker compose up -d` on a clean machine, timed
-2. Sign up as owner, land in the onboarding wizard
+2. Sign up as owner, land in the onboarding wizard — this account becomes the Primary Owner
 3. Set business profile + logo, pick the Construction industry template
 4. Confirm currency, financial year, tax rate, chart of accounts — accept defaults
-5. Invite a second user, assign them the Staff role
-6. Toggle dark mode; toggle back — confirm it persists after a refresh
-7. Open Storybook, show 5–6 components in both theme presets
-8. Open a database client, manually insert one balanced journal entry and one deliberately unbalanced one — show the constraint rejecting the second
+5. Invite a second user, assign them the Staff role, put them in the default "General Staff" Team
+6. Open the new Users/Teams/Permissions area from the sidebar, create a second Team with a narrower privilege matrix, promote the second user to Owner
+7. Open the personal Profile & Preferences page, edit a display name
+8. Toggle dark mode; toggle back — confirm it persists after a refresh
+9. Open Storybook, show 5–6 components in both theme presets
+10. Open a database client, manually insert one balanced journal entry and one deliberately unbalanced one — show the constraint rejecting the second
 
 Nothing in this script is customer-facing, so it's not a substitute for Phase 1 — it's proof that five weeks produced a real, working foundation rather than five weeks of scaffolding nobody can see. Worth recording as a short screen capture; it's also the natural seed for the eventual README demo.
 

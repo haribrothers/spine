@@ -1,4 +1,4 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   pgTable,
   text,
@@ -120,10 +120,26 @@ export const member = pgTable(
      */
     isActive: boolean("is_active").default(true).notNull(),
     deactivatedAt: timestamp("deactivated_at"),
+    /**
+     * PRD §2.1/§7 — the instance's super-admin. Exactly one member row per
+     * organisation may have this set; enforced below by a partial unique
+     * index rather than relying on application logic alone. Set once, on
+     * the very first signup (see auth.ts's user.create.after hook), and
+     * moved only via an explicit transfer action — never a side effect of
+     * promote/demote or deactivation.
+     */
+    isPrimaryOwner: boolean("is_primary_owner").default(false).notNull(),
   },
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),
     index("member_userId_idx").on(table.userId),
+    // At most one primary owner per org. "At least one exists" is an
+    // application invariant (signup hook + promote/demote/transfer
+    // endpoints never allow the last one to be removed), not something a
+    // DB constraint alone can express.
+    uniqueIndex("member_org_primary_owner_uidx")
+      .on(table.organizationId)
+      .where(sql`${table.isPrimaryOwner} = true`),
   ],
 );
 

@@ -1,8 +1,17 @@
+import { CAPABILITIES, DEFAULT_TEAM_GRANTS, DEFAULT_TEAM_NAME } from "@spine/shared";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { auth } from "./auth";
 import { createDb, type Database } from "../db/client";
-import { accounts, member, organization, session as sessionTable, user } from "../db/schema";
+import {
+  accounts,
+  member,
+  organization,
+  session as sessionTable,
+  teamPrivileges,
+  teams,
+  user,
+} from "../db/schema";
 import * as chartOfAccountsModule from "../db/seed/chart-of-accounts";
 
 /**
@@ -69,6 +78,60 @@ describe("signup (requires local Postgres)", () => {
     const [signupSession] = await db.select().from(sessionTable).where(eq(sessionTable.userId, userId));
     expect(signupSession).toBeDefined();
     expect(signupSession!.activeOrganizationId).toBe(orgId);
+
+    // PRD §2.1/§7: the first signup on a fresh instance is always its
+    // Primary Owner.
+    expect(membership!.isPrimaryOwner).toBe(true);
+
+    // PRD §2.1/S-10.13-14: every fresh org seeds a default "General Staff"
+    // team with the documented default grants, so a newly invited Staff
+    // user has sensible access with zero extra owner setup.
+    const [defaultTeam] = await db.select().from(teams).where(eq(teams.orgId, orgId));
+    expect(defaultTeam).toBeDefined();
+    expect(defaultTeam!.name).toBe(DEFAULT_TEAM_NAME);
+    expect(defaultTeam!.isDefault).toBe(true);
+
+    const privileges = await db.select().from(teamPrivileges).where(eq(teamPrivileges.teamId, defaultTeam!.id));
+    expect(privileges).toHaveLength(CAPABILITIES.length);
+    const grantsByCapability = Object.fromEntries(privileges.map((p) => [p.capability, p.granted]));
+    expect(grantsByCapability).toEqual(DEFAULT_TEAM_GRANTS);
+  });
+
+  it("rejects a second Primary Owner in the same org at the database level", async () => {
+    const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
+    db = createDb(databaseUrl);
+
+    const primaryEmail = `signup-primary-${Date.now()}@example.com`;
+    createdEmails.push(primaryEmail);
+
+    const primary = await auth.api.signUpEmail({
+      body: { email: primaryEmail, password: "testpassword123", name: "Primary Owner" },
+    });
+    const [primaryMembership] = await db.select().from(member).where(eq(member.userId, primary.user.id));
+    const orgId = primaryMembership!.organizationId;
+
+    // Simulate promoting a second member to Owner and attempting to also
+    // mark them Primary Owner (an application bug this partial unique
+    // index exists specifically to prevent) by inserting a second member
+    // row for the same org with isPrimaryOwner already true. postgres-js
+    // wraps the real Postgres error as `.cause` behind a generic "Failed
+    // query" top-level message, so assert on the cause, not `.message`.
+    let caught: unknown;
+    try {
+      await db.insert(member).values({
+        id: `test-second-owner-${Date.now()}`,
+        organizationId: orgId,
+        userId: primary.user.id, // reusing the same user is irrelevant to this check — the index is keyed on organizationId alone
+        role: "owner",
+        createdAt: new Date(),
+        isPrimaryOwner: true,
+      });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeDefined();
+    const cause = caught instanceof Error ? (caught.cause ?? caught) : caught;
+    expect(String(cause)).toMatch(/duplicate key|unique constraint|member_org_primary_owner_uidx/i);
   });
 
   it("deletes the orphaned user instead of leaving a broken account when org setup fails mid-signup", async () => {
