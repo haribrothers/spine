@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, LayoutDashboard, Package, Receipt, Target, Users } from "lucide-react";
+import { Banknote, CalendarDays, FileText, LayoutDashboard, Package, Receipt, Target, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -34,6 +34,9 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
   },
   {
     label: "Billing",
-    items: [{ href: "/invoices", label: "Invoices", icon: <Receipt /> }],
+    items: [
+      { href: "/invoices", label: "Invoices", icon: <Receipt /> },
+      { href: "/payments", label: "Payments", icon: <Banknote /> },
+    ],
   },
 ];
