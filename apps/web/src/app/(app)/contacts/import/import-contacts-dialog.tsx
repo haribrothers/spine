@@ -9,6 +9,7 @@ import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -173,8 +174,8 @@ export function ImportContactsDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent size="md" className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden p-0">
-        <DialogHeader className="px-5 pt-5">
+      <DialogContent size="md" className="w-full max-w-2xl">
+        <DialogHeader>
           <DialogTitle>Import contacts from CSV</DialogTitle>
           <DialogDescription>
             {step === "upload" && "Upload a CSV exported from a spreadsheet or another CRM."}
@@ -185,7 +186,7 @@ export function ImportContactsDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4 pb-5">
+        <DialogBody>
           {step === "upload" && (
             <label
               className={`flex cursor-pointer flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed py-16 text-center transition-colors ${
@@ -359,10 +360,10 @@ export function ImportContactsDialog({
               )}
             </div>
           )}
-        </div>
+        </DialogBody>
 
         {(step === "map" || step === "preview" || step === "results") && (
-          <DialogFooter className="px-5 pb-5">
+          <DialogFooter>
             {step === "map" && (
               <>
                 <Button variant="secondary" onClick={() => setStep("upload")}>

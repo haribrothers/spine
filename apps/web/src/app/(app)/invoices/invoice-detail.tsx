@@ -9,6 +9,7 @@ import {
   Button,
   Card,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -359,21 +360,23 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               Posts a reversing journal entry and marks {invoice.number} as void. This cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          {voidError && (
-            <Alert variant="critical">
-              <AlertDescription>{voidError}</AlertDescription>
-            </Alert>
-          )}
-          <FormField label="Reason" required>
-            {(field) => (
-              <Input
-                {...field}
-                value={voidReason}
-                onChange={(e) => setVoidReason(e.target.value)}
-                placeholder="Why is this invoice being voided?"
-              />
+          <DialogBody className="flex flex-col gap-4">
+            {voidError && (
+              <Alert variant="critical">
+                <AlertDescription>{voidError}</AlertDescription>
+              </Alert>
             )}
-          </FormField>
+            <FormField label="Reason" required>
+              {(field) => (
+                <Input
+                  {...field}
+                  value={voidReason}
+                  onChange={(e) => setVoidReason(e.target.value)}
+                  placeholder="Why is this invoice being voided?"
+                />
+              )}
+            </FormField>
+          </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setVoidOpen(false)} disabled={busy}>
               Cancel

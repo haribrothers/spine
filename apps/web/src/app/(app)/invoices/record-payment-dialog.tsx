@@ -7,6 +7,7 @@ import {
   Button,
   DatePicker,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -226,7 +227,7 @@ export function RecordPaymentDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg" className="flex max-h-[85vh] flex-col gap-4 overflow-y-auto p-6">
+      <DialogContent size="lg">
         <DialogHeader>
           <DialogTitle>Record a payment</DialogTitle>
           <DialogDescription>
@@ -235,102 +236,104 @@ export function RecordPaymentDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {error && (
-          <Alert variant="critical">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+        <DialogBody className="flex flex-col gap-4">
+          {error && (
+            <Alert variant="critical">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField label="Date" required>
-            {() => <DatePicker value={date} onChange={setDate} />}
-          </FormField>
-          <FormField label="Method" required>
-            {() => (
-              <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {METHOD_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </FormField>
-          <FormField label="Reference" helperText="Cheque number, transaction ID, etc.">
-            {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" />}
-          </FormField>
-          <FormField label="Amount" required>
-            {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
-          </FormField>
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
-            <span className="text-[12px] text-on-surface-muted">
-              Unallocated: {toDecimalString({ amount: unallocated, currency })} {currency}
-            </span>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Date" required>
+              {() => <DatePicker value={date} onChange={setDate} />}
+            </FormField>
+            <FormField label="Method" required>
+              {() => (
+                <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {METHOD_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Reference" helperText="Cheque number, transaction ID, etc.">
+              {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" />}
+            </FormField>
+            <FormField label="Amount" required>
+              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+            </FormField>
           </div>
 
-          {outstanding === null ? (
-            <div className="flex justify-center py-6">
-              <Spinner size="sm" />
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
+              <span className="text-[12px] text-on-surface-muted">
+                Unallocated: {toDecimalString({ amount: unallocated, currency })} {currency}
+              </span>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
-              {allocations.length === 0 && (
-                <p className="text-[13px] text-on-surface-muted">
-                  No invoice allocated — this payment will sit as unallocated customer credit until applied later.
-                </p>
-              )}
-              {allocations.map((row) => (
-                <div key={row.invoiceId} className="flex items-center gap-2">
-                  <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
-                  <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
-                    Balance {toDecimalString({ amount: row.balanceDue, currency })}
-                  </span>
-                  <div className="flex-1">
-                    <MoneyInput
-                      value={row.amount}
-                      onValueChange={(v) => updateAllocationAmount(row.invoiceId, v > row.balanceDue ? row.balanceDue : v)}
-                      currency={currency}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    aria-label={`Remove allocation to ${row.invoiceNumber ?? "invoice"}`}
-                    onClick={() => removeAllocation(row.invoiceId)}
-                    className="shrink-0 text-[12px] text-on-surface-muted underline hover:text-overdue"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
 
-              {unallocatedInvoices.length > 0 && (
-                <div className="pt-1">
-                  <Select value="" onValueChange={addAllocationRow}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Allocate to another invoice…" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {unallocatedInvoices.map((inv) => (
-                        <SelectItem key={inv.id} value={inv.id}>
-                          {inv.number ?? "Unnumbered"} — balance {toDecimalString({ amount: BigInt(inv.balanceDue), currency })}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+            {outstanding === null ? (
+              <div className="flex justify-center py-6">
+                <Spinner size="sm" />
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                {allocations.length === 0 && (
+                  <p className="text-[13px] text-on-surface-muted">
+                    No invoice allocated — this payment will sit as unallocated customer credit until applied later.
+                  </p>
+                )}
+                {allocations.map((row) => (
+                  <div key={row.invoiceId} className="flex items-center gap-2">
+                    <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
+                    <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
+                      Balance {toDecimalString({ amount: row.balanceDue, currency })}
+                    </span>
+                    <div className="flex-1">
+                      <MoneyInput
+                        value={row.amount}
+                        onValueChange={(v) => updateAllocationAmount(row.invoiceId, v > row.balanceDue ? row.balanceDue : v)}
+                        currency={currency}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Remove allocation to ${row.invoiceNumber ?? "invoice"}`}
+                      onClick={() => removeAllocation(row.invoiceId)}
+                      className="shrink-0 text-[12px] text-on-surface-muted underline hover:text-overdue"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))}
+
+                {unallocatedInvoices.length > 0 && (
+                  <div className="pt-1">
+                    <Select value="" onValueChange={addAllocationRow}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Allocate to another invoice…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {unallocatedInvoices.map((inv) => (
+                          <SelectItem key={inv.id} value={inv.id}>
+                            {inv.number ?? "Unnumbered"} — balance {toDecimalString({ amount: BigInt(inv.balanceDue), currency })}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogBody>
 
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>

@@ -13,6 +13,7 @@ import {
   Button,
   Combobox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -185,7 +186,7 @@ export function LeadDialog({
           <DialogHeader>
             <DialogTitle>{lead ? "Edit lead" : "Add lead"}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
+          <DialogBody className="flex flex-col gap-3">
             <FormField label="Contact">
               {(field) => (
                 <Combobox
@@ -238,7 +239,7 @@ export function LeadDialog({
                 />
               )}
             </FormField>
-          </div>
+          </DialogBody>
           <DialogFooter className="justify-between">
             {lead ? (
               <Button variant="ghost" onClick={() => setConfirmDelete(true)} className="text-overdue hover:text-overdue">

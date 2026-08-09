@@ -3,6 +3,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogHeader,
   DialogTitle,
@@ -179,16 +180,18 @@ export default () => (
     <DialogHeader>
       <DialogTitle>Change status</DialogTitle>
     </DialogHeader>
-    <Select defaultValue="draft">
-      <SelectTrigger className="w-full">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="draft">Draft</SelectItem>
-        <SelectItem value="sent">Sent</SelectItem>
-        <SelectItem value="paid">Paid</SelectItem>
-      </SelectContent>
-    </Select>
+    <DialogBody>
+      <Select defaultValue="draft">
+        <SelectTrigger className="w-full">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="draft">Draft</SelectItem>
+          <SelectItem value="sent">Sent</SelectItem>
+          <SelectItem value="paid">Paid</SelectItem>
+        </SelectContent>
+      </Select>
+    </DialogBody>
   </DialogContent>
 </Dialog>`}
         >
@@ -200,16 +203,18 @@ export default () => (
               <DialogHeader>
                 <DialogTitle>Change status</DialogTitle>
               </DialogHeader>
-              <Select defaultValue="draft">
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="sent">Sent</SelectItem>
-                  <SelectItem value="paid">Paid</SelectItem>
-                </SelectContent>
-              </Select>
+              <DialogBody>
+                <Select defaultValue="draft">
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="paid">Paid</SelectItem>
+                  </SelectContent>
+                </Select>
+              </DialogBody>
             </DialogContent>
           </Dialog>
         </ComponentPreview>

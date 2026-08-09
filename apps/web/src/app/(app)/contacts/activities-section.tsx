@@ -6,6 +6,7 @@ import {
   Button,
   Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -150,7 +151,7 @@ export function ActivitiesSection({
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit activity" : "Log activity"}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
+          <DialogBody className="flex flex-col gap-3">
             <FormField label="Type">
               {(field) => (
                 <Select value={type} onValueChange={(v) => setType(v as ActivityType)}>
@@ -173,7 +174,7 @@ export function ActivitiesSection({
             <FormField label="Follow-up date" helperText="Leave blank if there's nothing to follow up on.">
               {(field) => <Input {...field} type="date" value={dueAt} onChange={(e) => setDueAt(e.target.value)} />}
             </FormField>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel

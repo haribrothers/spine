@@ -5,6 +5,7 @@ import {
   Badge,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -138,7 +139,7 @@ export function LeadsSection({
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit lead" : "Add lead"}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
+          <DialogBody className="flex flex-col gap-3">
             <FormField label="Title">
               {(field) => <Input {...field} value={title} onChange={(e) => setTitle(e.target.value)} />}
             </FormField>
@@ -164,7 +165,7 @@ export function LeadsSection({
             <FormField label="Currency">
               {(field) => <Input {...field} value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} className="w-24" />}
             </FormField>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel

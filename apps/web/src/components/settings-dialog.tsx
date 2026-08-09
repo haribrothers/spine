@@ -88,7 +88,7 @@ export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenCh
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent size="lg" aria-describedby={undefined}>
         <DialogTitle className="sr-only">Settings</DialogTitle>
-        <div className="flex h-full min-h-0">
+        <div className="flex min-h-0 flex-1">
           <div className="flex w-64 shrink-0 flex-col gap-3 border-r border-border p-4">
             <div className="relative">
               <Search

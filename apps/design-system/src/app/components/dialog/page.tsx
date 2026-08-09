@@ -1,6 +1,7 @@
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -8,6 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  FormField,
+  Textarea,
 } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { ApiTable, DocLead, DocSection, DocSubsection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
@@ -35,6 +38,9 @@ export default function DialogPage() {
                 This cannot be undone. A reversing entry will be posted to the ledger.
               </DialogDescription>
             </DialogHeader>
+            <DialogBody>
+              <p className="text-[13px] text-on-surface-muted">No content needed for a bare confirmation.</p>
+            </DialogBody>
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="secondary">Cancel</Button>
@@ -58,7 +64,13 @@ export default function DialogPage() {
       </DocSection>
 
       <DocSection id="anatomy" title="Anatomy">
-        <DocLead>Import the parts and piece them together.</DocLead>
+        <DocLead>
+          Import the parts and piece them together. <code>DialogHeader</code> and{" "}
+          <code>DialogFooter</code> are fixed to the top/bottom and never scroll — only{" "}
+          <code>DialogBody</code>, the region between them, scrolls when its content grows
+          past the dialog&apos;s own height cap. This mirrors Drawer&apos;s exact
+          header/body/footer split (see Drawer&apos;s own docs).
+        </DocLead>
         <CodeBlock
           code={`import {
   Dialog,
@@ -67,6 +79,7 @@ export default function DialogPage() {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogBody,
   DialogFooter,
   DialogClose,
 } from "@spine/ui";
@@ -79,6 +92,9 @@ export default () => (
         <DialogTitle />
         <DialogDescription />
       </DialogHeader>
+      <DialogBody>
+        {/* form fields, lists, anything that might outgrow the dialog */}
+      </DialogBody>
       <DialogFooter>
         <DialogClose />
       </DialogFooter>
@@ -104,7 +120,14 @@ export default () => (
           <ApiTable rows={[{ prop: "asChild", type: "boolean", defaultValue: "false" }]} />
         </DocSubsection>
         <DocSubsection id="dialog-content" title="DialogContent">
-          <DocLead>Contains content to be rendered when the dialog is open, including a built-in close button.</DocLead>
+          <DocLead>
+            A height-bounded flex column (<code>max-h-[85vh]</code> at <code>size=&quot;md&quot;</code>, a
+            fixed <code>h-[min(720px,85vh)]</code> at <code>size=&quot;lg&quot;</code>) containing a built-in
+            close button. Compose <code>DialogHeader</code>/<code>DialogBody</code>/<code>DialogFooter</code>{" "}
+            inside it so only the body scrolls — a dialog that builds its own internal layout
+            instead (e.g. a settings dialog with a nav pane) can skip all three and manage its
+            own <code>h-full</code> flex column directly.
+          </DocLead>
           <ApiTable
             rows={[
               { prop: "size", type: '"md" | "lg"', defaultValue: '"md"' },
@@ -114,6 +137,16 @@ export default () => (
               { prop: "onPointerDownOutside", type: "(event: PointerDownOutsideEvent) => void" },
             ]}
           />
+        </DocSubsection>
+        <DocSubsection id="dialog-body" title="DialogBody">
+          <DocLead>
+            The only scrollable region between <code>DialogHeader</code> and{" "}
+            <code>DialogFooter</code> (<code>flex-1 overflow-y-auto</code>). Owns its own
+            padding, matching <code>DrawerBody</code> exactly — reach for it whenever a
+            dialog has a footer AND content that could plausibly outgrow the dialog&apos;s
+            height cap (a form, a list, a table). A bare confirmation with no footer doesn&apos;t
+            need it.
+          </DocLead>
         </DocSubsection>
         <DocSubsection id="dialog-title" title="DialogTitle / DialogDescription">
           <DocLead>An accessible name and description read by screen readers when the dialog opens.</DocLead>
@@ -168,6 +201,61 @@ export default () => (
                     <Button variant="secondary">Cancel</Button>
                   </DialogClose>
                   <Button variant="danger">Void invoice</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </ComponentPreview>
+        </DocSubsection>
+
+        <DocSubsection id="scrollable-body" title="Scrollable body, pinned header and footer">
+          <DocLead>
+            Wrap form content in <code>DialogBody</code> so a tall form scrolls internally
+            while the title and action buttons stay pinned in view — the footer never gets
+            pushed off-screen no matter how much content the body holds.
+          </DocLead>
+          <ComponentPreview
+            code={`<Dialog>
+  <DialogTrigger asChild>
+    <Button variant="secondary">Record a payment</Button>
+  </DialogTrigger>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Record a payment</DialogTitle>
+      <DialogDescription>Allocate it across outstanding invoices.</DialogDescription>
+    </DialogHeader>
+    <DialogBody className="flex flex-col gap-4">
+      <FormField label="Notes">
+        {(field) => <Textarea {...field} rows={8} placeholder="Long content that needs to scroll…" />}
+      </FormField>
+    </DialogBody>
+    <DialogFooter>
+      <DialogClose asChild>
+        <Button variant="secondary">Cancel</Button>
+      </DialogClose>
+      <Button>Record payment</Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>`}
+          >
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="secondary">Record a payment</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Record a payment</DialogTitle>
+                  <DialogDescription>Allocate it across outstanding invoices.</DialogDescription>
+                </DialogHeader>
+                <DialogBody className="flex flex-col gap-4">
+                  <FormField label="Notes">
+                    {(field) => <Textarea {...field} rows={8} placeholder="Long content that needs to scroll…" />}
+                  </FormField>
+                </DialogBody>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="secondary">Cancel</Button>
+                  </DialogClose>
+                  <Button>Record payment</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

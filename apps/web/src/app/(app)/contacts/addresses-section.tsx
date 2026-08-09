@@ -13,6 +13,7 @@ import {
   AlertDialogTrigger,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -174,7 +175,7 @@ export function AddressesSection({
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit address" : "Add address"}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
+          <DialogBody className="flex flex-col gap-3">
             <FormField label="Type">
               {(field) => (
                 <Select value={type} onValueChange={(v) => setType(v as AddressType)}>
@@ -197,7 +198,7 @@ export function AddressesSection({
             <FormField label="City">
               {(field) => <Input {...field} value={city} onChange={(e) => setCity(e.target.value)} />}
             </FormField>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel

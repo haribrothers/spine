@@ -5,6 +5,7 @@ import Cropper, { type Area } from "react-easy-crop";
 import {
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -81,35 +82,37 @@ export function LogoCropDialog({
           <DialogTitle>Crop logo</DialogTitle>
         </DialogHeader>
 
-        {imageSrc && (
-          <div className="relative h-64 w-full overflow-hidden rounded-md bg-surface-sunken">
-            <Cropper
-              image={imageSrc}
-              crop={crop}
-              zoom={zoom}
-              aspect={1}
-              cropShape={cropShape}
-              showGrid={false}
-              onCropChange={setCrop}
-              onZoomChange={setZoom}
-              onCropComplete={onCropComplete}
+        <DialogBody>
+          {imageSrc && (
+            <div className="relative h-64 w-full overflow-hidden rounded-md bg-surface-sunken">
+              <Cropper
+                image={imageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape={cropShape}
+                showGrid={false}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={onCropComplete}
+              />
+            </div>
+          )}
+
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-[12px] text-on-surface-muted">Zoom</span>
+            <Slider
+              value={[zoom]}
+              onValueChange={([value]) => setZoom(value ?? 1)}
+              min={1}
+              max={3}
+              step={0.01}
+              className="flex-1"
             />
           </div>
-        )}
 
-        <div className="mt-4 flex items-center gap-3">
-          <span className="text-[12px] text-on-surface-muted">Zoom</span>
-          <Slider
-            value={[zoom]}
-            onValueChange={([value]) => setZoom(value ?? 1)}
-            min={1}
-            max={3}
-            step={0.01}
-            className="flex-1"
-          />
-        </div>
-
-        {error && <p className="mt-2 text-[12px] text-overdue">{error}</p>}
+          {error && <p className="mt-2 text-[12px] text-overdue">{error}</p>}
+        </DialogBody>
 
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={resetAndCancel} disabled={saving}>

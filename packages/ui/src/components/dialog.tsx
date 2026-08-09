@@ -21,19 +21,31 @@ export const DialogOverlay = forwardRef<
 ));
 DialogOverlay.displayName = "DialogOverlay";
 
+/**
+ * Both sizes are height-BOUNDED (`max-h-[85vh]`/a fixed height), never
+ * content-driven past that cap — this is what makes `DialogBody`'s scroll
+ * containment actually do something: a dialog that could grow without
+ * limit would never need its middle region to scroll, the footer would
+ * just get pushed along with everything else. `"md"` still shrinks to fit
+ * short content (no fixed height, just a ceiling); `"lg"` keeps its
+ * original fixed `h-[min(720px,85vh)]` for tall multi-pane content like a
+ * settings dialog. Neither has padding here anymore — `DialogHeader`/
+ * `DialogBody`/`DialogFooter` each own their own, matching Drawer's exact
+ * split (see drawer.tsx) — a dialog NOT using those three (e.g. Settings,
+ * which builds its own internal two-pane layout) is unaffected and keeps
+ * doing its own thing inside a plain `h-full` flex column.
+ */
 const DIALOG_SIZES = {
-  md: "max-w-md p-5",
-  lg: "max-w-4xl h-[min(720px,85vh)] p-0",
+  md: "max-w-md max-h-[85vh]",
+  lg: "max-w-4xl h-[min(720px,85vh)]",
 } as const;
 
 export interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
   /**
    * `"md"` (default) is the standard centered task dialog (e.g. confirming
-   * a void). `"lg"` is a large, tall panel for multi-pane content like a
-   * settings dialog (roughly 2/3 viewport width, near-full height) — it
-   * drops the default padding since large panels typically compose their
-   * own internal panes (e.g. a nav column + content column) that need to
-   * control their own padding independently.
+   * a void, or a form like Record Payment). `"lg"` is a large, tall panel
+   * for multi-pane content like a settings dialog (roughly 2/3 viewport
+   * width, near-full height).
    */
   size?: keyof typeof DIALOG_SIZES;
 }
@@ -45,7 +57,7 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          "fixed left-1/2 top-1/2 z-[var(--z-modal)] w-full -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-surface shadow-[0_10px_30px_rgba(33,31,26,0.14)] focus:outline-none",
+          "fixed left-1/2 top-1/2 z-[var(--z-modal)] flex w-full -translate-x-1/2 -translate-y-1/2 flex-col rounded-lg border border-border bg-surface shadow-[0_10px_30px_rgba(33,31,26,0.14)] focus:outline-none",
           DIALOG_SIZES[size],
           className,
         )}
@@ -64,8 +76,23 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
 );
 DialogContent.displayName = "DialogContent";
 
+/** Fixed to the top, never scrolls. Owns its own padding — matches DrawerHeader exactly. */
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mb-4 flex flex-col gap-1 pr-6", className)} {...props} />;
+  return <div className={cn("flex shrink-0 flex-col gap-1 p-5 pr-11", className)} {...props} />;
+}
+
+/**
+ * The only scrollable region of a Dialog that uses the header/body/footer
+ * split — sits between `DialogHeader` and `DialogFooter` and fills the
+ * remaining height (`flex-1 overflow-y-auto`), matching `DrawerBody`
+ * exactly. Owns its own horizontal padding so header/footer stay flush
+ * with the dialog's edges (with their own border) while the body's
+ * content gets normal inset spacing. A dialog with no header/footer (a
+ * bare confirmation) doesn't need this — only reach for it once content
+ * can plausibly outgrow the dialog's own height cap.
+ */
+export function DialogBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("flex-1 overflow-y-auto p-5", className)} {...props} />;
 }
 
 export const DialogTitle = forwardRef<
@@ -84,6 +111,9 @@ export const DialogDescription = forwardRef<
 ));
 DialogDescription.displayName = "DialogDescription";
 
+/** Fixed to the bottom, never scrolls. Owns its own padding — matches DrawerFooter exactly. */
 export function DialogFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mt-5 flex items-center justify-end gap-2", className)} {...props} />;
+  return (
+    <div className={cn("flex shrink-0 items-center justify-end gap-2 border-t border-border p-5", className)} {...props} />
+  );
 }

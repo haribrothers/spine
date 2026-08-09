@@ -15,6 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -401,7 +402,9 @@ export function MeetingsCalendar() {
               {activityDetail?.event.title}
             </DialogTitle>
           </DialogHeader>
-          <p className="text-[13px] text-on-surface-muted">{activityDetail && `Due ${activityDetail.occurrenceStart.toLocaleString()}`}</p>
+          <DialogBody>
+            <p className="text-[13px] text-on-surface-muted">{activityDetail && `Due ${activityDetail.occurrenceStart.toLocaleString()}`}</p>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" size="sm" onClick={() => setActivityDetail(null)}>
               Close

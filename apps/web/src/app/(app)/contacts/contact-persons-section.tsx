@@ -16,6 +16,7 @@ import {
   AvatarImage,
   Button,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
@@ -194,7 +195,7 @@ export function ContactPersonsSection({
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit contact person" : "Add contact person"}</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-3">
+          <DialogBody className="flex flex-col gap-3">
             <ContactLogo name={name || "?"} fileId={logoFileId} editable onUploaded={(file) => setLogoFileId(file.id)} />
             <FormField label="Name" required>
               {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} />}
@@ -205,7 +206,7 @@ export function ContactPersonsSection({
             <FormField label="Email">
               {(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />}
             </FormField>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>
               Cancel
