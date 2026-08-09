@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterce
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
@@ -74,6 +75,7 @@ export class QuotesController {
   }
 
   @Post()
+  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -82,6 +84,7 @@ export class QuotesController {
   }
 
   @Put(":id")
+  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -98,6 +101,7 @@ export class QuotesController {
    * request or the number allocation it just performed).
    */
   @Post(":id/send")
+  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async send(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -105,15 +109,24 @@ export class QuotesController {
   }
 
   @Post(":id/revise")
+  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async revise(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.quotesService.revise(orgId, id, session.user.id);
   }
 
-  /** S-03.9 — owner-only, on top of this controller's own staff-inclusive default. */
+  /**
+   * S-03.9 — approval above the discount threshold. PRD §2.1 lists this as
+   * a Team-configurable capability (default: not granted), not a hard
+   * Owner-only action like "manage users/teams/permissions" — so this route
+   * now accepts staff too (previously @OrgRoles(["owner"]) only), gated by
+   * @RequireCapability instead. An Owner always passes regardless of Team
+   * grants (CapabilityGuard's own Owner bypass).
+   */
   @Post(":id/approve-discount")
-  @OrgRoles(["owner"])
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("quotes.approve_discount")
   @UseInterceptors(IdempotencyInterceptor)
   async approveDiscount(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -122,6 +135,7 @@ export class QuotesController {
 
   /** Only a draft is ever hard-deletable — see QuotesService.delete's own comment. */
   @Delete(":id")
+  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

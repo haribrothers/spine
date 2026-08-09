@@ -6,3 +6,4 @@ export * from "./quotes.ts";
 export * from "./invoices.ts";
 export * from "./payments.ts";
 export * from "./permissions.ts";
+export * from "./teams.ts";

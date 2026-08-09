@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Query, UseInterceptors } fr
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createPaymentSchema } from "@spine/shared";
 import { z } from "zod";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { PaymentsService } from "./payments.service";
@@ -38,6 +39,7 @@ export class PaymentsController {
 
   /** S-06.1/S-06.2/S-06.4/S-06.5 — records a payment, optionally allocating it across invoices in the same call. Optional `bankAccountId` in the body lets the caller pick which cash/bank account received the funds; omitted defaults to "Bank Account". */
   @Post()
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -48,6 +50,7 @@ export class PaymentsController {
 
   /** Only an unallocated payment is ever deletable — see PaymentsService.delete's own comment. */
   @Delete(":id")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

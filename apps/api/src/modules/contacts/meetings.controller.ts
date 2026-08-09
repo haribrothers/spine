@@ -1,6 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createMeetingSchema, updateMeetingSchema } from "@spine/shared";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { MeetingsService } from "./meetings.service";
@@ -33,6 +34,7 @@ export class MeetingsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -42,6 +44,7 @@ export class MeetingsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -51,6 +54,7 @@ export class MeetingsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

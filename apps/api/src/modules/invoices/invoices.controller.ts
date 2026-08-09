@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterce
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
 import type { Response } from "express";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
@@ -47,6 +48,7 @@ export class InvoicesController {
   }
 
   @Post()
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -55,6 +57,7 @@ export class InvoicesController {
   }
 
   @Put(":id")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -64,6 +67,7 @@ export class InvoicesController {
 
   /** S-05.3 — allocates the gapless number, flips to issued, posts the "Invoice issued" journal entry (§7.2). Optional `revenueAccountId` in the body lets the caller pick an income account; omitted defaults to "Sales — Services". */
   @Post(":id/issue")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string } = {}) {
     const orgId = requireOrgId(session);
@@ -72,6 +76,7 @@ export class InvoicesController {
 
   /** S-05.7 — queues emailing the invoice PDF to its contact. Deliberately separate from `issue` — see InvoicesService.sendEmail's own doc comment. */
   @Post(":id/send-email")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -80,6 +85,7 @@ export class InvoicesController {
 
   /** S-05.8 — void with a required reason; posts a reversing journal entry. */
   @Post(":id/void")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async void(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -89,6 +95,7 @@ export class InvoicesController {
 
   /** Only a draft is ever hard-deletable — see InvoicesService.delete's own comment. */
   @Delete(":id")
+  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

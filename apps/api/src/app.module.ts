@@ -3,9 +3,11 @@ import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { auth } from "./auth/auth";
+import { CapabilityGuard } from "./auth/capability.guard";
 import { DbModule } from "./db/db.module";
 import { HealthModule } from "./health/health.module";
 import { OrgModule } from "./modules/org/org.module";
+import { TeamsModule } from "./modules/teams/teams.module";
 import { UsersModule } from "./modules/users/users.module";
 import { ContactsModule } from "./modules/contacts/contacts.module";
 import { CatalogModule } from "./modules/catalog/catalog.module";
@@ -46,6 +48,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     PdfModule,
     HealthModule,
     OrgModule,
+    TeamsModule,
     UsersModule,
     ContactsModule,
     CatalogModule,
@@ -65,6 +68,13 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     DemoDataModule,
     DashboardModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Must be declared after AuthModule.forRoot(...) above (which
+    // self-registers its own AuthGuard as a global APP_GUARD) so AuthGuard
+    // runs first and populates request.session before this guard reads it
+    // — see CapabilityGuard's own doc comment for the full reasoning.
+    { provide: APP_GUARD, useClass: CapabilityGuard },
+  ],
 })
 export class AppModule {}

@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createContactSchema, updateContactSchema } from "@spine/shared";
 import { z } from "zod";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { ContactsService } from "./contacts.service";
@@ -71,6 +72,7 @@ export class ContactsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -87,6 +89,7 @@ export class ContactsController {
    */
   @Post("import")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async import(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -96,6 +99,7 @@ export class ContactsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -105,6 +109,7 @@ export class ContactsController {
 
   @Post(":id/archive")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async archive(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -113,6 +118,7 @@ export class ContactsController {
 
   @Post(":id/restore")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async restore(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -121,6 +127,7 @@ export class ContactsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
