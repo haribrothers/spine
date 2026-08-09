@@ -7,6 +7,34 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { PaymentsService } from "../payments/payments.service";
+import { SettingsService } from "../org/settings.service";
+
+/**
+ * S-12.8/F12 — "load demo data" now also seeds the org's own identity
+ * (`business_profile`/`industry_template`/`currency`, per `SettingsService`'s
+ * own doc comment on their shapes), not just contacts/catalogue/quotes/
+ * invoices/payments. Previously a demo org had no name/address/industry at
+ * all — every quote/invoice PDF's header rendered blank, and Settings'
+ * Business/Template panes showed nothing, even though the rest of the org
+ * looked fully populated. No logo — seeding a fake one would need a real
+ * S3/MinIO upload through `FilesService` from inside a seed script, which
+ * is real scope no story asked for; the PDF header degrades to text-only
+ * with no logo exactly as it already does for any real org that hasn't
+ * uploaded one, so this isn't a functional gap, just a cosmetic one.
+ * "Construction" is picked for the template/currency to match the DEMO_
+ * CONTACTS/DEMO_CATALOG_ITEMS below, which are already construction-themed
+ * (site surveys, framing lumber, concrete, etc.) — a demo org that looked
+ * construction-flavored in its data but was tagged "generic" in Settings
+ * would be a confusing mismatch for anyone evaluating the industry-template
+ * feature specifically.
+ */
+const DEMO_BUSINESS_PROFILE = {
+  name: "Riverstone Builders",
+  address: "220 Timberline Ave, Suite 4, Burlington, VT 05401",
+  industry: "General contracting & construction",
+};
+const DEMO_INDUSTRY_TEMPLATE = { template: "construction" as const };
+const DEMO_CURRENCY = { code: "USD", locale: "en-US" };
 
 type DemoContactSeed = {
   type: "customer" | "vendor" | "both";
@@ -377,9 +405,31 @@ export class DemoDataService {
     private readonly quotesService: QuotesService,
     private readonly invoicesService: InvoicesService,
     private readonly paymentsService: PaymentsService,
+    private readonly settingsService: SettingsService,
   ) {}
 
+  /**
+   * Only writes a setting if the org doesn't already have one at that key —
+   * a real guard, not a formality: `seed()` is safe to call twice (re-
+   * running it only ever adds more demo rows, per this class's own
+   * established convention), and a second run must not clobber a business
+   * profile the owner has since edited by hand. In practice this only ever
+   * fires on a genuinely fresh org, since the only caller of `POST
+   * /demo-data/seed` is the onboarding welcome step, which runs before any
+   * settings step could have set these — but the guard costs nothing and
+   * makes that assumption explicit rather than silently relied on.
+   */
+  private async seedSettingIfUnset(orgId: string, key: string, value: unknown): Promise<void> {
+    const existing = await this.settingsService.get(orgId, key);
+    if (existing !== null) return;
+    await this.settingsService.set(orgId, key, value);
+  }
+
   async seed(orgId: string, actorUserId: string) {
+    await this.seedSettingIfUnset(orgId, "business_profile", DEMO_BUSINESS_PROFILE);
+    await this.seedSettingIfUnset(orgId, "industry_template", DEMO_INDUSTRY_TEMPLATE);
+    await this.seedSettingIfUnset(orgId, "currency", DEMO_CURRENCY);
+
     const [currencySetting] = await this.db
       .select()
       .from(settings)
