@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
 import { ThemeToggle } from "../../../components/theme-toggle";
 
@@ -15,6 +16,12 @@ interface InvitationInfo {
   organizationName: string;
   organizationSlug: string;
   inviterEmail: string;
+}
+
+interface PublicInvitationPreview {
+  email: string;
+  role: string;
+  organizationName: string;
 }
 
 /**
@@ -36,7 +43,26 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
   const [acting, setActing] = useState<"accept" | "reject" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
+  // Pre-auth-only: Better Auth's own getInvitation requires a session
+  // matching the invited email (see this file's header comment) so it
+  // can't be used to pre-fill the signup form. This hits our own
+  // /public/invitations/:id instead, which exposes just the email/role/org
+  // name for a still-pending invitation — no session required, same trust
+  // model as a public quote-acceptance link.
+  const [preview, setPreview] = useState<PublicInvitationPreview | null>(null);
+
   const sessionEmail = session?.user?.email?.toLowerCase();
+
+  useEffect(() => {
+    if (sessionLoading || session) return;
+    apiClient
+      .get<PublicInvitationPreview>(`/public/invitations/${invitationId}`)
+      .then(setPreview)
+      .catch(() => {
+        // No preview available (expired/invalid) — NeedsAccountPrompt falls
+        // back to an unlocked email field rather than blocking sign up.
+      });
+  }, [invitationId, session, sessionLoading]);
 
   useEffect(() => {
     if (sessionLoading || !session) return;
@@ -106,7 +132,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
               <Spinner />
             </div>
           ) : !session ? (
-            <NeedsAccountPrompt invitationId={invitationId} />
+            <NeedsAccountPrompt invitationId={invitationId} email={preview?.email} />
           ) : loadingInvitation ? (
             <div className="flex justify-center py-4">
               <Spinner />
@@ -160,16 +186,23 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
   );
 }
 
-function NeedsAccountPrompt({ invitationId }: { invitationId: string }) {
-  // getInvitation itself requires an authenticated session (Better Auth
-  // won't reveal the invited email pre-auth — see this file's own top
-  // comment), so we can't pre-fill it here. The email match is checked
-  // AFTER sign up/log in, once a session exists.
+function NeedsAccountPrompt({ invitationId, email }: { invitationId: string; email?: string }) {
+  const signupHref = email
+    ? `/signup?inviteId=${invitationId}&email=${encodeURIComponent(email)}`
+    : `/signup?inviteId=${invitationId}`;
   return (
     <div className="flex flex-col gap-3 text-[13px]">
-      <p className="text-on-surface">Sign in or create an account with the email this invitation was sent to.</p>
+      <p className="text-on-surface">
+        {email ? (
+          <>
+            Sign in or create an account as <strong>{email}</strong> to accept this invitation.
+          </>
+        ) : (
+          "Sign in or create an account with the email this invitation was sent to."
+        )}
+      </p>
       <div className="flex gap-2">
-        <Link href={`/signup?inviteId=${invitationId}`} className="flex-1">
+        <Link href={signupHref} className="flex-1">
           <Button className="w-full">Create account</Button>
         </Link>
         <Link href={`/login?next=/accept-invite/${invitationId}`} className="flex-1">
