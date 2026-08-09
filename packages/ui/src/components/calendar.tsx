@@ -34,6 +34,7 @@ import { Button } from "./button";
 import { Combobox } from "./combobox";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -1148,7 +1149,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
             </DialogDescription>
           </DialogHeader>
 
-          <div className="flex max-h-[60vh] flex-col gap-4 overflow-y-auto pr-1">
+          <DialogBody className="flex flex-col gap-4">
             <Field>
               <Label htmlFor="calendar-event-title">Title</Label>
               <Input
@@ -1308,7 +1309,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
                 </Field>
               </div>
             )}
-          </div>
+          </DialogBody>
 
           <DialogFooter className="justify-between">
             <div>

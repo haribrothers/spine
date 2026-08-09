@@ -76,9 +76,9 @@ export const DialogContent = forwardRef<React.ElementRef<typeof DialogPrimitive.
 );
 DialogContent.displayName = "DialogContent";
 
-/** Fixed to the top, never scrolls. Owns its own padding — matches DrawerHeader exactly. */
+/** Fixed to the top, never scrolls. Owns its own padding — matches DrawerHeader exactly, including the bottom border separating it from DialogBody. */
 export function DialogHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex shrink-0 flex-col gap-1 p-5 pr-11", className)} {...props} />;
+  return <div className={cn("flex shrink-0 flex-col gap-1 border-b border-border p-5 pr-11", className)} {...props} />;
 }
 
 /**
