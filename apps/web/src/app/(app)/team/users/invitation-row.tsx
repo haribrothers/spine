@@ -40,13 +40,20 @@ export function InvitationRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-medium text-on-surface">{invitation.email}</span>
-          <Badge>{expired ? "Expired" : "Pending"}</Badge>
+          {expired ? <Badge className="bg-overdue-bg text-overdue">Expired</Badge> : <Badge>Pending</Badge>}
         </div>
         <span className="truncate text-on-surface-muted">
-          Invited as {ROLE_LABELS[invitation.role] ?? invitation.role}
+          {expired
+            ? `Invited as ${ROLE_LABELS[invitation.role] ?? invitation.role} — the link no longer works. Resend to invite again.`
+            : `Invited as ${ROLE_LABELS[invitation.role] ?? invitation.role}`}
         </span>
       </div>
-      <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => guarded("resend", () => onResend(invitation.id))}>
+      <Button
+        size="sm"
+        variant={expired ? "secondary" : "ghost"}
+        disabled={busy !== null}
+        onClick={() => guarded("resend", () => onResend(invitation.id))}
+      >
         {busy === "resend" ? <Spinner size="sm" /> : "Resend"}
       </Button>
       <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => guarded("cancel", () => onCancel(invitation.id))}>
