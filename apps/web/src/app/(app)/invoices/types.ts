@@ -88,3 +88,29 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   archivedAt: string | null;
 }
+
+export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: "Cash",
+  bank_transfer: "Bank transfer",
+  cheque: "Cheque",
+  card: "Card",
+  upi: "UPI",
+  other: "Other",
+};
+
+/** Mirrors GET /payments?invoiceId=:id's response shape (PaymentsService.listForInvoice) — a payment row plus how much of it was allocated specifically to this invoice, since one payment can span several invoices (S-06.2). */
+export interface InvoicePaymentRow {
+  id: string;
+  number: string | null;
+  date: string;
+  method: PaymentMethod;
+  reference: string | null;
+  currency: string;
+  amount: string;
+  allocatedAmount: string;
+  unallocatedAmount: string;
+  /** This payment's allocation specifically against the invoice being viewed — not the payment's own total. */
+  allocatedToThisInvoice: string;
+}

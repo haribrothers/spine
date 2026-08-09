@@ -61,6 +61,36 @@ export class PaymentsService {
     }));
   }
 
+  /**
+   * Every payment with at least one allocation against `invoiceId` — backs
+   * the invoice detail page's own "Payments" section. A real join through
+   * `payment_allocations` (not a `contactId` filter over `list()` above,
+   * which would also surface a payment allocated to a DIFFERENT invoice
+   * for the same contact, or an unallocated one, neither of which belongs
+   * here). Each row's own `amount` is the payment's full amount, not the
+   * portion applied to this invoice — `allocatedToThisInvoice` is that
+   * specific allocation's amount, since a single payment can legitimately
+   * span several invoices (S-06.2) and the page needs to show "how much of
+   * this payment applies here", not just "this payment touched this
+   * invoice".
+   */
+  async listForInvoice(orgId: string, invoiceId: string) {
+    const rows = await this.db
+      .select({ payment: payments, contactName: contacts.name, allocatedToThisInvoice: paymentAllocations.amount })
+      .from(paymentAllocations)
+      .innerJoin(payments, eq(paymentAllocations.paymentId, payments.id))
+      .leftJoin(contacts, eq(payments.contactId, contacts.id))
+      .where(and(eq(payments.orgId, orgId), eq(paymentAllocations.invoiceId, invoiceId)))
+      .orderBy(asc(payments.date));
+
+    return rows.map((r) => ({
+      ...r.payment,
+      contactName: r.contactName,
+      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount,
+      allocatedToThisInvoice: r.allocatedToThisInvoice,
+    }));
+  }
+
   async getOne(orgId: string, id: string) {
     const [row] = await this.db
       .select({ payment: payments, contactName: contacts.name })

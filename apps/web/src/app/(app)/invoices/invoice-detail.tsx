@@ -24,6 +24,7 @@ import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useEntityToast } from "./entity-toast";
+import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
 
@@ -60,6 +61,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentsRefreshKey, setPaymentsRefreshKey] = useState(0);
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -307,6 +309,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         </div>
       </Card>
 
+      <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
+
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
         <TotalRow
@@ -390,6 +394,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         presetBalanceDue={balanceDue}
         onRecorded={() => {
           load();
+          setPaymentsRefreshKey((key) => key + 1);
           showToast("Payment recorded", "The invoice's balance has been updated.");
         }}
       />

@@ -12,9 +12,13 @@ import { PaymentsService } from "./payments.service";
 export class PaymentsController {
   constructor(private readonly paymentsService: PaymentsService) {}
 
+  /** `invoiceId` dispatches to `listForInvoice` (a real join through payment_allocations, not a contactId filter) — backs the invoice detail page's own "Payments" section. Mutually exclusive with `contactId` in practice, but not enforced — `invoiceId` simply takes precedence when both are given, since no caller has a reason to pass both. */
   @Get()
-  async list(@Session() session: UserSession, @Query("contactId") contactId?: string) {
+  async list(@Session() session: UserSession, @Query("contactId") contactId?: string, @Query("invoiceId") invoiceId?: string) {
     const orgId = requireOrgId(session);
+    if (invoiceId) {
+      return this.paymentsService.listForInvoice(orgId, invoiceId);
+    }
     return this.paymentsService.list(orgId, { contactId });
   }
 
