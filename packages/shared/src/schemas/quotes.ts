@@ -27,7 +27,13 @@ export const quoteLineInputSchema = z.object({
   unitPriceAmount: z.coerce.bigint().default(0n),
   unitPriceCurrency: currencyCodeSchema.optional(),
   discountPercentage: z.coerce.number().min(0).max(100).default(0),
+  /** Legacy flat-percentage fallback, used only when neither taxRateId nor taxGroupId is set (FEAT-08). */
   taxRatePercentage: z.coerce.number().min(0).max(100).default(0),
+  /** At most one of these two — QuotesService rejects both being set. */
+  taxRateId: uuidSchema.optional().nullable(),
+  taxGroupId: uuidSchema.optional().nullable(),
+  /** S-08.2 — whether this line's unitPriceAmount is entered tax-inclusive. Defaults to the org's own setting client-side; always explicit on the wire. */
+  isTaxInclusive: z.boolean().default(false),
 });
 
 /**

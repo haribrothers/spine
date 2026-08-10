@@ -18,6 +18,9 @@ export interface InvoiceLine {
   unitPriceCurrency: string;
   discountPercentage: number;
   taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -88,7 +91,25 @@ export interface CatalogItemOption {
   defaultPriceAmount: string;
   defaultPriceCurrency: string;
   defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
   archivedAt: string | null;
+}
+
+/** FEAT-08 — used by the line editor's tax picker. Mirrors quotes/types.ts's identical shape. */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
 }
 
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";

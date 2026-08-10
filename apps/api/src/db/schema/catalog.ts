@@ -2,6 +2,7 @@ import { pgTable, uuid, text, bigint, boolean, real, timestamp, index } from "dr
 import { sql } from "drizzle-orm";
 import { organization } from "./auth";
 import { accounts } from "./ledger";
+import { taxRates, taxGroups } from "./tax";
 
 /**
  * PRD F2 — goods/services with a unit, default price and default tax rate,
@@ -62,7 +63,17 @@ export const catalogItems = pgTable(
     category: text("category"),
     defaultPriceAmount: bigint("default_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     defaultPriceCurrency: text("default_price_currency").notNull(),
+    /**
+     * Legacy flat percentage, kept only as a fallback display value for
+     * items created before FEAT-08's real tax_rates table existed. New
+     * writes should set `defaultTaxRateId`/`defaultTaxGroupId` instead —
+     * CatalogService keeps this column in sync (mirrors the chosen rate's
+     * blended percentage) purely so nothing reading it directly breaks.
+     */
     defaultTaxRatePercentage: real("default_tax_rate_percentage").notNull().default(0),
+    /** At most one of these two is set — enforced at the service layer, same convention as quote_lines/invoice_lines. */
+    defaultTaxRateId: uuid("default_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    defaultTaxGroupId: uuid("default_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     incomeAccountId: uuid("income_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     expenseAccountId: uuid("expense_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     /** Same demo-data marker as contacts.isDemo — see that column's comment. */

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
-import { computeLineTax, money } from "@spine/shared";
+import { computeLineTax, money, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import type { CatalogItemOption, QuoteLineType } from "./types";
+import type { CatalogItemOption, QuoteLineType, TaxGroupOption, TaxRateOption } from "./types";
 
 /** Client-side line shape while editing — money fields as `bigint` (never a float), matching MoneyInput's own contract. Not the same as the API's QuoteLine (which serializes bigints as strings and includes server-computed fields this component doesn't need pre-save). */
 export interface EditableQuoteLine {
@@ -18,7 +18,11 @@ export interface EditableQuoteLine {
   quantity: number;
   unitPriceAmount: bigint;
   discountPercentage: number;
+  /** Legacy flat fallback, used only when neither taxRateId nor taxGroupId is set. */
   taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
 }
 
 let keySeq = 0;
@@ -38,7 +42,27 @@ export function blankLine(type: QuoteLineType = "item"): EditableQuoteLine {
     unitPriceAmount: 0n,
     discountPercentage: 0,
     taxRatePercentage: 0,
+    taxRateId: null,
+    taxGroupId: null,
+    isTaxInclusive: false,
   };
+}
+
+/** Resolves a line's chosen tax rate/group into `computeLineTax`'s input shape, given the full rate/group lists — mirrors TaxResolverService.resolve (apps/api) client-side for instant preview. Falls back to the legacy flat percentage when neither is set. */
+function resolveLineTaxRates(
+  line: EditableQuoteLine,
+  taxRates: TaxRateOption[],
+  taxGroups: TaxGroupOption[],
+): ComputeTaxRate[] {
+  if (line.taxRateId) {
+    const rate = taxRates.find((r) => r.id === line.taxRateId);
+    return rate ? [{ id: rate.id, name: rate.name, rate: rate.rate / 100, isCompound: rate.isCompound }] : [];
+  }
+  if (line.taxGroupId) {
+    const group = taxGroups.find((g) => g.id === line.taxGroupId);
+    return group ? group.taxRates.map((r) => ({ id: r.id, name: r.name, rate: r.rate / 100, isCompound: r.isCompound })) : [];
+  }
+  return line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }] : [];
 }
 
 /**
@@ -49,18 +73,19 @@ export function blankLine(type: QuoteLineType = "item"): EditableQuoteLine {
  * client-side feedback (CLAUDE.md/task brief); the server remains the sole
  * source of truth and recomputes everything from scratch on every save.
  */
-export function computeLinePreview(line: EditableQuoteLine, currency: string) {
+export function computeLinePreview(
+  line: EditableQuoteLine,
+  currency: string,
+  taxRates: TaxRateOption[] = [],
+  taxGroups: TaxGroupOption[] = [],
+) {
   if (line.type !== "item") {
     return { subtotal: 0n, tax: 0n, total: 0n };
   }
   const gross = BigInt(Math.round(line.quantity * Number(line.unitPriceAmount)));
   const discount = BigInt(Math.round(Number(gross) * (line.discountPercentage / 100)));
   const net = gross - discount;
-  const taxResult = computeLineTax(
-    money(net, currency),
-    line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }] : [],
-    false,
-  );
+  const taxResult = computeLineTax(money(net, currency), resolveLineTaxRates(line, taxRates, taxGroups), line.isTaxInclusive);
   return { subtotal: net, tax: taxResult.taxAmount.amount, total: taxResult.total.amount };
 }
 
@@ -82,17 +107,38 @@ export function QuoteLineEditor({
   currency: string;
 }) {
   const [catalogItems, setCatalogItems] = useState<CatalogItemOption[]>([]);
+  const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
+  const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
 
   useEffect(() => {
     apiClient
       .get<CatalogItemOption[]>("/catalog-items")
       .then(setCatalogItems)
       .catch(() => {});
+    apiClient
+      .get<TaxRateOption[]>("/tax-rates")
+      .then(setTaxRates)
+      .catch(() => {});
+    apiClient
+      .get<TaxGroupOption[]>("/tax-groups")
+      .then(setTaxGroups)
+      .catch(() => {});
   }, []);
 
   const catalogOptions = useMemo(
     () => catalogItems.filter((i) => !i.archivedAt).map((i) => ({ value: i.id, label: i.name })),
     [catalogItems],
+  );
+
+  const taxOptions = useMemo(
+    () => [
+      { value: "", label: "No tax" },
+      ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
+      ...taxGroups
+        .filter((g) => !g.archivedAt)
+        .map((g) => ({ value: `group:${g.id}`, label: `${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join("+")})` })),
+    ],
+    [taxRates, taxGroups],
   );
 
   function updateLine(index: number, patch: Partial<EditableQuoteLine>) {
@@ -126,7 +172,9 @@ export function QuoteLineEditor({
       name: item.name,
       description: item.description ?? "",
       unitPriceAmount: BigInt(item.defaultPriceAmount),
-      taxRatePercentage: item.defaultTaxRatePercentage,
+      taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
+      taxRateId: item.defaultTaxRateId,
+      taxGroupId: item.defaultTaxGroupId,
     });
   }
 
@@ -163,6 +211,9 @@ export function QuoteLineEditor({
                     line={line}
                     currency={currency}
                     catalogOptions={catalogOptions}
+                    taxOptions={taxOptions}
+                    taxRates={taxRates}
+                    taxGroups={taxGroups}
                     onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
                     onChange={(patch) => updateLine(index, patch)}
                   />
@@ -203,16 +254,33 @@ function ItemLineFields({
   line,
   currency,
   catalogOptions,
+  taxOptions,
+  taxRates,
+  taxGroups,
   onApplyCatalogItem,
   onChange,
 }: {
   line: EditableQuoteLine;
   currency: string;
   catalogOptions: { value: string; label: string }[];
+  taxOptions: { value: string; label: string }[];
+  taxRates: TaxRateOption[];
+  taxGroups: TaxGroupOption[];
   onApplyCatalogItem: (id: string) => void;
   onChange: (patch: Partial<EditableQuoteLine>) => void;
 }) {
-  const preview = computeLinePreview(line, currency);
+  const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+  const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
+
+  function applyTaxSelection(value: string) {
+    if (value.startsWith("rate:")) {
+      onChange({ taxRateId: value.slice(5), taxGroupId: null, taxRatePercentage: 0 });
+    } else if (value.startsWith("group:")) {
+      onChange({ taxRateId: null, taxGroupId: value.slice(6), taxRatePercentage: 0 });
+    } else {
+      onChange({ taxRateId: null, taxGroupId: null, taxRatePercentage: 0 });
+    }
+  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -232,7 +300,7 @@ function ItemLineFields({
         onChange={(e) => onChange({ description: e.target.value })}
         placeholder="Description (optional)"
       />
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <FieldLabel label="Qty">
           <Input
             type="number"
@@ -257,22 +325,20 @@ function ItemLineFields({
             onChange={(e) => onChange({ discountPercentage: Number(e.target.value) || 0 })}
           />
         </FieldLabel>
-        <FieldLabel label="Tax %">
-          <Input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={100}
-            step="0.01"
-            value={String(line.taxRatePercentage)}
-            onChange={(e) => onChange({ taxRatePercentage: Number(e.target.value) || 0 })}
-          />
-        </FieldLabel>
         <FieldLabel label="Line total">
           <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 font-mono text-[14px] tabular-nums">
             {toDecimalString({ amount: preview.total, currency })}
           </div>
         </FieldLabel>
+      </div>
+      <div className="grid grid-cols-[1fr_auto] items-end gap-2">
+        <FieldLabel label="Tax">
+          <Combobox options={taxOptions} value={taxValue} onValueChange={applyTaxSelection} placeholder="No tax" />
+        </FieldLabel>
+        <label className="flex h-10 cursor-pointer items-center gap-2 pb-0.5">
+          <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => onChange({ isTaxInclusive: v === true })} />
+          <span className="text-[13px] text-on-surface">Price includes tax</span>
+        </label>
       </div>
     </div>
   );

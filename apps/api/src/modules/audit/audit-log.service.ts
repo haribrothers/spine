@@ -19,7 +19,9 @@ export type AuditEntityType =
   | "credit_note"
   | "payment"
   | "job"
-  | "milestone";
+  | "milestone"
+  | "tax_rate"
+  | "tax_group";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

@@ -10,11 +10,29 @@ export interface CatalogItem {
   defaultPriceAmount: string;
   defaultPriceCurrency: string;
   defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
   incomeAccountId: string | null;
   expenseAccountId: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+/** FEAT-08 — used by CatalogForm's tax picker. Mirrors quotes/invoices' identical shapes. */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
 }
 
 /** Mirrors apps/api/src/modules/org/accounts.service.ts's `listGroupedByType` response shape. */

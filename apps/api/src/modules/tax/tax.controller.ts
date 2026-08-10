@@ -1,10 +1,12 @@
-import { Body, Controller, Get, Put, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { SettingsService } from "../org/settings.service";
+import { ReportsService } from "../reports/reports.service";
 
 const DEFAULT_TAX_RATE_KEY = "default_tax_rate";
+const PRICES_INCLUDE_TAX_KEY = "prices_include_tax";
 
 export interface DefaultTaxRate {
   name: string;
@@ -12,16 +14,28 @@ export interface DefaultTaxRate {
   percentage: number;
 }
 
+export interface PricesIncludeTaxSetting {
+  /** S-08.2 — whether the org's catalogue/quote/invoice prices are entered tax-inclusive or tax-exclusive by default. A line can still override via its own `isTaxInclusive` snapshot. */
+  inclusive: boolean;
+}
+
+const DEFAULT_PRICES_INCLUDE_TAX: PricesIncludeTaxSetting = { inclusive: false };
+
 /**
- * A single default named tax rate, per the wizard-shell scope. Full
- * multi-rate tax-group CRUD (inclusive/exclusive pricing, per-item tax
- * mapping) is FEAT-08, a later phase — explicitly not built here. Backed
- * by the generic `settings` table (key `default_tax_rate`), same as every
- * other wizard-shell step without a dedicated table.
+ * `default-rate` is a legacy single named rate, kept only for the
+ * onboarding wizard's tax step (which asks for one rate as a quick-start
+ * default, not full FEAT-08 CRUD) — real multi-rate/tax-group management is
+ * `TaxRatesController`/`TaxGroupsController` (tax-rates.controller.ts,
+ * tax-groups.controller.ts), both backed by real tables now that FEAT-08 is
+ * built. Both endpoints stay backed by the generic `settings` table, same
+ * convention as every other wizard-shell step without a dedicated table.
  */
 @Controller("org/tax")
 export class TaxController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly reportsService: ReportsService,
+  ) {}
 
   @Get("default-rate")
   async getDefaultRate(@Session() session: UserSession) {
@@ -37,5 +51,29 @@ export class TaxController {
     const orgId = requireOrgId(session);
     await this.settingsService.set(orgId, DEFAULT_TAX_RATE_KEY, body);
     return body;
+  }
+
+  @Get("prices-include-tax")
+  async getPricesIncludeTax(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    const value = await this.settingsService.get<PricesIncludeTaxSetting>(orgId, PRICES_INCLUDE_TAX_KEY);
+    return value ?? DEFAULT_PRICES_INCLUDE_TAX;
+  }
+
+  @Put("prices-include-tax")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async setPricesIncludeTax(@Session() session: UserSession, @Body() body: PricesIncludeTaxSetting) {
+    const orgId = requireOrgId(session);
+    await this.settingsService.set(orgId, PRICES_INCLUDE_TAX_KEY, body);
+    return body;
+  }
+
+  /** S-08.4 — Owner-only, per CLAUDE.md's "manage ... tax rules" carve-out; not reachable via the Staff `dashboard.view` capability that gates `GET /reports/receivables`. */
+  @Get("summary")
+  @OrgRoles(["owner"])
+  async taxSummary(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string) {
+    const orgId = requireOrgId(session);
+    return this.reportsService.taxSummary(orgId, from, to);
   }
 }

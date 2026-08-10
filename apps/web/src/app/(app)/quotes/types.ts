@@ -17,6 +17,9 @@ export interface QuoteLine {
   unitPriceCurrency: string;
   discountPercentage: number;
   taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -87,7 +90,25 @@ export interface CatalogItemOption {
   defaultPriceAmount: string;
   defaultPriceCurrency: string;
   defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
   archivedAt: string | null;
+}
+
+/** FEAT-08 — used by the line editor's tax picker. Mirrors apps/api's TaxRatesService/TaxGroupsService row shapes. */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
 }
 
 /** Mirrors QuotesService.enrichEmailQueueJobs's response shape (GET /quotes/email-queue) — item 7, user feedback. */

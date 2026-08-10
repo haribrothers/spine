@@ -11,6 +11,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { QueueService } from "../queue/queue.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
+import { TaxResolverService } from "../tax/tax-resolver.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
@@ -27,6 +28,9 @@ interface ComputedLine {
   unitPriceCurrency: string;
   discountPercentage: number;
   taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -40,75 +44,113 @@ interface ComputedTotals {
   totalAmount: bigint;
 }
 
+interface InvoiceLineTotalInput {
+  type: "item" | "heading" | "text";
+  catalogItemId?: string | null;
+  name: string;
+  description?: string | null;
+  quantity?: number;
+  unitPriceAmount?: bigint;
+  unitPriceCurrency?: string;
+  discountPercentage?: number;
+  taxRatePercentage?: number;
+  taxRateId?: string | null;
+  taxGroupId?: string | null;
+  isTaxInclusive?: boolean;
+}
+
 /**
  * Server-side computation of every line and document total from raw line
  * input — mirrors computeQuoteTotals in quotes.service.ts exactly (same
  * discount-before-tax convention, same "round once at line level, half
- * up" rule, same zeroing of non-`item` lines). Duplicated rather than
- * imported from quotes.service.ts since the two document types' line
- * shapes are structurally identical but independently owned per-module —
- * a future change to one document type's tax behaviour (e.g. invoices
- * gaining tax-inclusive pricing before quotes do) must not silently alter
- * the other.
+ * up" rule, same zeroing of non-`item` lines, same FEAT-08 taxRateId/
+ * taxGroupId-resolves-via-TaxResolverService-else-falls-back-to-flat-
+ * percentage behaviour). Duplicated rather than imported from
+ * quotes.service.ts since the two document types' line shapes are
+ * structurally identical but independently owned per-module — a future
+ * change to one document type's tax behaviour must not silently alter the
+ * other.
  */
-function computeInvoiceTotals(currency: string, lines: CreateInvoiceInput["lines"]): ComputedTotals {
+async function computeInvoiceTotals(
+  orgId: string,
+  currency: string,
+  lines: readonly InvoiceLineTotalInput[],
+  taxResolver: TaxResolverService,
+): Promise<ComputedTotals> {
   let subtotalAmount = 0n;
   let discountAmount = 0n;
   let taxAmount = 0n;
   let totalAmount = 0n;
 
-  const computed: ComputedLine[] = lines.map((line, index) => {
-    if (line.type !== "item") {
+  const computed: ComputedLine[] = await Promise.all(
+    lines.map(async (line, index) => {
+      if (line.type !== "item") {
+        return {
+          sortOrder: index,
+          type: line.type,
+          catalogItemId: line.catalogItemId ?? null,
+          name: line.name,
+          description: line.description ?? null,
+          quantity: 0,
+          unitPriceAmount: 0n,
+          unitPriceCurrency: currency,
+          discountPercentage: 0,
+          taxRatePercentage: 0,
+          taxRateId: null,
+          taxGroupId: null,
+          isTaxInclusive: false,
+          lineSubtotalAmount: 0n,
+          lineTaxAmount: 0n,
+          lineTotalAmount: 0n,
+        };
+      }
+
+      const quantity = line.quantity ?? 0;
+      const unitPriceAmount = line.unitPriceAmount ?? 0n;
+      const discountPercentage = line.discountPercentage ?? 0;
+      const taxRatePercentage = line.taxRatePercentage ?? 0;
+      const isTaxInclusive = line.isTaxInclusive ?? false;
+
+      const grossAmount = roundHalfUp(quantity * Number(unitPriceAmount));
+      const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (discountPercentage / 100));
+      const netAmount = grossAmount - lineDiscountAmount;
+
+      const resolved = line.taxRateId || line.taxGroupId
+        ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
+        : {
+            rates: taxRatePercentage > 0
+              ? [{ id: "line", name: "Tax", rate: taxRatePercentage / 100, isCompound: false }]
+              : [],
+            blendedPercentage: taxRatePercentage,
+          };
+
+      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, isTaxInclusive);
+
+      subtotalAmount += grossAmount;
+      discountAmount += lineDiscountAmount;
+      taxAmount += taxResult.taxAmount.amount;
+      totalAmount += taxResult.total.amount;
+
       return {
         sortOrder: index,
-        type: line.type,
+        type: "item" as const,
         catalogItemId: line.catalogItemId ?? null,
         name: line.name,
         description: line.description ?? null,
-        quantity: 0,
-        unitPriceAmount: 0n,
+        quantity,
+        unitPriceAmount,
         unitPriceCurrency: currency,
-        discountPercentage: 0,
-        taxRatePercentage: 0,
-        lineSubtotalAmount: 0n,
-        lineTaxAmount: 0n,
-        lineTotalAmount: 0n,
+        discountPercentage,
+        taxRatePercentage: resolved.blendedPercentage,
+        taxRateId: line.taxRateId ?? null,
+        taxGroupId: line.taxGroupId ?? null,
+        isTaxInclusive,
+        lineSubtotalAmount: netAmount,
+        lineTaxAmount: taxResult.taxAmount.amount,
+        lineTotalAmount: taxResult.total.amount,
       };
-    }
-
-    const grossAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
-    const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (line.discountPercentage / 100));
-    const netAmount = grossAmount - lineDiscountAmount;
-
-    const taxResult = computeLineTax(
-      money(netAmount, currency),
-      line.taxRatePercentage > 0
-        ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
-        : [],
-      false,
-    );
-
-    subtotalAmount += grossAmount;
-    discountAmount += lineDiscountAmount;
-    taxAmount += taxResult.taxAmount.amount;
-    totalAmount += taxResult.total.amount;
-
-    return {
-      sortOrder: index,
-      type: "item",
-      catalogItemId: line.catalogItemId ?? null,
-      name: line.name,
-      description: line.description ?? null,
-      quantity: line.quantity,
-      unitPriceAmount: line.unitPriceAmount,
-      unitPriceCurrency: currency,
-      discountPercentage: line.discountPercentage,
-      taxRatePercentage: line.taxRatePercentage,
-      lineSubtotalAmount: netAmount,
-      lineTaxAmount: taxResult.taxAmount.amount,
-      lineTotalAmount: taxResult.total.amount,
-    };
-  });
+    }),
+  );
 
   return { lines: computed, subtotalAmount, discountAmount, taxAmount, totalAmount };
 }
@@ -134,6 +176,7 @@ export class InvoicesService {
     private readonly ledger: LedgerService,
     private readonly queue: QueueService,
     private readonly conversionGuard: QuoteConversionGuardService,
+    private readonly taxResolver: TaxResolverService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -198,7 +241,7 @@ export class InvoicesService {
       throw new BadRequestException("Contact not found");
     }
 
-    const totals = computeInvoiceTotals(input.currency, input.lines);
+    const totals = await computeInvoiceTotals(orgId, input.currency, input.lines, this.taxResolver);
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -293,6 +336,9 @@ export class InvoicesService {
         unitPriceCurrency: line.unitPriceCurrency,
         discountPercentage: line.discountPercentage,
         taxRatePercentage: line.taxRatePercentage,
+        taxRateId: line.taxRateId,
+        taxGroupId: line.taxGroupId,
+        isTaxInclusive: line.isTaxInclusive,
       })),
     };
 
@@ -336,7 +382,7 @@ export class InvoicesService {
       throw new BadRequestException("Contact not found");
     }
 
-    const totals = computeInvoiceTotals(input.currency, [
+    const totals = await computeInvoiceTotals(orgId, input.currency, [
       {
         type: "item",
         catalogItemId: null,
@@ -348,7 +394,7 @@ export class InvoicesService {
         discountPercentage: 0,
         taxRatePercentage: input.taxRatePercentage ?? 0,
       },
-    ]);
+    ], this.taxResolver);
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -518,7 +564,7 @@ export class InvoicesService {
     }
 
     const currency = input.currency ?? existing.currency;
-    const totals = input.lines !== undefined ? computeInvoiceTotals(currency, input.lines) : null;
+    const totals = input.lines !== undefined ? await computeInvoiceTotals(orgId, currency, input.lines, this.taxResolver) : null;
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -1017,6 +1063,9 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
       unitPriceCurrency: line.unitPriceCurrency,
       discountPercentage: line.discountPercentage,
       taxRatePercentage: line.taxRatePercentage,
+      taxRateId: line.taxRateId,
+      taxGroupId: line.taxGroupId,
+      isTaxInclusive: line.isTaxInclusive,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

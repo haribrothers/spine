@@ -16,6 +16,9 @@ export const invoiceLineInputSchema = z.object({
   unitPriceCurrency: currencyCodeSchema.optional(),
   discountPercentage: z.coerce.number().min(0).max(100).default(0),
   taxRatePercentage: z.coerce.number().min(0).max(100).default(0),
+  taxRateId: uuidSchema.optional().nullable(),
+  taxGroupId: uuidSchema.optional().nullable(),
+  isTaxInclusive: z.boolean().default(false),
 });
 
 /**

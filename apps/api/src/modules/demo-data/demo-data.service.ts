@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings, taxRates } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
@@ -10,6 +10,7 @@ import { PaymentsService } from "../payments/payments.service";
 import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
 import { SettingsService } from "../org/settings.service";
+import { TaxRatesService } from "../tax/tax-rates.service";
 
 /**
  * S-12.8/F12 — "load demo data" now also seeds the org's own identity
@@ -499,6 +500,7 @@ export class DemoDataService {
     private readonly jobsService: JobsService,
     private readonly milestonesService: MilestonesService,
     private readonly settingsService: SettingsService,
+    private readonly taxRatesService: TaxRatesService,
   ) {}
 
   /**
@@ -534,6 +536,27 @@ export class DemoDataService {
       .from(settings)
       .where(and(eq(settings.orgId, orgId), eq(settings.key, "default_tax_rate")));
     const taxRatePercentage = (taxSetting?.value as { percentage?: number } | undefined)?.percentage ?? 0;
+
+    // FEAT-08 — a real tax_rates row (not just the legacy flat percentage
+    // above), seeded via the real TaxRatesService so demo catalog items can
+    // reference a genuine `defaultTaxRateId`, exactly like every other demo
+    // document type in this file reuses its real service rather than
+    // hand-inserting rows. Reuses `taxRatePercentage` (the org's own
+    // configured default, from onboarding or its own settings default) as
+    // the rate's value, so the demo tax rate matches whatever the org
+    // actually configured rather than inventing an unrelated number.
+    // Guarded the same way seedSettingIfUnset is: only seed once per org,
+    // never on a re-run (seed() is safe to call twice, per this class's own
+    // convention — a second run must not create a duplicate "Sales Tax").
+    const existingRates = await this.taxRatesService.list(orgId, { includeArchived: true });
+    let demoTaxRate = existingRates.find((r) => r.name === "Sales Tax");
+    if (!demoTaxRate) {
+      demoTaxRate = await this.taxRatesService.create(orgId, actorUserId, {
+        name: "Sales Tax",
+        rate: taxRatePercentage > 0 ? taxRatePercentage : 15,
+        isCompound: false,
+      });
+    }
 
     const result = await this.db.transaction(async (tx) => {
       let contactsCreated = 0;
@@ -692,7 +715,8 @@ export class DemoDataService {
             category: item.category,
             defaultPriceAmount: item.priceAmount,
             defaultPriceCurrency: currencyCode,
-            defaultTaxRatePercentage: taxRatePercentage,
+            defaultTaxRatePercentage: demoTaxRate.rate,
+            defaultTaxRateId: demoTaxRate.id,
             isDemo: true,
           })),
         )
@@ -731,8 +755,8 @@ export class DemoDataService {
       };
     });
 
-    const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds);
-    const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds);
+    const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
+    const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const jobsResult = await this.seedJobs(orgId, actorUserId, result.contactIds);
 
     return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult };
@@ -754,7 +778,7 @@ export class DemoDataService {
    * rows, and deleteAll cleans up by isDemo flag regardless of how many
    * quotes made it through).
    */
-  private async seedQuotes(orgId: string, actorUserId: string, contactIds: string[], catalogItemIds: string[]) {
+  private async seedQuotes(orgId: string, actorUserId: string, contactIds: string[], catalogItemIds: string[], demoTaxRateId: string) {
     let quotesCreated = 0;
     let quotesSent = 0;
     let quotesRevised = 0;
@@ -780,6 +804,8 @@ export class DemoDataService {
             unitPriceAmount: item.priceAmount,
             discountPercentage: line.discountPercentage ?? 0,
             taxRatePercentage: 0,
+            taxRateId: demoTaxRateId,
+            isTaxInclusive: false,
           };
         })
         .filter((line): line is NonNullable<typeof line> => line !== null);
@@ -835,7 +861,7 @@ export class DemoDataService {
    * Independent of the seeded quotes (no `sourceQuoteId` wiring — see
    * DEMO_INVOICES' own comment on why).
    */
-  private async seedInvoices(orgId: string, actorUserId: string, contactIds: string[], catalogItemIds: string[]) {
+  private async seedInvoices(orgId: string, actorUserId: string, contactIds: string[], catalogItemIds: string[], demoTaxRateId: string) {
     let invoicesCreated = 0;
     let invoicesIssued = 0;
     let invoicesVoided = 0;
@@ -868,6 +894,8 @@ export class DemoDataService {
             unitPriceAmount: item.priceAmount,
             discountPercentage: 0,
             taxRatePercentage: 0,
+            taxRateId: demoTaxRateId,
+            isTaxInclusive: false,
           };
         })
         .filter((line): line is NonNullable<typeof line> => line !== null);
@@ -1198,6 +1226,16 @@ export class DemoDataService {
         await tx.delete(catalogItems).where(eq(catalogItems.id, item.id));
         catalogItemsDeleted++;
       }
+
+      // Cleans up seed()'s "Sales Tax" tax_rates row (see seed()'s own
+      // comment) once every catalog item/quote/invoice line that
+      // referenced it is already gone above — those FKs are all
+      // `onDelete: "set null"`, so nothing blocks this. Deliberately not
+      // tracked in this method's own return/count (unlike catalogItems etc.)
+      // since it's a byproduct of demo cleanup, not a document type users
+      // think of as "demo data" — same reasoning `status()` below already
+      // applies to why it only checks quotes/invoices/catalog items.
+      await tx.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.name, "Sales Tax")));
 
       return { paymentsDeleted, invoicesDeleted, quotesDeleted, jobsDeleted, contactsDeleted, catalogItemsDeleted };
     });

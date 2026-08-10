@@ -4,6 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { files } from "./files";
+import { taxRates, taxGroups } from "./tax";
 
 /**
  * PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8).
@@ -229,7 +230,19 @@ export const quoteLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
     discountPercentage: real("discount_percentage").notNull().default(0),
+    /**
+     * Blended effective tax percentage for this line — always server-
+     * computed from `taxRateId`/`taxGroupId` (FEAT-08) and stored so PDF/
+     * display never re-reads the tax_rates/tax_groups tables. A line with
+     * neither reference set (pre-FEAT-08 data, or "no tax" chosen
+     * explicitly) has this at 0.
+     */
     taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    /** Provenance only, snapshot semantics — never re-read for totals. At most one of taxRateId/taxGroupId is set; enforced at the service layer. */
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    /** Snapshot of the org's price-inclusive-of-tax setting (S-08.2) at the moment this line was priced — never re-read from org settings after. */
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
     /** Post-discount, pre-tax subtotal for this line — stored so QuotesService can sum lines without recomputing discount math at read time. */
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),

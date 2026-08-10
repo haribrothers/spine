@@ -7,7 +7,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
-import type { Quote } from "./types";
+import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -31,6 +31,9 @@ function toEditableLines(quote: Quote): EditableQuoteLine[] {
       unitPriceAmount: BigInt(line.unitPriceAmount),
       discountPercentage: line.discountPercentage,
       taxRatePercentage: line.taxRatePercentage,
+      taxRateId: line.taxRateId,
+      taxGroupId: line.taxGroupId,
+      isTaxInclusive: line.isTaxInclusive,
     }));
 }
 
@@ -60,6 +63,8 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   const [lines, setLines] = useState<EditableQuoteLine[]>(quote ? toEditableLines(quote) : [blankLine()]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
+  const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
 
   useEffect(() => {
     if (quote) return; // only pre-fill the org default currency for a brand-new quote
@@ -71,18 +76,23 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
       .catch(() => {});
   }, [quote]);
 
+  useEffect(() => {
+    apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
+    apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
+  }, []);
+
   const totals = useMemo(() => {
     let subtotal = 0n;
     let tax = 0n;
     let total = 0n;
     for (const line of lines) {
-      const preview = computeLinePreview(line, currency);
+      const preview = computeLinePreview(line, currency, taxRates, taxGroups);
       subtotal += preview.subtotal;
       tax += preview.tax;
       total += preview.total;
     }
     return { subtotal, tax, total };
-  }, [lines, currency]);
+  }, [lines, currency, taxRates, taxGroups]);
 
   const currencyOptions = useMemo(() => {
     const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
@@ -106,6 +116,9 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
         unitPriceCurrency: currency,
         discountPercentage: line.discountPercentage,
         taxRatePercentage: line.taxRatePercentage,
+        taxRateId: line.taxRateId,
+        taxGroupId: line.taxGroupId,
+        isTaxInclusive: line.isTaxInclusive,
         sortOrder: index,
       })),
     };

@@ -180,7 +180,7 @@ real, also walk ONE job manually through the full sequence below.
 5. On a **pending** milestone, click **Mark complete**. Attach a photo
    (upload via the file picker) and a completion note, submit. Confirm
    the milestone's status flips to **Completed** (S-04.4) — this action
-   should also be reachable/usable by a Field-role user (§11), unlike
+   should also be reachable/usable by a Field-role user (§12), unlike
    the rest of this page's mutating actions.
 6. On the now-**completed** milestone, click **Raise invoice**. Confirm
    you land on a new invoice whose type is **progress**, whose total
@@ -385,7 +385,72 @@ real, also walk ONE job manually through the full sequence below.
 
 ---
 
-## 10. Notifications (S-10.11 / S-10.12)
+## 10. Tax (FEAT-08, Phase 4 · Money Out & Books)
+
+1. Open **Settings → Tax**. Confirm two subsections: **Tax rates** and
+   **Tax groups**, plus a **Prices include tax by default** toggle.
+2. Add a tax rate (e.g. "GST" at 15%, not compound). Confirm it appears
+   in the list immediately, no page reload needed.
+3. Add a second rate (e.g. "State Tax" at 6.5%, **compound** checked).
+4. Create a tax group combining both rates (e.g. "GST + State"). Confirm
+   the group row shows both rates' names and percentages.
+5. Archive the first rate — confirm it disappears from the default
+   (non-archived) rate list, and confirm the tax group that references
+   it is unaffected (archiving a rate doesn't remove it from an existing
+   group). Restore it.
+6. Attempt to **delete** a rate that's used in a group — confirm this is
+   rejected ("used in a tax group and cannot be deleted — archive it
+   instead"), matching Catalogue's own archive-over-delete convention.
+7. Toggle **Prices include tax by default** on, confirm it persists
+   across a reload of the Settings dialog.
+8. Go to **Catalogue**, create or edit an item. Confirm the "Default
+   tax" field is now a picker offering "No tax," every active rate, and
+   every active group — not a raw percentage input.
+9. Pick the tax group from step 4 as the item's default. Save, reopen
+   the item — confirm the same group is still selected.
+10. Go to **Quotes → New Quote**, add a line, prefill it from the
+    catalogue item you just set up. Confirm the line's **Tax** field
+    auto-selects the same group, and the **Price includes tax** checkbox
+    reflects the org default from step 7.
+11. On that line, confirm the computed tax matches manual math for a
+    compound group: e.g. on a $100.00 line with GST 15% (non-compound)
+    + State Tax 6.5% (compound on top of GST), tax should be
+    `$15.00 + 6.5% × $115.00 = $15.00 + $7.48 = $22.48`, not
+    `$15.00 + $6.50 = $21.50` (the wrong, non-compound answer).
+12. Toggle **Price includes tax** on for that same line, keeping the
+    same $100.00 unit price — confirm the tax amount changes (now backed
+    out of $100 as inclusive, rather than added on top) and the line
+    total stays $100.00 while the pre-tax subtotal drops.
+13. Save the quote, then **Send** it and (once accepted) **Convert to
+    invoice** (§4.11) — confirm the invoice line carries over the exact
+    same tax rate/group selection and computed amounts, not a
+    re-resolved or reset value.
+14. Issue that invoice. Open **Settings → Tax** is Owner-only for
+    mutating rates/groups, but the **tax summary** report
+    (`GET /org/tax/summary`) is also Owner-only — as Staff, confirm you
+    cannot reach it (no UI surface exists yet beyond the API; this is a
+    server-side-only check for now, see "Known gaps" below). As Owner,
+    confirm the invoice's tax amount is reflected in the **Output Tax
+    Payable** ledger account (Settings → Chart of accounts, or via
+    `GET /org/tax/summary?from=...&to=...` spanning today's date)
+    exactly matching the invoice's own `taxAmount`.
+15. **Regression check (Catalogue, §3)**: an item created **before**
+    this feature existed (i.e. with only a flat
+    `defaultTaxRatePercentage` and no `defaultTaxRateId`) should still
+    prefill a quote/invoice line correctly — confirm via an item from
+    demo data seeded before your own manual rate/group creation, or by
+    checking that the "No tax"/flat-percentage fallback still computes a
+    sane total.
+16. **Regression check (Quotes §4 / Invoices §7 totals)**: confirm every
+    existing total-computation check in those two sections (discount
+    before tax, PDF totals, convert-to-invoice line-for-line match)
+    still holds now that tax is resolved via a named rate/group instead
+    of a raw percentage — nothing about how totals are *displayed*
+    should have changed, only how a line's tax is *selected*.
+
+---
+
+## 11. Notifications (S-10.11 / S-10.12)
 
 1. Trigger a notification-worthy event (e.g. a quote gets viewed on its
    public link, or a payment is recorded).
@@ -398,7 +463,7 @@ real, also walk ONE job manually through the full sequence below.
 
 ---
 
-## 11. Users, Teams & Permissions (§2.1 permission model)
+## 12. Users, Teams & Permissions (§2.1 permission model)
 
 This section needs a second browser (or incognito window) to act as an
 invited user alongside your Owner session.
@@ -449,7 +514,7 @@ invited user alongside your Owner session.
 
 ---
 
-## 12. Design system spot-check
+## 13. Design system spot-check
 
 Not a full audit — just confirm nothing obviously broke:
 
@@ -477,9 +542,21 @@ Not a full audit — just confirm nothing obviously broke:
   server on click — that's correct, expected behavior, not a bug to
   file.
 - Job cost/revenue/margin (§5.8) always shows **Cost: 0** — vendor
-  bills/expenses (Phase 4) don't exist yet, so nothing posts an
-  `expense`-type debit tagged with a job's id. This is expected, not a
+  bills/expenses (Phase 4, still to come within this same phase) don't
+  exist yet, so nothing posts an `expense`-type debit tagged with a
+  job's id. This is expected, not a bug.
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) has no
+  web page yet — it's a real, working, Owner-only endpoint (verify it
+  directly via that URL with `from`/`to` query params), but nothing in
+  the Settings dialog or a Reports page surfaces it visually yet. Tax
+  **paid** on that report will always read 0 until vendor bills exist
+  (same Phase 4 dependency as the job-cost gap above) — expected, not a
   bug.
+- The job **variation order** line editor (`variation-order-line-editor.tsx`)
+  still uses the pre-FEAT-08 flat tax-percentage input, not the new
+  named rate/group picker §10 exercises for Quotes/Invoices/Catalogue —
+  it still computes correctly, just without a tax picker UI. Not yet
+  retrofitted.
 - A variation order's acceptance does NOT automatically fold its value
   into the job's contract value — applying it (§5.11) is a deliberate,
   separate manual step. There's no proactive nudge when a variation

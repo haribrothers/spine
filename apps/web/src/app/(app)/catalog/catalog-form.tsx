@@ -15,9 +15,10 @@ import {
   SelectValue,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
-import type { AccountsByType, CatalogItem } from "./types";
+import type { AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
 
 const NO_ACCOUNT = "none";
+const NO_TAX = "";
 
 /**
  * Seed list for the currency Combobox — same fixed set
@@ -33,11 +34,6 @@ const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD
 interface CurrencyLocaleValue {
   code: string;
   locale: string;
-}
-
-interface DefaultTaxRate {
-  name: string;
-  percentage: number;
 }
 
 /**
@@ -70,10 +66,14 @@ export function CatalogForm({
   const [category, setCategory] = useState(item?.category ?? "");
   const [currency, setCurrency] = useState(item?.defaultPriceCurrency ?? "USD");
   const [priceAmount, setPriceAmount] = useState<bigint>(item ? BigInt(item.defaultPriceAmount) : 0n);
-  const [taxRatePercentage, setTaxRatePercentage] = useState(item?.defaultTaxRatePercentage ?? 0);
+  const [taxSelection, setTaxSelection] = useState(() =>
+    item?.defaultTaxRateId ? `rate:${item.defaultTaxRateId}` : item?.defaultTaxGroupId ? `group:${item.defaultTaxGroupId}` : NO_TAX,
+  );
   const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
   const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
+  const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
+  const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
   const [existingUnits, setExistingUnits] = useState<string[]>([]);
   const [existingCategories, setExistingCategories] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -97,9 +97,9 @@ export function CatalogForm({
       .catch(() => {});
   }, []);
 
-  // Pre-fill currency/tax rate from org defaults, but only for a brand-new
-  // item — an existing item's own stored values always win (they may have
-  // been intentionally set differently from the org's current default).
+  // Pre-fill currency from org defaults, but only for a brand-new item — an
+  // existing item's own stored values always win (they may have been
+  // intentionally set differently from the org's current default).
   useEffect(() => {
     if (item) return;
     apiClient
@@ -108,10 +108,6 @@ export function CatalogForm({
         if (res.value?.code) setCurrency(res.value.code);
       })
       .catch(() => {});
-    apiClient
-      .get<DefaultTaxRate>("/org/tax/default-rate")
-      .then((rate) => setTaxRatePercentage(rate.percentage))
-      .catch(() => {});
   }, [item]);
 
   useEffect(() => {
@@ -119,6 +115,8 @@ export function CatalogForm({
       .get<AccountsByType>("/org/accounts")
       .then(setAccounts)
       .catch(() => setAccounts(null));
+    apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
+    apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -133,7 +131,8 @@ export function CatalogForm({
         category: category || undefined,
         defaultPriceAmount: priceAmount.toString(),
         defaultPriceCurrency: currency,
-        defaultTaxRatePercentage: taxRatePercentage,
+        defaultTaxRateId: taxSelection.startsWith("rate:") ? taxSelection.slice(5) : null,
+        defaultTaxGroupId: taxSelection.startsWith("group:") ? taxSelection.slice(6) : null,
         incomeAccountId: incomeAccountId === NO_ACCOUNT ? undefined : incomeAccountId,
         expenseAccountId: expenseAccountId === NO_ACCOUNT ? undefined : expenseAccountId,
       };
@@ -158,6 +157,16 @@ export function CatalogForm({
     const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
     return codes.map((code) => ({ value: code, label: code }));
   }, [currency]);
+  const taxOptions = useMemo(
+    () => [
+      { value: NO_TAX, label: "No tax" },
+      ...taxRates.filter((r) => !r.archivedAt).map((r) => ({ value: `rate:${r.id}`, label: `${r.name} (${r.rate}%)` })),
+      ...taxGroups
+        .filter((g) => !g.archivedAt)
+        .map((g) => ({ value: `group:${g.id}`, label: `${g.name} (${g.taxRates.map((r) => `${r.rate}%`).join("+")})` })),
+    ],
+    [taxRates, taxGroups],
+  );
 
   return (
     <form id={formId} onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
@@ -219,19 +228,9 @@ export function CatalogForm({
         </FormField>
       </div>
 
-      <FormField label="Default tax rate (%)" helperText="Pre-filled from the org's default rate; editable per item.">
+      <FormField label="Default tax" helperText="Pre-fills a new quote/invoice line for this item; editable per line.">
         {(field) => (
-          <Input
-            {...field}
-            type="number"
-            inputMode="decimal"
-            min={0}
-            max={100}
-            step="0.01"
-            value={String(taxRatePercentage)}
-            onChange={(e) => setTaxRatePercentage(Number(e.target.value) || 0)}
-            className="w-32"
-          />
+          <Combobox {...field} options={taxOptions} value={taxSelection} onValueChange={setTaxSelection} placeholder="No tax" />
         )}
       </FormField>
 

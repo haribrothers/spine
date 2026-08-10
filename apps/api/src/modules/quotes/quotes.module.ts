@@ -6,6 +6,7 @@ import { FilesModule } from "../files/files.module";
 import { PdfModule } from "../pdf/pdf.module";
 import { EmailModule } from "../email/email.module";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { TaxModule } from "../tax/tax.module";
 import { QuotesController } from "./quotes.controller";
 import { QuotesService } from "./quotes.service";
 import { QuoteEmailWorker } from "./quote-email.worker";
@@ -34,7 +35,7 @@ import { PublicQuotesService } from "./public-quotes.service";
  * (`/public/quotes/*`) — see its own doc comment.
  */
 @Module({
-  imports: [AuditModule, NumberingModule, OrgModule, FilesModule, PdfModule, EmailModule, NotificationsModule],
+  imports: [AuditModule, NumberingModule, OrgModule, FilesModule, PdfModule, EmailModule, NotificationsModule, TaxModule],
   controllers: [QuotesController, PublicQuotesController],
   providers: [QuotesService, QuoteEmailWorker, QuotePublicTokenService, PublicQuotesService],
   exports: [QuotesService, QuotePublicTokenService],

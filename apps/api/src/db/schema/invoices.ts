@@ -7,6 +7,7 @@ import { files } from "./files";
 import { quotes } from "./quotes";
 import { journalEntries } from "./ledger";
 import { jobs, milestones } from "./jobs";
+import { taxRates, taxGroups } from "./tax";
 
 /**
  * PRD F5 — Invoicing (Phase 2 · Money In). Stage 1 scope: standard invoice
@@ -179,7 +180,11 @@ export const invoiceLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
     discountPercentage: real("discount_percentage").notNull().default(0),
+    /** Blended effective tax percentage — see quote_lines.taxRatePercentage's identical comment. */
     taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),

@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { catalogItems } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { TaxResolverService } from "../tax/tax-resolver.service";
 
 export type CreateCatalogItemInput = z.infer<typeof createCatalogItemSchema>;
 export type UpdateCatalogItemInput = z.infer<typeof updateCatalogItemSchema>;
@@ -24,6 +25,7 @@ export class CatalogService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly taxResolver: TaxResolverService,
   ) {}
 
   async list(orgId: string, options: { search?: string; category?: string; includeArchived?: boolean }) {
@@ -71,6 +73,10 @@ export class CatalogService {
    * "+ New item" affordance without any special-casing here.
    */
   async create(orgId: string, actorUserId: string, input: CreateCatalogItemInput) {
+    const resolvedTax = input.defaultTaxRateId || input.defaultTaxGroupId
+      ? await this.taxResolver.resolve(orgId, { taxRateId: input.defaultTaxRateId, taxGroupId: input.defaultTaxGroupId })
+      : null;
+
     const created = await this.db.transaction(async (tx) => {
       const [item] = await tx
         .insert(catalogItems)
@@ -82,7 +88,9 @@ export class CatalogService {
           category: input.category ?? null,
           defaultPriceAmount: input.defaultPriceAmount,
           defaultPriceCurrency: input.defaultPriceCurrency,
-          defaultTaxRatePercentage: input.defaultTaxRatePercentage,
+          defaultTaxRatePercentage: resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? 0,
+          defaultTaxRateId: input.defaultTaxRateId ?? null,
+          defaultTaxGroupId: input.defaultTaxGroupId ?? null,
           incomeAccountId: input.incomeAccountId ?? null,
           expenseAccountId: input.expenseAccountId ?? null,
         })
@@ -116,6 +124,14 @@ export class CatalogService {
       throw new NotFoundException("Catalog item not found");
     }
 
+    const taxRefChanged = input.defaultTaxRateId !== undefined || input.defaultTaxGroupId !== undefined;
+    const resolvedTax = taxRefChanged
+      ? await this.taxResolver.resolve(orgId, {
+          taxRateId: input.defaultTaxRateId !== undefined ? input.defaultTaxRateId : existing.defaultTaxRateId,
+          taxGroupId: input.defaultTaxGroupId !== undefined ? input.defaultTaxGroupId : existing.defaultTaxGroupId,
+        })
+      : null;
+
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(catalogItems)
@@ -126,9 +142,13 @@ export class CatalogService {
           ...(input.category !== undefined ? { category: input.category } : {}),
           ...(input.defaultPriceAmount !== undefined ? { defaultPriceAmount: input.defaultPriceAmount } : {}),
           ...(input.defaultPriceCurrency !== undefined ? { defaultPriceCurrency: input.defaultPriceCurrency } : {}),
-          ...(input.defaultTaxRatePercentage !== undefined
-            ? { defaultTaxRatePercentage: input.defaultTaxRatePercentage }
-            : {}),
+          ...(resolvedTax
+            ? { defaultTaxRatePercentage: resolvedTax.blendedPercentage }
+            : input.defaultTaxRatePercentage !== undefined
+              ? { defaultTaxRatePercentage: input.defaultTaxRatePercentage }
+              : {}),
+          ...(input.defaultTaxRateId !== undefined ? { defaultTaxRateId: input.defaultTaxRateId } : {}),
+          ...(input.defaultTaxGroupId !== undefined ? { defaultTaxGroupId: input.defaultTaxGroupId } : {}),
           ...(input.incomeAccountId !== undefined ? { incomeAccountId: input.incomeAccountId } : {}),
           ...(input.expenseAccountId !== undefined ? { expenseAccountId: input.expenseAccountId } : {}),
           updatedAt: new Date(),

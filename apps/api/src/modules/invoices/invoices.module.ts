@@ -6,6 +6,7 @@ import { PdfModule } from "../pdf/pdf.module";
 import { EmailModule } from "../email/email.module";
 import { FilesModule } from "../files/files.module";
 import { OrgModule } from "../org/org.module";
+import { TaxModule } from "../tax/tax.module";
 import { InvoicesController } from "./invoices.controller";
 import { InvoicesService } from "./invoices.service";
 import { InvoiceEmailWorker } from "./invoice-email.worker";
@@ -29,7 +30,7 @@ import { InvoiceEmailWorker } from "./invoice-email.worker";
  * providers/imports independently).
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule],
+  imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule],
   controllers: [InvoicesController],
   providers: [InvoicesService, InvoiceEmailWorker],
   exports: [InvoicesService],

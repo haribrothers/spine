@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { TaxModule } from "../tax/tax.module";
 import { CatalogController } from "./catalog.controller";
 import { CatalogService } from "./catalog.service";
 
@@ -12,7 +13,7 @@ import { CatalogService } from "./catalog.service";
  * context — see CatalogService.create's own comment.
  */
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, TaxModule],
   controllers: [CatalogController],
   providers: [CatalogService],
   exports: [CatalogService],

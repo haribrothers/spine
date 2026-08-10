@@ -30,7 +30,11 @@ export const createCatalogItemSchema = z.object({
   category: z.string().optional().nullable(),
   defaultPriceAmount: z.coerce.bigint(),
   defaultPriceCurrency: currencyCodeSchema,
-  defaultTaxRatePercentage: z.coerce.number().min(0).max(100),
+  /** Legacy fallback, kept for callers that don't yet pick a named rate. Superseded by defaultTaxRateId/defaultTaxGroupId (FEAT-08) when either is set. */
+  defaultTaxRatePercentage: z.coerce.number().min(0).max(100).optional(),
+  /** At most one of these two — enforced server-side, not by this schema. */
+  defaultTaxRateId: uuidSchema.optional().nullable(),
+  defaultTaxGroupId: uuidSchema.optional().nullable(),
   incomeAccountId: uuidSchema.optional().nullable(),
   expenseAccountId: uuidSchema.optional().nullable(),
 });

@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
+import { TaxResolverService } from "../tax/tax-resolver.service";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { QuotePublicTokenService } from "./quote-public-token.service";
 
@@ -37,6 +38,9 @@ interface ComputedLine {
   unitPriceCurrency: string;
   discountPercentage: number;
   taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -56,85 +60,106 @@ interface ComputedTotals {
  * Server-side computation of every line and document total from raw line
  * input — the ONLY place quote totals are computed. Never trust a
  * client-supplied total (CLAUDE.md). Uses `computeLineTax` (the existing
- * shared tax engine) per line, exclusive-tax only (quotes don't currently
- * support tax-inclusive pricing — no PRD story calls for it in Stage 1, and
- * `computeLineTax`'s `inclusive` flag is available to wire up later without
- * a schema change).
+ * shared tax engine) per line. FEAT-08: a line's tax now resolves via
+ * `TaxResolverService` from `taxRateId`/`taxGroupId` (real named rates,
+ * multi-rate/compound-capable) when either is set, falling back to the
+ * legacy flat `taxRatePercentage` otherwise — so pre-FEAT-08 callers (e.g.
+ * a line with neither reference set) keep working unchanged.
+ * `isTaxInclusive` is a per-line snapshot (S-08.2): when true, the line's
+ * `unitPriceAmount` already includes tax and `computeLineTax` backs it out
+ * instead of adding it on top.
  *
  * Discount is applied to the line's pre-tax amount before tax is computed
  * (tax is charged on the discounted price, the common convention) —
- * `lineSubtotalAmount` is the post-discount, pre-tax amount; line quantity
- * × unit price is rounded once at that point (half-up, per CLAUDE.md),
- * matching computeLineTax's own "round once, at line level" rule.
- * `heading`/`text` lines always compute to zero regardless of what junk
- * values are in their quantity/price/discount/tax fields, since those
- * fields are meaningless for non-`item` lines.
+ * `lineSubtotalAmount` is the post-discount, pre-tax amount for an
+ * exclusive line, or the post-discount inclusive amount for an inclusive
+ * one; line quantity × unit price is rounded once at that point (half-up,
+ * per CLAUDE.md), matching computeLineTax's own "round once, at line
+ * level" rule. `heading`/`text` lines always compute to zero regardless of
+ * what junk values are in their quantity/price/discount/tax fields, since
+ * those fields are meaningless for non-`item` lines.
  */
-function computeQuoteTotals(currency: string, lines: CreateQuoteInput["lines"]): ComputedTotals {
+async function computeQuoteTotals(
+  orgId: string,
+  currency: string,
+  lines: CreateQuoteInput["lines"],
+  taxResolver: TaxResolverService,
+): Promise<ComputedTotals> {
   let subtotalAmount = 0n; // pre-discount
   let discountAmount = 0n;
   let taxAmount = 0n;
   let totalAmount = 0n;
 
-  const computed: ComputedLine[] = lines.map((line, index) => {
-    if (line.type !== "item") {
+  const computed: ComputedLine[] = await Promise.all(
+    lines.map(async (line, index) => {
+      if (line.type !== "item") {
+        return {
+          sortOrder: index,
+          type: line.type,
+          catalogItemId: line.catalogItemId ?? null,
+          name: line.name,
+          description: line.description ?? null,
+          quantity: 0,
+          unitPriceAmount: 0n,
+          unitPriceCurrency: currency,
+          discountPercentage: 0,
+          taxRatePercentage: 0,
+          taxRateId: null,
+          taxGroupId: null,
+          isTaxInclusive: false,
+          lineSubtotalAmount: 0n,
+          lineTaxAmount: 0n,
+          lineTotalAmount: 0n,
+        };
+      }
+
+      const grossAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
+      const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (line.discountPercentage / 100));
+      const netAmount = grossAmount - lineDiscountAmount;
+
+      const resolved = line.taxRateId || line.taxGroupId
+        ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
+        : {
+            rates: line.taxRatePercentage > 0
+              ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
+              : [],
+            blendedPercentage: line.taxRatePercentage,
+          };
+
+      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, line.isTaxInclusive);
+
+      subtotalAmount += grossAmount;
+      discountAmount += lineDiscountAmount;
+      taxAmount += taxResult.taxAmount.amount;
+      totalAmount += taxResult.total.amount;
+
       return {
         sortOrder: index,
-        type: line.type,
+        type: "item" as const,
         catalogItemId: line.catalogItemId ?? null,
         name: line.name,
         description: line.description ?? null,
-        quantity: 0,
-        unitPriceAmount: 0n,
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        // Always the document's own currency, never a client-supplied
+        // per-line value — computeLineTax above already computed this line's
+        // tax/total assuming `currency`, and v1 has no multi-currency support
+        // (CLAUDE.md non-goals), so a line can never actually be priced in a
+        // different currency than its own quote. Silently normalizing here
+        // (rather than rejecting the request) matches this schema's existing
+        // permissive-input, server-computes-the-truth convention.
         unitPriceCurrency: currency,
-        discountPercentage: 0,
-        taxRatePercentage: 0,
-        lineSubtotalAmount: 0n,
-        lineTaxAmount: 0n,
-        lineTotalAmount: 0n,
+        discountPercentage: line.discountPercentage,
+        taxRatePercentage: resolved.blendedPercentage,
+        taxRateId: line.taxRateId ?? null,
+        taxGroupId: line.taxGroupId ?? null,
+        isTaxInclusive: line.isTaxInclusive,
+        lineSubtotalAmount: netAmount,
+        lineTaxAmount: taxResult.taxAmount.amount,
+        lineTotalAmount: taxResult.total.amount,
       };
-    }
-
-    const grossAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
-    const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (line.discountPercentage / 100));
-    const netAmount = grossAmount - lineDiscountAmount;
-
-    const taxResult = computeLineTax(
-      money(netAmount, currency),
-      line.taxRatePercentage > 0
-        ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
-        : [],
-      false,
-    );
-
-    subtotalAmount += grossAmount;
-    discountAmount += lineDiscountAmount;
-    taxAmount += taxResult.taxAmount.amount;
-    totalAmount += taxResult.total.amount;
-
-    return {
-      sortOrder: index,
-      type: "item",
-      catalogItemId: line.catalogItemId ?? null,
-      name: line.name,
-      description: line.description ?? null,
-      quantity: line.quantity,
-      unitPriceAmount: line.unitPriceAmount,
-      // Always the document's own currency, never a client-supplied
-      // per-line value — computeLineTax above already computed this line's
-      // tax/total assuming `currency`, and v1 has no multi-currency support
-      // (CLAUDE.md non-goals), so a line can never actually be priced in a
-      // different currency than its own quote. Silently normalizing here
-      // (rather than rejecting the request) matches this schema's existing
-      // permissive-input, server-computes-the-truth convention.
-      unitPriceCurrency: currency,
-      discountPercentage: line.discountPercentage,
-      taxRatePercentage: line.taxRatePercentage,
-      lineSubtotalAmount: netAmount,
-      lineTaxAmount: taxResult.taxAmount.amount,
-      lineTotalAmount: taxResult.total.amount,
-    };
-  });
+    }),
+  );
 
   const overallDiscountPercentage = subtotalAmount > 0n ? (Number(discountAmount) / Number(subtotalAmount)) * 100 : 0;
 
@@ -160,6 +185,7 @@ export class QuotesService {
     private readonly settings: SettingsService,
     private readonly queue: QueueService,
     private readonly publicTokens: QuotePublicTokenService,
+    private readonly taxResolver: TaxResolverService,
   ) {}
 
   private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
@@ -326,7 +352,7 @@ export class QuotesService {
     }
 
     const currency = input.currency ?? existing.currency;
-    const totals = input.lines !== undefined ? computeQuoteTotals(currency, input.lines) : null;
+    const totals = input.lines !== undefined ? await computeQuoteTotals(orgId, currency, input.lines, this.taxResolver) : null;
     const threshold = await this.getThreshold(orgId);
 
     const updated = await this.db.transaction(async (tx) => {
@@ -572,6 +598,9 @@ export class QuotesService {
             unitPriceCurrency: line.unitPriceCurrency,
             discountPercentage: line.discountPercentage,
             taxRatePercentage: line.taxRatePercentage,
+            taxRateId: line.taxRateId,
+            taxGroupId: line.taxGroupId,
+            isTaxInclusive: line.isTaxInclusive,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -696,7 +725,7 @@ export class QuotesService {
       throw new BadRequestException("Contact not found");
     }
 
-    const totals = computeQuoteTotals(input.currency, input.lines);
+    const totals = await computeQuoteTotals(orgId, input.currency, input.lines, this.taxResolver);
     const threshold = await this.getThreshold(orgId);
 
     const created = await this.db.transaction(async (tx) => {
@@ -756,6 +785,9 @@ async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine
       unitPriceCurrency: line.unitPriceCurrency,
       discountPercentage: line.discountPercentage,
       taxRatePercentage: line.taxRatePercentage,
+      taxRateId: line.taxRateId,
+      taxGroupId: line.taxGroupId,
+      isTaxInclusive: line.isTaxInclusive,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

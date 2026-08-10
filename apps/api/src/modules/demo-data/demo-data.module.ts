@@ -5,11 +5,12 @@ import { InvoicesModule } from "../invoices/invoices.module";
 import { PaymentsModule } from "../payments/payments.module";
 import { JobsModule } from "../jobs/jobs.module";
 import { OrgModule } from "../org/org.module";
+import { TaxModule } from "../tax/tax.module";
 import { DemoDataController } from "./demo-data.controller";
 import { DemoDataService } from "./demo-data.service";
 
 @Module({
-  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, JobsModule, OrgModule],
+  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, JobsModule, OrgModule, TaxModule],
   controllers: [DemoDataController],
   providers: [DemoDataService],
   exports: [DemoDataService],
