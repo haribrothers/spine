@@ -8,6 +8,8 @@ This repository currently contains only the product requirements document at `do
 
 **Check `CHANGELOG.md` at the start of any work session.** It tracks what's actually been completed and what's next, phase by phase against PRD §12. This file (CLAUDE.md) covers architecture and rules; CHANGELOG.md covers progress state. Update CHANGELOG.md whenever a story or phase milestone lands.
 
+**Keep `docs/qa-script.md` in sync too.** It's the manual QA script covering every user-facing feature shipped so far, organized by area (not chronologically) so a human can run it end-to-end against a fresh org. Whenever a feature is completed and committed, add or update its section in that file in the same change — new steps for what the feature does, plus any regression checks for existing screens/computations it touches (e.g. a change to how an invoice's balance is computed needs a regression check on every screen that displays that balance). Don't wait for a dedicated "write QA docs" task — this is part of finishing the feature, the same way updating CHANGELOG.md is.
+
 ## What Spine is
 
 Spine is a self-hosted business management app for small service/project businesses (construction, fabrication, contractors, design studios). It follows the workflow **enquiry → quote → job → invoice → payment → books**, where double-entry accounting is derived automatically from business events rather than entered directly by users. Read `docs/spine-prd.md` in full before making architectural decisions — it is the single source of truth for scope, data model, and rationale.
@@ -104,3 +106,4 @@ Multi-tenant SaaS hosting (including one owner account managing multiple organis
 - Integration tests per document lifecycle (quote, invoice, payment, etc.).
 - A ledger-integrity test asserting the trial balance stays balanced after every simulated workflow.
 - E2E smoke test covering quote → invoice → payment.
+- `docs/qa-script.md` is the human-run counterpart to the above — update it alongside a feature's automated tests, not instead of them. See the pointer near the top of this file.
