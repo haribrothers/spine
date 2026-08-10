@@ -1,20 +1,47 @@
 import { Inject, Injectable, BadRequestException } from "@nestjs/common";
+import type { createAccountSchema } from "@spine/shared";
 import { and, eq } from "drizzle-orm";
+import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { accounts } from "../../db/schema";
 
+export type CreateAccountInput = z.infer<typeof createAccountSchema>;
+
 /**
- * Chart-of-accounts read + rename for the onboarding wizard's CoA-review
- * step. Judgment call (see task brief): `accounts` has no `isHidden`
- * column and adding hide/delete semantics is out of scope for this pass —
- * system accounts are read-only, non-system accounts can be renamed but
- * not hidden or deleted here. Full CoA management (add/hide/delete
- * accounts) is Settings/later-phase territory.
+ * Chart-of-accounts read, rename, and create. Judgment call (see task
+ * brief): `accounts` has no `isHidden` column and adding hide/delete
+ * semantics is out of scope for this pass — system accounts are read-only,
+ * non-system accounts can be renamed but not hidden or deleted here.
+ *
+ * `create` is S-09.9 ("add a custom expense account, so my categories
+ * match my business") — deliberately not restricted to `type: "expense"`
+ * despite the story's own wording, since a custom income/asset account is
+ * exactly as valid a business need and there's no reason to special-case
+ * expense here when the same CRUD serves every account type identically.
  */
 @Injectable()
 export class AccountsService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async create(orgId: string, input: CreateAccountInput) {
+    const [existing] = await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.code, input.code)));
+    if (existing) {
+      throw new BadRequestException(`An account with code ${input.code} already exists`);
+    }
+    const [row] = await this.db
+      .insert(accounts)
+      .values({
+        orgId,
+        code: input.code,
+        name: input.name,
+        type: input.type,
+        parentId: input.parentId ?? null,
+        isSystem: false,
+      })
+      .returning();
+    return row;
+  }
 
   async listGroupedByType(orgId: string) {
     const rows = await this.db.select().from(accounts).where(eq(accounts.orgId, orgId));

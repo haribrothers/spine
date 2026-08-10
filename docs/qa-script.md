@@ -70,6 +70,9 @@ before considering that work's QA "done."
      in the job's Photos tab and attached to a milestone completion),
      and — on the "active" job — a sent-but-not-yet-accepted variation
      order (confirm it shows as pending, not applied to the job total).
+     That same "active" job also has one vendor bill and one expense
+     tagged to it, so Reports → Job Profitability (§15) shows a real
+     nonzero cost for it, not just revenue.
    - Two demo team members: **Sarah Mendes** (Staff, joined the default
      Team) and **Marcus Webb** (Field, no Team — Field is fixed and
      never Team-assignable). Both are real login accounts
@@ -702,12 +705,67 @@ Not a full audit — just confirm nothing obviously broke:
 
 ---
 
-## Known gaps — don't file these as bugs
+## 15. Reports & Dashboard (FEAT-09, Phase 4 Stage 3 · Money Out & Books)
 
-- No P&L / Balance Sheet report exists yet (Owner-only, later phase) —
-  the only way to verify the per-catalog-item revenue posting split
-  (§7.2) today is by inspecting the ledger directly, not through a UI
-  report.
+Best run against the demo data's seeded jobs/invoices/vendor bills/expenses
+(§1.7) — the "active" demo job ("Marina office fit-out") has a real
+job-tagged vendor bill and expense so it shows nonzero cost, not just
+revenue.
+
+1. Go to **Dashboard**. Confirm a 4-card KPI row: Cash position,
+   Receivables, Overdue invoices, Revenue this month — all real numbers
+   derived from the ledger, not placeholders. Cross-check "Receivables"
+   matches Receivables' own Total outstanding figure (§9).
+2. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
+   Job Profitability.
+3. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
+   this calendar year). Confirm Income/Expense sections list real
+   chart-of-accounts lines with amounts, and Net profit = Total income −
+   Total expenses.
+4. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
+   drill-down dialog opens listing the journal entries behind that
+   figure, each linking to its source document (invoice/payment/vendor
+   bill/expense) — S-09.4's "click any figure, see the documents behind
+   it." Click through one link and confirm it lands on the right
+   document.
+5. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
+   Section/Code/Account/Amount columns matching the on-screen figures.
+6. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
+   Liabilities, and Equity sections, and that **Total assets = Total
+   liabilities + Total equity** exactly (the balance sheet must always
+   balance). Confirm Equity includes a computed "Retained Earnings
+   (current period)" line reflecting net profit to date.
+7. **Job Profitability tab**: confirm every job appears with contract
+   value, revenue, cost, margin, and margin %. Confirm the "Marina office
+   fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
+   vendor bill + expense) — every other demo job showing `cost: 0` (no
+   vendor bills/expenses tagged to them) is correct, not a bug. Click a
+   job name — confirm it navigates to that job's detail page.
+8. As a Staff user with `dashboard.view` granted but not Owner: confirm
+   the dashboard KPI row and Job Profitability tab both load normally,
+   but Profit & Loss / Balance Sheet / drill-down show a clear "Owner-only
+   report" message instead of data (S-09.2/S-09.3 stay Owner-only per
+   CLAUDE.md's permission model; the capability's own description already
+   says "P&L/balance sheet stay Owner-only regardless of this grant").
+9. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
+   scroll to **Period close**. Add a period covering today, click
+   **Close**. Try to issue a new invoice or record/approve an
+   expense/vendor bill dated today — confirm it's rejected with "falls
+   within a closed fiscal period." Click **Reopen** and confirm the same
+   action now succeeds.
+10. **Custom account (S-09.9)**: in the same Chart of accounts pane,
+    click **Add account**, create one (e.g. code `6950`, "Software
+    Subscriptions", type Expense). Confirm it appears in the list
+    immediately, and that a new Settings → Purchases expense category can
+    select it as its posting account.
+11. **Regression check**: after adding a custom account or closing/
+    reopening a period, reload Settings → Chart of accounts and confirm
+    the existing system accounts (AR, AP, tax, retention) are still
+    present and still read-only.
+
+---
+
+## Known gaps — don't file these as bugs
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/
@@ -720,15 +778,15 @@ Not a full audit — just confirm nothing obviously broke:
   job (§11.3/§11.4) — Phase 4 Stage 2 (Purchases & Expenses) closed this
   gap. A job with no tagged bills/expenses still correctly shows Cost: 0
   — that's a real zero, not a missing feature.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) has a
-  web surface (a "Tax summary" section at the bottom of Settings →
-  Tax), but it's a plain figures-and-list display, not a real Reports
-  page — no CSV export, no drill-down into which invoices make up a
-  rate's total. That's expected to land with Stage 3 (Reports/FEAT-09),
-  not a bug. Tax **paid** on that report now has a real source (Input
-  Tax Receivable postings from recorded vendor bills, §11.4) but will
-  still read 0 for any org with no recorded vendor bills yet — expected,
-  not a bug.
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) still
+  lives in its own "Tax summary" section at the bottom of Settings →
+  Tax, not folded into the new Reports page (§15) — it has its own
+  working per-rate breakdown UI that Reports deliberately doesn't
+  duplicate (see CHANGELOG's own note on this). No CSV export on that
+  specific view, unlike every report on the new Reports page. Tax
+  **paid** on that report has a real source (Input Tax Receivable
+  postings from recorded vendor bills, §11.4) but will still read 0 for
+  any org with no recorded vendor bills yet — expected, not a bug.
 - The job **variation order** line editor (`variation-order-line-editor.tsx`)
   still uses the pre-FEAT-08 flat tax-percentage input, not the new
   named rate/group picker §10 exercises for Quotes/Invoices/Catalogue —

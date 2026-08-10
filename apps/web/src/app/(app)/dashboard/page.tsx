@@ -1,5 +1,6 @@
 import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../lib/get-session";
+import { DashboardSummary } from "./dashboard-summary";
 import { SetupChecklist } from "./setup-checklist";
 
 /**
@@ -13,11 +14,10 @@ import { SetupChecklist } from "./setup-checklist";
  * finished, skipped, or never started the wizard.
  *
  * Renders inside the shared AppShell provided by `(app)/layout.tsx` — same
- * shell Settings uses. No stat-card row: the screenshot reference shows 4
- * KPI cards, but Spine has no real contacts/quotes/invoices data yet to
- * back them, and this dashboard deliberately doesn't fabricate placeholder
- * numbers — StatCard is ready in @spine/ui for whenever there's a real
- * metric to plug in.
+ * shell Settings uses. S-09.10's stat-card row (`DashboardSummary`) is now
+ * real, backed by `GET /reports/dashboard-summary` — cash position,
+ * receivables, overdue count, and month revenue derived straight from the
+ * ledger, not fabricated placeholder numbers.
  */
 export default async function DashboardPage() {
   const session = await getSession();
@@ -29,7 +29,10 @@ export default async function DashboardPage() {
         title={session?.user?.name ? `Welcome, ${session.user.name}` : "Dashboard"}
         description="You're signed in to Spine."
       />
-      <SetupChecklist />
+      <div className="flex flex-col gap-6">
+        <DashboardSummary />
+        <SetupChecklist />
+      </div>
     </>
   );
 }

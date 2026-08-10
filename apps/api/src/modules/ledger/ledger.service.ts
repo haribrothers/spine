@@ -1,8 +1,9 @@
-import { Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { accounts, journalEntries, journalLines } from "../../db/schema";
+import { PeriodsService } from "./periods.service";
 
 /**
  * PRD §7.2 posting rules reference system accounts by name/role, not a
@@ -55,7 +56,10 @@ export interface PostEntryInput {
  */
 @Injectable()
 export class LedgerService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly periodsService: PeriodsService,
+  ) {}
 
   /**
    * Resolves this org's system accounts by their well-known codes
@@ -122,6 +126,22 @@ export class LedgerService {
     }
 
     const dateStr = typeof input.date === "string" ? input.date : input.date.toISOString().slice(0, 10);
+
+    // S-09.8 — "nobody back-dates entries into a closed period." Checked
+    // inside the same transaction as the posting itself, using `tx` (not
+    // `this.db`), so a period closed concurrently mid-transaction is still
+    // caught rather than racing the write. Note every domain service today
+    // posts with `date: new Date()` (issue/record/approve time, not a
+    // user-editable backdate field) — so in practice this guard blocks
+    // "post anything new while today falls in a closed range" rather than
+    // literally rejecting a chosen past date, but it satisfies the same
+    // intent: once a period is closed, no new activity can land inside
+    // that date range either.
+    if (await this.periodsService.isDateClosed(tx, input.orgId, dateStr)) {
+      throw new BadRequestException(
+        `Cannot post a journal entry dated ${dateStr} — that date falls within a closed fiscal period`,
+      );
+    }
 
     const [entry] = await tx
       .insert(journalEntries)

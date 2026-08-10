@@ -12,3 +12,4 @@ export * from "./teams.ts";
 export * from "./user-profile.ts";
 export * from "./tax.ts";
 export * from "./purchases.ts";
+export * from "./reports.ts";

@@ -1,8 +1,11 @@
 import { Module } from "@nestjs/common";
 import { LedgerService } from "./ledger.service";
+import { PeriodsService } from "./periods.service";
+import { PeriodsController } from "./periods.controller";
 
 @Module({
-  providers: [LedgerService],
-  exports: [LedgerService],
+  controllers: [PeriodsController],
+  providers: [LedgerService, PeriodsService],
+  exports: [LedgerService, PeriodsService],
 })
 export class LedgerModule {}

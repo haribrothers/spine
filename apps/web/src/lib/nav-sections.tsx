@@ -1,5 +1,6 @@
 import {
   Banknote,
+  BarChart3,
   CalendarDays,
   ClipboardList,
   FileText,
@@ -86,6 +87,10 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
       { href: "/vendor-payments", label: "Vendor Payments", icon: <HandCoins /> },
       { href: "/payables", label: "Payables", icon: <Wallet /> },
     ],
+  },
+  {
+    label: "Reports",
+    items: [{ href: "/reports", label: "Reports", icon: <BarChart3 /> }],
   },
 ];
 

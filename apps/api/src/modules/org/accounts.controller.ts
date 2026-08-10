@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Put, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, UseInterceptors } from "@nestjs/common";
+import { createAccountSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { AccountsService } from "./accounts.service";
@@ -12,6 +13,16 @@ export class AccountsController {
   async list(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.accountsService.listGroupedByType(orgId);
+  }
+
+  /** S-09.9 — Owner-only, same category as tax rules/org settings management per CLAUDE.md's permission model. */
+  @Post()
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async create(@Session() session: UserSession, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = createAccountSchema.parse(body);
+    return this.accountsService.create(orgId, input);
   }
 
   @Put(":id")

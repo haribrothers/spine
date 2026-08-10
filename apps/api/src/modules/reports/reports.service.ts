@@ -2,7 +2,18 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, journalEntries, journalLines, taxRates, taxGroups, vendorBills } from "../../db/schema";
+import {
+  invoices,
+  invoiceLines,
+  contacts,
+  accounts,
+  journalEntries,
+  journalLines,
+  taxRates,
+  taxGroups,
+  vendorBills,
+  jobs,
+} from "../../db/schema";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -327,6 +338,291 @@ export class ReportsService {
     };
   }
 
+  /**
+   * S-09.2 — Profit & Loss for any date range. Per CLAUDE.md/FEAT-09's
+   * "no report is computed from documents directly — all financial
+   * reporting derives from journal lines" rule, this sums `journal_lines`
+   * grouped by account, bounded by `journal_entries.date` (the business
+   * event's date, inclusive both ends — same convention as `taxSummary`).
+   * Income accounts' net is credit-debit (a credit increases income);
+   * expense accounts' net is debit-credit (a debit increases expense) —
+   * standard trial-balance sign convention. A void's reversing entry nets
+   * out automatically since it's just more journal lines on the same
+   * accounts, not a special case here.
+   */
+  async profitAndLoss(orgId: string, from: string, to: string): Promise<ProfitAndLossReport> {
+    const rows = await this.db
+      .select({ accountId: journalLines.accountId, debit: journalLines.debit, credit: journalLines.credit, account: accounts })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(
+        and(
+          eq(journalEntries.orgId, orgId),
+          gte(journalEntries.date, from),
+          lte(journalEntries.date, to),
+          inArray(accounts.type, ["income", "expense"]),
+        ),
+      );
+
+    const byAccount = new Map<string, { code: string; name: string; type: "income" | "expense"; amount: bigint }>();
+    for (const row of rows) {
+      const existing = byAccount.get(row.accountId);
+      const delta = row.account.type === "income" ? row.credit - row.debit : row.debit - row.credit;
+      if (existing) {
+        existing.amount += delta;
+      } else {
+        byAccount.set(row.accountId, { code: row.account.code, name: row.account.name, type: row.account.type as "income" | "expense", amount: delta });
+      }
+    }
+
+    const income: ReportAccountLine[] = [];
+    const expenses: ReportAccountLine[] = [];
+    let totalIncome = 0n;
+    let totalExpenses = 0n;
+    for (const [id, acc] of byAccount) {
+      const line: ReportAccountLine = { accountId: id, code: acc.code, name: acc.name, amount: acc.amount.toString() };
+      if (acc.type === "income") {
+        totalIncome += acc.amount;
+        income.push(line);
+      } else {
+        totalExpenses += acc.amount;
+        expenses.push(line);
+      }
+    }
+    income.sort((a, b) => a.code.localeCompare(b.code));
+    expenses.sort((a, b) => a.code.localeCompare(b.code));
+
+    return {
+      from,
+      to,
+      income,
+      expenses,
+      totalIncome: totalIncome.toString(),
+      totalExpenses: totalExpenses.toString(),
+      netProfit: (totalIncome - totalExpenses).toString(),
+    };
+  }
+
+  /**
+   * S-09.3 — Balance Sheet as of a given date. Assets/liabilities/equity
+   * balances are each accounts' lifetime net movement up to and including
+   * `asOf` (a balance sheet is a point-in-time snapshot, unlike P&L's
+   * ranged flow), same journal_lines-derived approach as every other
+   * report here. Asset accounts net debit-credit (a debit increases an
+   * asset); liability/equity accounts net credit-debit — standard
+   * convention, mirroring `profitAndLoss`'s own income/expense split.
+   *
+   * Current-period net profit (income minus expense for the same
+   * lifetime-to-`asOf` window) is folded into equity as an explicit
+   * "Retained Earnings (current period)" line rather than written to the
+   * `3200 Retained Earnings` system account — that account exists for a
+   * future formal period-close/roll-forward step (S-09.8 closes a period
+   * for editing, it doesn't currently post a closing entry), so showing
+   * current earnings as a computed line here means the balance sheet
+   * balances (assets == liabilities + equity) without inventing a posting
+   * this codebase doesn't otherwise make.
+   */
+  async balanceSheet(orgId: string, asOf: string): Promise<BalanceSheetReport> {
+    const rows = await this.db
+      .select({ accountId: journalLines.accountId, debit: journalLines.debit, credit: journalLines.credit, account: accounts })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), lte(journalEntries.date, asOf)));
+
+    const byAccount = new Map<string, { code: string; name: string; type: string; amount: bigint }>();
+    for (const row of rows) {
+      const isDebitNormal = row.account.type === "asset" || row.account.type === "expense";
+      const delta = isDebitNormal ? row.debit - row.credit : row.credit - row.debit;
+      const existing = byAccount.get(row.accountId);
+      if (existing) {
+        existing.amount += delta;
+      } else {
+        byAccount.set(row.accountId, { code: row.account.code, name: row.account.name, type: row.account.type, amount: delta });
+      }
+    }
+
+    const assets: ReportAccountLine[] = [];
+    const liabilities: ReportAccountLine[] = [];
+    const equity: ReportAccountLine[] = [];
+    let totalAssets = 0n;
+    let totalLiabilities = 0n;
+    let totalEquity = 0n;
+    let netIncome = 0n;
+
+    for (const [id, acc] of byAccount) {
+      const line: ReportAccountLine = { accountId: id, code: acc.code, name: acc.name, amount: acc.amount.toString() };
+      if (acc.type === "asset") {
+        totalAssets += acc.amount;
+        assets.push(line);
+      } else if (acc.type === "liability") {
+        totalLiabilities += acc.amount;
+        liabilities.push(line);
+      } else if (acc.type === "equity") {
+        totalEquity += acc.amount;
+        equity.push(line);
+      } else if (acc.type === "income") {
+        netIncome += acc.amount;
+      } else if (acc.type === "expense") {
+        netIncome -= acc.amount;
+      }
+    }
+
+    equity.push({ accountId: undefined, code: "3200", name: "Retained Earnings (current period)", amount: netIncome.toString() });
+    totalEquity += netIncome;
+
+    assets.sort((a, b) => a.code.localeCompare(b.code));
+    liabilities.sort((a, b) => a.code.localeCompare(b.code));
+    equity.sort((a, b) => a.code.localeCompare(b.code));
+
+    return {
+      asOf,
+      assets,
+      liabilities,
+      equity,
+      totalAssets: totalAssets.toString(),
+      totalLiabilities: totalLiabilities.toString(),
+      totalEquity: totalEquity.toString(),
+      totalLiabilitiesAndEquity: (totalLiabilities + totalEquity).toString(),
+    };
+  }
+
+  /**
+   * S-09.4 — "click any figure in a report and see the documents behind
+   * it." Given an account + date range (the exact inputs `profitAndLoss`/
+   * `balanceSheet` already group by), returns every journal entry posted
+   * to that account in range with its `sourceType`/`sourceId` — the web
+   * client resolves that into a real link (e.g. `sourceType: "invoice"` ->
+   * `/invoices/:sourceId`) since this service has no reason to know every
+   * consuming module's own route shape. `narration` is included as a
+   * human-readable fallback for source types the client doesn't have a
+   * dedicated link for.
+   */
+  async accountDrilldown(orgId: string, accountId: string, from: string, to: string): Promise<AccountDrilldownReport> {
+    const [account] = await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.id, accountId)));
+    if (!account) {
+      return { accountId, accountCode: "", accountName: "", from, to, entries: [] };
+    }
+
+    const rows = await this.db
+      .select({ entry: journalEntries, line: journalLines })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .where(
+        and(
+          eq(journalEntries.orgId, orgId),
+          eq(journalLines.accountId, accountId),
+          gte(journalEntries.date, from),
+          lte(journalEntries.date, to),
+        ),
+      );
+
+    const entries: AccountDrilldownEntry[] = rows
+      .map((row) => ({
+        journalEntryId: row.entry.id,
+        date: row.entry.date,
+        narration: row.entry.narration,
+        sourceType: row.entry.sourceType,
+        sourceId: row.entry.sourceId,
+        debit: row.line.debit.toString(),
+        credit: row.line.credit.toString(),
+      }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { accountId, accountCode: account.code, accountName: account.name, from, to, entries };
+  }
+
+  /**
+   * S-09.6 — job profitability across ALL jobs, the all-jobs summary view
+   * `JobCostingService.report` (per-job, Phase 3) doesn't provide. Reuses
+   * the exact same journal_lines-filtered-by-jobId approach — grouped by
+   * `jobId` in one query instead of N — never a shadow costing table, same
+   * as that service's own doc comment.
+   */
+  async jobProfitability(orgId: string): Promise<JobProfitabilityReport> {
+    const jobRows = await this.db.select().from(jobs).where(eq(jobs.orgId, orgId));
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, debit: journalLines.debit, credit: journalLines.credit, accountType: accounts.type })
+      .from(journalLines)
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.type, ["income", "expense"])));
+
+    const byJob = new Map<string, { revenue: bigint; cost: bigint }>();
+    for (const row of rows) {
+      if (!row.jobId) continue;
+      const existing = byJob.get(row.jobId) ?? { revenue: 0n, cost: 0n };
+      if (row.accountType === "income") existing.revenue += row.credit;
+      if (row.accountType === "expense") existing.cost += row.debit;
+      byJob.set(row.jobId, existing);
+    }
+
+    const jobRowsReport: JobProfitabilityRow[] = jobRows.map((job) => {
+      const totals = byJob.get(job.id) ?? { revenue: 0n, cost: 0n };
+      const margin = totals.revenue - totals.cost;
+      const marginPct = totals.revenue > 0n ? Number((margin * 10000n) / totals.revenue) / 100 : null;
+      return {
+        jobId: job.id,
+        name: job.name,
+        status: job.status,
+        currency: job.currency,
+        contractValueAmount: job.contractValueAmount.toString(),
+        revenue: totals.revenue.toString(),
+        cost: totals.cost.toString(),
+        margin: margin.toString(),
+        marginPct,
+      };
+    });
+
+    jobRowsReport.sort((a, b) => (BigInt(b.margin) > BigInt(a.margin) ? 1 : BigInt(b.margin) < BigInt(a.margin) ? -1 : 0));
+
+    return { jobs: jobRowsReport };
+  }
+
+  /**
+   * S-09.10 — "a dashboard with cash position, receivables, overdue count
+   * and month revenue, so one screen tells me how things stand." Reuses
+   * `receivables()` for the AR figures (same balance computation, no
+   * second source of truth); cash position sums the two seeded cash/bank
+   * asset accounts' (`1000`/`1010`) lifetime net movement, same
+   * debit-increases-asset convention as `balanceSheet`; month revenue sums
+   * `income`-type journal_lines credits for the current calendar month
+   * to date, same convention as `profitAndLoss`.
+   */
+  async dashboardSummary(orgId: string): Promise<DashboardSummaryReport> {
+    const receivables = await this.receivables(orgId);
+    const overdueCount = receivables.invoices.filter((i) => i.bucket !== "current").length;
+
+    const cashAccounts = await this.db
+      .select()
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), inArray(accounts.code, ["1000", "1010"])));
+    const cashAccountIds = cashAccounts.map((a) => a.id);
+    const cashLines = cashAccountIds.length
+      ? await this.db.select({ debit: journalLines.debit, credit: journalLines.credit }).from(journalLines).where(inArray(journalLines.accountId, cashAccountIds))
+      : [];
+    const cashPosition = cashLines.reduce((sum, l) => sum + l.debit - l.credit, 0n);
+
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const todayStr = now.toISOString().slice(0, 10);
+    const monthRevenueRows = await this.db
+      .select({ debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), eq(accounts.type, "income"), gte(journalEntries.date, monthStart), lte(journalEntries.date, todayStr)));
+    const monthRevenue = monthRevenueRows.reduce((sum, l) => sum + l.credit - l.debit, 0n);
+
+    return {
+      cashPosition: cashPosition.toString(),
+      totalReceivables: receivables.totalOutstanding,
+      overdueInvoiceCount: overdueCount,
+      monthRevenue: monthRevenue.toString(),
+    };
+  }
+
   private async taxCollectedByRate(orgId: string, from: string, to: string): Promise<TaxByRateRow[]> {
     const lineRows = await this.db
       .select({ line: invoiceLines })
@@ -410,6 +706,78 @@ export interface TaxSummaryReport {
    * is itself "0".
    */
   collectedByRate: TaxByRateRow[];
+}
+
+export interface ReportAccountLine {
+  accountId: string | undefined;
+  code: string;
+  name: string;
+  amount: string;
+}
+
+export interface ProfitAndLossReport {
+  from: string;
+  to: string;
+  income: ReportAccountLine[];
+  expenses: ReportAccountLine[];
+  totalIncome: string;
+  totalExpenses: string;
+  netProfit: string;
+}
+
+export interface BalanceSheetReport {
+  asOf: string;
+  assets: ReportAccountLine[];
+  liabilities: ReportAccountLine[];
+  /** Includes a computed "Retained Earnings (current period)" line — see balanceSheet's own doc comment. */
+  equity: ReportAccountLine[];
+  totalAssets: string;
+  totalLiabilities: string;
+  totalEquity: string;
+  totalLiabilitiesAndEquity: string;
+}
+
+export interface AccountDrilldownEntry {
+  journalEntryId: string;
+  date: string;
+  narration: string | null;
+  /** e.g. "invoice", "vendor_bill", "expense", "payment", "credit_note" — see each service's own postEntry call for the full set. */
+  sourceType: string;
+  sourceId: string;
+  debit: string;
+  credit: string;
+}
+
+export interface AccountDrilldownReport {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  from: string;
+  to: string;
+  entries: AccountDrilldownEntry[];
+}
+
+export interface JobProfitabilityRow {
+  jobId: string;
+  name: string;
+  status: string;
+  currency: string;
+  contractValueAmount: string;
+  revenue: string;
+  cost: string;
+  margin: string;
+  marginPct: number | null;
+}
+
+export interface JobProfitabilityReport {
+  jobs: JobProfitabilityRow[];
+}
+
+export interface DashboardSummaryReport {
+  cashPosition: string;
+  totalReceivables: string;
+  overdueInvoiceCount: number;
+  monthRevenue: string;
 }
 
 function daysPastDue(dueDate: Date | null, today: Date): number {

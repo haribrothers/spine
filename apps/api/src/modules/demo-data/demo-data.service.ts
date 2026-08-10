@@ -480,6 +480,8 @@ type DemoVendorBillSeed = {
   dueInDays: number | null;
   lines: { name: string; quantity: number; unitPriceAmount: bigint }[];
   outcome: "draft" | "recorded" | "paid" | "voided";
+  /** When true, posts against `costingJobId` (the "active" demo job) — see seedPurchases' own comment on why job profitability needs at least one bill/expense with real cost data. */
+  tagToCostingJob?: boolean;
 };
 
 /** PRD §11.3's own seed-data spec calls for "expenses" alongside jobs/retention — this closes that gap for FEAT-07. Covers every lifecycle stage: draft (never recorded), recorded-and-outstanding (appears in Payables), fully paid, and voided (S-07.1/S-07.7/S-07.8). */
@@ -491,6 +493,7 @@ const DEMO_VENDOR_BILLS: DemoVendorBillSeed[] = [
     dueInDays: 20,
     lines: [{ name: "Framing lumber delivery", quantity: 500, unitPriceAmount: 850n }],
     outcome: "paid",
+    tagToCostingJob: true,
   },
   {
     contactIndex: 8, // Granite State Concrete
@@ -525,11 +528,13 @@ type DemoExpenseSeed = {
   description: string;
   dateInDays: number;
   outcome: "submitted" | "approved" | "rejected";
+  /** Same costingJobId tagging as DemoVendorBillSeed — see seedPurchases' own comment. */
+  tagToCostingJob?: boolean;
 };
 
 /** Covers S-07.2/S-07.3's submission shape plus S-07.4's full approval-gate lifecycle (submitted/approved/rejected) — an approved expense here has a real ledger posting, a rejected one deliberately doesn't (see ExpensesService.approve's own doc comment on why approval IS the posting trigger). */
 const DEMO_EXPENSES: DemoExpenseSeed[] = [
-  { categoryName: "Fuel & Vehicle", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved" },
+  { categoryName: "Fuel & Vehicle", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved", tagToCostingJob: true },
   { categoryName: "Site Meals", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved" },
   { categoryName: "Tools & Small Equipment", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved" },
   { categoryName: "Fuel & Vehicle", amount: 6000n, paidBy: "employee", description: "Fuel — no receipt attached", dateInDays: -2, outcome: "submitted" },
@@ -912,7 +917,7 @@ export class DemoDataService {
     const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const jobsResult = await this.seedJobs(orgId, actorUserId, result.contactIds);
-    const purchasesResult = await this.seedPurchases(orgId, actorUserId, result.contactIds);
+    const purchasesResult = await this.seedPurchases(orgId, actorUserId, result.contactIds, jobsResult.costingJobId);
     const creditNotesResult = await this.seedCreditNotes(orgId, actorUserId, invoicesResult.creditableInvoiceId);
     const meetingsResult = await this.seedMeetings(orgId, actorUserId, result.contactIds);
     const usersResult = await this.seedDemoUsers(orgId, actorUserId);
@@ -1529,7 +1534,12 @@ export class DemoDataService {
       }
     }
 
-    return { jobsCreated, milestonesInvoiced, retentionReleases, jobPhotosCreated, jobNotesCreated, variationOrdersCreated };
+    // Exposed for seedPurchases below (S-09.6's job-profitability report
+    // needs at least one demo job with real `cost` data, not just revenue
+    // — otherwise every demo job shows `cost: 0` and a misleadingly
+    // 100%-margin row, even though VendorBillsService/ExpensesService both
+    // already post with jobId when one is set).
+    return { jobsCreated, milestonesInvoiced, retentionReleases, jobPhotosCreated, jobNotesCreated, variationOrdersCreated, costingJobId: variationOrderJobId };
   }
 
   /**
@@ -1544,8 +1554,17 @@ export class DemoDataService {
    * vendor bill is recorded then fully paid via a real VendorPaymentsService
    * allocation (S-07.8), exercising the same allocation-limit trigger
    * every other demo document type's real-service seeding already relies on.
+   *
+   * `costingJobId` (the "active" demo job's id, from seedJobs) is tagged
+   * onto exactly one vendor bill and one expense (`tagToCostingJob: true`
+   * in their seed rows) — Phase 4 Stage 3's job-profitability report
+   * (S-09.6) reads `journal_lines.jobId`, and without at least one
+   * job-tagged bill/expense every demo job showed `cost: 0` and a
+   * misleadingly flat 100% margin, even though VendorBillsService.record/
+   * ExpensesService.approve already post with `jobId` when the document
+   * itself has one set.
    */
-  private async seedPurchases(orgId: string, actorUserId: string, contactIds: string[]) {
+  private async seedPurchases(orgId: string, actorUserId: string, contactIds: string[], costingJobId: string | null) {
     const [currencySetting] = await this.db
       .select()
       .from(settings)
@@ -1587,6 +1606,7 @@ export class DemoDataService {
         actorUserId,
         {
           contactId,
+          jobId: seed.tagToCostingJob ? costingJobId : null,
           billNumber: seed.billNumber,
           date,
           dueDate,
@@ -1652,6 +1672,7 @@ export class DemoDataService {
         actorUserId,
         {
           categoryId,
+          jobId: seed.tagToCostingJob ? costingJobId : null,
           date,
           currency: currencyCode,
           amount: seed.amount,
