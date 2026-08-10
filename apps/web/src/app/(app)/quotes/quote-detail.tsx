@@ -144,6 +144,20 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     }
   }
 
+  /** S-03.10's job half (S-04.1) — creates a job from this accepted quote's own snapshot (contract value carried over), then navigates there so the user can define milestones/retention before billing starts. Independent of "Convert to invoice" — a quote can become a job, an invoice, or both, per S-03.10's own "job and its first invoice" wording (the job path here doesn't also raise an invoice; the two conversions are separate actions a user chooses between or combines). */
+  async function handleConvertToJob() {
+    if (!quote) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const job = await apiClient.post<{ id: string }>(`/jobs/from-quote/${quote.id}`);
+      router.push(`/jobs/${job.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not convert this quote to a job.");
+      setBusy(false);
+    }
+  }
+
   async function handleApproveDiscount() {
     if (!quote) return;
     setBusy(true);
@@ -190,7 +204,11 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   const canEdit = quote.status === "draft";
   const canRevise = quote.status !== "draft" && !quote.isSuperseded;
+  // S-03.10 — both conversions share the same guard (only an accepted
+  // quote is convertible) and are independent actions, not mutually
+  // exclusive: a quote can become a job, an invoice, or both.
   const canConvertToInvoice = quote.status === "accepted";
+  const canConvertToJob = quote.status === "accepted";
   const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId;
 
   return (
@@ -254,6 +272,11 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             {canConvertToInvoice && (
               <Button onClick={handleConvertToInvoice} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Convert to invoice"}
+              </Button>
+            )}
+            {canConvertToJob && (
+              <Button variant="secondary" onClick={handleConvertToJob} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Convert to job"}
               </Button>
             )}
             {canEdit && (

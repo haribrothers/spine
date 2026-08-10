@@ -1,4 +1,4 @@
-import { Banknote, CalendarDays, FileText, Inbox, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
+import { Banknote, CalendarDays, FileText, HardHat, Inbox, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -13,6 +13,16 @@ import type { AppShellNavSection } from "@spine/ui";
  * "Sales Spine", Phase 2 is "Money In", not part of Sales) and its
  * enquiry → quote → job → invoice → payment → books workflow, where a
  * quote is a sales document but an invoice is a financial one.
+ *
+ * "Jobs" (Phase 3) is its own top-level section for the same reason,
+ * placed between Sales and Billing to match that workflow's own ordering
+ * (quote → job → invoice) — not nested under Sales (a job outlives the
+ * quote it came from and isn't itself a sales document) and not folded
+ * into Billing (a job is a work container milestones/photos/variation
+ * orders attach to, not a financial document). It's reachable for every
+ * org regardless of industry template — S-04.1-S-04.10 aren't
+ * construction-exclusive, only the retention-% field is tucked behind an
+ * "Advanced" disclosure per-job (see job-detail.tsx's EditJobDialog).
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
@@ -28,6 +38,10 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
       { href: "/catalog", label: "Catalogue", icon: <Package /> },
       { href: "/quotes", label: "Quotes", icon: <FileText /> },
     ],
+  },
+  {
+    label: "Jobs",
+    items: [{ href: "/jobs", label: "Jobs", icon: <HardHat /> }],
   },
   {
     label: "Billing",
