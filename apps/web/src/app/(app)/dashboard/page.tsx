@@ -2,6 +2,10 @@ import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../lib/get-session";
 import { DashboardSummary } from "./dashboard-summary";
 import { SetupChecklist } from "./setup-checklist";
+import { RevenueTrendChart } from "./widgets/revenue-trend-chart";
+import { PipelineByStageChart } from "./widgets/pipeline-by-stage-chart";
+import { ArAgingDonut } from "./widgets/ar-aging-donut";
+import { JobProfitabilityRanked } from "./widgets/job-profitability-ranked";
 
 /**
  * Real landing page for the sign-up/login flow and for the onboarding
@@ -14,10 +18,17 @@ import { SetupChecklist } from "./setup-checklist";
  * finished, skipped, or never started the wizard.
  *
  * Renders inside the shared AppShell provided by `(app)/layout.tsx` — same
- * shell Settings uses. S-09.10's stat-card row (`DashboardSummary`) is now
- * real, backed by `GET /reports/dashboard-summary` — cash position,
- * receivables, overdue count, and month revenue derived straight from the
- * ledger, not fabricated placeholder numbers.
+ * shell Settings uses. S-09.10's stat-card row (`DashboardSummary`) is
+ * real, backed by `GET /reports/dashboard-summary`.
+ *
+ * Dashboard v2 Stage 2 (S-09.11): the 4 new chart widgets below are
+ * temporarily appended in a fixed grid — every widget self-gates by
+ * rendering nothing on a 403/error, matching `DashboardSummary`'s own
+ * convention, so a Staff/Field session simply sees fewer cards rather than
+ * broken ones. Stage 3 replaces this fixed layout with a real
+ * `DashboardShell` that composes a genuinely different, role-adaptive set
+ * (not just "the same grid with gaps") — this interim state is real
+ * shippable value for Owner in the meantime, not a placeholder to hide.
  */
 export default async function DashboardPage() {
   const session = await getSession();
@@ -31,6 +42,12 @@ export default async function DashboardPage() {
       />
       <div className="flex flex-col gap-6">
         <DashboardSummary />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <RevenueTrendChart />
+          <ArAgingDonut />
+          <PipelineByStageChart />
+          <JobProfitabilityRanked />
+        </div>
         <SetupChecklist />
       </div>
     </>

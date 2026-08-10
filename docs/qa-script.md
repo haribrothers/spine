@@ -716,49 +716,73 @@ revenue.
    Receivables, Overdue invoices, Revenue this month — all real numbers
    derived from the ledger, not placeholders. Cross-check "Receivables"
    matches Receivables' own Total outstanding figure (§9).
-2. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
+2. **Dashboard v2 Stage 2 — chart widgets (S-09.11)**: below the KPI row,
+   confirm 4 chart cards render with real data:
+   - **Revenue trend** — a bar chart, one bar per month. Click the 3M/6M/
+     12M toggle and confirm the chart re-fetches and re-renders with the
+     right number of bars each time. Hover a bar and confirm the tooltip
+     shows the exact currency amount for that month.
+   - **Receivables aging** — a donut matching Receivables' own bucket
+     totals (§9) exactly; colored current/due-soon/overdue, not the app's
+     accent color. If nothing is outstanding, confirm it shows "Nothing
+     outstanding" instead of an empty/broken chart.
+   - **Pipeline by stage** — a horizontal bar per lead stage (New/
+     Qualified/Proposal/Won/Lost), bar length by total deal value. Click
+     "View board" and confirm it lands on `/leads`.
+   - **Job profitability** — a "Top performers"/"Needs attention" ranked
+     list (top 3 / bottom 3 by margin), each row with a margin bar colored
+     green (positive) or red (negative). Click "View all" and confirm it
+     lands on `/reports`.
+3. **Regression check**: reload the dashboard a few times and confirm all
+   4 chart widgets consistently render without a flash of broken/empty
+   state — each widget independently fetches its own data, so one being
+   slow shouldn't block the others from appearing.
+4. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
    Job Profitability.
-3. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
+5. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
    this calendar year). Confirm Income/Expense sections list real
    chart-of-accounts lines with amounts, and Net profit = Total income −
    Total expenses.
-4. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
+6. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
    drill-down dialog opens listing the journal entries behind that
    figure, each linking to its source document (invoice/payment/vendor
    bill/expense) — S-09.4's "click any figure, see the documents behind
    it." Click through one link and confirm it lands on the right
    document.
-5. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
+7. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
    Section/Code/Account/Amount columns matching the on-screen figures.
-6. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
+8. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
    Liabilities, and Equity sections, and that **Total assets = Total
    liabilities + Total equity** exactly (the balance sheet must always
    balance). Confirm Equity includes a computed "Retained Earnings
    (current period)" line reflecting net profit to date.
-7. **Job Profitability tab**: confirm every job appears with contract
+9. **Job Profitability tab**: confirm every job appears with contract
    value, revenue, cost, margin, and margin %. Confirm the "Marina office
    fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
    vendor bill + expense) — every other demo job showing `cost: 0` (no
    vendor bills/expenses tagged to them) is correct, not a bug. Click a
    job name — confirm it navigates to that job's detail page.
-8. As a Staff user with `dashboard.view` granted but not Owner: confirm
-   the dashboard KPI row and Job Profitability tab both load normally,
-   but Profit & Loss / Balance Sheet / drill-down show a clear "Owner-only
-   report" message instead of data (S-09.2/S-09.3 stay Owner-only per
-   CLAUDE.md's permission model; the capability's own description already
-   says "P&L/balance sheet stay Owner-only regardless of this grant").
-9. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
-   scroll to **Period close**. Add a period covering today, click
-   **Close**. Try to issue a new invoice or record/approve an
-   expense/vendor bill dated today — confirm it's rejected with "falls
-   within a closed fiscal period." Click **Reopen** and confirm the same
-   action now succeeds.
-10. **Custom account (S-09.9)**: in the same Chart of accounts pane,
+10. As a Staff user with `dashboard.view` granted but not Owner: confirm
+    the dashboard KPI row, the aging/pipeline/job-profitability chart
+    widgets, and the Job Profitability report tab all load normally, but
+    the **Revenue trend chart** widget and Profit & Loss / Balance Sheet /
+    drill-down on the Reports page all render nothing / show a clear
+    "Owner-only report" message (S-09.2/S-09.3/S-09.11's revenue trend
+    stay Owner-only per CLAUDE.md's permission model; the capability's own
+    description already says "P&L/balance sheet stay Owner-only regardless
+    of this grant").
+11. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
+    scroll to **Period close**. Add a period covering today, click
+    **Close**. Try to issue a new invoice or record/approve an
+    expense/vendor bill dated today — confirm it's rejected with "falls
+    within a closed fiscal period." Click **Reopen** and confirm the same
+    action now succeeds.
+12. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
     immediately, and that a new Settings → Purchases expense category can
     select it as its posting account.
-11. **Regression check**: after adding a custom account or closing/
+13. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
     the existing system accounts (AR, AP, tax, retention) are still
     present and still read-only.

@@ -75,6 +75,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-11 — Dashboard v2 Stage 2: widget registry + Owner/Staff financial charts (S-09.11)
+
+- **Second of 5 staged commits.** First real user-facing surface of dashboard v2 — 4 new chart widgets on `/dashboard`, plus the widget registry every later stage builds on.
+- **`packages/shared/src/schemas/dashboard-widgets.ts`** — new `DASHBOARD_WIDGETS` list, mirroring `CAPABILITIES`' single-source-of-truth pattern. Each entry documents (for the web layer's UX only, never the real security boundary — each widget's own data endpoint still enforces its own gate server-side) which capability a widget needs and whether it's Owner-only. Also the "stable widget key list" Stage 5's per-user layout persistence needs, so a removed/renamed widget key in a saved layout can be skipped safely rather than breaking the page.
+- **Recharts is now a direct `apps/web` dependency** (`apps/web/package.json`), matching how `apps/design-system`'s chart demo page already consumes it — `packages/ui/src/components/chart.tsx`'s `ChartContainer` is a thin theming wrapper, not a full chart-type library, so callers compose raw Recharts primitives themselves. First real (non-demo-page) consumer of this pattern in the actual app.
+- **4 new widgets** under `apps/web/src/app/(app)/dashboard/widgets/`:
+  - `RevenueTrendChart` — bar chart, 3/6/12-month toggle (`ToggleGroup`), Owner-only per `GET /reports/revenue-trend`'s own gate.
+  - `ArAgingDonut` — donut reusing `GET /reports/receivables`'s already-bucketed totals verbatim, no client-side re-bucketing needed (simpler than originally planned). Uses the semantic paid/due-soon/overdue palette, not the categorical accent, per `chart.tsx`'s own doc-comment rule against mixing the two.
+  - `PipelineByStageChart` — horizontal bar chart reusing Stage 1's new `GET /leads/summary-by-stage`, bar length by deal value.
+  - `JobProfitabilityRanked` — a plain ranked list (not a Recharts chart — a hand-rolled margin bar recolored by sign, since `@spine/ui`'s `Progress` component has no color-override prop), top-3/bottom-3 by margin %, reusing `GET /reports/job-profitability` verbatim.
+  - All four render nothing on a 403/error, matching `DashboardSummary`'s existing "degrade quietly" convention — a Staff/Field session simply sees fewer cards, never a broken one.
+- **`apps/web/src/app/(app)/dashboard/page.tsx`** — the 4 widgets are appended in a temporary fixed 2-column grid below the KPI row. Deliberately not role-adaptive yet — Stage 3 replaces this fixed layout with a real `DashboardShell`; this interim state ships real value for Owner in the meantime rather than sitting behind a flag.
+- Verified end-to-end: typecheck and `pnpm --filter @spine/web build` both clean, `pnpm install` correctly linked the new `recharts` dependency, and a live authenticated session against the seeded dev org confirmed all 4 widget titles render server-side (200, not the earlier stale-`.next`-cache 500 this same check has caught before in this session).
+- `docs/qa-script.md` §15 extended with the new chart-widget steps (3/6/12 toggle, donut bucket cross-check against Receivables, pipeline "View board" link, job-profitability ranked list) and the Owner-vs-Staff gating check now explicitly covers revenue trend too.
+
 ### 2026-08-11 — Dashboard v2 Stage 1: backend data layer (S-09.11, S-09.12 partial)
 
 - **First of 5 staged commits building out S-09.11 → S-09.14/S-10.19 (dashboard v2)**, per the requirements review and staged plan documented in this session — API-only groundwork, no web UI yet. Every new query is either a genuinely new cross-cutting aggregate or a thin reuse of an already-existing report/service, following CLAUDE.md's "don't build a shadow subsystem" rule throughout.
