@@ -1,14 +1,16 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { setMilestonesSchema } from "@spine/shared";
+import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
 import { roundHalfUp } from "@spine/shared";
 import { and, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { jobs, milestones } from "../../db/schema";
+import { jobs, milestones, jobPhotos } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { InvoicesService } from "../invoices/invoices.service";
 
 export type SetMilestonesInput = z.infer<typeof setMilestonesSchema>;
+export type CompleteMilestoneInput = z.infer<typeof completeMilestoneSchema>;
 
 interface ResolvedMilestone {
   id?: string;
@@ -44,6 +46,7 @@ export class MilestonesService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly invoices: InvoicesService,
   ) {}
 
   async list(orgId: string, jobId: string) {
@@ -142,6 +145,122 @@ export class MilestonesService {
     });
 
     return this.list(orgId, jobId);
+  }
+
+  /**
+   * S-04.4 — "mark a milestone as complete with photos, so office staff
+   * can raise the invoice." Web-only for now (mobile capture is Phase 5,
+   * per the PRD's own phase breakdown — see CHANGELOG). Only a `pending`
+   * milestone can be completed (an `invoiced` one is already past this
+   * point; re-completing a `completed` one is a no-op the UI shouldn't
+   * offer, guarded here anyway since this is a server-enforced boundary,
+   * not just a UI affordance). Photos are attached via `job_photos` with
+   * `milestoneId` set (see jobs.ts's own doc comment on that column) — the
+   * files themselves are already-uploaded `files` rows (`POST /files`),
+   * referenced here by id, matching every other file-attaching flow in
+   * this codebase.
+   */
+  async completeMilestone(orgId: string, jobId: string, milestoneId: string, actorUserId: string, input: CompleteMilestoneInput) {
+    const job = await this.requireJob(orgId, jobId);
+    const milestone = await this.getOne(orgId, jobId, milestoneId);
+
+    if (milestone.status !== "pending") {
+      throw new BadRequestException("Only a pending milestone can be marked complete");
+    }
+
+    await this.db.transaction(async (tx) => {
+      const completedAt = new Date();
+      await tx
+        .update(milestones)
+        .set({ status: "completed", completedByUserId: actorUserId, completedAt, completionNotes: input.completionNotes ?? null, updatedAt: completedAt })
+        .where(eq(milestones.id, milestoneId));
+
+      if (input.photoFileIds.length) {
+        await tx.insert(jobPhotos).values(
+          input.photoFileIds.map((fileId) => ({
+            jobId,
+            orgId,
+            milestoneId,
+            fileId,
+            uploadedByUserId: actorUserId,
+          })),
+        );
+      }
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "milestone_completed",
+        entityType: "milestone",
+        entityId: milestoneId,
+        contactId: job.contactId,
+        changes: [{ field: "status", from: "pending", to: "completed" }],
+      });
+    });
+
+    return this.getOne(orgId, jobId, milestoneId);
+  }
+
+  /**
+   * S-04.5 / S-05.1's milestone path — "raise a progress invoice directly
+   * from a completed milestone." Only a `completed` milestone can be
+   * invoiced (a `pending` one has nothing done to bill for yet; an
+   * already-`invoiced` one is the one-shot guard from milestones.ts's own
+   * doc comment). Retention (S-04.6) is applied here — `job.retentionPct`
+   * times the milestone's own `resolvedAmount`, rounded the same
+   * half-up-at-line-level way every other money computation in this
+   * codebase works — and passed through to
+   * `InvoicesService.createFromMilestone`, which stores it on the new
+   * invoice's own `retentionAmount` column for `issue()` to post against.
+   * The milestone flips to `invoiced` and records the new invoice's id
+   * immediately after invoice creation succeeds — two sequential writes,
+   * not one shared transaction (InvoicesService.createFromMilestone owns
+   * its own transaction boundary, matching every other cross-service call
+   * in this codebase, e.g. QuotesService.send enqueuing a queue job after
+   * its own commit). Retry-safety against a client retrying this exact
+   * call (e.g. after a dropped response) is `IdempotencyInterceptor`'s job
+   * at the controller layer, per CLAUDE.md's "idempotency keys on all
+   * mutating endpoints" rule — not a manual re-entrancy guard here.
+   */
+  async invoiceMilestone(orgId: string, jobId: string, milestoneId: string, actorUserId: string) {
+    const job = await this.requireJob(orgId, jobId);
+    const milestone = await this.getOne(orgId, jobId, milestoneId);
+
+    if (milestone.status !== "completed") {
+      throw new BadRequestException("Only a completed milestone can be invoiced");
+    }
+
+    const retentionAmount = job.retentionPct > 0 ? roundHalfUp((Number(milestone.resolvedAmount) * job.retentionPct) / 100) : 0n;
+
+    const invoice = await this.invoices.createFromMilestone(orgId, actorUserId, {
+      jobId,
+      milestoneId,
+      contactId: job.contactId,
+      currency: job.currency,
+      name: `${job.name} — ${milestone.name}`,
+      amount: milestone.resolvedAmount,
+      retentionAmount,
+    });
+
+    await this.db
+      .update(milestones)
+      .set({ status: "invoiced", invoicedInvoiceId: invoice.id, updatedAt: new Date() })
+      .where(eq(milestones.id, milestoneId));
+
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "milestone_invoiced",
+      entityType: "milestone",
+      entityId: milestoneId,
+      contactId: job.contactId,
+      changes: [
+        { field: "status", from: "completed", to: "invoiced" },
+        { field: "invoicedInvoiceId", from: null, to: invoice.id },
+      ],
+    });
+
+    return invoice;
   }
 
   /**

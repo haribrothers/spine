@@ -26,7 +26,8 @@ import { jobs, milestones } from "./jobs";
  */
 export const invoiceStatusEnum = pgEnum("invoice_status", ["draft", "issued", "void"]);
 
-export const invoiceTypeEnum = pgEnum("invoice_type", ["standard", "advance", "progress"]);
+/** `retention_release` (S-04.7) — a distinct type rather than reusing `standard`, so InvoicesService.releaseRetention can unambiguously find "how much retention has already been released for this job" without conflating it with any other standard invoice that happens to be linked to the same job. */
+export const invoiceTypeEnum = pgEnum("invoice_type", ["standard", "advance", "progress", "retention_release"]);
 
 /** Same three kinds as quoteLineTypeEnum — see quotes.ts's own comment on why one table covers priced items, section headings, and free text. */
 export const invoiceLineTypeEnum = pgEnum("invoice_line_type", ["item", "heading", "text"]);

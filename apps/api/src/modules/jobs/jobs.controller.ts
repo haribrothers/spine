@@ -1,11 +1,12 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createJobSchema, updateJobSchema, setMilestonesSchema } from "@spine/shared";
+import { createJobSchema, updateJobSchema, setMilestonesSchema, completeMilestoneSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { JobsService } from "./jobs.service";
 import { MilestonesService } from "./milestones.service";
+import { InvoicesService } from "../invoices/invoices.service";
 
 /**
  * PRD F4 — jobs and their milestones. GET routes are readable by any
@@ -23,6 +24,7 @@ export class JobsController {
   constructor(
     private readonly jobsService: JobsService,
     private readonly milestonesService: MilestonesService,
+    private readonly invoicesService: InvoicesService,
   ) {}
 
   @Get()
@@ -84,5 +86,49 @@ export class JobsController {
     const orgId = requireOrgId(session);
     const input = setMilestonesSchema.parse(body);
     return this.milestonesService.setAll(orgId, id, session.user.id, input);
+  }
+
+  /**
+   * S-04.4 — mark a milestone complete with photos. Field-reachable (per
+   * §2.1's "Upload site photos, update milestone status: Field ✅"), so
+   * this uses `@OrgRoles(["owner", "staff", "field"])` +
+   * `jobs.update_milestones` rather than the `invoices.manage` gate the
+   * rest of this controller uses — a field crew member has no business
+   * creating jobs or raising invoices, but marking their own work done is
+   * exactly what this capability exists for.
+   */
+  @Post(":id/milestones/:milestoneId/complete")
+  @OrgRoles(["owner", "staff", "field"])
+  @RequireCapability("jobs.update_milestones")
+  @UseInterceptors(IdempotencyInterceptor)
+  async completeMilestone(
+    @Session() session: UserSession,
+    @Param("id") id: string,
+    @Param("milestoneId") milestoneId: string,
+    @Body() body: unknown,
+  ) {
+    const orgId = requireOrgId(session);
+    const input = completeMilestoneSchema.parse(body);
+    return this.milestonesService.completeMilestone(orgId, id, milestoneId, session.user.id, input);
+  }
+
+  /** S-04.5 / S-05.1's milestone path — raises a progress invoice directly from a completed milestone. Office-staff action, same gate as job/milestone creation. */
+  @Post(":id/milestones/:milestoneId/invoice")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async invoiceMilestone(@Session() session: UserSession, @Param("id") id: string, @Param("milestoneId") milestoneId: string) {
+    const orgId = requireOrgId(session);
+    return this.milestonesService.invoiceMilestone(orgId, id, milestoneId, session.user.id);
+  }
+
+  /** S-04.7 — releases a job's outstanding retention as a final invoice. */
+  @Post(":id/release-retention")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async releaseRetention(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.invoicesService.releaseRetention(orgId, session.user.id, id);
   }
 }

@@ -5,7 +5,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -149,7 +149,7 @@ export class InvoicesService {
       ...r.invoice,
       contactName: r.contactName,
       isOverdue: isOverdue(r.invoice),
-      balanceDue: r.invoice.totalAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
+      balanceDue: r.invoice.totalAmount - r.invoice.retentionAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
     }));
 
     if (options.status) {
@@ -179,7 +179,7 @@ export class InvoicesService {
       ...row.invoice,
       contactName: row.contactName,
       isOverdue: isOverdue(row.invoice),
-      balanceDue: row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
+      balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
       lines,
     };
   }
@@ -294,6 +294,210 @@ export class InvoicesService {
   }
 
   /**
+   * S-05.1's milestone path / S-04.5 — "raise a progress invoice directly
+   * from a completed milestone." Called by MilestonesService.invoiceMilestone,
+   * never directly from a controller (a milestone's own completion/
+   * invoiced-state guards live there, not here — this method trusts its
+   * caller the same way `create()` trusts a pre-validated `input`).
+   *
+   * Builds a single `item`-type line for the milestone's own
+   * `resolvedAmount` (already a snapshot — see milestones.ts's own doc
+   * comment on why this column exists) at the job's own tax rate default
+   * of 0% (a milestone doesn't carry its own tax rate; construction
+   * progress billing typically taxes the whole invoice at the org's
+   * standard rate, applied here via `taxRatePercentage` if the caller
+   * supplies one — defaulting to untaxed keeps this from silently
+   * inventing a tax rate no one configured). `type: "progress"` marks
+   * this as a milestone-driven invoice for reporting purposes, distinct
+   * from a `standard` from-scratch invoice.
+   */
+  async createFromMilestone(
+    orgId: string,
+    actorUserId: string,
+    input: {
+      jobId: string;
+      milestoneId: string;
+      contactId: string;
+      currency: string;
+      name: string;
+      amount: bigint;
+      taxRatePercentage?: number;
+      retentionAmount?: bigint;
+    },
+  ) {
+    const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
+    if (!contact) {
+      throw new BadRequestException("Contact not found");
+    }
+
+    const totals = computeInvoiceTotals(input.currency, [
+      {
+        type: "item",
+        catalogItemId: null,
+        name: input.name,
+        description: null,
+        quantity: 1,
+        unitPriceAmount: input.amount,
+        unitPriceCurrency: input.currency,
+        discountPercentage: 0,
+        taxRatePercentage: input.taxRatePercentage ?? 0,
+      },
+    ]);
+
+    const created = await this.db.transaction(async (tx) => {
+      const [invoice] = await tx
+        .insert(invoices)
+        .values({
+          orgId,
+          contactId: input.contactId,
+          status: "draft",
+          type: "progress",
+          jobId: input.jobId,
+          milestoneId: input.milestoneId,
+          currency: input.currency,
+          subtotalAmount: totals.subtotalAmount,
+          discountAmount: totals.discountAmount,
+          taxAmount: totals.taxAmount,
+          retentionAmount: input.retentionAmount ?? 0n,
+          totalAmount: totals.totalAmount,
+          createdByUserId: actorUserId,
+        })
+        .returning();
+
+      await insertLines(tx, invoice!.id, totals.lines);
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "invoice",
+        entityId: invoice!.id,
+        contactId: input.contactId,
+        changes: [
+          { field: "status", from: null, to: "draft" },
+          { field: "milestoneId", from: null, to: input.milestoneId },
+        ],
+      });
+
+      return invoice;
+    });
+
+    return this.getOne(orgId, created!.id);
+  }
+
+  /**
+   * S-04.7 — "release retention as a final invoice when the defect period
+   * ends." A retention-release invoice is a `standard`-type invoice for
+   * exactly the job's outstanding retained amount (summed from every prior
+   * `progress` invoice's `retentionAmount` issued against this job, minus
+   * whatever's already been released) — its own posting is the mirror
+   * image of the original hold: debit Retention Receivable is wrong here
+   * (that's what issuing WITH retention does); releasing instead credits
+   * Retention Receivable and debits AR, moving the held amount into the
+   * normal collectible-balance pool exactly like `Retention released` in
+   * §7.2 does for the cash side once it's actually paid.
+   *
+   * Concretely: this posts "debit Accounts Receivable, credit Retention
+   * Receivable" for the release amount at issue time (the retained amount
+   * becomes a real, collectible receivable) — separate from and prior to
+   * `Payment received` (debit Bank/Cash, credit AR) once the customer
+   * actually pays it, matching how every other invoice's AR-then-payment
+   * two-step already works. No Revenue/Tax line: the revenue and tax for
+   * this amount were already recognised on the original progress
+   * invoice(s) that held it back — recognising it again here would double
+   * -count revenue.
+   */
+  async releaseRetention(orgId: string, actorUserId: string, jobId: string) {
+    const [job] = await this.db.select().from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, jobId)));
+    if (!job) {
+      throw new NotFoundException("Job not found");
+    }
+
+    const heldInvoices = await this.db
+      .select()
+      .from(invoices)
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.jobId, jobId), eq(invoices.status, "issued")));
+
+    const totalHeld = heldInvoices.reduce((sum, inv) => sum + inv.retentionAmount, 0n);
+    const alreadyReleased = heldInvoices
+      .filter((inv) => inv.type === "retention_release")
+      .reduce((sum, inv) => sum + inv.totalAmount, 0n);
+    const releasable = totalHeld - alreadyReleased;
+
+    if (releasable <= 0n) {
+      throw new BadRequestException("No retention is outstanding for this job");
+    }
+
+    const result = await this.db.transaction(async (tx) => {
+      const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
+      const issuedAt = new Date();
+      const issueDateStr = issuedAt.toISOString().slice(0, 10);
+
+      const [invoice] = await tx
+        .insert(invoices)
+        .values({
+          orgId,
+          contactId: job.contactId,
+          status: "issued",
+          type: "retention_release",
+          jobId,
+          number,
+          issueDate: issuedAt,
+          issuedAt,
+          currency: job.currency,
+          subtotalAmount: releasable,
+          totalAmount: releasable,
+          notes: `Retention release for ${job.name}`,
+          createdByUserId: actorUserId,
+        })
+        .returning();
+
+      await tx.insert(invoiceLines).values({
+        invoiceId: invoice!.id,
+        sortOrder: 0,
+        type: "item",
+        name: `Retention release — ${job.name}`,
+        quantity: 1,
+        unitPriceAmount: releasable,
+        unitPriceCurrency: job.currency,
+        lineSubtotalAmount: releasable,
+        lineTotalAmount: releasable,
+      });
+
+      const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
+      const retentionAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "retentionReceivable");
+
+      const journalEntryId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: issueDateStr,
+        narration: `Invoice ${number} — retention released for job ${job.name}`,
+        sourceType: "invoice",
+        sourceId: invoice!.id,
+        lines: [
+          { accountId: arAccountId, debit: releasable, credit: 0n, contactId: job.contactId, jobId },
+          { accountId: retentionAccountId, debit: 0n, credit: releasable, contactId: job.contactId, jobId },
+        ],
+      });
+
+      await tx.update(invoices).set({ journalEntryId }).where(eq(invoices.id, invoice!.id));
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "issued",
+        entityType: "invoice",
+        entityId: invoice!.id,
+        contactId: job.contactId,
+        changes: [{ field: "status", from: null, to: "issued" }],
+      });
+
+      return invoice;
+    });
+
+    return this.getOne(orgId, result!.id);
+  }
+
+  /**
    * Updates a DRAFT invoice in place. An issued invoice is immutable per
    * CLAUDE.md — only void() may transition it further. Full-replace on
    * lines, same convention as QuotesService.update.
@@ -404,6 +608,24 @@ export class InvoicesService {
    * AR simply nets to the discounted total; a gross/contra presentation is
    * a P&L-reporting-time concern for Phase 4, not required for the ledger
    * to balance correctly today.
+   *
+   * **S-04.6 — retention.** When `retentionAmount > 0` (set at creation
+   * time by `InvoicesService.createFromMilestone` off the job's
+   * `retentionPct`), §7.2's "Invoice with retention" row applies: the AR
+   * debit is split into two lines — `totalAmount - retentionAmount` to
+   * Accounts Receivable (the actually-collectible net) and
+   * `retentionAmount` to Retention Receivable (held back until S-04.7's
+   * release) — rather than one full-total AR debit. Revenue and Tax are
+   * unaffected by retention (the work is still fully recognised as
+   * revenue now; only the cash collection is deferred), so those credit
+   * lines are computed exactly the same as the non-retention path.
+   *
+   * Every posting line for a job-linked invoice (`existing.jobId` set)
+   * also carries `jobId`, so job costing (S-04.8) can filter
+   * `journal_lines` by job per CLAUDE.md's "job costing pulls from journal
+   * lines tagged with job_id" rule — this is the only place invoice
+   * issuance sets it, matching how `contactId` is already attached to
+   * every line here.
    */
   async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string) {
     const [preCheck] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
@@ -441,17 +663,35 @@ export class InvoicesService {
 
         const revenueByAccount = await this.resolveRevenuePostingLines(tx, orgId, id, resolvedRevenueAccountId!);
 
-        const postingLines = [
-          { accountId: arAccountId, debit: existing.totalAmount, credit: 0n, contactId: existing.contactId },
+        const postingLines: { accountId: string; debit: bigint; credit: bigint; contactId: string; jobId?: string | null }[] = [];
+
+        if (existing.retentionAmount > 0n) {
+          const retentionAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "retentionReceivable");
+          postingLines.push(
+            {
+              accountId: arAccountId,
+              debit: existing.totalAmount - existing.retentionAmount,
+              credit: 0n,
+              contactId: existing.contactId,
+              jobId: existing.jobId,
+            },
+            { accountId: retentionAccountId, debit: existing.retentionAmount, credit: 0n, contactId: existing.contactId, jobId: existing.jobId },
+          );
+        } else {
+          postingLines.push({ accountId: arAccountId, debit: existing.totalAmount, credit: 0n, contactId: existing.contactId, jobId: existing.jobId });
+        }
+
+        postingLines.push(
           ...Array.from(revenueByAccount.entries()).map(([accountId, amount]) => ({
             accountId,
             debit: 0n,
             credit: amount,
             contactId: existing.contactId,
+            jobId: existing.jobId,
           })),
-        ];
+        );
         if (existing.taxAmount > 0n) {
-          postingLines.push({ accountId: taxAccountId, debit: 0n, credit: existing.taxAmount, contactId: existing.contactId });
+          postingLines.push({ accountId: taxAccountId, debit: 0n, credit: existing.taxAmount, contactId: existing.contactId, jobId: existing.jobId });
         }
 
         journalEntryId = await this.ledger.postEntry(tx, {
@@ -778,10 +1018,10 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
   );
 }
 
-/** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. Balance accounts for both payments and credit notes (S-05.6) — a fully credited invoice is no more overdue than a fully paid one. */
+/** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. Balance accounts for payments, credit notes (S-05.6), and retention (S-04.6) — a fully credited invoice, or one whose only remaining balance is held-back retention not yet due for release, is no more overdue than a fully paid one. */
 function isOverdue(invoice: typeof invoices.$inferSelect): boolean {
   if (invoice.status !== "issued" || !invoice.dueDate) return false;
-  if (invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount <= 0n) return false;
+  if (invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount <= 0n) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dueDate = new Date(invoice.dueDate);

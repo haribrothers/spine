@@ -31,14 +31,23 @@ export interface ReceivablesReport {
  * buckets. Per CLAUDE.md's own "AR aging and job profitability come from
  * filtering the ledger, not from separate calculations — don't build a
  * shadow costing system" rule, this reads directly off `invoices` (the
- * same `balanceDue = totalAmount - amountPaid - creditedAmount`
- * InvoicesService.list/getOne already compute, credit notes' S-05.6
- * reduction included) rather than re-deriving balances from journal_lines —
- * invoices already carry the authoritative running balance, and re-summing
- * the ledger per invoice on every report request would be strictly more
- * work for the same answer, not more correct. "Filtering the ledger" here
- * is read as "don't maintain a parallel receivables table that can drift
- * from the source documents", which this satisfies by computing on read.
+ * same `balanceDue = totalAmount - retentionAmount - amountPaid -
+ * creditedAmount` InvoicesService.list/getOne already compute, credit
+ * notes' S-05.6 reduction included) rather than re-deriving balances from
+ * journal_lines — invoices already carry the authoritative running
+ * balance, and re-summing the ledger per invoice on every report request
+ * would be strictly more work for the same answer, not more correct.
+ * "Filtering the ledger" here is read as "don't maintain a parallel
+ * receivables table that can drift from the source documents", which this
+ * satisfies by computing on read.
+ *
+ * Retention (S-04.6) is subtracted from every balance here, per the PRD's
+ * own §7's acceptance highlight for F4: "retention posts to a separate
+ * Retention Receivable account, not AR, so aging reports aren't
+ * distorted." A held-back retention amount was never part of AR, so it
+ * must never appear as an "overdue" receivable — it becomes collectible
+ * only when explicitly released (S-04.7), which posts its own separate
+ * entry and is a distinct concern from this report.
  *
  * Bucketing is by days *past* `dueDate` as of today: not yet due (or no
  * due date) is "current"; 1-30 days over is "0-30"; and so on. Only
@@ -72,7 +81,7 @@ export class ReportsService {
     let totalOutstanding = 0n;
 
     for (const row of rows) {
-      const balanceDue = row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
+      const balanceDue = row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
       if (balanceDue <= 0n) continue;
 
       const daysOverdue = daysPastDue(row.invoice.dueDate, today);

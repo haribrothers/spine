@@ -2,7 +2,7 @@ import { z } from "zod";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
 
 export const invoiceLineTypeSchema = z.enum(["item", "heading", "text"]);
-export const invoiceTypeSchema = z.enum(["standard", "advance", "progress"]);
+export const invoiceTypeSchema = z.enum(["standard", "advance", "progress", "retention_release"]);
 
 /** Structurally identical to quoteLineInputSchema — see quotes.ts's own doc comment for the full reasoning (one permissive shape covers item/heading/text, server always recomputes totals). */
 export const invoiceLineInputSchema = z.object({

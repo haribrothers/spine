@@ -133,6 +133,16 @@ export class PaymentsService {
    * submitting `create()`, matching S-06.3's own wording ("so I usually
    * just confirm" — implying a suggestion, not an automatic commit).
    */
+  /**
+   * S-04.6 (Phase 3) — every balance computed in this service subtracts
+   * `retentionAmount` alongside `amountPaid`/`creditedAmount`: retention is
+   * posted to `Retention Receivable`, not `Accounts Receivable` (§7.2
+   * "Invoice with retention"), so the retained portion was never part of
+   * what a payment can be allocated against in the first place. A
+   * zero-retention invoice (every invoice before Phase 3, and any
+   * non-construction invoice today) has `retentionAmount = 0n`, so this is
+   * a no-op for all pre-existing behavior.
+   */
   async suggestAllocation(orgId: string, contactId: string, amount: bigint) {
     const outstanding = await this.db
       .select()
@@ -142,7 +152,7 @@ export class PaymentsService {
     const withBalance = outstanding
       // S-05.4 — an advance invoice never posts to AR (see InvoicesService.issue's own comment), so it has no real balance to suggest a payment against.
       .filter((inv) => inv.type !== "advance")
-      .map((inv) => ({ invoice: inv, balance: inv.totalAmount - inv.amountPaid - inv.creditedAmount }))
+      .map((inv) => ({ invoice: inv, balance: inv.totalAmount - inv.retentionAmount - inv.amountPaid - inv.creditedAmount }))
       .filter((row) => row.balance > 0n)
       .sort((a, b) => {
         if (!a.invoice.dueDate && !b.invoice.dueDate) return a.invoice.createdAt.getTime() - b.invoice.createdAt.getTime();
@@ -230,7 +240,7 @@ export class PaymentsService {
           `Invoice ${invoice.number ?? invoice.id} is an advance/deposit invoice — it never posts to Accounts Receivable (see InvoicesService.issue's own comment), so a payment can't be allocated to it. Record the deposit as an unallocated payment instead (S-06.4).`,
         );
       }
-      const balance = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
+      const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
       }
@@ -358,7 +368,7 @@ export class PaymentsService {
           `Invoice ${invoice.number ?? invoice.id} is an advance/deposit invoice — it never posts to Accounts Receivable, so credit can't be applied to it.`,
         );
       }
-      const balance = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
+      const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
       }
