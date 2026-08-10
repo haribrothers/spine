@@ -425,23 +425,35 @@ real, also walk ONE job manually through the full sequence below.
     invoice** (§4.11) — confirm the invoice line carries over the exact
     same tax rate/group selection and computed amounts, not a
     re-resolved or reset value.
-14. Issue that invoice. Open **Settings → Tax** is Owner-only for
-    mutating rates/groups, but the **tax summary** report
-    (`GET /org/tax/summary`) is also Owner-only — as Staff, confirm you
-    cannot reach it (no UI surface exists yet beyond the API; this is a
-    server-side-only check for now, see "Known gaps" below). As Owner,
-    confirm the invoice's tax amount is reflected in the **Output Tax
-    Payable** ledger account (Settings → Chart of accounts, or via
-    `GET /org/tax/summary?from=...&to=...` spanning today's date)
-    exactly matching the invoice's own `taxAmount`.
-15. **Regression check (Catalogue, §3)**: an item created **before**
+14. Issue that invoice. Scroll to the bottom of **Settings → Tax** — a
+    **Tax summary** section with a From/To date range and a Refresh
+    button. Set the range to cover today, click Refresh. Confirm three
+    figures (Collected, Paid, Net payable) and a **Collected by rate**
+    breakdown listing at least the rate/group you used in step 10-12,
+    with an amount matching the invoice's own `taxAmount`.
+15. As Staff (second browser/incognito, per §12's setup), open **Settings
+    → Tax** and try to load the Tax summary section — confirm a real
+    "Owner-only report" message appears rather than a silent empty state
+    or a raw crash (the endpoint's `@OrgRoles(["owner"])` check is real;
+    this is just confirming the web UI surfaces that 403 legibly).
+16. **Unattributed history check**: if your org has any tax-bearing
+    invoice from BEFORE this QA pass that's since been removed as a
+    draft-only deletion is the only way an invoice document disappears
+    (an issued invoice's ledger entry is permanent, per CLAUDE.md) — or
+    more realistically, after running **Settings → Demo data → Clear
+    demo data** on an org that previously had demo invoices with tax —
+    confirm the breakdown includes a trailing **"Other / from removed
+    invoices"** row rather than the rate breakdown silently under-totaling
+    the ledger's own Collected figure. The breakdown's rows should always
+    sum exactly to Collected.
+17. **Regression check (Catalogue, §3)**: an item created **before**
     this feature existed (i.e. with only a flat
     `defaultTaxRatePercentage` and no `defaultTaxRateId`) should still
     prefill a quote/invoice line correctly — confirm via an item from
     demo data seeded before your own manual rate/group creation, or by
     checking that the "No tax"/flat-percentage fallback still computes a
     sane total.
-16. **Regression check (Quotes §4 / Invoices §7 totals)**: confirm every
+18. **Regression check (Quotes §4 / Invoices §7 totals)**: confirm every
     existing total-computation check in those two sections (discount
     before tax, PDF totals, convert-to-invoice line-for-line match)
     still holds now that tax is resolved via a named rate/group instead
@@ -545,13 +557,14 @@ Not a full audit — just confirm nothing obviously broke:
   bills/expenses (Phase 4, still to come within this same phase) don't
   exist yet, so nothing posts an `expense`-type debit tagged with a
   job's id. This is expected, not a bug.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) has no
-  web page yet — it's a real, working, Owner-only endpoint (verify it
-  directly via that URL with `from`/`to` query params), but nothing in
-  the Settings dialog or a Reports page surfaces it visually yet. Tax
-  **paid** on that report will always read 0 until vendor bills exist
-  (same Phase 4 dependency as the job-cost gap above) — expected, not a
-  bug.
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) now has
+  a web surface (a "Tax summary" section at the bottom of Settings →
+  Tax), but it's a plain figures-and-list display, not a real Reports
+  page — no CSV export, no drill-down into which invoices make up a
+  rate's total. That's expected to land with Stage 3 (Reports/FEAT-09),
+  not a bug. Tax **paid** on that report will always read 0 until vendor
+  bills exist (same Phase 4 dependency as the job-cost gap above) —
+  expected, not a bug.
 - The job **variation order** line editor (`variation-order-line-editor.tsx`)
   still uses the pre-FEAT-08 flat tax-percentage input, not the new
   named rate/group picker §10 exercises for Quotes/Invoices/Catalogue —

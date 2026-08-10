@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, contacts, accounts, journalEntries, journalLines } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, journalEntries, journalLines, taxRates, taxGroups } from "../../db/schema";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -135,6 +135,38 @@ export class ReportsService {
    * shape `JobCostingService`'s own revenue/cost split already established.
    * Bounded by `journal_entries.date` (the business event's date, not
    * `createdAt`), inclusive on both ends.
+   *
+   * `collectedByRate` is the per-rate/group breakdown a real VAT/GST return
+   * usually needs (e.g. "how much collected at 20% vs. at 5%") — this part
+   * necessarily reads `invoice_lines` rather than `journal_lines`, since a
+   * ledger posting is one blended amount per document with no per-rate
+   * split. Grouped by `taxRateId`/`taxGroupId` (falling back to the flat
+   * `taxRatePercentage` for pre-FEAT-08 lines that have neither), scoped to
+   * `status = "issued"` invoices with `issueDate` in range — a voided
+   * invoice's status flips to `void` (never `issued`), so this naturally
+   * excludes voids without needing the ledger's reversing-entry netting
+   * trick `taxCollected`/`taxPaid` above rely on. There is currently no
+   * paid-side (input tax) equivalent breakdown since vendor bill lines
+   * don't exist until FEAT-07 — same "always 0 until Purchases lands"
+   * caveat as `taxPaid` itself.
+   *
+   * IMPORTANT: `collectedByRate`'s rows will NOT always sum to
+   * `taxCollected` above, and that's correct, not a bug — the two read
+   * different sources of truth on purpose. `taxCollected` is the ledger
+   * (`journal_lines`), which is genuinely permanent per CLAUDE.md ("issued
+   * financial documents are never edited or deleted") and can include
+   * postings whose originating `invoices` row is gone (e.g. a demo invoice
+   * removed by `DemoDataService.deleteAll`, which deletes the invoice
+   * document but never touches its already-posted ledger history — the
+   * same "referenced ledger history survives document deletion" principle
+   * `deleteAll`'s own comment already documents for contacts/jobs).
+   * `collectedByRate` reads `invoice_lines`, which only reflects
+   * currently-existing invoices. A mismatch here means old/removed
+   * invoices' tax is still sitting in the ledger with no live document to
+   * attribute it to by rate — worth surfacing to the user as "N in
+   * unattributed history" rather than silently forcing the breakdown to
+   * sum to the ledger total, which would misrepresent which real,
+   * currently-visible invoices produced which rate's revenue.
    */
   async taxSummary(orgId: string, from: string, to: string): Promise<TaxSummaryReport> {
     const [outputTaxAccount] = await this.db
@@ -183,14 +215,89 @@ export class ReportsService {
     // Debits increase Input Tax Receivable (tax paid) — same net convention.
     const taxPaid = paidRows.reduce((sum, r) => sum + r.line.debit - r.line.credit, 0n);
 
+    const collectedByRate = await this.taxCollectedByRate(orgId, from, to);
+    const attributedTotal = collectedByRate.reduce((sum, r) => sum + BigInt(r.amount), 0n);
+    // See taxSummary's own doc comment on why these can legitimately
+    // differ — surfaced explicitly rather than silently letting the
+    // breakdown under-total the ledger figure with no explanation.
+    const unattributed = taxCollected - attributedTotal;
+    if (unattributed !== 0n) {
+      collectedByRate.push({ name: "Other / from removed invoices", percentage: 0, amount: unattributed.toString() });
+    }
+
     return {
       from,
       to,
       taxCollected: taxCollected.toString(),
       taxPaid: taxPaid.toString(),
       netTaxPayable: (taxCollected - taxPaid).toString(),
+      collectedByRate,
     };
   }
+
+  private async taxCollectedByRate(orgId: string, from: string, to: string): Promise<TaxByRateRow[]> {
+    const lineRows = await this.db
+      .select({ line: invoiceLines })
+      .from(invoiceLines)
+      .innerJoin(invoices, eq(invoiceLines.invoiceId, invoices.id))
+      .where(
+        and(
+          eq(invoices.orgId, orgId),
+          eq(invoices.status, "issued"),
+          gte(invoices.issueDate, new Date(from)),
+          lte(invoices.issueDate, new Date(to)),
+        ),
+      );
+
+    const taxRateIds = Array.from(new Set(lineRows.map((r) => r.line.taxRateId).filter((id): id is string => Boolean(id))));
+    const taxGroupIds = Array.from(new Set(lineRows.map((r) => r.line.taxGroupId).filter((id): id is string => Boolean(id))));
+
+    const rateNames = taxRateIds.length
+      ? await this.db.select({ id: taxRates.id, name: taxRates.name }).from(taxRates).where(inArray(taxRates.id, taxRateIds))
+      : [];
+    const groupNames = taxGroupIds.length
+      ? await this.db.select({ id: taxGroups.id, name: taxGroups.name }).from(taxGroups).where(inArray(taxGroups.id, taxGroupIds))
+      : [];
+    const rateNameById = new Map(rateNames.map((r) => [r.id, r.name]));
+    const groupNameById = new Map(groupNames.map((g) => [g.id, g.name]));
+
+    const buckets = new Map<string, { key: string; name: string; percentage: number; amount: bigint }>();
+    for (const { line } of lineRows) {
+      if (line.lineTaxAmount === 0n) continue;
+
+      let key: string;
+      let name: string;
+      if (line.taxRateId) {
+        key = `rate:${line.taxRateId}`;
+        name = rateNameById.get(line.taxRateId) ?? "Deleted rate";
+      } else if (line.taxGroupId) {
+        key = `group:${line.taxGroupId}`;
+        name = groupNameById.get(line.taxGroupId) ?? "Deleted group";
+      } else {
+        key = `flat:${line.taxRatePercentage}`;
+        name = `${line.taxRatePercentage}% tax`;
+      }
+
+      const existing = buckets.get(key);
+      if (existing) {
+        existing.amount += line.lineTaxAmount;
+      } else {
+        buckets.set(key, { key, name, percentage: line.taxRatePercentage, amount: line.lineTaxAmount });
+      }
+    }
+
+    return Array.from(buckets.values())
+      .sort((a, b) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0))
+      .map((b) => ({ name: b.name, percentage: b.percentage, amount: b.amount.toString() }));
+  }
+}
+
+export interface TaxByRateRow {
+  /** The tax rate/group's own name, or "X% tax" for a pre-FEAT-08 line with only a flat percentage, or "Deleted rate"/"Deleted group" if the referenced row was since hard-deleted. */
+  name: string;
+  /** Blended percentage — see invoice_lines.taxRatePercentage's own comment. */
+  percentage: number;
+  amount: string;
 }
 
 export interface TaxSummaryReport {
@@ -201,6 +308,16 @@ export interface TaxSummaryReport {
   /** Sum of Input Tax Receivable postings in the period — tax paid to vendors. Always "0" until FEAT-07 vendor bills exist. */
   taxPaid: string;
   netTaxPayable: string;
+  /**
+   * Tax collected broken down by rate/group, largest first. Always sums
+   * exactly to `taxCollected` — if the ledger includes postings from
+   * invoices that no longer exist as documents (see `taxSummary`'s own
+   * doc comment), the remainder is surfaced as a trailing "Other / from
+   * removed invoices" row rather than silently making the breakdown
+   * under-total the ledger figure. Empty array only when `taxCollected`
+   * is itself "0".
+   */
+  collectedByRate: TaxByRateRow[];
 }
 
 function daysPastDue(dueDate: Date | null, today: Date): number {
