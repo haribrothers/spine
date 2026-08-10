@@ -1,0 +1,402 @@
+import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import { and, desc, eq } from "drizzle-orm";
+import type { z } from "zod";
+import { DATABASE } from "../../db/db.module";
+import type { Database } from "../../db/client";
+import { expenses, expenseCategories, accounts, invoiceLines, jobs } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
+import { NumberingService } from "../numbering/numbering.service";
+import { LedgerService } from "../ledger/ledger.service";
+
+export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
+export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
+
+/**
+ * PRD FEAT-07 (S-07.2/S-07.3 submit, S-07.4 approve/reject, S-07.5 job
+ * tagging, S-07.6 billable). The PRD's own acceptance highlight for F7 is
+ * the load-bearing rule this whole service is built around: "an
+ * unapproved expense does not post to the ledger. Approval is the posting
+ * trigger." — there is deliberately no separate "post" action; `approve()`
+ * both flips `status -> approved` AND posts the §7.2 "Expense paid
+ * directly" journal entry in the SAME transaction, so there is no
+ * reachable approved-but-unposted state, matching InvoicesService.issue's
+ * exact transaction-boundary discipline (row-lock, status re-check,
+ * numbering, posting, audit log, all atomic).
+ */
+@Injectable()
+export class ExpensesService {
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly auditLog: AuditLogService,
+    private readonly numbering: NumberingService,
+    private readonly ledger: LedgerService,
+  ) {}
+
+  async list(orgId: string, options: { status?: string; jobId?: string; submittedByUserId?: string }) {
+    const conditions = [eq(expenses.orgId, orgId)];
+    if (options.status) conditions.push(eq(expenses.status, options.status as "submitted" | "approved" | "rejected"));
+    if (options.jobId) conditions.push(eq(expenses.jobId, options.jobId));
+    if (options.submittedByUserId) conditions.push(eq(expenses.submittedByUserId, options.submittedByUserId));
+
+    return this.db
+      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .from(expenses)
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .where(and(...conditions))
+      .orderBy(desc(expenses.createdAt))
+      .then((rows) => rows.map((r) => ({ ...r.expense, categoryName: r.categoryName })));
+  }
+
+  async getOne(orgId: string, id: string) {
+    const [row] = await this.db
+      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .from(expenses)
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!row) {
+      throw new NotFoundException("Expense not found");
+    }
+    return { ...row.expense, categoryName: row.categoryName };
+  }
+
+  async create(orgId: string, actorUserId: string, input: CreateExpenseInput, isDemo = false) {
+    const [category] = await this.db
+      .select()
+      .from(expenseCategories)
+      .where(and(eq(expenseCategories.orgId, orgId), eq(expenseCategories.id, input.categoryId)));
+    if (!category) {
+      throw new BadRequestException("Expense category not found");
+    }
+
+    const created = await this.db.transaction(async (tx) => {
+      const [expense] = await tx
+        .insert(expenses)
+        .values({
+          orgId,
+          categoryId: input.categoryId,
+          jobId: input.jobId ?? null,
+          date: input.date,
+          currency: input.currency,
+          amount: input.amount,
+          taxAmount: input.taxAmount ?? 0n,
+          taxRateId: input.taxRateId ?? null,
+          description: input.description ?? null,
+          paidBy: input.paidBy,
+          receiptFileId: input.receiptFileId ?? null,
+          status: "submitted",
+          submittedByUserId: actorUserId,
+          isBillable: input.isBillable,
+          isDemo,
+        })
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "expense",
+        entityId: expense!.id,
+        contactId: null,
+        changes: [{ field: "status", from: null, to: "submitted" }],
+      });
+
+      return expense;
+    });
+
+    return this.getOne(orgId, created!.id);
+  }
+
+  /** Updates a SUBMITTED expense in place — an approved/rejected expense is immutable (approval already posted to the ledger; a rejected one is a closed review, resubmit as a new expense instead). */
+  async update(orgId: string, id: string, actorUserId: string, input: UpdateExpenseInput) {
+    const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Expense not found");
+    }
+    if (existing.status !== "submitted") {
+      throw new BadRequestException("Only a submitted expense can be edited");
+    }
+
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(expenses)
+        .set({
+          ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+          ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
+          ...(input.date !== undefined ? { date: input.date } : {}),
+          ...(input.currency !== undefined ? { currency: input.currency } : {}),
+          ...(input.amount !== undefined ? { amount: input.amount } : {}),
+          ...(input.taxAmount !== undefined ? { taxAmount: input.taxAmount } : {}),
+          ...(input.taxRateId !== undefined ? { taxRateId: input.taxRateId } : {}),
+          ...(input.description !== undefined ? { description: input.description } : {}),
+          ...(input.paidBy !== undefined ? { paidBy: input.paidBy } : {}),
+          ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
+          ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(expenses.id, id))
+        .returning();
+
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      if (changes.length) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "updated",
+          entityType: "expense",
+          entityId: id,
+          contactId: null,
+          changes,
+        });
+      }
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * S-07.4's approve half — the posting trigger. §7.2 "Expense paid
+   * directly": debit the category's own Expense account (falling back to
+   * the org's default expense account, same 6900 fallback
+   * VendorBillsService uses) + debit Input Tax Receivable if any tax,
+   * credit Bank/Cash if `paidBy: "company"`. For `paidBy: "employee"`
+   * (paid out of pocket, reimbursable), this v1 has no dedicated
+   * employee-reimbursement liability account — crediting Bank/Cash would
+   * be wrong (no cash actually left the business bank account yet) and
+   * crediting Accounts Payable would conflate an employee reimbursement
+   * with a vendor bill. The simplification taken: `paidBy: "employee"`
+   * still credits Bank/Cash, treating the reimbursement as effectively
+   * immediate/already-settled — correct once the employee is actually
+   * paid back (typically same-day via petty cash or an immediate bank
+   * transfer for a small business, this product's own target per
+   * CLAUDE.md), and a real "outstanding reimbursement" liability account
+   * is a natural Settings → Chart of Accounts addition (S-09.9) an org
+   * can configure later if they need to track a lag between submission
+   * and reimbursement — not invented here without a PRD story asking for it.
+   */
+  async approve(orgId: string, id: string, actorUserId: string, comment: string | null, bankAccountId?: string) {
+    const [preCheck] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Expense not found");
+    }
+
+    const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, preCheck.categoryId));
+    const resolvedExpenseAccountId = category?.accountId ?? (await this.resolveDefaultExpenseAccount(orgId));
+    const resolvedBankAccountId = bankAccountId ?? (await this.resolveDefaultBankAccount(orgId));
+
+    const result = await this.db.transaction(async (tx) => {
+      const [existing] = await tx
+        .select()
+        .from(expenses)
+        .where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)))
+        .for("update");
+      if (!existing) {
+        throw new NotFoundException("Expense not found");
+      }
+      if (existing.status !== "submitted") {
+        throw new BadRequestException("Only a submitted expense can be approved");
+      }
+
+      const number = await this.numbering.allocateNumber(tx, orgId, "expense");
+      const approvedAt = new Date();
+      const dateStr = new Date(existing.date).toISOString().slice(0, 10);
+
+      const postingLines: { accountId: string; debit: bigint; credit: bigint; jobId?: string | null }[] = [
+        { accountId: resolvedExpenseAccountId, debit: existing.amount - existing.taxAmount, credit: 0n, jobId: existing.jobId },
+      ];
+      if (existing.taxAmount > 0n) {
+        const inputTaxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "inputTaxReceivable");
+        postingLines.push({ accountId: inputTaxAccountId, debit: existing.taxAmount, credit: 0n, jobId: existing.jobId });
+      }
+      postingLines.push({ accountId: resolvedBankAccountId, debit: 0n, credit: existing.amount, jobId: existing.jobId });
+
+      const journalEntryId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: dateStr,
+        narration: `Expense ${number} approved and posted`,
+        sourceType: "expense",
+        sourceId: id,
+        lines: postingLines,
+      });
+
+      const [row] = await tx
+        .update(expenses)
+        .set({
+          status: "approved",
+          number,
+          approvedByUserId: actorUserId,
+          approvedAt,
+          reviewComment: comment,
+          journalEntryId,
+          updatedAt: approvedAt,
+        })
+        .where(eq(expenses.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "approved",
+        entityType: "expense",
+        entityId: id,
+        contactId: null,
+        changes: [{ field: "status", from: "submitted", to: "approved" }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, result!.id);
+  }
+
+  /** S-07.4's reject half — a comment is required (per the story's own wording), and a rejected expense never posts. */
+  async reject(orgId: string, id: string, actorUserId: string, comment: string) {
+    const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Expense not found");
+    }
+    if (existing.status !== "submitted") {
+      throw new BadRequestException("Only a submitted expense can be rejected");
+    }
+
+    const updated = await this.db.transaction(async (tx) => {
+      const rejectedAt = new Date();
+      const [row] = await tx
+        .update(expenses)
+        .set({ status: "rejected", rejectedByUserId: actorUserId, rejectedAt, reviewComment: comment, updatedAt: rejectedAt })
+        .where(eq(expenses.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "rejected",
+        entityType: "expense",
+        entityId: id,
+        contactId: null,
+        changes: [{ field: "status", from: "submitted", to: "rejected" }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * S-07.6 — pulls a billable, approved expense into a customer invoice as
+   * one new line, mirroring the exact snapshot-on-write shape
+   * QuotesService/InvoicesService already use for a line's name/price
+   * (name = the expense's own description or category name, unitPrice =
+   * the expense's own amount inc. tax, quantity 1, no separate tax applied
+   * here since the expense's own tax was already paid — this line
+   * reimburses the gross amount, not a re-taxed amount). Only reachable
+   * once per expense (`billedOnInvoiceLineId` is set on success) — see
+   * expenses.ts's own doc comment on why a second attempt is rejected
+   * rather than allowed like a quote's repeat conversion.
+   *
+   * Deliberately does NOT insert the invoice_lines row directly — that
+   * would duplicate InvoicesService's own line-computation logic (tax,
+   * totals) and risk drifting from it. Instead this returns the shaped
+   * line data for InvoicesService.update (or a future dedicated
+   * "add billable expense to invoice" convenience wrapper there) to
+   * append, and the CALLER is responsible for setting
+   * `billedOnInvoiceLineId` back onto this expense once the invoice write
+   * actually lands one — see PurchasesController's own doc comment on how
+   * the two calls compose into one user-facing action.
+   */
+  async markBilled(orgId: string, id: string, actorUserId: string, invoiceLineId: string) {
+    const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Expense not found");
+    }
+    if (existing.status !== "approved") {
+      throw new BadRequestException("Only an approved expense can be marked billed");
+    }
+    if (!existing.isBillable) {
+      throw new BadRequestException("This expense is not marked as billable");
+    }
+    if (existing.billedOnInvoiceLineId) {
+      throw new BadRequestException("This expense has already been billed to a customer");
+    }
+
+    const [invoiceLine] = await this.db.select().from(invoiceLines).where(eq(invoiceLines.id, invoiceLineId));
+    if (!invoiceLine) {
+      throw new BadRequestException("Invoice line not found");
+    }
+
+    const updated = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .update(expenses)
+        .set({ billedOnInvoiceLineId: invoiceLineId, updatedAt: new Date() })
+        .where(eq(expenses.id, id))
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "billed",
+        entityType: "expense",
+        entityId: id,
+        contactId: null,
+        changes: [{ field: "billedOnInvoiceLineId", from: null, to: invoiceLineId }],
+      });
+
+      return row;
+    });
+
+    return this.getOne(orgId, updated!.id);
+  }
+
+  /** Only a submitted (never posted) expense can be hard-deleted — matches VendorBillsService.delete/InvoicesService.delete's exact posture. */
+  async delete(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Expense not found");
+    }
+    if (existing.status !== "submitted") {
+      throw new BadRequestException("Only a submitted expense can be deleted");
+    }
+
+    await this.db.transaction(async (tx) => {
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "expense",
+        entityId: id,
+        contactId: null,
+        changes: [{ field: "status", from: existing.status, to: null }],
+      });
+      await tx.delete(expenses).where(eq(expenses.id, id));
+    });
+    return { id };
+  }
+
+  private async resolveDefaultExpenseAccount(orgId: string): Promise<string> {
+    const [row] = await this.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6900")));
+    if (!row) {
+      throw new BadRequestException(
+        "No default expense account found (expected code 6900, 'Other Expenses'). Assign an account to this expense's category or restore this account.",
+      );
+    }
+    return row.id;
+  }
+
+  /** Mirrors PaymentsService.resolveDefaultBankAccount's exact convention (hardcoded seeded account code 1010). */
+  private async resolveDefaultBankAccount(orgId: string): Promise<string> {
+    const [row] = await this.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "1010")));
+    if (!row) {
+      throw new BadRequestException("No default bank account found (expected code 1010, 'Bank Account'). Pass bankAccountId explicitly or restore this account.");
+    }
+    return row.id;
+  }
+}

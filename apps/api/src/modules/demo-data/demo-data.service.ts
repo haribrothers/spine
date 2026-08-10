@@ -1,8 +1,8 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings, taxRates } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings, taxRates, vendorBills, expenses, expenseCategories, vendorPayments, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
@@ -11,6 +11,10 @@ import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxRatesService } from "../tax/tax-rates.service";
+import { VendorBillsService } from "../purchases/vendor-bills.service";
+import { ExpenseCategoriesService } from "../purchases/expense-categories.service";
+import { ExpensesService } from "../purchases/expenses.service";
+import { VendorPaymentsService } from "../purchases/vendor-payments.service";
 
 /**
  * S-12.8/F12 — "load demo data" now also seeds the org's own identity
@@ -448,6 +452,70 @@ const DEMO_JOBS: DemoJobSeed[] = [
   },
 ];
 
+type DemoVendorBillSeed = {
+  /** Index into DEMO_CONTACTS — must be a vendor/both-type contact (indices 7-13). */
+  contactIndex: number;
+  billNumber: string;
+  dateInDays: number;
+  dueInDays: number | null;
+  lines: { name: string; quantity: number; unitPriceAmount: bigint }[];
+  outcome: "draft" | "recorded" | "paid" | "voided";
+};
+
+/** PRD §11.3's own seed-data spec calls for "expenses" alongside jobs/retention — this closes that gap for FEAT-07. Covers every lifecycle stage: draft (never recorded), recorded-and-outstanding (appears in Payables), fully paid, and voided (S-07.1/S-07.7/S-07.8). */
+const DEMO_VENDOR_BILLS: DemoVendorBillSeed[] = [
+  {
+    contactIndex: 7, // Apex Timber Supply
+    billNumber: "AT-20441",
+    dateInDays: -10,
+    dueInDays: 20,
+    lines: [{ name: "Framing lumber delivery", quantity: 500, unitPriceAmount: 850n }],
+    outcome: "paid",
+  },
+  {
+    contactIndex: 8, // Granite State Concrete
+    billNumber: "GSC-8834",
+    dateInDays: -35,
+    dueInDays: -5,
+    lines: [{ name: "Ready-mix concrete pour", quantity: 12, unitPriceAmount: 18000n }],
+    outcome: "recorded",
+  },
+  {
+    contactIndex: 10, // Coastal Steel & Metal Works
+    billNumber: "CSM-5502",
+    dateInDays: -3,
+    dueInDays: 27,
+    lines: [{ name: "Structural steel beams", quantity: 80, unitPriceAmount: 4200n }],
+    outcome: "draft",
+  },
+  {
+    contactIndex: 9, // Northline Electrical Wholesale
+    billNumber: "NEW-1190",
+    dateInDays: -50,
+    dueInDays: -20,
+    lines: [{ name: "Electrical rough-in materials", quantity: 3, unitPriceAmount: 45000n }],
+    outcome: "voided",
+  },
+];
+
+type DemoExpenseSeed = {
+  categoryName: string;
+  amount: bigint;
+  paidBy: "company" | "employee";
+  description: string;
+  dateInDays: number;
+  outcome: "submitted" | "approved" | "rejected";
+};
+
+/** Covers S-07.2/S-07.3's submission shape plus S-07.4's full approval-gate lifecycle (submitted/approved/rejected) — an approved expense here has a real ledger posting, a rejected one deliberately doesn't (see ExpensesService.approve's own doc comment on why approval IS the posting trigger). */
+const DEMO_EXPENSES: DemoExpenseSeed[] = [
+  { categoryName: "Fuel & Vehicle", amount: 8500n, paidBy: "employee", description: "Site visits — Marina office fit-out", dateInDays: -6, outcome: "approved" },
+  { categoryName: "Site Meals", amount: 4200n, paidBy: "employee", description: "Crew lunch — foundation pour day", dateInDays: -12, outcome: "approved" },
+  { categoryName: "Tools & Small Equipment", amount: 15000n, paidBy: "company", description: "Replacement power tools", dateInDays: -20, outcome: "approved" },
+  { categoryName: "Fuel & Vehicle", amount: 6000n, paidBy: "employee", description: "Fuel — no receipt attached", dateInDays: -2, outcome: "submitted" },
+  { categoryName: "Site Meals", amount: 12000n, paidBy: "employee", description: "Client lunch (over policy limit)", dateInDays: -8, outcome: "rejected" },
+];
+
 /**
  * Onboarding "load demo data" seeding + Settings "delete all demo data",
  * covering every module that exists today: Contacts (F1), Catalogue (F2),
@@ -501,6 +569,10 @@ export class DemoDataService {
     private readonly milestonesService: MilestonesService,
     private readonly settingsService: SettingsService,
     private readonly taxRatesService: TaxRatesService,
+    private readonly vendorBillsService: VendorBillsService,
+    private readonly expenseCategoriesService: ExpenseCategoriesService,
+    private readonly expensesService: ExpensesService,
+    private readonly vendorPaymentsService: VendorPaymentsService,
   ) {}
 
   /**
@@ -758,8 +830,9 @@ export class DemoDataService {
     const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const jobsResult = await this.seedJobs(orgId, actorUserId, result.contactIds);
+    const purchasesResult = await this.seedPurchases(orgId, actorUserId, result.contactIds);
 
-    return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult };
+    return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult, ...purchasesResult };
   }
 
   /**
@@ -1051,6 +1124,150 @@ export class DemoDataService {
   }
 
   /**
+   * PRD FEAT-07 — runs AFTER the contacts transaction above commits, same
+   * "real service, not hand-inserted rows" principle as seedQuotes/
+   * seedInvoices/seedJobs. Seeds two expense categories (via the real
+   * ExpenseCategoriesService, one WITH an accountId set so its posting
+   * doesn't fall through to the 6900 default and one without, exercising
+   * both paths), `DEMO_VENDOR_BILLS` across every lifecycle outcome
+   * (draft/recorded/paid/voided — S-07.1/S-07.7), and `DEMO_EXPENSES`
+   * across the full approval-gate lifecycle (S-07.2/S-07.4). A "paid"
+   * vendor bill is recorded then fully paid via a real VendorPaymentsService
+   * allocation (S-07.8), exercising the same allocation-limit trigger
+   * every other demo document type's real-service seeding already relies on.
+   */
+  private async seedPurchases(orgId: string, actorUserId: string, contactIds: string[]) {
+    const [currencySetting] = await this.db
+      .select()
+      .from(settings)
+      .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+    const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
+
+    const [expenseAccountRow] = await this.db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6300"))); // Travel & Vehicle
+    const fuelCategory = await this.expenseCategoriesService.create(orgId, actorUserId, {
+      name: "Fuel & Vehicle",
+      accountId: expenseAccountRow?.id ?? null,
+    });
+    const mealsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Site Meals" });
+    const toolsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Tools & Small Equipment" });
+    const categoryByName = new Map([
+      [fuelCategory.name, fuelCategory.id],
+      [mealsCategory.name, mealsCategory.id],
+      [toolsCategory.name, toolsCategory.id],
+    ]);
+
+    let vendorBillsCreated = 0;
+    let vendorBillsRecorded = 0;
+    let vendorBillsVoided = 0;
+    let vendorPaymentsCreated = 0;
+
+    for (const seed of DEMO_VENDOR_BILLS) {
+      const contactId = contactIds[seed.contactIndex];
+      if (!contactId) continue;
+
+      const date = new Date();
+      date.setDate(date.getDate() + seed.dateInDays);
+      const dueDate = seed.dueInDays === null ? null : new Date();
+      if (dueDate && seed.dueInDays !== null) dueDate.setDate(dueDate.getDate() + seed.dueInDays);
+
+      const bill = await this.vendorBillsService.create(
+        orgId,
+        actorUserId,
+        {
+          contactId,
+          billNumber: seed.billNumber,
+          date,
+          dueDate,
+          currency: currencyCode,
+          lines: seed.lines.map((line) => ({
+            type: "item" as const,
+            name: line.name,
+            quantity: line.quantity,
+            unitPriceAmount: line.unitPriceAmount,
+            unitPriceCurrency: currencyCode,
+            taxRatePercentage: 0,
+            isTaxInclusive: false,
+          })),
+        },
+        true, // isDemo
+      );
+      vendorBillsCreated++;
+      if (seed.outcome === "draft") continue;
+
+      if (seed.outcome === "voided") {
+        const recorded = await this.vendorBillsService.record(orgId, bill.id, actorUserId);
+        vendorBillsRecorded++;
+        await this.vendorBillsService.void(orgId, recorded.id, actorUserId, "Duplicate bill entered in error");
+        vendorBillsVoided++;
+        continue;
+      }
+
+      const recorded = await this.vendorBillsService.record(orgId, bill.id, actorUserId);
+      vendorBillsRecorded++;
+
+      if (seed.outcome === "paid") {
+        await this.vendorPaymentsService.create(
+          orgId,
+          actorUserId,
+          {
+            contactId,
+            date: new Date(),
+            method: "bank_transfer",
+            currency: currencyCode,
+            amount: recorded.totalAmount,
+            allocations: [{ billId: recorded.id, amount: recorded.totalAmount }],
+          },
+          undefined,
+          true, // isDemo
+        );
+        vendorPaymentsCreated++;
+      }
+    }
+
+    let expensesSubmitted = 0;
+    let expensesApproved = 0;
+    let expensesRejected = 0;
+
+    for (const seed of DEMO_EXPENSES) {
+      const categoryId = categoryByName.get(seed.categoryName);
+      if (!categoryId) continue;
+
+      const date = new Date();
+      date.setDate(date.getDate() + seed.dateInDays);
+
+      const expense = await this.expensesService.create(
+        orgId,
+        actorUserId,
+        {
+          categoryId,
+          date,
+          currency: currencyCode,
+          amount: seed.amount,
+          taxAmount: 0n,
+          paidBy: seed.paidBy,
+          description: seed.description,
+          isBillable: false,
+        },
+        true, // isDemo
+      );
+      expensesSubmitted++;
+
+      if (seed.outcome === "approved") {
+        await this.expensesService.approve(orgId, expense.id, actorUserId, null);
+        expensesApproved++;
+      } else if (seed.outcome === "rejected") {
+        await this.expensesService.reject(orgId, expense.id, actorUserId, "Over the org's per-meal policy limit — please resubmit with an itemised receipt.");
+        expensesRejected++;
+      }
+    }
+
+    return { vendorBillsCreated, vendorBillsRecorded, vendorBillsVoided, vendorPaymentsCreated, expensesSubmitted, expensesApproved, expensesRejected };
+  }
+
+  /**
    * Hard-deletes every row tagged `isDemo: true` for this org. Deleting a
    * demo contact cascades onto its contact_persons/addresses/leads/
    * activities automatically (see this class's own top comment on why
@@ -1095,6 +1312,18 @@ export class DemoDataService {
    * row anywhere").
    */
   async deleteAll(orgId: string, actorUserId: string) {
+    const demoVendorPayments = await this.db
+      .select({ id: vendorPayments.id, number: vendorPayments.number, contactId: vendorPayments.contactId })
+      .from(vendorPayments)
+      .where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.isDemo, true)));
+    const demoVendorBills = await this.db
+      .select({ id: vendorBills.id, billNumber: vendorBills.billNumber, contactId: vendorBills.contactId })
+      .from(vendorBills)
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.isDemo, true)));
+    const demoExpenses = await this.db
+      .select({ id: expenses.id, number: expenses.number })
+      .from(expenses)
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true)));
     const demoPayments = await this.db
       .select({ id: payments.id, number: payments.number, contactId: payments.contactId })
       .from(payments)
@@ -1120,8 +1349,66 @@ export class DemoDataService {
       .from(catalogItems)
       .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)));
 
-    const { paymentsDeleted, invoicesDeleted, quotesDeleted, jobsDeleted, contactsDeleted, catalogItemsDeleted } =
-      await this.db.transaction(async (tx) => {
+    const {
+      paymentsDeleted,
+      invoicesDeleted,
+      quotesDeleted,
+      jobsDeleted,
+      contactsDeleted,
+      catalogItemsDeleted,
+      vendorPaymentsDeleted,
+      vendorBillsDeleted,
+      expensesDeleted,
+    } = await this.db.transaction(async (tx) => {
+      // Vendor payments first — vendor_payment_allocations.billId is
+      // onDelete: "restrict" (mirrors payment_allocations.invoiceId), so a
+      // demo vendor bill with any allocation against it can't be
+      // hard-deleted until the allocating payment is gone first.
+      let vendorPaymentsDeleted = 0;
+      for (const vendorPayment of demoVendorPayments) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "vendor_payment",
+          entityId: vendorPayment.id,
+          contactId: vendorPayment.contactId,
+          changes: [{ field: "number", from: vendorPayment.number, to: null }],
+        });
+        await tx.delete(vendorPayments).where(eq(vendorPayments.id, vendorPayment.id));
+        vendorPaymentsDeleted++;
+      }
+
+      let vendorBillsDeleted = 0;
+      for (const bill of demoVendorBills) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "vendor_bill",
+          entityId: bill.id,
+          contactId: bill.contactId,
+          changes: [{ field: "billNumber", from: bill.billNumber, to: null }],
+        });
+        await tx.delete(vendorBills).where(eq(vendorBills.id, bill.id));
+        vendorBillsDeleted++;
+      }
+
+      let expensesDeleted = 0;
+      for (const expense of demoExpenses) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "expense",
+          entityId: expense.id,
+          contactId: null,
+          changes: [{ field: "number", from: expense.number, to: null }],
+        });
+        await tx.delete(expenses).where(eq(expenses.id, expense.id));
+        expensesDeleted++;
+      }
+
       let paymentsDeleted = 0;
       for (const payment of demoPayments) {
         await this.auditLog.record(tx, {
@@ -1237,7 +1524,27 @@ export class DemoDataService {
       // applies to why it only checks quotes/invoices/catalog items.
       await tx.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.name, "Sales Tax")));
 
-      return { paymentsDeleted, invoicesDeleted, quotesDeleted, jobsDeleted, contactsDeleted, catalogItemsDeleted };
+      // Same "clean up by name, not an isDemo flag" convention as the
+      // "Sales Tax" tax rate above — expense_categories has no isDemo
+      // column (org-configuration, not a document type, same reasoning
+      // tax_rates itself isn't isDemo-flagged either). Every expense
+      // referencing one of these is already gone (deleted above), so
+      // nothing blocks this.
+      await tx
+        .delete(expenseCategories)
+        .where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.name, ["Fuel & Vehicle", "Site Meals", "Tools & Small Equipment"])));
+
+      return {
+        paymentsDeleted,
+        invoicesDeleted,
+        quotesDeleted,
+        jobsDeleted,
+        contactsDeleted,
+        catalogItemsDeleted,
+        vendorPaymentsDeleted,
+        vendorBillsDeleted,
+        expensesDeleted,
+      };
     });
 
     // Every count here is the actual number of rows removed inside the
@@ -1245,7 +1552,17 @@ export class DemoDataService {
     // when referenced by a permanent (onDelete: "restrict") journal_lines
     // row, so length would overcount for those; the rest can't currently
     // diverge but are tracked the same way so this can't silently regress.
-    return { contactsDeleted, catalogItemsDeleted, quotesDeleted, invoicesDeleted, paymentsDeleted, jobsDeleted };
+    return {
+      contactsDeleted,
+      catalogItemsDeleted,
+      quotesDeleted,
+      invoicesDeleted,
+      paymentsDeleted,
+      jobsDeleted,
+      vendorPaymentsDeleted,
+      vendorBillsDeleted,
+      expensesDeleted,
+    };
   }
 
   /**

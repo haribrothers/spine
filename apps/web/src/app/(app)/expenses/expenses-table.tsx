@@ -1,0 +1,114 @@
+"use client";
+
+import { Badge, DataTable, type TableColumn } from "@spine/ui";
+import { toDecimalString } from "@spine/shared/money";
+import type { MemberRow } from "../../../lib/members";
+import { ExpenseRowActions } from "./expense-row-actions";
+import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
+
+const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
+  submitted: "bg-draft-bg text-draft",
+  approved: "bg-paid-bg text-paid",
+  rejected: "bg-overdue-bg text-overdue",
+};
+
+/**
+ * The list view for Expenses — a single amount per row, not a multi-line
+ * document, so there's no "number" column the way invoices/vendor bills
+ * have (an expense's `number` is null until approved — S-07.4's posting
+ * trigger allocates it then). Clicking a row's date/category opens
+ * `ExpenseDetailDrawer` rather than navigating to its own route, mirroring
+ * payments-table.tsx's own drawer-not-page precedent (an expense is a
+ * small record, no line items).
+ */
+export function ExpensesTable({
+  expenses,
+  jobs,
+  members,
+  onDeleted,
+  onOpen,
+}: {
+  expenses: Expense[];
+  jobs: JobOption[];
+  members: MemberRow[];
+  onDeleted: (expense: Expense) => void;
+  onOpen: (expense: Expense) => void;
+}) {
+  const jobById = new Map(jobs.map((j) => [j.id, j]));
+  const memberByUserId = new Map(members.map((m) => [m.userId, m]));
+
+  const columns: TableColumn<Expense>[] = [
+    {
+      key: "date",
+      header: "Date",
+      render: (row) => (
+        <button
+          type="button"
+          onClick={() => onOpen(row)}
+          className="text-left font-medium text-on-surface hover:text-primary hover:underline"
+        >
+          {new Date(row.date).toLocaleDateString()}
+        </button>
+      ),
+      sortValue: (row) => row.date,
+    },
+    {
+      key: "category",
+      header: "Category",
+      render: (row) => row.categoryName ?? "—",
+      sortValue: (row) => row.categoryName ?? "",
+    },
+    {
+      key: "job",
+      header: "Job",
+      render: (row) => (row.jobId ? (jobById.get(row.jobId)?.name ?? "—") : "—"),
+      sortValue: (row) => (row.jobId ? (jobById.get(row.jobId)?.name ?? "") : ""),
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      render: (row) => (
+        <span className="font-mono tabular-nums">
+          {toDecimalString({ amount: BigInt(row.amount), currency: row.currency })} {row.currency}
+        </span>
+      ),
+      sortValue: (row) => Number(row.amount),
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => (
+        <div className="flex items-center gap-1.5">
+          <Badge className={STATUS_BADGE_CLASS[row.status]}>{EXPENSE_STATUS_LABELS[row.status]}</Badge>
+          {row.isBillable && <Badge className="bg-due-soon-bg text-due-soon">Billable</Badge>}
+        </div>
+      ),
+    },
+    {
+      key: "submittedBy",
+      header: "Submitted by",
+      render: (row) => (row.submittedByUserId ? (memberByUserId.get(row.submittedByUserId)?.name ?? "—") : "—"),
+      sortValue: (row) => (row.submittedByUserId ? (memberByUserId.get(row.submittedByUserId)?.name ?? "") : ""),
+    },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} />
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <DataTable
+      columns={columns}
+      data={expenses}
+      rowKey={(row) => row.id}
+      searchPlaceholder="Search expenses"
+      searchKey={(row) => `${row.categoryName ?? ""} ${row.description ?? ""}`}
+      configurablePageSize
+    />
+  );
+}

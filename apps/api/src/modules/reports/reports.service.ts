@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, journalEntries, journalLines, taxRates, taxGroups } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, journalEntries, journalLines, taxRates, taxGroups, vendorBills } from "../../db/schema";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -24,6 +24,26 @@ export interface ReceivablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   invoices: ReceivablesInvoiceRow[];
+}
+
+export interface PayablesBillRow {
+  id: string;
+  billNumber: string;
+  contactId: string;
+  contactName: string | null;
+  currency: string;
+  dueDate: string | null;
+  totalAmount: string;
+  balanceDue: string;
+  daysOverdue: number;
+  bucket: AgingBucket;
+}
+
+export interface PayablesReport {
+  asOf: string;
+  totalOutstanding: string;
+  buckets: Record<AgingBucket, string>;
+  bills: PayablesBillRow[];
 }
 
 /**
@@ -117,6 +137,78 @@ export class ReportsService {
         "90+": buckets["90+"].toString(),
       },
       invoices: invoiceRows,
+    };
+  }
+
+  /**
+   * S-07.7 — payables with the same 0-30/31-60/61-90/90+ aging buckets as
+   * `receivables()` above, mirroring its exact reasoning: reads directly
+   * off `vendor_bills` (which already carries the authoritative running
+   * `amountPaid`, kept in sync by `VendorPaymentsService`) rather than
+   * re-deriving balances from `journal_lines`, same "don't maintain a
+   * parallel payables table" interpretation of CLAUDE.md's ledger-derived-
+   * reporting rule. Only `recorded` bills with a positive balance are
+   * included — draft/void bills were never payable and paid-in-full ones
+   * have nothing outstanding.
+   */
+  async payables(orgId: string): Promise<PayablesReport> {
+    const rows = await this.db
+      .select({ bill: vendorBills, contactName: contacts.name })
+      .from(vendorBills)
+      .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.status, "recorded")));
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const buckets: Record<AgingBucket, bigint> = {
+      current: 0n,
+      "0-30": 0n,
+      "31-60": 0n,
+      "61-90": 0n,
+      "90+": 0n,
+    };
+
+    const billRows: PayablesBillRow[] = [];
+    let totalOutstanding = 0n;
+
+    for (const row of rows) {
+      const balanceDue = row.bill.totalAmount - row.bill.amountPaid;
+      if (balanceDue <= 0n) continue;
+
+      const daysOverdue = daysPastDue(row.bill.dueDate, today);
+      const bucket = bucketFor(daysOverdue);
+
+      buckets[bucket] += balanceDue;
+      totalOutstanding += balanceDue;
+
+      billRows.push({
+        id: row.bill.id,
+        billNumber: row.bill.billNumber,
+        contactId: row.bill.contactId,
+        contactName: row.contactName,
+        currency: row.bill.currency,
+        dueDate: row.bill.dueDate ? new Date(row.bill.dueDate).toISOString().slice(0, 10) : null,
+        totalAmount: row.bill.totalAmount.toString(),
+        balanceDue: balanceDue.toString(),
+        daysOverdue,
+        bucket,
+      });
+    }
+
+    billRows.sort((a, b) => b.daysOverdue - a.daysOverdue);
+
+    return {
+      asOf: today.toISOString().slice(0, 10),
+      totalOutstanding: totalOutstanding.toString(),
+      buckets: {
+        current: buckets.current.toString(),
+        "0-30": buckets["0-30"].toString(),
+        "31-60": buckets["31-60"].toString(),
+        "61-90": buckets["61-90"].toString(),
+        "90+": buckets["90+"].toString(),
+      },
+      bills: billRows,
     };
   }
 

@@ -21,7 +21,12 @@ export type AuditEntityType =
   | "job"
   | "milestone"
   | "tax_rate"
-  | "tax_group";
+  | "tax_group"
+  | "vendor_bill"
+  | "vendor_bill_line"
+  | "expense_category"
+  | "expense"
+  | "vendor_payment";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

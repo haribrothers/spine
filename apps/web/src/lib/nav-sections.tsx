@@ -1,4 +1,21 @@
-import { Banknote, CalendarDays, FileText, HardHat, Inbox, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
+import {
+  Banknote,
+  CalendarDays,
+  ClipboardList,
+  FileText,
+  HandCoins,
+  HardHat,
+  Inbox,
+  LayoutDashboard,
+  Package,
+  Receipt,
+  ReceiptText,
+  Shield,
+  Target,
+  UserCog,
+  Users,
+  Wallet,
+} from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -23,6 +40,16 @@ import type { AppShellNavSection } from "@spine/ui";
  * org regardless of industry template — S-04.1-S-04.10 aren't
  * construction-exclusive, only the retention-% field is tucked behind an
  * "Advanced" disclosure per-job (see job-detail.tsx's EditJobDialog).
+ *
+ * "Purchases" (Phase 4 Stage 2, FEAT-07) is the money-out mirror of
+ * "Billing" — mirrors the PRD's own §7 grouping name exactly, kept as its
+ * own top-level section rather than folded into Billing for the same
+ * reason Billing itself isn't folded into Sales: Billing is what customers
+ * owe the org, Purchases is what the org owes vendors/has spent — distinct
+ * halves of the ledger a user reasons about separately day to day.
+ * Ordered after Billing (money in, then money out, matching the PRD's own
+ * enquiry → quote → job → invoice → payment → books → purchases/expenses
+ * phase sequencing).
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
@@ -49,6 +76,15 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
       { href: "/invoices", label: "Invoices", icon: <Receipt /> },
       { href: "/payments", label: "Payments", icon: <Banknote /> },
       { href: "/receivables", label: "Receivables", icon: <Inbox /> },
+    ],
+  },
+  {
+    label: "Purchases",
+    items: [
+      { href: "/vendor-bills", label: "Vendor Bills", icon: <ClipboardList /> },
+      { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
+      { href: "/vendor-payments", label: "Vendor Payments", icon: <HandCoins /> },
+      { href: "/payables", label: "Payables", icon: <Wallet /> },
     ],
   },
 ];

@@ -73,10 +73,27 @@ export class CapabilityGuard implements CanActivate {
 
     if (membership.role === "owner") return true;
 
+    if (membership.role === "field") {
+      // Field is fixed/non-configurable (never Team-gated, per §2.1) — if
+      // execution reaches this guard at all, Better Auth's own AuthGuard
+      // has already evaluated this route's @OrgRoles and allowed "field"
+      // through, since @OrgRoles runs first and 403s an ineligible role
+      // before this guard's canActivate is ever called. A route pairing
+      // @OrgRoles([..., "field"]) with @RequireCapability therefore means
+      // "field is allowed here unconditionally, no Team grant needed" —
+      // e.g. jobs.controller.ts's completeMilestone route (S-04.4,
+      // jobs.update_milestones). This guard previously threw for any
+      // non-staff role including field, which meant a field user could
+      // never actually pass a route explicitly built to allow them —
+      // fixed live while adding the same field+capability shape for
+      // S-07.2 (expenses.submit), which surfaced the same bug.
+      return true;
+    }
+
     if (membership.role !== "staff") {
-      // field, or any future fixed role — @RequireCapability is meaningless
-      // for a fixed role; reaching here is a controller misconfiguration,
-      // not something to silently allow.
+      // Any future fixed role beyond owner/staff/field — same reasoning
+      // as field would apply once such a role exists, but nothing defines
+      // one yet, so fail closed rather than assume.
       throw new ForbiddenException(`Role "${membership.role}" is not eligible for capability "${required}"`);
     }
 

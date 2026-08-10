@@ -17,7 +17,6 @@ import { InvoicesModule } from "./modules/invoices/invoices.module";
 import { CreditNotesModule } from "./modules/credit-notes/credit-notes.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { PurchasesModule } from "./modules/purchases/purchases.module";
-import { ExpensesModule } from "./modules/expenses/expenses.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { TaxModule } from "./modules/tax/tax.module";
@@ -59,7 +58,6 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     CreditNotesModule,
     PaymentsModule,
     PurchasesModule,
-    ExpensesModule,
     LedgerModule,
     ReportsModule,
     TaxModule,

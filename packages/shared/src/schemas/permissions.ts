@@ -18,6 +18,7 @@ export const CAPABILITIES = [
   "invoices.manage",
   "expenses.submit",
   "expenses.approve",
+  "purchases.manage",
   "jobs.update_milestones",
   "ledger.view",
 ] as const;
@@ -59,6 +60,10 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Approve expense",
     description: "Approve a submitted expense.",
   },
+  "purchases.manage": {
+    label: "Record vendor bills, pay vendors",
+    description: "Record vendor bills and record payments to vendors.",
+  },
   "jobs.update_milestones": {
     label: "Upload site photos, update milestone status",
     description: "Attach job photos/notes and update milestone status.",
@@ -80,6 +85,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "invoices.manage": true,
   "expenses.submit": true,
   "expenses.approve": true,
+  "purchases.manage": true,
   "jobs.update_milestones": true,
   "ledger.view": false,
 };

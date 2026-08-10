@@ -180,7 +180,7 @@ real, also walk ONE job manually through the full sequence below.
 5. On a **pending** milestone, click **Mark complete**. Attach a photo
    (upload via the file picker) and a completion note, submit. Confirm
    the milestone's status flips to **Completed** (S-04.4) — this action
-   should also be reachable/usable by a Field-role user (§12), unlike
+   should also be reachable/usable by a Field-role user (§13), unlike
    the rest of this page's mutating actions.
 6. On the now-**completed** milestone, click **Raise invoice**. Confirm
    you land on a new invoice whose type is **progress**, whose total
@@ -431,7 +431,7 @@ real, also walk ONE job manually through the full sequence below.
     figures (Collected, Paid, Net payable) and a **Collected by rate**
     breakdown listing at least the rate/group you used in step 10-12,
     with an amount matching the invoice's own `taxAmount`.
-15. As Staff (second browser/incognito, per §12's setup), open **Settings
+15. As Staff (second browser/incognito, per §13's setup), open **Settings
     → Tax** and try to load the Tax summary section — confirm a real
     "Owner-only report" message appears rather than a silent empty state
     or a raw crash (the endpoint's `@OrgRoles(["owner"])` check is real;
@@ -462,7 +462,137 @@ real, also walk ONE job manually through the full sequence below.
 
 ---
 
-## 11. Notifications (S-10.11 / S-10.12)
+## 11. Purchases & Expenses (FEAT-07, Phase 4 · Money Out & Books)
+
+Best run against the demo data's seeded vendor bills/expenses (§1.7) — they
+cover every lifecycle outcome already, so you can spot-check each rather
+than building every case from scratch.
+
+### 11.1 Expense categories
+
+1. Open **Settings → Purchases**. Confirm a list of expense categories
+   (demo data seeds "Fuel & Vehicle", "Site Meals", "Tools & Small
+   Equipment" — "Fuel & Vehicle" has a default posting account set, the
+   other two don't).
+2. Add a new category, optionally assigning a default account. Confirm it
+   appears immediately.
+3. Archive a category, confirm it disappears from the picker an expense
+   form offers. Restore it.
+4. Attempt to delete a category that's used by an existing expense —
+   confirm this is rejected ("used by an expense and cannot be deleted —
+   archive it instead").
+
+### 11.2 Submit and approve an expense (S-07.2, S-07.4)
+
+1. Go to **Purchases → Expenses → New expense**. Pick a category, enter an
+   amount, optionally tag a job, set **Paid by** (Company or Employee),
+   optionally attach a receipt photo, save.
+2. Confirm the expense appears with status **Submitted** and no number
+   yet — an unapproved expense has neither a number nor a ledger posting
+   (the PRD's own acceptance highlight: "an unapproved expense does not
+   post to the ledger. Approval is the posting trigger").
+3. Open the expense, click **Approve**. Confirm: status flips to
+   **Approved**, a real gapless number is allocated (`EXP-000X`), and the
+   expense becomes read-only.
+4. Confirm the approved amount is reflected in the ledger — the expense's
+   own category account (or the default "Other Expenses" account if the
+   category has none) is debited, the org's default bank account is
+   credited, for the expense's full amount (Settings → Chart of accounts,
+   or cross-check against Purchases → Payables/reports if a P&L exists by
+   the time you're testing).
+5. Submit a second expense, click **Reject**. Confirm a comment is
+   **required** (the confirm button stays disabled until you type one) —
+   confirm the rejected expense never gets a number and never posts to
+   the ledger.
+6. **Regression check**: an approved or rejected expense should be
+   read-only — no Edit/Delete action should be offered on it, only on a
+   still-**Submitted** one.
+
+### 11.3 Job tagging and billable expenses (S-07.5, S-07.6)
+
+1. Submit and approve an expense tagged to one of the demo jobs. Open that
+   job's detail page → Costing tab — confirm the expense's amount now
+   shows up on the **cost** side of that job's profitability (this was
+   previously always $0 before Purchases existed — see §5's own "Known
+   gaps" note, now resolved).
+2. Submit an expense with **Billable** checked, approve it. Confirm it's
+   flagged billable on its detail page. **Known gap**: there is currently
+   no web UI action to actually pull it into a customer invoice line —
+   `POST /expenses/:id/mark-billed` (S-07.6) is a real, working,
+   Owner/Staff-only endpoint, but nothing in the invoice builder or the
+   expense detail drawer calls it yet. Verify it directly via that
+   endpoint if you need to confirm the one-shot-only behaviour (a second
+   call against the same expense is rejected); don't file "no way to
+   bill a customer for an expense" as a bug — it's this gap.
+
+### 11.4 Vendor bills (S-07.1)
+
+1. Go to **Purchases → Vendor Bills → New vendor bill**. Pick a vendor
+   contact (only vendor/both-type contacts should be selectable — a
+   customer-only contact should NOT appear in this picker), enter the
+   vendor's own bill number, add lines with quantity/price/an expense
+   account/tax, save as draft.
+2. Confirm the computed total matches your expectation (tax computed per
+   line, same engine as quotes/invoices — see §10's own tax regression
+   checks).
+3. Click **Record**. Confirm: status flips to **Recorded**, and the
+   ledger shows a debit to each line's own Expense/COGS account plus
+   Input Tax Receivable (if any tax), credit Accounts Payable, for the
+   bill's total.
+4. Confirm a recorded bill is immutable — no Edit action offered, only
+   Void.
+5. Void a recorded bill with a reason. Confirm a reversing entry posts
+   and the bill's status flips to **Void**.
+6. **Job tagging (S-07.5)**: create and record a vendor bill tagged to a
+   job. Confirm its amount appears on that job's Costing tab, same as
+   §11.3's expense check above.
+
+### 11.5 Payables (S-07.7)
+
+1. Go to **Purchases → Payables**. Confirm stat cards for Current/0-30/
+   31-60/61-90/90+ days overdue, plus a Total outstanding figure.
+2. Confirm the table lists every outstanding **recorded** vendor bill,
+   oldest-overdue first, tagged with the correct aging bucket.
+3. Confirm bills that are **draft**, **void**, or **fully paid** do NOT
+   appear here.
+4. Cross-check: pick one row, open that vendor bill directly, confirm its
+   own **Balance due** matches exactly what Payables showed.
+
+### 11.6 Vendor payments (S-07.8)
+
+1. Go to **Purchases → Vendor Payments → New vendor payment**. Pick a
+   vendor, enter an amount, allocate it across one or more of their
+   outstanding recorded bills.
+2. Confirm allocations must sum to **exactly** the payment amount before
+   you can save — unlike customer payments, there's no "hold the
+   remainder as credit" option here (no PRD story asks for a vendor-credit
+   concept). The dialog should show a running "Remaining to allocate"
+   figure that must hit exactly $0.00, not just ≤ the payment amount.
+3. Save. Confirm: a real gapless number is allocated (`VPY-000X`), the
+   ledger shows a debit to Accounts Payable and a credit to the org's
+   bank account for the full amount, and each allocated bill's own
+   **Balance due** drops by its allocated amount.
+4. Fully pay off a recorded bill via one or more vendor payments. Confirm
+   it now shows a $0 balance and disappears from Payables (§11.5).
+5. Attempt to allocate more than a bill's remaining balance — confirm
+   this is rejected with a clear error naming the bill and its actual
+   remaining balance (enforced both client-side and server-side; the
+   server enforcement is backed by a real DB constraint trigger, same
+   pattern as customer payment allocations).
+
+### 11.7 Field access (§2.1 permission model)
+
+1. As a Field user (second browser/incognito, per §13's setup), confirm
+   you CAN reach **Expenses** and submit a new one — S-07.2's own wording
+   is "As a field user, I want to photograph a receipt and submit an
+   expense from site."
+2. Confirm a Field user CANNOT see or reach Approve/Reject on any
+   expense, and CANNOT reach Vendor Bills, Payables, or Vendor Payments
+   at all — those are Owner/Staff-only per §2.1's own permission table.
+
+---
+
+## 12. Notifications (S-10.11 / S-10.12)
 
 1. Trigger a notification-worthy event (e.g. a quote gets viewed on its
    public link, or a payment is recorded).
@@ -475,7 +605,7 @@ real, also walk ONE job manually through the full sequence below.
 
 ---
 
-## 12. Users, Teams & Permissions (§2.1 permission model)
+## 13. Users, Teams & Permissions (§2.1 permission model)
 
 This section needs a second browser (or incognito window) to act as an
 invited user alongside your Owner session.
@@ -526,7 +656,7 @@ invited user alongside your Owner session.
 
 ---
 
-## 13. Design system spot-check
+## 14. Design system spot-check
 
 Not a full audit — just confirm nothing obviously broke:
 
@@ -553,18 +683,20 @@ Not a full audit — just confirm nothing obviously broke:
   capability will still see the button and get a real 403 from the
   server on click — that's correct, expected behavior, not a bug to
   file.
-- Job cost/revenue/margin (§5.8) always shows **Cost: 0** — vendor
-  bills/expenses (Phase 4, still to come within this same phase) don't
-  exist yet, so nothing posts an `expense`-type debit tagged with a
-  job's id. This is expected, not a bug.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) now has
-  a web surface (a "Tax summary" section at the bottom of Settings →
+- Job cost/revenue/margin (§5.8) now shows real **Cost** figures once at
+  least one recorded vendor bill or approved expense is tagged to that
+  job (§11.3/§11.4) — Phase 4 Stage 2 (Purchases & Expenses) closed this
+  gap. A job with no tagged bills/expenses still correctly shows Cost: 0
+  — that's a real zero, not a missing feature.
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) has a
+  web surface (a "Tax summary" section at the bottom of Settings →
   Tax), but it's a plain figures-and-list display, not a real Reports
   page — no CSV export, no drill-down into which invoices make up a
   rate's total. That's expected to land with Stage 3 (Reports/FEAT-09),
-  not a bug. Tax **paid** on that report will always read 0 until vendor
-  bills exist (same Phase 4 dependency as the job-cost gap above) —
-  expected, not a bug.
+  not a bug. Tax **paid** on that report now has a real source (Input
+  Tax Receivable postings from recorded vendor bills, §11.4) but will
+  still read 0 for any org with no recorded vendor bills yet — expected,
+  not a bug.
 - The job **variation order** line editor (`variation-order-line-editor.tsx`)
   still uses the pre-FEAT-08 flat tax-percentage input, not the new
   named rate/group picker §10 exercises for Quotes/Invoices/Catalogue —
@@ -574,8 +706,13 @@ Not a full audit — just confirm nothing obviously broke:
   into the job's contract value — applying it (§5.11) is a deliberate,
   separate manual step. There's no proactive nudge when a variation
   quote gets accepted; you have to check the job's Variation orders tab.
-- Vendor bills/expenses and mobile (`apps/mobile`) don't exist yet —
-  demo data intentionally doesn't include them.
+- Mobile (`apps/mobile`) doesn't exist yet — S-07.2/S-07.3's mobile-native
+  receipt capture and offline expense-submission queueing are Phase 5
+  scope; the web-based expense submission built in §11 covers S-07.2's
+  web half only, per that story's own "web submission this stage" split.
+- S-07.6 (mark a billable expense and pull it into a customer invoice)
+  has a real, working API (`POST /expenses/:id/mark-billed`) but no web
+  UI action yet — see §11.3 step 2. Not a bug, a follow-up.
 - No standalone `/credit-notes` list page — credit notes are only
   reachable from the invoice they correct.
 - Multi-org (one Owner account across several orgs) is explicitly out of

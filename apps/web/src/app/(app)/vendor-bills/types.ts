@@ -1,0 +1,147 @@
+/** Mirrors apps/api/src/db/schema/purchases.ts's `vendorBills`/`vendorBillLines` row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+export type VendorBillStatus = "draft" | "recorded" | "void";
+export type VendorBillLineType = "item" | "heading" | "text";
+
+export interface VendorBillLine {
+  id: string;
+  billId: string;
+  sortOrder: number;
+  type: VendorBillLineType;
+  catalogItemId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unitPriceAmount: string;
+  unitPriceCurrency: string;
+  accountId: string | null;
+  taxRatePercentage: number;
+  taxRateId: string | null;
+  taxGroupId: string | null;
+  isTaxInclusive: boolean;
+  lineSubtotalAmount: string;
+  lineTaxAmount: string;
+  lineTotalAmount: string;
+}
+
+export interface VendorBill {
+  id: string;
+  orgId: string;
+  contactId: string;
+  contactName: string | null;
+  jobId: string | null;
+  status: VendorBillStatus;
+  /** Vendor-supplied identifier, never system-allocated — see vendorBills' own schema doc comment. */
+  billNumber: string;
+  date: string;
+  dueDate: string | null;
+  currency: string;
+  subtotalAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  /** Denormalized running total, kept in sync by VendorPaymentsService on every allocation — never client-computed. */
+  amountPaid: string;
+  notes: string | null;
+  createdByUserId: string | null;
+  recordedAt: string | null;
+  voidedAt: string | null;
+  voidedByUserId: string | null;
+  voidReason: string | null;
+  journalEntryId: string | null;
+  voidJournalEntryId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** Computed server-side — totalAmount - amountPaid. */
+  balanceDue: string;
+  lines?: VendorBillLine[];
+}
+
+export const VENDOR_BILL_STATUS_LABELS: Record<VendorBillStatus, string> = {
+  draft: "Draft",
+  recorded: "Recorded",
+  void: "Void",
+};
+
+/** Minimal shape used by the vendor-only contact picker — a subset of apps/web/src/app/contacts/types.ts's `Contact`. */
+export interface ContactOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+}
+
+/** Minimal shape used by the catalog-item prefill combobox in the line editor. */
+export interface CatalogItemOption {
+  id: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  defaultPriceAmount: string;
+  defaultPriceCurrency: string;
+  defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
+  expenseAccountId: string | null;
+  archivedAt: string | null;
+}
+
+/** FEAT-08 — used by the line editor's tax picker. Mirrors invoices/types.ts's identical shape. */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
+}
+
+/** Mirrors apps/api/src/modules/org/accounts.service.ts's `listGroupedByType` response shape — used by the line editor's Expense/COGS account picker. */
+export type AccountType = "asset" | "liability" | "equity" | "income" | "expense";
+
+export interface AccountOption {
+  id: string;
+  orgId: string;
+  code: string;
+  name: string;
+  type: AccountType;
+  parentId: string | null;
+  isSystem: boolean;
+}
+
+export type AccountsByType = Record<AccountType, AccountOption[]>;
+
+/** Minimal shape used by the optional job picker in the builder. */
+export interface JobOption {
+  id: string;
+  name: string;
+  status: string;
+}
+
+export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
+
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  cash: "Cash",
+  bank_transfer: "Bank transfer",
+  cheque: "Cheque",
+  card: "Card",
+  upi: "UPI",
+  other: "Other",
+};
+
+/** Mirrors GET /vendor-payments?billId=:id's response shape (VendorPaymentsService.listForBill) — a vendor payment row plus how much of it was allocated specifically to this bill, since one payment can span several bills (S-07.8). */
+export interface BillVendorPaymentRow {
+  id: string;
+  number: string | null;
+  date: string;
+  method: PaymentMethod;
+  reference: string | null;
+  currency: string;
+  amount: string;
+  allocatedAmount: string;
+  /** This payment's allocation specifically against the bill being viewed — not the payment's own total. */
+  allocatedToThisBill: string;
+}

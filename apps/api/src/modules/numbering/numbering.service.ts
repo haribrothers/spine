@@ -8,7 +8,11 @@ import { numberSequences } from "../../db/schema";
  * Canonical document types per docs/spine-prd.md §14.3 — everything with a
  * system-generated sequence. Vendor Bill is deliberately excluded: its
  * number is user-entered (the vendor's own number), so it never gets a row
- * here.
+ * here. `vendor_payment` (FEAT-07/S-07.8) is the vendor-side mirror of the
+ * existing customer-side `receipt` type — a separate type rather than
+ * reusing "receipt", since a receipt of money coming in and a payment
+ * going out are conceptually distinct documents even though both are
+ * "payments" internally.
  */
 export const NUMBERING_DOCUMENT_TYPES = [
   "quote",
@@ -17,6 +21,7 @@ export const NUMBERING_DOCUMENT_TYPES = [
   "receipt",
   "expense",
   "job",
+  "vendor_payment",
 ] as const;
 export type NumberingDocumentType = (typeof NUMBERING_DOCUMENT_TYPES)[number];
 
@@ -27,6 +32,7 @@ export const NUMBERING_DEFAULTS: Record<NumberingDocumentType, { prefix: string;
   receipt: { prefix: "RCP", padding: 4 },
   expense: { prefix: "EXP", padding: 4 },
   job: { prefix: "JOB", padding: 3 },
+  vendor_payment: { prefix: "VPY", padding: 4 },
 };
 
 /**

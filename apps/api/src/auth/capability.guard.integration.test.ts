@@ -105,13 +105,13 @@ describe("CapabilityGuard (requires local Postgres)", () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
   });
 
-  it("Field is always rejected when @RequireCapability is present", async () => {
-    const guard = guardFor("contacts.manage");
-    const context = fakeContext("contacts.manage", {
+  it("Field always passes when @RequireCapability is present — @OrgRoles already gated it, this guard trusts that", async () => {
+    const guard = guardFor("jobs.update_milestones");
+    const context = fakeContext("jobs.update_milestones", {
       session: { activeOrganizationId: orgId },
       user: { id: fieldUserId },
     });
-    await expect(guard.canActivate(context)).rejects.toThrow();
+    await expect(guard.canActivate(context)).resolves.toBe(true);
   });
 
   it("Staff with no Teams is rejected", async () => {

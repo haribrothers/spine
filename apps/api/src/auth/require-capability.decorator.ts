@@ -16,9 +16,15 @@ export const CAPABILITY_KEY = "spine:requiredCapability";
  * Semantics, enforced by CapabilityGuard (see capability.guard.ts):
  *  - role === "owner": always passes, no capability lookup — Owner has
  *    blanket access per PRD §2.1 and is never Team-configurable.
- *  - role === "field": always REJECTED if this decorator is present. Field
- *    is a fixed, non-configurable role; an endpoint reachable by Field
- *    should gate on @OrgRoles alone, never mix in @RequireCapability.
+ *  - role === "field": always passes if this route's own @OrgRoles lists
+ *    "field" (Better Auth's AuthGuard already evaluated @OrgRoles and
+ *    would have 403'd first if not) — Field is fixed/non-configurable, so
+ *    there is no Team grant to check; @RequireCapability on a
+ *    Field-reachable route exists only to label WHICH capability the
+ *    route corresponds to (for the privilege-matrix UI's own bookkeeping/
+ *    documentation), not to gate Field further. If @OrgRoles does NOT
+ *    list "field" for this route, Field never reaches this guard at all
+ *    (AuthGuard already rejected it), so this case is moot for those.
  *  - role === "staff": passes iff the union of the caller's Team grants
  *    includes this capability (most-permissive-wins, per §2.1).
  *

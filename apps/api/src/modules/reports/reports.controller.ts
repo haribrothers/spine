@@ -27,4 +27,12 @@ export class ReportsController {
     const orgId = requireOrgId(session);
     return this.reportsService.receivables(orgId);
   }
+
+  /** S-07.7 — the AP-side mirror of receivables above; same `dashboard.view` gate, since Staff already manages vendor bills/payments end-to-end via `purchases.manage` and reasonably needs to see what's due. */
+  @Get("payables")
+  @RequireCapability("dashboard.view")
+  async payables(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.reportsService.payables(orgId);
+  }
 }
