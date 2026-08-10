@@ -5,16 +5,17 @@ import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   RichTextContent,
   Spinner,
 } from "@spine/ui";
@@ -463,12 +464,12 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         </Card>
       )}
 
-      {/* Org's `quote_conversion_guard` "warn" setting — see ConversionGuardBody's own doc comment. Only ever shown when a prior job and/or invoice already trace back to this quote. */}
-      <Dialog open={conversionConfirm !== null} onOpenChange={(open) => !open && setConversionConfirm(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>This quote has already been converted before</DialogTitle>
-            <DialogDescription>
+      {/* Org's `quote_conversion_guard` "warn" setting — see ConversionGuardBody's own doc comment. Only ever shown when a prior job and/or invoice already trace back to this quote. AlertDialog (not Dialog) since this is a pure yes/no confirmation with real consequences (creates a separate, unlinked job/invoice), per that component's own "reach for this when an action can't be undone" doc comment. */}
+      <AlertDialog open={conversionConfirm !== null} onOpenChange={(open) => !open && setConversionConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>This quote has already been converted before</AlertDialogTitle>
+            <AlertDialogDescription>
               {conversionConfirm && (
                 <>
                   {conversionConfirm.body.existing.jobs.length > 0 && (
@@ -489,23 +490,19 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                   more than once.
                 </>
               )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody />
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setConversionConfirm(null)} disabled={busy}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              onClick={() => (conversionConfirm?.action === "invoice" ? handleConvertToInvoice(true) : handleConvertToJob(true))}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
               disabled={busy}
+              onClick={() => (conversionConfirm?.action === "invoice" ? handleConvertToInvoice(true) : handleConvertToJob(true))}
             >
               {busy ? <Spinner size="sm" /> : `Convert to ${conversionConfirm?.action} anyway`}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {toast}
     </div>

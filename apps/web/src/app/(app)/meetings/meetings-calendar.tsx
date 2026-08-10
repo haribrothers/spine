@@ -5,6 +5,14 @@ import { addMonths } from "date-fns";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Avatar,
   AvatarFallback,
   Badge,
@@ -144,6 +152,9 @@ export function MeetingsCalendar() {
   const [showActivities, setShowActivities] = useState(false);
   const [activityDetail, setActivityDetail] = useState<CalendarEventInstance | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const collapsed = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -268,9 +279,33 @@ export function MeetingsCalendar() {
     setMeetings((prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev);
   }
 
-  async function handleDelete(eventId: string) {
-    await apiClient.delete(`/meetings/${eventId}`);
-    setMeetings((prev) => prev?.filter((m) => m.id !== eventId) ?? prev);
+  /**
+   * `Calendar`'s own `onEventDelete` (packages/ui) fires this immediately
+   * on the user's delete action with no confirmation of its own — this
+   * component is the right place to add one, rather than teaching the
+   * shared `@spine/ui` Calendar about a confirmation flow every consumer
+   * might want shaped differently. Same "AlertDialog for a real,
+   * consequential yes/no" convention as every other delete confirmation
+   * in this app (contacts, quotes, catalogue, teams).
+   */
+  function handleDeleteRequest(eventId: string) {
+    setDeleteError(null);
+    setPendingDeleteId(eventId);
+  }
+
+  async function handleConfirmDelete() {
+    if (!pendingDeleteId) return;
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      await apiClient.delete(`/meetings/${pendingDeleteId}`);
+      setMeetings((prev) => prev?.filter((m) => m.id !== pendingDeleteId) ?? prev);
+      setPendingDeleteId(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete this meeting.");
+    } finally {
+      setDeleteBusy(false);
+    }
   }
 
   if (error) {
@@ -303,7 +338,7 @@ export function MeetingsCalendar() {
         contactOptions={contactOptions}
         onEventCreate={handleCreate}
         onEventUpdate={handleUpdate}
-        onEventDelete={handleDelete}
+        onEventDelete={handleDeleteRequest}
         readOnlyEventIds={readOnlyEventIds}
         onReadOnlyEventClick={setActivityDetail}
       />
@@ -412,6 +447,24 @@ export function MeetingsCalendar() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={pendingDeleteId !== null} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this meeting?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes it from the calendar for everyone. This cannot be undone.
+              {deleteError && <span className="mt-2 block text-overdue">{deleteError}</span>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={deleteBusy} onClick={handleConfirmDelete}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

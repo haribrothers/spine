@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -16,7 +24,6 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -267,26 +274,24 @@ export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUser
         }}
       />
 
-      <Dialog open={releaseOpen} onOpenChange={setReleaseOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Release retention?</DialogTitle>
-            <DialogDescription>
-              Creates a retention-release invoice for whatever retention is still outstanding across this job's issued progress
-              invoices. If nothing is currently held back, this will be rejected.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody />
-          <DialogFooter>
-            <Button type="button" variant="secondary" onClick={() => setReleaseOpen(false)} disabled={busy}>
-              Cancel
-            </Button>
-            <Button type="button" onClick={handleReleaseRetention} disabled={busy}>
+      {/* Pure yes/no confirmation with a real ledger effect (posts a new invoice + journal entry) — AlertDialog, not Dialog, per that component's own "reach for this when an action can't be undone" doc comment. */}
+      <AlertDialog open={releaseOpen} onOpenChange={setReleaseOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Release retention?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Creates a retention-release invoice for whatever retention is still outstanding across this job's issued
+              progress invoices. If nothing is currently held back, this will be rejected.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={handleReleaseRetention}>
               {busy ? <Spinner size="sm" /> : "Release retention"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {toast}
     </div>

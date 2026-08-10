@@ -234,6 +234,9 @@ real, also walk ONE job manually through the full sequence below.
 3. Create a recurring meeting, then edit a single later occurrence's
    time — confirm this does NOT move the whole series' start date (this
    was a real bug fixed earlier).
+4. Delete a meeting from the calendar. Confirm a confirmation dialog
+   appears before it's actually removed (user-reported gap — deletion
+   used to happen immediately on click, no confirmation at all).
 
 ---
 
