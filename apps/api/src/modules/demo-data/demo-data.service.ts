@@ -1092,7 +1092,9 @@ export class DemoDataService {
       .from(catalogItems)
       .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)));
 
-    const { jobsDeleted } = await this.db.transaction(async (tx) => {
+    const { paymentsDeleted, invoicesDeleted, quotesDeleted, jobsDeleted, contactsDeleted, catalogItemsDeleted } =
+      await this.db.transaction(async (tx) => {
+      let paymentsDeleted = 0;
       for (const payment of demoPayments) {
         await this.auditLog.record(tx, {
           orgId,
@@ -1104,8 +1106,10 @@ export class DemoDataService {
           changes: [{ field: "number", from: payment.number, to: null }],
         });
         await tx.delete(payments).where(eq(payments.id, payment.id));
+        paymentsDeleted++;
       }
 
+      let invoicesDeleted = 0;
       for (const invoice of demoInvoices) {
         await this.auditLog.record(tx, {
           orgId,
@@ -1117,8 +1121,10 @@ export class DemoDataService {
           changes: [{ field: "number", from: invoice.number, to: null }],
         });
         await tx.delete(invoices).where(eq(invoices.id, invoice.id));
+        invoicesDeleted++;
       }
 
+      let quotesDeleted = 0;
       for (const quote of demoQuotes) {
         await this.auditLog.record(tx, {
           orgId,
@@ -1130,6 +1136,7 @@ export class DemoDataService {
           changes: [{ field: "number", from: quote.number, to: null }],
         });
         await tx.delete(quotes).where(eq(quotes.id, quote.id));
+        quotesDeleted++;
       }
 
       // Same "blocked if referenced" pattern as demoContacts below —
@@ -1160,6 +1167,7 @@ export class DemoDataService {
         jobsDeleted++;
       }
 
+      let contactsDeleted = 0;
       for (const contact of demoContacts) {
         const [referenced] = await tx.select().from(journalLines).where(eq(journalLines.contactId, contact.id)).limit(1);
         if (referenced) continue;
@@ -1173,8 +1181,10 @@ export class DemoDataService {
           changes: [{ field: "name", from: contact.name, to: null }],
         });
         await tx.delete(contacts).where(eq(contacts.id, contact.id));
+        contactsDeleted++;
       }
 
+      let catalogItemsDeleted = 0;
       for (const item of demoItems) {
         await this.auditLog.record(tx, {
           orgId,
@@ -1186,23 +1196,18 @@ export class DemoDataService {
           changes: [{ field: "name", from: item.name, to: null }],
         });
         await tx.delete(catalogItems).where(eq(catalogItems.id, item.id));
+        catalogItemsDeleted++;
       }
 
-      return { jobsDeleted };
+      return { paymentsDeleted, invoicesDeleted, quotesDeleted, jobsDeleted, contactsDeleted, catalogItemsDeleted };
     });
 
-    return {
-      contactsDeleted: demoContacts.length,
-      catalogItemsDeleted: demoItems.length,
-      quotesDeleted: demoQuotes.length,
-      invoicesDeleted: demoInvoices.length,
-      paymentsDeleted: demoPayments.length,
-      // Unlike the counts above (contacts/items/quotes/invoices/payments,
-      // none of which can be blocked by a referencing journal_lines row —
-      // see this method's own doc comment), jobs genuinely can be, so this
-      // is the actual count of jobs removed, not demoJobs.length.
-      jobsDeleted,
-    };
+    // Every count here is the actual number of rows removed inside the
+    // transaction above, not demoX.length — contacts/jobs can be skipped
+    // when referenced by a permanent (onDelete: "restrict") journal_lines
+    // row, so length would overcount for those; the rest can't currently
+    // diverge but are tracked the same way so this can't silently regress.
+    return { contactsDeleted, catalogItemsDeleted, quotesDeleted, invoicesDeleted, paymentsDeleted, jobsDeleted };
   }
 
   /**
