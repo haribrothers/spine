@@ -1,20 +1,31 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { and, eq, inArray } from "drizzle-orm";
+import { fromNodeHeaders } from "better-auth/node";
 import type { Capability } from "@spine/shared";
+import { auth } from "./auth";
 import { DATABASE } from "../db/db.module";
 import type { Database } from "../db/client";
 import { member, teamMemberships, teamPrivileges } from "../db/schema";
 import { CAPABILITY_KEY } from "./require-capability.decorator";
 
 /**
- * Registered as a global APP_GUARD in app.module.ts, declared AFTER
- * AuthModule.forRoot(...) is imported — @thallesp/nestjs-better-auth's
- * AuthModule.forRoot self-registers its own AuthGuard as a global APP_GUARD
- * internally (there is no separate OrgRolesGuard; @OrgRoles is handled
- * inside that same AuthGuard). Nest resolves multiple APP_GUARD providers
- * in registration order, so AuthGuard runs first and populates
- * request.session before this guard's canActivate reads it.
+ * Registered as a global APP_GUARD in app.module.ts. @thallesp/nestjs-
+ * better-auth's AuthModule.forRoot self-registers its own AuthGuard as a
+ * global APP_GUARD too (there is no separate OrgRolesGuard; @OrgRoles is
+ * handled inside that same AuthGuard) — this guard used to assume Nest
+ * would run that AuthGuard first (since AuthModule.forRoot is imported
+ * before this guard is declared in app.module.ts's providers array) and
+ * read `request.session` off the raw request as a result. That assumption
+ * was wrong: verified live against a real running server that
+ * `request.session` is still `undefined` here even on routes where
+ * @OrgRoles' own check already passed — Nest does not order cross-module
+ * global APP_GUARDs by import position, only by each module's own
+ * discovery order in the DI graph. So this guard resolves the session
+ * itself via `auth.api.getSession` (the same primitive AuthGuard uses
+ * internally), falling back to `request.session` first in case a future
+ * Nest/AuthModule version does populate it before this guard runs — never
+ * trusting guard ordering either way.
  *
  * No-ops for any route without @RequireCapability metadata, so it's safe to
  * register globally without affecting routes that don't use it.
@@ -34,11 +45,18 @@ export class CapabilityGuard implements CanActivate {
     if (!required) return true;
 
     const request = context.switchToHttp().getRequest();
-    // Same access pattern as IdempotencyInterceptor — guards run before the
-    // @Session() param decorator resolves, so read the session Better
-    // Auth's AuthGuard already attached to the raw request.
-    const orgId: string | undefined = request.session?.session?.activeOrganizationId;
-    const userId: string | undefined = request.session?.user?.id;
+    // NOT guaranteed to be Better Auth's own AuthGuard's request.session yet
+    // — despite this guard being declared after AuthModule.forRoot(...) in
+    // app.module.ts, Nest does not order cross-module global APP_GUARDs by
+    // import position; verified live that request.session is still
+    // undefined here on a real HTTP request even though @OrgRoles' own
+    // AuthGuard check on the very same route passes. So this guard resolves
+    // the session itself, the same way AuthGuard does internally
+    // (auth.api.getSession against the request's own headers) rather than
+    // depending on guard execution order at all.
+    const session = request.session ?? (await auth.api.getSession({ headers: request.headers ? fromNodeHeaders(request.headers) : new Headers() }));
+    const orgId: string | undefined = session?.session?.activeOrganizationId;
+    const userId: string | undefined = session?.user?.id;
     if (!orgId || !userId) {
       // Should be unreachable — @OrgRoles already requires an active org —
       // but fail closed rather than assume.
