@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings, taxRates, vendorBills, expenses, expenseCategories, vendorPayments, accounts } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, invoiceLines, jobs, journalLines, leads, payments, quotes, settings, taxRates, taxGroups, vendorBills, expenses, expenseCategories, vendorPayments, accounts, meetings as meetingsTable, creditNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
@@ -11,10 +11,18 @@ import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxRatesService } from "../tax/tax-rates.service";
+import { TaxGroupsService } from "../tax/tax-groups.service";
 import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { ExpenseCategoriesService } from "../purchases/expense-categories.service";
 import { ExpensesService } from "../purchases/expenses.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
+import { CreditNotesService } from "../credit-notes/credit-notes.service";
+import { MeetingsService } from "../contacts/meetings.service";
+import { VariationOrdersService } from "../jobs/variation-orders.service";
+import { FilesService } from "../files/files.service";
+import { TeamsService } from "../teams/teams.service";
+import { auth } from "../../auth/auth";
+import { member, organization, teamMemberships, user } from "../../db/schema";
 
 /**
  * S-12.8/F12 — "load demo data" now also seeds the org's own identity
@@ -35,6 +43,18 @@ import { VendorPaymentsService } from "../purchases/vendor-payments.service";
  * would be a confusing mismatch for anyone evaluating the industry-template
  * feature specifically.
  */
+/**
+ * A minimal, valid 1x1 px PNG (base64) — used everywhere this file needs a
+ * real uploaded file (job photos, S-04.4/S-04.10; the business logo,
+ * S-12.x's own Settings step) rather than a fake `files` row with no
+ * actual object-storage backing. Deliberately tiny (67 bytes decoded): the
+ * point is exercising the real `FilesService.upload` → MinIO → signed-URL
+ * round trip end-to-end, not producing a visually convincing demo photo —
+ * this is dev/demo seed data, not marketing material.
+ */
+const PLACEHOLDER_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
 const DEMO_BUSINESS_PROFILE = {
   name: "Riverstone Builders",
   address: "220 Timberline Ave, Suite 4, Burlington, VT 05401",
@@ -569,10 +589,16 @@ export class DemoDataService {
     private readonly milestonesService: MilestonesService,
     private readonly settingsService: SettingsService,
     private readonly taxRatesService: TaxRatesService,
+    private readonly taxGroupsService: TaxGroupsService,
     private readonly vendorBillsService: VendorBillsService,
     private readonly expenseCategoriesService: ExpenseCategoriesService,
     private readonly expensesService: ExpensesService,
     private readonly vendorPaymentsService: VendorPaymentsService,
+    private readonly creditNotesService: CreditNotesService,
+    private readonly meetingsService: MeetingsService,
+    private readonly variationOrdersService: VariationOrdersService,
+    private readonly filesService: FilesService,
+    private readonly teamsService: TeamsService,
   ) {}
 
   /**
@@ -593,9 +619,43 @@ export class DemoDataService {
   }
 
   async seed(orgId: string, actorUserId: string) {
-    await this.seedSettingIfUnset(orgId, "business_profile", DEMO_BUSINESS_PROFILE);
+    // S-12.2 — a real uploaded logo, not a fake URL string, so the
+    // business-profile Settings pane and every PDF header
+    // (quote/invoice/payment) show an actual image instead of the
+    // fallback text-only header. Only attempted if business_profile is
+    // itself unset (matches seedSettingIfUnset's own "never overwrite an
+    // org's real configuration" guard) and storage is configured — per
+    // CLAUDE.md's graceful-degradation rule, a demo org must still seed
+    // successfully with a logo-less profile if MinIO/S3 isn't reachable.
+    const businessProfileAlreadySet = (await this.settingsService.get(orgId, "business_profile")) !== null;
+    let demoBusinessProfile: typeof DEMO_BUSINESS_PROFILE & { logoUrl?: string } = DEMO_BUSINESS_PROFILE;
+    if (!businessProfileAlreadySet && this.filesService.isStorageConfigured()) {
+      const uploadedLogo = await this.filesService.upload(orgId, {
+        originalFilename: "logo.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(PLACEHOLDER_PNG_BASE64, "base64"),
+        uploadedByUserId: actorUserId,
+      });
+      if (uploadedLogo) {
+        const apiUrl = process.env.API_URL ?? `http://localhost:${process.env.PORT ?? 4000}`;
+        demoBusinessProfile = { ...DEMO_BUSINESS_PROFILE, logoUrl: `${apiUrl}/files/${uploadedLogo.id}` };
+      }
+    }
+    await this.seedSettingIfUnset(orgId, "business_profile", demoBusinessProfile);
     await this.seedSettingIfUnset(orgId, "industry_template", DEMO_INDUSTRY_TEMPLATE);
     await this.seedSettingIfUnset(orgId, "currency", DEMO_CURRENCY);
+    // These three previously relied entirely on each service's own
+    // hardcoded fallback when unset — seeding them explicitly turns
+    // "settings" into a real, visible row in Settings rather than an
+    // invisible code default, without changing behaviour. Values match
+    // each feature's existing fallback exactly (20% / exclusive / warn)
+    // deliberately — DEMO_QUOTES (below) already assumes a 20% discount
+    // threshold for its own "deliberately left unapproved" quote (see that
+    // array's own doc comment); seeding a different value here would
+    // silently break that scenario.
+    await this.seedSettingIfUnset(orgId, "discount_approval_threshold", { percentage: 20 });
+    await this.seedSettingIfUnset(orgId, "prices_include_tax", { inclusive: false });
+    await this.seedSettingIfUnset(orgId, "quote_conversion_guard", { mode: "warn" });
 
     const [currencySetting] = await this.db
       .select()
@@ -627,6 +687,28 @@ export class DemoDataService {
         name: "Sales Tax",
         rate: taxRatePercentage > 0 ? taxRatePercentage : 15,
         isCompound: false,
+      });
+    }
+
+    // S-08.3 — a second rate plus a group combining it with the one above,
+    // demonstrating split/compound tax (e.g. a state surcharge applied on
+    // top of the base sales tax) — every catalog item/quote/invoice line
+    // still uses the single `demoTaxRate` above by default; this group
+    // exists so Settings → Tax and the tax-rate/group picker aren't empty
+    // of a group example, not because any seeded document uses it.
+    let demoSurchargeRate = existingRates.find((r) => r.name === "State Surcharge");
+    if (!demoSurchargeRate) {
+      demoSurchargeRate = await this.taxRatesService.create(orgId, actorUserId, {
+        name: "State Surcharge",
+        rate: 2.5,
+        isCompound: true,
+      });
+    }
+    const existingGroups = await this.taxGroupsService.list(orgId, { includeArchived: true });
+    if (!existingGroups.some((g) => g.name === "Sales Tax + Surcharge")) {
+      await this.taxGroupsService.create(orgId, actorUserId, {
+        name: "Sales Tax + Surcharge",
+        taxRateIds: [demoTaxRate.id, demoSurchargeRate.id],
       });
     }
 
@@ -831,8 +913,138 @@ export class DemoDataService {
     const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds, demoTaxRate.id);
     const jobsResult = await this.seedJobs(orgId, actorUserId, result.contactIds);
     const purchasesResult = await this.seedPurchases(orgId, actorUserId, result.contactIds);
+    const creditNotesResult = await this.seedCreditNotes(orgId, actorUserId, invoicesResult.creditableInvoiceId);
+    const meetingsResult = await this.seedMeetings(orgId, actorUserId, result.contactIds);
+    const usersResult = await this.seedDemoUsers(orgId, actorUserId);
 
-    return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult, ...purchasesResult };
+    return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult, ...purchasesResult, ...creditNotesResult, ...meetingsResult, ...usersResult };
+  }
+
+  /**
+   * S-05.6 — a single partial credit note against the "issued" (never
+   * paid, never voided) demo invoice — see seedInvoices' own
+   * `creditableInvoiceId` doc comment on why that one specifically.
+   * Correcting an over-billed quantity on that invoice's own single line
+   * (Project management, 20 hours) by crediting back 4 hours, via the real
+   * `CreditNotesService.create`/`.issue`, matching every other demo
+   * document type's "seed via the real service" convention.
+   */
+  private async seedCreditNotes(orgId: string, actorUserId: string, creditableInvoiceId: string | null) {
+    let creditNotesCreated = 0;
+    let creditNotesIssued = 0;
+    if (!creditableInvoiceId) {
+      return { creditNotesCreated, creditNotesIssued };
+    }
+
+    const [invoice] = await this.db.select().from(invoices).where(eq(invoices.id, creditableInvoiceId));
+    const invoiceLine = invoice
+      ? await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, creditableInvoiceId)).then((rows) => rows[0])
+      : undefined;
+    if (!invoice || !invoiceLine) {
+      return { creditNotesCreated, creditNotesIssued };
+    }
+
+    const creditQuantity = Math.min(4, invoiceLine.quantity);
+    const creditNote = await this.creditNotesService.create(
+      orgId,
+      actorUserId,
+      {
+        invoiceId: creditableInvoiceId,
+        reason: "Overbilled hours — corrected per client review.",
+        lines: [
+          {
+            type: "item",
+            catalogItemId: invoiceLine.catalogItemId,
+            name: invoiceLine.name,
+            description: invoiceLine.description,
+            quantity: creditQuantity,
+            unitPriceAmount: invoiceLine.unitPriceAmount,
+            unitPriceCurrency: invoiceLine.unitPriceCurrency,
+            taxRatePercentage: invoiceLine.taxRatePercentage,
+          },
+        ],
+      },
+      true, // isDemo
+    );
+    creditNotesCreated++;
+
+    await this.creditNotesService.issue(orgId, creditNote.id, actorUserId);
+    creditNotesIssued++;
+
+    return { creditNotesCreated, creditNotesIssued };
+  }
+
+  /**
+   * S-01.9 — a handful of scheduled meetings on the calendar, spanning
+   * past (already happened) and upcoming, some linked to a demo contact
+   * and one internal (no contact). Meetings have no draft/issue lifecycle
+   * — MeetingsService.create is the only write this needs.
+   */
+  private async seedMeetings(orgId: string, actorUserId: string, contactIds: string[]) {
+    let meetingsCreated = 0;
+    const now = new Date();
+
+    const seeds: { title: string; contactIndex: number | null; startInDays: number; durationHours: number; location: string | null; description: string | null }[] = [
+      {
+        title: "Site walkthrough — Marina office fit-out",
+        contactIndex: 0,
+        startInDays: -3,
+        durationHours: 1,
+        location: "48 Harbor Way, Portland, ME 04101",
+        description: "Walk the space with the client before framing sign-off.",
+      },
+      {
+        title: "Kickoff call — kitchen renovation scope",
+        contactIndex: 2,
+        startInDays: -10,
+        durationHours: 1,
+        location: null,
+        description: "Confirm final material selections and schedule.",
+      },
+      {
+        title: "Progress review — Phase 2 townhomes",
+        contactIndex: 1,
+        startInDays: 3,
+        durationHours: 2,
+        location: "220 Ridge Rd, Burlington, VT 05401",
+        description: null,
+      },
+      {
+        title: "Weekly crew scheduling",
+        contactIndex: null,
+        startInDays: 1,
+        durationHours: 1,
+        location: null,
+        description: "Internal — assign crews to next week's jobs.",
+      },
+    ];
+
+    for (const seed of seeds) {
+      const contactId = seed.contactIndex !== null ? contactIds[seed.contactIndex] : null;
+      const startAt = new Date(now);
+      startAt.setDate(startAt.getDate() + seed.startInDays);
+      startAt.setHours(9, 0, 0, 0);
+      const endAt = new Date(startAt);
+      endAt.setHours(endAt.getHours() + seed.durationHours);
+
+      const created = await this.meetingsService.create(orgId, actorUserId, {
+        contactId: contactId ?? null,
+        title: seed.title,
+        startAt,
+        endAt,
+        location: seed.location,
+        description: seed.description,
+      });
+      // MeetingsService.create has no isDemo parameter (mirrors its own
+      // input schema, which has no such field) — flipped by id in a
+      // direct follow-up update rather than threading isDemo through the
+      // service/schema for one demo-only field, matching the "small,
+      // targeted" spirit of this file's own conventions elsewhere.
+      await this.db.update(meetingsTable).set({ isDemo: true }).where(eq(meetingsTable.id, created!.id));
+      meetingsCreated++;
+    }
+
+    return { meetingsCreated };
   }
 
   /**
@@ -928,6 +1140,111 @@ export class DemoDataService {
   }
 
   /**
+   * §2.1 permission model — a fresh demo org otherwise has only the
+   * Primary Owner, so Users/Teams/Permissions looks empty despite that
+   * whole area being feature-complete. Seeds one real Staff user (added to
+   * the auto-created "General Staff" default team) and one real Field
+   * user, so a demo org actually demonstrates multi-role access.
+   *
+   * These become REAL loginable accounts (Better Auth's own
+   * `auth.api.signUpEmail`, the only supported way to create a `user` row
+   * with a correctly-hashed password — see members.service.integration.test.ts's
+   * own identical precedent, "no invitation-accept flow exists yet [for
+   * test/seed purposes]"). Every signup is unconditionally the Primary
+   * Owner of a BRAND NEW org (auth.ts's own `user.create.after` hook,
+   * `allowUserToCreateOrganization: false` notwithstanding — the hook
+   * itself always fires), so each demo user's own auto-created org
+   * (+ its auto-seeded chart of accounts + default team) is deleted
+   * immediately after, before their `member` row is re-pointed at the
+   * REAL target org — that throwaway org never becomes reachable by
+   * anyone and never appears in any list. The re-pointed `member` row is
+   * flagged `isDemo: true` (this migration's own new column) so
+   * `deleteAll` can revoke exactly this org access on cleanup WITHOUT
+   * touching the underlying `user`/`account` login row — see that
+   * column's own schema comment on why a login account is never deleted
+   * by demo cleanup.
+   */
+  private async seedDemoUsers(orgId: string, actorUserId: string) {
+    let usersCreated = 0;
+
+    const defaultTeam = (await this.teamsService.list(orgId)).find((t) => t.isDefault);
+
+    const seeds: { email: string; name: string; role: "staff" | "field"; joinDefaultTeam: boolean }[] = [
+      { email: "sarah.mendes.demo@example.com", name: "Sarah Mendes", role: "staff", joinDefaultTeam: true },
+      { email: "marcus.webb.demo@example.com", name: "Marcus Webb", role: "field", joinDefaultTeam: false },
+    ];
+
+    for (const seed of seeds) {
+      // Idempotency guard: seed() is safe to call twice (this class's own
+      // established convention), and signUpEmail has no "find or create"
+      // behaviour of its own — it hard-rejects a duplicate email. If this
+      // exact demo email already exists (e.g. a prior seed run got this
+      // far before failing on a later step), reuse that user instead of
+      // erroring, and skip straight to (re-)pointing their membership at
+      // this org, so a retried seed() converges rather than 500ing.
+      const [existingUser] = await this.db.select().from(user).where(eq(user.email, seed.email));
+      let userId: string;
+      let autoOrgId: string | undefined;
+      if (existingUser) {
+        userId = existingUser.id;
+      } else {
+        const signUp = await auth.api.signUpEmail({
+          body: { email: seed.email, password: "DemoPassword123!", name: seed.name },
+        });
+        if (!signUp?.user?.id) continue;
+        userId = signUp.user.id;
+
+        const [autoMembership] = await this.db.select().from(member).where(eq(member.userId, userId));
+        autoOrgId = autoMembership?.organizationId;
+      }
+
+      // Re-point the membership at the REAL target org BEFORE deleting the
+      // throwaway auto-created org below — member.organizationId is
+      // onDelete: "cascade" off organization.id, so deleting the auto-org
+      // first would cascade-delete this very row before the UPDATE ever
+      // runs (confirmed live: usersCreated reported success but no member
+      // row existed afterward — the UPDATE's WHERE matched zero rows
+      // because its target had just been cascade-deleted out from under
+      // it). Ordering this update first means the row survives to be
+      // re-pointed, and the auto-org deletion below now only ever removes
+      // an org with zero members left in it.
+      const [movedMember] = await this.db
+        .update(member)
+        .set({ organizationId: orgId, role: seed.role, isDemo: true, isPrimaryOwner: false })
+        .where(eq(member.userId, userId))
+        .returning();
+      usersCreated++;
+
+      // Deletes the throwaway auto-created org — cascades onto its own
+      // chart of accounts and default team (both now orphaned, since the
+      // member row above already moved out), per every FK's `onDelete:
+      // "cascade"` in auth.ts/ledger.ts/teams.ts.
+      if (autoOrgId && autoOrgId !== orgId) {
+        await this.db.delete(organization).where(eq(organization.id, autoOrgId));
+      }
+
+      if (seed.joinDefaultTeam && defaultTeam && movedMember) {
+        const existingMemberIds = await this.db
+          .select({ id: teamMemberships.memberId })
+          .from(teamMemberships)
+          .where(eq(teamMemberships.teamId, defaultTeam.id));
+        await this.teamsService.setMembers(orgId, defaultTeam.id, [...existingMemberIds.map((m) => m.id), movedMember.id]);
+      }
+
+      // No AuditLogService.record call here — audit_log.entity_id is a
+      // strict `uuid` column (audit.ts), but Better Auth's own `user`/
+      // `member` ids are plain text ids (e.g. "DNTUzkhViZ2..."), not
+      // UUIDs — passing one in fails the column's own type constraint,
+      // discovered live. Every other entityType this file writes
+      // (contact/quote/invoice/job/etc.) uses this app's own uuid-keyed
+      // tables, so this mismatch is specific to auth-plugin-owned rows;
+      // not worth a schema change for one demo-seed call site.
+    }
+
+    return { usersCreated };
+  }
+
+  /**
    * Same "runs after the transaction above commits, calls the real
    * service" reasoning as `seedQuotes` — `InvoicesService.create`/`.issue`/
    * `.void` and `PaymentsService.create` each open their own transactions.
@@ -939,6 +1256,11 @@ export class DemoDataService {
     let invoicesIssued = 0;
     let invoicesVoided = 0;
     let paymentsCreated = 0;
+    // Captured for seedCreditNotes below (S-05.6) — the "issued" (never
+    // paid, never voided) demo invoice is the cleanest target for a
+    // partial credit note: a real outstanding balance to reduce, no
+    // payment allocation or void status complicating the numbers.
+    let creditableInvoiceId: string | null = null;
 
     const [currencySetting] = await this.db
       .select()
@@ -1000,6 +1322,10 @@ export class DemoDataService {
         continue;
       }
 
+      if (seed.outcome === "issued") {
+        creditableInvoiceId = issued.id;
+      }
+
       if (seed.outcome === "partiallyPaid" || seed.outcome === "paidInFull") {
         const total = BigInt(issued.totalAmount);
         const payAmount = seed.outcome === "paidInFull" ? total : (total * BigInt(Math.round((seed.partialPaymentFraction ?? 0.5) * 100))) / 100n;
@@ -1024,7 +1350,7 @@ export class DemoDataService {
       }
     }
 
-    return { invoicesCreated, invoicesIssued, invoicesVoided, paymentsCreated };
+    return { invoicesCreated, invoicesIssued, invoicesVoided, paymentsCreated, creditableInvoiceId };
   }
 
   /**
@@ -1050,6 +1376,30 @@ export class DemoDataService {
     let jobsCreated = 0;
     let milestonesInvoiced = 0;
     let retentionReleases = 0;
+    let jobPhotosCreated = 0;
+    let jobNotesCreated = 0;
+    // Captured for seedJobExtras below (S-04.9's variation order demo) —
+    // the first ("active") job is the cleanest target: nothing invoiced
+    // against it yet, so folding a variation's value into its contract
+    // value later (if a real user applies it) has an obvious before/after.
+    let variationOrderJobId: string | null = null;
+
+    // Real object-storage upload (S-04.4/S-04.10), not a fake `files` row
+    // — reused across every milestone-completion photo below rather than
+    // re-uploading identical bytes per call. Storage may be unconfigured
+    // in some environments (CLAUDE.md's graceful-degradation rule); if so,
+    // every photo attach below is just skipped (photoFileIds stays empty,
+    // no addPhoto call), not a hard seed failure.
+    let demoPhotoFileId: string | null = null;
+    if (this.filesService.isStorageConfigured()) {
+      const uploaded = await this.filesService.upload(orgId, {
+        originalFilename: "site-progress.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(PLACEHOLDER_PNG_BASE64, "base64"),
+        uploadedByUserId: actorUserId,
+      });
+      demoPhotoFileId = uploaded!.id;
+    }
 
     for (const seed of DEMO_JOBS) {
       const contactId = contactIds[seed.contactIndex];
@@ -1081,6 +1431,24 @@ export class DemoDataService {
         true, // isDemo
       );
       jobsCreated++;
+      if (seed.outcome === "active") {
+        variationOrderJobId = job.id;
+      }
+
+      // S-04.10 — a general site note + photo on every seeded job,
+      // independent of milestone completion (which has its own photo
+      // path below), via the real JobsService.addPhoto/.addNote.
+      await this.jobsService.addNote(orgId, job.id, actorUserId, {
+        body: `Site kicked off — ${seed.siteAddress}. Crew scheduled per the milestone plan below.`,
+      });
+      jobNotesCreated++;
+      if (demoPhotoFileId) {
+        await this.jobsService.addPhoto(orgId, job.id, actorUserId, {
+          fileId: demoPhotoFileId,
+          caption: "Site condition at kickoff.",
+        });
+        jobPhotosCreated++;
+      }
 
       const milestones = await this.milestonesService.setAll(orgId, job.id, actorUserId, {
         milestones: seed.milestones.map((m, i) => {
@@ -1097,8 +1465,9 @@ export class DemoDataService {
         const milestone = milestones[i]!;
         await this.milestonesService.completeMilestone(orgId, job.id, milestone.id, actorUserId, {
           completionNotes: `${milestone.name} — completed on schedule.`,
-          photoFileIds: [],
+          photoFileIds: demoPhotoFileId ? [demoPhotoFileId] : [],
         });
+        if (demoPhotoFileId) jobPhotosCreated++;
         const invoice = await this.milestonesService.invoiceMilestone(orgId, job.id, milestone.id, actorUserId);
         await this.invoicesService.issue(orgId, invoice.id, actorUserId);
         milestonesInvoiced++;
@@ -1109,8 +1478,9 @@ export class DemoDataService {
           const milestone = milestones[i]!;
           await this.milestonesService.completeMilestone(orgId, job.id, milestone.id, actorUserId, {
             completionNotes: `${milestone.name} — completed on schedule.`,
-            photoFileIds: [],
+            photoFileIds: demoPhotoFileId ? [demoPhotoFileId] : [],
           });
+          if (demoPhotoFileId) jobPhotosCreated++;
           const invoice = await this.milestonesService.invoiceMilestone(orgId, job.id, milestone.id, actorUserId);
           await this.invoicesService.issue(orgId, invoice.id, actorUserId);
           milestonesInvoiced++;
@@ -1120,7 +1490,46 @@ export class DemoDataService {
       }
     }
 
-    return { jobsCreated, milestonesInvoiced, retentionReleases };
+    let variationOrdersCreated = 0;
+    if (variationOrderJobId) {
+      const [currencySetting] = await this.db
+        .select()
+        .from(settings)
+        .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+      const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
+
+      // S-04.9 — a supplementary quote raised against the job for
+      // out-of-scope work, sent to the customer but deliberately left
+      // un-accepted/un-applied: acceptance only happens via a real
+      // customer clicking the public quote link (PublicQuotesService),
+      // and DEMO_QUOTES' own doc comment explains why this file never
+      // fabricates that status directly. A staff user can accept it
+      // through the same flow any real variation order would use, then
+      // apply it from the job's own Variation Orders tab.
+      const variationOrders = await this.variationOrdersService.create(orgId, actorUserId, variationOrderJobId, {
+        currency: currencyCode,
+        notes: "Additional scope requested on site — see attached line items.",
+        lines: [
+          {
+            type: "item",
+            name: "Additional electrical outlets (site-requested)",
+            quantity: 6,
+            unitPriceAmount: 8500n,
+            unitPriceCurrency: currencyCode,
+            discountPercentage: 0,
+            taxRatePercentage: 0,
+            isTaxInclusive: false,
+          },
+        ],
+      });
+      const created = variationOrders[variationOrders.length - 1];
+      if (created) {
+        await this.quotesService.send(orgId, created.quoteId, actorUserId);
+        variationOrdersCreated++;
+      }
+    }
+
+    return { jobsCreated, milestonesInvoiced, retentionReleases, jobPhotosCreated, jobNotesCreated, variationOrdersCreated };
   }
 
   /**
@@ -1328,10 +1737,28 @@ export class DemoDataService {
       .select({ id: payments.id, number: payments.number, contactId: payments.contactId })
       .from(payments)
       .where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true)));
+    // credit_notes.invoiceId is onDelete: "restrict" (credit-notes.ts's
+    // own schema comment on why) — must be removed before the invoices
+    // below, same "child before restrict-parent" ordering this method
+    // already follows for payments/vendor payments.
+    const demoCreditNotes = await this.db
+      .select({ id: creditNotes.id, number: creditNotes.number, contactId: creditNotes.contactId })
+      .from(creditNotes)
+      .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true)));
     const demoInvoices = await this.db
       .select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId })
       .from(invoices)
       .where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true)));
+    const demoMeetings = await this.db
+      .select({ id: meetingsTable.id, title: meetingsTable.title, contactId: meetingsTable.contactId })
+      .from(meetingsTable)
+      .where(and(eq(meetingsTable.orgId, orgId), eq(meetingsTable.isDemo, true)));
+    // Revokes org access only — the underlying user/account login row is
+    // never touched, per member.isDemo's own schema comment.
+    const demoMembers = await this.db
+      .select({ id: member.id, userId: member.userId })
+      .from(member)
+      .where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)));
     const demoQuotes = await this.db
       .select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId })
       .from(quotes)
@@ -1359,6 +1786,9 @@ export class DemoDataService {
       vendorPaymentsDeleted,
       vendorBillsDeleted,
       expensesDeleted,
+      creditNotesDeleted,
+      meetingsDeleted,
+      membersDeleted,
     } = await this.db.transaction(async (tx) => {
       // Vendor payments first — vendor_payment_allocations.billId is
       // onDelete: "restrict" (mirrors payment_allocations.invoiceId), so a
@@ -1422,6 +1852,21 @@ export class DemoDataService {
         });
         await tx.delete(payments).where(eq(payments.id, payment.id));
         paymentsDeleted++;
+      }
+
+      let creditNotesDeleted = 0;
+      for (const creditNote of demoCreditNotes) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "credit_note",
+          entityId: creditNote.id,
+          contactId: creditNote.contactId,
+          changes: [{ field: "number", from: creditNote.number, to: null }],
+        });
+        await tx.delete(creditNotes).where(eq(creditNotes.id, creditNote.id));
+        creditNotesDeleted++;
       }
 
       let invoicesDeleted = 0;
@@ -1514,15 +1959,21 @@ export class DemoDataService {
         catalogItemsDeleted++;
       }
 
-      // Cleans up seed()'s "Sales Tax" tax_rates row (see seed()'s own
-      // comment) once every catalog item/quote/invoice line that
-      // referenced it is already gone above — those FKs are all
-      // `onDelete: "set null"`, so nothing blocks this. Deliberately not
-      // tracked in this method's own return/count (unlike catalogItems etc.)
-      // since it's a byproduct of demo cleanup, not a document type users
-      // think of as "demo data" — same reasoning `status()` below already
-      // applies to why it only checks quotes/invoices/catalog items.
-      await tx.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.name, "Sales Tax")));
+      // Cleans up seed()'s "Sales Tax" + "State Surcharge" tax_rates rows
+      // and the "Sales Tax + Surcharge" group (see seed()'s own comment)
+      // once every catalog item/quote/invoice line that referenced a rate
+      // is already gone above — those FKs are all `onDelete: "set null"`,
+      // so nothing blocks this. The group is deleted FIRST: its own
+      // `tax_group_rates` join rows reference `tax_rates` with `onDelete:
+      // "restrict"`, so a rate used by a still-existing group can't be
+      // removed until the group (and its cascade-deleted join rows) is
+      // gone. Deliberately not tracked in this method's own return/count
+      // (unlike catalogItems etc.) since it's a byproduct of demo cleanup,
+      // not a document type users think of as "demo data" — same
+      // reasoning `status()` below already applies to why it only checks
+      // quotes/invoices/catalog items.
+      await tx.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "Sales Tax + Surcharge")));
+      await tx.delete(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])));
 
       // Same "clean up by name, not an isDemo flag" convention as the
       // "Sales Tax" tax rate above — expense_categories has no isDemo
@@ -1534,6 +1985,36 @@ export class DemoDataService {
         .delete(expenseCategories)
         .where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.name, ["Fuel & Vehicle", "Site Meals", "Tools & Small Equipment"])));
 
+      let meetingsDeleted = 0;
+      for (const meeting of demoMeetings) {
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "meeting",
+          entityId: meeting.id,
+          contactId: meeting.contactId,
+          changes: [{ field: "title", from: meeting.title, to: null }],
+        });
+        await tx.delete(meetingsTable).where(eq(meetingsTable.id, meeting.id));
+        meetingsDeleted++;
+      }
+
+      // Revokes this org's access for the demo Staff/Field member ONLY —
+      // team_memberships.memberId is onDelete: "cascade" off member.id
+      // (teams.ts), so no separate cleanup needed there. The underlying
+      // user/account login row is deliberately left alone, per
+      // member.isDemo's own schema comment — a demo user can still log in
+      // afterward, they simply no longer belong to this org.
+      // No AuditLogService.record call here — same reason seedDemoUsers'
+      // own comment gives: audit_log.entity_id is a strict uuid column,
+      // member.id is a plain Better-Auth text id, not a UUID.
+      let membersDeleted = 0;
+      for (const demoMember of demoMembers) {
+        await tx.delete(member).where(eq(member.id, demoMember.id));
+        membersDeleted++;
+      }
+
       return {
         paymentsDeleted,
         invoicesDeleted,
@@ -1544,6 +2025,9 @@ export class DemoDataService {
         vendorPaymentsDeleted,
         vendorBillsDeleted,
         expensesDeleted,
+        creditNotesDeleted,
+        meetingsDeleted,
+        membersDeleted,
       };
     });
 
@@ -1562,6 +2046,9 @@ export class DemoDataService {
       vendorPaymentsDeleted,
       vendorBillsDeleted,
       expensesDeleted,
+      creditNotesDeleted,
+      meetingsDeleted,
+      membersDeleted,
     };
   }
 

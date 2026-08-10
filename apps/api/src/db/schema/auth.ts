@@ -138,6 +138,19 @@ export const member = pgTable(
      * promote/demote or deactivation.
      */
     isPrimaryOwner: boolean("is_primary_owner").default(false).notNull(),
+    /**
+     * Demo-data marker, same convention as contacts.isDemo/quotes.isDemo —
+     * but deliberately scoped to the MEMBERSHIP row, not the underlying
+     * `user`/`account` login row. `DemoDataService.deleteAll` removes a
+     * demo member's org access (this row) on cleanup, never the person's
+     * actual account/session/credential history — deleting a login account
+     * is a materially bigger, harder-to-reverse action than removing a
+     * business record, and Primary-Owner-only orgs must never accidentally
+     * lose their only Owner if a demo membership happened to be marked
+     * incorrectly (see the primary-owner uniqueness index above — demo
+     * members are never seeded as Primary Owner, only staff/field).
+     */
+    isDemo: boolean("is_demo").default(false).notNull(),
   },
   (table) => [
     index("member_organizationId_idx").on(table.organizationId),

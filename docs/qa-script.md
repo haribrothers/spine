@@ -23,6 +23,12 @@ before considering that work's QA "done."
    http://localhost:1080
 4. MinIO console (uploaded files/logos): http://localhost:9001
    (credentials in `.env`).
+5. For a genuinely fresh org, run `pnpm db:reset` (in `apps/api`) — it
+   truncates every app table (a hardcoded list kept in sync with the
+   schema; see `apps/api/src/db/reset.ts`) but does **not** seed demo
+   data itself. You still sign up fresh and opt into **Load demo data**
+   from onboarding (§1.7) — this is intentional, matching real
+   first-run behaviour.
 
 ---
 
@@ -49,12 +55,38 @@ before considering that work's QA "done."
    page, logo still shows) and later appears on a quote/invoice PDF
    (see §3/§4 below).
 7. In Settings → Data (or the dashboard checklist), click **Load demo
-   data**. Confirm it seeds contacts, catalogue items, leads, quotes,
-   invoices, payments, and jobs (3, at different stages — see §5 below)
-   without error.
+   data**. Confirm it seeds, without error:
+   - Contacts, catalogue items, leads, quotes, invoices, payments, and
+     jobs (3, at different stages — see §5 below).
+   - A business logo (a real uploaded file, not a URL string — confirm
+     it shows in Settings and on quote/invoice PDFs, and that the file
+     exists in the MinIO console).
+   - A second tax rate ("State Surcharge", compound) and a tax group
+     combining it with the seeded "Sales Tax" rate (§10).
+   - A partial credit note against one of the seeded invoices (§7).
+   - 4 meetings on the calendar, 3 linked to a seeded contact and one
+     internal with no contact (§6).
+   - On the seeded jobs: a kickoff note, a real uploaded photo (visible
+     in the job's Photos tab and attached to a milestone completion),
+     and — on the "active" job — a sent-but-not-yet-accepted variation
+     order (confirm it shows as pending, not applied to the job total).
+   - Two demo team members: **Sarah Mendes** (Staff, joined the default
+     Team) and **Marcus Webb** (Field, no Team — Field is fixed and
+     never Team-assignable). Both are real login accounts
+     (`sarah.mendes.demo@example.com` / `marcus.webb.demo@example.com`,
+     password `DemoPassword123!`) — confirm you can log in as either
+     and see role-appropriate access (Field sees no financial reports).
 8. Confirm the **dashboard setup checklist** reflects real completion
    state (e.g. "add a contact" flips to done once you have contacts from
    the demo seed, not just because you dismissed it).
+9. In Settings → Data, click **Clear demo data**. Confirm every item
+   above is removed — including the tax group/rate, credit note,
+   meetings, job photos/notes/variation order — and that Sarah's and
+   Marcus's **login accounts still work** (they lose access to this org
+   only; their `user`/`account` rows are never deleted, only their
+   membership). Re-running **Load demo data** afterward should succeed
+   cleanly (idempotent — no "already exists" errors), including for
+   Sarah/Marcus (their accounts are reused, not recreated).
 
 ---
 

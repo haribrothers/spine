@@ -56,6 +56,8 @@ export const meetings = pgTable(
       end: { type: "date"; date: string } | { type: "count"; count: number };
     }>(),
     organizerUserId: text("organizer_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** Same demo-data marker convention as contacts.isDemo/quotes.isDemo — meetings have no cascading demo-flagged parent (contactId is nullable and set-null on delete), so this is DemoDataService.deleteAll's own removal handle. */
+    isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -63,5 +65,6 @@ export const meetings = pgTable(
     index("meetings_org_idx").on(table.orgId),
     index("meetings_contact_idx").on(table.contactId),
     index("meetings_org_start_idx").on(table.orgId, table.startAt),
+    index("meetings_org_demo_idx").on(table.orgId, table.isDemo),
   ],
 );

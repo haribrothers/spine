@@ -211,6 +211,13 @@
       "when": 1786375312565,
       "tag": "0029_vendor_payment_allocation_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1786380103585,
+      "tag": "0030_purple_doctor_octopus",
+      "breakpoints": true
     }
   ]
 }
