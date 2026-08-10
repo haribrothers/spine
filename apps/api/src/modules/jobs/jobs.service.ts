@@ -1,14 +1,16 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createJobSchema, updateJobSchema } from "@spine/shared";
+import type { addJobNoteSchema, addJobPhotoSchema, createJobSchema, updateJobSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, contacts, quotes } from "../../db/schema";
+import { jobs, contacts, quotes, jobPhotos, jobNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
+export type AddJobNoteInput = z.infer<typeof addJobNoteSchema>;
+export type AddJobPhotoInput = z.infer<typeof addJobPhotoSchema>;
 
 /**
  * PRD F4 (Phase 3 · Jobs & Construction Billing) — job CRUD and the S-04.1
@@ -171,31 +173,53 @@ export class JobsService {
     return this.getOne(orgId, updated!.id);
   }
 
-  /**
-   * S-04.9's job-side bookkeeping — folds an accepted variation order's
-   * value into the job's contract value. Called by VariationOrdersService
-   * (Stage 3), kept here since it mutates `jobs` directly and every other
-   * job-row mutation goes through this service.
-   */
-  async addToContractValue(orgId: string, id: string, actorUserId: string, deltaAmount: bigint, narration: string) {
-    const [existing] = await this.db.select().from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, id)));
-    if (!existing) {
-      throw new NotFoundException("Job not found");
-    }
+  /** S-04.10 (web upload) — a general site/progress photo, not tied to a specific milestone's completion (that's MilestonesService.completeMilestone's own `photoFileIds`, which writes to this same `job_photos` table with `milestoneId` set). */
+  async addPhoto(orgId: string, jobId: string, actorUserId: string, input: AddJobPhotoInput) {
+    const job = await this.getOne(orgId, jobId);
 
-    await this.db.transaction(async (tx) => {
-      const newValue = existing.contractValueAmount + deltaAmount;
-      await tx.update(jobs).set({ contractValueAmount: newValue, updatedAt: new Date() }).where(eq(jobs.id, id));
+    const [row] = await this.db
+      .insert(jobPhotos)
+      .values({ jobId, orgId, milestoneId: null, fileId: input.fileId, caption: input.caption ?? null, uploadedByUserId: actorUserId })
+      .returning();
 
-      await this.auditLog.record(tx, {
-        orgId,
-        actorUserId,
-        action: "contract_value_adjusted",
-        entityType: "job",
-        entityId: id,
-        contactId: existing.contactId,
-        changes: [{ field: "contractValueAmount", from: existing.contractValueAmount.toString(), to: (existing.contractValueAmount + deltaAmount).toString() }],
-      });
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "photo_added",
+      entityType: "job",
+      entityId: jobId,
+      contactId: job.contactId,
+      changes: [{ field: "photoFileId", from: null, to: input.fileId }],
     });
+
+    return row;
+  }
+
+  async listPhotos(orgId: string, jobId: string) {
+    await this.getOne(orgId, jobId);
+    return this.db.select().from(jobPhotos).where(eq(jobPhotos.jobId, jobId)).orderBy(desc(jobPhotos.createdAt));
+  }
+
+  async addNote(orgId: string, jobId: string, actorUserId: string, input: AddJobNoteInput) {
+    const job = await this.getOne(orgId, jobId);
+
+    const [row] = await this.db.insert(jobNotes).values({ jobId, orgId, body: input.body, createdByUserId: actorUserId }).returning();
+
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "note_added",
+      entityType: "job",
+      entityId: jobId,
+      contactId: job.contactId,
+      changes: [{ field: "note", from: null, to: input.body }],
+    });
+
+    return row;
+  }
+
+  async listNotes(orgId: string, jobId: string) {
+    await this.getOne(orgId, jobId);
+    return this.db.select().from(jobNotes).where(eq(jobNotes.jobId, jobId)).orderBy(desc(jobNotes.createdAt));
   }
 }

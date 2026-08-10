@@ -1,9 +1,12 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { InvoicesModule } from "../invoices/invoices.module";
+import { QuotesModule } from "../quotes/quotes.module";
 import { JobsController } from "./jobs.controller";
 import { JobsService } from "./jobs.service";
 import { MilestonesService } from "./milestones.service";
+import { VariationOrdersService } from "./variation-orders.service";
+import { JobCostingService } from "./job-costing.service";
 
 /**
  * PRD F4 (Phase 3 · Jobs & Construction Billing) — Stage 1: job CRUD,
@@ -12,15 +15,17 @@ import { MilestonesService } from "./milestones.service";
  * with photos (S-04.4), progress invoicing from a completed milestone
  * (S-04.5), retention hold (S-04.6, via InvoicesService.issue) and release
  * (S-04.7, via InvoicesService.releaseRetention) — both of which is why
- * this module now imports `InvoicesModule` (MilestonesService.invoiceMilestone
- * and JobsController.releaseRetention both call into `InvoicesService`
- * directly rather than duplicating posting logic). Variation orders
- * (S-04.9) and site photos (S-04.10) land in Stage 3 — see CHANGELOG.
+ * this module imports `InvoicesModule`. Stage 3: variation orders as
+ * supplementary quotes linked to a job (S-04.9, via `QuotesModule` for
+ * `QuotesService` — VariationOrdersService never duplicates quote CRUD),
+ * general job photos/notes (S-04.10, on `JobsService` itself), and job
+ * cost/revenue/margin (S-04.8, revenue side only — see JobCostingService's
+ * own doc comment on why cost is still always 0 until Phase 4).
  */
 @Module({
-  imports: [AuditModule, InvoicesModule],
+  imports: [AuditModule, InvoicesModule, QuotesModule],
   controllers: [JobsController],
-  providers: [JobsService, MilestonesService],
-  exports: [JobsService, MilestonesService],
+  providers: [JobsService, MilestonesService, VariationOrdersService, JobCostingService],
+  exports: [JobsService, MilestonesService, VariationOrdersService],
 })
 export class JobsModule {}

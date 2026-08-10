@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { quoteLineInputSchema } from "./quotes.ts";
 
 export const jobStatusSchema = z.enum(["active", "on_hold", "completed", "cancelled"]);
 export const milestoneAmountTypeSchema = z.enum(["fixed", "percent"]);
@@ -67,4 +68,22 @@ export const addJobNoteSchema = z.object({
 export const addJobPhotoSchema = z.object({
   fileId: uuidSchema,
   caption: z.string().optional().nullable(),
+});
+
+/**
+ * S-04.9 — builds the supplementary quote a variation order wraps.
+ * `contactId`/`currency` are optional here (unlike `createQuoteSchema`,
+ * where both are required) because VariationOrdersService.create defaults
+ * either to the job's own contact/currency when omitted — a variation is
+ * almost always for the same customer/currency as the job itself, so
+ * requiring the caller to repeat them on every variation would be pure
+ * friction.
+ */
+export const createVariationOrderSchema = z.object({
+  contactId: uuidSchema.optional(),
+  currency: currencyCodeSchema.optional(),
+  validUntil: z.coerce.date().optional().nullable(),
+  notes: z.string().optional().nullable(),
+  termsAndConditions: z.string().optional().nullable(),
+  lines: z.array(quoteLineInputSchema).default([]),
 });

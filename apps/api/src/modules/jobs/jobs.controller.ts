@@ -1,12 +1,22 @@
 import { Body, Controller, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createJobSchema, updateJobSchema, setMilestonesSchema, completeMilestoneSchema } from "@spine/shared";
+import {
+  createJobSchema,
+  updateJobSchema,
+  setMilestonesSchema,
+  completeMilestoneSchema,
+  addJobPhotoSchema,
+  addJobNoteSchema,
+  createVariationOrderSchema,
+} from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { JobsService } from "./jobs.service";
 import { MilestonesService } from "./milestones.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { VariationOrdersService } from "./variation-orders.service";
+import { JobCostingService } from "./job-costing.service";
 
 /**
  * PRD F4 — jobs and their milestones. GET routes are readable by any
@@ -25,6 +35,8 @@ export class JobsController {
     private readonly jobsService: JobsService,
     private readonly milestonesService: MilestonesService,
     private readonly invoicesService: InvoicesService,
+    private readonly variationOrdersService: VariationOrdersService,
+    private readonly jobCostingService: JobCostingService,
   ) {}
 
   @Get()
@@ -130,5 +142,75 @@ export class JobsController {
   async releaseRetention(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.invoicesService.releaseRetention(orgId, session.user.id, id);
+  }
+
+  /** S-04.8 (revenue side) — cost/revenue/margin for a job, read live off journal_lines. Any authenticated org member can view (field crews included — this is job progress, not a financial report gated by §S-11.8's "mobile hides all financial reports" rule, which targets P&L/balance sheet, not a single job's own numbers a field lead may need). */
+  @Get(":id/costing")
+  async costing(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobCostingService.report(orgId, id);
+  }
+
+  @Get(":id/photos")
+  async listPhotos(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.listPhotos(orgId, id);
+  }
+
+  /** S-04.10 (web upload) — attach an already-uploaded file (`POST /files`) as a general job/site photo. Field-reachable, same gate as milestone completion. */
+  @Post(":id/photos")
+  @OrgRoles(["owner", "staff", "field"])
+  @RequireCapability("jobs.update_milestones")
+  @UseInterceptors(IdempotencyInterceptor)
+  async addPhoto(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = addJobPhotoSchema.parse(body);
+    return this.jobsService.addPhoto(orgId, id, session.user.id, input);
+  }
+
+  @Get(":id/notes")
+  async listNotes(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.listNotes(orgId, id);
+  }
+
+  @Post(":id/notes")
+  @OrgRoles(["owner", "staff", "field"])
+  @RequireCapability("jobs.update_milestones")
+  async addNote(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = addJobNoteSchema.parse(body);
+    return this.jobsService.addNote(orgId, id, session.user.id, input);
+  }
+
+  /** S-04.9 — variation orders raised against this job. */
+  @Get(":id/variation-orders")
+  async listVariationOrders(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.variationOrdersService.list(orgId, id);
+  }
+
+  @Post(":id/variation-orders")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("quotes.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async createVariationOrder(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = createVariationOrderSchema.parse(body);
+    return this.variationOrdersService.create(orgId, session.user.id, id, input);
+  }
+
+  /** Folds an accepted variation order's total into the job's contract value — see VariationOrdersService.apply's own doc comment on why this is a deliberate, explicit action rather than automatic on quote acceptance. */
+  @Post(":id/variation-orders/:variationOrderId/apply")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async applyVariationOrder(
+    @Session() session: UserSession,
+    @Param("id") id: string,
+    @Param("variationOrderId") variationOrderId: string,
+  ) {
+    const orgId = requireOrgId(session);
+    return this.variationOrdersService.apply(orgId, session.user.id, id, variationOrderId);
   }
 }
