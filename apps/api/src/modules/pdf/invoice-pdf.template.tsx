@@ -126,7 +126,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={styles.docTitle}>INVOICE</Text>
+            <Text style={styles.docTitle}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : "INVOICE"}</Text>
             <Text style={styles.docNumber}>{invoice.number ?? "DRAFT"}</Text>
           </View>
         </View>

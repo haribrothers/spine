@@ -130,10 +130,10 @@ before considering that work's QA "done."
    "Expired" in the UI.
 10. Open the **email queue** dialog from the quotes page — confirm it
     shows pending/sent/failed email jobs.
-11. **(New this session)** On an **accepted** quote, click **Convert to
-    invoice**. Confirm you land on a new **draft** invoice whose lines,
-    quantities, prices, and total exactly match the quote. Confirm the
-    invoice is NOT auto-issued — you get to review first.
+11. On an **accepted** quote, click **Convert to invoice**. Confirm you
+    land on a new **draft** invoice whose lines, quantities, prices, and
+    total exactly match the quote. Confirm the invoice is NOT
+    auto-issued — you get to review first.
 
 ---
 
@@ -158,12 +158,12 @@ before considering that work's QA "done."
 2. Click **Issue Invoice**. Confirm:
    - A real gapless number is allocated (`INV-000X`).
    - The invoice becomes immutable (Edit/Delete disappear).
-   - **(New this session)** If you check the posted journal entry (ask
-     an engineer, or query directly), revenue should post to each
-     line's own catalogue item's income account — not one blended
-     line — when income accounts are configured (see §3.1). Lines with
-     no catalogue item, or whose catalogue item has no income account
-     set, should fall back to the default "Sales — Services" account.
+   - If you check the posted journal entry (ask an engineer, or query
+     directly), revenue should post to each line's own catalogue item's
+     income account — not one blended line — when income accounts are
+     configured (see §3.1). Lines with no catalogue item, or whose
+     catalogue item has no income account set, should fall back to the
+     default "Sales — Services" account.
 3. Click **Preview/Download PDF** — confirm it renders with your
    business branding, line items, and totals.
 4. Click **Email invoice** — confirm a "sending…" state appears, then
@@ -177,8 +177,7 @@ before considering that work's QA "done."
      original + reversal is zero — ask an engineer to confirm via SQL
      if you want to be thorough).
    - A second void attempt on the same invoice is blocked.
-7. **(New this session)** On an **overdue** invoice (issued, due date
-   passed, balance > 0):
+7. On an **overdue** invoice (issued, due date passed, balance > 0):
    - From the invoice detail page, click **Send reminder**. Confirm a
      reminder-specific email lands in MailDev (subject like "Reminder:
      INV-000X is now N days overdue," not the plain "sent you an
@@ -186,9 +185,9 @@ before considering that work's QA "done."
    - From the **Invoices list**, open the same invoice's row **⋯** menu
      and confirm **Send reminder** is offered there too, and works.
    - Confirm **Send reminder** does NOT appear on a non-overdue invoice.
-8. **(New this session)** On an issued invoice with a balance owing,
-   click **Issue credit note**. Enter a description and an amount less
-   than the remaining balance, submit. Confirm:
+8. On an issued invoice with a balance owing, click **Issue credit
+   note**. Enter a description and an amount less than the remaining
+   balance, submit. Confirm:
    - A `CRN-000X` number is allocated.
    - A new **Credit notes** section appears on the invoice showing it.
    - The invoice's totals block gains a **Credited** line, and
@@ -196,6 +195,33 @@ before considering that work's QA "done."
    - Trying to issue a second credit note larger than the now-reduced
      remaining balance is rejected with a clear error.
    - The invoice PDF now shows the "Credited" line too.
+9. **Advance/deposit invoice (S-05.4)**: create a new invoice, set
+   **Type** to **Advance**, add a line for the deposit amount, save as
+   draft, then **Issue**. Confirm:
+   - A real gapless number is allocated, same as any other invoice.
+   - A "Deposit" badge appears next to the status badge, on both this
+     invoice's detail page and its row in the Invoices list.
+   - **Download PDF** shows "DEPOSIT INVOICE" as the title (not
+     "INVOICE").
+   - **Record payment** and **Issue credit note** do NOT appear on this
+     invoice's detail page (an advance invoice never posts to Accounts
+     Receivable, so there's no balance to record a payment or credit
+     note against).
+   - Ask an engineer to confirm no journal entry was posted for this
+     invoice (or check yourself if you have DB access) — issuing an
+     advance invoice should have zero ledger effect.
+   - Go to **Payments** → **Record payment** for the same contact and
+     confirm this advance invoice does NOT appear in the allocation
+     picker (it's filtered out, since there's nothing to allocate
+     against).
+   - Now record the deposit the *correct* way: **Record payment** for
+     that contact, same amount, leave it **unallocated**. Confirm the
+     payment posts (MailDev shows a confirmation email), and if you can
+     check the ledger, confirm it's a debit Bank / credit Customer
+     Advances posting (§7.2's "Advance received" row).
+   - Later, on a real (non-advance) invoice for the same contact, use
+     **Apply credit** on that payment (§7 below) to offset it against
+     the real invoice — confirm this works normally.
 
 ---
 
@@ -214,16 +240,16 @@ before considering that work's QA "done."
 3. Go to the standalone **Payments** page. Confirm the payment you just
    recorded appears, with correct Allocated/Unallocated amounts shown.
 4. Open that payment's detail drawer:
-   - **(New this session)** Click **Download PDF** — confirm a receipt
-     PDF opens showing the payment details and an "Applied to" table if
-     it's allocated to any invoice.
-   - **(New this session)** Click **Email receipt** — confirm success
-     toast and a PDF-attached email in MailDev.
-   - **(New this session)** If the payment has any unallocated amount,
-     click **Apply credit**, pick a different outstanding invoice for
-     the same contact, submit. Confirm the payment's Unallocated amount
-     drops, the target invoice's balance drops by the same amount, and
-     **Apply credit** disappears once fully allocated.
+   - Click **Download PDF** — confirm a receipt PDF opens showing the
+     payment details and an "Applied to" table if it's allocated to any
+     invoice.
+   - Click **Email receipt** — confirm a success toast and a
+     PDF-attached email in MailDev.
+   - If the payment has any unallocated amount, click **Apply credit**,
+     pick a different outstanding invoice for the same contact, submit.
+     Confirm the payment's Unallocated amount drops, the target
+     invoice's balance drops by the same amount, and **Apply credit**
+     disappears once fully allocated.
 5. Try to delete a payment that has at least one allocation — confirm
    it's blocked. Record a fresh fully-unallocated payment and delete
    it — confirm this succeeds and reverses its journal entry.

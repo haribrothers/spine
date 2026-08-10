@@ -52,6 +52,7 @@ export function InvoicesTable({
       render: (row) => (
         <div className="flex items-center gap-1.5">
           <Badge className={STATUS_BADGE_CLASS[row.status]}>{INVOICE_STATUS_LABELS[row.status]}</Badge>
+          {row.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
           {row.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
         </div>
       ),

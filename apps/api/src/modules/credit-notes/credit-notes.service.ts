@@ -159,6 +159,11 @@ export class CreditNotesService {
     if (invoice.status !== "issued") {
       throw new BadRequestException("Credit notes can only be issued against an issued invoice");
     }
+    if (invoice.type === "advance") {
+      throw new BadRequestException(
+        "Credit notes can't be issued against an advance/deposit invoice — it never posted to Accounts Receivable, so there's no revenue/AR posting to reverse (see InvoicesService.issue's own comment).",
+      );
+    }
 
     const totals = computeCreditNoteTotals(invoice.currency, input.lines);
 

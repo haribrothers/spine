@@ -361,29 +361,42 @@ export class InvoicesService {
 
   /**
    * Issues the invoice: allocates its gapless number, flips draft -> issued,
-   * and posts the "Invoice issued" journal entry per §7.2 (debit Accounts
-   * Receivable, credit Revenue + Tax Payable) in the SAME transaction —
-   * CLAUDE.md's "ledger is derived... in the same transaction as the
-   * business document it originates from" is non-negotiable here: if the
-   * posting fails, the whole issue must roll back, not leave an issued
-   * invoice with no ledger trail.
+   * and — for a `standard`/`progress` invoice — posts the "Invoice issued"
+   * journal entry per §7.2 (debit Accounts Receivable, credit Revenue +
+   * Tax Payable) in the SAME transaction — CLAUDE.md's "ledger is
+   * derived... in the same transaction as the business document it
+   * originates from" is non-negotiable here: if the posting fails, the
+   * whole issue must roll back, not leave an issued invoice with no
+   * ledger trail.
    *
-   * Revenue is split per catalog item's own `incomeAccountId` (S-02.3),
-   * not posted as one blended line — each `item`-type line's
-   * `lineSubtotalAmount` (post-discount, pre-tax) is grouped by its
-   * resolved income account and posted as its own credit line. A line
-   * falls back to `resolvedRevenueAccountId` (the same default-to-4100
-   * "Sales — Services" this method already resolved, or the caller's own
-   * explicit `revenueAccountId` override) when it has no `catalogItemId`
-   * (a free-form line never added from the catalogue) or the referenced
-   * catalog item has no `incomeAccountId` set (S-02.3's own field is
-   * optional per PRD F2 — "SHOULD", not "MUST" — so an org that never
-   * bothered to set per-item income accounts still gets exactly Stage 1's
-   * old single-blended-line behavior, just reached via the fallback path
-   * rather than a separate code path). This was previously a documented
-   * Stage 1 simplification (flagged in this method's own comment and in
-   * CHANGELOG) — now built, so an org's P&L can actually break revenue
-   * down by catalogue item once reporting reads the ledger for it.
+   * **S-05.4 — an `advance`-type invoice posts NOTHING on issue.** It's a
+   * request for a deposit, not a claim on goods/services already owed —
+   * nothing is actually owed until real work is invoiced, so debiting AR
+   * here would misrepresent what's happened. §7.2's own "Advance
+   * received" row (debit Bank/Cash, credit Customer Advances) is a
+   * *payment*-received posting, not an invoice-issued one — it already
+   * fires from `PaymentsService.create` the moment the customer's deposit
+   * is actually recorded as a payment (S-06.4's unallocated-credit path),
+   * and `PaymentsService.applyCredit` (S-05.5) already posts "Advance
+   * applied to invoice" when that sitting credit is later applied to a
+   * real invoice. So an advance invoice only needs to allocate a number
+   * and render/email as a PDF asking for a deposit — the two ledger
+   * postings it triggers over its lifecycle both already exist, on the
+   * payment side, not here.
+   *
+   * Revenue (for `standard`/`progress` invoices) is split per catalog
+   * item's own `incomeAccountId` (S-02.3), not posted as one blended
+   * line — each `item`-type line's `lineSubtotalAmount` (post-discount,
+   * pre-tax) is grouped by its resolved income account and posted as its
+   * own credit line. A line falls back to `resolvedRevenueAccountId` (the
+   * same default-to-4100 "Sales — Services" this method already resolved,
+   * or the caller's own explicit `revenueAccountId` override) when it has
+   * no `catalogItemId` (a free-form line never added from the catalogue)
+   * or the referenced catalog item has no `incomeAccountId` set (S-02.3's
+   * own field is optional per PRD F2 — "SHOULD", not "MUST" — so an org
+   * that never bothered to set per-item income accounts still gets
+   * exactly Stage 1's old single-blended-line behavior, just reached via
+   * the fallback path rather than a separate code path).
    *
    * Discounts are NOT posted as their own "Discounts Given" contra-revenue
    * line — `lineSubtotalAmount` per line is already the post-discount net
@@ -398,7 +411,8 @@ export class InvoicesService {
       throw new NotFoundException("Invoice not found");
     }
 
-    const resolvedRevenueAccountId = revenueAccountId ?? (await this.resolveDefaultRevenueAccount(orgId));
+    const isAdvance = preCheck.type === "advance";
+    const resolvedRevenueAccountId = isAdvance ? null : (revenueAccountId ?? (await this.resolveDefaultRevenueAccount(orgId)));
 
     const result = await this.db.transaction(async (tx) => {
       const [existing] = await tx
@@ -420,32 +434,35 @@ export class InvoicesService {
       const issuedAt = new Date();
       const issueDateStr = issuedAt.toISOString().slice(0, 10);
 
-      const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
-      const taxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "outputTaxPayable");
+      let journalEntryId: string | null = null;
+      if (!isAdvance) {
+        const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
+        const taxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "outputTaxPayable");
 
-      const revenueByAccount = await this.resolveRevenuePostingLines(tx, orgId, id, resolvedRevenueAccountId);
+        const revenueByAccount = await this.resolveRevenuePostingLines(tx, orgId, id, resolvedRevenueAccountId!);
 
-      const postingLines = [
-        { accountId: arAccountId, debit: existing.totalAmount, credit: 0n, contactId: existing.contactId },
-        ...Array.from(revenueByAccount.entries()).map(([accountId, amount]) => ({
-          accountId,
-          debit: 0n,
-          credit: amount,
-          contactId: existing.contactId,
-        })),
-      ];
-      if (existing.taxAmount > 0n) {
-        postingLines.push({ accountId: taxAccountId, debit: 0n, credit: existing.taxAmount, contactId: existing.contactId });
+        const postingLines = [
+          { accountId: arAccountId, debit: existing.totalAmount, credit: 0n, contactId: existing.contactId },
+          ...Array.from(revenueByAccount.entries()).map(([accountId, amount]) => ({
+            accountId,
+            debit: 0n,
+            credit: amount,
+            contactId: existing.contactId,
+          })),
+        ];
+        if (existing.taxAmount > 0n) {
+          postingLines.push({ accountId: taxAccountId, debit: 0n, credit: existing.taxAmount, contactId: existing.contactId });
+        }
+
+        journalEntryId = await this.ledger.postEntry(tx, {
+          orgId,
+          date: issueDateStr,
+          narration: `Invoice ${number} issued`,
+          sourceType: "invoice",
+          sourceId: id,
+          lines: postingLines,
+        });
       }
-
-      const journalEntryId = await this.ledger.postEntry(tx, {
-        orgId,
-        date: issueDateStr,
-        narration: `Invoice ${number} issued`,
-        sourceType: "invoice",
-        sourceId: id,
-        lines: postingLines,
-      });
 
       const [row] = await tx
         .update(invoices)

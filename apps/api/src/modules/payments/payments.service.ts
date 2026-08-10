@@ -140,7 +140,9 @@ export class PaymentsService {
       .where(and(eq(invoices.orgId, orgId), eq(invoices.contactId, contactId), eq(invoices.status, "issued")));
 
     const withBalance = outstanding
-      .map((inv) => ({ invoice: inv, balance: inv.totalAmount - inv.amountPaid }))
+      // S-05.4 — an advance invoice never posts to AR (see InvoicesService.issue's own comment), so it has no real balance to suggest a payment against.
+      .filter((inv) => inv.type !== "advance")
+      .map((inv) => ({ invoice: inv, balance: inv.totalAmount - inv.amountPaid - inv.creditedAmount }))
       .filter((row) => row.balance > 0n)
       .sort((a, b) => {
         if (!a.invoice.dueDate && !b.invoice.dueDate) return a.invoice.createdAt.getTime() - b.invoice.createdAt.getTime();
@@ -223,7 +225,12 @@ export class PaymentsService {
       if (invoice.status !== "issued") {
         throw new BadRequestException(`Invoice ${invoice.number ?? invoice.id} is not issued and cannot receive a payment`);
       }
-      const balance = invoice.totalAmount - invoice.amountPaid;
+      if (invoice.type === "advance") {
+        throw new BadRequestException(
+          `Invoice ${invoice.number ?? invoice.id} is an advance/deposit invoice — it never posts to Accounts Receivable (see InvoicesService.issue's own comment), so a payment can't be allocated to it. Record the deposit as an unallocated payment instead (S-06.4).`,
+        );
+      }
+      const balance = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
       }
@@ -346,7 +353,12 @@ export class PaymentsService {
       if (invoice.status !== "issued") {
         throw new BadRequestException(`Invoice ${invoice.number ?? invoice.id} is not issued and cannot receive a payment`);
       }
-      const balance = invoice.totalAmount - invoice.amountPaid;
+      if (invoice.type === "advance") {
+        throw new BadRequestException(
+          `Invoice ${invoice.number ?? invoice.id} is an advance/deposit invoice — it never posts to Accounts Receivable, so credit can't be applied to it.`,
+        );
+      }
+      const balance = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
       }

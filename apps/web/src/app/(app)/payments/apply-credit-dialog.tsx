@@ -67,10 +67,13 @@ export function ApplyCreditDialog({
     setError(null);
     setAllocations([]);
     apiClient
-      .get<{ id: string; number: string | null; balanceDue: string; currency: string }[]>(
+      .get<{ id: string; number: string | null; balanceDue: string; currency: string; type: string }[]>(
         `/invoices?contactId=${payment.contactId}&status=issued`,
       )
-      .then((invoices) => setOutstanding(invoices.map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue }))))
+      // S-05.4 — an advance invoice never posts to AR, so credit can't be applied against it (PaymentsService.applyCredit rejects it server-side too).
+      .then((invoices) =>
+        setOutstanding(invoices.filter((inv) => inv.type !== "advance").map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue }))),
+      )
       .catch(() => setOutstanding([]));
   }, [open, payment]);
 

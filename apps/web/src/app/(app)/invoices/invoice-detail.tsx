@@ -200,8 +200,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const canSendReminder = invoice.isOverdue;
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
-  const canRecordPayment = invoice.status === "issued" && balanceDue > 0n;
-  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n;
+  // S-05.4 — an advance invoice never posts to AR on issue (see
+  // InvoicesService.issue's own doc comment), so it has no real ledger
+  // balance to record a payment or credit note against — that money
+  // flows through PaymentsService.create's own "Advance received"
+  // posting (S-06.4, record the deposit as an unallocated payment)
+  // instead, not through this invoice.
+  const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance";
+  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance";
   const creditedAmount = BigInt(invoice.creditedAmount);
 
   return (
@@ -227,6 +233,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-on-surface">{invoice.number ?? "Draft invoice"}</h2>
               <Badge className={STATUS_BADGE_CLASS[invoice.status]}>{INVOICE_STATUS_LABELS[invoice.status]}</Badge>
+              {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
               {invoice.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
             </div>
             <p className="mt-1 text-[13px] text-on-surface-muted">

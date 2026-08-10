@@ -104,12 +104,14 @@ export function RecordPaymentDialog({
     setError(null);
 
     apiClient
-      .get<{ id: string; number: string | null; balanceDue: string; currency: string }[]>(
+      .get<{ id: string; number: string | null; balanceDue: string; currency: string; type: string }[]>(
         `/invoices?contactId=${contactId}&status=issued`,
       )
       .then((invoices) => {
-        setOutstanding(invoices.map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue })));
-        if (invoices[0]?.currency) setCurrency(invoices[0].currency);
+        // S-05.4 — an advance invoice never posts to AR, so it has no real balance a payment can be allocated against (PaymentsService.create rejects it server-side too).
+        const allocatable = invoices.filter((inv) => inv.type !== "advance");
+        setOutstanding(allocatable.map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue })));
+        if (allocatable[0]?.currency) setCurrency(allocatable[0].currency);
       })
       .catch(() => setOutstanding([]));
   }, [open, contactId, presetBalanceDue]);
