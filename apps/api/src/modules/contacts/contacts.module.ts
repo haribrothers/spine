@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { OrgModule } from "../org/org.module";
 import { ActivitiesController } from "./activities.controller";
 import { ActivitiesService } from "./activities.service";
 import { ContactsController } from "./contacts.controller";
@@ -19,7 +20,7 @@ import { MeetingsService } from "./meetings.service";
  * meetings.ts's schema comment).
  */
 @Module({
-  imports: [AuditModule],
+  imports: [AuditModule, OrgModule],
   controllers: [ContactsController, LeadsController, ActivitiesController, MeetingsController],
   providers: [ContactsService, LeadsService, ActivitiesService, MeetingsService],
   exports: [ContactsService, LeadsService, ActivitiesService, MeetingsService],

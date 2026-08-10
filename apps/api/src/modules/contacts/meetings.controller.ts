@@ -26,6 +26,19 @@ export class MeetingsController {
     });
   }
 
+  /**
+   * S-09.12 (dashboard v2) — "upcoming meetings" widget. Declared before
+   * `:id` below — Nest matches routes in declaration order, so a literal
+   * segment must come first or it's swallowed by `:id` (id="upcoming").
+   */
+  @Get("upcoming")
+  async upcoming(@Session() session: UserSession, @Query("withinDays") withinDays?: string) {
+    const orgId = requireOrgId(session);
+    return this.meetingsService.upcomingForDashboard(orgId, session.user.id, {
+      withinDays: withinDays ? Number(withinDays) : undefined,
+    });
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

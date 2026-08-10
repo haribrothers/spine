@@ -30,6 +30,14 @@ import { settings } from "../../db/schema";
  *   to override from the UI (an owner would need to lower this setting
  *   first). Checked identically by both JobsService and InvoicesService,
  *   via QuoteConversionGuardService (see that class's own doc comment).
+ * - `dashboard_meetings_scope` → { scope: "own" | "org" } — S-10.19,
+ *   governs the dashboard's "upcoming meetings" widget for Owner/Staff.
+ *   "own" (default if unset): only meetings the viewer organizes. "org":
+ *   every meeting in the org. Owner-editable from Settings. Field ALWAYS
+ *   sees own-meetings-only regardless of this setting — enforced
+ *   server-side in the dashboard meetings route itself (checked before
+ *   honoring "org"), not a client-side toggle, so this is not a
+ *   Field-widening lever.
  */
 @Injectable()
 export class SettingsService {

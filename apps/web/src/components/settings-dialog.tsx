@@ -5,6 +5,7 @@ import {
   Bell,
   Building2,
   Calendar,
+  CalendarClock,
   Coins,
   Database,
   ListOrdered,
@@ -27,6 +28,7 @@ import { PurchasesPane } from "../app/settings/panes/purchases-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
 import { PushPane } from "../app/settings/panes/push-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
+import { DashboardMeetingsScopePane } from "../app/settings/panes/dashboard-meetings-scope-pane";
 
 interface SettingsSection {
   key: string;
@@ -49,6 +51,12 @@ const SECTIONS: SettingsSection[] = [
     label: "Repeat quote conversion",
     icon: <ShieldAlert size={16} />,
     render: () => <QuoteConversionGuardPane />,
+  },
+  {
+    key: "dashboard-meetings-scope",
+    label: "Upcoming meetings",
+    icon: <CalendarClock size={16} />,
+    render: () => <DashboardMeetingsScopePane />,
   },
   { key: "push", label: "Browser notifications", icon: <Bell size={16} />, render: () => <PushPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },

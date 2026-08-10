@@ -746,52 +746,82 @@ revenue.
    4 chart widgets consistently render without a flash of broken/empty
    state — each widget independently fetches its own data, so one being
    slow shouldn't block the others from appearing.
-4. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
+4. **Dashboard v2 Stage 3 — non-financial widgets + role-adaptive layout
+   (S-09.12, S-10.19)**: as Owner or Staff, confirm 4 more cards below the
+   charts:
+   - **My overdue follow-ups** — lists activities assigned to you with a
+     past due date and no completion, each showing how many days overdue.
+     Click one and confirm it lands on that contact (or `/leads` if it's
+     lead-only). "Nothing overdue" if you have none.
+   - **Upcoming meetings** — meetings in the next 7 days, each with a
+     colored dot matching its calendar color and a "Today, 9:00 AM"-style
+     time label. Click "View calendar" and confirm it lands on
+     `/meetings`.
+   - **Invoices due this week** — issued invoices due in the next 7 days,
+     each with a "Due today"/"Due tomorrow"/"Due in Nd" badge. Click one
+     and confirm it lands on that invoice.
+   - **Job milestones due** — pending milestones due soon or overdue
+     across ALL jobs (not just one), overdue ones badged red. Click one
+     and confirm it lands on that job.
+5. **Upcoming meetings scope (S-10.19)**: open **Settings → Upcoming
+   meetings**. Confirm two options: "Only my meetings" / "Every org
+   meeting," default "Only my meetings." Switch to "Every org meeting,"
+   save, reload the dashboard — confirm the Upcoming meetings widget now
+   shows meetings organized by other users too, not just your own. Switch
+   back.
+6. **Field's dashboard is a genuinely different, shorter layout — not the
+   Owner page with cards hidden.** Log in as a Field user (§13's setup).
+   Confirm the dashboard shows ONLY: My overdue follow-ups, Upcoming
+   meetings, and Job milestones due — no KPI row, no charts, no Invoices
+   due. Confirm Upcoming meetings shows only Field's own meetings even if
+   the org setting (step 5) is set to "Every org meeting" — this is a hard
+   rule, not a preference, enforced server-side.
+7. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
    Job Profitability.
-5. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
+8. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
    this calendar year). Confirm Income/Expense sections list real
    chart-of-accounts lines with amounts, and Net profit = Total income −
    Total expenses.
-6. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
+9. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
    drill-down dialog opens listing the journal entries behind that
    figure, each linking to its source document (invoice/payment/vendor
    bill/expense) — S-09.4's "click any figure, see the documents behind
    it." Click through one link and confirm it lands on the right
    document.
-7. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
-   Section/Code/Account/Amount columns matching the on-screen figures.
-8. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
-   Liabilities, and Equity sections, and that **Total assets = Total
-   liabilities + Total equity** exactly (the balance sheet must always
-   balance). Confirm Equity includes a computed "Retained Earnings
-   (current period)" line reflecting net profit to date.
-9. **Job Profitability tab**: confirm every job appears with contract
-   value, revenue, cost, margin, and margin %. Confirm the "Marina office
-   fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
-   vendor bill + expense) — every other demo job showing `cost: 0` (no
-   vendor bills/expenses tagged to them) is correct, not a bug. Click a
-   job name — confirm it navigates to that job's detail page.
-10. As a Staff user with `dashboard.view` granted but not Owner: confirm
+10. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
+    Section/Code/Account/Amount columns matching the on-screen figures.
+11. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
+    Liabilities, and Equity sections, and that **Total assets = Total
+    liabilities + Total equity** exactly (the balance sheet must always
+    balance). Confirm Equity includes a computed "Retained Earnings
+    (current period)" line reflecting net profit to date.
+12. **Job Profitability tab**: confirm every job appears with contract
+    value, revenue, cost, margin, and margin %. Confirm the "Marina office
+    fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
+    vendor bill + expense) — every other demo job showing `cost: 0` (no
+    vendor bills/expenses tagged to them) is correct, not a bug. Click a
+    job name — confirm it navigates to that job's detail page.
+13. As a Staff user with `dashboard.view` granted but not Owner: confirm
     the dashboard KPI row, the aging/pipeline/job-profitability chart
-    widgets, and the Job Profitability report tab all load normally, but
-    the **Revenue trend chart** widget and Profit & Loss / Balance Sheet /
-    drill-down on the Reports page all render nothing / show a clear
-    "Owner-only report" message (S-09.2/S-09.3/S-09.11's revenue trend
-    stay Owner-only per CLAUDE.md's permission model; the capability's own
-    description already says "P&L/balance sheet stay Owner-only regardless
-    of this grant").
-11. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
+    widgets, the non-financial widgets (step 4), and the Job Profitability
+    report tab all load normally, but the **Revenue trend chart** widget
+    and Profit & Loss / Balance Sheet / drill-down on the Reports page all
+    render nothing / show a clear "Owner-only report" message
+    (S-09.2/S-09.3/S-09.11's revenue trend stay Owner-only per CLAUDE.md's
+    permission model; the capability's own description already says
+    "P&L/balance sheet stay Owner-only regardless of this grant").
+14. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
     scroll to **Period close**. Add a period covering today, click
     **Close**. Try to issue a new invoice or record/approve an
     expense/vendor bill dated today — confirm it's rejected with "falls
     within a closed fiscal period." Click **Reopen** and confirm the same
     action now succeeds.
-12. **Custom account (S-09.9)**: in the same Chart of accounts pane,
+15. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
     immediately, and that a new Settings → Purchases expense category can
     select it as its posting account.
-13. **Regression check**: after adding a custom account or closing/
+16. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
     the existing system accounts (AR, AP, tax, retention) are still
     present and still read-only.

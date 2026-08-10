@@ -1,11 +1,12 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createMeetingSchema, updateMeetingSchema } from "@spine/shared";
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { meetings } from "../../db/schema";
+import { meetings, member } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { SettingsService } from "../org/settings.service";
 
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
 export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
@@ -22,6 +23,7 @@ export class MeetingsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly settingsService: SettingsService,
   ) {}
 
   /**
@@ -44,6 +46,51 @@ export class MeetingsService {
       .from(meetings)
       .where(and(...conditions))
       .orderBy(desc(meetings.startAt));
+  }
+
+  /**
+   * S-09.12/S-10.19 (dashboard v2) — "upcoming meetings" widget. Reads
+   * `dashboard_meetings_scope` and applies the org's own choice, EXCEPT
+   * for Field: Field always sees own-meetings-only regardless of the
+   * setting, since Field's narrower access is a hard rule elsewhere in
+   * this codebase (mobile hides all financial reports, §S-11.8), not
+   * something an org preference should be able to widen. This check is
+   * server-side and unconditional — there is no client-side toggle that
+   * could bypass it.
+   */
+  async upcomingForDashboard(orgId: string, userId: string, options: { withinDays?: number } = {}) {
+    const withinDays = options.withinDays ?? 7;
+    const from = new Date();
+    const to = new Date(from);
+    to.setDate(to.getDate() + withinDays);
+
+    const [membership] = await this.db
+      .select({ role: member.role })
+      .from(member)
+      .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+
+    let organizerUserId: string | undefined = userId;
+    if (membership?.role !== "field") {
+      const scopeSetting = await this.settingsService.get<{ scope?: "own" | "org" }>(orgId, "dashboard_meetings_scope");
+      if (scopeSetting?.scope === "org") {
+        organizerUserId = undefined;
+      }
+    }
+
+    const rows = await this.db
+      .select()
+      .from(meetings)
+      .where(
+        and(
+          eq(meetings.orgId, orgId),
+          gte(meetings.endAt, from),
+          lte(meetings.startAt, to),
+          ...(organizerUserId ? [eq(meetings.organizerUserId, organizerUserId)] : []),
+        ),
+      )
+      .orderBy(asc(meetings.startAt));
+
+    return rows;
   }
 
   async getOne(orgId: string, id: string) {
