@@ -50,7 +50,8 @@ before considering that work's QA "done."
    (see §3/§4 below).
 7. In Settings → Data (or the dashboard checklist), click **Load demo
    data**. Confirm it seeds contacts, catalogue items, leads, quotes,
-   invoices, and payments without error.
+   invoices, payments, and jobs (3, at different stages — see §5 below)
+   without error.
 8. Confirm the **dashboard setup checklist** reflects real completion
    state (e.g. "add a contact" flips to done once you have contacts from
    the demo seed, not just because you dismissed it).
@@ -134,10 +135,83 @@ before considering that work's QA "done."
     land on a new **draft** invoice whose lines, quantities, prices, and
     total exactly match the quote. Confirm the invoice is NOT
     auto-issued — you get to review first.
+12. On the same **accepted** quote, click **Convert to job** (next to
+    Convert to invoice). Confirm you land on the new job's detail page,
+    with the contract value matching the quote's total exactly (S-04.1,
+    completes S-03.10 — see §5 below for the rest of the Jobs flow).
 
 ---
 
-## 5. Meetings (S-01.9)
+## 5. Jobs (FEAT-04, Phase 3 · Jobs & Construction Billing)
+
+Best run against the demo data's 3 seeded jobs (§1.7) — they cover three
+different points in this lifecycle already, so you can spot-check each
+stage without walking a job through by hand. To exercise every action for
+real, also walk ONE job manually through the full sequence below.
+
+1. Go to **Jobs** (its own top-level sidebar section, between Sales and
+   Billing). Confirm the list shows stat cards (total/active/on
+   hold/completed), a status filter, a contact filter, and the 3 demo
+   jobs if demo data is loaded.
+2. Open a job's detail page. Confirm the header shows contact, site
+   address, status, contract value, and — only when nonzero, or the org's
+   industry template is Construction (§1.2) — retention %.
+3. Click **Edit**. Confirm retention % lives behind an **Advanced**
+   disclosure, not a top-level field, and that it's still fully editable
+   regardless of the org's industry template (Jobs itself is never gated
+   by template — only whether this field starts expanded).
+4. On the **Milestones** tab, click **Define milestones** (or **Edit
+   milestones** if some exist). Add 2-3 milestones as percentages of the
+   contract value that do NOT sum to 100%, try to save — confirm it's
+   rejected with a clear error naming the current total (S-04.3). Fix the
+   percentages to total exactly 100% and save successfully.
+5. On a **pending** milestone, click **Mark complete**. Attach a photo
+   (upload via the file picker) and a completion note, submit. Confirm
+   the milestone's status flips to **Completed** (S-04.4) — this action
+   should also be reachable/usable by a Field-role user (§11), unlike
+   the rest of this page's mutating actions.
+6. On the now-**completed** milestone, click **Raise invoice**. Confirm
+   you land on a new invoice whose type is **progress**, whose total
+   matches the milestone's resolved amount, and — if the job has a
+   nonzero retention % — whose **Retention** shown in the totals block
+   is the correct percentage of that amount (S-04.5/S-04.6). Issue it.
+7. Open the issued progress invoice from step 6. Confirm **Balance due**
+   equals `total - retention`, NOT the full total — the retained portion
+   is deliberately excluded from what's collectible via a normal payment
+   (§7 Invoices, §8 Payments, §9 Receivables should all reflect this same
+   net-of-retention balance; spot-check at least one of them).
+8. Back on the job, go to the **Costing** tab. Confirm **Revenue
+   recognised** matches the sum of every issued progress invoice's total
+   for this job, and **Cost** is exactly 0 (Purchases/Expenses don't
+   exist until Phase 4 — this is expected, not a bug, per that tab's own
+   explanatory note).
+9. Once every milestone on a job is completed and invoiced, click
+   **Release retention** on the job header. Confirm:
+   - A new invoice is created and issued with type **retention_release**,
+     for exactly the sum of retention held back across that job's
+     progress invoices.
+   - Trying to release retention again on the same job (with nothing
+     newly held back) is rejected with a clear "no retention outstanding"
+     error.
+10. On the **Variation orders** tab, click **Raise variation order**.
+    Enter a description and amount, submit — confirm it creates a
+    **draft quote** linked to the job (check the quote appears under
+    **Quotes** too, fully editable/sendable like any other quote).
+11. Send that variation quote and accept it via the public link (same
+    steps as §4.4-4.7). Back on the job's Variation orders tab, confirm
+    an **Apply to job** button now appears next to it — click it, and
+    confirm the job's **contract value** on the header increases by
+    exactly the variation's total, and any percent-type milestones'
+    resolved amounts recompute against the new total.
+12. On the **Photos** tab, upload a general site photo (not tied to a
+    milestone) — confirm it appears in the grid separately from any
+    milestone-completion photos from step 5.
+13. On the **Notes** tab, add a free-text note — confirm it appears with
+    a timestamp, newest first.
+
+---
+
+## 6. Meetings (S-01.9)
 
 1. Go to **Meetings**. Confirm an Outlook-style calendar (day/week/month
    views) renders.
@@ -151,7 +225,7 @@ before considering that work's QA "done."
 
 ---
 
-## 6. Invoices (FEAT-05)
+## 7. Invoices (FEAT-05)
 
 1. Go to **Invoices** → **New invoice**. Build a multi-line invoice for
    a contact, save as draft.
@@ -220,12 +294,20 @@ before considering that work's QA "done."
      check the ledger, confirm it's a debit Bank / credit Customer
      Advances posting (§7.2's "Advance received" row).
    - Later, on a real (non-advance) invoice for the same contact, use
-     **Apply credit** on that payment (§7 below) to offset it against
+     **Apply credit** on that payment (§8 below) to offset it against
      the real invoice — confirm this works normally.
+10. **Regression check (S-04.6 retention, added in Phase 3)**: open one
+    of a job's issued progress invoices (§5 above). Confirm **Balance
+    due** in the totals block equals `total - retention`, not the full
+    total — a held-back retention amount was never part of Accounts
+    Receivable (§7.2), so it must never look collectible or overdue here.
+    A non-job invoice (`retentionAmount = 0`) should be completely
+    unaffected — its balance due should still just be
+    `total - paid - credited`, exactly as before Phase 3.
 
 ---
 
-## 7. Payments (FEAT-06)
+## 8. Payments (FEAT-06)
 
 1. From an issued invoice with a balance, click **Record payment**.
    Confirm the allocation table pre-fills a suggested oldest-first split
@@ -256,10 +338,15 @@ before considering that work's QA "done."
 6. Record a payment with **no invoice at all** (pure unallocated
    credit) — confirm this is allowed and shows correctly as 100%
    unallocated.
+7. **Regression check (S-04.6 retention, added in Phase 3)**: from a job
+   with an issued progress invoice (§5 above), click **Record payment**
+   and confirm the suggested allocation offers at most `total -
+   retention` for that invoice — never the full total, and never more
+   than the DB's own allocation-limit trigger would accept.
 
 ---
 
-## 8. Receivables / AR aging (S-06.7 / S-09.5)
+## 9. Receivables / AR aging (S-06.7 / S-09.5)
 
 1. Go to **Receivables**.
 2. Confirm five stat cards: Current, 1–30, 31–60, 61–90, 90+ days, plus
@@ -270,13 +357,20 @@ before considering that work's QA "done."
    own **Balance due** matches exactly what Receivables showed.
 5. Confirm invoices that are **draft**, **void**, or **fully paid/
    credited** do NOT appear here.
-6. After issuing a credit note against an invoice (§6.8) or applying
-   credit to it (§7.4), reload Receivables and confirm the balance there
+6. After issuing a credit note against an invoice (§7.8) or applying
+   credit to it (§8.4), reload Receivables and confirm the balance there
    reflects the change with no double-counting.
+7. **Regression check (S-04.6 retention, added in Phase 3)**: confirm a
+   job's issued progress invoice with retention still outstanding never
+   inflates Receivables' totals by its retained portion — its row here
+   (if it appears at all, i.e. `total - retention - paid - credited >
+   0`) should show the SAME `total - retention` balance as its own
+   detail page, per the PRD's own acceptance highlight that retention
+   posting to a separate account keeps aging reports undistorted.
 
 ---
 
-## 9. Notifications (S-10.11 / S-10.12)
+## 10. Notifications (S-10.11 / S-10.12)
 
 1. Trigger a notification-worthy event (e.g. a quote gets viewed on its
    public link, or a payment is recorded).
@@ -289,7 +383,7 @@ before considering that work's QA "done."
 
 ---
 
-## 10. Users, Teams & Permissions (§2.1 permission model)
+## 11. Users, Teams & Permissions (§2.1 permission model)
 
 This section needs a second browser (or incognito window) to act as an
 invited user alongside your Owner session.
@@ -330,10 +424,17 @@ invited user alongside your Owner session.
     create one via a different invite path if the product supports it).
     Confirm Field never sees financial reports/data — no Receivables,
     no invoice amounts beyond what's explicitly allowed, per §S-11.8.
+11. Still as that **Field** user, open a job (§5 above) with a pending
+    milestone. Confirm **Mark complete** and adding a job photo/note are
+    all usable (Field is fixed-granted `jobs.update_milestones` — see
+    §2.1) — but confirm they do NOT see **Edit job**, **Define
+    milestones**, **Raise invoice**, **Release retention**, or **Raise
+    variation order** (all gated on `invoices.manage`/`quotes.manage`,
+    which Field never has).
 
 ---
 
-## 11. Design system spot-check
+## 12. Design system spot-check
 
 Not a full audit — just confirm nothing obviously broke:
 
@@ -351,10 +452,25 @@ Not a full audit — just confirm nothing obviously broke:
 
 - No P&L / Balance Sheet report exists yet (Owner-only, later phase) —
   the only way to verify the per-catalog-item revenue posting split
-  (§6.2) today is by inspecting the ledger directly, not through a UI
+  (§7.2) today is by inspecting the ledger directly, not through a UI
   report.
-- Jobs, vendor bills/expenses, and mobile (`apps/mobile`) don't exist
-  yet — demo data intentionally doesn't include them.
+- No client-side fine-grained capability check exists in the web app —
+  every gated page (Quotes, Teams, Jobs) approximates server-side
+  `@RequireCapability` enforcement by checking coarse role (owner/staff/
+  field) client-side. A Staff user whose Team doesn't actually grant a
+  capability will still see the button and get a real 403 from the
+  server on click — that's correct, expected behavior, not a bug to
+  file.
+- Job cost/revenue/margin (§5.8) always shows **Cost: 0** — vendor
+  bills/expenses (Phase 4) don't exist yet, so nothing posts an
+  `expense`-type debit tagged with a job's id. This is expected, not a
+  bug.
+- A variation order's acceptance does NOT automatically fold its value
+  into the job's contract value — applying it (§5.11) is a deliberate,
+  separate manual step. There's no proactive nudge when a variation
+  quote gets accepted; you have to check the job's Variation orders tab.
+- Vendor bills/expenses and mobile (`apps/mobile`) don't exist yet —
+  demo data intentionally doesn't include them.
 - No standalone `/credit-notes` list page — credit notes are only
   reachable from the invoice they correct.
 - Multi-org (one Owner account across several orgs) is explicitly out of

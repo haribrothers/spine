@@ -2,11 +2,13 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, invoices, journalLines, leads, payments, quotes, settings } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, jobs, journalLines, leads, payments, quotes, settings } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { PaymentsService } from "../payments/payments.service";
+import { JobsService } from "../jobs/jobs.service";
+import { MilestonesService } from "../jobs/milestones.service";
 import { SettingsService } from "../org/settings.service";
 
 /**
@@ -357,12 +359,101 @@ const DEMO_INVOICES: DemoInvoiceSeed[] = [
   },
 ];
 
+type DemoMilestoneSeed = {
+  name: string;
+  amountType: "fixed" | "percent";
+  amount: number;
+  dueInDays: number;
+};
+
+type DemoJobSeed = {
+  /** Index into DEMO_CONTACTS. */
+  contactIndex: number;
+  name: string;
+  siteAddress: string;
+  contractValueAmount: bigint;
+  retentionPct: number;
+  startInDays: number;
+  milestones: DemoMilestoneSeed[];
+  /**
+   * "active": milestones defined, none touched — a job just getting
+   * started. "inProgress": first milestone marked complete and invoiced
+   * (issued) — shows retention actually held on a real posted invoice.
+   * "nearingCompletion": same as inProgress, PLUS the second milestone also
+   * completed+invoiced — two progress invoices in, most of the contract
+   * billed, retention accumulating across both. "retentionReleased": same
+   * as nearingCompletion, plus every milestone is completed+invoiced and
+   * retention has been released via a real retention-release invoice —
+   * the full S-04.1→S-04.7 lifecycle in one seeded job.
+   */
+  outcome: "active" | "inProgress" | "nearingCompletion" | "retentionReleased";
+};
+
+/**
+ * PRD §11.3's own seed-data spec calls for "3 jobs at different stages"
+ * and "retention" — three jobs, each further along S-04.1→S-04.7's
+ * lifecycle than the last, all using the real `JobsService`/
+ * `MilestonesService`/`InvoicesService` methods a real user's actions
+ * would call (same "seed via the real service" principle as
+ * `seedQuotes`/`seedInvoices` above), so a seeded "nearingCompletion" job
+ * has genuine progress-invoice numbers and real §7.2 retention postings,
+ * not hand-set columns. Every job here uses `amountType: "percent"`
+ * milestones (summing to 100%) rather than fixed amounts, since that's
+ * the more construction-typical billing shape and exercises S-04.3's
+ * percentage-total validation for real on every seed run.
+ */
+const DEMO_JOBS: DemoJobSeed[] = [
+  {
+    contactIndex: 0, // Harborview Construction Co.
+    name: "Marina office fit-out",
+    siteAddress: "48 Harbor Way, Portland, ME 04101",
+    contractValueAmount: 4850000n,
+    retentionPct: 5,
+    startInDays: -14,
+    milestones: [
+      { name: "Mobilisation & site setup", amountType: "percent", amount: 20, dueInDays: 7 },
+      { name: "Framing & rough-in complete", amountType: "percent", amount: 40, dueInDays: 30 },
+      { name: "Final fit-out & handover", amountType: "percent", amount: 40, dueInDays: 60 },
+    ],
+    outcome: "active",
+  },
+  {
+    contactIndex: 1, // Maple Ridge Developments
+    name: "Phase 2 townhomes — foundations",
+    siteAddress: "220 Ridge Rd, Burlington, VT 05401",
+    contractValueAmount: 1250000n,
+    retentionPct: 10,
+    startInDays: -45,
+    milestones: [
+      { name: "Excavation & footings", amountType: "percent", amount: 35, dueInDays: -20 },
+      { name: "Foundation walls poured", amountType: "percent", amount: 35, dueInDays: 10 },
+      { name: "Backfill & inspection sign-off", amountType: "percent", amount: 30, dueInDays: 25 },
+    ],
+    outcome: "nearingCompletion",
+  },
+  {
+    contactIndex: 6, // Bluewater Hospitality Group
+    name: "Hotel lobby renovation",
+    siteAddress: "5 Waterfront Plz, Providence, RI 02903",
+    contractValueAmount: 2100000n,
+    retentionPct: 8,
+    startInDays: -120,
+    milestones: [
+      { name: "Demolition & prep", amountType: "percent", amount: 25, dueInDays: -100 },
+      { name: "Millwork & finishes installed", amountType: "percent", amount: 50, dueInDays: -60 },
+      { name: "Final walkthrough & sign-off", amountType: "percent", amount: 25, dueInDays: -30 },
+    ],
+    outcome: "retentionReleased",
+  },
+];
+
 /**
  * Onboarding "load demo data" seeding + Settings "delete all demo data",
  * covering every module that exists today: Contacts (F1), Catalogue (F2),
- * Quotes (F3 Stage 1), and Invoices + Payments (F5/F6 Stage 1, Phase 2 ·
- * Money In) — see WelcomeStep's own comment (now updated) on why Jobs
- * (Phase 3) and vendor bills/expenses (Phase 4) still aren't seeded. Each demo contact gets one
+ * Quotes (F3), Invoices + Payments (F5/F6, Phase 2 · Money In), and now
+ * Jobs (F4, Phase 3 · Jobs & Construction Billing — see DEMO_JOBS/
+ * seedJobs below). Vendor bills/expenses (Phase 4) still aren't seeded —
+ * those modules don't exist yet. Each demo contact gets one
  * contact person, one address, one lead, and one activity, so the contact
  * detail page (persons/addresses tabs, Leads tab, Activities tab) has
  * something real to show rather than a bare shell — matching what a
@@ -405,6 +496,8 @@ export class DemoDataService {
     private readonly quotesService: QuotesService,
     private readonly invoicesService: InvoicesService,
     private readonly paymentsService: PaymentsService,
+    private readonly jobsService: JobsService,
+    private readonly milestonesService: MilestonesService,
     private readonly settingsService: SettingsService,
   ) {}
 
@@ -640,8 +733,9 @@ export class DemoDataService {
 
     const quotesResult = await this.seedQuotes(orgId, actorUserId, result.contactIds, result.catalogItemIds);
     const invoicesResult = await this.seedInvoices(orgId, actorUserId, result.contactIds, result.catalogItemIds);
+    const jobsResult = await this.seedJobs(orgId, actorUserId, result.contactIds);
 
-    return { ...result, ...quotesResult, ...invoicesResult };
+    return { ...result, ...quotesResult, ...invoicesResult, ...jobsResult };
   }
 
   /**
@@ -833,6 +927,102 @@ export class DemoDataService {
   }
 
   /**
+   * PRD §11.3 — "3 jobs at different stages" + "retention." Same "seed via
+   * the real service" principle as `seedQuotes`/`seedInvoices`:
+   * `JobsService.create`, `MilestonesService.setAll`/`.completeMilestone`/
+   * `.invoiceMilestone`, and `InvoicesService.issue`/`.releaseRetention`
+   * are all called directly, never hand-inserted, so a seeded
+   * "nearingCompletion" job has genuine `JOB-`-adjacent progress-invoice
+   * numbers and real §7.2 retention postings (net-AR + Retention
+   * Receivable split) exactly like a real user's clicks would produce.
+   *
+   * Each `DemoJobSeed.outcome` drives how far through S-04.1→S-04.7 the
+   * job is walked: `active` only defines milestones; `inProgress`
+   * additionally completes+invoices+issues the first; `nearingCompletion`
+   * does the same for the second too; `retentionReleased` walks every
+   * milestone through complete→invoice→issue and then calls
+   * `InvoicesService.releaseRetention` for the whole held-back amount —
+   * the one seeded job that demonstrates the full retention lifecycle
+   * end to end.
+   */
+  private async seedJobs(orgId: string, actorUserId: string, contactIds: string[]) {
+    let jobsCreated = 0;
+    let milestonesInvoiced = 0;
+    let retentionReleases = 0;
+
+    for (const seed of DEMO_JOBS) {
+      const contactId = contactIds[seed.contactIndex];
+      if (!contactId) continue;
+
+      const [currencySetting] = await this.db
+        .select()
+        .from(settings)
+        .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+      const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
+
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() + seed.startInDays);
+
+      const job = await this.jobsService.create(
+        orgId,
+        actorUserId,
+        {
+          contactId,
+          name: seed.name,
+          siteAddress: seed.siteAddress,
+          currency: currencyCode,
+          startDate,
+          endDate: null,
+          contractValueAmount: seed.contractValueAmount,
+          retentionPct: seed.retentionPct,
+          notes: null,
+        },
+        true, // isDemo
+      );
+      jobsCreated++;
+
+      const milestones = await this.milestonesService.setAll(orgId, job.id, actorUserId, {
+        milestones: seed.milestones.map((m, i) => {
+          const dueDate = new Date();
+          dueDate.setDate(dueDate.getDate() + m.dueInDays);
+          return { name: m.name, sequence: i, amountType: m.amountType, amount: m.amount, dueDate };
+        }),
+      });
+
+      if (seed.outcome === "active") continue;
+
+      const toAdvance = seed.outcome === "inProgress" ? 1 : 2;
+      for (let i = 0; i < Math.min(toAdvance, milestones.length); i++) {
+        const milestone = milestones[i]!;
+        await this.milestonesService.completeMilestone(orgId, job.id, milestone.id, actorUserId, {
+          completionNotes: `${milestone.name} — completed on schedule.`,
+          photoFileIds: [],
+        });
+        const invoice = await this.milestonesService.invoiceMilestone(orgId, job.id, milestone.id, actorUserId);
+        await this.invoicesService.issue(orgId, invoice.id, actorUserId);
+        milestonesInvoiced++;
+      }
+
+      if (seed.outcome === "retentionReleased") {
+        for (let i = toAdvance; i < milestones.length; i++) {
+          const milestone = milestones[i]!;
+          await this.milestonesService.completeMilestone(orgId, job.id, milestone.id, actorUserId, {
+            completionNotes: `${milestone.name} — completed on schedule.`,
+            photoFileIds: [],
+          });
+          const invoice = await this.milestonesService.invoiceMilestone(orgId, job.id, milestone.id, actorUserId);
+          await this.invoicesService.issue(orgId, invoice.id, actorUserId);
+          milestonesInvoiced++;
+        }
+        await this.invoicesService.releaseRetention(orgId, actorUserId, job.id);
+        retentionReleases++;
+      }
+    }
+
+    return { jobsCreated, milestonesInvoiced, retentionReleases };
+  }
+
+  /**
    * Hard-deletes every row tagged `isDemo: true` for this org. Deleting a
    * demo contact cascades onto its contact_persons/addresses/leads/
    * activities automatically (see this class's own top comment on why
@@ -889,6 +1079,10 @@ export class DemoDataService {
       .select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId })
       .from(quotes)
       .where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true)));
+    const demoJobs = await this.db
+      .select({ id: jobs.id, name: jobs.name, contactId: jobs.contactId })
+      .from(jobs)
+      .where(and(eq(jobs.orgId, orgId), eq(jobs.isDemo, true)));
     const demoContacts = await this.db
       .select({ id: contacts.id, name: contacts.name })
       .from(contacts)
@@ -898,7 +1092,7 @@ export class DemoDataService {
       .from(catalogItems)
       .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)));
 
-    await this.db.transaction(async (tx) => {
+    const { jobsDeleted } = await this.db.transaction(async (tx) => {
       for (const payment of demoPayments) {
         await this.auditLog.record(tx, {
           orgId,
@@ -938,6 +1132,34 @@ export class DemoDataService {
         await tx.delete(quotes).where(eq(quotes.id, quote.id));
       }
 
+      // Same "blocked if referenced" pattern as demoContacts below —
+      // journal_lines.jobId is onDelete: "restrict" (ledger.ts's own
+      // comment), so a job that had ANY progress invoice issued against it
+      // (which posts journal_lines with jobId set) can never be
+      // hard-deleted, exactly matching how a contact with real ledger
+      // history behaves. Every demo job created via seedJobs above except
+      // the "active" one (milestones defined, nothing invoiced yet) will
+      // hit this and be left in place — cascades onto milestones/
+      // job_photos/job_notes/job_variation_orders regardless (all
+      // onDelete: "cascade" off jobs.id, per jobs.ts) for the ones that DO
+      // get removed.
+      let jobsDeleted = 0;
+      for (const job of demoJobs) {
+        const [referenced] = await tx.select().from(journalLines).where(eq(journalLines.jobId, job.id)).limit(1);
+        if (referenced) continue;
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "deleted",
+          entityType: "job",
+          entityId: job.id,
+          contactId: job.contactId,
+          changes: [{ field: "name", from: job.name, to: null }],
+        });
+        await tx.delete(jobs).where(eq(jobs.id, job.id));
+        jobsDeleted++;
+      }
+
       for (const contact of demoContacts) {
         const [referenced] = await tx.select().from(journalLines).where(eq(journalLines.contactId, contact.id)).limit(1);
         if (referenced) continue;
@@ -965,6 +1187,8 @@ export class DemoDataService {
         });
         await tx.delete(catalogItems).where(eq(catalogItems.id, item.id));
       }
+
+      return { jobsDeleted };
     });
 
     return {
@@ -973,10 +1197,25 @@ export class DemoDataService {
       quotesDeleted: demoQuotes.length,
       invoicesDeleted: demoInvoices.length,
       paymentsDeleted: demoPayments.length,
+      // Unlike the counts above (contacts/items/quotes/invoices/payments,
+      // none of which can be blocked by a referencing journal_lines row —
+      // see this method's own doc comment), jobs genuinely can be, so this
+      // is the actual count of jobs removed, not demoJobs.length.
+      jobsDeleted,
     };
   }
 
-  /** See deleteAll's own doc comment on why this deliberately doesn't check for a leftover demo contact. */
+  /**
+   * See deleteAll's own doc comment on why this deliberately doesn't check
+   * for a leftover demo contact — the same reasoning excludes jobs too: a
+   * demo job with any issued progress invoice can never be hard-deleted
+   * (journal_lines.jobId is onDelete: "restrict"), so checking for one
+   * here would report `hasDemoData: true` forever after a single such job
+   * ever existed, even right after a successful deleteAll. Checking
+   * catalog items/quotes/invoices is sufficient — those three are always
+   * fully removable, so their absence already means "nothing left to
+   * clear."
+   */
   async status(orgId: string) {
     const [demoItem] = await this.db
       .select({ id: catalogItems.id })
