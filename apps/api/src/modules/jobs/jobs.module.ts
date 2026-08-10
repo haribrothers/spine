@@ -2,6 +2,7 @@ import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { InvoicesModule } from "../invoices/invoices.module";
 import { QuotesModule } from "../quotes/quotes.module";
+import { OrgModule } from "../org/org.module";
 import { JobsController } from "./jobs.controller";
 import { JobsService } from "./jobs.service";
 import { MilestonesService } from "./milestones.service";
@@ -20,10 +21,14 @@ import { JobCostingService } from "./job-costing.service";
  * `QuotesService` — VariationOrdersService never duplicates quote CRUD),
  * general job photos/notes (S-04.10, on `JobsService` itself), and job
  * cost/revenue/margin (S-04.8, revenue side only — see JobCostingService's
- * own doc comment on why cost is still always 0 until Phase 4).
+ * own doc comment on why cost is still always 0 until Phase 4). Imports
+ * `OrgModule` directly (not just transitively via `InvoicesModule`, which
+ * doesn't re-export it) for `QuoteConversionGuardService` — the org's
+ * warn/block preference on accidental repeat quote conversion, shared
+ * with `InvoicesService.convertFromQuote`.
  */
 @Module({
-  imports: [AuditModule, InvoicesModule, QuotesModule],
+  imports: [AuditModule, InvoicesModule, QuotesModule, OrgModule],
   controllers: [JobsController],
   providers: [JobsService, MilestonesService, VariationOrdersService, JobCostingService],
   exports: [JobsService, MilestonesService, VariationOrdersService],

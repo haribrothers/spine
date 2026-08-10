@@ -139,6 +139,18 @@ before considering that work's QA "done."
     Convert to invoice). Confirm you land on the new job's detail page,
     with the contract value matching the quote's total exactly (S-04.1,
     completes S-03.10 — see §5 below for the rest of the Jobs flow).
+13. **Repeat-conversion safeguard (user-reported)**: in Settings →
+    "Repeat quote conversion", confirm the default is **Warn**. On the
+    same quote from step 11/12 (which already has a job AND an invoice),
+    click **Convert to invoice** again. Confirm a dialog appears naming
+    exactly what already exists ("1 job... and 1 invoice...") rather than
+    silently creating a duplicate. Click **Convert to invoice anyway** —
+    confirm it proceeds and a second, separate draft invoice is created.
+    Switch the setting to **Block**, attempt another conversion on the
+    same quote — confirm it's rejected outright with no dialog offering
+    an override. Switch to **Off** — confirm conversions on an
+    already-converted quote now proceed with no warning at all, matching
+    this app's original (pre-safeguard) behaviour.
 
 ---
 

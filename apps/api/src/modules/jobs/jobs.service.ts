@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { jobs, contacts, quotes, jobPhotos, jobNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
@@ -26,6 +27,7 @@ export class JobsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly conversionGuard: QuoteConversionGuardService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -107,8 +109,15 @@ export class JobsService {
    * unlike invoices this is a much rarer real case). `contractValueAmount`
    * is the quote's own `totalAmount` snapshot, taken once here and never
    * re-read from the quote again — see jobs.ts's own doc comment.
+   *
+   * `QuoteConversionGuardService.check` guards against an ACCIDENTAL
+   * repeat conversion (re-clicking the button) per the org's own
+   * configurable warn/block preference — see that service's own doc
+   * comment. It is not a one-shot restriction; a deliberate second
+   * conversion still works once confirmed (or always, if the org has the
+   * guard set to "off").
    */
-  async createFromQuote(orgId: string, actorUserId: string, quoteId: string, retentionPct = 0) {
+  async createFromQuote(orgId: string, actorUserId: string, quoteId: string, retentionPct = 0, confirm = false) {
     const [quote] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, quoteId)));
     if (!quote) {
       throw new NotFoundException("Quote not found");
@@ -116,6 +125,8 @@ export class JobsService {
     if (quote.status !== "accepted") {
       throw new BadRequestException("Only an accepted quote can be converted to a job");
     }
+
+    await this.conversionGuard.check(orgId, quoteId, confirm);
 
     const input: CreateJobInput = {
       contactId: quote.contactId,

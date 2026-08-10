@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { QueueService } from "../queue/queue.service";
+import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
@@ -132,6 +133,7 @@ export class InvoicesService {
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
     private readonly queue: QueueService,
+    private readonly conversionGuard: QuoteConversionGuardService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -251,14 +253,16 @@ export class InvoicesService {
    * behavior as one built from scratch. Only `quote.status === "accepted"`
    * is convertible — converting a draft/sent/rejected/expired quote makes
    * no sense (nothing to convert from, or the customer never agreed to
-   * it). A quote can be converted more than once in principle (no
-   * "already converted" guard) — S-03.10's wording doesn't ask for a
-   * one-shot restriction, and a legitimate case exists (e.g. a first
-   * invoice covers only part of the quoted work, a second later invoice
-   * covers the rest) even though Phase 2 has no milestone/progress-billing
-   * UI yet to drive that from.
+   * it). A quote can be converted more than once in principle — S-03.10's
+   * wording doesn't ask for a one-shot restriction, and a legitimate case
+   * exists (e.g. a first invoice covers only part of the quoted work, a
+   * second later invoice covers the rest). The risk of an ACCIDENTAL
+   * repeat conversion (re-clicking the button, silently doubling the
+   * billed amount) is what `QuoteConversionGuardService.check` exists to
+   * catch — an org-configurable warn/block preference, not a hardcoded
+   * one-shot restriction. See that service's own doc comment.
    */
-  async convertFromQuote(orgId: string, actorUserId: string, quoteId: string) {
+  async convertFromQuote(orgId: string, actorUserId: string, quoteId: string, confirm = false) {
     const [quote] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, quoteId)));
     if (!quote) {
       throw new NotFoundException("Quote not found");
@@ -266,6 +270,8 @@ export class InvoicesService {
     if (quote.status !== "accepted") {
       throw new BadRequestException("Only an accepted quote can be converted to an invoice");
     }
+
+    await this.conversionGuard.check(orgId, quoteId, confirm);
 
     const lines = await this.db.select().from(quoteLines).where(eq(quoteLines.quoteId, quoteId)).orderBy(quoteLines.sortOrder);
 

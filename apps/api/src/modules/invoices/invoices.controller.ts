@@ -56,13 +56,21 @@ export class InvoicesController {
     return this.invoicesService.create(orgId, session.user.id, input);
   }
 
-  /** S-03.10's invoice half — creates a draft invoice from an accepted quote's own snapshot. See InvoicesService.convertFromQuote's own doc comment. */
+  /**
+   * S-03.10's invoice half — creates a draft invoice from an accepted
+   * quote's own snapshot. See InvoicesService.convertFromQuote's own doc
+   * comment. `confirm` (optional, defaults false) is only meaningful when
+   * the org's `quote_conversion_guard` setting is "warn": passing it lets
+   * the caller proceed after being shown a 409's warning body once
+   * (QuoteConversionGuardService.check), for a quote that's already been
+   * converted before.
+   */
   @Post("from-quote/:quoteId")
   @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
-  async convertFromQuote(@Session() session: UserSession, @Param("quoteId") quoteId: string) {
+  async convertFromQuote(@Session() session: UserSession, @Param("quoteId") quoteId: string, @Body("confirm") confirm?: boolean) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.convertFromQuote(orgId, session.user.id, quoteId);
+    return this.invoicesService.convertFromQuote(orgId, session.user.id, quoteId, confirm === true);
   }
 
   @Put(":id")

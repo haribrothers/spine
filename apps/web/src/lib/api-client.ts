@@ -11,6 +11,27 @@
  */
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+/**
+ * Thrown instead of a plain `Error` so a caller that needs more than the
+ * message string — e.g. QuoteConversionGuardService's 409 response, which
+ * carries a structured `{ existing: {...} }` body the UI needs to render a
+ * real confirmation dialog — can `instanceof ApiError` and read `.status`/
+ * `.body`. Extends `Error` (not a bare class) specifically so every
+ * existing `catch (err) { err instanceof Error ? err.message : ... }` call
+ * site in this codebase keeps working completely unchanged — this is
+ * additive, not a breaking change to the client's error shape.
+ */
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly body: unknown,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 function idempotencyKey(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
     ? crypto.randomUUID()
@@ -36,13 +57,15 @@ async function request<T>(
 
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
+    let data: unknown;
     try {
-      const data = await res.json();
-      message = data?.message ?? message;
+      data = await res.json();
+      const parsed = data as { message?: string } | undefined;
+      message = parsed?.message ?? message;
     } catch {
       // response wasn't JSON — keep the generic message
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, data);
   }
 
   if (res.status === 204) {

@@ -61,7 +61,12 @@ export class JobsController {
     return this.jobsService.create(orgId, session.user.id, input);
   }
 
-  /** S-04.1 / S-03.10's job half — creates a job from an accepted quote's own snapshot. */
+  /**
+   * S-04.1 / S-03.10's job half — creates a job from an accepted quote's
+   * own snapshot. `confirm` (optional) mirrors
+   * InvoicesController.convertFromQuote's own doc comment — only
+   * meaningful when the org's `quote_conversion_guard` setting is "warn".
+   */
   @Post("from-quote/:quoteId")
   @OrgRoles(["owner", "staff"])
   @RequireCapability("invoices.manage")
@@ -69,10 +74,10 @@ export class JobsController {
   async createFromQuote(
     @Session() session: UserSession,
     @Param("quoteId") quoteId: string,
-    @Body() body: { retentionPct?: number },
+    @Body() body: { retentionPct?: number; confirm?: boolean },
   ) {
     const orgId = requireOrgId(session);
-    return this.jobsService.createFromQuote(orgId, session.user.id, quoteId, body?.retentionPct ?? 0);
+    return this.jobsService.createFromQuote(orgId, session.user.id, quoteId, body?.retentionPct ?? 0, body?.confirm === true);
   }
 
   @Put(":id")

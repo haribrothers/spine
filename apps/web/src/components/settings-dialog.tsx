@@ -10,6 +10,7 @@ import {
   ListOrdered,
   Percent,
   Search,
+  ShieldAlert,
   Sparkles,
   Wallet,
 } from "lucide-react";
@@ -23,6 +24,7 @@ import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
 import { PushPane } from "../app/settings/panes/push-pane";
+import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
 
 interface SettingsSection {
   key: string;
@@ -39,6 +41,12 @@ const SECTIONS: SettingsSection[] = [
   { key: "tax", label: "Tax", icon: <Percent size={16} />, render: () => <TaxPane /> },
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
+  {
+    key: "quote-conversion-guard",
+    label: "Repeat quote conversion",
+    icon: <ShieldAlert size={16} />,
+    render: () => <QuoteConversionGuardPane />,
+  },
   { key: "push", label: "Browser notifications", icon: <Bell size={16} />, render: () => <PushPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];

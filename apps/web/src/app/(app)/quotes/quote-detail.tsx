@@ -2,14 +2,48 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, Spinner } from "@spine/ui";
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  Card,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  RichTextContent,
+  Spinner,
+} from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
-import { apiClient } from "../../../lib/api-client";
+import { apiClient, ApiError } from "../../../lib/api-client";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
+
+/**
+ * Body shape of the 409 QuoteConversionGuardService throws when the org's
+ * `quote_conversion_guard` setting is "warn" and this quote already has a
+ * prior job/invoice — see that service's own doc comment. `existing` lists
+ * what's already there so the confirmation dialog can name it specifically
+ * ("2 jobs, 1 invoice"), not just say "are you sure?" with no context.
+ */
+interface ConversionGuardBody {
+  message: string;
+  existing: {
+    jobs: { id: string; name: string }[];
+    invoices: { id: string; number: string | null }[];
+  };
+}
+
+function isConversionGuardConflict(err: unknown): err is ApiError & { body: ConversionGuardBody } {
+  return err instanceof ApiError && err.status === 409 && typeof err.body === "object" && err.body !== null && "existing" in err.body;
+}
 
 interface MemberRow {
   userId: string;
@@ -56,6 +90,10 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [conversionConfirm, setConversionConfirm] = useState<{
+    action: "invoice" | "job";
+    body: ConversionGuardBody;
+  } | null>(null);
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -130,29 +168,58 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     }
   }
 
-  /** S-03.10's invoice half — creates a draft invoice from this accepted quote's own snapshot, then navigates there so the user can review/adjust before issuing (same "land on the new draft" pattern as handleRevise). */
-  async function handleConvertToInvoice() {
+  /**
+   * S-03.10's invoice half — creates a draft invoice from this accepted
+   * quote's own snapshot, then navigates there so the user can
+   * review/adjust before issuing (same "land on the new draft" pattern as
+   * handleRevise). `confirm` is only ever `true` when this is a RETRY
+   * after the org's `quote_conversion_guard` "warn" setting rejected the
+   * first attempt with a 409 and the user explicitly chose "Convert
+   * anyway" in the dialog below — see isConversionGuardConflict's own
+   * comment for what that 409 looks like.
+   */
+  async function handleConvertToInvoice(confirm = false) {
     if (!quote) return;
     setBusy(true);
     setError(null);
     try {
-      const invoice = await apiClient.post<{ id: string }>(`/invoices/from-quote/${quote.id}`);
+      const invoice = await apiClient.post<{ id: string }>(`/invoices/from-quote/${quote.id}`, { confirm });
+      setConversionConfirm(null);
       router.push(`/invoices/${invoice.id}`);
     } catch (err) {
+      if (isConversionGuardConflict(err)) {
+        setConversionConfirm({ action: "invoice", body: err.body });
+        setBusy(false);
+        return;
+      }
       setError(err instanceof Error ? err.message : "Could not convert this quote to an invoice.");
       setBusy(false);
     }
   }
 
-  /** S-03.10's job half (S-04.1) — creates a job from this accepted quote's own snapshot (contract value carried over), then navigates there so the user can define milestones/retention before billing starts. Independent of "Convert to invoice" — a quote can become a job, an invoice, or both, per S-03.10's own "job and its first invoice" wording (the job path here doesn't also raise an invoice; the two conversions are separate actions a user chooses between or combines). */
-  async function handleConvertToJob() {
+  /**
+   * S-03.10's job half (S-04.1) — creates a job from this accepted
+   * quote's own snapshot (contract value carried over), then navigates
+   * there so the user can define milestones/retention before billing
+   * starts. Independent of "Convert to invoice" — a quote can become a
+   * job, an invoice, or both, per S-03.10's own "job and its first
+   * invoice" wording. `confirm` mirrors handleConvertToInvoice's own doc
+   * comment.
+   */
+  async function handleConvertToJob(confirm = false) {
     if (!quote) return;
     setBusy(true);
     setError(null);
     try {
-      const job = await apiClient.post<{ id: string }>(`/jobs/from-quote/${quote.id}`);
+      const job = await apiClient.post<{ id: string }>(`/jobs/from-quote/${quote.id}`, { confirm });
+      setConversionConfirm(null);
       router.push(`/jobs/${job.id}`);
     } catch (err) {
+      if (isConversionGuardConflict(err)) {
+        setConversionConfirm({ action: "job", body: err.body });
+        setBusy(false);
+        return;
+      }
       setError(err instanceof Error ? err.message : "Could not convert this quote to a job.");
       setBusy(false);
     }
@@ -270,12 +337,12 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               </Button>
             )}
             {canConvertToInvoice && (
-              <Button onClick={handleConvertToInvoice} disabled={busy}>
+              <Button onClick={() => handleConvertToInvoice()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Convert to invoice"}
               </Button>
             )}
             {canConvertToJob && (
-              <Button variant="secondary" onClick={handleConvertToJob} disabled={busy}>
+              <Button variant="secondary" onClick={() => handleConvertToJob()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Convert to job"}
               </Button>
             )}
@@ -395,6 +462,50 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           )}
         </Card>
       )}
+
+      {/* Org's `quote_conversion_guard` "warn" setting — see ConversionGuardBody's own doc comment. Only ever shown when a prior job and/or invoice already trace back to this quote. */}
+      <Dialog open={conversionConfirm !== null} onOpenChange={(open) => !open && setConversionConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>This quote has already been converted before</DialogTitle>
+            <DialogDescription>
+              {conversionConfirm && (
+                <>
+                  {conversionConfirm.body.existing.jobs.length > 0 && (
+                    <>
+                      Existing job{conversionConfirm.body.existing.jobs.length > 1 ? "s" : ""}:{" "}
+                      {conversionConfirm.body.existing.jobs.map((j) => j.name).join(", ")}
+                      {conversionConfirm.body.existing.invoices.length > 0 && ". "}
+                    </>
+                  )}
+                  {conversionConfirm.body.existing.invoices.length > 0 && (
+                    <>
+                      Existing invoice{conversionConfirm.body.existing.invoices.length > 1 ? "s" : ""}:{" "}
+                      {conversionConfirm.body.existing.invoices.map((i) => i.number ?? "draft").join(", ")}.
+                    </>
+                  )}{" "}
+                  Converting again will create a SEPARATE {conversionConfirm.action}, in addition to the one(s) above — the
+                  amount is not split between them. Only do this if you actually mean to bill or track this quote's work
+                  more than once.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody />
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setConversionConfirm(null)} disabled={busy}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => (conversionConfirm?.action === "invoice" ? handleConvertToInvoice(true) : handleConvertToJob(true))}
+              disabled={busy}
+            >
+              {busy ? <Spinner size="sm" /> : `Convert to ${conversionConfirm?.action} anyway`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {toast}
     </div>

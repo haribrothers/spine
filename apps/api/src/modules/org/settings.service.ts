@@ -18,6 +18,18 @@ import { settings } from "../../db/schema";
  * - `default_tax_rate`   → { name: string; percentage: number } (percentage as a decimal string, e.g. "7.5")
  * - `onboarding_status`  → { completedSteps: string[]; skipped: boolean; completedAt?: string }
  * - `dashboard_checklist_dismissed` → { dismissed: boolean }
+ * - `quote_conversion_guard` → { mode: "off" | "warn" | "block" } — governs
+ *   what happens when a user converts the SAME accepted quote into a job or
+ *   invoice more than once (nothing else in the schema prevents this — see
+ *   JobsService.createFromQuote/InvoicesService.convertFromQuote's own doc
+ *   comments). "off": always allow silently (pre-existing behaviour).
+ *   "warn" (default): the convert action still succeeds, but the caller
+ *   must pass `confirm: true` once an existing conversion is found —
+ *   without it, the request is rejected with a 409 so the web UI can show
+ *   a real confirmation dialog first. "block": rejected outright, no way
+ *   to override from the UI (an owner would need to lower this setting
+ *   first). Checked identically by both JobsService and InvoicesService,
+ *   via QuoteConversionGuardService (see that class's own doc comment).
  */
 @Injectable()
 export class SettingsService {
