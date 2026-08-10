@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
 import { roundHalfUp } from "@spine/shared";
-import { and, eq } from "drizzle-orm";
+import { and, eq, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
@@ -52,6 +52,45 @@ export class MilestonesService {
   async list(orgId: string, jobId: string) {
     await this.requireJob(orgId, jobId);
     return this.db.select().from(milestones).where(eq(milestones.jobId, jobId)).orderBy(milestones.sequence);
+  }
+
+  /**
+   * S-09.12 (dashboard v2) — "job milestones due," across every job, not
+   * one at a time. No cross-job milestone query existed before this —
+   * `list` above is deliberately job-scoped (it's used by the job detail
+   * page's Milestones tab). Only `pending` milestones are "due" — a
+   * `completed`/`invoiced` milestone has nothing left to act on, even if
+   * its `dueDate` is in the past. Includes overdue (`dueDate` before
+   * today) as well as due within `withinDays`, both sorted soonest/most-
+   * overdue first, so the dashboard widget doesn't need a second query for
+   * the overdue case.
+   */
+  async dueAcrossJobs(orgId: string, options: { withinDays?: number } = {}) {
+    const withinDays = options.withinDays ?? 14;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const horizon = new Date(today);
+    horizon.setDate(horizon.getDate() + withinDays);
+
+    const rows = await this.db
+      .select({ milestone: milestones, jobName: jobs.name, jobContactId: jobs.contactId, jobCurrency: jobs.currency })
+      .from(milestones)
+      .innerJoin(jobs, eq(milestones.jobId, jobs.id))
+      .where(and(eq(milestones.orgId, orgId), eq(milestones.status, "pending"), lte(milestones.dueDate, horizon)))
+      .orderBy(milestones.dueDate);
+
+    return rows
+      .filter((row) => row.milestone.dueDate !== null)
+      .map((row) => ({
+        milestoneId: row.milestone.id,
+        jobId: row.milestone.jobId,
+        jobName: row.jobName,
+        jobContactId: row.jobContactId,
+        currency: row.jobCurrency,
+        name: row.milestone.name,
+        dueDate: row.milestone.dueDate,
+        isOverdue: row.milestone.dueDate !== null && row.milestone.dueDate < today,
+      }));
   }
 
   async getOne(orgId: string, jobId: string, milestoneId: string) {

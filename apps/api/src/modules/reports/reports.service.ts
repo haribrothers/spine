@@ -623,6 +623,68 @@ export class ReportsService {
     };
   }
 
+  /**
+   * S-09.11 (dashboard v2) — revenue trend chart, trailing N months
+   * (3/6/12). Same journal_lines-income-credits source as
+   * `dashboardSummary`'s `monthRevenue`, generalized from "this month
+   * only" to N calendar months. One query for the whole window, then
+   * grouped by month in application code — simpler than N separate
+   * date-range queries, and a year of journal activity is small enough
+   * that grouping in JS costs nothing meaningful.
+   */
+  async revenueTrend(orgId: string, months: 3 | 6 | 12): Promise<RevenueTrendReport> {
+    const now = new Date();
+    const windowStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
+    const windowStartStr = windowStart.toISOString().slice(0, 10);
+    const todayStr = now.toISOString().slice(0, 10);
+
+    const rows = await this.db
+      .select({ date: journalEntries.date, debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), eq(accounts.type, "income"), gte(journalEntries.date, windowStartStr), lte(journalEntries.date, todayStr)));
+
+    const byMonth = new Map<string, bigint>();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(windowStart.getFullYear(), windowStart.getMonth() + i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      byMonth.set(key, 0n);
+    }
+    for (const row of rows) {
+      const key = row.date.slice(0, 7);
+      const existing = byMonth.get(key);
+      if (existing !== undefined) {
+        byMonth.set(key, existing + row.credit - row.debit);
+      }
+    }
+
+    return {
+      months: Array.from(byMonth.entries()).map(([month, revenue]) => ({ month, revenue: revenue.toString() })),
+    };
+  }
+
+  /**
+   * S-09.12 (dashboard v2) — "invoices due this week" widget. A thin
+   * filter over `receivables()`'s already-computed, already-balance-
+   * correct invoice list — not a new balance computation. "This week"
+   * means the next 7 days from today, inclusive, matching the widget's
+   * own PRD wording ("invoices due within the next 7 days").
+   */
+  async invoicesDueThisWeek(orgId: string): Promise<ReceivablesInvoiceRow[]> {
+    const report = await this.receivables(orgId);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const horizon = new Date(today);
+    horizon.setDate(horizon.getDate() + 7);
+    const todayStr = today.toISOString().slice(0, 10);
+    const horizonStr = horizon.toISOString().slice(0, 10);
+
+    return report.invoices
+      .filter((invoice) => invoice.dueDate !== null && invoice.dueDate >= todayStr && invoice.dueDate <= horizonStr)
+      .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
+  }
+
   private async taxCollectedByRate(orgId: string, from: string, to: string): Promise<TaxByRateRow[]> {
     const lineRows = await this.db
       .select({ line: invoiceLines })
@@ -778,6 +840,11 @@ export interface DashboardSummaryReport {
   totalReceivables: string;
   overdueInvoiceCount: number;
   monthRevenue: string;
+}
+
+export interface RevenueTrendReport {
+  /** "YYYY-MM" keys, oldest first, always exactly `months` entries even when a month has zero revenue. */
+  months: { month: string; revenue: string }[];
 }
 
 function daysPastDue(dueDate: Date | null, today: Date): number {

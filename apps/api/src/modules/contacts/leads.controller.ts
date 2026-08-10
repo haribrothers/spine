@@ -16,6 +16,15 @@ export class LeadsController {
     return this.leadsService.list(orgId, stage);
   }
 
+  /** S-09.11 (dashboard v2) — "pipeline by stage" chart. Declared before `:id` — see JobsController.milestonesDue's own comment on why route order matters here. */
+  @Get("summary-by-stage")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("contacts.manage")
+  async summaryByStage(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.leadsService.summaryByStage(orgId);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

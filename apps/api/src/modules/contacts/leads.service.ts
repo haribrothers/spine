@@ -4,7 +4,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { leads, type leadStageEnum } from "../../db/schema";
+import { leads, leadStageEnum } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
@@ -33,6 +33,40 @@ export class LeadsService {
       .from(leads)
       .where(and(...conditions))
       .orderBy(desc(leads.createdAt));
+  }
+
+  /**
+   * S-09.11 (dashboard v2) — "pipeline by stage" chart. A server-side
+   * GROUP BY, unlike the /leads kanban board (S-01.5), which groups its
+   * own `list(orgId)` client-side — that board already has every lead's
+   * full row in memory for drag-and-drop, so a second aggregate query
+   * would be redundant there; the dashboard widget wants only the totals,
+   * not every lead row, so a real GROUP BY is the right shape here.
+   * Zero-filled for every `leadStageEnum` value so the chart always
+   * renders all 5 stages, even ones with no leads yet, rather than a
+   * shifting set of bars.
+   */
+  async summaryByStage(orgId: string) {
+    const rows = await this.db
+      .select({ stage: leads.stage, valueAmount: leads.valueAmount })
+      .from(leads)
+      .where(eq(leads.orgId, orgId));
+
+    const byStage = new Map<string, { count: number; totalValue: bigint }>();
+    for (const stage of leadStageEnum.enumValues) {
+      byStage.set(stage, { count: 0, totalValue: 0n });
+    }
+    for (const row of rows) {
+      const existing = byStage.get(row.stage)!;
+      existing.count += 1;
+      existing.totalValue += row.valueAmount;
+    }
+
+    return leadStageEnum.enumValues.map((stage) => ({
+      stage,
+      count: byStage.get(stage)!.count,
+      totalValue: byStage.get(stage)!.totalValue.toString(),
+    }));
   }
 
   async listByContact(orgId: string, contactId: string) {

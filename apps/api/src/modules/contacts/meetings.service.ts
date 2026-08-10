@@ -24,12 +24,21 @@ export class MeetingsService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  /** `from`/`to` filter by overlap with the meeting's [startAt, endAt] range — used by the /meetings calendar page to fetch only the visible date range. */
-  async list(orgId: string, filters: { contactId?: string; from?: Date; to?: Date }) {
+  /**
+   * `from`/`to` filter by overlap with the meeting's [startAt, endAt]
+   * range — used by the /meetings calendar page to fetch only the visible
+   * date range. `organizerUserId` (added for S-09.12's dashboard
+   * "upcoming meetings" widget) narrows to meetings a specific user
+   * organizes — the dashboard route (Stage 3) decides when to pass this
+   * based on the org's `dashboard_meetings_scope` setting and the
+   * requester's role; this method itself has no opinion about scope.
+   */
+  async list(orgId: string, filters: { contactId?: string; from?: Date; to?: Date; organizerUserId?: string }) {
     const conditions = [eq(meetings.orgId, orgId)];
     if (filters.contactId) conditions.push(eq(meetings.contactId, filters.contactId));
     if (filters.from) conditions.push(gte(meetings.endAt, filters.from));
     if (filters.to) conditions.push(lte(meetings.startAt, filters.to));
+    if (filters.organizerUserId) conditions.push(eq(meetings.organizerUserId, filters.organizerUserId));
     return this.db
       .select()
       .from(meetings)

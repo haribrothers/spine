@@ -32,6 +32,24 @@ export class ReportsController {
     return this.reportsService.dashboardSummary(orgId);
   }
 
+  /** S-09.11 (dashboard v2) — revenue trend chart. Owner-only, no capability bypass — same gate as P&L/Balance Sheet, since this is derived from the same income-account journal history those reports summarize. */
+  @Get("revenue-trend")
+  @OrgRoles(["owner"])
+  async revenueTrend(@Session() session: UserSession, @Query("months") months?: string) {
+    const orgId = requireOrgId(session);
+    const parsed = months ? Number(months) : 12;
+    const safeMonths = parsed === 3 || parsed === 6 || parsed === 12 ? parsed : 12;
+    return this.reportsService.revenueTrend(orgId, safeMonths);
+  }
+
+  /** S-09.12 (dashboard v2) — "invoices due this week" widget. Same capability invoice-management already requires elsewhere. */
+  @Get("invoices-due-this-week")
+  @RequireCapability("invoices.manage")
+  async invoicesDueThisWeek(@Session() session: UserSession) {
+    const orgId = requireOrgId(session);
+    return this.reportsService.invoicesDueThisWeek(orgId);
+  }
+
   @Get("receivables")
   @RequireCapability("dashboard.view")
   async receivables(@Session() session: UserSession) {
