@@ -2,6 +2,7 @@ import { pgTable, uuid, text, bigint, timestamp, date, boolean, pgEnum, check, i
 import { sql } from "drizzle-orm";
 import { organization } from "./auth";
 import { contacts } from "./contacts";
+import { jobs } from "./jobs";
 
 export const accountTypeEnum = pgEnum("account_type", [
   "asset",
@@ -85,7 +86,8 @@ export const journalLines = pgTable(
      * defensive backstop, not the primary safeguard.
      */
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "restrict" }),
-    jobId: uuid("job_id"),
+    /** Optional — same job-costing rationale as this column's own doc comment above, and same RESTRICT convention as contactId: a job referenced by posted ledger history must not silently vanish. */
+    jobId: uuid("job_id").references(() => jobs.id, { onDelete: "restrict" }),
   },
   (table) => [
     check("journal_lines_one_sided", sql`(${table.debit} = 0 OR ${table.credit} = 0) AND (${table.debit} > 0 OR ${table.credit} > 0)`),

@@ -3,6 +3,7 @@ export * from "./contacts.ts";
 export * from "./meetings.ts";
 export * from "./catalog.ts";
 export * from "./quotes.ts";
+export * from "./jobs.ts";
 export * from "./invoices.ts";
 export * from "./credit-notes.ts";
 export * from "./payments.ts";

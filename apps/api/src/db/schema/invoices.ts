@@ -6,6 +6,7 @@ import { catalogItems } from "./catalog";
 import { files } from "./files";
 import { quotes } from "./quotes";
 import { journalEntries } from "./ledger";
+import { jobs, milestones } from "./jobs";
 
 /**
  * PRD F5 — Invoicing (Phase 2 · Money In). Stage 1 scope: standard invoice
@@ -90,9 +91,10 @@ export const invoices = pgTable(
     type: invoiceTypeEnum("type").notNull().default("standard"),
     /** Provenance only (S-03.10) — see this table's own doc comment. Not yet settable in Stage 1 (no conversion action exists yet). */
     sourceQuoteId: uuid("source_quote_id").references(() => quotes.id, { onDelete: "set null" }),
-    /** Phase 3 (Jobs) — unused, nullable, present so the shape doesn't need a migration later. No FK yet since the `jobs` table doesn't exist. */
-    jobId: uuid("job_id"),
-    milestoneId: uuid("milestone_id"),
+    /** Phase 3 (Jobs) — set by MilestonesService.invoiceMilestone (S-04.5) for a `progress`-type invoice, and by JobsService for a retention-release final invoice (S-04.7). `set null` on job delete since a job is never actually deletable in practice (no delete path exists — see JobsService), but matches every other provenance FK's convention. */
+    jobId: uuid("job_id").references(() => jobs.id, { onDelete: "set null" }),
+    /** Set only for a milestone-triggered progress invoice — see milestones.ts's own `invoicedInvoiceId` doc comment for the inverse pointer. */
+    milestoneId: uuid("milestone_id").references(() => milestones.id, { onDelete: "set null" }),
     issueDate: date("issue_date", { mode: "date" }),
     dueDate: date("due_date", { mode: "date" }),
     currency: text("currency").notNull(),
@@ -146,6 +148,8 @@ export const invoices = pgTable(
     index("invoices_source_quote_idx").on(table.sourceQuoteId),
     index("invoices_org_number_idx").on(table.orgId, table.number),
     index("invoices_org_due_date_idx").on(table.orgId, table.dueDate),
+    index("invoices_job_idx").on(table.jobId),
+    index("invoices_milestone_idx").on(table.milestoneId),
   ],
 );
 

@@ -6,6 +6,7 @@ export * from "./contacts";
 export * from "./meetings";
 export * from "./catalog";
 export * from "./quotes";
+export * from "./jobs";
 export * from "./invoices";
 export * from "./credit-notes";
 export * from "./payments";
