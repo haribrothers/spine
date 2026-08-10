@@ -169,6 +169,13 @@
       "when": 1786299563333,
       "tag": "0023_cheerful_senator_kelly",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1786341218576,
+      "tag": "0024_fancy_makkari",
+      "breakpoints": true
     }
   ]
 }

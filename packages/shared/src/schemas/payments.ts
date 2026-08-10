@@ -32,3 +32,15 @@ export const createPaymentSchema = z.object({
   notes: z.string().optional().nullable(),
   allocations: z.array(paymentAllocationInputSchema).default([]),
 });
+
+/**
+ * S-05.5's other half — applies an EXISTING payment's sitting unallocated
+ * credit (S-06.4) against one or more invoices that didn't exist yet (or
+ * weren't chosen) at the time the payment was originally created. Reuses
+ * `paymentAllocationInputSchema` — the shape of "how much applies to which
+ * invoice" is identical to `create()`'s own `allocations`, only the target
+ * (an existing payment vs. a brand-new one) differs.
+ */
+export const applyPaymentCreditSchema = z.object({
+  allocations: z.array(paymentAllocationInputSchema).min(1),
+});

@@ -7,6 +7,7 @@ export * from "./meetings";
 export * from "./catalog";
 export * from "./quotes";
 export * from "./invoices";
+export * from "./credit-notes";
 export * from "./payments";
 export * from "./notifications";
 export * from "./push-subscriptions";

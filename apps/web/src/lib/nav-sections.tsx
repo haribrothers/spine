@@ -1,4 +1,4 @@
-import { Banknote, CalendarDays, FileText, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
+import { Banknote, CalendarDays, FileText, Inbox, LayoutDashboard, Package, Receipt, Shield, Target, UserCog, Users } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 
 /**
@@ -12,10 +12,7 @@ import type { AppShellNavSection } from "@spine/ui";
  * mirrors the PRD's own phase naming (`docs/spine-prd.md` §12: Phase 1 is
  * "Sales Spine", Phase 2 is "Money In", not part of Sales) and its
  * enquiry → quote → job → invoice → payment → books workflow, where a
- * quote is a sales document but an invoice is a financial one. This is
- * also the natural home for Payments/AR-aging/receivables once those get
- * their own pages (currently payment recording lives inside the invoice
- * detail page — see CHANGELOG).
+ * quote is a sales document but an invoice is a financial one.
  */
 export const NAV_SECTIONS: AppShellNavSection[] = [
   {
@@ -37,6 +34,7 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     items: [
       { href: "/invoices", label: "Invoices", icon: <Receipt /> },
       { href: "/payments", label: "Payments", icon: <Banknote /> },
+      { href: "/receivables", label: "Receivables", icon: <Inbox /> },
     ],
   },
 ];

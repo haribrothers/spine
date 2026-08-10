@@ -18,7 +18,17 @@ const STATUS_BADGE_CLASS: Record<Invoice["status"], string> = {
  * (that's a quotes-only concept from S-03.x's revision flow); every row
  * here stands alone.
  */
-export function InvoicesTable({ invoices, onDeleted }: { invoices: Invoice[]; onDeleted: (invoice: Invoice) => void }) {
+export function InvoicesTable({
+  invoices,
+  onDeleted,
+  onReminderSent,
+  onReminderFailed,
+}: {
+  invoices: Invoice[];
+  onDeleted: (invoice: Invoice) => void;
+  onReminderSent?: (invoice: Invoice) => void;
+  onReminderFailed?: (invoice: Invoice, message: string) => void;
+}) {
   const columns: TableColumn<Invoice>[] = [
     {
       key: "number",
@@ -77,7 +87,7 @@ export function InvoicesTable({ invoices, onDeleted }: { invoices: Invoice[]; on
       header: "",
       render: (row) => (
         <div className="flex justify-end">
-          <InvoiceRowActions invoice={row} onDeleted={onDeleted} />
+          <InvoiceRowActions invoice={row} onDeleted={onDeleted} onReminderSent={onReminderSent} onReminderFailed={onReminderFailed} />
         </div>
       ),
     },

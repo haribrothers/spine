@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
 import { computeLineTax, money, roundHalfUp } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -149,7 +149,7 @@ export class InvoicesService {
       ...r.invoice,
       contactName: r.contactName,
       isOverdue: isOverdue(r.invoice),
-      balanceDue: r.invoice.totalAmount - r.invoice.amountPaid,
+      balanceDue: r.invoice.totalAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
     }));
 
     if (options.status) {
@@ -179,7 +179,7 @@ export class InvoicesService {
       ...row.invoice,
       contactName: row.contactName,
       isOverdue: isOverdue(row.invoice),
-      balanceDue: row.invoice.totalAmount - row.invoice.amountPaid,
+      balanceDue: row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
       lines,
     };
   }
@@ -190,7 +190,7 @@ export class InvoicesService {
    * client-settable, exists solely for a future DemoDataService hook to
    * reuse this same totals/audit-log logic instead of hand-inserting rows.
    */
-  async create(orgId: string, actorUserId: string, input: CreateInvoiceInput, isDemo = false) {
+  async create(orgId: string, actorUserId: string, input: CreateInvoiceInput, isDemo = false, sourceQuoteId?: string) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -206,6 +206,7 @@ export class InvoicesService {
           contactId: input.contactId,
           status: "draft",
           type: input.type,
+          sourceQuoteId: sourceQuoteId ?? null,
           currency: input.currency,
           issueDate: input.issueDate ?? null,
           dueDate: input.dueDate ?? null,
@@ -236,6 +237,60 @@ export class InvoicesService {
     });
 
     return this.getOne(orgId, created!.id);
+  }
+
+  /**
+   * S-03.10's invoice half — "convert an accepted quote into a job and its
+   * first invoice." Only the invoice half (Jobs don't exist until Phase
+   * 3). Reads the accepted quote's own snapshot (never re-reads catalog
+   * items — quote_lines already snapshotted name/price/tax at the time
+   * they were added, per CLAUDE.md's "documents snapshot their data")
+   * and creates a DRAFT invoice from it via the same `create()` this
+   * method delegates to — not a parallel insert path, so a converted
+   * invoice gets identical validation/audit-log/totals-computation
+   * behavior as one built from scratch. Only `quote.status === "accepted"`
+   * is convertible — converting a draft/sent/rejected/expired quote makes
+   * no sense (nothing to convert from, or the customer never agreed to
+   * it). A quote can be converted more than once in principle (no
+   * "already converted" guard) — S-03.10's wording doesn't ask for a
+   * one-shot restriction, and a legitimate case exists (e.g. a first
+   * invoice covers only part of the quoted work, a second later invoice
+   * covers the rest) even though Phase 2 has no milestone/progress-billing
+   * UI yet to drive that from.
+   */
+  async convertFromQuote(orgId: string, actorUserId: string, quoteId: string) {
+    const [quote] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, quoteId)));
+    if (!quote) {
+      throw new NotFoundException("Quote not found");
+    }
+    if (quote.status !== "accepted") {
+      throw new BadRequestException("Only an accepted quote can be converted to an invoice");
+    }
+
+    const lines = await this.db.select().from(quoteLines).where(eq(quoteLines.quoteId, quoteId)).orderBy(quoteLines.sortOrder);
+
+    const input: CreateInvoiceInput = {
+      contactId: quote.contactId,
+      type: "standard",
+      currency: quote.currency,
+      issueDate: null,
+      dueDate: null,
+      notes: quote.notes ?? null,
+      termsAndConditions: quote.termsAndConditions ?? null,
+      lines: lines.map((line) => ({
+        type: line.type,
+        catalogItemId: line.catalogItemId,
+        name: line.name,
+        description: line.description,
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        unitPriceCurrency: line.unitPriceCurrency,
+        discountPercentage: line.discountPercentage,
+        taxRatePercentage: line.taxRatePercentage,
+      })),
+    };
+
+    return this.create(orgId, actorUserId, input, false, quoteId);
   }
 
   /**
@@ -313,19 +368,29 @@ export class InvoicesService {
    * posting fails, the whole issue must roll back, not leave an issued
    * invoice with no ledger trail.
    *
-   * Revenue is posted to a single umbrella account for Stage 1 (catalogue
-   * items' own `incomeAccountId` per-line breakdown, S-02.3, is a
-   * documented future refinement — Stage 1 posts the invoice's blended
-   * subtotal as one revenue line rather than one line per distinct income
-   * account, since splitting by each line's own catalog-item income
-   * account is real scope Quotes' own Stage 1 never had to solve either;
-   * revisit once job costing/P&L reporting needs the finer split).
+   * Revenue is split per catalog item's own `incomeAccountId` (S-02.3),
+   * not posted as one blended line — each `item`-type line's
+   * `lineSubtotalAmount` (post-discount, pre-tax) is grouped by its
+   * resolved income account and posted as its own credit line. A line
+   * falls back to `resolvedRevenueAccountId` (the same default-to-4100
+   * "Sales — Services" this method already resolved, or the caller's own
+   * explicit `revenueAccountId` override) when it has no `catalogItemId`
+   * (a free-form line never added from the catalogue) or the referenced
+   * catalog item has no `incomeAccountId` set (S-02.3's own field is
+   * optional per PRD F2 — "SHOULD", not "MUST" — so an org that never
+   * bothered to set per-item income accounts still gets exactly Stage 1's
+   * old single-blended-line behavior, just reached via the fallback path
+   * rather than a separate code path). This was previously a documented
+   * Stage 1 simplification (flagged in this method's own comment and in
+   * CHANGELOG) — now built, so an org's P&L can actually break revenue
+   * down by catalogue item once reporting reads the ledger for it.
+   *
    * Discounts are NOT posted as their own "Discounts Given" contra-revenue
-   * line in Stage 1 — `subtotalAmount` here is the post-discount net
-   * (matching how `lineSubtotalAmount` is stored post-discount), so AR
-   * simply nets to the discounted total; a gross/contra presentation is a
-   * P&L-reporting-time concern for Phase 4, not required for the ledger to
-   * balance correctly today.
+   * line — `lineSubtotalAmount` per line is already the post-discount net
+   * (matching how the invoice's own `subtotalAmount` is post-discount), so
+   * AR simply nets to the discounted total; a gross/contra presentation is
+   * a P&L-reporting-time concern for Phase 4, not required for the ledger
+   * to balance correctly today.
    */
   async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string) {
     const [preCheck] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
@@ -358,9 +423,16 @@ export class InvoicesService {
       const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
       const taxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "outputTaxPayable");
 
+      const revenueByAccount = await this.resolveRevenuePostingLines(tx, orgId, id, resolvedRevenueAccountId);
+
       const postingLines = [
         { accountId: arAccountId, debit: existing.totalAmount, credit: 0n, contactId: existing.contactId },
-        { accountId: resolvedRevenueAccountId, debit: 0n, credit: existing.totalAmount - existing.taxAmount, contactId: existing.contactId },
+        ...Array.from(revenueByAccount.entries()).map(([accountId, amount]) => ({
+          accountId,
+          debit: 0n,
+          credit: amount,
+          contactId: existing.contactId,
+        })),
       ];
       if (existing.taxAmount > 0n) {
         postingLines.push({ accountId: taxAccountId, debit: 0n, credit: existing.taxAmount, contactId: existing.contactId });
@@ -454,6 +526,49 @@ export class InvoicesService {
   }
 
   /**
+   * S-05.10 — "send a payment reminder in one click." Reuses the exact
+   * same queue/worker as `sendEmail` (same PDF attachment, same
+   * `emailStatus` bookkeeping) with `isReminder: true`, which only changes
+   * the subject/opening line (InvoiceEmailWorker.attemptSend's own
+   * branch) — not a parallel mechanism, since a reminder IS an invoice
+   * email, just reminder-flavored copy. Only callable on an invoice that
+   * is actually overdue (per `isOverdue()`'s own definition: issued,
+   * has a due date, has an outstanding balance, and that due date has
+   * passed) — reminding someone about an invoice that isn't overdue yet
+   * doesn't match S-05.10's own framing ("so following up isn't a
+   * chore" implies there's something to follow up ON).
+   */
+  async sendReminder(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Invoice not found");
+    }
+    if (!isOverdue(existing)) {
+      throw new BadRequestException("A payment reminder can only be sent for an overdue invoice");
+    }
+
+    await this.db.update(invoices).set({ emailStatus: "pending", updatedAt: new Date() }).where(eq(invoices.id, id));
+
+    await this.auditLog.record(this.db, {
+      orgId,
+      actorUserId,
+      action: "reminder_queued",
+      entityType: "invoice",
+      entityId: id,
+      contactId: existing.contactId,
+      changes: [{ field: "emailStatus", from: existing.emailStatus, to: "pending" }],
+    });
+
+    try {
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true });
+    } catch (err) {
+      this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
+    }
+
+    return this.getOne(orgId, id);
+  }
+
+  /**
    * `revenueAccountId` on `issue()` is optional — a caller (e.g. a future
    * "issue" dialog letting staff pick which income account to post to) can
    * pass one explicitly; if omitted, this resolves the seeded "Sales —
@@ -476,6 +591,48 @@ export class InvoicesService {
       );
     }
     return row.id;
+  }
+
+  /**
+   * S-02.3 — groups this invoice's `item`-type lines' `lineSubtotalAmount`
+   * (post-discount, pre-tax net) by each line's resolved income account,
+   * so `issue()` can post one credit line per distinct account instead of
+   * one blended line. See `issue()`'s own doc comment for the fallback
+   * rule (no catalog item, or catalog item has no `incomeAccountId` set)
+   * — `fallbackAccountId` there.
+   */
+  private async resolveRevenuePostingLines(
+    tx: Transaction,
+    orgId: string,
+    invoiceId: string,
+    fallbackAccountId: string,
+  ): Promise<Map<string, bigint>> {
+    const lines = await tx
+      .select({ catalogItemId: invoiceLines.catalogItemId, lineSubtotalAmount: invoiceLines.lineSubtotalAmount })
+      .from(invoiceLines)
+      .where(and(eq(invoiceLines.invoiceId, invoiceId), eq(invoiceLines.type, "item")));
+
+    const catalogItemIds = [...new Set(lines.map((l) => l.catalogItemId).filter((id): id is string => id !== null))];
+    const incomeAccountByCatalogItem = new Map<string, string | null>();
+    if (catalogItemIds.length > 0) {
+      const rows = await tx
+        .select({ id: catalogItems.id, incomeAccountId: catalogItems.incomeAccountId })
+        .from(catalogItems)
+        .where(and(eq(catalogItems.orgId, orgId), inArray(catalogItems.id, catalogItemIds)));
+      for (const row of rows) {
+        incomeAccountByCatalogItem.set(row.id, row.incomeAccountId);
+      }
+    }
+
+    const byAccount = new Map<string, bigint>();
+    for (const line of lines) {
+      if (line.lineSubtotalAmount === 0n) continue;
+      const resolvedAccountId =
+        (line.catalogItemId && incomeAccountByCatalogItem.get(line.catalogItemId)) || fallbackAccountId;
+      byAccount.set(resolvedAccountId, (byAccount.get(resolvedAccountId) ?? 0n) + line.lineSubtotalAmount);
+    }
+
+    return byAccount;
   }
 
   /**
@@ -604,10 +761,10 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
   );
 }
 
-/** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. */
+/** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. Balance accounts for both payments and credit notes (S-05.6) — a fully credited invoice is no more overdue than a fully paid one. */
 function isOverdue(invoice: typeof invoices.$inferSelect): boolean {
   if (invoice.status !== "issued" || !invoice.dueDate) return false;
-  if (invoice.totalAmount - invoice.amountPaid <= 0n) return false;
+  if (invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount <= 0n) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dueDate = new Date(invoice.dueDate);

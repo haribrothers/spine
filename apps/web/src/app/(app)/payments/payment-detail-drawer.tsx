@@ -25,7 +25,18 @@ import {
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { ApplyCreditDialog } from "./apply-credit-dialog";
+import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
+
+/**
+ * `GET /payments/:id/pdf` streams a binary PDF, not JSON — same reasoning
+ * as invoice-detail.tsx's own `invoicePdfUrl`.
+ */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+function paymentPdfUrl(paymentId: string): string {
+  return `${API_URL}/payments/${paymentId}/pdf`;
+}
 
 /**
  * Read-only detail Drawer — a payment has no draft/edit lifecycle (see
@@ -34,23 +45,39 @@ import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
  * edits, unlike CatalogItemDrawer's create-or-edit form. Only an
  * unallocated payment (`allocatedAmount === "0"`) can be deleted — see
  * PaymentsService.delete's own guard; the Delete button is hidden entirely
- * otherwise rather than shown-then-rejected.
+ * otherwise rather than shown-then-rejected. S-06.6 adds "Download PDF"
+ * (opens the live-rendered receipt directly, same pattern as invoices'
+ * "Download PDF") and "Email receipt" (synchronous send, not queued — see
+ * PaymentsService.sendReceiptEmail's own doc comment on why).
  */
 export function PaymentDetailDrawer({
   open,
   onOpenChange,
   paymentId,
   onDeleted,
+  onChanged,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   paymentId: string | null;
   onDeleted: (payment: Payment) => void;
+  /** Fired after applying credit — lets the parent list refresh its own row (unallocatedAmount changed) without a full page reload. */
+  onChanged?: () => void;
 }) {
   const [payment, setPayment] = useState<Payment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [applyCreditOpen, setApplyCreditOpen] = useState(false);
+  const { show: showToast, toast } = useEntityToast();
+
+  function reload() {
+    if (!paymentId) return;
+    apiClient
+      .get<Payment>(`/payments/${paymentId}`)
+      .then(setPayment)
+      .catch((err) => setError(err instanceof Error ? err.message : "Could not load payment."));
+  }
 
   useEffect(() => {
     if (!open || !paymentId) {
@@ -80,7 +107,22 @@ export function PaymentDetailDrawer({
     }
   }
 
+  async function handleSendReceipt() {
+    if (!payment) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiClient.post(`/payments/${payment.id}/send-receipt`);
+      showToast("Receipt sent", `The receipt for ${payment.number ?? "this payment"} has been emailed to ${payment.contactName ?? "the contact"}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not email this receipt.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const canDelete = payment && payment.allocatedAmount === "0";
+  const canApplyCredit = payment && payment.unallocatedAmount !== "0";
 
   return (
     <>
@@ -152,6 +194,23 @@ export function PaymentDetailDrawer({
             )}
           </DrawerBody>
           <DrawerFooter>
+            {payment && (
+              <Button variant="secondary" asChild>
+                <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">
+                  Download PDF
+                </a>
+              </Button>
+            )}
+            {payment && (
+              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Email receipt"}
+              </Button>
+            )}
+            {canApplyCredit && (
+              <Button variant="secondary" onClick={() => setApplyCreditOpen(true)} disabled={busy}>
+                Apply credit
+              </Button>
+            )}
             {canDelete && (
               <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
                 Delete payment
@@ -163,6 +222,18 @@ export function PaymentDetailDrawer({
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+
+      <ApplyCreditDialog
+        open={applyCreditOpen}
+        onOpenChange={setApplyCreditOpen}
+        payment={payment}
+        onApplied={() => {
+          reload();
+          onChanged?.();
+          showToast("Credit applied", `Credit from ${payment?.number ?? "this payment"} has been applied to the selected invoice(s).`);
+        }}
+      />
+      {toast}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

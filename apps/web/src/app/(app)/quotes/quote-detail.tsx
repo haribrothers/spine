@@ -130,6 +130,20 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     }
   }
 
+  /** S-03.10's invoice half — creates a draft invoice from this accepted quote's own snapshot, then navigates there so the user can review/adjust before issuing (same "land on the new draft" pattern as handleRevise). */
+  async function handleConvertToInvoice() {
+    if (!quote) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const invoice = await apiClient.post<{ id: string }>(`/invoices/from-quote/${quote.id}`);
+      router.push(`/invoices/${invoice.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not convert this quote to an invoice.");
+      setBusy(false);
+    }
+  }
+
   async function handleApproveDiscount() {
     if (!quote) return;
     setBusy(true);
@@ -176,6 +190,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   const canEdit = quote.status === "draft";
   const canRevise = quote.status !== "draft" && !quote.isSuperseded;
+  const canConvertToInvoice = quote.status === "accepted";
   const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId;
 
   return (
@@ -234,6 +249,11 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             {canRevise && (
               <Button onClick={handleRevise} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Revise"}
+              </Button>
+            )}
+            {canConvertToInvoice && (
+              <Button onClick={handleConvertToInvoice} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Convert to invoice"}
               </Button>
             )}
             {canEdit && (

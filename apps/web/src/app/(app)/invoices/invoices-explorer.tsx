@@ -77,6 +77,14 @@ export function InvoicesExplorer() {
     showToast("Invoice deleted", `${invoice.number ?? "Draft invoice"} has been permanently removed.`);
   }
 
+  function handleReminderSent(invoice: Invoice) {
+    showToast("Reminder queued", `A reminder for ${invoice.number ?? "this invoice"} has been queued.`);
+  }
+
+  function handleReminderFailed(invoice: Invoice, message: string) {
+    showToast("Could not send reminder", message);
+  }
+
   if (error) {
     return (
       <Alert variant="critical">
@@ -151,7 +159,12 @@ export function InvoicesExplorer() {
           )}
         </div>
       ) : (
-        <InvoicesTable invoices={filteredInvoices} onDeleted={handleDeleted} />
+        <InvoicesTable
+          invoices={filteredInvoices}
+          onDeleted={handleDeleted}
+          onReminderSent={handleReminderSent}
+          onReminderFailed={handleReminderFailed}
+        />
       )}
       {toast}
     </div>

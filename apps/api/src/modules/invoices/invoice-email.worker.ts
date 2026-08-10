@@ -20,6 +20,8 @@ function escapeHtml(value: string): string {
 export interface InvoiceSendEmailJobData {
   orgId: string;
   invoiceId: string;
+  /** S-05.10 — same worker, reminder-specific subject/body (see attemptSend's own branch) instead of the standard "here's your invoice" copy. Does not affect emailStatus/pdfFileId bookkeeping, which stays identical either way. */
+  isReminder?: boolean;
 }
 
 /**
@@ -56,7 +58,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
   }
 
   async process(data: InvoiceSendEmailJobData): Promise<void> {
-    const { orgId, invoiceId } = data;
+    const { orgId, invoiceId, isReminder = false } = data;
 
     const [row] = await this.db
       .select({ invoice: invoices, contactName: contacts.name, contactEmail: contacts.email })
@@ -69,7 +71,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     }
 
     try {
-      await this.attemptSend(orgId, invoiceId, row);
+      await this.attemptSend(orgId, invoiceId, row, isReminder);
       await this.db
         .update(invoices)
         .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
@@ -85,6 +87,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     orgId: string,
     invoiceId: string,
     row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
+    isReminder: boolean,
   ): Promise<void> {
     const { buffer, filename } = await this.pdf.render(orgId, invoiceId);
 
@@ -117,7 +120,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     const businessName = business?.name || "Spine";
     const invoiceNumber = row.invoice.number ?? "your invoice";
     const currency = row.invoice.currency;
-    const balanceDue = row.invoice.totalAmount - row.invoice.amountPaid;
+    const balanceDue = row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
     const dueDateText = row.invoice.dueDate ? new Date(row.invoice.dueDate).toLocaleDateString() : null;
 
     const balanceLine =
@@ -125,13 +128,28 @@ export class InvoiceEmailWorker implements OnModuleInit {
         ? `The balance due is ${toDecimalString({ amount: balanceDue, currency })} ${currency}${dueDateText ? `, due ${dueDateText}` : ""}.`
         : "This invoice is already paid in full — no balance is owing.";
 
+    // S-05.10 — same PDF, same attachment, only the subject/opening line
+    // change: a reminder says "this is now overdue" instead of "here's your
+    // invoice", using days-overdue rather than the due date itself (a
+    // reminder is inherently sent because the due date has already passed,
+    // so restating it plainly is more useful than repeating the date).
+    const daysOverdueText = row.invoice.dueDate
+      ? Math.max(0, Math.floor((Date.now() - new Date(row.invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
+      : null;
+    const subject = isReminder
+      ? `Reminder: ${invoiceNumber} is now ${daysOverdueText !== null ? `${daysOverdueText} day${daysOverdueText === 1 ? "" : "s"} ` : ""}overdue`
+      : `${businessName} sent you an invoice (${invoiceNumber})`;
+    const openingLine = isReminder
+      ? `This is a friendly reminder that invoice ${invoiceNumber} from ${businessName} is now overdue.`
+      : `${businessName} has sent you an invoice (${invoiceNumber}), attached as a PDF.`;
+
     await this.email.send({
       to: row.contactEmail,
-      subject: `${businessName} sent you an invoice (${invoiceNumber})`,
+      subject,
       text: [
         `Hi ${row.contactName ?? "there"},`,
         "",
-        `${businessName} has sent you an invoice (${invoiceNumber}), attached as a PDF.`,
+        openingLine,
         "",
         balanceLine,
         "",
@@ -139,7 +157,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
       ].join("\n"),
       html: [
         `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-        `<p>${escapeHtml(businessName)} has sent you an invoice (${escapeHtml(invoiceNumber)}), attached as a PDF.</p>`,
+        `<p>${escapeHtml(openingLine)}</p>`,
         `<p>${escapeHtml(balanceLine)}</p>`,
         `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly with any payment questions.</p>`,
       ].join("\n"),

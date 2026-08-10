@@ -42,6 +42,8 @@ export interface Invoice {
   totalAmount: string;
   /** Denormalized running total, kept in sync by PaymentsService on every allocation — never client-computed. */
   amountPaid: string;
+  /** Denormalized running total, kept in sync by CreditNotesService.issue (S-05.6) — never client-computed. */
+  creditedAmount: string;
   notes: string | null;
   termsAndConditions: string | null;
   createdByUserId: string | null;
@@ -59,7 +61,7 @@ export interface Invoice {
   updatedAt: string;
   /** Computed server-side at read time (S-05.9) — only an issued invoice past its due date with a balance still owing. Never stored. */
   isOverdue: boolean;
-  /** Computed server-side — totalAmount - amountPaid. */
+  /** Computed server-side — totalAmount - amountPaid - creditedAmount. */
   balanceDue: string;
   lines?: InvoiceLine[];
 }

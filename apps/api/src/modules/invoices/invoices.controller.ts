@@ -56,6 +56,15 @@ export class InvoicesController {
     return this.invoicesService.create(orgId, session.user.id, input);
   }
 
+  /** S-03.10's invoice half — creates a draft invoice from an accepted quote's own snapshot. See InvoicesService.convertFromQuote's own doc comment. */
+  @Post("from-quote/:quoteId")
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async convertFromQuote(@Session() session: UserSession, @Param("quoteId") quoteId: string) {
+    const orgId = requireOrgId(session);
+    return this.invoicesService.convertFromQuote(orgId, session.user.id, quoteId);
+  }
+
   @Put(":id")
   @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
@@ -81,6 +90,15 @@ export class InvoicesController {
   async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.invoicesService.sendEmail(orgId, id, session.user.id);
+  }
+
+  /** S-05.10 — one-click payment reminder for an overdue invoice; reuses sendEmail's own queue/worker with reminder-flavored copy, see InvoicesService.sendReminder's own doc comment. */
+  @Post(":id/send-reminder")
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async sendReminder(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.invoicesService.sendReminder(orgId, id, session.user.id);
   }
 
   /** S-05.8 — void with a required reason; posts a reversing journal entry. */

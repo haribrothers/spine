@@ -24,9 +24,23 @@ import type { Invoice } from "./types";
  * Row-level "more" menu, mirroring quotes/quote-row-actions.tsx exactly.
  * "Edit"/"Delete" only appear for a draft — an issued/void invoice is
  * immutable (InvoicesService.update/delete's own guards), this just avoids
- * offering a dead-end action.
+ * offering a dead-end action. "Send reminder" (S-05.10) only appears when
+ * `isOverdue` — this is the actual "one click" surface the story's own
+ * wording asks for, more so than the detail page's own button, since
+ * following up on several overdue invoices from the list is the whole
+ * point ("so following up isn't a chore").
  */
-export function InvoiceRowActions({ invoice, onDeleted }: { invoice: Invoice; onDeleted: (invoice: Invoice) => void }) {
+export function InvoiceRowActions({
+  invoice,
+  onDeleted,
+  onReminderSent,
+  onReminderFailed,
+}: {
+  invoice: Invoice;
+  onDeleted: (invoice: Invoice) => void;
+  onReminderSent?: (invoice: Invoice) => void;
+  onReminderFailed?: (invoice: Invoice, message: string) => void;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +55,18 @@ export function InvoiceRowActions({ invoice, onDeleted }: { invoice: Invoice; on
       onDeleted(invoice);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not delete invoice.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendReminder() {
+    setBusy(true);
+    try {
+      await apiClient.post(`/invoices/${invoice.id}/send-reminder`);
+      onReminderSent?.(invoice);
+    } catch (err) {
+      onReminderFailed?.(invoice, err instanceof Error ? err.message : "Could not send this reminder.");
     } finally {
       setBusy(false);
     }
@@ -61,6 +87,11 @@ export function InvoiceRowActions({ invoice, onDeleted }: { invoice: Invoice; on
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => router.push(`/invoices/${invoice.id}`)}>View</DropdownMenuItem>
+          {invoice.isOverdue && (
+            <DropdownMenuItem disabled={busy} onSelect={handleSendReminder}>
+              Send reminder
+            </DropdownMenuItem>
+          )}
           {invoice.status === "draft" && (
             <DropdownMenuItem onSelect={() => router.push(`/invoices/${invoice.id}/edit`)}>Edit</DropdownMenuItem>
           )}

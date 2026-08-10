@@ -16,6 +16,7 @@ export type AuditEntityType =
   | "quote_line"
   | "invoice"
   | "invoice_line"
+  | "credit_note"
   | "payment";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"

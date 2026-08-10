@@ -24,6 +24,8 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
+import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
 import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
@@ -63,6 +65,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const [voidError, setVoidError] = useState<string | null>(null);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [paymentsRefreshKey, setPaymentsRefreshKey] = useState(0);
+  const [creditNoteOpen, setCreditNoteOpen] = useState(false);
+  const [creditNotesRefreshKey, setCreditNotesRefreshKey] = useState(0);
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -116,6 +120,24 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not email this invoice.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSendReminder() {
+    if (!invoice) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`);
+      setInvoice(updated);
+      showToast(
+        "Reminder sent",
+        updated.contactName ? `A reminder for ${updated.number} has been queued to ${updated.contactName}.` : `A reminder for ${updated.number} has been queued.`,
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send this reminder.");
     } finally {
       setBusy(false);
     }
@@ -175,9 +197,12 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const canIssue = invoice.status === "draft";
   const canVoid = invoice.status === "issued";
   const canSendEmail = invoice.status === "issued";
+  const canSendReminder = invoice.isOverdue;
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
   const canRecordPayment = invoice.status === "issued" && balanceDue > 0n;
+  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n;
+  const creditedAmount = BigInt(invoice.creditedAmount);
 
   return (
     <div className="flex flex-col gap-6">
@@ -231,9 +256,19 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 Record payment
               </Button>
             )}
+            {canIssueCreditNote && (
+              <Button variant="secondary" onClick={() => setCreditNoteOpen(true)} disabled={busy}>
+                Issue credit note
+              </Button>
+            )}
             {canSendEmail && (
               <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email invoice"}
+              </Button>
+            )}
+            {canSendReminder && (
+              <Button variant="secondary" onClick={handleSendReminder} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Send reminder"}
               </Button>
             )}
             {canVoid && (
@@ -311,6 +346,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       </Card>
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
+      <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
@@ -325,12 +361,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           <TotalRow label="Total" value={invoice.totalAmount} currency={invoice.currency} emphasize />
         </div>
         {amountPaid > 0n && (
-          <>
-            <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: invoice.currency })}`} currency="" raw />
-            <div className="border-t border-border pt-2">
-              <TotalRow label="Balance due" value={invoice.balanceDue} currency={invoice.currency} emphasize critical />
-            </div>
-          </>
+          <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: invoice.currency })}`} currency="" raw />
+        )}
+        {creditedAmount > 0n && (
+          <TotalRow label="Credited" value={`-${toDecimalString({ amount: creditedAmount, currency: invoice.currency })}`} currency="" raw />
+        )}
+        {(amountPaid > 0n || creditedAmount > 0n) && (
+          <div className="border-t border-border pt-2">
+            <TotalRow label="Balance due" value={invoice.balanceDue} currency={invoice.currency} emphasize critical />
+          </div>
         )}
       </Card>
 
@@ -399,6 +438,19 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           load();
           setPaymentsRefreshKey((key) => key + 1);
           showToast("Payment recorded", "The invoice's balance has been updated.");
+        }}
+      />
+
+      <CreateCreditNoteDialog
+        open={creditNoteOpen}
+        onOpenChange={setCreditNoteOpen}
+        invoiceId={invoice.id}
+        currency={invoice.currency}
+        maxAmount={balanceDue}
+        onIssued={() => {
+          load();
+          setCreditNotesRefreshKey((key) => key + 1);
+          showToast("Credit note issued", "The invoice's balance has been updated.");
         }}
       />
 

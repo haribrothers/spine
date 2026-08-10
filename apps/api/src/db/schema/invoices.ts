@@ -104,6 +104,17 @@ export const invoices = pgTable(
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** Denormalized running total kept in sync by PaymentsService allocations — see this table's own doc comment. */
     amountPaid: bigint("amount_paid", { mode: "bigint" }).notNull().default(sql`0`),
+    /**
+     * S-05.6 — denormalized running total kept in sync by
+     * CreditNotesService.issue, same "fast single-row check" reasoning as
+     * `amountPaid`'s own comment. Kept as its own column rather than folded
+     * into `amountPaid` — a credit note reduces what's owed without any
+     * cash changing hands, which is a meaningfully different fact from "the
+     * customer paid this" for future reporting (e.g. "total credited" as
+     * its own metric), even though both currently feed the same
+     * `balanceDue = totalAmount - amountPaid - creditedAmount` formula.
+     */
+    creditedAmount: bigint("credited_amount", { mode: "bigint" }).notNull().default(sql`0`),
     notes: text("notes"),
     termsAndConditions: text("terms_and_conditions"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),

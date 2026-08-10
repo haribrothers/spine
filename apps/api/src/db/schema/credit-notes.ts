@@ -1,0 +1,113 @@
+import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { organization, user } from "./auth";
+import { contacts } from "./contacts";
+import { catalogItems } from "./catalog";
+import { invoices } from "./invoices";
+import { journalEntries } from "./ledger";
+
+/**
+ * PRD F5 (S-05.6) — "issue a credit note against an invoice for a return or
+ * correction, so I never edit an issued document." Structurally the
+ * simplest of the three document types (quotes/invoices/credit notes) —
+ * `draft -> issued` only, no void (there is no PRD story asking to undo a
+ * credit note; a mistaken one is simply left as a small permanent
+ * correction, matching CLAUDE.md's "nothing financial is ever deleted"
+ * rule literally rather than adding a reversal-of-a-reversal concept
+ * nobody asked for).
+ */
+export const creditNoteStatusEnum = pgEnum("credit_note_status", ["draft", "issued"]);
+
+/** Same three kinds as invoiceLineTypeEnum/quoteLineTypeEnum — see invoices.ts's own comment. */
+export const creditNoteLineTypeEnum = pgEnum("credit_note_line_type", ["item", "heading", "text"]);
+
+/**
+ * A credit note (PRD F5/§7). Always tied to one specific `invoiceId` — the
+ * PRD's own wording is "against an invoice," not a freestanding document,
+ * so unlike quotes/invoices there is no contact-only path; `contactId` is
+ * still stored directly (denormalized from the invoice) purely so listing/
+ * filtering by contact doesn't need a join, matching payments.ts's own
+ * contactId-on-every-row convention.
+ *
+ * `number` is nullable, populated only on issue (NumberingService,
+ * "credit_note" document type) — same gapless-only-on-issue rule as every
+ * other document type per CLAUDE.md.
+ *
+ * `subtotalAmount`/`taxAmount`/`totalAmount` are always server-computed
+ * from `credit_note_lines`, never trusted from the client — identical
+ * convention to invoices.ts/quotes.ts.
+ */
+export const creditNotes = pgTable(
+  "credit_notes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "restrict" }),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "restrict" }),
+    /** Gapless, permanent, allocated only on issue — see NumberingService. Null on every draft. */
+    number: text("number"),
+    status: creditNoteStatusEnum("status").notNull().default("draft"),
+    reason: text("reason"),
+    date: date("date", { mode: "date" }),
+    currency: text("currency").notNull(),
+    subtotalAmount: bigint("subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    taxAmount: bigint("tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** Set once, in the same transaction as the status flip to `issued` — never touched again (an issued credit note is immutable, same as an issued invoice). */
+    issuedAt: timestamp("issued_at", { withTimezone: true }),
+    /** The journal_entries row this credit note's issuance posted (§7.2 "Credit note issued": debit Revenue + Tax Payable, credit AR). Nullable: null on every draft. */
+    journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
+    isDemo: boolean("is_demo").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("credit_notes_org_idx").on(table.orgId),
+    index("credit_notes_org_status_idx").on(table.orgId, table.status),
+    index("credit_notes_invoice_idx").on(table.invoiceId),
+    index("credit_notes_contact_idx").on(table.contactId),
+    index("credit_notes_org_number_idx").on(table.orgId, table.number),
+  ],
+);
+
+/**
+ * A single credit note line — structurally identical to invoice_lines/
+ * quote_lines (see invoices.ts's own doc comment for the full reasoning on
+ * snapshotting, cascade-delete + full-replace, and why quantity is `real`
+ * not bigint) — duplicated rather than shared for the same reason those two
+ * are duplicated from each other.
+ */
+export const creditNoteLines = pgTable(
+  "credit_note_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    creditNoteId: uuid("credit_note_id")
+      .notNull()
+      .references(() => creditNotes.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    type: creditNoteLineTypeEnum("type").notNull().default("item"),
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    quantity: real("quantity").notNull().default(0),
+    unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    unitPriceCurrency: text("unit_price_currency").notNull(),
+    taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("credit_note_lines_credit_note_idx").on(table.creditNoteId),
+    index("credit_note_lines_catalog_item_idx").on(table.catalogItemId),
+  ],
+);

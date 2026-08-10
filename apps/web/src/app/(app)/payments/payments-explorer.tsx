@@ -142,6 +142,7 @@ export function PaymentsExplorer() {
         }}
         paymentId={selectedPaymentId}
         onDeleted={handleDeleted}
+        onChanged={loadPayments}
       />
       {toast}
     </div>

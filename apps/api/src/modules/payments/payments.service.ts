@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import type { createPaymentSchema } from "@spine/shared";
+import type { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
 import { toDecimalString } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
@@ -12,8 +12,10 @@ import { LedgerService } from "../ledger/ledger.service";
 import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
+import { PaymentPdfService } from "../pdf/payment-pdf.service";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type ApplyPaymentCreditInput = z.infer<typeof applyPaymentCreditSchema>;
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -24,10 +26,11 @@ function escapeHtml(value: string): string {
  * allocate it across one or more invoices in the same call (S-06.1, S-06.2,
  * S-06.5), or leave it fully/partially unallocated as customer credit
  * (S-06.4). S-06.3 (oldest-first suggestion) is `suggestAllocation` below.
- * Receipt PDF (S-06.6) and the receivables/AR-aging view (S-06.7) are a
- * later stage (see CHANGELOG). `create()` also sends a payment-confirmation
- * email to the paying contact and an in-app + email notification to the
- * org, see its own doc comment.
+ * S-06.6 (receipt PDF, `PaymentPdfService`) is rendered on demand via
+ * `GET /payments/:id/pdf` and can be (re-)emailed via `sendReceiptEmail`.
+ * The receivables/AR-aging view (S-06.7) is a later stage (see CHANGELOG).
+ * `create()` also sends a payment-confirmation email to the paying contact
+ * and an in-app + email notification to the org, see its own doc comment.
  */
 @Injectable()
 export class PaymentsService {
@@ -41,6 +44,7 @@ export class PaymentsService {
     private readonly email: EmailService,
     private readonly notifications: NotificationsService,
     private readonly settings: SettingsService,
+    private readonly pdf: PaymentPdfService,
   ) {}
 
   async list(orgId: string, options: { contactId?: string }) {
@@ -302,6 +306,102 @@ export class PaymentsService {
   }
 
   /**
+   * S-05.5's other half — applies an existing payment's sitting
+   * unallocated credit (S-06.4, sitting in `Customer Advances`, account
+   * 2200) against one or more invoices that weren't available (or weren't
+   * chosen) when the payment was first recorded. Posts §7.2's "Advance
+   * applied to invoice" row — debit Customer Advances, credit Accounts
+   * Receivable — a genuinely different journal entry from `create()`'s own
+   * "Payment received"/"Advance received" postings, since no new cash
+   * changes hands here; money that already sits in Customer Advances is
+   * simply being reclassified against a specific invoice's balance.
+   *
+   * Same validation shape as `create()`'s own allocation loop (invoice
+   * must be `issued`, allocation can't exceed the invoice's remaining
+   * balance) plus one more: the total requested can't exceed the
+   * payment's own `unallocatedAmount` — there's no cash to draw beyond
+   * what's actually sitting as credit.
+   */
+  async applyCredit(orgId: string, actorUserId: string, paymentId: string, input: ApplyPaymentCreditInput) {
+    const [payment] = await this.db.select().from(payments).where(and(eq(payments.orgId, orgId), eq(payments.id, paymentId)));
+    if (!payment) {
+      throw new NotFoundException("Payment not found");
+    }
+
+    const unallocated = payment.amount - payment.allocatedAmount;
+    const totalRequested = input.allocations.reduce((sum, a) => sum + a.amount, 0n);
+    if (totalRequested > unallocated) {
+      throw new BadRequestException(`Requested ${totalRequested} exceeds this payment's unallocated credit of ${unallocated}`);
+    }
+
+    const invoiceIds = input.allocations.map((a) => a.invoiceId);
+    const invoiceRows = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.id, invoiceIds)));
+    const invoiceById = new Map(invoiceRows.map((row) => [row.id, row]));
+
+    for (const allocation of input.allocations) {
+      const invoice = invoiceById.get(allocation.invoiceId);
+      if (!invoice) {
+        throw new BadRequestException(`Invoice ${allocation.invoiceId} not found`);
+      }
+      if (invoice.status !== "issued") {
+        throw new BadRequestException(`Invoice ${invoice.number ?? invoice.id} is not issued and cannot receive a payment`);
+      }
+      const balance = invoice.totalAmount - invoice.amountPaid;
+      if (allocation.amount > balance) {
+        throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
+      }
+    }
+
+    await this.db.transaction(async (tx) => {
+      for (const allocation of input.allocations) {
+        await tx.insert(paymentAllocations).values({
+          orgId,
+          paymentId: payment.id,
+          invoiceId: allocation.invoiceId,
+          amount: allocation.amount,
+        });
+        const invoice = invoiceById.get(allocation.invoiceId)!;
+        await tx
+          .update(invoices)
+          .set({ amountPaid: invoice.amountPaid + allocation.amount, updatedAt: new Date() })
+          .where(eq(invoices.id, allocation.invoiceId));
+      }
+
+      await tx
+        .update(payments)
+        .set({ allocatedAmount: payment.allocatedAmount + totalRequested, updatedAt: new Date() })
+        .where(eq(payments.id, payment.id));
+
+      const advancesAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
+      const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
+
+      await this.ledger.postEntry(tx, {
+        orgId,
+        date: new Date(),
+        narration: `Credit from payment ${payment.number ?? payment.id} applied to invoice(s)`,
+        sourceType: "payment_credit_applied",
+        sourceId: payment.id,
+        lines: [
+          { accountId: advancesAccountId, debit: totalRequested, credit: 0n, contactId: payment.contactId },
+          { accountId: arAccountId, debit: 0n, credit: totalRequested, contactId: payment.contactId },
+        ],
+      });
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "updated",
+        entityType: "payment",
+        entityId: payment.id,
+        contactId: payment.contactId,
+        changes: [{ field: "allocatedAmount", from: payment.allocatedAmount.toString(), to: (payment.allocatedAmount + totalRequested).toString() }],
+      });
+    });
+
+    return this.getOne(orgId, paymentId);
+  }
+
+  /**
    * Fires after `create()`'s transaction has committed — the payment and
    * its ledger posting are already durable, so neither delivery channel
    * failing may ever undo or block what already happened (same posture as
@@ -310,11 +410,12 @@ export class PaymentsService {
    * Never throws.
    *
    * Two independent channels, matching what was actually asked for:
-   *  1. A confirmation email direct to the paying contact (S-06.6's own
-   *     framing — "so the customer has proof" — read here as a plain-text/
-   *     HTML summary rather than a PDF attachment; `PaymentPdfService`
-   *     doesn't exist yet, that's the rest of S-06.6, tracked separately
-   *     in CHANGELOG). Skipped silently (not an error) if the contact has
+   *  1. A confirmation email direct to the paying contact — a plain-text/
+   *     HTML summary, deliberately without the receipt PDF attached (the
+   *     PDF is a render-on-demand action via `sendReceiptEmail`/
+   *     `GET :id/pdf` instead, so a slow PDF render never blocks or risks
+   *     failing the payment-creation transaction's own post-commit
+   *     confirmation). Skipped silently (not an error) if the contact has
    *     no email on file or SMTP isn't configured — graceful degradation,
    *     not a hard requirement to record the payment.
    *  2. An org notification via the existing, already-generic
@@ -384,6 +485,59 @@ export class PaymentsService {
         link: `/payments/${paymentId}`,
       },
     });
+  }
+
+  /**
+   * S-06.6 — sends (or re-sends) the receipt PDF to the paying contact on
+   * demand, as a separate action from `create()`'s own automatic
+   * plain-text confirmation (which fires once, at creation time, and never
+   * carries an attachment). Synchronous rather than queued — unlike
+   * InvoiceEmailWorker, a receipt is a short, low-volume, user-initiated
+   * action (a single "resend receipt" click), not something issued in bulk
+   * or needing pg-boss's retry/backoff; mirrors how `sendConfirmation`
+   * itself already sends synchronously inline in `create()`.
+   */
+  async sendReceiptEmail(orgId: string, paymentId: string): Promise<{ sent: boolean }> {
+    const [row] = await this.db
+      .select({ payment: payments, contactName: contacts.name, contactEmail: contacts.email })
+      .from(payments)
+      .leftJoin(contacts, eq(payments.contactId, contacts.id))
+      .where(and(eq(payments.orgId, orgId), eq(payments.id, paymentId)));
+    if (!row) {
+      throw new NotFoundException("Payment not found");
+    }
+    if (!row.contactEmail) {
+      throw new BadRequestException("This contact has no email address on file — cannot send a receipt");
+    }
+    if (!this.email.isConfigured()) {
+      throw new BadRequestException("SMTP is not configured — cannot send a receipt");
+    }
+
+    const { buffer, filename } = await this.pdf.render(orgId, paymentId);
+    const business = await this.settings.get<{ name?: string }>(orgId, "business_profile");
+    const businessName = business?.name || "Spine";
+    const amountText = `${toDecimalString({ amount: row.payment.amount, currency: row.payment.currency })} ${row.payment.currency}`;
+    const receiptNumber = row.payment.number ?? "your receipt";
+
+    await this.email.send({
+      to: row.contactEmail,
+      subject: `${businessName} sent you a receipt (${receiptNumber})`,
+      text: [
+        `Hi ${row.contactName ?? "there"},`,
+        "",
+        `Attached is your receipt (${receiptNumber}) for a payment of ${amountText}.`,
+        "",
+        "This is an automated email — please reply directly with any questions.",
+      ].join("\n"),
+      html: [
+        `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
+        `<p>Attached is your receipt (${escapeHtml(receiptNumber)}) for a payment of ${escapeHtml(amountText)}.</p>`,
+        `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly with any questions.</p>`,
+      ].join("\n"),
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+    });
+
+    return { sent: true };
   }
 
   /**

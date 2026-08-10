@@ -112,7 +112,7 @@ function formatDate(value: Date | string | null): string {
 export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri }: InvoicePdfData) {
   const currency = invoice.currency;
   const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
-  const balanceDue = invoice.totalAmount - invoice.amountPaid;
+  const balanceDue = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
@@ -205,6 +205,12 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Paid</Text>
               <Text style={styles.totalsValue}>-{fmt(invoice.amountPaid)}</Text>
+            </View>
+          )}
+          {invoice.creditedAmount > 0n && (
+            <View style={styles.totalsRow}>
+              <Text style={styles.totalsLabel}>Credited</Text>
+              <Text style={styles.totalsValue}>-{fmt(invoice.creditedAmount)}</Text>
             </View>
           )}
           {balanceDue > 0n && invoice.status !== "draft" && (
