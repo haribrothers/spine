@@ -718,17 +718,26 @@ revenue.
    matches Receivables' own Total outstanding figure (§9).
 2. **Dashboard v2 Stage 2 — chart widgets (S-09.11)**: below the KPI row,
    confirm 4 chart cards render with real data:
-   - **Revenue trend** — a bar chart, one bar per month. Click the 3M/6M/
-     12M toggle and confirm the chart re-fetches and re-renders with the
-     right number of bars each time. Hover a bar and confirm the tooltip
-     shows the exact currency amount for that month.
-   - **Receivables aging** — a donut matching Receivables' own bucket
-     totals (§9) exactly; colored current/due-soon/overdue, not the app's
-     accent color. If nothing is outstanding, confirm it shows "Nothing
-     outstanding" instead of an empty/broken chart.
-   - **Pipeline by stage** — a horizontal bar per lead stage (New/
-     Qualified/Proposal/Won/Lost), bar length by total deal value. Click
-     "View board" and confirm it lands on `/leads`.
+   - **Revenue trend** (uses `@spine/ui`'s `TrendBarChart`) — a bar chart,
+     one bar per month, each non-zero bar showing its exact currency
+     amount as a label directly above it (not just on hover — the label is
+     always visible). A month with zero revenue shows no label rather than
+     a fake "$0.00". Click the 3M/6M/12M toggle and confirm the chart
+     re-fetches and re-renders with the right number of bars each time.
+     Hover a bar and confirm the tooltip also shows the exact amount.
+   - **Receivables aging** (uses `@spine/ui`'s `DonutChart`) — a donut with
+     a **legend beside it** (not just hover) listing every bucket's label
+     and amount, plus a **center total**. Cross-check the legend's figures
+     match Receivables' own bucket totals (§9) exactly. Colored current/
+     due-soon/overdue, not the app's accent color. If nothing is
+     outstanding, confirm it shows "Nothing outstanding" instead of an
+     empty/broken ring.
+   - **Pipeline by stage** (uses `@spine/ui`'s `TrendBarChart`, horizontal) —
+     a horizontal bar per lead stage (New/Qualified/Proposal/Won/Lost),
+     bar length by total deal value, each bar showing its value + lead
+     count as a label at the end (a stage with 0 leads shows a quiet "—"
+     rather than an invisible sliver with no number). Click "View board"
+     and confirm it lands on `/leads`.
    - **Job profitability** — a "Top performers"/"Needs attention" ranked
      list (top 3 / bottom 3 by margin), each row with a margin bar colored
      green (positive) or red (negative). Click "View all" and confirm it

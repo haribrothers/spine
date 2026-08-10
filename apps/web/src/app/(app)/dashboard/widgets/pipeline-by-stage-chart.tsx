@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip, ChartTooltipContent, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, Spinner, TrendBarChart } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { apiClient } from "../../../../lib/api-client";
 
 interface StageSummaryRow {
@@ -25,8 +24,8 @@ const STAGE_LABELS: Record<StageSummaryRow["stage"], string> = {
  * S-09.11 (dashboard v2) — pipeline by stage. Bar length is deal value
  * (not lead count) by default, since "how much is in proposal" matters
  * more for forecasting than "how many" — matches the requirements draft's
- * own reasoning. Categorical palette (primary), not the financial-status
- * palette — a lead stage isn't a paid/overdue semantic.
+ * own reasoning. Uses `@spine/ui`'s `TrendBarChart` in horizontal
+ * orientation, same component the revenue trend widget uses.
  */
 export function PipelineByStageChart() {
   const [currency, setCurrency] = useState("USD");
@@ -50,7 +49,15 @@ export function PipelineByStageChart() {
     return null;
   }
 
-  const chartData = (rows ?? []).map((r) => ({ stage: STAGE_LABELS[r.stage], value: Number(BigInt(r.totalValue)) / 100, count: r.count }));
+  const chartData = (rows ?? []).map((r) => {
+    const amount = r.totalValue === "0" ? 0n : BigInt(r.totalValue);
+    return {
+      key: r.stage,
+      label: STAGE_LABELS[r.stage],
+      value: Number(amount) / 100,
+      formattedValue: `${toDecimalString({ amount, currency })} ${currency} · ${r.count}`,
+    };
+  });
 
   return (
     <Card>
@@ -68,22 +75,7 @@ export function PipelineByStageChart() {
             <Spinner />
           </div>
         ) : (
-          <ChartContainer config={{ value: { label: "Value", color: "var(--color-primary)" } }} className="h-40">
-            <BarChart data={chartData} layout="vertical">
-              <CartesianGrid horizontal={false} />
-              <XAxis type="number" hide />
-              <YAxis dataKey="stage" type="category" tickLine={false} axisLine={false} width={70} />
-              <ChartTooltip
-                content={(props) => (
-                  <ChartTooltipContent
-                    {...props}
-                    payload={props.payload?.map((p) => ({ ...p, value: `${toDecimalString({ amount: BigInt(Math.round(Number(p.value) * 100)), currency })} ${currency}` }))}
-                  />
-                )}
-              />
-              <Bar dataKey="value" fill="var(--color-primary)" radius={4} />
-            </BarChart>
-          </ChartContainer>
+          <TrendBarChart data={chartData} orientation="horizontal" emptyState="No leads yet." />
         )}
       </CardContent>
     </Card>

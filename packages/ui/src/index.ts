@@ -13,6 +13,8 @@ export * from "./components/calendar-mini";
 export * from "./components/card";
 export * from "./components/carousel";
 export * from "./components/chart";
+export * from "./components/donut-chart";
+export * from "./components/trend-bar-chart";
 export * from "./components/checkbox";
 export * from "./components/collapsible";
 export * from "./components/combobox";

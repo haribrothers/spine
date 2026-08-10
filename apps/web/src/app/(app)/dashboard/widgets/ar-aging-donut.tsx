@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, ChartContainer, ChartTooltip, ChartTooltipContent, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, DonutChart, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
-import { Cell, Pie, PieChart } from "recharts";
 import { apiClient } from "../../../../lib/api-client";
 
 type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
@@ -31,7 +30,13 @@ const BUCKET_COLORS: Record<AgingBucket, string> = {
   "90+": "var(--color-overdue)",
 };
 
-/** S-09.11 (dashboard v2) — AR aging as a donut, reusing GET /reports/receivables' already-bucketed totals (no new backend, no client-side re-bucketing needed). */
+/**
+ * S-09.11 (dashboard v2) — AR aging as a donut, reusing
+ * GET /reports/receivables' already-bucketed totals (no new backend).
+ * Uses `@spine/ui`'s `DonutChart` (added alongside this widget), which
+ * gives it a real legend + center total — a color-only donut with no key
+ * isn't legible without hovering every segment.
+ */
 export function ArAgingDonut() {
   const [currency, setCurrency] = useState("USD");
   const [report, setReport] = useState<ReceivablesReport | null>(null);
@@ -54,7 +59,14 @@ export function ArAgingDonut() {
     return null;
   }
 
-  const chartData = BUCKET_ORDER.map((bucket) => ({ bucket, label: BUCKET_LABELS[bucket], amount: report ? Number(BigInt(report.buckets[bucket])) / 100 : 0 })).filter((d) => d.amount > 0);
+  const money = (amount: string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const segments = BUCKET_ORDER.map((bucket) => ({
+    key: bucket,
+    label: BUCKET_LABELS[bucket],
+    value: report ? Number(BigInt(report.buckets[bucket])) / 100 : 0,
+    color: BUCKET_COLORS[bucket],
+    formattedValue: report ? money(report.buckets[bucket]) : "",
+  }));
 
   return (
     <Card>
@@ -71,26 +83,8 @@ export function ArAgingDonut() {
           <div className="flex h-40 items-center justify-center">
             <Spinner />
           </div>
-        ) : chartData.length === 0 ? (
-          <p className="py-8 text-center text-[13px] text-on-surface-muted">Nothing outstanding.</p>
         ) : (
-          <ChartContainer
-            config={Object.fromEntries(BUCKET_ORDER.map((b) => [b, { label: BUCKET_LABELS[b], color: BUCKET_COLORS[b] }]))}
-            className="h-40"
-          >
-            <PieChart>
-              <ChartTooltip
-                content={(props) => (
-                  <ChartTooltipContent {...props} payload={props.payload?.map((p) => ({ ...p, value: `${toDecimalString({ amount: BigInt(Math.round(Number(p.value) * 100)), currency })} ${currency}` }))} />
-                )}
-              />
-              <Pie data={chartData} dataKey="amount" nameKey="bucket" innerRadius={40} outerRadius={64} paddingAngle={2}>
-                {chartData.map((d) => (
-                  <Cell key={d.bucket} fill={BUCKET_COLORS[d.bucket]} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ChartContainer>
+          <DonutChart segments={segments} centerLabel={money(report.totalOutstanding)} emptyState="Nothing outstanding." />
         )}
       </CardContent>
     </Card>
