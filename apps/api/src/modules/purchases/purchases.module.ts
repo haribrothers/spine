@@ -3,6 +3,7 @@ import { AuditModule } from "../audit/audit.module";
 import { NumberingModule } from "../numbering/numbering.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
+import { NotificationsModule } from "../notifications/notifications.module";
 import { VendorBillsController } from "./vendor-bills.controller";
 import { VendorBillsService } from "./vendor-bills.service";
 import { ExpenseCategoriesController } from "./expense-categories.controller";
@@ -23,10 +24,13 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  * `LedgerModule` for the shared posting primitive, `TaxModule` for
  * `TaxResolverService` (vendor bill lines reuse FEAT-08's tax rate/group
  * resolution exactly like invoice/quote lines), `AuditModule` for
- * audit-log writes on every mutation.
+ * audit-log writes on every mutation, `NotificationsModule` (added for
+ * S-09.14/dashboard v2) so `ExpensesService.approve` can fire an
+ * `expense_approved` notification, same `.notify()` pattern
+ * `PaymentsService`/`PublicQuotesService` already use.
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule],
+  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule],
   controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController],
   providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],

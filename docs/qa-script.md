@@ -637,6 +637,13 @@ than building every case from scratch.
    trigger another event — confirm a native OS/browser push notification
    appears (this only works over a real trigger, not a manual test
    button, so pick a real action like recording a payment).
+4. **Dashboard v2 additions (S-09.14)**: approve an expense, complete a
+   milestone, or mark a job completed — confirm each one ALSO shows up in
+   the notification bell (not just the dashboard's Recent activity card,
+   §15 step 7) — these 3 new event types go through the exact same
+   `.notify()` trigger point as every other notification, so they get the
+   bell/drawer, email, and (if opted in) browser push automatically, with
+   no separate wiring.
 
 ---
 
@@ -772,56 +779,74 @@ revenue.
 6. **Field's dashboard is a genuinely different, shorter layout — not the
    Owner page with cards hidden.** Log in as a Field user (§13's setup).
    Confirm the dashboard shows ONLY: My overdue follow-ups, Upcoming
-   meetings, and Job milestones due — no KPI row, no charts, no Invoices
-   due. Confirm Upcoming meetings shows only Field's own meetings even if
-   the org setting (step 5) is set to "Every org meeting" — this is a hard
-   rule, not a preference, enforced server-side.
-7. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
+   meetings, Job milestones due, and Recent activity — no KPI row, no
+   charts, no Invoices due. Confirm Upcoming meetings shows only Field's
+   own meetings even if the org setting (step 5) is set to "Every org
+   meeting" — this is a hard rule, not a preference, enforced server-side.
+7. **Recent activity feed (S-09.14)**: on the Owner/Staff dashboard,
+   confirm a full-width "Recent activity" card below the other widgets,
+   listing up to 6 recent events newest-first (quote viewed/accepted,
+   payment received, expense approved, job completed, milestone
+   completed), each with a relative time ("2h ago", "3d ago") and a link
+   to its source document. Approve an expense, then complete a milestone
+   or mark a job completed — reload the dashboard and confirm both show up
+   at the top of the feed within a few seconds, and that each recipient
+   (Owner/Staff) also gets a real email for it (check MailDev at
+   http://localhost:1080) — same delivery pattern as every other
+   `.notify()`-triggered event in this app (S-10.11/S-03.7), not a
+   feed-only side channel.
+8. **Field's activity feed excludes financial events.** As the Field user
+   from step 6, confirm their Recent activity card never shows a "payment
+   received" or "expense approved" entry, even if those events happened
+   recently in the org — job/milestone-completion and quote-view/accept
+   entries are still visible to Field.
+9. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
    Job Profitability.
-8. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
-   this calendar year). Confirm Income/Expense sections list real
-   chart-of-accounts lines with amounts, and Net profit = Total income −
-   Total expenses.
-9. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
-   drill-down dialog opens listing the journal entries behind that
-   figure, each linking to its source document (invoice/payment/vendor
-   bill/expense) — S-09.4's "click any figure, see the documents behind
-   it." Click through one link and confirm it lands on the right
-   document.
-10. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
+10. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
+    this calendar year). Confirm Income/Expense sections list real
+    chart-of-accounts lines with amounts, and Net profit = Total income −
+    Total expenses.
+11. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
+    drill-down dialog opens listing the journal entries behind that
+    figure, each linking to its source document (invoice/payment/vendor
+    bill/expense) — S-09.4's "click any figure, see the documents behind
+    it." Click through one link and confirm it lands on the right
+    document.
+12. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
     Section/Code/Account/Amount columns matching the on-screen figures.
-11. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
+13. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
     Liabilities, and Equity sections, and that **Total assets = Total
     liabilities + Total equity** exactly (the balance sheet must always
     balance). Confirm Equity includes a computed "Retained Earnings
     (current period)" line reflecting net profit to date.
-12. **Job Profitability tab**: confirm every job appears with contract
+14. **Job Profitability tab**: confirm every job appears with contract
     value, revenue, cost, margin, and margin %. Confirm the "Marina office
     fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
     vendor bill + expense) — every other demo job showing `cost: 0` (no
     vendor bills/expenses tagged to them) is correct, not a bug. Click a
     job name — confirm it navigates to that job's detail page.
-13. As a Staff user with `dashboard.view` granted but not Owner: confirm
+15. As a Staff user with `dashboard.view` granted but not Owner: confirm
     the dashboard KPI row, the aging/pipeline/job-profitability chart
-    widgets, the non-financial widgets (step 4), and the Job Profitability
-    report tab all load normally, but the **Revenue trend chart** widget
-    and Profit & Loss / Balance Sheet / drill-down on the Reports page all
-    render nothing / show a clear "Owner-only report" message
-    (S-09.2/S-09.3/S-09.11's revenue trend stay Owner-only per CLAUDE.md's
-    permission model; the capability's own description already says
-    "P&L/balance sheet stay Owner-only regardless of this grant").
-14. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
+    widgets, the non-financial widgets (step 4), Recent activity (step 7),
+    and the Job Profitability report tab all load normally, but the
+    **Revenue trend chart** widget and Profit & Loss / Balance Sheet /
+    drill-down on the Reports page all render nothing / show a clear
+    "Owner-only report" message (S-09.2/S-09.3/S-09.11's revenue trend
+    stay Owner-only per CLAUDE.md's permission model; the capability's own
+    description already says "P&L/balance sheet stay Owner-only regardless
+    of this grant").
+16. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
     scroll to **Period close**. Add a period covering today, click
     **Close**. Try to issue a new invoice or record/approve an
     expense/vendor bill dated today — confirm it's rejected with "falls
     within a closed fiscal period." Click **Reopen** and confirm the same
     action now succeeds.
-15. **Custom account (S-09.9)**: in the same Chart of accounts pane,
+17. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
     immediately, and that a new Settings → Purchases expense category can
     select it as its posting account.
-16. **Regression check**: after adding a custom account or closing/
+18. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
     the existing system accounts (AR, AP, tax, retention) are still
     present and still read-only.

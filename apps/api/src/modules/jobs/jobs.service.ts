@@ -7,6 +7,7 @@ import type { Database } from "../../db/client";
 import { jobs, contacts, quotes, jobPhotos, jobNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
@@ -28,6 +29,7 @@ export class JobsService {
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly conversionGuard: QuoteConversionGuardService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -180,6 +182,19 @@ export class JobsService {
 
       return row;
     });
+
+    if (input.status === "completed" && existing.status !== "completed") {
+      void this.notifications.notify(orgId, {
+        subject: `Job completed — ${updated!.name}`,
+        text: `Job "${updated!.name}" was marked completed.`,
+        recipientRoles: ["owner", "staff"],
+        inApp: {
+          type: "job_completed",
+          message: `Job "${updated!.name}" marked completed`,
+          link: `/jobs/${updated!.id}`,
+        },
+      });
+    }
 
     return this.getOne(orgId, updated!.id);
   }

@@ -8,6 +8,7 @@ import { OverdueFollowups } from "./widgets/overdue-followups";
 import { UpcomingMeetings } from "./widgets/upcoming-meetings";
 import { InvoicesDue } from "./widgets/invoices-due";
 import { MilestonesDue } from "./widgets/milestones-due";
+import { ActivityFeed } from "./widgets/activity-feed";
 
 /**
  * S-09.12 (dashboard v2) — the real role-adaptive dashboard composition,
@@ -37,6 +38,7 @@ export function DashboardShell({ role }: { role: string | null }) {
           <UpcomingMeetings />
         </div>
         <MilestonesDue />
+        <ActivityFeed />
       </div>
     );
   }
@@ -58,6 +60,7 @@ export function DashboardShell({ role }: { role: string | null }) {
         <InvoicesDue />
         <MilestonesDue />
       </div>
+      <ActivityFeed />
       <SetupChecklist />
     </div>
   );

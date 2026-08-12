@@ -8,6 +8,7 @@ import type { Database, Transaction } from "../../db/client";
 import { jobs, milestones, jobPhotos } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 export type SetMilestonesInput = z.infer<typeof setMilestonesSchema>;
 export type CompleteMilestoneInput = z.infer<typeof completeMilestoneSchema>;
@@ -47,6 +48,7 @@ export class MilestonesService {
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
     private readonly invoices: InvoicesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async list(orgId: string, jobId: string) {
@@ -235,6 +237,17 @@ export class MilestonesService {
         contactId: job.contactId,
         changes: [{ field: "status", from: "pending", to: "completed" }],
       });
+    });
+
+    void this.notifications.notify(orgId, {
+      subject: `Milestone completed — ${milestone.name}`,
+      text: `Milestone "${milestone.name}" on job "${job.name}" was marked completed.`,
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "milestone_completed",
+        message: `Milestone "${milestone.name}" completed on ${job.name}`,
+        link: `/jobs/${jobId}`,
+      },
     });
 
     return this.getOne(orgId, jobId, milestoneId);
