@@ -104,7 +104,7 @@ export default function ReorderableListPage() {
         <FeatureList
           items={[
             "Container layout is entirely the caller's — a grid of cards (dashboard widgets) or a plain vertical list, both shown on this page.",
-            "Drop position is computed from pointer position vs. the target item's own midpoint.",
+            "Drop position adapts to the container's own layout — a single-column list decides before/after by vertical (Y) midpoint; a multi-column grid decides by horizontal (X) midpoint instead, since a grid's array neighbors are its left/right siblings, not the card above/below. Detected automatically per drag, no layout prop to set.",
             "DragHandle and HideToggle are small shared visual primitives — use them, or roll your own controls entirely.",
             "useReorderableItemDragState(id) reads one item's own isDragging/isOver so a child can render its own drag feedback instead of relying on ReorderableItem's default outline.",
             "onReorder only fires when the order actually changed, never for a drag that ends where it started.",

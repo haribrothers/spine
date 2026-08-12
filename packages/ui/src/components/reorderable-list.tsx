@@ -78,14 +78,27 @@ export interface ReorderableItemProps extends Omit<React.HTMLAttributes<HTMLDivE
  * Drag/drop wiring for one item inside a `ReorderableList` — carries no
  * opinion about its own visual layout (no padding, no border, no flex
  * row) so it can wrap arbitrary content, e.g. a full dashboard widget
- * card, and still have that content's own styling read correctly. Drop
- * position is computed from pointer Y vs. this element's own vertical
- * midpoint — the same "compare against a midpoint" technique
- * `KanbanColumn` already uses for its own drop-zone detection.
+ * card, and still have that content's own styling read correctly.
  *
- * Use `useReorderableItemDragState(id)` inside a child to read this
- * item's own `isDragging`/`isOver` for visual feedback (a ghost/drop-line
- * treatment), rather than this wrapper imposing one fixed look.
+ * Drop position ("does the dragged item land before or after THIS item
+ * in array order") is decided per-axis of the container, not a single
+ * Y-midpoint check — a Y-only check is correct for a single-column list
+ * (`KanbanColumn`'s own drop-zone technique, which inspired this) but
+ * breaks once a grid has more than one column: array order and 2D visual
+ * position diverge, so a Y-only check can't tell "drop to the right of
+ * this card, same row" from "drop below this card, next row," and gets
+ * diagonal drags wrong entirely (Y alone says nothing about column).
+ *
+ * The actual rule, read like text (left-to-right, top-to-bottom): a grid
+ * with more than one column decides purely on X — the pointer's
+ * horizontal position within THIS card's own bounds, left half = before,
+ * right half = after — since a card's array neighbors in a wrapping grid
+ * are its left/right siblings, not (usually) the card directly above or
+ * below it. A single-column list has only one column, so every card
+ * shares the same X and this collapses to the previous Y-only behavior
+ * automatically. Column count is inferred once per drag from the
+ * container's own children positions (do any two cards share a Y
+ * coordinate?) rather than requiring the caller to declare it.
  */
 export function ReorderableItem({ id, children, className, ...props }: ReorderableItemProps) {
   const ctx = useReorderableListContext("ReorderableItem");
@@ -109,7 +122,13 @@ export function ReorderableItem({ id, children, className, ...props }: Reorderab
         e.preventDefault();
         ctx.setOverId(id);
         const rect = rowRef.current?.getBoundingClientRect();
-        dropBeforeRef.current = rect ? e.clientY < rect.top + rect.height / 2 : true;
+        if (!rect) {
+          dropBeforeRef.current = true;
+          return;
+        }
+        const container = rowRef.current?.parentElement;
+        const isMultiColumn = container ? hasMultipleColumns(container) : false;
+        dropBeforeRef.current = isMultiColumn ? e.clientX < rect.left + rect.width / 2 : e.clientY < rect.top + rect.height / 2;
       }}
       onDragLeave={() => {
         if (ctx.overId === id) ctx.setOverId(null);
@@ -128,6 +147,18 @@ export function ReorderableItem({ id, children, className, ...props }: Reorderab
       {children}
     </div>
   );
+}
+
+/** True if any two direct children of `container` sit at the same top offset — i.e. the layout has more than one column (a grid), not a single stacked column. Checked fresh per dragover rather than cached, since it's a cheap DOM read and the caller's layout can change (e.g. a responsive breakpoint collapsing a grid to one column). */
+function hasMultipleColumns(container: Element): boolean {
+  const children = Array.from(container.children);
+  const tops = new Set<number>();
+  for (const child of children) {
+    const top = Math.round(child.getBoundingClientRect().top);
+    if (tops.has(top)) return true;
+    tops.add(top);
+  }
+  return false;
 }
 
 /** Reads this specific item's own drag state — for a child that wants to render a "dragging"/"drop target" visual itself, instead of relying on ReorderableItem's own default outline treatment. */
