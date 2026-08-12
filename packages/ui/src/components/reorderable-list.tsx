@@ -30,16 +30,17 @@ export interface ReorderableListProps extends Omit<React.HTMLAttributes<HTMLDivE
 }
 
 /**
- * A single flat drag-to-reorder list — native HTML5 DnD, same idiom as
- * `KanbanBoard`/`KanbanCard` (`draggable` + `onDragStart`/`onDragOver`/
- * `onDrop`, drag state in a small context), adapted for one container
- * instead of many drop-target columns. No `@dnd-kit` or other dependency:
- * this codebase already has a working native DnD pattern for the harder
- * multi-column case (Kanban), so a single-list reorder — which only needs
- * "compare pointer Y against sibling midpoints to find an insert index,"
- * not cross-container drop-target logic — reuses that idiom rather than
- * introducing a second one. Extracted for S-09.13 (dashboard v2's
- * per-user widget reordering), the first consumer.
+ * Drag-to-reorder state/logic for a set of items — native HTML5 DnD, same
+ * idiom as `KanbanBoard`/`KanbanCard` (`draggable` + `onDragStart`/
+ * `onDragOver`/`onDrop`, drag state in a small context). Deliberately
+ * layout-agnostic: `ReorderableList` renders its own `className` as the
+ * container (a plain vertical list by default, but just as easily a CSS
+ * grid — see `ReorderableItem`'s own doc comment on why it carries no
+ * opinion about its children's internal layout either). No `@dnd-kit` or
+ * other dependency — this codebase already has a working native DnD
+ * pattern for the harder multi-column Kanban case; a flat reorder only
+ * needs "compare pointer position against a sibling's own midpoint to
+ * find an insert index," which reuses the same idiom.
  */
 export function ReorderableList({ itemIds, onReorder, className, children, ...props }: ReorderableListProps) {
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -61,7 +62,7 @@ export function ReorderableList({ itemIds, onReorder, className, children, ...pr
 
   return (
     <ReorderableListContext.Provider value={{ draggedId, setDraggedId, overId, setOverId, moveItem }}>
-      <div className={cn("flex flex-col gap-1", className)} {...props}>
+      <div className={className} {...props}>
         {children}
       </div>
     </ReorderableListContext.Provider>
@@ -70,21 +71,23 @@ export function ReorderableList({ itemIds, onReorder, className, children, ...pr
 
 export interface ReorderableItemProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "id" | "onDrop"> {
   id: string;
-  /** Rendered before the drag handle and hide/show toggle — typically a short label identifying the item. */
   children: React.ReactNode;
-  hidden?: boolean;
-  onToggleHidden?: () => void;
 }
 
 /**
- * One row inside a `ReorderableList`. Drop position is computed from
- * pointer Y vs. this row's own vertical midpoint (`onDragOver`) — dropping
- * in the top half inserts before this row, the bottom half inserts after
- * — the same "compare against a midpoint" technique `KanbanColumn` already
- * uses for its own drop-zone detection, applied here to ordering within
- * one list instead of column membership.
+ * Drag/drop wiring for one item inside a `ReorderableList` — carries no
+ * opinion about its own visual layout (no padding, no border, no flex
+ * row) so it can wrap arbitrary content, e.g. a full dashboard widget
+ * card, and still have that content's own styling read correctly. Drop
+ * position is computed from pointer Y vs. this element's own vertical
+ * midpoint — the same "compare against a midpoint" technique
+ * `KanbanColumn` already uses for its own drop-zone detection.
+ *
+ * Use `useReorderableItemDragState(id)` inside a child to read this
+ * item's own `isDragging`/`isOver` for visual feedback (a ghost/drop-line
+ * treatment), rather than this wrapper imposing one fixed look.
  */
-export function ReorderableItem({ id, children, hidden = false, onToggleHidden, className, ...props }: ReorderableItemProps) {
+export function ReorderableItem({ id, children, className, ...props }: ReorderableItemProps) {
   const ctx = useReorderableListContext("ReorderableItem");
   const rowRef = useRef<HTMLDivElement>(null);
   const dropBeforeRef = useRef(true);
@@ -119,29 +122,50 @@ export function ReorderableItem({ id, children, hidden = false, onToggleHidden, 
         if (!draggedId || draggedId === id) return;
         ctx.moveItem(draggedId, id, dropBeforeRef.current);
       }}
-      className={cn(
-        "flex items-center gap-2 rounded-sm border px-2 py-2 text-[13px] transition-colors",
-        ctx.overId === id ? "border-primary bg-primary/5" : "border-border-strong bg-surface",
-        ctx.draggedId === id ? "opacity-50" : "",
-        hidden ? "opacity-60" : "",
-        className,
-      )}
+      className={cn("transition-opacity", ctx.draggedId === id ? "opacity-40" : "", ctx.overId === id ? "outline outline-2 outline-primary outline-offset-2 rounded-lg" : "", className)}
       {...props}
     >
-      <span className="cursor-grab text-on-surface-muted active:cursor-grabbing" aria-hidden="true">
-        <GripVertical size={14} />
-      </span>
-      <span className={cn("flex-1", hidden ? "text-on-surface-muted" : "text-on-surface")}>{children}</span>
-      {onToggleHidden && (
-        <button
-          type="button"
-          onClick={onToggleHidden}
-          className="text-on-surface-muted hover:text-on-surface"
-          aria-label={hidden ? "Show widget" : "Hide widget"}
-        >
-          {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
-        </button>
-      )}
+      {children}
     </div>
+  );
+}
+
+/** Reads this specific item's own drag state — for a child that wants to render a "dragging"/"drop target" visual itself, instead of relying on ReorderableItem's own default outline treatment. */
+export function useReorderableItemDragState(id: string) {
+  const ctx = useReorderableListContext("useReorderableItemDragState");
+  return { isDragging: ctx.draggedId === id, isOver: ctx.overId === id };
+}
+
+export interface DragHandleProps extends React.HTMLAttributes<HTMLSpanElement> {
+  /** Size in px, passed to the GripVertical icon. Default 14. */
+  size?: number;
+}
+
+/** A grab-cursor grip icon — purely visual/cursor affordance, since the whole ReorderableItem is draggable regardless of where the pointer starts (native HTML5 DnD has no way to restrict the drag origin to a sub-element without extra plumbing this doesn't need yet). */
+export function DragHandle({ size = 14, className, ...props }: DragHandleProps) {
+  return (
+    <span className={cn("cursor-grab text-on-surface-muted active:cursor-grabbing", className)} aria-hidden="true" {...props}>
+      <GripVertical size={size} />
+    </span>
+  );
+}
+
+export interface HideToggleProps {
+  hidden: boolean;
+  onToggle: () => void;
+  className?: string;
+}
+
+/** An eye/eye-off icon button toggling a widget's visibility — shared visual between the row-list layout and the card-overlay layout. */
+export function HideToggle({ hidden, onToggle, className }: HideToggleProps) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={cn("text-on-surface-muted hover:text-on-surface", className)}
+      aria-label={hidden ? "Show widget" : "Hide widget"}
+    >
+      {hidden ? <EyeOff size={14} /> : <Eye size={14} />}
+    </button>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, ReorderableItem, ReorderableList, Spinner } from "@spine/ui";
+import { Button, DragHandle, HideToggle, ReorderableItem, ReorderableList, useReorderableItemDragState } from "@spine/ui";
 import { DASHBOARD_WIDGETS, mergeDashboardLayout, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
-import { LayoutGrid, Pencil } from "lucide-react";
+import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { SetupChecklist } from "./setup-checklist";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
@@ -23,23 +23,25 @@ function visibleKeysForRole(role: string | null): DashboardWidgetKey[] {
   return DASHBOARD_WIDGETS.filter((w) => role === "owner" || !w.ownerOnly).map((w) => w.key);
 }
 
+const FULL_WIDTH_KEYS = new Set<string>(["kpi-summary", "activity-feed"]);
+
 /**
  * S-09.12/S-09.13 (dashboard v2) — the role-adaptive, per-user-
  * customizable dashboard composition. `role` is resolved server-side by
  * the caller (`page.tsx`, via `getMyMembership()`) and passed down as a
  * prop, never trusted from the client — see `visibleKeysForRole`'s own
- * comment on why this is a UX decision, not the security boundary (every
- * widget still independently self-gates on its own data endpoint's
- * 403/error).
+ * comment on why this is a UX decision, not the security boundary.
  *
- * Layout is a single flat responsive grid (2 columns on desktop, 1 on
- * mobile), auto-flowing in whichever order the merged layout produces —
- * not hand-curated 2-up pairs, since arbitrary per-user reordering can't
- * preserve a fixed pairing anyway (confirmed with the user before
- * building this). `mergeDashboardLayout` (packages/shared, unit-tested)
- * is the pure function deciding the actual order/visibility for this
- * render — this component only fetches the saved layout, computes the
- * viewer's visible set, and renders.
+ * User-redesigned (2026-08): the first cut swapped the whole grid for a
+ * separate text-only reorder list in "edit mode," so a user was
+ * rearranging blind and only saw the real result after clicking "Done" —
+ * confirmed with the user this was the wrong shape. This version drags
+ * the REAL widget cards, in place, in the actual grid — "Edit layout"
+ * overlays a drag handle + hide toggle onto each card's own corner
+ * without replacing it with a placeholder, so what's being edited is
+ * always what's actually on the dashboard. `mergeDashboardLayout`
+ * (packages/shared, unit-tested) is still the pure function deciding
+ * order/visibility; only the editing UI changed.
  */
 export function DashboardShell({ role }: { role: string | null }) {
   const [savedLayout, setSavedLayout] = useState<DashboardLayout | null | undefined>(undefined);
@@ -70,7 +72,9 @@ export function DashboardShell({ role }: { role: string | null }) {
     void persist(merged.map((entry) => (entry.widgetKey === widgetKey ? { ...entry, hidden: !entry.hidden } : entry)));
   }
 
-  const visible = merged.filter((entry) => !entry.hidden);
+  // Editing shows every widget (dimmed if hidden, so a user can find and
+  // re-show one) — the normal view shows only what's actually visible.
+  const displayed = editing ? merged : merged.filter((entry) => !entry.hidden);
 
   return (
     <div className="flex flex-col gap-6">
@@ -80,42 +84,72 @@ export function DashboardShell({ role }: { role: string | null }) {
         <Button variant="secondary" size="sm" onClick={() => setEditing((v) => !v)}>
           {editing ? (
             <>
-              <LayoutGrid size={14} /> Done
+              <Check size={14} /> Done
             </>
           ) : (
             <>
-              <Pencil size={14} /> Customize dashboard
+              <Pencil size={14} /> Edit layout
             </>
           )}
         </Button>
       </div>
 
-      {editing && savedLayout === undefined ? (
-        <div className="flex items-center justify-center py-16">
-          <Spinner />
-        </div>
-      ) : editing ? (
-        <ReorderableList itemIds={merged.map((e) => e.widgetKey)} onReorder={handleReorder} className="max-w-lg">
-          {merged.map((entry) => (
-            <ReorderableItem key={entry.widgetKey} id={entry.widgetKey} hidden={entry.hidden} onToggleHidden={() => toggleHidden(entry.widgetKey)}>
-              {WIDGET_LABELS[entry.widgetKey as DashboardWidgetKey] ?? entry.widgetKey}
-            </ReorderableItem>
-          ))}
-        </ReorderableList>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          {visible.map((entry) => {
-            const Widget = WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
-            if (!Widget) return null;
-            const fullWidth = entry.widgetKey === "kpi-summary" || entry.widgetKey === "activity-feed";
+      <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
+        {displayed.map((entry) => {
+          const Widget = WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
+          if (!Widget) return null;
+          const fullWidth = FULL_WIDTH_KEYS.has(entry.widgetKey);
+
+          if (!editing) {
             return (
-              <div key={entry.widgetKey} className={fullWidth ? "lg:col-span-2" : ""}>
+              <div key={entry.widgetKey} className={`flex [&>*]:flex-1 ${fullWidth ? "lg:col-span-2" : ""}`}>
                 <Widget />
               </div>
             );
-          })}
-        </div>
-      )}
+          }
+
+          return (
+            <EditableWidgetCard
+              key={entry.widgetKey}
+              widgetKey={entry.widgetKey}
+              fullWidth={fullWidth}
+              hidden={entry.hidden}
+              onToggleHidden={() => toggleHidden(entry.widgetKey)}
+            >
+              <Widget />
+            </EditableWidgetCard>
+          );
+        })}
+      </ReorderableList>
     </div>
+  );
+}
+
+function EditableWidgetCard({
+  widgetKey,
+  fullWidth,
+  hidden,
+  onToggleHidden,
+  children,
+}: {
+  widgetKey: string;
+  fullWidth: boolean;
+  hidden: boolean;
+  onToggleHidden: () => void;
+  children: React.ReactNode;
+}) {
+  const { isOver } = useReorderableItemDragState(widgetKey);
+
+  return (
+    <ReorderableItem id={widgetKey} className={`flex ${fullWidth ? "lg:col-span-2" : ""}`}>
+      <div className={`relative flex flex-1 flex-col rounded-lg ${isOver ? "ring-2 ring-primary ring-offset-2" : ""}`}>
+        <div className={`flex flex-1 flex-col [&>*]:flex-1 ${hidden ? "opacity-40" : ""}`}>{children}</div>
+        <div className="absolute right-3 top-3 flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1 shadow-sm">
+          <span className="text-[11px] font-medium text-on-surface-muted">{WIDGET_LABELS[widgetKey as DashboardWidgetKey] ?? widgetKey}</span>
+          <HideToggle hidden={hidden} onToggle={onToggleHidden} />
+          <DragHandle />
+        </div>
+      </div>
+    </ReorderableItem>
   );
 }
