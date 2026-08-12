@@ -385,6 +385,13 @@ interface TimeGridDragState {
   startY: number;
   currentStart: Date;
   currentEnd: Date;
+  // The clicked occurrence's date/time when the gesture began — used to
+  // detect "no actual movement" (a plain click) and to compute the offset
+  // to apply to the series' real originalEvent.start/end, since currentStart
+  // is seeded from the occurrence's date, not the series anchor. Only set
+  // for "move"/"resize-*" (kind "create" has no occurrence).
+  dragStartOccurrenceStart?: Date;
+  dragStartOccurrenceEnd?: Date;
   pointerId: number;
 }
 
@@ -466,6 +473,8 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       startY: y,
       currentStart: instance.occurrenceStart,
       currentEnd: instance.occurrenceEnd,
+      dragStartOccurrenceStart: instance.occurrenceStart,
+      dragStartOccurrenceEnd: instance.occurrenceEnd,
       pointerId: e.pointerId,
     });
   };
@@ -485,6 +494,8 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       startY: y,
       currentStart: instance.occurrenceStart,
       currentEnd: instance.occurrenceEnd,
+      dragStartOccurrenceStart: instance.occurrenceStart,
+      dragStartOccurrenceEnd: instance.occurrenceEnd,
       pointerId: e.pointerId,
     });
   };
@@ -538,8 +549,23 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       if (!finished) return;
       if (finished.kind === "create") {
         onSlotCreate({ start: finished.currentStart, end: finished.currentEnd });
-      } else if (finished.originalEvent) {
-        onEventUpdate({ ...finished.originalEvent, start: finished.currentStart, end: finished.currentEnd });
+      } else if (finished.originalEvent && finished.dragStartOccurrenceStart && finished.dragStartOccurrenceEnd) {
+        // A plain click (no actual pointer movement) still runs the full
+        // move gesture — onMoveStart fires on pointerdown before onClick.
+        // currentStart/End were seeded from the *occurrence's* date
+        // (instance.occurrenceStart/End), not the series' real
+        // originalEvent.start/end, so committing an update here on every
+        // click would silently move the whole recurring series to whatever
+        // occurrence was clicked. Only commit when the event actually moved.
+        const startOffset = finished.currentStart.getTime() - finished.dragStartOccurrenceStart.getTime();
+        const endOffset = finished.currentEnd.getTime() - finished.dragStartOccurrenceEnd.getTime();
+        if (startOffset !== 0 || endOffset !== 0) {
+          onEventUpdate({
+            ...finished.originalEvent,
+            start: new Date(finished.originalEvent.start.getTime() + startOffset),
+            end: new Date(finished.originalEvent.end.getTime() + endOffset),
+          });
+        }
       }
     };
 
