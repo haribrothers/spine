@@ -218,6 +218,13 @@
       "when": 1786380103585,
       "tag": "0030_purple_doctor_octopus",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1786509688692,
+      "tag": "0031_skinny_angel",
+      "breakpoints": true
     }
   ]
 }

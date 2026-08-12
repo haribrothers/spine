@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Put, Req } from "@nestjs/common";
-import { changePasswordSchema, updatePreferencesSchema, updateProfileSchema } from "@spine/shared";
+import { changePasswordSchema, dashboardLayoutSchema, updatePreferencesSchema, updateProfileSchema } from "@spine/shared";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
@@ -46,5 +46,20 @@ export class UsersController {
     @Body(new ZodValidationPipe(updatePreferencesSchema)) body: z.infer<typeof updatePreferencesSchema>,
   ) {
     return this.usersService.updatePreferences(session.user.id, body.themePreference);
+  }
+
+  @Get("me/dashboard-layout")
+  async getDashboardLayout(@Session() session: UserSession) {
+    return { layout: await this.usersService.getDashboardLayout(session.user.id) };
+  }
+
+  /** S-09.13 (dashboard v2) — any authenticated user edits their own dashboard widget order/visibility. Not org-scoped, not Owner-gated — same self-service reasoning as every other route in this controller. */
+  @Put("me/dashboard-layout")
+  async updateDashboardLayout(
+    @Session() session: UserSession,
+    @Body(new ZodValidationPipe(dashboardLayoutSchema)) body: z.infer<typeof dashboardLayoutSchema>,
+  ) {
+    await this.usersService.setDashboardLayout(session.user.id, body);
+    return { layout: body };
   }
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import type { DashboardLayout } from "@spine/shared";
 import { eq } from "drizzle-orm";
 import { auth } from "../../auth/auth";
 import { DATABASE } from "../../db/db.module";
@@ -63,5 +64,21 @@ export class UsersService {
   async updatePreferences(userId: string, themePreference: string): Promise<ProfileRow> {
     await this.db.update(user).set({ themePreference }).where(eq(user.id, userId));
     return this.getMe(userId);
+  }
+
+  /**
+   * S-09.13 — trivial read/write by id, same "no @OrgRoles, any
+   * authenticated user edits their own row" reasoning as every other
+   * method here. `null` (unset) means "use the registry default order,
+   * nothing hidden" — `DashboardShell`'s own layout-merge logic owns that
+   * fallback, not this service.
+   */
+  async getDashboardLayout(userId: string): Promise<DashboardLayout | null> {
+    const [row] = await this.db.select({ dashboardLayout: user.dashboardLayout }).from(user).where(eq(user.id, userId));
+    return (row?.dashboardLayout as DashboardLayout | null) ?? null;
+  }
+
+  async setDashboardLayout(userId: string, layout: DashboardLayout): Promise<void> {
+    await this.db.update(user).set({ dashboardLayout: layout }).where(eq(user.id, userId));
   }
 }

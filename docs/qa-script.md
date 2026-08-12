@@ -800,53 +800,74 @@ revenue.
    received" or "expense approved" entry, even if those events happened
    recently in the org — job/milestone-completion and quote-view/accept
    entries are still visible to Field.
-9. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
-   Job Profitability.
-10. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
+9. **Widget customization (S-09.13)**: on the Owner/Staff dashboard, click
+   **Customize dashboard** (top-right). Confirm the widget grid is
+   replaced by a reorderable list — one row per visible widget, a drag
+   handle, and an eye icon to hide/show. Drag a row to a new position,
+   confirm the list re-orders immediately. Click the eye icon on one
+   widget to hide it (row dims). Click **Done** — confirm the dashboard
+   grid now reflects the new order, and the hidden widget is gone from the
+   grid (not greyed out — actually absent).
+10. **Persistence**: reload the page — confirm the same custom order and
+    hidden widget persist (not reset to default). Log out and log back in
+    (or open a different browser/incognito with the same account) —
+    confirm the same layout still applies, proving it's saved server-side
+    per-user, not just in browser storage.
+11. **Re-showing a hidden widget restores its position.** Reopen
+    Customize, click the eye icon again on the widget you hid in step 9 —
+    confirm it reappears in the SAME position it was in before being
+    hidden, not appended to the end.
+12. **Regression check**: confirm a second user (e.g. a Staff account) on
+    the same org has their OWN independent layout — customizing the
+    Owner's dashboard must never affect what a Staff or Field user sees,
+    since this is a per-user preference, not an org-wide one.
+13. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
+    Job Profitability.
+14. **Profit & Loss tab**: pick a date range covering all demo data (e.g.
     this calendar year). Confirm Income/Expense sections list real
     chart-of-accounts lines with amounts, and Net profit = Total income −
     Total expenses.
-11. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
+15. Click any account line (e.g. "4100 — Sales — Services"). Confirm a
     drill-down dialog opens listing the journal entries behind that
     figure, each linking to its source document (invoice/payment/vendor
     bill/expense) — S-09.4's "click any figure, see the documents behind
     it." Click through one link and confirm it lands on the right
     document.
-12. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
+16. Click **Export CSV** on the P&L tab — confirm a CSV downloads with
     Section/Code/Account/Amount columns matching the on-screen figures.
-13. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
+17. **Balance Sheet tab**: pick an "as of" date. Confirm Assets,
     Liabilities, and Equity sections, and that **Total assets = Total
     liabilities + Total equity** exactly (the balance sheet must always
     balance). Confirm Equity includes a computed "Retained Earnings
     (current period)" line reflecting net profit to date.
-14. **Job Profitability tab**: confirm every job appears with contract
+18. **Job Profitability tab**: confirm every job appears with contract
     value, revenue, cost, margin, and margin %. Confirm the "Marina office
     fit-out" demo job shows a nonzero **cost** (from its job-tagged demo
     vendor bill + expense) — every other demo job showing `cost: 0` (no
     vendor bills/expenses tagged to them) is correct, not a bug. Click a
     job name — confirm it navigates to that job's detail page.
-15. As a Staff user with `dashboard.view` granted but not Owner: confirm
+19. As a Staff user with `dashboard.view` granted but not Owner: confirm
     the dashboard KPI row, the aging/pipeline/job-profitability chart
     widgets, the non-financial widgets (step 4), Recent activity (step 7),
-    and the Job Profitability report tab all load normally, but the
-    **Revenue trend chart** widget and Profit & Loss / Balance Sheet /
-    drill-down on the Reports page all render nothing / show a clear
-    "Owner-only report" message (S-09.2/S-09.3/S-09.11's revenue trend
-    stay Owner-only per CLAUDE.md's permission model; the capability's own
-    description already says "P&L/balance sheet stay Owner-only regardless
-    of this grant").
-16. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
+    Customize dashboard (step 9), and the Job Profitability report tab
+    all load normally, but the **Revenue trend chart** widget and Profit &
+    Loss / Balance Sheet / drill-down on the Reports page all render
+    nothing / show a clear "Owner-only report" message
+    (S-09.2/S-09.3/S-09.11's revenue trend stay Owner-only per CLAUDE.md's
+    permission model; the capability's own description already says
+    "P&L/balance sheet stay Owner-only regardless of this grant").
+20. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
     scroll to **Period close**. Add a period covering today, click
     **Close**. Try to issue a new invoice or record/approve an
     expense/vendor bill dated today — confirm it's rejected with "falls
     within a closed fiscal period." Click **Reopen** and confirm the same
     action now succeeds.
-17. **Custom account (S-09.9)**: in the same Chart of accounts pane,
+21. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
     immediately, and that a new Settings → Purchases expense category can
     select it as its posting account.
-18. **Regression check**: after adding a custom account or closing/
+22. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
     the existing system accounts (AR, AP, tax, retention) are still
     present and still read-only.

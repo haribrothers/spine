@@ -35,6 +35,7 @@ export * from "./components/hover-card";
 export * from "./components/input";
 export * from "./components/input-group";
 export * from "./components/kanban";
+export * from "./components/reorderable-list";
 export * from "./components/kbd";
 export * from "./components/label";
 export * from "./components/layout";

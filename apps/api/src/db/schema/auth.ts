@@ -6,6 +6,7 @@ import {
   boolean,
   index,
   uniqueIndex,
+  jsonb,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -28,6 +29,26 @@ export const user = pgTable("user", {
    * general preference for keeping small enum-ish fields as plain text.
    */
   themePreference: text("theme_preference").default("system").notNull(),
+  /**
+   * S-09.13 (dashboard v2) — per-user dashboard widget order/visibility,
+   * the first dashboard-LAYOUT preference in the app (distinct from
+   * `themePreference` above, which is a single flat value, not a list).
+   * Nullable — absent means "every widget the viewer's role/capabilities
+   * make visible, in DASHBOARD_WIDGETS' registry order, none hidden."
+   * Shape: Array<{ widgetKey: string; position: number; hidden: boolean }>
+   * (`packages/shared/src/schemas/dashboard-widgets.ts` is the source of
+   * truth for valid widgetKey values). A saved widgetKey not present in
+   * that registry (a removed/renamed widget) is skipped at read/merge
+   * time in `DashboardShell`, never rejected at write time — a stale key
+   * must stay storable so a user is never blocked from saving a layout
+   * change just because a widget was removed from the registry since they
+   * last saved. One JSON column rather than a dedicated table — the whole
+   * layout is always read/written as one atomic unit (never "just this
+   * user's position for widget X" as an isolated query), the same
+   * flexible-shape role `settings.value` already plays for org-level
+   * preferences one table over.
+   */
+  dashboardLayout: jsonb("dashboard_layout"),
 });
 
 export const session = pgTable(
