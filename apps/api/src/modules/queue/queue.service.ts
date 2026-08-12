@@ -95,6 +95,23 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Arm a recurring job on a cron schedule — pg-boss's own scheduler
+   * (`pgboss.schedule` table) fires `send()` internally on the given cron
+   * expression, deduplicating so only one instance of the job is ever
+   * queued per tick even with multiple app instances pointed at the same
+   * database. First caller in this codebase: `MeetingReminderWorker`
+   * (PRD S-10.21) — every prior queue use here was `send()`'s immediate,
+   * one-shot enqueue triggered by a business action, never a clock.
+   * Idempotent to call repeatedly (e.g. every boot) — pg-boss upserts the
+   * schedule by `(name)`, so re-registering the same cron is a no-op.
+   */
+  async schedule(queueName: string, cron: string, data?: object) {
+    const boss = this.getBoss();
+    await boss.createQueue(queueName).catch(() => {});
+    await boss.schedule(queueName, cron, data ?? null);
+  }
+
+  /**
    * Read-only listing of a queue's not-yet-completed jobs, for the "pending
    * emails" view (S-03.4 follow-up) — queries `pgboss.job` directly rather
    * than `PgBoss.fetch()`, since `fetch()` claims/dequeues jobs (moves them

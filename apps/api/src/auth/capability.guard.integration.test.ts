@@ -136,6 +136,32 @@ describe("CapabilityGuard (requires local Postgres)", () => {
     await expect(guard.canActivate(context)).resolves.toBe(true);
   });
 
+  it("Staff without meetings.manage granted is rejected from creating/editing/deleting meetings", async () => {
+    const [team] = await db.insert(teams).values({ orgId, name: "No Meetings Team" }).returning();
+    await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.manage", granted: false });
+
+    const guard = guardFor("meetings.manage");
+    const context = fakeContext("meetings.manage", {
+      session: { activeOrganizationId: orgId },
+      user: { id: staffUserId },
+    });
+    await expect(guard.canActivate(context)).rejects.toThrow(/missing capability/i);
+  });
+
+  it("Staff with meetings.manage granted passes — this capability does NOT control read/visibility, only mutation, see MeetingsService", async () => {
+    const [team] = await db.insert(teams).values({ orgId, name: "Meetings Team" }).returning();
+    await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.manage", granted: true });
+
+    const guard = guardFor("meetings.manage");
+    const context = fakeContext("meetings.manage", {
+      session: { activeOrganizationId: orgId },
+      user: { id: staffUserId },
+    });
+    await expect(guard.canActivate(context)).resolves.toBe(true);
+  });
+
   it("Staff with multiple Teams passes if ANY of them grants the capability (union semantics)", async () => {
     const [teamA] = await db.insert(teams).values({ orgId, name: "Team A" }).returning();
     const [teamB] = await db.insert(teams).values({ orgId, name: "Team B" }).returning();

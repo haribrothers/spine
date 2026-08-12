@@ -1,5 +1,8 @@
 import type { CalendarEventColor, CalendarRecurrenceRule } from "@spine/ui";
 
+export type MeetingVisibility = "private" | "org";
+export type MeetingAttendeeStatus = "invited" | "accepted" | "declined" | "tentative";
+
 /** Mirrors apps/api/src/db/schema/meetings.ts's row shape — apps/web has no generated SDK yet (packages/sdk is still empty), same hand-written-mirror precedent as contacts/quotes/types.ts. */
 export interface Meeting {
   id: string;
@@ -15,6 +18,19 @@ export interface Meeting {
   /** Same shape as @spine/ui's CalendarRecurrenceRule, except `end.date` is serialized as an ISO string over JSON rather than a Date — see toCalendarEvent's own conversion. */
   recurrence: (Omit<CalendarRecurrenceRule, "end"> & { end: { type: "date"; date: string } | { type: "count"; count: number } }) | null;
   organizerUserId: string | null;
+  /** PRD S-01.10/S-01.11 — "private" (default) visible only to organizer + invited attendees; "org" visible to everyone. */
+  visibility: MeetingVisibility;
   createdAt: string;
   updatedAt: string;
+}
+
+/** Mirrors apps/api's GET /meetings/:id/attendees row shape (meetingAttendees joined to user). */
+export interface MeetingAttendee {
+  id: string;
+  userId: string | null;
+  status: MeetingAttendeeStatus;
+  invitedAt: string;
+  respondedAt: string | null;
+  name: string | null;
+  email: string | null;
 }

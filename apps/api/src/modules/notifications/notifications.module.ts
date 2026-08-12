@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { EmailModule } from "../email/email.module";
+import { OrgModule } from "../org/org.module";
+import { MeetingReminderWorker } from "./meeting-reminder.worker";
 import { NotificationsController } from "./notifications.controller";
 import { NotificationsService } from "./notifications.service";
 import { NotifyEmailWorker } from "./notify-email.worker";
@@ -17,9 +19,9 @@ import { PushService } from "./push.service";
  * from.
  */
 @Module({
-  imports: [EmailModule],
+  imports: [EmailModule, OrgModule],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotifyEmailWorker, PushService],
+  providers: [NotificationsService, NotifyEmailWorker, MeetingReminderWorker, PushService],
   exports: [NotificationsService, PushService],
 })
 export class NotificationsModule {}

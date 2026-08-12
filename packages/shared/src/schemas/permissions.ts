@@ -20,6 +20,7 @@ export const CAPABILITIES = [
   "expenses.approve",
   "purchases.manage",
   "jobs.update_milestones",
+  "meetings.manage",
   "ledger.view",
 ] as const;
 
@@ -68,6 +69,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Upload site photos, update milestone status",
     description: "Attach job photos/notes and update milestone status.",
   },
+  "meetings.manage": {
+    label: "Create/invite/manage meetings",
+    description:
+      "Create, edit, delete meetings and invite attendees. Read access to a specific meeting is enforced independently of this grant, by that meeting's own visibility and invite list — this capability never widens who can see a meeting, only who can create/edit/delete one.",
+  },
   "ledger.view": {
     label: "View ledger / journals",
     description: "View journal entries and drill into source documents.",
@@ -87,5 +93,6 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "expenses.approve": true,
   "purchases.manage": true,
   "jobs.update_milestones": true,
+  "meetings.manage": true,
   "ledger.view": false,
 };

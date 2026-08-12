@@ -1,5 +1,5 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { member, notifications, user } from "../../db/schema";
@@ -49,16 +49,27 @@ export class NotificationsService {
   ) {}
 
   /**
-   * Queues one notification email per active member of `orgId` whose role
-   * is in `recipientRoles` (default `["owner"]`, preserving the exact
-   * behavior every pre-S-10.11 caller relies on), and — when `inApp` is
-   * given — writes one persisted `notifications` row per the same set of
+   * Queues one notification email per active member of `orgId` matched by
+   * `recipientRoles` and/or `recipientUserIds`, and — when `inApp` is given
+   * — writes one persisted `notifications` row per the same set of
    * recipients. Never throws — a failure to look up recipients, enqueue an
    * email, or write the in-app rows is logged and swallowed, exactly
    * matching `QuotesService.send()`'s own posture on its email-enqueue
    * call: the action that triggered a notification (an already-committed
    * public accept/view) must never be blocked or failed by this being
    * unable to notify anyone.
+   *
+   * Recipient resolution (order matters — this is the one place a subtle
+   * bug would silently over- or under-notify):
+   *   - Neither `recipientRoles` nor `recipientUserIds` given → `["owner"]`,
+   *     preserving the exact default every pre-S-10.20 caller relies on.
+   *   - Only `recipientRoles` given → unchanged existing behavior exactly.
+   *   - Only `recipientUserIds` given → recipients are EXACTLY those user
+   *     ids — deliberately NOT unioned with the `["owner"]` default, or an
+   *     Owner who isn't one of the named recipients would silently receive
+   *     every targeted notification (e.g. a meeting-invite meant for one
+   *     Staff member).
+   *   - Both given → the union (role match OR user id match).
    */
   async notify(
     orgId: string,
@@ -67,19 +78,31 @@ export class NotificationsService {
       text: string;
       html?: string;
       recipientRoles?: string[];
+      recipientUserIds?: string[];
       inApp?: { type: string; message: string; link?: string };
     },
   ): Promise<void> {
-    const roles = params.recipientRoles ?? ["owner"];
+    const { recipientRoles, recipientUserIds } = params;
+    const useDefaultRole = !recipientRoles && !recipientUserIds;
+    const roleFilter = useDefaultRole ? ["owner"] : recipientRoles;
     try {
+      const matchers = [
+        ...(roleFilter ? [inArray(member.role, roleFilter)] : []),
+        ...(recipientUserIds ? [inArray(member.userId, recipientUserIds)] : []),
+      ];
+      if (!matchers.length) {
+        this.logger.warn(`notify() called for org ${orgId} with no recipientRoles or recipientUserIds — nothing to do`);
+        return;
+      }
+
       const recipients = await this.db
         .select({ userId: member.userId, email: user.email })
         .from(member)
         .innerJoin(user, eq(member.userId, user.id))
-        .where(and(eq(member.organizationId, orgId), inArray(member.role, roles), eq(member.isActive, true)));
+        .where(and(eq(member.organizationId, orgId), eq(member.isActive, true), or(...matchers)));
 
       if (!recipients.length) {
-        this.logger.warn(`No active member with role in [${roles.join(", ")}] found for org ${orgId} — notification "${params.subject}" was not sent to anyone`);
+        this.logger.warn(`No active member matched roles=[${(roleFilter ?? []).join(", ")}] userIds=[${(recipientUserIds ?? []).join(", ")}] for org ${orgId} — notification "${params.subject}" was not sent to anyone`);
         return;
       }
 

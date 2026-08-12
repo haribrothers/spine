@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Put, Req } from "@nestjs/common";
-import { changePasswordSchema, dashboardLayoutSchema, updatePreferencesSchema, updateProfileSchema } from "@spine/shared";
+import {
+  changePasswordSchema,
+  dashboardLayoutSchema,
+  updateMeetingReminderLeadMinutesSchema,
+  updatePreferencesSchema,
+  updateProfileSchema,
+} from "@spine/shared";
 import { Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Request } from "express";
@@ -61,5 +67,15 @@ export class UsersController {
   ) {
     await this.usersService.setDashboardLayout(session.user.id, body);
     return { layout: body };
+  }
+
+  /** S-10.22 — personal override of the org's default meeting-reminder lead time; `meetingReminderLeadMinutes: null` clears back to "use org default". */
+  @Put("me/meeting-reminder-lead-minutes")
+  async updateMeetingReminderLeadMinutes(
+    @Session() session: UserSession,
+    @Body(new ZodValidationPipe(updateMeetingReminderLeadMinutesSchema))
+    body: z.infer<typeof updateMeetingReminderLeadMinutesSchema>,
+  ) {
+    return this.usersService.setMeetingReminderLeadMinutes(session.user.id, body.meetingReminderLeadMinutes);
   }
 }

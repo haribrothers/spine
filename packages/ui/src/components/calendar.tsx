@@ -110,8 +110,9 @@ interface DraftRange {
 
 export interface CalendarProps {
   events: CalendarEvent[];
-  onEventCreate?: (event: CalendarEvent) => void;
-  onEventUpdate?: (event: CalendarEvent) => void;
+  /** `extra` carries whatever `renderExtraFields` collected via its `setExtra` callback, opaque to Calendar itself — undefined when `renderExtraFields` isn't provided or contributed nothing. */
+  onEventCreate?: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
+  onEventUpdate?: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
   onEventDelete?: (eventId: string) => void;
   view: CalendarView;
   onViewChange: (view: CalendarView) => void;
@@ -129,6 +130,20 @@ export interface CalendarProps {
   readOnlyEventIds?: Set<string>;
   /** Required when `readOnlyEventIds` is set — called with the clicked instance instead of opening the built-in editor. */
   onReadOnlyEventClick?: (instance: CalendarEventInstance) => void;
+  /**
+   * Escape hatch for consumer-specific fields the built-in editor form has
+   * no concept of (e.g. meeting attendees/visibility) — same "generic slot
+   * fed consumer-owned data" shape as `contactOptions`/`CalendarEvent.
+   * contactId`, but for data that doesn't fit a single scalar field.
+   * Rendered inline in the create/edit dialog, between the built-in fields
+   * and the footer. Call `setExtra` with whatever shape your `onEventCreate`/
+   * `onEventUpdate` handler expects to receive back as `extra` — Calendar
+   * never inspects it. `event` is the event being edited (null in create
+   * mode, since no id exists yet — an extra-fields UI that needs a
+   * persisted id, like fetching existing attendees, can only do so once
+   * `isEdit` is true).
+   */
+  renderExtraFields?: (ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode;
   className?: string;
 }
 
@@ -154,6 +169,7 @@ export function Calendar({
   contactOptions,
   readOnlyEventIds,
   onReadOnlyEventClick,
+  renderExtraFields,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -178,11 +194,11 @@ export function Calendar({
     setEditorState({ mode: "edit", instance });
   };
 
-  const handleSave = (result: CalendarEvent) => {
+  const handleSave = (result: CalendarEvent, extra?: Record<string, unknown>) => {
     if (editorState?.mode === "edit") {
-      onEventUpdate?.(result);
+      onEventUpdate?.(result, extra);
     } else {
-      onEventCreate?.(result);
+      onEventCreate?.(result, extra);
     }
     setEditorState(null);
   };
@@ -250,6 +266,7 @@ export function Calendar({
         onSave={handleSave}
         onDelete={handleDelete}
         contactOptions={contactOptions}
+        renderExtraFields={renderExtraFields}
       />
     </div>
   );
@@ -1064,9 +1081,10 @@ interface CalendarEventEditorProps {
     | { mode: "edit"; instance: CalendarEventInstance }
     | null;
   onClose: () => void;
-  onSave: (event: CalendarEvent) => void;
+  onSave: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
   onDelete: (eventId: string) => void;
   contactOptions?: { value: string; label: string }[];
+  renderExtraFields?: (ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode;
 }
 
 function toLocalInputValue(date: Date): string {
@@ -1078,9 +1096,10 @@ function fromLocalInputValue(value: string): Date {
   return new Date(value);
 }
 
-function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions }: CalendarEventEditorProps) {
+function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions, renderExtraFields }: CalendarEventEditorProps) {
   const isEdit = state?.mode === "edit";
   const baseEvent: CalendarEvent | null = isEdit ? state.instance.event : null;
+  const extraRef = useRef<Record<string, unknown> | undefined>(undefined);
 
   const [title, setTitle] = useState("");
   const [start, setStart] = useState<Date>(new Date());
@@ -1098,6 +1117,9 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
 
   useEffect(() => {
     if (!state) return;
+    // Reset per-open — a stale `extra` from a previously-closed dialog must
+    // never leak into a different create/edit session.
+    extraRef.current = undefined;
     if (state.mode === "edit") {
       const event = state.instance.event;
       setTitle(event.title);
@@ -1170,7 +1192,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
           }
         : undefined,
     };
-    onSave(result);
+    onSave(result, extraRef.current);
   };
 
   return (
@@ -1346,6 +1368,14 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions 
                 </Field>
               </div>
             )}
+
+            {renderExtraFields?.({
+              isEdit,
+              event: baseEvent,
+              setExtra: (extra) => {
+                extraRef.current = extra;
+              },
+            })}
           </DialogBody>
 
           <DialogFooter className="justify-between">

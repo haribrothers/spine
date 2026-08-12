@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createMeetingSchema, updateMeetingSchema } from "@spine/shared";
+import { createMeetingSchema, respondToMeetingSchema, updateMeetingSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -19,7 +19,8 @@ export class MeetingsController {
     @Query("to") to?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.meetingsService.list(orgId, {
+    const requestingUser = await this.meetingsService.resolveRequestingUser(orgId, session.user.id);
+    return this.meetingsService.list(orgId, requestingUser, {
       contactId,
       from: from ? new Date(from) : undefined,
       to: to ? new Date(to) : undefined,
@@ -42,12 +43,21 @@ export class MeetingsController {
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.meetingsService.getOne(orgId, id);
+    const requestingUser = await this.meetingsService.resolveRequestingUser(orgId, session.user.id);
+    return this.meetingsService.getOne(orgId, id, requestingUser);
+  }
+
+  /** PRD S-01.10 — same visibility gate as getOne; an attendee list is meeting detail. */
+  @Get(":id/attendees")
+  async attendees(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    const requestingUser = await this.meetingsService.resolveRequestingUser(orgId, session.user.id);
+    return this.meetingsService.listAttendees(orgId, id, requestingUser);
   }
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -57,7 +67,7 @@ export class MeetingsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -67,10 +77,20 @@ export class MeetingsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.meetingsService.delete(orgId, id, session.user.id);
+  }
+
+  /** PRD S-01.12 — self-service; no @RequireCapability, any org member with an invite can respond to it. */
+  @Post(":id/respond")
+  @OrgRoles(["owner", "staff", "field"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async respond(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = respondToMeetingSchema.parse(body);
+    return this.meetingsService.respond(orgId, id, session.user.id, input);
   }
 }

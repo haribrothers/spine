@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { addMonths } from "date-fns";
 import {
   Alert,
@@ -33,9 +34,12 @@ import {
   type CalendarEventInstance,
   type CalendarView,
 } from "@spine/ui";
-import { ChevronDown, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { ChevronDown, PanelRightClose, PanelRightOpen, Users } from "lucide-react";
+import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
 import type { Activity, ActivityType, Contact } from "../contacts/types";
+import { MeetingAttendeesFields } from "./meeting-attendees-fields";
+import { MeetingAttendeesPanel } from "./meeting-attendees-panel";
 import type { Meeting } from "./types";
 
 const SIDEBAR_STORAGE_KEY = "spine.meetings.sidebar-collapsed";
@@ -93,8 +97,17 @@ function activityToCalendarEvent(activity: Activity): CalendarEvent {
   };
 }
 
-/** CalendarEvent (Date objects) -> the API's create/update payload shape (ISO strings). */
-function toMeetingPayload(event: CalendarEvent) {
+/**
+ * CalendarEvent (Date objects) -> the API's create/update payload shape
+ * (ISO strings). `extra` is whatever MeetingAttendeesFields last reported
+ * via Calendar's renderExtraFields slot ({visibility, attendeeUserIds}) —
+ * present when this event came from the create/edit dialog's Save button,
+ * absent for a drag-move/resize (Calendar's onEventUpdate fires identically
+ * for both, but only the dialog path renders extra fields at all), in
+ * which case visibility/attendeeUserIds are simply omitted from the
+ * payload so the API's update() leaves them untouched.
+ */
+function toMeetingPayload(event: CalendarEvent, extra?: Record<string, unknown>) {
   return {
     contactId: event.contactId ?? null,
     title: event.title,
@@ -114,6 +127,8 @@ function toMeetingPayload(event: CalendarEvent) {
               : event.recurrence.end,
         }
       : null,
+    ...(extra?.visibility !== undefined ? { visibility: extra.visibility } : {}),
+    ...(extra?.attendeeUserIds !== undefined ? { attendeeUserIds: extra.attendeeUserIds } : {}),
   };
 }
 
@@ -137,6 +152,9 @@ function toMeetingPayload(event: CalendarEvent) {
  * whenever `date` moves outside the already-loaded window.
  */
 export function MeetingsCalendar() {
+  const { data: session } = useSession();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -154,6 +172,7 @@ export function MeetingsCalendar() {
   const [hydrated, setHydrated] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
+  const [attendeesPanel, setAttendeesPanel] = useState<Meeting | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -249,6 +268,31 @@ export function MeetingsCalendar() {
       .catch(() => setActivities([]));
   }, []);
 
+  // S-10.20/S-10.21 — notification deep links land here as /meetings?id=...
+  // (e.g. "you've been invited," "starting soon"). Fetches the specific
+  // meeting directly rather than relying on it already being in the
+  // currently-loaded ±2-month window, then opens its attendees panel and
+  // strips the query param so a refresh doesn't reopen it. Depends on the
+  // read `deepLinkId` value itself (not `searchParams`/`router`, whose
+  // identity can churn on navigation) so this only re-runs when the id
+  // in the URL actually changes.
+  const deepLinkId = searchParams.get("id");
+  useEffect(() => {
+    if (!deepLinkId) return;
+    apiClient
+      .get<Meeting>(`/meetings/${deepLinkId}`)
+      .then((meeting) => {
+        setAttendeesPanel(meeting);
+        router.replace("/meetings");
+      })
+      .catch(() => {
+        // Meeting may have been deleted, or is no longer visible to this
+        // user — silently drop the deep link rather than showing an error
+        // for what's likely just a stale notification link.
+        router.replace("/meetings");
+      });
+  }, [deepLinkId, router]);
+
   const contactOptions = useMemo(() => contacts.map((c) => ({ value: c.id, label: c.name })), [contacts]);
   const contactsById = useMemo(() => new Map(contacts.map((c) => [c.id, c])), [contacts]);
 
@@ -269,13 +313,13 @@ export function MeetingsCalendar() {
     [visibleMeetings, activityEvents],
   );
 
-  async function handleCreate(event: CalendarEvent) {
-    const created = await apiClient.post<Meeting>("/meetings", toMeetingPayload(event));
+  async function handleCreate(event: CalendarEvent, extra?: Record<string, unknown>) {
+    const created = await apiClient.post<Meeting>("/meetings", toMeetingPayload(event, extra));
     setMeetings((prev) => (prev ? [...prev, created] : [created]));
   }
 
-  async function handleUpdate(event: CalendarEvent) {
-    const updated = await apiClient.put<Meeting>(`/meetings/${event.id}`, toMeetingPayload(event));
+  async function handleUpdate(event: CalendarEvent, extra?: Record<string, unknown>) {
+    const updated = await apiClient.put<Meeting>(`/meetings/${event.id}`, toMeetingPayload(event, extra));
     setMeetings((prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev);
   }
 
@@ -341,6 +385,20 @@ export function MeetingsCalendar() {
         onEventDelete={handleDeleteRequest}
         readOnlyEventIds={readOnlyEventIds}
         onReadOnlyEventClick={setActivityDetail}
+        renderExtraFields={({ isEdit, event, setExtra }) => {
+          if (!session?.user?.id) return null;
+          const editingMeeting = isEdit ? (meetings?.find((m) => m.id === event?.id) ?? null) : null;
+          return (
+            <MeetingAttendeesFields
+              meetingId={editingMeeting?.id ?? null}
+              organizerUserId={editingMeeting?.organizerUserId ?? session.user.id}
+              currentUserId={session.user.id}
+              members={members}
+              initialVisibility={editingMeeting?.visibility ?? "private"}
+              setExtra={setExtra}
+            />
+          );
+        }}
       />
 
       {sidebarCollapsed ? (
@@ -398,6 +456,43 @@ export function MeetingsCalendar() {
             <Checkbox checked={hydrated ? showActivities : false} onCheckedChange={(v) => toggleActivitiesVisible(v === true)} />
             My Activities
           </label>
+
+          <div className="flex flex-col gap-2">
+            <h3 className="text-[13px] font-semibold text-on-surface">Upcoming</h3>
+            {meetings === null ? (
+              <p className="text-[13px] text-on-surface-muted">Loading…</p>
+            ) : (
+              (() => {
+                const now = new Date();
+                const upcoming = visibleMeetings
+                  .filter((m) => new Date(m.endAt) >= now)
+                  .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
+                  .slice(0, 8);
+                if (upcoming.length === 0) {
+                  return <p className="text-[13px] text-on-surface-muted">No upcoming meetings in this range.</p>;
+                }
+                return (
+                  <ul className="flex flex-col gap-1.5">
+                    {upcoming.map((m) => (
+                      <li key={m.id} className="flex items-center gap-2 text-[13px]">
+                        <span className="min-w-0 flex-1 truncate text-on-surface">{m.title}</span>
+                        {m.visibility === "org" && <Badge className="shrink-0">Org</Badge>}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 shrink-0 p-0"
+                          aria-label={`Attendees for ${m.title}`}
+                          onClick={() => setAttendeesPanel(m)}
+                        >
+                          <Users size={14} />
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()
+            )}
+          </div>
 
           <div className="flex flex-col gap-2">
             <h3 className="text-[13px] font-semibold text-on-surface">Meetings by contact</h3>
@@ -465,6 +560,16 @@ export function MeetingsCalendar() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {attendeesPanel && session?.user?.id && (
+        <MeetingAttendeesPanel
+          meeting={attendeesPanel}
+          members={members}
+          currentUserId={session.user.id}
+          onClose={() => setAttendeesPanel(null)}
+          onSaved={(updated) => setMeetings((prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev)}
+        />
+      )}
     </div>
   );
 }

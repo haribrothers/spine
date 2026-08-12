@@ -258,7 +258,7 @@ real, also walk ONE job manually through the full sequence below.
 
 ---
 
-## 6. Meetings (S-01.9)
+## 6. Meetings (S-01.9 → S-01.12)
 
 1. Go to **Meetings**. Confirm an Outlook-style calendar (day/week/month
    views) renders.
@@ -272,6 +272,58 @@ real, also walk ONE job manually through the full sequence below.
 4. Delete a meeting from the calendar. Confirm a confirmation dialog
    appears before it's actually removed (user-reported gap — deletion
    used to happen immediately on click, no confirmation at all).
+
+### 6.1 Private invites and visibility (S-01.10, S-01.11)
+
+5. Create a new meeting as Staff user A. Confirm the "Visibility"/
+   "Invite people" fields appear directly inside the SAME "New
+   meeting" dialog, alongside title/time/location — no separate
+   follow-up popup after clicking Save. Leave visibility at its
+   default (private) and invite no one for this step. As Staff user B
+   (same Team, no invite, no `owner` role), confirm the meeting is
+   invisible on B's calendar — check both the calendar UI and a direct
+   `GET /meetings/:id` call (should 404, not 403).
+6. Open that meeting to EDIT it — confirm the same Visibility/Invite
+   fields appear inline in the edit dialog too (not just create), and
+   are pre-filled with the meeting's actual current visibility (don't
+   just default back to Private) and its current invite list. Invite
+   user B and save. Confirm B now sees it on their calendar, and B's
+   notification bell shows a "you've been invited" notification
+   (§12).
+7. As the Owner, confirm you can see A's private meeting even without
+   being invited or organizing it (Owner sees everything regardless of
+   visibility, §2.1).
+8. Switch the same meeting's visibility to "Everyone in the org" from
+   its edit dialog. Confirm every role (Staff, Field) can now see it
+   on their calendar without an explicit invite.
+9. As Field, confirm you can create your own private meeting (if
+   `meetings.manage` is granted to your Team) but never see another
+   user's private meeting you're not invited to — Field gets the same
+   visibility treatment as Staff, only Owner is special-cased.
+
+### 6.2 Responding to an invite (S-01.12)
+
+10. As invited user B, open the meeting's "Manage attendees" panel
+    (the small people-icon button next to a meeting in the sidebar's
+    "Upcoming" list, or a notification's deep link) and click Accept.
+    Confirm no notification fires to the organizer for this first
+    response (check A's notification bell — nothing new).
+11. Change your response from Accepted to Declined. Confirm the
+    organizer (A) DOES now get a "changed their response" notification
+    — this is the one case that notifies, deliberately different from
+    the first response.
+12. As the organizer, confirm the attendee list shows each invitee's
+    current status (Invited/Accepted/Declined/Tentative) — no need to
+    ask them separately.
+
+### 6.3 `meetings.manage` permission (cross-check with §13)
+
+13. From Users/Teams/Permissions, turn OFF `meetings.manage` for a
+    Team. Confirm a Staff member on only that Team can no longer
+    create/edit/delete meetings (the "+ New meeting" flow or edit
+    dialog should fail with a permission error), but CAN still respond
+    to an existing invite and see `org`-visibility meetings — this
+    capability gates mutation only, never read access.
 
 ---
 
@@ -644,6 +696,33 @@ than building every case from scratch.
    `.notify()` trigger point as every other notification, so they get the
    bell/drawer, email, and (if opted in) browser push automatically, with
    no separate wiring.
+5. **Meeting invite/response notifications (S-10.20)**: invite a
+   specific Staff user to a meeting — confirm THEY get an "invited"
+   notification (bell + email + push, same channels as every other
+   type), but no one else in the org does (this is targeted at that
+   one person, not fanned out to a role — a stricter check than every
+   prior notification type, which all targeted a role like "owner").
+   Then have that invitee change their response after their first
+   reply (e.g. accepted → declined) — confirm ONLY the organizer gets
+   a "response changed" notification, and confirm the invitee's FIRST
+   response (before any change) did NOT notify anyone — this is a
+   deliberate two-tier behavior, not a bug if the first accept is
+   silent.
+6. **"Starting soon" reminder (S-10.21)**: schedule a meeting a few
+   minutes out (within your configured lead time, default 15 minutes
+   if you haven't changed Settings → Meeting reminders or your own
+   Profile & Preferences override) with yourself as an accepted
+   attendee. Wait for the reminder to fire (checked every 5 minutes
+   server-side, so allow up to that long) — confirm you get a
+   "starting soon" notification. Set your own status to Declined on a
+   different upcoming meeting and confirm you do NOT get reminded for
+   that one.
+7. **Reminder lead-time settings (S-10.22)**: as Owner, change the org
+   default in Settings → Meeting reminders. As any user, override it
+   for yourself from Profile & Preferences (or explicitly pick "Org
+   default" to clear your own override) — confirm the resolution order
+   is your override first, then the org default, then a hardcoded
+   15-minute fallback if neither is set.
 
 ---
 
@@ -924,3 +1003,13 @@ revenue.
   reachable from the invoice they correct.
 - Multi-org (one Owner account across several orgs) is explicitly out of
   scope for v1 — don't test for it.
+- Meeting invites (§6.1) have only two visibility tiers, `private` and
+  `org` — there is no "visible to a specific Team" tier. Explicitly out
+  of scope for v1 per the PRD, not a missing feature.
+- Recurring meetings apply the invite list to the whole series — there's
+  no way to invite someone to just one occurrence of a repeating
+  meeting. Also explicit v1 scope, not a bug.
+- The "starting soon" reminder (§12 step 6) polls every 5 minutes, so a
+  reminder can fire up to ~5 minutes later than its exact configured
+  lead time — this is a deliberate trade-off (see CHANGELOG), not
+  imprecise timing to file as a bug.

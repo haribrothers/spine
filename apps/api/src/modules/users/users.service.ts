@@ -12,6 +12,7 @@ export interface ProfileRow {
   email: string;
   image: string | null;
   themePreference: string;
+  meetingReminderLeadMinutes: number | null;
 }
 
 /**
@@ -26,7 +27,14 @@ export class UsersService {
 
   async getMe(userId: string): Promise<ProfileRow> {
     const [row] = await this.db
-      .select({ id: user.id, name: user.name, email: user.email, image: user.image, themePreference: user.themePreference })
+      .select({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+        themePreference: user.themePreference,
+        meetingReminderLeadMinutes: user.meetingReminderLeadMinutes,
+      })
       .from(user)
       .where(eq(user.id, userId));
     if (!row) {
@@ -80,5 +88,16 @@ export class UsersService {
 
   async setDashboardLayout(userId: string, layout: DashboardLayout): Promise<void> {
     await this.db.update(user).set({ dashboardLayout: layout }).where(eq(user.id, userId));
+  }
+
+  /**
+   * S-10.22 — personal override of the org's default meeting-reminder lead
+   * time. `null` explicitly clears the override back to "use the org
+   * default" — same "no @OrgRoles, any authenticated user edits their own
+   * row" reasoning as every other method here.
+   */
+  async setMeetingReminderLeadMinutes(userId: string, minutes: number | null): Promise<ProfileRow> {
+    await this.db.update(user).set({ meetingReminderLeadMinutes: minutes }).where(eq(user.id, userId));
+    return this.getMe(userId);
   }
 }

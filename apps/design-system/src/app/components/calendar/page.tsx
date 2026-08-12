@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Button, Calendar, type CalendarEvent, type CalendarEventInstance, type CalendarView } from "@spine/ui";
+import { Badge, Button, Calendar, Field, Input, Label, type CalendarEvent, type CalendarEventInstance, type CalendarView } from "@spine/ui";
 import { useMemo, useState } from "react";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
@@ -302,6 +302,52 @@ function ReadOnlyOverlayDemo() {
   );
 }
 
+function ExtraFieldsDemo() {
+  const [events, setEvents] = useState<CalendarEvent[]>(() => [
+    {
+      id: "planning-session",
+      title: "Planning session",
+      start: atTime(0, 14, 0),
+      end: atTime(0, 15, 0),
+      color: "amber",
+    },
+  ]);
+  const [invitees, setInvitees] = useState<Record<string, string>>({ "planning-session": "" });
+  const [view, setView] = useState<CalendarView>("week");
+  const [date, setDate] = useState(new Date());
+
+  return (
+    <div className="h-[480px] w-full">
+      <Calendar
+        events={events}
+        view={view}
+        onViewChange={setView}
+        date={date}
+        onDateChange={setDate}
+        onEventCreate={(event, extra) => {
+          setEvents((prev) => [...prev, event]);
+          setInvitees((prev) => ({ ...prev, [event.id]: (extra?.invitees as string) ?? "" }));
+        }}
+        onEventUpdate={(event, extra) => {
+          setEvents((prev) => prev.map((e) => (e.id === event.id ? event : e)));
+          if (extra) setInvitees((prev) => ({ ...prev, [event.id]: (extra.invitees as string) ?? "" }));
+        }}
+        onEventDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
+        renderExtraFields={({ event, setExtra }) => (
+          <Field>
+            <Label>Invite people (comma-separated, demo only)</Label>
+            <Input
+              defaultValue={event ? (invitees[event.id] ?? "") : ""}
+              placeholder="e.g. Sam, Priya"
+              onChange={(e) => setExtra({ invitees: e.target.value })}
+            />
+          </Field>
+        )}
+      />
+    </div>
+  );
+}
+
 export default function CalendarPage() {
   return (
     <div>
@@ -374,8 +420,16 @@ export default function Example() {
           <ApiTable
             rows={[
               { prop: "events", type: "CalendarEvent[]" },
-              { prop: "onEventCreate", type: "(event: CalendarEvent) => void" },
-              { prop: "onEventUpdate", type: "(event: CalendarEvent) => void" },
+              {
+                prop: "onEventCreate",
+                type: "(event: CalendarEvent, extra?: Record<string, unknown>) => void",
+                description: "extra carries whatever renderExtraFields collected via its setExtra callback — undefined when renderExtraFields isn't provided or contributed nothing.",
+              },
+              {
+                prop: "onEventUpdate",
+                type: "(event: CalendarEvent, extra?: Record<string, unknown>) => void",
+                description: "Same extra param as onEventCreate. Also fires on drag-move/resize, where extra is always undefined (renderExtraFields only renders inside the dialog).",
+              },
               { prop: "onEventDelete", type: "(eventId: string) => void" },
               { prop: "view", type: '"day" | "week" | "month" | "agenda"' },
               { prop: "onViewChange", type: "(view: CalendarView) => void" },
@@ -395,6 +449,11 @@ export default function Example() {
                 prop: "onReadOnlyEventClick",
                 type: "(instance: CalendarEventInstance) => void",
                 description: "Required alongside readOnlyEventIds — called instead of opening the editor.",
+              },
+              {
+                prop: "renderExtraFields",
+                type: "(ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode",
+                description: "Escape hatch for consumer-specific fields the built-in editor has no concept of (e.g. meeting attendees). Rendered inline in the create/edit dialog. Call setExtra with whatever your onEventCreate/onEventUpdate handler expects back as extra — Calendar never inspects it. event is null in create mode (no id exists yet).",
               },
               { prop: "className", type: "string" },
             ]}
@@ -521,6 +580,27 @@ export default function Example() {
           </DocLead>
           <ComponentPreview>
             <ReadOnlyOverlayDemo />
+          </ComponentPreview>
+        </DocSubsection>
+
+        <DocSubsection id="extra-fields" title="Extra fields in the editor">
+          <DocLead>
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">renderExtraFields</code> renders
+            consumer-owned content inline in the create/edit dialog, below the built-in fields —
+            for data the built-in editor has no concept of. Call the supplied{" "}
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">setExtra</code> whenever your
+            content changes; whatever you pass is threaded through to{" "}
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">onEventCreate</code>/
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">onEventUpdate</code>&apos;s second
+            argument. The /meetings page (S-01.10/S-01.11) uses this for a visibility toggle and
+            an attendee picker — this demo below is a minimal stand-in (a plain text field) to
+            show the mechanism without pulling in a real attendee data source. Note{" "}
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">event</code> is{" "}
+            <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">null</code> in create mode,
+            since no id exists yet.
+          </DocLead>
+          <ComponentPreview>
+            <ExtraFieldsDemo />
           </ComponentPreview>
         </DocSubsection>
       </DocSection>

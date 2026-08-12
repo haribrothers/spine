@@ -225,6 +225,20 @@
       "when": 1786509688692,
       "tag": "0031_skinny_angel",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1786519742697,
+      "tag": "0032_meeting_visibility_attendees",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1786519853875,
+      "tag": "0033_backfill_meetings_manage_capability",
+      "breakpoints": true
     }
   ]
 }

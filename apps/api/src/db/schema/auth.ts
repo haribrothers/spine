@@ -7,6 +7,7 @@ import {
   index,
   uniqueIndex,
   jsonb,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -49,6 +50,16 @@ export const user = pgTable("user", {
    * preferences one table over.
    */
   dashboardLayout: jsonb("dashboard_layout"),
+  /**
+   * PRD S-10.22 — per-user override of the org's default meeting-reminder
+   * lead time (minutes before a meeting starts to send the S-10.21
+   * "starting soon" notification). Nullable, same "absent = fall back"
+   * convention as `dashboardLayout`: null means "use the org default"
+   * (`settings` key `meeting_reminder_lead_minutes`), which itself falls
+   * back to a hardcoded default if the org has never set one — see
+   * MeetingReminderWorker for the full three-tier resolution order.
+   */
+  meetingReminderLeadMinutes: integer("meeting_reminder_lead_minutes"),
 });
 
 export const session = pgTable(

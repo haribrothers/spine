@@ -14,6 +14,22 @@ export const meetingRecurrenceSchema = z.object({
   ]),
 });
 
+/** PRD S-01.10/S-01.11 — see apps/api/src/db/schema/meetings.ts's meetingVisibilityEnum comment. */
+export const meetingVisibilitySchema = z.enum(["private", "org"]);
+
+/**
+ * `user.id` (Better Auth) is a plain `text` primary key, not a uuid — do not
+ * reuse `uuidSchema` here.
+ */
+export const meetingAttendeeUserIdSchema = z.string().min(1);
+
+export const meetingAttendeeStatusSchema = z.enum(["invited", "accepted", "declined", "tentative"]);
+
+/** "invited" is excluded — that's the system-set initial state, never something a user sets via respond(). */
+export const respondToMeetingSchema = z.object({
+  status: z.enum(["accepted", "declined", "tentative"]),
+});
+
 export const createMeetingSchema = z
   .object({
     contactId: uuidSchema.optional().nullable(),
@@ -25,6 +41,9 @@ export const createMeetingSchema = z
     description: z.string().optional().nullable(),
     location: z.string().optional().nullable(),
     recurrence: meetingRecurrenceSchema.optional().nullable(),
+    /** Defaults to "private" server-side when omitted. */
+    visibility: meetingVisibilitySchema.optional(),
+    attendeeUserIds: z.array(meetingAttendeeUserIdSchema).optional(),
   })
   .refine((value) => value.endAt >= value.startAt, {
     message: "endAt must not be before startAt",
@@ -41,4 +60,7 @@ export const updateMeetingSchema = z.object({
   description: z.string().optional().nullable(),
   location: z.string().optional().nullable(),
   recurrence: meetingRecurrenceSchema.optional().nullable(),
+  visibility: meetingVisibilitySchema.optional(),
+  /** When provided, replaces the full invite list — MeetingsService diffs against existing attendees to decide who's newly invited vs. removed. */
+  attendeeUserIds: z.array(meetingAttendeeUserIdSchema).optional(),
 });

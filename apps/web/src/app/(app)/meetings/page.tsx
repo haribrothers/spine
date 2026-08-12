@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { MeetingsCalendar } from "./meetings-calendar";
 
@@ -11,7 +12,10 @@ export default function MeetingsPage() {
   return (
     <>
       <AppShellHeader breadcrumb={[{ label: "Sales" }, { label: "Meetings" }]} title="Meetings" description="Schedule and view meetings with your contacts." />
-      <MeetingsCalendar />
+      {/* MeetingsCalendar reads ?id= (S-10.20/S-10.21 notification deep links) via useSearchParams, which requires a Suspense boundary. */}
+      <Suspense>
+        <MeetingsCalendar />
+      </Suspense>
     </>
   );
 }

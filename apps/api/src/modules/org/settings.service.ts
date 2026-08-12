@@ -38,6 +38,15 @@ import { settings } from "../../db/schema";
  *   server-side in the dashboard meetings route itself (checked before
  *   honoring "org"), not a client-side toggle, so this is not a
  *   Field-widening lever.
+ * - `meeting_reminder_lead_minutes` → { minutes: number } — S-10.22, the
+ *   org-wide default for how many minutes before a meeting starts the
+ *   S-10.21 "starting soon" reminder fires. Owner-editable from Settings.
+ *   Any user can override it for themselves via `user.
+ *   meetingReminderLeadMinutes` (nullable — null means "use this org
+ *   default"); if this key itself is unset, `MeetingReminderWorker` falls
+ *   back to a hardcoded default. See that worker's own comment for the
+ *   full three-tier resolution order (user override → org default →
+ *   hardcoded fallback).
  */
 @Injectable()
 export class SettingsService {

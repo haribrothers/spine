@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, jsonb, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, jsonb, pgEnum, index, unique } from "drizzle-orm/pg-core";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 
@@ -16,6 +16,23 @@ export const meetingColorEnum = pgEnum("meeting_color", [
   "teal",
   "pink",
   "slate",
+]);
+
+/**
+ * PRD S-01.10/S-01.11 — `private` (default) is visible only to the organizer
+ * and invited attendees (see `meetingAttendees` below); `org` is visible to
+ * every org member, matching the app's pre-existing behavior before this
+ * visibility model existed. Owners always see every meeting regardless of
+ * this value, per §2.1's blanket-access rule — that's enforced in
+ * MeetingsService, not here.
+ */
+export const meetingVisibilityEnum = pgEnum("meeting_visibility", ["private", "org"]);
+
+export const meetingAttendeeStatusEnum = pgEnum("meeting_attendee_status", [
+  "invited",
+  "accepted",
+  "declined",
+  "tentative",
 ]);
 
 /**
@@ -56,6 +73,8 @@ export const meetings = pgTable(
       end: { type: "date"; date: string } | { type: "count"; count: number };
     }>(),
     organizerUserId: text("organizer_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** PRD S-01.10/S-01.11 — see meetingVisibilityEnum's own comment. */
+    visibility: meetingVisibilityEnum("visibility").notNull().default("private"),
     /** Same demo-data marker convention as contacts.isDemo/quotes.isDemo — meetings have no cascading demo-flagged parent (contactId is nullable and set-null on delete), so this is DemoDataService.deleteAll's own removal handle. */
     isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -66,5 +85,52 @@ export const meetings = pgTable(
     index("meetings_contact_idx").on(table.contactId),
     index("meetings_org_start_idx").on(table.orgId, table.startAt),
     index("meetings_org_demo_idx").on(table.orgId, table.isDemo),
+  ],
+);
+
+/**
+ * PRD S-01.10/S-01.12 — who's invited to a meeting and their response.
+ * `userId` is nullable with ON DELETE SET NULL (not cascade) so a departed
+ * member's historical attendance record survives their removal from the
+ * org, matching `meetings.organizerUserId`'s own retention behavior — see
+ * CLAUDE.md's permission-model section and PRD §7 for why this repo prefers
+ * retaining history over cascading deletes for membership-adjacent data.
+ *
+ * The organizer always gets a synthetic row here too (status "accepted",
+ * set at creation time in MeetingsService.create) so reminder/response
+ * logic never has to special-case "is this the organizer" — see
+ * MeetingsService for that invariant.
+ *
+ * `remindedAt`/`remindedForOccurrenceStart` back the S-10.21 "starting
+ * soon" reminder. Recurring meetings apply attendees to the whole series
+ * (no per-occurrence overrides, PRD explicit) but attendees must still be
+ * reminded before *every* occurrence, not just once ever — so reminder
+ * state is keyed against which occurrence's start was last reminded for
+ * (`remindedForOccurrenceStart`), and a poll tick reminds again whenever
+ * the next-upcoming occurrence's start doesn't match it. For a
+ * non-recurring meeting, "the occurrence" is just the meeting's own
+ * `startAt`, so the same column/logic covers both cases with no branch.
+ */
+export const meetingAttendees = pgTable(
+  "meeting_attendees",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    meetingId: uuid("meeting_id")
+      .notNull()
+      .references(() => meetings.id, { onDelete: "cascade" }),
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    status: meetingAttendeeStatusEnum("status").notNull().default("invited"),
+    invitedAt: timestamp("invited_at", { withTimezone: true }).notNull().defaultNow(),
+    respondedAt: timestamp("responded_at", { withTimezone: true }),
+    remindedAt: timestamp("reminded_at", { withTimezone: true }),
+    remindedForOccurrenceStart: timestamp("reminded_for_occurrence_start", { withTimezone: true }),
+  },
+  (table) => [
+    // Multiple NULL userId rows don't collide under a plain unique
+    // constraint — intended, since ON DELETE SET NULL can otherwise
+    // produce several history rows with no user for the same meeting.
+    unique("meeting_attendees_meeting_user_unique").on(table.meetingId, table.userId),
+    index("meeting_attendees_meeting_idx").on(table.meetingId),
+    index("meeting_attendees_user_idx").on(table.userId),
   ],
 );
