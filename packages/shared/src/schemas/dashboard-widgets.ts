@@ -17,9 +17,17 @@ import type { Capability } from "./permissions.ts";
  * pattern; `null` means "every authenticated org member" (session-only,
  * or — for `activity-feed` — the server does its own role-filtering
  * internally rather than gating the whole route).
+ *
+ * The KPI summary row (S-09.10, cash/receivables/overdue/revenue) is
+ * DELIBERATELY not a member of this list — per explicit user direction it
+ * must never be movable or hideable, so `DashboardShell` renders it as a
+ * pinned header outside the reorderable set entirely, not as a widget
+ * with drag/hide disabled. Keeping it out of the registry (rather than
+ * adding a `locked: true` flag some widgets could set) means the
+ * customizable set and the pinned set are structurally distinct — there's
+ * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
-  { key: "kpi-summary", capability: "dashboard.view" as Capability, ownerOnly: false },
   { key: "revenue-trend", capability: "dashboard.view" as Capability, ownerOnly: true },
   { key: "pipeline-by-stage", capability: "contacts.manage" as Capability, ownerOnly: false },
   { key: "ar-aging", capability: "dashboard.view" as Capability, ownerOnly: false },

@@ -801,26 +801,34 @@ revenue.
    recently in the org — job/milestone-completion and quote-view/accept
    entries are still visible to Field.
 9. **Widget customization (S-09.13)**: on the Owner/Staff dashboard, click
-   **Customize dashboard** (top-right). Confirm the widget grid is
-   replaced by a reorderable list — one row per visible widget, a drag
-   handle, and an eye icon to hide/show. Drag a row to a new position,
-   confirm the list re-orders immediately. Click the eye icon on one
-   widget to hide it (row dims). Click **Done** — confirm the dashboard
-   grid now reflects the new order, and the hidden widget is gone from the
-   grid (not greyed out — actually absent).
+   **Edit layout** (top-right). Confirm the widget grid stays in place —
+   no separate list — with a small drag-handle + eye-icon control
+   overlaid on each widget card's own top-right corner. Confirm the
+   **KPI row is NOT part of this** — it has no drag handle, no eye icon,
+   and never moves, since it's a pinned header above the customizable
+   grid, not a widget. Drag a card to a new position (try same-row and
+   diagonal moves) — confirm the grid re-orders immediately, in place.
+   Click the eye icon on one widget — confirm it dims (not removed yet,
+   so it can still be found while editing). Click **Done** — confirm the
+   dashboard now reflects the new order, the hidden widget is gone
+   entirely (not greyed out), and the KPI row is unchanged and still
+   above everything.
 10. **Persistence**: reload the page — confirm the same custom order and
-    hidden widget persist (not reset to default). Log out and log back in
-    (or open a different browser/incognito with the same account) —
-    confirm the same layout still applies, proving it's saved server-side
-    per-user, not just in browser storage.
+    hidden widget persist (not reset to default), and the KPI row is
+    still pinned at the top. Log out and log back in (or open a different
+    browser/incognito with the same account) — confirm the same layout
+    still applies, proving it's saved server-side per-user, not just in
+    browser storage.
 11. **Re-showing a hidden widget restores its position.** Reopen
-    Customize, click the eye icon again on the widget you hid in step 9 —
-    confirm it reappears in the SAME position it was in before being
+    Edit layout, click the eye icon again on the widget you hid in step 9
+    — confirm it reappears in the SAME position it was in before being
     hidden, not appended to the end.
 12. **Regression check**: confirm a second user (e.g. a Staff account) on
     the same org has their OWN independent layout — customizing the
     Owner's dashboard must never affect what a Staff or Field user sees,
-    since this is a per-user preference, not an org-wide one.
+    since this is a per-user preference, not an org-wide one. Also confirm
+    the KPI row is pinned identically for every role that sees it — it
+    isn't part of anyone's saved layout.
 13. Go to **Reports**. Confirm three tabs: Profit & Loss, Balance Sheet,
     Job Profitability.
 14. **Profit & Loss tab**: pick a date range covering all demo data (e.g.

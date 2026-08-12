@@ -5,6 +5,7 @@ import { Button, DragHandle, HideToggle, ReorderableItem, ReorderableList, useRe
 import { DASHBOARD_WIDGETS, mergeDashboardLayout, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { DashboardSummary } from "./dashboard-summary";
 import { SetupChecklist } from "./setup-checklist";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
 
@@ -23,7 +24,7 @@ function visibleKeysForRole(role: string | null): DashboardWidgetKey[] {
   return DASHBOARD_WIDGETS.filter((w) => role === "owner" || !w.ownerOnly).map((w) => w.key);
 }
 
-const FULL_WIDTH_KEYS = new Set<string>(["kpi-summary", "activity-feed"]);
+const FULL_WIDTH_KEYS = new Set<string>(["activity-feed"]);
 
 /**
  * S-09.12/S-09.13 (dashboard v2) — the role-adaptive, per-user-
@@ -42,6 +43,13 @@ const FULL_WIDTH_KEYS = new Set<string>(["kpi-summary", "activity-feed"]);
  * always what's actually on the dashboard. `mergeDashboardLayout`
  * (packages/shared, unit-tested) is still the pure function deciding
  * order/visibility; only the editing UI changed.
+ *
+ * `DashboardSummary` (the KPI row) renders as a PINNED header, above and
+ * outside the reorderable grid entirely — per explicit user direction it
+ * must never be movable or hideable. It's gated the same way it always
+ * was (self-gates to nothing on a 403, so Field/no-`dashboard.view`
+ * sessions correctly never see it) but isn't part of the customizable
+ * widget set at all, so there's no "Edit layout" affordance on it.
  */
 export function DashboardShell({ role }: { role: string | null }) {
   const [savedLayout, setSavedLayout] = useState<DashboardLayout | null | undefined>(undefined);
@@ -79,6 +87,7 @@ export function DashboardShell({ role }: { role: string | null }) {
   return (
     <div className="flex flex-col gap-6">
       {role !== "field" && <SetupChecklist />}
+      {role !== "field" && <DashboardSummary />}
 
       <div className="flex justify-end">
         <Button variant="secondary" size="sm" onClick={() => setEditing((v) => !v)}>
