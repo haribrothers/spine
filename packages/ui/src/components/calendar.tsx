@@ -28,6 +28,7 @@ import {
   eventSpansMultipleDays,
   expandEventsInRange,
   isInstanceWithinDay,
+  isOccurrenceAlreadyModified,
   layoutOverlappingEvents,
 } from "../lib/calendar-utils";
 import { Button } from "./button";
@@ -53,9 +54,26 @@ import { Textarea } from "./textarea";
 import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 
 export type { CalendarEvent, CalendarEventColor, CalendarEventInstance, CalendarRecurrenceRule, CalendarRecurrenceFrequency, CalendarRecurrenceEnd } from "../lib/calendar-utils";
-export { CALENDAR_EVENT_COLORS } from "../lib/calendar-utils";
+export { CALENDAR_EVENT_COLORS, isOccurrenceAlreadyModified } from "../lib/calendar-utils";
 
 export type CalendarView = "day" | "week" | "month" | "agenda";
+
+/**
+ * PRD S-01.14 — a completed drag-move or resize gesture on a recurring
+ * occurrence, deferred to the consumer for a This event/All events choice
+ * before Calendar commits anything (mirrors renderEventPopover's onEdit/
+ * onDelete deferral for the click-edit path). `seriesEvent` is the whole
+ * series shifted by the drag's offset (what "All events" should save);
+ * `occurrenceStart`/`occurrenceEnd` are the dragged occurrence's own new
+ * absolute time (what "This event" should save as an exception override);
+ * `originalOccurrenceStart` is the exception's stable key.
+ */
+export interface RecurringMoveOrResizeRequest {
+  seriesEvent: CalendarEvent;
+  occurrenceStart: Date;
+  occurrenceEnd: Date;
+  originalOccurrenceStart: Date;
+}
 
 const HOUR_HEIGHT = 48; // px per hour in Day/Week grids
 const SNAP_MINUTES = 15;
@@ -177,6 +195,21 @@ export interface CalendarProps {
    * entirely if the consumer has no duplicate feature.
    */
   duplicateRequest?: { event: CalendarEvent } | null;
+  /**
+   * PRD S-01.14 — called instead of committing directly when the user
+   * finishes dragging or resizing an occurrence that belongs to a
+   * recurring series (Day/Week views only — Month has no drag-move).
+   * Calendar does not render any dialog itself here (unlike
+   * `renderEventPopover`, there's no anchored popover step for a drag
+   * gesture to render into) — the consumer is expected to show its own
+   * This event/All events confirmation (e.g. the same one already used
+   * for the click-edit path) and then call `onConfirm(scope)` to commit
+   * via `onEventUpdate`, or `onCancel()` to snap the event back to its
+   * original slot with no change. When this prop is omitted, a drag/resize
+   * on a recurring occurrence silently moves the whole series, matching
+   * behavior before S-01.14.
+   */
+  onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest, onConfirm: (scope: "series" | "occurrence") => void, onCancel: () => void) => void;
   className?: string;
 }
 
@@ -205,6 +238,7 @@ export function Calendar({
   renderExtraFields,
   renderEventPopover,
   duplicateRequest,
+  onRecurringMoveOrResize,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -268,9 +302,38 @@ export function Calendar({
     setEditorState(null);
   };
 
-  const handleEventUpdate = (event: CalendarEvent) => {
+  const handleEventUpdate = (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => {
     if (readOnlyEventIds?.has(event.id)) return;
-    onEventUpdate?.(event);
+    onEventUpdate?.(event, undefined, scope, occurrenceDate);
+  };
+
+  const handleRecurringMoveOrResize = (request: RecurringMoveOrResizeRequest) => {
+    if (readOnlyEventIds?.has(request.seriesEvent.id)) return;
+    if (!onRecurringMoveOrResize) {
+      // No consumer opt-in — preserve pre-S-01.14 behavior (whole series moves).
+      onEventUpdate?.(request.seriesEvent);
+      return;
+    }
+    onRecurringMoveOrResize(
+      request,
+      (scope) => {
+        if (scope === "occurrence") {
+          onEventUpdate?.(
+            { ...request.seriesEvent, start: request.occurrenceStart, end: request.occurrenceEnd },
+            undefined,
+            "occurrence",
+            request.originalOccurrenceStart,
+          );
+        } else {
+          onEventUpdate?.(request.seriesEvent);
+        }
+      },
+      () => {
+        // Cancel — nothing to revert here; TimeGrid already discarded its
+        // own drag state on pointerup regardless of what handleUp did, so
+        // the event simply re-renders at its last-committed position.
+      },
+    );
   };
 
   return (
@@ -292,6 +355,7 @@ export function Calendar({
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
             onEventUpdate={handleEventUpdate}
+            onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
           />
         )}
@@ -302,6 +366,7 @@ export function Calendar({
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
             onEventUpdate={handleEventUpdate}
+            onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
           />
         )}
@@ -503,6 +568,13 @@ interface TimeGridDragState {
   // for "move"/"resize-*" (kind "create" has no occurrence).
   dragStartOccurrenceStart?: Date;
   dragStartOccurrenceEnd?: Date;
+  // PRD S-01.14 — whether the dragged/resized instance belongs to a
+  // recurring series, and (when it does) the series-computed date that
+  // identifies this occurrence for an exception, independent of any
+  // existing time override (see CalendarEventInstance.originalOccurrenceStart's
+  // own doc comment for why this must stay fixed across edits).
+  isRecurring?: boolean;
+  originalOccurrenceStart?: Date;
   pointerId: number;
 }
 
@@ -522,7 +594,9 @@ interface TimeGridProps {
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
-  onEventUpdate: (event: CalendarEvent) => void;
+  onEventUpdate: (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
+  /** PRD S-01.14 — when set, a move/resize on a recurring occurrence defers here instead of calling onEventUpdate directly. Omit to fall back to today's whole-series-move behavior (matches renderEventPopover's own opt-in shape). */
+  onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
   readOnlyEventIds?: Set<string>;
 }
 
@@ -533,11 +607,19 @@ interface TimeGridProps {
  * so touch works and live feedback (the draft block following the pointer)
  * is simple to render — see calendar.tsx's module doc for why.
  */
-function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: TimeGridProps) {
+function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: TimeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<TimeGridDragState | null>(null);
   const dragRef = useRef<TimeGridDragState | null>(null);
   dragRef.current = drag;
+  // A pointerdown→move→up sequence that actually moved/resized an event
+  // still fires a native `click` on pointerup (onMoveStart fires on
+  // pointerdown, before the click) — without this guard, a real drag would
+  // ALSO open the click-to-edit popover on top of (and blocking) any
+  // scope-choice confirmation the drag itself triggered. Set the instant a
+  // real move/resize is detected in handleUp, consumed and cleared by the
+  // very next click.
+  const suppressNextClickRef = useRef(false);
 
   const rangeStart = startOfDay(days[0] ?? new Date());
   const rangeEnd = addDays(startOfDay(days[days.length - 1] ?? days[0] ?? new Date()), 1);
@@ -586,6 +668,8 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       currentEnd: instance.occurrenceEnd,
       dragStartOccurrenceStart: instance.occurrenceStart,
       dragStartOccurrenceEnd: instance.occurrenceEnd,
+      isRecurring: instance.isRecurring,
+      originalOccurrenceStart: instance.originalOccurrenceStart,
       pointerId: e.pointerId,
     });
   };
@@ -607,6 +691,8 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       currentEnd: instance.occurrenceEnd,
       dragStartOccurrenceStart: instance.occurrenceStart,
       dragStartOccurrenceEnd: instance.occurrenceEnd,
+      isRecurring: instance.isRecurring,
+      originalOccurrenceStart: instance.originalOccurrenceStart,
       pointerId: e.pointerId,
     });
   };
@@ -671,11 +757,41 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
         const startOffset = finished.currentStart.getTime() - finished.dragStartOccurrenceStart.getTime();
         const endOffset = finished.currentEnd.getTime() - finished.dragStartOccurrenceEnd.getTime();
         if (startOffset !== 0 || endOffset !== 0) {
-          onEventUpdate({
+          suppressNextClickRef.current = true;
+          const seriesUpdate: CalendarEvent = {
             ...finished.originalEvent,
             start: new Date(finished.originalEvent.start.getTime() + startOffset),
             end: new Date(finished.originalEvent.end.getTime() + endOffset),
-          });
+          };
+          if (
+            finished.isRecurring &&
+            finished.originalOccurrenceStart &&
+            !isOccurrenceAlreadyModified(finished.originalEvent, finished.originalOccurrenceStart, true)
+          ) {
+            // PRD S-01.14 — dragging/resizing one occurrence of a recurring
+            // event must not silently move the whole series. Defer to the
+            // consumer for a This event/All events choice; only commit
+            // directly (as a plain series move) once it resolves.
+            onRecurringMoveOrResize?.({
+              seriesEvent: seriesUpdate,
+              // The occurrence's own new absolute time — what "this event"
+              // scope should save as the exception's start/end override,
+              // as opposed to seriesEvent's offset-shifted series anchor.
+              occurrenceStart: finished.currentStart,
+              occurrenceEnd: finished.currentEnd,
+              originalOccurrenceStart: finished.originalOccurrenceStart,
+            });
+          } else if (finished.isRecurring && finished.originalOccurrenceStart) {
+            // Already individually modified — no ambiguity left to resolve,
+            // this drag/resize commits straight to "this event" again.
+            onEventUpdate(
+              { ...seriesUpdate, start: finished.currentStart, end: finished.currentEnd },
+              "occurrence",
+              finished.originalOccurrenceStart,
+            );
+          } else {
+            onEventUpdate(seriesUpdate);
+          }
         }
       }
     };
@@ -692,7 +808,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
       window.removeEventListener("pointerup", handleUp);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [drag?.kind, drag?.dayIndex, gridHeight, days, onEventUpdate, onSlotCreate]);
+  }, [drag?.kind, drag?.dayIndex, gridHeight, days, onEventUpdate, onRecurringMoveOrResize, onSlotCreate]);
 
   const hours = Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => DAY_START_HOUR + i);
 
@@ -777,7 +893,13 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
                     gridHeight={gridHeight}
                     isDragging={drag?.instanceId === slot.instance.instanceId}
                     isReadOnly={readOnlyEventIds?.has(slot.instance.event.id) ?? false}
-                    onEventClick={onEventClick}
+                    onEventClick={(instance, target) => {
+                      if (suppressNextClickRef.current) {
+                        suppressNextClickRef.current = false;
+                        return;
+                      }
+                      onEventClick(instance, target);
+                    }}
                     onMoveStart={(e) => beginMove(slot.instance, dayIndex, e)}
                     onResizeStart={(edge, e) => beginResize(slot.instance, dayIndex, edge, e)}
                   />
@@ -894,11 +1016,12 @@ interface DayLikeViewProps {
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
-  onEventUpdate: (event: CalendarEvent) => void;
+  onEventUpdate: (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
+  onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
   readOnlyEventIds?: Set<string>;
 }
 
-function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
   return (
     <TimeGrid
       days={[date]}
@@ -906,6 +1029,7 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpda
       onSlotCreate={onSlotCreate}
       onEventClick={onEventClick}
       onEventUpdate={onEventUpdate}
+      onRecurringMoveOrResize={onRecurringMoveOrResize}
       readOnlyEventIds={readOnlyEventIds}
     />
   );
@@ -915,7 +1039,7 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpda
 // Week view
 // ---------------------------------------------------------------------------
 
-function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpdate, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
   const days = useMemo(() => eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) }), [date]);
 
   return (
@@ -944,6 +1068,7 @@ function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpd
         onSlotCreate={onSlotCreate}
         onEventClick={onEventClick}
         onEventUpdate={onEventUpdate}
+        onRecurringMoveOrResize={onRecurringMoveOrResize}
         readOnlyEventIds={readOnlyEventIds}
       />
     </div>

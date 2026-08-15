@@ -12,10 +12,19 @@ import {
   Button,
 } from "@spine/ui";
 
+const ACTION_COPY: Record<"edit" | "delete" | "move", { title: string; verb: string }> = {
+  edit: { title: "Edit recurring event", verb: "edit" },
+  delete: { title: "Delete recurring event", verb: "delete" },
+  // PRD S-01.14 — dragging to move, or resizing, a recurring occurrence
+  // shares the same This event/All events choice as edit/delete.
+  move: { title: "Move recurring event", verb: "move" },
+};
+
 /**
- * PRD S-01.14 — shown before editing/deleting a recurring meeting from the
- * quick-view popover. Two-way choice only ("This event" vs "All events") —
- * no "this and following" split, per the PRD's explicit v1 scope.
+ * PRD S-01.14 — shown before editing/deleting/moving a recurring meeting
+ * (from the quick-view popover, or a drag-move/resize on the calendar
+ * grid). Two-way choice only ("This event" vs "All events") — no "this and
+ * following" split, per the PRD's explicit v1 scope.
  */
 export function MeetingScopeChoiceDialog({
   open,
@@ -24,16 +33,16 @@ export function MeetingScopeChoiceDialog({
   onChoose,
 }: {
   open: boolean;
-  action: "edit" | "delete";
+  action: "edit" | "delete" | "move";
   onOpenChange: (open: boolean) => void;
   onChoose: (scope: "occurrence" | "series") => void;
 }) {
-  const verb = action === "edit" ? "edit" : "delete";
+  const { title, verb } = ACTION_COPY[action];
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>{action === "edit" ? "Edit recurring event" : "Delete recurring event"}</AlertDialogTitle>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>
             This is a recurring event. Do you want to {verb} just this event, or all events in the series?
           </AlertDialogDescription>

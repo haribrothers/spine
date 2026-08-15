@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { expandRecurringEvent, type CalendarEvent } from "./calendar-utils.ts";
+import { expandRecurringEvent, isOccurrenceAlreadyModified, type CalendarEvent } from "./calendar-utils.ts";
 
 function weeklyEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
   return {
@@ -134,5 +134,43 @@ describe("expandRecurringEvent — occurrence exceptions (PRD S-01.14)", () => {
     });
     const instances = expandRecurringEvent(event, rangeStart, rangeEnd);
     expect(instances).toHaveLength(5);
+  });
+});
+
+describe("isOccurrenceAlreadyModified", () => {
+  const occurrenceDate = new Date("2026-01-12T10:00:00.000Z");
+
+  it("is true for an occurrence with a modified exception (a second edit should skip the scope prompt)", () => {
+    const event = weeklyEvent({
+      occurrenceExceptions: [{ occurrenceDate, status: "modified", title: "Rescheduled" }],
+    });
+    expect(isOccurrenceAlreadyModified(event, occurrenceDate, true)).toBe(true);
+  });
+
+  it("is false for an occurrence with no exception at all", () => {
+    const event = weeklyEvent({ occurrenceExceptions: [] });
+    expect(isOccurrenceAlreadyModified(event, occurrenceDate, true)).toBe(false);
+  });
+
+  it("is false for an occurrence with a cancelled (not modified) exception", () => {
+    const event = weeklyEvent({
+      occurrenceExceptions: [{ occurrenceDate, status: "cancelled" }],
+    });
+    expect(isOccurrenceAlreadyModified(event, occurrenceDate, true)).toBe(false);
+  });
+
+  it("is false when the exception belongs to a different occurrence date", () => {
+    const event = weeklyEvent({
+      occurrenceExceptions: [{ occurrenceDate: new Date("2026-01-19T10:00:00.000Z"), status: "modified" }],
+    });
+    expect(isOccurrenceAlreadyModified(event, occurrenceDate, true)).toBe(false);
+  });
+
+  it("is false for a non-recurring event regardless of exceptions present", () => {
+    const event = weeklyEvent({
+      recurrence: undefined,
+      occurrenceExceptions: [{ occurrenceDate, status: "modified" }],
+    });
+    expect(isOccurrenceAlreadyModified(event, occurrenceDate, false)).toBe(false);
   });
 });

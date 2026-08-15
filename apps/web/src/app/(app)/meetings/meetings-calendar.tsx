@@ -30,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
   MiniCalendar,
+  isOccurrenceAlreadyModified,
   type CalendarEvent,
   type CalendarEventInstance,
   type CalendarView,
@@ -201,12 +202,15 @@ export function MeetingsCalendar() {
   // meeting), plus the scope-choice alert shown before Edit/Delete on a
   // recurring meeting.
   const [popoverAttendees, setPopoverAttendees] = useState<Record<string, MeetingAttendee[]>>({});
-  const [scopeChoice, setScopeChoice] = useState<{
-    action: "edit" | "delete";
-    instance: CalendarEventInstance;
-    onEdit: (scope?: "series" | "occurrence") => void;
-    onDelete: (scope?: "series" | "occurrence") => void;
-  } | null>(null);
+  const [scopeChoice, setScopeChoice] = useState<
+    | { action: "edit"; onEdit: (scope?: "series" | "occurrence") => void; onDelete: (scope?: "series" | "occurrence") => void }
+    | { action: "delete"; onEdit: (scope?: "series" | "occurrence") => void; onDelete: (scope?: "series" | "occurrence") => void }
+    // PRD S-01.14 — a completed drag-move or resize on a recurring
+    // occurrence, deferred here the same way popover Edit/Delete already
+    // are, before Calendar commits anything.
+    | { action: "move"; onConfirm: (scope: "series" | "occurrence") => void; onCancel: () => void }
+    | null
+  >(null);
   const [duplicatePrefill, setDuplicatePrefill] = useState<CalendarEvent | null>(null);
 
   useEffect(() => {
@@ -443,6 +447,9 @@ export function MeetingsCalendar() {
         readOnlyEventIds={readOnlyEventIds}
         onReadOnlyEventClick={setActivityDetail}
         duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
+        onRecurringMoveOrResize={(request, onConfirm, onCancel) => {
+          setScopeChoice({ action: "move", onConfirm, onCancel });
+        }}
         renderExtraFields={({ isEdit, event, setExtra }) => {
           if (!session?.user?.id) return null;
           const editingMeeting = isEdit ? (meetings?.find((m) => m.id === event?.id) ?? null) : null;
@@ -487,7 +494,13 @@ export function MeetingsCalendar() {
               organizerName={members.find((m) => m.userId === meeting.organizerUserId)?.name}
               onEdit={(scope) => {
                 if (instance.isRecurring && !scope) {
-                  setScopeChoice({ action: "edit", instance, onEdit, onDelete });
+                  // Already individually modified — no ambiguity left, skip
+                  // straight to "this event" instead of asking again.
+                  if (isOccurrenceAlreadyModified(instance.event, instance.originalOccurrenceStart, true)) {
+                    onEdit("occurrence");
+                    return;
+                  }
+                  setScopeChoice({ action: "edit", onEdit, onDelete });
                   onClose();
                   return;
                 }
@@ -495,7 +508,11 @@ export function MeetingsCalendar() {
               }}
               onDelete={(scope) => {
                 if (instance.isRecurring && !scope) {
-                  setScopeChoice({ action: "delete", instance, onEdit, onDelete });
+                  if (isOccurrenceAlreadyModified(instance.event, instance.originalOccurrenceStart, true)) {
+                    onDelete("occurrence");
+                    return;
+                  }
+                  setScopeChoice({ action: "delete", onEdit, onDelete });
                   onClose();
                   return;
                 }
@@ -515,15 +532,21 @@ export function MeetingsCalendar() {
       <MeetingScopeChoiceDialog
         open={!!scopeChoice}
         action={scopeChoice?.action ?? "edit"}
-        onOpenChange={(open) => !open && setScopeChoice(null)}
+        onOpenChange={(open) => {
+          if (open || !scopeChoice) return;
+          if (scopeChoice.action === "move") scopeChoice.onCancel();
+          setScopeChoice(null);
+        }}
         onChoose={(chosenScope) => {
           if (!scopeChoice) return;
-          const { action, onEdit, onDelete } = scopeChoice;
+          const choice = scopeChoice;
           setScopeChoice(null);
-          if (action === "edit") {
-            onEdit(chosenScope);
+          if (choice.action === "edit") {
+            choice.onEdit(chosenScope);
+          } else if (choice.action === "delete") {
+            choice.onDelete(chosenScope);
           } else {
-            onDelete(chosenScope);
+            choice.onConfirm(chosenScope);
           }
         }}
       />

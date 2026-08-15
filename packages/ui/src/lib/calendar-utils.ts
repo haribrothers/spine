@@ -222,6 +222,32 @@ export function expandRecurringEvent(
   return instances;
 }
 
+/**
+ * PRD S-01.14 — true when this specific occurrence already has a `modified`
+ * exception (i.e. it was previously edited as "this event"). Used to skip
+ * the This event/All events prompt on a *second* edit of an
+ * already-individually-modified occurrence — at that point the user has
+ * already committed to "just this one," so asking again is a false choice,
+ * not a real one. A `cancelled` exception doesn't count (nothing to
+ * re-edit; the occurrence is hidden), and a non-recurring event has no
+ * exceptions to check. Takes the series event + the occurrence's stable key
+ * directly (rather than a full CalendarEventInstance) so both the
+ * click-edit path (which has an instance) and the drag path (which only
+ * has the series CalendarEvent + a separately-tracked originalOccurrenceStart)
+ * can share one implementation.
+ */
+export function isOccurrenceAlreadyModified(
+  event: CalendarEvent,
+  originalOccurrenceStart: Date,
+  isRecurring: boolean,
+): boolean {
+  if (!isRecurring) return false;
+  const key = originalOccurrenceStart.getTime();
+  return (event.occurrenceExceptions ?? []).some(
+    (exception) => exception.status === "modified" && exception.occurrenceDate.getTime() === key,
+  );
+}
+
 /** Expands every event in `events` and flattens into occurrences overlapping the range, sorted by start time. */
 export function expandEventsInRange(
   events: CalendarEvent[],
