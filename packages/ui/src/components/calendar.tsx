@@ -432,9 +432,13 @@ export function Calendar({
 
       <CalendarEventEditor
         state={editorState}
+        events={events}
         onClose={() => setEditorState(null)}
         onSave={handleSave}
         onDelete={handleDelete}
+        onScopeChange={(scope) => {
+          setEditorState((prev) => (prev?.mode === "edit" ? { ...prev, scope } : prev));
+        }}
         contactOptions={contactOptions}
         renderExtraFields={renderExtraFields}
       />
@@ -1380,6 +1384,18 @@ interface CalendarEventEditorProps {
   onClose: () => void;
   onSave: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
   onDelete: (eventId: string) => void;
+  /** PRD S-01.14 — lets the "Edit series instead" link switch an in-progress occurrence-scoped edit to series scope without closing the dialog; the form re-seeds from the series' own values via the existing state-keyed useEffect. Only meaningful (and only rendered) when editing a recurring event. */
+  onScopeChange?: (scope: "series" | "occurrence") => void;
+  /**
+   * The raw, unexpanded event list — needed so a series-scope seed can look
+   * up the TRUE series row by id rather than `state.instance.event`, which
+   * for an already-modified occurrence is a shallow clone with
+   * title/location/description overridden for THAT occurrence's display
+   * (see expandRecurringEvent's own comment) — using it directly for a
+   * series-scope seed would silently carry the occurrence's override into
+   * the series on save.
+   */
+  events?: CalendarEvent[];
   contactOptions?: { value: string; label: string }[];
   renderExtraFields?: (ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode;
 }
@@ -1393,7 +1409,7 @@ function fromLocalInputValue(value: string): Date {
   return new Date(value);
 }
 
-function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions, renderExtraFields }: CalendarEventEditorProps) {
+function CalendarEventEditor({ state, events, onClose, onSave, onDelete, onScopeChange, contactOptions, renderExtraFields }: CalendarEventEditorProps) {
   const isEdit = state?.mode === "edit";
   const baseEvent: CalendarEvent | null = isEdit ? state.instance.event : null;
   const extraRef = useRef<Record<string, unknown> | undefined>(undefined);
@@ -1418,8 +1434,19 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
     // never leak into a different create/edit session.
     extraRef.current = undefined;
     if (state.mode === "edit") {
-      const event = state.instance.event;
       const isOccurrenceScoped = state.scope === "occurrence";
+      // For series scope, seed from the TRUE series row (looked up in the
+      // raw `events` list by id), not `state.instance.event` — the latter
+      // is a shallow clone with title/location/description overridden for
+      // an already-modified occurrence's own display (see
+      // expandRecurringEvent's own comment), and using it here would
+      // silently carry that occurrence's override into the series on save
+      // (the "Edit series instead" transition is the path that surfaces
+      // this). Falls back to instance.event if the series row can't be
+      // found (defensive only — should always be present).
+      const event = isOccurrenceScoped
+        ? state.instance.event
+        : (events?.find((e) => e.id === state.instance.event.id) ?? state.instance.event);
       // Editing the whole SERIES rewrites all of it (see this dialog's
       // scope-conditional description below, and handleSave, which has no
       // per-occurrence branch of its own) — so the form must seed start/end
@@ -1484,6 +1511,15 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
 
   if (!state) return null;
 
+  // PRD S-01.14 — editing a single occurrence only ever writes
+  // start/end/location/description onto the exception row (see
+  // MeetingsService.updateOccurrenceException) — title/contact/category/
+  // all-day/recurrence all stay series-level. Title/Contact/Category/All-day
+  // are shown read-only rather than hidden (so the occurrence's real values
+  // are still visible at a glance); Repeats/Frequency are hidden outright
+  // since recurrence itself can never be occurrence-scoped.
+  const isOccurrenceScoped = state.mode === "edit" && state.scope === "occurrence";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -1518,7 +1554,10 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
           onChange={(e) => setTitle(e.target.value)}
           placeholder="e.g. Site visit — Acme Contracting"
           required
-          autoFocus
+          autoFocus={!isOccurrenceScoped}
+          readOnly={isOccurrenceScoped}
+          aria-readonly={isOccurrenceScoped}
+          className={isOccurrenceScoped ? "cursor-not-allowed bg-surface-sunken text-on-surface-muted" : undefined}
         />
       </Field>
 
@@ -1531,6 +1570,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
             value={contactId}
             onValueChange={setContactId}
             placeholder="None"
+            disabled={isOccurrenceScoped}
           />
         </Field>
       )}
@@ -1539,7 +1579,7 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
         <Label htmlFor="calendar-event-allday" className="font-medium">
           All day
         </Label>
-        <Switch id="calendar-event-allday" checked={allDay} onCheckedChange={setAllDay} />
+        <Switch id="calendar-event-allday" checked={allDay} onCheckedChange={setAllDay} disabled={isOccurrenceScoped} />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -1577,10 +1617,12 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
                 type="button"
                 aria-label={COLOR_LABELS[c]}
                 aria-pressed={color === c}
+                disabled={isOccurrenceScoped}
                 onClick={() => setColor(c)}
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   color === c ? "scale-110 border-on-surface" : "border-transparent",
+                  isOccurrenceScoped && "cursor-not-allowed opacity-50",
                 )}
               >
                 <span className={cn("h-5 w-5 rounded-full", colors.dot)} />
@@ -1613,61 +1655,65 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
         />
       </Field>
 
-      <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-        <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
-          <Repeat size={12} />
-          Repeats
-        </Label>
-        <Switch id="calendar-event-recurs" checked={recurs} onCheckedChange={setRecurs} />
-      </div>
+      {!isOccurrenceScoped && (
+        <>
+          <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+            <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
+              <Repeat size={12} />
+              Repeats
+            </Label>
+            <Switch id="calendar-event-recurs" checked={recurs} onCheckedChange={setRecurs} />
+          </div>
 
-      {recurs && (
-        <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-sunken p-3">
-          <Field>
-            <Label htmlFor="calendar-event-frequency">Frequency</Label>
-            <NativeSelect
-              id="calendar-event-frequency"
-              value={frequency}
-              onChange={(e) => setFrequency(e.target.value as CalendarRecurrenceFrequency)}
-            >
-              <option value="daily">Daily</option>
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-            </NativeSelect>
-          </Field>
-          <Field>
-            <Label>Ends</Label>
-            <div className="flex items-center gap-2">
-              <NativeSelect
-                value={endType}
-                onChange={(e) => setEndType(e.target.value as "date" | "count")}
-                className="w-36"
-              >
-                <option value="count">After</option>
-                <option value="date">On date</option>
-              </NativeSelect>
-              {endType === "count" ? (
-                <Input
-                  type="number"
-                  min={1}
-                  value={endCount}
-                  onChange={(e) => setEndCount(Number(e.target.value) || 1)}
-                  className="w-24"
-                  aria-label="Occurrence count"
-                />
-              ) : (
-                <Input
-                  type="date"
-                  value={toLocalInputValue(endDate).slice(0, 10)}
-                  onChange={(e) => setEndDate(fromLocalInputValue(`${e.target.value}T00:00`))}
-                  className="w-40"
-                  aria-label="End date"
-                />
-              )}
-              {endType === "count" && <span className="text-[13px] text-on-surface-muted">occurrences</span>}
+          {recurs && (
+            <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-sunken p-3">
+              <Field>
+                <Label htmlFor="calendar-event-frequency">Frequency</Label>
+                <NativeSelect
+                  id="calendar-event-frequency"
+                  value={frequency}
+                  onChange={(e) => setFrequency(e.target.value as CalendarRecurrenceFrequency)}
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </NativeSelect>
+              </Field>
+              <Field>
+                <Label>Ends</Label>
+                <div className="flex items-center gap-2">
+                  <NativeSelect
+                    value={endType}
+                    onChange={(e) => setEndType(e.target.value as "date" | "count")}
+                    className="w-36"
+                  >
+                    <option value="count">After</option>
+                    <option value="date">On date</option>
+                  </NativeSelect>
+                  {endType === "count" ? (
+                    <Input
+                      type="number"
+                      min={1}
+                      value={endCount}
+                      onChange={(e) => setEndCount(Number(e.target.value) || 1)}
+                      className="w-24"
+                      aria-label="Occurrence count"
+                    />
+                  ) : (
+                    <Input
+                      type="date"
+                      value={toLocalInputValue(endDate).slice(0, 10)}
+                      onChange={(e) => setEndDate(fromLocalInputValue(`${e.target.value}T00:00`))}
+                      className="w-40"
+                      aria-label="End date"
+                    />
+                  )}
+                  {endType === "count" && <span className="text-[13px] text-on-surface-muted">occurrences</span>}
+                </div>
+              </Field>
             </div>
-          </Field>
-        </div>
+          )}
+        </>
       )}
     </>
   );
@@ -1685,6 +1731,15 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
                   : "Editing updates the entire series."
                 : "Fill in the details below to add this to the calendar."}
             </DialogDescription>
+            {isEdit && state.mode === "edit" && state.scope === "occurrence" && state.instance.isRecurring && (
+              <button
+                type="button"
+                className="w-fit text-left text-[12.5px] font-medium text-primary underline-offset-2 hover:underline"
+                onClick={() => onScopeChange?.("series")}
+              >
+                Edit the series instead
+              </button>
+            )}
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
