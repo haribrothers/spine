@@ -1,10 +1,15 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createMeetingSchema, respondToMeetingSchema, updateMeetingSchema } from "@spine/shared";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type {
+  createMeetingSchema,
+  deleteMeetingScopeSchema,
+  respondToMeetingSchema,
+  updateMeetingSchema,
+} from "@spine/shared";
 import { and, asc, desc, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { meetingAttendees, meetings, member, user } from "../../db/schema";
+import { meetingAttendees, meetingOccurrenceExceptions, meetings, member, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
@@ -12,6 +17,7 @@ import { SettingsService } from "../org/settings.service";
 export type CreateMeetingInput = z.infer<typeof createMeetingSchema>;
 export type UpdateMeetingInput = z.infer<typeof updateMeetingSchema>;
 export type RespondToMeetingInput = z.infer<typeof respondToMeetingSchema>;
+export type DeleteMeetingScopeInput = z.infer<typeof deleteMeetingScopeSchema>;
 
 /** Resolved once per request from `member`, never trusted from the client. */
 export interface RequestingUser {
@@ -97,11 +103,39 @@ export class MeetingsService {
     if (filters.organizerUserId) conditions.push(eq(meetings.organizerUserId, filters.organizerUserId));
     const visibility = this.visibilityCondition(requestingUser);
     if (visibility) conditions.push(visibility);
-    return this.db
+    const rows = await this.db
       .select()
       .from(meetings)
       .where(and(...conditions))
       .orderBy(desc(meetings.startAt));
+    return this.withOccurrenceExceptions(rows);
+  }
+
+  /**
+   * PRD S-01.14 — batch-fetches `meeting_occurrence_exceptions` for a set of
+   * meetings and nests them onto each row as `occurrenceExceptions` (always
+   * an array, never null/undefined, even when empty). Exceptions carry no
+   * visibility of their own — they ride along with whatever meeting row
+   * already passed the caller's visibility filter, so no extra check is
+   * needed here. Recurrence expansion itself stays a client-side pure
+   * function (calendar-utils.ts); this just ships the raw exception rows
+   * for that function to consult, same pattern as `meetings.recurrence`
+   * itself being stored as-authored rather than expanded server-side.
+   */
+  private async withOccurrenceExceptions<T extends { id: string }>(rows: T[]) {
+    if (!rows.length) return rows.map((row) => ({ ...row, occurrenceExceptions: [] }));
+    const meetingIds = rows.map((row) => row.id);
+    const exceptionRows = await this.db
+      .select()
+      .from(meetingOccurrenceExceptions)
+      .where(inArray(meetingOccurrenceExceptions.meetingId, meetingIds));
+    const byMeetingId = new Map<string, typeof exceptionRows>();
+    for (const exception of exceptionRows) {
+      const bucket = byMeetingId.get(exception.meetingId);
+      if (bucket) bucket.push(exception);
+      else byMeetingId.set(exception.meetingId, [exception]);
+    }
+    return rows.map((row) => ({ ...row, occurrenceExceptions: byMeetingId.get(row.id) ?? [] }));
   }
 
   /**
@@ -148,7 +182,7 @@ export class MeetingsService {
       )
       .orderBy(asc(meetings.startAt));
 
-    return rows;
+    return this.withOccurrenceExceptions(rows);
   }
 
   async getOne(orgId: string, id: string, requestingUser: RequestingUser) {
@@ -164,7 +198,8 @@ export class MeetingsService {
       // the API at all").
       throw new NotFoundException("Meeting not found");
     }
-    return meeting;
+    const [withExceptions] = await this.withOccurrenceExceptions([meeting]);
+    return withExceptions!;
   }
 
   /** Same visibility gate as `getOne` — an attendee list is itself meeting detail. */
@@ -233,7 +268,13 @@ export class MeetingsService {
     if (created?.meeting && created.invitedUserIds.length) {
       this.notifyInvited(orgId, created.meeting.id, created.meeting.title, created.invitedUserIds);
     }
-    return created?.meeting;
+    if (!created?.meeting) return created?.meeting;
+    // A brand-new meeting can't have any occurrence exceptions yet, but the
+    // response shape must still match every other meeting-returning
+    // endpoint (list/getOne/update) — omitting the field here is exactly
+    // what caused apps/web's toCalendarEvent to crash on `.map()` of
+    // undefined the moment this row landed in client state.
+    return { ...created.meeting, occurrenceExceptions: [] };
   }
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateMeetingInput) {
@@ -241,6 +282,10 @@ export class MeetingsService {
     // holders reach this method at all (see controller's @RequireCapability),
     // and the update itself must still target the right org-scoped row.
     const existing = await this.getOne(orgId, id, { userId: actorUserId, role: "owner" });
+
+    if (input.scope === "occurrence") {
+      return this.updateOccurrenceException(orgId, existing, actorUserId, input);
+    }
 
     const result = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -308,11 +353,92 @@ export class MeetingsService {
       if (result.added.length) this.notifyInvited(orgId, id, result.row.title, result.added);
       if (result.removed.length) this.notifyRemoved(orgId, id, result.row.title, result.removed);
     }
-    return result.row;
+    if (!result.row) return result.row;
+    // A series-scoped edit doesn't touch meeting_occurrence_exceptions, but
+    // any that already existed (from a prior "this event" edit) must still
+    // be reported — this response feeds straight back into apps/web's
+    // meetings state, same as create()'s return above.
+    const [withExceptions] = await this.withOccurrenceExceptions([result.row]);
+    return withExceptions;
   }
 
-  async delete(orgId: string, id: string, actorUserId: string) {
+  /**
+   * PRD S-01.14 — "This event" scope. Upserts a `modified` exception row
+   * keyed on `occurrenceDate`, leaving the series row untouched. Each save
+   * fully re-specifies the override set from `input` (no partial-merge with
+   * a previously-saved exception), matching how the series `update()` path
+   * above already treats "field present in input" vs "field omitted."
+   * Attendees/visibility are intentionally never touched here — they stay
+   * series-level only, and the schema layer (`updateMeetingSchema`) already
+   * rejects `attendeeUserIds` alongside `scope: "occurrence"` before this
+   * method is ever reached, but `existing.recurrence` is re-checked here as
+   * a defensive guard, since this method is a private/internal seam a future
+   * caller could still hit without going through the DTO validation.
+   */
+  private async updateOccurrenceException(
+    orgId: string,
+    existing: Awaited<ReturnType<typeof this.getOne>>,
+    actorUserId: string,
+    input: UpdateMeetingInput,
+  ) {
+    if (!existing.recurrence) {
+      throw new BadRequestException("Cannot scope an update to a single occurrence: this meeting is not recurring");
+    }
+    if (!input.occurrenceDate) {
+      throw new BadRequestException("occurrenceDate is required when scope is \"occurrence\"");
+    }
+
+    const row = await this.db.transaction(async (tx) => {
+      const [exception] = await tx
+        .insert(meetingOccurrenceExceptions)
+        .values({
+          meetingId: existing.id,
+          occurrenceDate: input.occurrenceDate!,
+          status: "modified",
+          startAt: input.startAt ?? null,
+          endAt: input.endAt ?? null,
+          title: input.title ?? null,
+          location: input.location ?? null,
+          description: input.description ?? null,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [meetingOccurrenceExceptions.meetingId, meetingOccurrenceExceptions.occurrenceDate],
+          set: {
+            status: "modified",
+            startAt: input.startAt ?? null,
+            endAt: input.endAt ?? null,
+            title: input.title ?? null,
+            location: input.location ?? null,
+            description: input.description ?? null,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "updated",
+        entityType: "meeting",
+        entityId: existing.id,
+        contactId: existing.contactId,
+        changes: [{ field: "occurrence", from: input.occurrenceDate!.toISOString(), to: "modified" }],
+      });
+
+      return exception;
+    });
+
+    return row;
+  }
+
+  async delete(orgId: string, id: string, actorUserId: string, scope: DeleteMeetingScopeInput = {}) {
     const existing = await this.getOne(orgId, id, { userId: actorUserId, role: "owner" });
+
+    if (scope.scope === "occurrence") {
+      return this.deleteOccurrenceException(orgId, existing, actorUserId, scope);
+    }
+
     const attendeeRows = await this.db
       .select({ userId: meetingAttendees.userId })
       .from(meetingAttendees)
@@ -345,6 +471,88 @@ export class MeetingsService {
       });
     }
     return { id };
+  }
+
+  /**
+   * PRD S-01.14 — "This event" delete scope. Upserts a `cancelled` exception
+   * row (all override columns null — nothing to override, it just shouldn't
+   * render) rather than deleting anything; the series row and its attendees
+   * are untouched. Notifies attendees the same way a full-series delete
+   * does, scoped to the one occurrence, so nobody has to notice a gap on
+   * their calendar themselves.
+   */
+  private async deleteOccurrenceException(
+    orgId: string,
+    existing: Awaited<ReturnType<typeof this.getOne>>,
+    actorUserId: string,
+    scope: DeleteMeetingScopeInput,
+  ) {
+    if (!existing.recurrence) {
+      throw new BadRequestException("Cannot scope a delete to a single occurrence: this meeting is not recurring");
+    }
+    if (!scope.occurrenceDate) {
+      throw new BadRequestException("occurrenceDate is required when scope is \"occurrence\"");
+    }
+    const occurrenceDate = scope.occurrenceDate;
+
+    const attendeeRows = await this.db
+      .select({ userId: meetingAttendees.userId })
+      .from(meetingAttendees)
+      .where(eq(meetingAttendees.meetingId, existing.id));
+    const attendeeUserIds = attendeeRows.map((r) => r.userId).filter((uid): uid is string => uid !== null && uid !== existing.organizerUserId);
+
+    await this.db.transaction(async (tx) => {
+      await tx
+        .insert(meetingOccurrenceExceptions)
+        .values({
+          meetingId: existing.id,
+          occurrenceDate,
+          status: "cancelled",
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: [meetingOccurrenceExceptions.meetingId, meetingOccurrenceExceptions.occurrenceDate],
+          set: {
+            status: "cancelled",
+            startAt: null,
+            endAt: null,
+            title: null,
+            location: null,
+            description: null,
+            updatedAt: new Date(),
+          },
+        });
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "updated",
+        entityType: "meeting",
+        entityId: existing.id,
+        contactId: existing.contactId,
+        changes: [{ field: "occurrence", from: occurrenceDate.toISOString(), to: "cancelled" }],
+      });
+    });
+
+    if (attendeeUserIds.length) {
+      const occurrenceDateLabel = occurrenceDate.toLocaleDateString(undefined, {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      });
+      void this.notifications.notify(orgId, {
+        subject: `Meeting occurrence cancelled: ${existing.title}`,
+        text: `One occurrence of "${existing.title}" on ${occurrenceDateLabel} was cancelled. The rest of the series is unaffected.`,
+        recipientUserIds: attendeeUserIds,
+        inApp: {
+          type: "meeting_cancelled",
+          message: `One occurrence of "${existing.title}" on ${occurrenceDateLabel} was cancelled.`,
+          link: `/meetings?id=${existing.id}`,
+        },
+      });
+    }
+
+    return { id: existing.id, occurrenceDate, status: "cancelled" as const };
   }
 
   /**

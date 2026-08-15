@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
-import { member, meetingAttendees, meetings, user } from "../../db/schema";
+import { member, meetingAttendees, meetingOccurrenceExceptions, meetings, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
@@ -98,6 +98,16 @@ describe("MeetingsService visibility (requires local Postgres)", () => {
     } as never);
   }
 
+  async function createRecurringMeeting() {
+    return meetingsService.create(orgId, organizerUserId, {
+      title: "Weekly sync",
+      startAt: new Date(Date.now() + 60 * 60 * 1000),
+      endAt: new Date(Date.now() + 2 * 60 * 60 * 1000),
+      recurrence: { frequency: "weekly", end: { type: "count", count: 10 } },
+      attendeeUserIds: [invitedUserId],
+    } as never);
+  }
+
   describe("list", () => {
     it("Owner sees a private meeting they didn't organize and aren't invited to", async () => {
       await createPrivateMeeting();
@@ -164,6 +174,12 @@ describe("MeetingsService visibility (requires local Postgres)", () => {
       expect(organizerAttendee?.respondedAt).not.toBeNull();
       expect(organizerRow).toBeDefined();
     });
+
+    it("returns occurrenceExceptions as an empty array, never undefined (regression: apps/web's toCalendarEvent crashed on .map() of undefined)", async () => {
+      const created = await createPrivateMeeting();
+      expect(created).toHaveProperty("occurrenceExceptions");
+      expect((created as unknown as { occurrenceExceptions: unknown[] }).occurrenceExceptions).toEqual([]);
+    });
   });
 
   describe("respond", () => {
@@ -183,6 +199,169 @@ describe("MeetingsService visibility (requires local Postgres)", () => {
       await meetingsService.respond(orgId, created!.id, invitedUserId, { status: "accepted" });
       const second = await meetingsService.respond(orgId, created!.id, invitedUserId, { status: "accepted" });
       expect(second.status).toBe("accepted");
+    });
+  });
+
+  describe("update — occurrence scope (PRD S-01.14)", () => {
+    it("creates a modified exception row without touching the series row", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+
+      await meetingsService.update(orgId, created!.id, organizerUserId, {
+        scope: "occurrence",
+        occurrenceDate,
+        title: "Weekly sync (rescheduled)",
+      } as never);
+
+      const [seriesRow] = await db.select().from(meetings).where(eq(meetings.id, created!.id));
+      expect(seriesRow?.title).toBe("Weekly sync");
+
+      const exceptions = await db
+        .select()
+        .from(meetingOccurrenceExceptions)
+        .where(eq(meetingOccurrenceExceptions.meetingId, created!.id));
+      expect(exceptions).toHaveLength(1);
+      expect(exceptions[0]?.status).toBe("modified");
+      expect(exceptions[0]?.title).toBe("Weekly sync (rescheduled)");
+    });
+
+    it("editing the same occurrence twice upserts, not duplicates", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+
+      await meetingsService.update(orgId, created!.id, organizerUserId, {
+        scope: "occurrence",
+        occurrenceDate,
+        title: "First edit",
+      } as never);
+      await meetingsService.update(orgId, created!.id, organizerUserId, {
+        scope: "occurrence",
+        occurrenceDate,
+        title: "Second edit",
+      } as never);
+
+      const exceptions = await db
+        .select()
+        .from(meetingOccurrenceExceptions)
+        .where(eq(meetingOccurrenceExceptions.meetingId, created!.id));
+      expect(exceptions).toHaveLength(1);
+      expect(exceptions[0]?.title).toBe("Second edit");
+    });
+
+    it("rejects scope: occurrence on a non-recurring meeting", async () => {
+      const created = await createPrivateMeeting();
+      await expect(
+        meetingsService.update(orgId, created!.id, organizerUserId, {
+          scope: "occurrence",
+          occurrenceDate: created!.startAt,
+          title: "Nope",
+        } as never),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe("delete — occurrence scope (PRD S-01.14)", () => {
+    it("creates a cancelled exception row; series row and attendees untouched", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+
+      await meetingsService.delete(orgId, created!.id, organizerUserId, { scope: "occurrence", occurrenceDate });
+
+      const [seriesRow] = await db.select().from(meetings).where(eq(meetings.id, created!.id));
+      expect(seriesRow).toBeDefined();
+
+      const attendeeRows = await db.select().from(meetingAttendees).where(eq(meetingAttendees.meetingId, created!.id));
+      expect(attendeeRows.length).toBeGreaterThan(0);
+
+      const exceptions = await db
+        .select()
+        .from(meetingOccurrenceExceptions)
+        .where(eq(meetingOccurrenceExceptions.meetingId, created!.id));
+      expect(exceptions).toHaveLength(1);
+      expect(exceptions[0]?.status).toBe("cancelled");
+      expect(exceptions[0]?.title).toBeNull();
+    });
+
+    it("deleting the same occurrence twice is idempotent", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+
+      await meetingsService.delete(orgId, created!.id, organizerUserId, { scope: "occurrence", occurrenceDate });
+      await meetingsService.delete(orgId, created!.id, organizerUserId, { scope: "occurrence", occurrenceDate });
+
+      const exceptions = await db
+        .select()
+        .from(meetingOccurrenceExceptions)
+        .where(eq(meetingOccurrenceExceptions.meetingId, created!.id));
+      expect(exceptions).toHaveLength(1);
+    });
+
+    it("rejects scope: occurrence on a non-recurring meeting", async () => {
+      const created = await createPrivateMeeting();
+      await expect(
+        meetingsService.delete(orgId, created!.id, organizerUserId, { scope: "occurrence", occurrenceDate: created!.startAt }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+  });
+
+  describe("update/delete — series scope (regression)", () => {
+    it("update with scope omitted still mutates the series row exactly as before", async () => {
+      const created = await createRecurringMeeting();
+      const updated = await meetingsService.update(orgId, created!.id, organizerUserId, { title: "Renamed series" } as never);
+      expect((updated as { title?: string })?.title).toBe("Renamed series");
+
+      const exceptions = await db
+        .select()
+        .from(meetingOccurrenceExceptions)
+        .where(eq(meetingOccurrenceExceptions.meetingId, created!.id));
+      expect(exceptions).toHaveLength(0);
+    });
+
+    it("delete with scope omitted still deletes the whole series row", async () => {
+      const created = await createRecurringMeeting();
+      await meetingsService.delete(orgId, created!.id, organizerUserId);
+
+      const rows = await db.select().from(meetings).where(eq(meetings.id, created!.id));
+      expect(rows).toHaveLength(0);
+    });
+
+    it("a series-scoped update still returns occurrenceExceptions, including ones that already existed (regression: this response feeds straight into apps/web's meetings state and previously omitted the field, crashing toCalendarEvent)", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+      await meetingsService.update(orgId, created!.id, organizerUserId, {
+        scope: "occurrence",
+        occurrenceDate,
+        title: "Occurrence override",
+      } as never);
+
+      const updated = await meetingsService.update(orgId, created!.id, organizerUserId, { title: "Renamed series" } as never);
+      const withExceptions = updated as unknown as { occurrenceExceptions: { title: string | null }[] };
+      expect(withExceptions.occurrenceExceptions).toHaveLength(1);
+      expect(withExceptions.occurrenceExceptions[0]?.title).toBe("Occurrence override");
+    });
+  });
+
+  describe("list/getOne — occurrenceExceptions passthrough", () => {
+    it("a meeting with an exception returns it nested on the row", async () => {
+      const created = await createRecurringMeeting();
+      const occurrenceDate = created!.startAt as Date;
+      await meetingsService.update(orgId, created!.id, organizerUserId, {
+        scope: "occurrence",
+        occurrenceDate,
+        title: "Overridden",
+      } as never);
+
+      const requestingUser = await meetingsService.resolveRequestingUser(orgId, organizerUserId);
+      const found = await meetingsService.getOne(orgId, created!.id, requestingUser);
+      expect(found.occurrenceExceptions).toHaveLength(1);
+      expect(found.occurrenceExceptions[0]?.title).toBe("Overridden");
+    });
+
+    it("a meeting without exceptions returns an empty array, not null/undefined", async () => {
+      const created = await createPrivateMeeting();
+      const requestingUser = await meetingsService.resolveRequestingUser(orgId, organizerUserId);
+      const found = await meetingsService.getOne(orgId, created!.id, requestingUser);
+      expect(found.occurrenceExceptions).toEqual([]);
     });
   });
 });

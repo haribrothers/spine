@@ -42,6 +42,27 @@ export interface CalendarRecurrenceRule {
   end: CalendarRecurrenceEnd;
 }
 
+/**
+ * PRD S-01.14 — a single occurrence of a recurring event diverging from its
+ * series' `recurrence` rule. `occurrenceDate` is the occurrence's
+ * *unmodified* computed start (the date the rule would have produced before
+ * any override) — the stable key an exception attaches to, matched against
+ * each candidate occurrence's own computed `occurrenceStart` during
+ * expansion, below. A `cancelled` exception carries no overrides (nothing to
+ * override — the occurrence just shouldn't render); a `modified` exception's
+ * override fields replace the corresponding computed value only where
+ * present, falling back to the series' own value otherwise.
+ */
+export interface CalendarEventOccurrenceException {
+  occurrenceDate: Date;
+  status: "modified" | "cancelled";
+  start?: Date;
+  end?: Date;
+  title?: string;
+  location?: string;
+  description?: string;
+}
+
 export interface CalendarEvent {
   id: string;
   title: string;
@@ -54,6 +75,8 @@ export interface CalendarEvent {
   recurrence?: CalendarRecurrenceRule;
   /** Optional link to an external "contact" record — Calendar has no opinion on what a contact is, only an id/label pair supplied via CalendarProps.contactOptions. Omit both if the consuming app has no contact concept. */
   contactId?: string;
+  /** PRD S-01.14 — per-occurrence overrides/cancellations for a recurring event. Meaningless (ignored) on a non-recurring event. */
+  occurrenceExceptions?: CalendarEventOccurrenceException[];
 }
 
 /**
@@ -65,11 +88,23 @@ export interface CalendarEvent {
  */
 export interface CalendarEventInstance {
   event: CalendarEvent;
-  /** Stable per-occurrence key: `${event.id}::${occurrenceStart.toISOString()}`. */
+  /** Stable per-occurrence key: `${event.id}::${originalOccurrenceStart.toISOString()}`. */
   instanceId: string;
   occurrenceStart: Date;
   occurrenceEnd: Date;
   isRecurring: boolean;
+  /**
+   * PRD S-01.14 — the occurrence's UNMODIFIED, series-computed start (what
+   * the recurrence rule alone would have produced, before any exception
+   * override). `occurrenceStart` above may differ from this once a
+   * `modified` exception overrides the displayed time — but
+   * `originalOccurrenceStart` is the stable key that exception is (and any
+   * future edit to "this event" must be) keyed on, matching
+   * `meeting_occurrence_exceptions.occurrence_date`. Equal to
+   * `occurrenceStart` whenever no time override exists (including every
+   * non-recurring instance).
+   */
+  originalOccurrenceStart: Date;
 }
 
 function stepInterval(rule: CalendarRecurrenceRule): number {
@@ -120,6 +155,7 @@ export function expandRecurringEvent(
         occurrenceStart: event.start,
         occurrenceEnd: event.end,
         isRecurring: false,
+        originalOccurrenceStart: event.start,
       });
     }
     return instances;
@@ -131,19 +167,51 @@ export function expandRecurringEvent(
 
   const hardEndDate = rule.end.type === "date" ? rule.end.date : null;
   const hardCount = rule.end.type === "count" ? rule.end.count : Infinity;
+  const exceptionsByDate = new Map(
+    (event.occurrenceExceptions ?? []).map((exception) => [exception.occurrenceDate.getTime(), exception]),
+  );
 
   while (count < hardCount && count < MAX_OCCURRENCES) {
     if (hardEndDate && isBefore(hardEndDate, occurrenceStart)) break;
     if (isBefore(rangeEnd, occurrenceStart)) break;
 
-    const occurrenceEnd = new Date(occurrenceStart.getTime() + duration);
-    if (occurrenceEnd >= rangeStart) {
+    const exception = exceptionsByDate.get(occurrenceStart.getTime());
+    const computedEnd = new Date(occurrenceStart.getTime() + duration);
+
+    if (exception?.status === "cancelled") {
+      // Skip emitting this instance — still advance/count normally, since
+      // the occurrence still "happened" for recurrence-counting purposes,
+      // it's just hidden from render.
+      count += 1;
+      occurrenceStart = advance(occurrenceStart, rule);
+      continue;
+    }
+
+    const instanceStart = exception?.start ?? occurrenceStart;
+    const instanceEnd = exception?.end ?? computedEnd;
+
+    if (instanceEnd >= rangeStart) {
+      // A modified exception's event-level overrides apply only to this one
+      // instance — shallow-clone rather than mutate the shared series
+      // `event` object, so other instances (and the series itself) are
+      // never affected by one occurrence's override.
+      const instanceEvent =
+        exception?.status === "modified" && (exception.title !== undefined || exception.location !== undefined || exception.description !== undefined)
+          ? {
+              ...event,
+              ...(exception.title !== undefined ? { title: exception.title } : {}),
+              ...(exception.location !== undefined ? { location: exception.location } : {}),
+              ...(exception.description !== undefined ? { description: exception.description } : {}),
+            }
+          : event;
+
       instances.push({
-        event,
+        event: instanceEvent,
         instanceId: `${event.id}::${occurrenceStart.toISOString()}`,
-        occurrenceStart,
-        occurrenceEnd,
+        occurrenceStart: instanceStart,
+        occurrenceEnd: instanceEnd,
         isRecurring: true,
+        originalOccurrenceStart: occurrenceStart,
       });
     }
 

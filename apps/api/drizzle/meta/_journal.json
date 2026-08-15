@@ -239,6 +239,13 @@
       "when": 1786519853875,
       "tag": "0033_backfill_meetings_manage_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1786783370598,
+      "tag": "0034_meeting_occurrence_exceptions",
+      "breakpoints": true
     }
   ]
 }

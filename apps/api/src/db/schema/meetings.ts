@@ -134,3 +134,50 @@ export const meetingAttendees = pgTable(
     index("meeting_attendees_user_idx").on(table.userId),
   ],
 );
+
+export const meetingOccurrenceExceptionStatusEnum = pgEnum("meeting_occurrence_exception_status", [
+  "modified",
+  "cancelled",
+]);
+
+/**
+ * PRD S-01.14 — lets a single occurrence of a recurring meeting diverge from
+ * its series' `recurrence` rule without mutating the series row. This is the
+ * only place per-occurrence state exists; the series row (`meetings`) is
+ * still the single source of truth for the recurrence rule, attendees, and
+ * visibility, none of which this table overrides (attendees/visibility stay
+ * series-level only in v1 — PRD explicit).
+ *
+ * `occurrenceDate` is the occurrence's *unmodified* computed start, i.e. the
+ * date the series' `recurrence` rule would have produced before any
+ * override — this is the stable key an exception attaches to, so a
+ * `modified` row can still move `startAt` elsewhere without losing its
+ * identity. A `cancelled` row's override columns stay null (nothing to
+ * override — it just shouldn't be rendered).
+ *
+ * Like `meetings.recurrence`, expansion into individual calendar instances
+ * is a client-side, pure-function concern (calendar-utils.ts) — this table
+ * is shipped to the client raw and consulted there, not expanded server-side.
+ */
+export const meetingOccurrenceExceptions = pgTable(
+  "meeting_occurrence_exceptions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    meetingId: uuid("meeting_id")
+      .notNull()
+      .references(() => meetings.id, { onDelete: "cascade" }),
+    occurrenceDate: timestamp("occurrence_date", { withTimezone: true }).notNull(),
+    status: meetingOccurrenceExceptionStatusEnum("status").notNull(),
+    startAt: timestamp("start_at", { withTimezone: true }),
+    endAt: timestamp("end_at", { withTimezone: true }),
+    title: text("title"),
+    location: text("location"),
+    description: text("description"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("meeting_occurrence_exceptions_meeting_date_unique").on(table.meetingId, table.occurrenceDate),
+    index("meeting_occurrence_exceptions_meeting_idx").on(table.meetingId),
+  ],
+);

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Field, Label, MultiSelect, RadioGroup, RadioGroupItem, cn } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { MeetingVisibilityAndInviteesEditor } from "./meeting-visibility-and-invitees-editor";
 import type { MeetingAttendee, MeetingVisibility } from "./types";
 
 interface Member {
@@ -99,46 +99,17 @@ export function MeetingAttendeesFields({
   }, [meetingId, initialVisibility]);
 
   const organizerId = organizerUserId ?? currentUserId;
-  const memberOptions = members.filter((m) => m.userId !== organizerId).map((m) => ({ value: m.userId, label: m.name }));
 
   return (
-    <div className="flex flex-col gap-4 rounded-md border border-border p-3">
-      <Field>
-        <Label>Visibility</Label>
-        <RadioGroup value={visibility} onValueChange={(v) => setVisibility(v as MeetingVisibility)} className="gap-2">
-          <label
-            htmlFor="meeting-visibility-private"
-            className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-md border p-2.5 transition-colors",
-              visibility === "private" ? "border-primary bg-primary/5" : "border-border-strong",
-            )}
-          >
-            <RadioGroupItem value="private" id="meeting-visibility-private" className="mt-0.5" />
-            <div>
-              <p className="text-[13px] font-medium text-on-surface">Private</p>
-              <p className="text-[12px] text-on-surface-muted">Only you and invited attendees can see this meeting.</p>
-            </div>
-          </label>
-          <label
-            htmlFor="meeting-visibility-org"
-            className={cn(
-              "flex cursor-pointer items-start gap-3 rounded-md border p-2.5 transition-colors",
-              visibility === "org" ? "border-primary bg-primary/5" : "border-border-strong",
-            )}
-          >
-            <RadioGroupItem value="org" id="meeting-visibility-org" className="mt-0.5" />
-            <div>
-              <p className="text-[13px] font-medium text-on-surface">Everyone in the org</p>
-              <p className="text-[12px] text-on-surface-muted">Every org member can see this meeting on their calendar.</p>
-            </div>
-          </label>
-        </RadioGroup>
-      </Field>
-
-      <Field>
-        <Label>Invite people</Label>
-        <MultiSelect options={memberOptions} value={attendeeUserIds} onValueChange={setAttendeeUserIds} placeholder="Select people to invite…" />
-      </Field>
+    <div className="rounded-md border border-border p-3">
+      <MeetingVisibilityAndInviteesEditor
+        visibility={visibility}
+        onVisibilityChange={setVisibility}
+        attendeeUserIds={attendeeUserIds}
+        onAttendeeUserIdsChange={setAttendeeUserIds}
+        members={members}
+        excludeUserId={organizerId}
+      />
     </div>
   );
 }

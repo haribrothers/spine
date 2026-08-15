@@ -40,7 +40,9 @@ import { apiClient } from "../../../lib/api-client";
 import type { Activity, ActivityType, Contact } from "../contacts/types";
 import { MeetingAttendeesFields } from "./meeting-attendees-fields";
 import { MeetingAttendeesPanel } from "./meeting-attendees-panel";
-import type { Meeting } from "./types";
+import { MeetingQuickViewPopover } from "./meeting-quick-view-popover";
+import { MeetingScopeChoiceDialog } from "./meeting-scope-choice-dialog";
+import type { Meeting, MeetingAttendee } from "./types";
 
 const SIDEBAR_STORAGE_KEY = "spine.meetings.sidebar-collapsed";
 const MEMBERS_STORAGE_KEY = "spine.meetings.hidden-organizers";
@@ -51,6 +53,7 @@ interface Member {
   userId: string;
   name: string;
   email: string;
+  role: string;
 }
 
 const ACTIVITY_LABELS: Record<ActivityType, string> = {
@@ -82,6 +85,18 @@ function toCalendarEvent(meeting: Meeting): CalendarEvent {
               : meeting.recurrence.end,
         }
       : undefined,
+    // PRD S-01.14 — carries per-occurrence overrides/cancellations through
+    // to @spine/ui's expandRecurringEvent, which consults this to skip
+    // cancelled dates and apply modified overrides during expansion.
+    occurrenceExceptions: (meeting.occurrenceExceptions ?? []).map((exception) => ({
+      occurrenceDate: new Date(exception.occurrenceDate),
+      status: exception.status,
+      start: exception.startAt ? new Date(exception.startAt) : undefined,
+      end: exception.endAt ? new Date(exception.endAt) : undefined,
+      title: exception.title ?? undefined,
+      location: exception.location ?? undefined,
+      description: exception.description ?? undefined,
+    })),
   };
 }
 
@@ -107,7 +122,12 @@ function activityToCalendarEvent(activity: Activity): CalendarEvent {
  * which case visibility/attendeeUserIds are simply omitted from the
  * payload so the API's update() leaves them untouched.
  */
-function toMeetingPayload(event: CalendarEvent, extra?: Record<string, unknown>) {
+function toMeetingPayload(
+  event: CalendarEvent,
+  extra?: Record<string, unknown>,
+  scope?: "series" | "occurrence",
+  occurrenceDate?: Date,
+) {
   return {
     contactId: event.contactId ?? null,
     title: event.title,
@@ -129,6 +149,7 @@ function toMeetingPayload(event: CalendarEvent, extra?: Record<string, unknown>)
       : null,
     ...(extra?.visibility !== undefined ? { visibility: extra.visibility } : {}),
     ...(extra?.attendeeUserIds !== undefined ? { attendeeUserIds: extra.attendeeUserIds } : {}),
+    ...(scope === "occurrence" ? { scope, occurrenceDate: occurrenceDate?.toISOString() } : {}),
   };
 }
 
@@ -170,10 +191,23 @@ export function MeetingsCalendar() {
   const [showActivities, setShowActivities] = useState(false);
   const [activityDetail, setActivityDetail] = useState<CalendarEventInstance | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<{ eventId: string; scope?: "series" | "occurrence"; occurrenceDate?: Date } | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [attendeesPanel, setAttendeesPanel] = useState<Meeting | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // PRD S-01.13/S-01.14 — quick-view popover state and its attendee cache
+  // (fetched lazily per popover open, not eagerly for every visible
+  // meeting), plus the scope-choice alert shown before Edit/Delete on a
+  // recurring meeting.
+  const [popoverAttendees, setPopoverAttendees] = useState<Record<string, MeetingAttendee[]>>({});
+  const [scopeChoice, setScopeChoice] = useState<{
+    action: "edit" | "delete";
+    instance: CalendarEventInstance;
+    onEdit: (scope?: "series" | "occurrence") => void;
+    onDelete: (scope?: "series" | "occurrence") => void;
+  } | null>(null);
+  const [duplicatePrefill, setDuplicatePrefill] = useState<CalendarEvent | null>(null);
 
   useEffect(() => {
     const collapsed = window.localStorage.getItem(SIDEBAR_STORAGE_KEY);
@@ -318,7 +352,19 @@ export function MeetingsCalendar() {
     setMeetings((prev) => (prev ? [...prev, created] : [created]));
   }
 
-  async function handleUpdate(event: CalendarEvent, extra?: Record<string, unknown>) {
+  async function handleUpdate(event: CalendarEvent, extra?: Record<string, unknown>, scope?: "series" | "occurrence", occurrenceDate?: Date) {
+    if (scope === "occurrence") {
+      // The series row's own id, not the client-synthesized instance —
+      // `event.id` here is already `instance.event.id` (Calendar threads
+      // the series event straight through), so this targets the right
+      // meeting; the response is the upserted exception row, not a
+      // `Meeting`, so refetch the series' own row to pick up the new
+      // `occurrenceExceptions` entry rather than trying to merge it by hand.
+      await apiClient.put(`/meetings/${event.id}`, toMeetingPayload(event, extra, scope, occurrenceDate));
+      const refreshed = await apiClient.get<Meeting>(`/meetings/${event.id}`);
+      setMeetings((prev) => prev?.map((m) => (m.id === refreshed.id ? refreshed : m)) ?? prev);
+      return;
+    }
     const updated = await apiClient.put<Meeting>(`/meetings/${event.id}`, toMeetingPayload(event, extra));
     setMeetings((prev) => prev?.map((m) => (m.id === updated.id ? updated : m)) ?? prev);
   }
@@ -330,21 +376,32 @@ export function MeetingsCalendar() {
    * shared `@spine/ui` Calendar about a confirmation flow every consumer
    * might want shaped differently. Same "AlertDialog for a real,
    * consequential yes/no" convention as every other delete confirmation
-   * in this app (contacts, quotes, catalogue, teams).
+   * in this app (contacts, quotes, catalogue, teams). `scope`/`occurrenceDate`
+   * (PRD S-01.14) come from the quick-view popover's scope-choice dialog for
+   * a recurring meeting — undefined for a non-recurring one, matching
+   * today's whole-meeting delete.
    */
-  function handleDeleteRequest(eventId: string) {
+  function handleDeleteRequest(eventId: string, scope?: "series" | "occurrence", occurrenceDate?: Date) {
     setDeleteError(null);
-    setPendingDeleteId(eventId);
+    setPendingDelete({ eventId, scope, occurrenceDate });
   }
 
   async function handleConfirmDelete() {
-    if (!pendingDeleteId) return;
+    if (!pendingDelete) return;
     setDeleteBusy(true);
     setDeleteError(null);
     try {
-      await apiClient.delete(`/meetings/${pendingDeleteId}`);
-      setMeetings((prev) => prev?.filter((m) => m.id !== pendingDeleteId) ?? prev);
-      setPendingDeleteId(null);
+      if (pendingDelete.scope === "occurrence" && pendingDelete.occurrenceDate) {
+        await apiClient.delete(
+          `/meetings/${pendingDelete.eventId}?scope=occurrence&occurrenceDate=${encodeURIComponent(pendingDelete.occurrenceDate.toISOString())}`,
+        );
+        const refreshed = await apiClient.get<Meeting>(`/meetings/${pendingDelete.eventId}`);
+        setMeetings((prev) => prev?.map((m) => (m.id === refreshed.id ? refreshed : m)) ?? prev);
+      } else {
+        await apiClient.delete(`/meetings/${pendingDelete.eventId}`);
+        setMeetings((prev) => prev?.filter((m) => m.id !== pendingDelete.eventId) ?? prev);
+      }
+      setPendingDelete(null);
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Could not delete this meeting.");
     } finally {
@@ -385,6 +442,7 @@ export function MeetingsCalendar() {
         onEventDelete={handleDeleteRequest}
         readOnlyEventIds={readOnlyEventIds}
         onReadOnlyEventClick={setActivityDetail}
+        duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
         renderExtraFields={({ isEdit, event, setExtra }) => {
           if (!session?.user?.id) return null;
           const editingMeeting = isEdit ? (meetings?.find((m) => m.id === event?.id) ?? null) : null;
@@ -398,6 +456,75 @@ export function MeetingsCalendar() {
               setExtra={setExtra}
             />
           );
+        }}
+        renderEventPopover={({ instance, onEdit, onDelete, onClose }) => {
+          if (!session?.user?.id) return null;
+          const meeting = meetings?.find((m) => m.id === instance.event.id);
+          if (!meeting) return null;
+          if (!(meeting.id in popoverAttendees)) {
+            apiClient
+              .get<MeetingAttendee[]>(`/meetings/${meeting.id}/attendees`)
+              .then((rows) => setPopoverAttendees((prev) => ({ ...prev, [meeting.id]: rows })))
+              .catch(() => setPopoverAttendees((prev) => ({ ...prev, [meeting.id]: [] })));
+          }
+          // No client-side fine-grained capability check exists in this codebase yet
+          // (see expenses-explorer.tsx/job-detail.tsx's own comments on the same
+          // gap) — mirrors their established pattern of gating purely on coarse
+          // role (owner/staff, matching meetings.manage's @OrgRoles(["owner",
+          // "staff"])) fetched via GET /org/members. Hiding these buttons for a
+          // role that lacks the capability is UI signal only; the server
+          // independently 403s regardless.
+          const myRole = members.find((m) => m.userId === session.user.id)?.role;
+          const canManage = myRole === "owner" || myRole === "staff";
+          return (
+            <MeetingQuickViewPopover
+              instance={instance}
+              meeting={meeting}
+              attendees={popoverAttendees[meeting.id] ?? null}
+              currentUserId={session.user.id}
+              canManage={canManage}
+              contactLabel={meeting.contactId ? contactsById.get(meeting.contactId)?.name : undefined}
+              organizerName={members.find((m) => m.userId === meeting.organizerUserId)?.name}
+              onEdit={(scope) => {
+                if (instance.isRecurring && !scope) {
+                  setScopeChoice({ action: "edit", instance, onEdit, onDelete });
+                  onClose();
+                  return;
+                }
+                onEdit(scope);
+              }}
+              onDelete={(scope) => {
+                if (instance.isRecurring && !scope) {
+                  setScopeChoice({ action: "delete", instance, onEdit, onDelete });
+                  onClose();
+                  return;
+                }
+                onDelete(scope);
+              }}
+              onDuplicate={() => {
+                setDuplicatePrefill({ ...instance.event, id: `${instance.event.id}-copy` });
+                onClose();
+              }}
+              onAttendeesUpdated={(rows) => setPopoverAttendees((prev) => ({ ...prev, [meeting.id]: rows }))}
+              onClose={onClose}
+            />
+          );
+        }}
+      />
+
+      <MeetingScopeChoiceDialog
+        open={!!scopeChoice}
+        action={scopeChoice?.action ?? "edit"}
+        onOpenChange={(open) => !open && setScopeChoice(null)}
+        onChoose={(chosenScope) => {
+          if (!scopeChoice) return;
+          const { action, onEdit, onDelete } = scopeChoice;
+          setScopeChoice(null);
+          if (action === "edit") {
+            onEdit(chosenScope);
+          } else {
+            onDelete(chosenScope);
+          }
         }}
       />
 
@@ -543,12 +670,14 @@ export function MeetingsCalendar() {
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={pendingDeleteId !== null} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this meeting?</AlertDialogTitle>
+            <AlertDialogTitle>{pendingDelete?.scope === "occurrence" ? "Delete this occurrence?" : "Delete this meeting?"}</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes it from the calendar for everyone. This cannot be undone.
+              {pendingDelete?.scope === "occurrence"
+                ? "This removes just this occurrence from the calendar for everyone. The rest of the series is unaffected. This cannot be undone."
+                : "This removes it from the calendar for everyone. This cannot be undone."}
               {deleteError && <span className="mt-2 block text-overdue">{deleteError}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>

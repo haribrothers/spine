@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createMeetingSchema, respondToMeetingSchema, updateMeetingSchema } from "@spine/shared";
+import { createMeetingSchema, deleteMeetingScopeSchema, respondToMeetingSchema, updateMeetingSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -75,13 +75,20 @@ export class MeetingsController {
     return this.meetingsService.update(orgId, id, session.user.id, input);
   }
 
+  /** PRD S-01.14 — `scope`/`occurrenceDate` are query params, not a DELETE body, to avoid the body-on-DELETE question entirely; `?scope=occurrence&occurrenceDate=...` deletes just that occurrence, defaulting to the whole series when omitted. */
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
   @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
-  async delete(@Session() session: UserSession, @Param("id") id: string) {
+  async delete(
+    @Session() session: UserSession,
+    @Param("id") id: string,
+    @Query("scope") scope?: string,
+    @Query("occurrenceDate") occurrenceDate?: string,
+  ) {
     const orgId = requireOrgId(session);
-    return this.meetingsService.delete(orgId, id, session.user.id);
+    const parsed = deleteMeetingScopeSchema.parse({ scope, occurrenceDate });
+    return this.meetingsService.delete(orgId, id, session.user.id, parsed);
   }
 
   /** PRD S-01.12 — self-service; no @RequireCapability, any org member with an invite can respond to it. */

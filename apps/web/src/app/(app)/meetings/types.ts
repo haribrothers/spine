@@ -2,6 +2,21 @@ import type { CalendarEventColor, CalendarRecurrenceRule } from "@spine/ui";
 
 export type MeetingVisibility = "private" | "org";
 export type MeetingAttendeeStatus = "invited" | "accepted" | "declined" | "tentative";
+export type MeetingOccurrenceExceptionStatus = "modified" | "cancelled";
+export type MeetingMutationScope = "series" | "occurrence";
+
+/** PRD S-01.14 — mirrors apps/api's meeting_occurrence_exceptions row shape. */
+export interface MeetingOccurrenceException {
+  id: string;
+  meetingId: string;
+  occurrenceDate: string;
+  status: MeetingOccurrenceExceptionStatus;
+  startAt: string | null;
+  endAt: string | null;
+  title: string | null;
+  location: string | null;
+  description: string | null;
+}
 
 /** Mirrors apps/api/src/db/schema/meetings.ts's row shape — apps/web has no generated SDK yet (packages/sdk is still empty), same hand-written-mirror precedent as contacts/quotes/types.ts. */
 export interface Meeting {
@@ -20,6 +35,8 @@ export interface Meeting {
   organizerUserId: string | null;
   /** PRD S-01.10/S-01.11 — "private" (default) visible only to organizer + invited attendees; "org" visible to everyone. */
   visibility: MeetingVisibility;
+  /** PRD S-01.14 — per-occurrence overrides/cancellations for a recurring meeting. Always present (empty array when none exist), never undefined, on any row returned by the API. */
+  occurrenceExceptions: MeetingOccurrenceException[];
   createdAt: string;
   updatedAt: string;
 }

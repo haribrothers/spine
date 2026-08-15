@@ -46,8 +46,9 @@ import { Input } from "./input";
 import { Label } from "./label";
 import { MiniCalendar } from "./calendar-mini";
 import { NativeSelect } from "./native-select";
-import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "./popover";
 import { Switch } from "./switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 import { Textarea } from "./textarea";
 import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 
@@ -112,8 +113,10 @@ export interface CalendarProps {
   events: CalendarEvent[];
   /** `extra` carries whatever `renderExtraFields` collected via its `setExtra` callback, opaque to Calendar itself — undefined when `renderExtraFields` isn't provided or contributed nothing. */
   onEventCreate?: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
-  onEventUpdate?: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
-  onEventDelete?: (eventId: string) => void;
+  /** `scope`/`occurrenceDate` are set when the edit was scoped to a single occurrence via `renderEventPopover`'s `onEdit` (PRD S-01.14) — undefined for a plain series-level save, same as before S-01.14. */
+  onEventUpdate?: (event: CalendarEvent, extra?: Record<string, unknown>, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
+  /** `scope`/`occurrenceDate` — see `onEventUpdate`'s own doc. */
+  onEventDelete?: (eventId: string, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
   view: CalendarView;
   onViewChange: (view: CalendarView) => void;
   date: Date;
@@ -144,6 +147,36 @@ export interface CalendarProps {
    * `isEdit` is true).
    */
   renderExtraFields?: (ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode;
+  /**
+   * PRD S-01.13 — when provided, clicking a (non-read-only) event opens a
+   * small anchored Popover instead of jumping straight into the built-in
+   * edit dialog. Calendar owns the Popover's positioning/open-close chrome
+   * (mirroring how it owns Dialog chrome for the editor) and delegates all
+   * content to the consumer — same "generic slot, consumer owns the domain
+   * content" shape as `renderExtraFields`. Call `onEdit(scope)`/
+   * `onDelete(scope)` to close the popover and transition into the
+   * built-in edit dialog (scoped, for a recurring event, to "series" or
+   * "occurrence" — Calendar itself has no opinion on how that scope was
+   * chosen, e.g. via a scope-choice dialog the consumer renders); call
+   * `onClose()` to dismiss the popover with no further action. When this
+   * prop is omitted, clicking an event opens the edit dialog directly, same
+   * as before S-01.13.
+   */
+  renderEventPopover?: (ctx: {
+    instance: CalendarEventInstance;
+    onEdit: (scope?: "series" | "occurrence") => void;
+    onDelete: (scope?: "series" | "occurrence") => void;
+    onClose: () => void;
+  }) => React.ReactNode;
+  /**
+   * PRD S-01.13's popover "Duplicate" action — set to a fresh object (e.g.
+   * `{ event: draftEvent }`) to open the create dialog pre-filled from
+   * `event`. Calendar reacts via a change in object identity, not a
+   * boolean, so duplicating the same event twice in a row (or duplicating
+   * while the dialog is already open) still re-triggers reliably. Omit
+   * entirely if the consumer has no duplicate feature.
+   */
+  duplicateRequest?: { event: CalendarEvent } | null;
   className?: string;
 }
 
@@ -170,13 +203,28 @@ export function Calendar({
   readOnlyEventIds,
   onReadOnlyEventClick,
   renderExtraFields,
+  renderEventPopover,
+  duplicateRequest,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
-    | { mode: "create"; range: DraftRange; allDay?: boolean }
-    | { mode: "edit"; instance: CalendarEventInstance }
+    | { mode: "create"; range: DraftRange; allDay?: boolean; prefillFrom?: CalendarEvent }
+    | { mode: "edit"; instance: CalendarEventInstance; scope?: "series" | "occurrence" }
     | null
   >(null);
+  const [popoverInstance, setPopoverInstance] = useState<CalendarEventInstance | null>(null);
+  const popoverAnchorRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!duplicateRequest) return;
+    const { event } = duplicateRequest;
+    setEditorState({
+      mode: "create",
+      range: { start: event.start, end: event.end },
+      allDay: event.allDay,
+      prefillFrom: event,
+    });
+  }, [duplicateRequest]);
 
   const goToday = () => onDateChange(new Date());
   const goPrev = () => onDateChange(stepDate(date, view, -1));
@@ -186,9 +234,14 @@ export function Calendar({
     setEditorState({ mode: "create", range, allDay });
   };
 
-  const handleEventClick = (instance: CalendarEventInstance) => {
+  const handleEventClick = (instance: CalendarEventInstance, target?: HTMLElement) => {
     if (readOnlyEventIds?.has(instance.event.id)) {
       onReadOnlyEventClick?.(instance);
+      return;
+    }
+    if (renderEventPopover) {
+      popoverAnchorRef.current = target ?? null;
+      setPopoverInstance(instance);
       return;
     }
     setEditorState({ mode: "edit", instance });
@@ -196,7 +249,12 @@ export function Calendar({
 
   const handleSave = (result: CalendarEvent, extra?: Record<string, unknown>) => {
     if (editorState?.mode === "edit") {
-      onEventUpdate?.(result, extra);
+      const scope = editorState.scope;
+      // originalOccurrenceStart, not occurrenceStart — the exception key
+      // must stay the series-computed date even if this save (or a prior
+      // one) changed the occurrence's displayed time, or a second edit to
+      // the same occurrence would target a different key than the first.
+      onEventUpdate?.(result, extra, scope, scope === "occurrence" ? editorState.instance.originalOccurrenceStart : undefined);
     } else {
       onEventCreate?.(result, extra);
     }
@@ -204,7 +262,9 @@ export function Calendar({
   };
 
   const handleDelete = (eventId: string) => {
-    onEventDelete?.(eventId);
+    const scope = editorState?.mode === "edit" ? editorState.scope : undefined;
+    const occurrenceDate = scope === "occurrence" && editorState?.mode === "edit" ? editorState.instance.originalOccurrenceStart : undefined;
+    onEventDelete?.(eventId, scope, occurrenceDate);
     setEditorState(null);
   };
 
@@ -268,6 +328,40 @@ export function Calendar({
         contactOptions={contactOptions}
         renderExtraFields={renderExtraFields}
       />
+
+      {renderEventPopover && (
+        <Popover
+          open={!!popoverInstance}
+          onOpenChange={(open) => {
+            if (!open) setPopoverInstance(null);
+          }}
+        >
+          <PopoverAnchor virtualRef={popoverAnchorRef} />
+          <PopoverContent
+            align="start"
+            side="right"
+            className="w-80 p-0"
+            onOpenAutoFocus={(e) => e.preventDefault()}
+          >
+            {popoverInstance &&
+              renderEventPopover({
+                instance: popoverInstance,
+                onEdit: (scope) => {
+                  const instance = popoverInstance;
+                  setPopoverInstance(null);
+                  setEditorState({ mode: "edit", instance, scope });
+                },
+                onDelete: (scope) => {
+                  const instance = popoverInstance;
+                  setPopoverInstance(null);
+                  const occurrenceDate = scope === "occurrence" ? instance.originalOccurrenceStart : undefined;
+                  onEventDelete?.(instance.event.id, scope, occurrenceDate);
+                },
+                onClose: () => setPopoverInstance(null),
+              })}
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 }
@@ -427,7 +521,7 @@ interface TimeGridProps {
   days: Date[];
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
-  onEventClick: (instance: CalendarEventInstance) => void;
+  onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onEventUpdate: (event: CalendarEvent) => void;
   readOnlyEventIds?: Set<string>;
 }
@@ -620,7 +714,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, rea
                       <button
                         key={instance.instanceId}
                         type="button"
-                        onClick={() => onEventClick(instance)}
+                        onClick={(e) => onEventClick(instance, e.currentTarget)}
                         className={cn(
                           "mb-1 flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11.5px] font-medium",
                           colors.bg,
@@ -732,7 +826,7 @@ interface TimeGridEventProps {
   gridHeight: number;
   isDragging: boolean;
   isReadOnly?: boolean;
-  onEventClick: (instance: CalendarEventInstance) => void;
+  onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onMoveStart: (e: React.PointerEvent) => void;
   onResizeStart: (edge: "start" | "end", e: React.PointerEvent) => void;
 }
@@ -761,11 +855,11 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
       )}
       style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)`, cursor: isReadOnly ? "pointer" : undefined }}
       onPointerDown={isReadOnly ? (e) => e.stopPropagation() : onMoveStart}
-      onClick={() => onEventClick(instance)}
+      onClick={(e) => onEventClick(instance, e.currentTarget)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          onEventClick(instance);
+          onEventClick(instance, e.currentTarget);
         }
       }}
     >
@@ -799,7 +893,7 @@ interface DayLikeViewProps {
   date: Date;
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
-  onEventClick: (instance: CalendarEventInstance) => void;
+  onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onEventUpdate: (event: CalendarEvent) => void;
   readOnlyEventIds?: Set<string>;
 }
@@ -864,7 +958,7 @@ interface MonthViewProps {
   date: Date;
   events: CalendarEvent[];
   onDayCreate: (day: Date) => void;
-  onEventClick: (instance: CalendarEventInstance) => void;
+  onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onDateChange: (date: Date) => void;
   onViewChange: (view: CalendarView) => void;
 }
@@ -960,7 +1054,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChan
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
-                            onEventClick(instance);
+                            onEventClick(instance, e.currentTarget);
                           }}
                           className={cn(
                             "flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
@@ -997,7 +1091,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChan
 interface AgendaViewProps {
   date: Date;
   events: CalendarEvent[];
-  onEventClick: (instance: CalendarEventInstance) => void;
+  onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
 }
 
 const AGENDA_WINDOW_DAYS = 60;
@@ -1045,7 +1139,7 @@ function CalendarAgendaView({ date, events, onEventClick }: AgendaViewProps) {
                   <button
                     key={instance.instanceId}
                     type="button"
-                    onClick={() => onEventClick(instance)}
+                    onClick={(e) => onEventClick(instance, e.currentTarget)}
                     className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", colors.dot)} />
@@ -1077,8 +1171,8 @@ function CalendarAgendaView({ date, events, onEventClick }: AgendaViewProps) {
 
 interface CalendarEventEditorProps {
   state:
-    | { mode: "create"; range: DraftRange; allDay?: boolean }
-    | { mode: "edit"; instance: CalendarEventInstance }
+    | { mode: "create"; range: DraftRange; allDay?: boolean; prefillFrom?: CalendarEvent }
+    | { mode: "edit"; instance: CalendarEventInstance; scope?: "series" | "occurrence" }
     | null;
   onClose: () => void;
   onSave: (event: CalendarEvent, extra?: Record<string, unknown>) => void;
@@ -1122,20 +1216,24 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
     extraRef.current = undefined;
     if (state.mode === "edit") {
       const event = state.instance.event;
+      const isOccurrenceScoped = state.scope === "occurrence";
+      // Editing the whole SERIES rewrites all of it (see this dialog's
+      // scope-conditional description below, and handleSave, which has no
+      // per-occurrence branch of its own) — so the form must seed start/end
+      // from the series' own anchor (event.start/end), never from the
+      // specific occurrence that was clicked. Using occurrenceStart/End
+      // here was a real bug: clicking any occurrence other than the first
+      // and saving (even with no changes) silently moved the entire
+      // series' start date to whichever occurrence happened to be clicked.
+      // Editing a single OCCURRENCE (state.scope === "occurrence") is the
+      // opposite: it must seed from that occurrence's own
+      // occurrenceStart/occurrenceEnd (which already reflects any existing
+      // "modified" exception override, per expandRecurringEvent), since
+      // that's the value being saved as a new/updated exception, not a
+      // series mutation.
       setTitle(event.title);
-      // Editing a recurring event always rewrites the WHOLE series (see this
-      // dialog's own "Editing a recurring event updates the entire series"
-      // copy, and handleSave below, which has no per-occurrence branch) —
-      // so the form must seed start/end from the series' own anchor
-      // (event.start/end), never from the specific occurrence that was
-      // clicked. Using occurrenceStart/End here was a real bug: clicking
-      // any occurrence other than the first and saving (even with no
-      // changes) silently moved the entire series' start date to whichever
-      // occurrence happened to be clicked, since handleSubmit below just
-      // writes `start`/`end` straight onto the returned event with the same
-      // `id`.
-      setStart(event.start);
-      setEnd(event.end);
+      setStart(isOccurrenceScoped ? state.instance.occurrenceStart : event.start);
+      setEnd(isOccurrenceScoped ? state.instance.occurrenceEnd : event.end);
       setAllDay(!!event.allDay);
       setColor(event.color);
       setLocation(event.location ?? "");
@@ -1153,19 +1251,31 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
         }
       }
     } else {
-      setTitle("");
+      const prefill = state.prefillFrom;
+      setTitle(prefill?.title ?? "");
       setStart(state.range.start);
       setEnd(state.range.end);
       setAllDay(!!state.allDay);
-      setColor("blue");
-      setLocation("");
-      setDescription("");
-      setContactId("");
-      setRecurs(false);
-      setFrequency("weekly");
-      setEndType("count");
-      setEndCount(5);
-      setEndDate(addWeeks(state.range.start, 8));
+      setColor(prefill?.color ?? "blue");
+      setLocation(prefill?.location ?? "");
+      setDescription(prefill?.description ?? "");
+      setContactId(prefill?.contactId ?? "");
+      setRecurs(!!prefill?.recurrence);
+      if (prefill?.recurrence) {
+        setFrequency(prefill.recurrence.frequency);
+        if (prefill.recurrence.end.type === "date") {
+          setEndType("date");
+          setEndDate(prefill.recurrence.end.date);
+        } else {
+          setEndType("count");
+          setEndCount(prefill.recurrence.end.count);
+        }
+      } else {
+        setFrequency("weekly");
+        setEndType("count");
+        setEndCount(5);
+        setEndDate(addWeeks(state.range.start, 8));
+      }
     }
   }, [state]);
 
@@ -1195,6 +1305,170 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
     onSave(result, extraRef.current);
   };
 
+  const detailsFields = (
+    <>
+      <Field>
+        <Label htmlFor="calendar-event-title">Title</Label>
+        <Input
+          id="calendar-event-title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g. Site visit — Acme Contracting"
+          required
+          autoFocus
+        />
+      </Field>
+
+      {contactOptions && (
+        <Field>
+          <Label htmlFor="calendar-event-contact">Contact</Label>
+          <Combobox
+            id="calendar-event-contact"
+            options={contactOptions}
+            value={contactId}
+            onValueChange={setContactId}
+            placeholder="None"
+          />
+        </Field>
+      )}
+
+      <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+        <Label htmlFor="calendar-event-allday" className="font-medium">
+          All day
+        </Label>
+        <Switch id="calendar-event-allday" checked={allDay} onCheckedChange={setAllDay} />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <Field>
+          <Label htmlFor="calendar-event-start">
+            <Clock size={12} className="mr-1 inline" />
+            Start
+          </Label>
+          <Input
+            id="calendar-event-start"
+            type={allDay ? "date" : "datetime-local"}
+            value={allDay ? toLocalInputValue(start).slice(0, 10) : toLocalInputValue(start)}
+            onChange={(e) => setStart(fromLocalInputValue(allDay ? `${e.target.value}T00:00` : e.target.value))}
+          />
+        </Field>
+        <Field>
+          <Label htmlFor="calendar-event-end">End</Label>
+          <Input
+            id="calendar-event-end"
+            type={allDay ? "date" : "datetime-local"}
+            value={allDay ? toLocalInputValue(end).slice(0, 10) : toLocalInputValue(end)}
+            onChange={(e) => setEnd(fromLocalInputValue(allDay ? `${e.target.value}T00:00` : e.target.value))}
+          />
+        </Field>
+      </div>
+
+      <Field>
+        <Label>Category</Label>
+        <div className="flex flex-wrap gap-2">
+          {CALENDAR_EVENT_COLORS.map((c) => {
+            const colors = colorClasses(c);
+            return (
+              <button
+                key={c}
+                type="button"
+                aria-label={COLOR_LABELS[c]}
+                aria-pressed={color === c}
+                onClick={() => setColor(c)}
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  color === c ? "scale-110 border-on-surface" : "border-transparent",
+                )}
+              >
+                <span className={cn("h-5 w-5 rounded-full", colors.dot)} />
+              </button>
+            );
+          })}
+        </div>
+      </Field>
+
+      <Field>
+        <Label htmlFor="calendar-event-location">
+          <MapPin size={12} className="mr-1 inline" />
+          Location
+        </Label>
+        <Input
+          id="calendar-event-location"
+          value={location}
+          onChange={(e) => setLocation(e.target.value)}
+          placeholder="Optional"
+        />
+      </Field>
+
+      <Field>
+        <Label htmlFor="calendar-event-description">Notes</Label>
+        <Textarea
+          id="calendar-event-description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Optional"
+        />
+      </Field>
+
+      <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+        <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
+          <Repeat size={12} />
+          Repeats
+        </Label>
+        <Switch id="calendar-event-recurs" checked={recurs} onCheckedChange={setRecurs} />
+      </div>
+
+      {recurs && (
+        <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-sunken p-3">
+          <Field>
+            <Label htmlFor="calendar-event-frequency">Frequency</Label>
+            <NativeSelect
+              id="calendar-event-frequency"
+              value={frequency}
+              onChange={(e) => setFrequency(e.target.value as CalendarRecurrenceFrequency)}
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </NativeSelect>
+          </Field>
+          <Field>
+            <Label>Ends</Label>
+            <div className="flex items-center gap-2">
+              <NativeSelect
+                value={endType}
+                onChange={(e) => setEndType(e.target.value as "date" | "count")}
+                className="w-36"
+              >
+                <option value="count">After</option>
+                <option value="date">On date</option>
+              </NativeSelect>
+              {endType === "count" ? (
+                <Input
+                  type="number"
+                  min={1}
+                  value={endCount}
+                  onChange={(e) => setEndCount(Number(e.target.value) || 1)}
+                  className="w-24"
+                  aria-label="Occurrence count"
+                />
+              ) : (
+                <Input
+                  type="date"
+                  value={toLocalInputValue(endDate).slice(0, 10)}
+                  onChange={(e) => setEndDate(fromLocalInputValue(`${e.target.value}T00:00`))}
+                  className="w-40"
+                  aria-label="End date"
+                />
+              )}
+              {endType === "count" && <span className="text-[13px] text-on-surface-muted">occurrences</span>}
+            </div>
+          </Field>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <Dialog open={!!state} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-lg">
@@ -1203,179 +1477,42 @@ function CalendarEventEditor({ state, onClose, onSave, onDelete, contactOptions,
             <DialogTitle>{isEdit ? "Edit event" : "New event"}</DialogTitle>
             <DialogDescription>
               {isEdit
-                ? "Editing a recurring event updates the entire series."
+                ? state.mode === "edit" && state.scope === "occurrence"
+                  ? "Editing just this occurrence — the rest of the series is unaffected."
+                  : "Editing updates the entire series."
                 : "Fill in the details below to add this to the calendar."}
             </DialogDescription>
           </DialogHeader>
 
           <DialogBody className="flex flex-col gap-4">
-            <Field>
-              <Label htmlFor="calendar-event-title">Title</Label>
-              <Input
-                id="calendar-event-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Site visit — Acme Contracting"
-                required
-                autoFocus
-              />
-            </Field>
-
-            {contactOptions && (
-              <Field>
-                <Label htmlFor="calendar-event-contact">Contact</Label>
-                <Combobox
-                  id="calendar-event-contact"
-                  options={contactOptions}
-                  value={contactId}
-                  onValueChange={setContactId}
-                  placeholder="None"
-                />
-              </Field>
+            {renderExtraFields ? (
+              <Tabs defaultValue="details">
+                <TabsList>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="people">People</TabsTrigger>
+                </TabsList>
+                <TabsContent value="details" className="flex flex-col gap-4">
+                  {detailsFields}
+                </TabsContent>
+                <TabsContent value="people" className="flex flex-col gap-4">
+                  {isEdit && state.mode === "edit" && state.scope === "occurrence" ? (
+                    <p className="rounded-md border border-border bg-surface-sunken p-3 text-[13px] text-on-surface-muted">
+                      Visibility and invitees apply to the whole series — edit the series to change them.
+                    </p>
+                  ) : (
+                    renderExtraFields({
+                      isEdit,
+                      event: baseEvent,
+                      setExtra: (extra) => {
+                        extraRef.current = extra;
+                      },
+                    })
+                  )}
+                </TabsContent>
+              </Tabs>
+            ) : (
+              detailsFields
             )}
-
-            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-              <Label htmlFor="calendar-event-allday" className="font-medium">
-                All day
-              </Label>
-              <Switch id="calendar-event-allday" checked={allDay} onCheckedChange={setAllDay} />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Field>
-                <Label htmlFor="calendar-event-start">
-                  <Clock size={12} className="mr-1 inline" />
-                  Start
-                </Label>
-                <Input
-                  id="calendar-event-start"
-                  type={allDay ? "date" : "datetime-local"}
-                  value={allDay ? toLocalInputValue(start).slice(0, 10) : toLocalInputValue(start)}
-                  onChange={(e) => setStart(fromLocalInputValue(allDay ? `${e.target.value}T00:00` : e.target.value))}
-                />
-              </Field>
-              <Field>
-                <Label htmlFor="calendar-event-end">End</Label>
-                <Input
-                  id="calendar-event-end"
-                  type={allDay ? "date" : "datetime-local"}
-                  value={allDay ? toLocalInputValue(end).slice(0, 10) : toLocalInputValue(end)}
-                  onChange={(e) => setEnd(fromLocalInputValue(allDay ? `${e.target.value}T00:00` : e.target.value))}
-                />
-              </Field>
-            </div>
-
-            <Field>
-              <Label>Category</Label>
-              <div className="flex flex-wrap gap-2">
-                {CALENDAR_EVENT_COLORS.map((c) => {
-                  const colors = colorClasses(c);
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      aria-label={COLOR_LABELS[c]}
-                      aria-pressed={color === c}
-                      onClick={() => setColor(c)}
-                      className={cn(
-                        "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                        color === c ? "scale-110 border-on-surface" : "border-transparent",
-                      )}
-                    >
-                      <span className={cn("h-5 w-5 rounded-full", colors.dot)} />
-                    </button>
-                  );
-                })}
-              </div>
-            </Field>
-
-            <Field>
-              <Label htmlFor="calendar-event-location">
-                <MapPin size={12} className="mr-1 inline" />
-                Location
-              </Label>
-              <Input
-                id="calendar-event-location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Optional"
-              />
-            </Field>
-
-            <Field>
-              <Label htmlFor="calendar-event-description">Notes</Label>
-              <Textarea
-                id="calendar-event-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Optional"
-              />
-            </Field>
-
-            <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
-              <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
-                <Repeat size={12} />
-                Repeats
-              </Label>
-              <Switch id="calendar-event-recurs" checked={recurs} onCheckedChange={setRecurs} />
-            </div>
-
-            {recurs && (
-              <div className="flex flex-col gap-3 rounded-md border border-border bg-surface-sunken p-3">
-                <Field>
-                  <Label htmlFor="calendar-event-frequency">Frequency</Label>
-                  <NativeSelect
-                    id="calendar-event-frequency"
-                    value={frequency}
-                    onChange={(e) => setFrequency(e.target.value as CalendarRecurrenceFrequency)}
-                  >
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </NativeSelect>
-                </Field>
-                <Field>
-                  <Label>Ends</Label>
-                  <div className="flex items-center gap-2">
-                    <NativeSelect
-                      value={endType}
-                      onChange={(e) => setEndType(e.target.value as "date" | "count")}
-                      className="w-36"
-                    >
-                      <option value="count">After</option>
-                      <option value="date">On date</option>
-                    </NativeSelect>
-                    {endType === "count" ? (
-                      <Input
-                        type="number"
-                        min={1}
-                        value={endCount}
-                        onChange={(e) => setEndCount(Number(e.target.value) || 1)}
-                        className="w-24"
-                        aria-label="Occurrence count"
-                      />
-                    ) : (
-                      <Input
-                        type="date"
-                        value={toLocalInputValue(endDate).slice(0, 10)}
-                        onChange={(e) => setEndDate(fromLocalInputValue(`${e.target.value}T00:00`))}
-                        className="w-40"
-                        aria-label="End date"
-                      />
-                    )}
-                    {endType === "count" && <span className="text-[13px] text-on-surface-muted">occurrences</span>}
-                  </div>
-                </Field>
-              </div>
-            )}
-
-            {renderExtraFields?.({
-              isEdit,
-              event: baseEvent,
-              setExtra: (extra) => {
-                extraRef.current = extra;
-              },
-            })}
           </DialogBody>
 
           <DialogFooter className="justify-between">

@@ -14,14 +14,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  MultiSelect,
-  RadioGroup,
-  RadioGroupItem,
   Spinner,
-  cn,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
-import type { Meeting, MeetingAttendee, MeetingAttendeeStatus, MeetingVisibility } from "./types";
+import { STATUS_CLASSNAME, STATUS_LABEL } from "./meeting-attendee-status";
+import { MeetingVisibilityAndInviteesEditor } from "./meeting-visibility-and-invitees-editor";
+import type { Meeting, MeetingAttendee, MeetingVisibility } from "./types";
+import { useMeetingRespond } from "./use-meeting-respond";
 
 interface Member {
   id: string;
@@ -29,21 +28,6 @@ interface Member {
   name: string;
   email: string;
 }
-
-const STATUS_LABEL: Record<MeetingAttendeeStatus, string> = {
-  invited: "Invited",
-  accepted: "Accepted",
-  declined: "Declined",
-  tentative: "Tentative",
-};
-
-/** Badge itself is intentionally neutral-toned (see its own doc comment — StatusChip is reserved for financial status), so attendee-response color is applied here via className rather than a Badge variant. */
-const STATUS_CLASSNAME: Record<MeetingAttendeeStatus, string> = {
-  invited: "",
-  accepted: "bg-paid-bg text-paid",
-  declined: "bg-overdue-bg text-overdue",
-  tentative: "bg-due-soon-bg text-due-soon",
-};
 
 /**
  * PRD S-01.10/S-01.11/S-01.12 — visibility + attendee management for a
@@ -84,10 +68,9 @@ export function MeetingAttendeesPanel({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [respondBusy, setRespondBusy] = useState(false);
+  const { respond: handleRespond, busy: respondBusy, error: respondError } = useMeetingRespond(meeting.id, setAttendees);
 
   const isOrganizer = meeting.organizerUserId === currentUserId;
-  const memberOptions = members.filter((m) => m.userId !== meeting.organizerUserId).map((m) => ({ value: m.userId, label: m.name }));
 
   useEffect(() => {
     setLoading(true);
@@ -120,20 +103,6 @@ export function MeetingAttendeesPanel({
     }
   }
 
-  async function handleRespond(status: "accepted" | "declined" | "tentative") {
-    setRespondBusy(true);
-    setError(null);
-    try {
-      await apiClient.post(`/meetings/${meeting.id}/respond`, { status });
-      const rows = await apiClient.get<MeetingAttendee[]>(`/meetings/${meeting.id}/attendees`);
-      setAttendees(rows);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save your response.");
-    } finally {
-      setRespondBusy(false);
-    }
-  }
-
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md">
@@ -141,9 +110,9 @@ export function MeetingAttendeesPanel({
           <DialogTitle>Manage attendees</DialogTitle>
         </DialogHeader>
         <DialogBody className="flex flex-col gap-5">
-          {error && (
+          {(error || respondError) && (
             <Alert variant="critical">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{error ?? respondError}</AlertDescription>
             </Alert>
           )}
 
@@ -167,44 +136,14 @@ export function MeetingAttendeesPanel({
           )}
 
           {isOrganizer && (
-            <>
-              <div className="flex flex-col gap-2">
-                <p className="text-[13px] font-medium text-on-surface">Visibility</p>
-                <RadioGroup value={visibility} onValueChange={(v) => setVisibility(v as MeetingVisibility)} className="gap-2">
-                  <label
-                    htmlFor="meeting-visibility-private"
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
-                      visibility === "private" ? "border-primary bg-primary/5" : "border-border-strong",
-                    )}
-                  >
-                    <RadioGroupItem value="private" id="meeting-visibility-private" className="mt-0.5" />
-                    <div>
-                      <p className="text-[13px] font-medium text-on-surface">Private</p>
-                      <p className="text-[12px] text-on-surface-muted">Only you and invited attendees can see this meeting.</p>
-                    </div>
-                  </label>
-                  <label
-                    htmlFor="meeting-visibility-org"
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-md border p-3 transition-colors",
-                      visibility === "org" ? "border-primary bg-primary/5" : "border-border-strong",
-                    )}
-                  >
-                    <RadioGroupItem value="org" id="meeting-visibility-org" className="mt-0.5" />
-                    <div>
-                      <p className="text-[13px] font-medium text-on-surface">Everyone in the org</p>
-                      <p className="text-[12px] text-on-surface-muted">Every org member can see this meeting on their calendar.</p>
-                    </div>
-                  </label>
-                </RadioGroup>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <p className="text-[13px] font-medium text-on-surface">Invite people</p>
-                <MultiSelect options={memberOptions} value={attendeeUserIds} onValueChange={setAttendeeUserIds} placeholder="Select people to invite…" />
-              </div>
-            </>
+            <MeetingVisibilityAndInviteesEditor
+              visibility={visibility}
+              onVisibilityChange={setVisibility}
+              attendeeUserIds={attendeeUserIds}
+              onAttendeeUserIdsChange={setAttendeeUserIds}
+              members={members}
+              excludeUserId={meeting.organizerUserId ?? currentUserId}
+            />
           )}
 
           {loading ? (
