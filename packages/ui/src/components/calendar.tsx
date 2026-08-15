@@ -149,8 +149,8 @@ export interface CalendarProps {
    * alongside the calendar's real events) — see `onReadOnlyEventClick`.
    */
   readOnlyEventIds?: Set<string>;
-  /** Required when `readOnlyEventIds` is set — called with the clicked instance instead of opening the built-in editor. */
-  onReadOnlyEventClick?: (instance: CalendarEventInstance) => void;
+  /** Required when `readOnlyEventIds` is set — called with the clicked instance instead of opening the built-in editor. `target` is the clicked DOM element, e.g. for anchoring a consumer-rendered Popover the same way `renderEventPopover` anchors its own. */
+  onReadOnlyEventClick?: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   /**
    * Escape hatch for consumer-specific fields the built-in editor form has
    * no concept of (e.g. meeting attendees/visibility) — same "generic slot
@@ -287,7 +287,7 @@ export function Calendar({
 
   const handleEventClick = (instance: CalendarEventInstance, target?: HTMLElement) => {
     if (readOnlyEventIds?.has(instance.event.id)) {
-      onReadOnlyEventClick?.(instance);
+      onReadOnlyEventClick?.(instance, target);
       return;
     }
     if (renderEventPopover) {

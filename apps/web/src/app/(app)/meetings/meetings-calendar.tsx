@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addMonths } from "date-fns";
 import {
@@ -23,19 +23,16 @@ import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  Dialog,
-  DialogBody,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   MiniCalendar,
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
   isOccurrenceAlreadyModified,
   type CalendarEvent,
   type CalendarEventInstance,
   type CalendarView,
 } from "@spine/ui";
-import { ChevronDown, PanelRightClose, PanelRightOpen, Users } from "lucide-react";
+import { ChevronDown, PanelRightClose, PanelRightOpen, Users, X } from "lucide-react";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
 import type { Activity, ActivityType, Contact } from "../contacts/types";
@@ -191,6 +188,7 @@ export function MeetingsCalendar() {
   const [hiddenOrganizers, setHiddenOrganizers] = useState<Set<string>>(new Set());
   const [showActivities, setShowActivities] = useState(false);
   const [activityDetail, setActivityDetail] = useState<CalendarEventInstance | null>(null);
+  const activityDetailAnchorRef = useRef<HTMLElement | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<{ eventId: string; scope?: "series" | "occurrence"; occurrenceDate?: Date } | null>(null);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -472,7 +470,10 @@ export function MeetingsCalendar() {
         onEventUpdate={handleUpdate}
         onEventDelete={handleDeleteRequest}
         readOnlyEventIds={readOnlyEventIds}
-        onReadOnlyEventClick={setActivityDetail}
+        onReadOnlyEventClick={(instance, target) => {
+          activityDetailAnchorRef.current = target ?? null;
+          setActivityDetail(instance);
+        }}
         duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
         onRecurringMoveOrResize={(request, onConfirm, onCancel) => {
           setScopeChoice({ action: "move", onConfirm, onCancel });
@@ -694,24 +695,31 @@ export function MeetingsCalendar() {
         </aside>
       )}
 
-      <Dialog open={!!activityDetail} onOpenChange={(open) => !open && setActivityDetail(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Badge>Activity</Badge>
-              {activityDetail?.event.title}
-            </DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <p className="text-[13px] text-on-surface-muted">{activityDetail && `Due ${activityDetail.occurrenceStart.toLocaleString()}`}</p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="secondary" size="sm" onClick={() => setActivityDetail(null)}>
-              Close
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <Popover open={!!activityDetail} onOpenChange={(open) => !open && setActivityDetail(null)}>
+        <PopoverAnchor virtualRef={activityDetailAnchorRef} />
+        <PopoverContent align="start" side="right" className="w-72 p-0" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <div className="flex flex-col gap-2 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Badge>Activity</Badge>
+                <h3 className="text-[14px] font-semibold text-on-surface">{activityDetail?.event.title}</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 shrink-0 p-0"
+                aria-label="Close"
+                onClick={() => setActivityDetail(null)}
+              >
+                <X size={14} />
+              </Button>
+            </div>
+            <p className="text-[13px] text-on-surface-muted">
+              {activityDetail && `Due ${activityDetail.occurrenceStart.toLocaleString()}`}
+            </p>
+          </div>
+        </PopoverContent>
+      </Popover>
 
       <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <AlertDialogContent>
