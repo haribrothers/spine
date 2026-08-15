@@ -762,8 +762,13 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
           const hi = Math.max(startMinutes, minutes + SNAP_MINUTES);
           return { ...prev, currentStart: addMinutesTo(dayBase, lo), currentEnd: addMinutesTo(dayBase, Math.max(hi, lo + SNAP_MINUTES)) };
         }
-        if (prev.kind === "move" && prev.originalEvent) {
-          const duration = prev.originalEvent.end.getTime() - prev.originalEvent.start.getTime();
+        if (prev.kind === "move" && prev.originalEvent && prev.dragStartOccurrenceStart && prev.dragStartOccurrenceEnd) {
+          // The occurrence's own current duration, not the series'
+          // originalEvent.start/end — a previously-resized single
+          // occurrence (a "this event" resize) must keep its own length
+          // while being dragged to a new time, not snap back to the
+          // series' original duration.
+          const duration = prev.dragStartOccurrenceEnd.getTime() - prev.dragStartOccurrenceStart.getTime();
           const newStart = addMinutesTo(dayBase, minutes);
           return { ...prev, currentStart: newStart, currentEnd: new Date(newStart.getTime() + duration) };
         }
@@ -859,7 +864,11 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
   const hours = Array.from({ length: DAY_END_HOUR - DAY_START_HOUR }, (_, i) => DAY_START_HOUR + i);
 
   return (
-    <div className="flex flex-col">
+    // select-none only while a drag is active — a fast pointer move during
+    // create/move/resize was catching the hour labels/event text in a
+    // native text selection; the grid has no text worth selecting anyway
+    // once a gesture starts, and this keeps titles copy-able at rest.
+    <div className={cn("flex flex-col", drag && "select-none")}>
       {allDayInstances.length > 0 && (
         <div className="flex border-b border-border">
           <div className="w-16 shrink-0 border-r border-border px-2 py-1.5 text-[11px] font-medium text-on-surface-muted">
@@ -1021,7 +1030,7 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
       tabIndex={0}
       aria-label={`${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}`}
       className={cn(
-        "group absolute overflow-hidden rounded border px-1.5 py-0.5 text-left text-[11.5px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "group absolute select-none overflow-hidden rounded border px-1.5 py-0.5 text-left text-[11.5px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         colors.bg,
         colors.fg,
         colors.border,
