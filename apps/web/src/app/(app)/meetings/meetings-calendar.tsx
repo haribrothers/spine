@@ -413,6 +413,33 @@ export function MeetingsCalendar() {
     }
   }
 
+  /**
+   * PRD S-01.14 — shared by the popover's Edit/Delete buttons and
+   * double-click (both reach `Calendar`'s built-in edit dialog through the
+   * same `onEdit`/`onDelete` closure shape): on a recurring meeting with no
+   * explicit scope yet, skip straight to "this event" if the occurrence is
+   * already individually modified (no ambiguity left to ask about),
+   * otherwise show the This event/All events choice.
+   */
+  function resolveEditOrDeleteScope(
+    action: "edit" | "delete",
+    instance: CalendarEventInstance,
+    onEdit: (scope?: "series" | "occurrence") => void,
+    onDelete: (scope?: "series" | "occurrence") => void,
+  ) {
+    if (!instance.isRecurring) {
+      if (action === "edit") onEdit();
+      else onDelete();
+      return;
+    }
+    if (isOccurrenceAlreadyModified(instance.event, instance.originalOccurrenceStart, true)) {
+      if (action === "edit") onEdit("occurrence");
+      else onDelete("occurrence");
+      return;
+    }
+    setScopeChoice({ action, onEdit, onDelete });
+  }
+
   if (error) {
     return (
       <Alert variant="critical">
@@ -449,6 +476,9 @@ export function MeetingsCalendar() {
         duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
         onRecurringMoveOrResize={(request, onConfirm, onCancel) => {
           setScopeChoice({ action: "move", onConfirm, onCancel });
+        }}
+        onEventDoubleClick={({ instance, onEdit, onDelete }) => {
+          resolveEditOrDeleteScope("edit", instance, onEdit, onDelete);
         }}
         renderExtraFields={({ isEdit, event, setExtra }) => {
           if (!session?.user?.id) return null;
@@ -494,26 +524,16 @@ export function MeetingsCalendar() {
               organizerName={members.find((m) => m.userId === meeting.organizerUserId)?.name}
               onEdit={(scope) => {
                 if (instance.isRecurring && !scope) {
-                  // Already individually modified — no ambiguity left, skip
-                  // straight to "this event" instead of asking again.
-                  if (isOccurrenceAlreadyModified(instance.event, instance.originalOccurrenceStart, true)) {
-                    onEdit("occurrence");
-                    return;
-                  }
-                  setScopeChoice({ action: "edit", onEdit, onDelete });
                   onClose();
+                  resolveEditOrDeleteScope("edit", instance, onEdit, onDelete);
                   return;
                 }
                 onEdit(scope);
               }}
               onDelete={(scope) => {
                 if (instance.isRecurring && !scope) {
-                  if (isOccurrenceAlreadyModified(instance.event, instance.originalOccurrenceStart, true)) {
-                    onDelete("occurrence");
-                    return;
-                  }
-                  setScopeChoice({ action: "delete", onEdit, onDelete });
                   onClose();
+                  resolveEditOrDeleteScope("delete", instance, onEdit, onDelete);
                   return;
                 }
                 onDelete(scope);

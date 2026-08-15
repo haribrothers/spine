@@ -210,6 +210,22 @@ export interface CalendarProps {
    * behavior before S-01.14.
    */
   onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest, onConfirm: (scope: "series" | "occurrence") => void, onCancel: () => void) => void;
+  /**
+   * Double-clicking a (non-read-only) event bypasses the quick-view popover
+   * (if any) and goes straight to editing — same destination as clicking
+   * Edit inside the popover, just one step shorter. Calendar hands the
+   * consumer the exact same `onEdit`/`onDelete` closures `renderEventPopover`
+   * receives (transition into the built-in edit dialog, scoped as
+   * requested), so a consumer already handling the popover's Edit button —
+   * including any "already individually modified, skip the scope prompt"
+   * logic — reuses that same code path unchanged. Omit entirely to leave
+   * double-click a no-op beyond whatever single-click already does.
+   */
+  onEventDoubleClick?: (ctx: {
+    instance: CalendarEventInstance;
+    onEdit: (scope?: "series" | "occurrence") => void;
+    onDelete: (scope?: "series" | "occurrence") => void;
+  }) => void;
   className?: string;
 }
 
@@ -239,6 +255,7 @@ export function Calendar({
   renderEventPopover,
   duplicateRequest,
   onRecurringMoveOrResize,
+  onEventDoubleClick,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -279,6 +296,31 @@ export function Calendar({
       return;
     }
     setEditorState({ mode: "edit", instance });
+  };
+
+  const handleEventDoubleClick = (instance: CalendarEventInstance) => {
+    if (readOnlyEventIds?.has(instance.event.id)) return;
+    if (!onEventDoubleClick) {
+      // No consumer opt-in — go straight to the built-in edit dialog,
+      // same destination single-click reaches without a popover configured.
+      setEditorState({ mode: "edit", instance });
+      return;
+    }
+    // Same onEdit/onDelete closures the popover itself receives (see
+    // renderEventPopover's own call below) — a consumer already handling
+    // Edit from the popover, including any already-modified/scope-choice
+    // logic, reuses that exact same code path here.
+    setPopoverInstance(null);
+    onEventDoubleClick({
+      instance,
+      onEdit: (scope) => {
+        setEditorState({ mode: "edit", instance, scope });
+      },
+      onDelete: (scope) => {
+        const occurrenceDate = scope === "occurrence" ? instance.originalOccurrenceStart : undefined;
+        onEventDelete?.(instance.event.id, scope, occurrenceDate);
+      },
+    });
   };
 
   const handleSave = (result: CalendarEvent, extra?: Record<string, unknown>) => {
@@ -354,6 +396,7 @@ export function Calendar({
             events={events}
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
+            onEventDoubleClick={handleEventDoubleClick}
             onEventUpdate={handleEventUpdate}
             onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
@@ -365,6 +408,7 @@ export function Calendar({
             events={events}
             onSlotCreate={handleSlotCreate}
             onEventClick={handleEventClick}
+            onEventDoubleClick={handleEventDoubleClick}
             onEventUpdate={handleEventUpdate}
             onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
@@ -376,12 +420,13 @@ export function Calendar({
             events={events}
             onDayCreate={(day) => handleSlotCreate({ start: day, end: addDays(day, 1) }, true)}
             onEventClick={handleEventClick}
+            onEventDoubleClick={handleEventDoubleClick}
             onDateChange={onDateChange}
             onViewChange={onViewChange}
           />
         )}
         {view === "agenda" && (
-          <CalendarAgendaView date={date} events={events} onEventClick={handleEventClick} />
+          <CalendarAgendaView date={date} events={events} onEventClick={handleEventClick} onEventDoubleClick={handleEventDoubleClick} />
         )}
       </div>
 
@@ -594,6 +639,7 @@ interface TimeGridProps {
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
+  onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onEventUpdate: (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
   /** PRD S-01.14 — when set, a move/resize on a recurring occurrence defers here instead of calling onEventUpdate directly. Omit to fall back to today's whole-series-move behavior (matches renderEventPopover's own opt-in shape). */
   onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
@@ -607,7 +653,7 @@ interface TimeGridProps {
  * so touch works and live feedback (the draft block following the pointer)
  * is simple to render — see calendar.tsx's module doc for why.
  */
-function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: TimeGridProps) {
+function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: TimeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<TimeGridDragState | null>(null);
   const dragRef = useRef<TimeGridDragState | null>(null);
@@ -831,6 +877,10 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, onR
                         key={instance.instanceId}
                         type="button"
                         onClick={(e) => onEventClick(instance, e.currentTarget)}
+                        onDoubleClick={(e) => {
+                          e.stopPropagation();
+                          onEventDoubleClick?.(instance);
+                        }}
                         className={cn(
                           "mb-1 flex w-full items-center gap-1 truncate rounded px-1.5 py-0.5 text-left text-[11.5px] font-medium",
                           colors.bg,
@@ -900,6 +950,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventUpdate, onR
                       }
                       onEventClick(instance, target);
                     }}
+                    onEventDoubleClick={onEventDoubleClick}
                     onMoveStart={(e) => beginMove(slot.instance, dayIndex, e)}
                     onResizeStart={(edge, e) => beginResize(slot.instance, dayIndex, edge, e)}
                   />
@@ -949,11 +1000,12 @@ interface TimeGridEventProps {
   isDragging: boolean;
   isReadOnly?: boolean;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
+  onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onMoveStart: (e: React.PointerEvent) => void;
   onResizeStart: (edge: "start" | "end", e: React.PointerEvent) => void;
 }
 
-function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onMoveStart, onResizeStart }: TimeGridEventProps) {
+function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onEventDoubleClick, onMoveStart, onResizeStart }: TimeGridEventProps) {
   const { instance, column, columnCount } = slot;
   const dayBase = startOfDay(instance.occurrenceStart);
   const top = minutesToY(diffMinutes(instance.occurrenceStart, dayBase), gridHeight);
@@ -975,9 +1027,13 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
         colors.border,
         isDragging && "opacity-60",
       )}
-      style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)`, cursor: isReadOnly ? "pointer" : undefined }}
+      style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)`, cursor: "pointer" }}
       onPointerDown={isReadOnly ? (e) => e.stopPropagation() : onMoveStart}
       onClick={(e) => onEventClick(instance, e.currentTarget)}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        if (!isReadOnly) onEventDoubleClick?.(instance);
+      }}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
@@ -1016,18 +1072,20 @@ interface DayLikeViewProps {
   events: CalendarEvent[];
   onSlotCreate: (range: DraftRange, allDay?: boolean) => void;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
+  onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onEventUpdate: (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
   onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
   readOnlyEventIds?: Set<string>;
 }
 
-function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
   return (
     <TimeGrid
       days={[date]}
       events={events}
       onSlotCreate={onSlotCreate}
       onEventClick={onEventClick}
+      onEventDoubleClick={onEventDoubleClick}
       onEventUpdate={onEventUpdate}
       onRecurringMoveOrResize={onRecurringMoveOrResize}
       readOnlyEventIds={readOnlyEventIds}
@@ -1039,7 +1097,7 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventUpda
 // Week view
 // ---------------------------------------------------------------------------
 
-function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
   const days = useMemo(() => eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) }), [date]);
 
   return (
@@ -1067,6 +1125,7 @@ function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventUpd
         events={events}
         onSlotCreate={onSlotCreate}
         onEventClick={onEventClick}
+        onEventDoubleClick={onEventDoubleClick}
         onEventUpdate={onEventUpdate}
         onRecurringMoveOrResize={onRecurringMoveOrResize}
         readOnlyEventIds={readOnlyEventIds}
@@ -1084,6 +1143,7 @@ interface MonthViewProps {
   events: CalendarEvent[];
   onDayCreate: (day: Date) => void;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
+  onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onDateChange: (date: Date) => void;
   onViewChange: (view: CalendarView) => void;
 }
@@ -1091,7 +1151,7 @@ interface MonthViewProps {
 const WEEKDAY_HEADERS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MAX_VISIBLE_PER_DAY = 3;
 
-function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChange, onViewChange }: MonthViewProps) {
+function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDoubleClick, onDateChange, onViewChange }: MonthViewProps) {
   const monthStart = startOfMonth(date);
   const monthEnd = endOfMonth(date);
   const gridStart = startOfWeek(monthStart);
@@ -1181,6 +1241,10 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onDateChan
                             e.stopPropagation();
                             onEventClick(instance, e.currentTarget);
                           }}
+                          onDoubleClick={(e) => {
+                            e.stopPropagation();
+                            onEventDoubleClick?.(instance);
+                          }}
                           className={cn(
                             "flex items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                             colors.bg,
@@ -1217,11 +1281,12 @@ interface AgendaViewProps {
   date: Date;
   events: CalendarEvent[];
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
+  onEventDoubleClick?: (instance: CalendarEventInstance) => void;
 }
 
 const AGENDA_WINDOW_DAYS = 60;
 
-function CalendarAgendaView({ date, events, onEventClick }: AgendaViewProps) {
+function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick }: AgendaViewProps) {
   const rangeStart = startOfDay(date);
   const rangeEnd = addDays(rangeStart, AGENDA_WINDOW_DAYS);
   const instances = useMemo(() => expandEventsInRange(events, rangeStart, rangeEnd), [events, rangeStart, rangeEnd]);
@@ -1265,6 +1330,10 @@ function CalendarAgendaView({ date, events, onEventClick }: AgendaViewProps) {
                     key={instance.instanceId}
                     type="button"
                     onClick={(e) => onEventClick(instance, e.currentTarget)}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      onEventDoubleClick?.(instance);
+                    }}
                     className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                   >
                     <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", colors.dot)} />
