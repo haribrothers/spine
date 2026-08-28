@@ -7,6 +7,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { vendorBills, vendorBillLines, contacts, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 
@@ -268,6 +269,10 @@ export class VendorBillsService {
     if (!existing) {
       throw new NotFoundException("Vendor bill not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "vendor_bills.edit_own",
+      others: "vendor_bills.edit_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft vendor bill can be edited");
     }
@@ -481,6 +486,10 @@ export class VendorBillsService {
     if (!existing) {
       throw new NotFoundException("Vendor bill not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "vendor_bills.delete_own",
+      others: "vendor_bills.delete_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft vendor bill can be deleted");
     }

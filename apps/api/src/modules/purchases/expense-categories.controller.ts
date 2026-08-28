@@ -6,7 +6,14 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { ExpenseCategoriesService } from "./expense-categories.service";
 
-/** GET routes open to any authenticated member (Field needs to pick a category when submitting an expense) — mutation gated on `purchases.manage`, matching CatalogController's own any-can-read/owner+staff-can-write split. */
+/**
+ * GET routes open to any authenticated member (Field needs to pick a
+ * category when submitting an expense) — mutation gated on the own/others
+ * split (PRD §9), matching CatalogController's own any-can-read/
+ * owner+staff-can-write posture. `purchases.manage` is replaced by
+ * `expense_categories.edit_own`/`edit_others`/`delete_own`/`delete_others`,
+ * checked in `ExpenseCategoriesService` via `requireOwnershipCapability`.
+ */
 @Controller("expense-categories")
 export class ExpenseCategoriesController {
   constructor(private readonly expenseCategoriesService: ExpenseCategoriesService) {}
@@ -25,7 +32,7 @@ export class ExpenseCategoriesController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("purchases.manage")
+  @RequireCapability("expense_categories.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -35,7 +42,6 @@ export class ExpenseCategoriesController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -45,7 +51,6 @@ export class ExpenseCategoriesController {
 
   @Post(":id/archive")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async archive(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -54,7 +59,6 @@ export class ExpenseCategoriesController {
 
   @Post(":id/restore")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async restore(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -63,7 +67,6 @@ export class ExpenseCategoriesController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

@@ -942,6 +942,47 @@ creates a meeting becomes its organizer).
    org, organized by anyone) regardless of Team grants — same
    blanket-access rule as everywhere else in §2.1.
 
+### 13.5 Purchases — own/others split across Expenses, Expense Categories, Vendor Bills, Vendor Payments (§9 S-07.9)
+
+Needs a Staff account in two Teams, plus a **Field** account for the
+Expenses-specific check. This is the first resource in this pattern
+where Field has real write access to their own records.
+
+1. Confirm four new collapsible groups in the privilege matrix: **Manage
+   Expenses** (Create/edit own, Edit others', Delete own, Delete others',
+   Approve, Reject, Mark as billed, Bill to customer), **Manage Expense
+   Categories**, **Manage Vendor Bills** (own/others pair plus Record and
+   Void), **Manage Vendor Payments** (own/others pair — no separate edit
+   action exists for vendor payments, only create/delete).
+2. As a **Field** user with NO Team memberships at all (Field never
+   appears in the privilege matrix), submit a new expense from the
+   mobile/field flow — succeeds. Edit it — succeeds. Delete it —
+   succeeds. All three must work purely because Field is fixed-granted
+   `edit_own`/`delete_own` for their OWN expenses, regardless of Teams.
+3. Still as that Field user, try to view/edit a **different** expense
+   submitted by someone else. Confirm they can SEE it (read stays
+   unconditional) but get blocked from editing/deleting it — Field never
+   gets `edit_others`/`delete_others` under any configuration.
+4. Grant Team A (a Staff user) only **Manage Expenses → Create/edit
+   own**. Confirm they can submit/edit their own expense, but the
+   **Approve**/**Reject** buttons on a colleague's submitted expense are
+   blocked without the separate Approve/Reject grants — these were never
+   folded into edit_own.
+5. Grant Team A **Manage Expenses → Approve**. As that Staff user,
+   approve a colleague's expense — succeeds, even without any
+   edit_others grant (approving isn't editing).
+6. Repeat the "create own, blocked from others', independent workflow
+   action" pattern for a **Vendor Bill**: create as Staff User 1
+   (Create/edit own only), confirm Staff User 2 (no grants) can view it
+   but not edit it, and confirm neither can click **Record** without the
+   separate `vendor_bills.record` grant.
+7. Confirm **Vendor Payments** — create a payment as Staff User 1
+   (Create own vendor payments granted), confirm Staff User 2 can see it
+   but deleting it (while unallocated) requires `delete_own`/
+   `delete_others` as appropriate.
+8. As Owner, confirm every action above works regardless of Team grants,
+   for all four Purchases resources.
+
 ---
 
 ## 14. Design system spot-check

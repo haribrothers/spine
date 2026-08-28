@@ -6,7 +6,14 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { VendorPaymentsService } from "./vendor-payments.service";
 
-/** Same Owner ✅ / Staff ✅ / Field ❌ posture as PaymentsController, gated on `purchases.manage`. */
+/**
+ * Same Owner ✅ / Staff ✅ / Field ❌ posture as PaymentsController.
+ * Own/others split (PRD §9): `purchases.manage` is replaced by
+ * `vendor_payments.edit_own`/`edit_others`/`delete_own`/`delete_others` —
+ * `edit_own` gates create (there is no update route for vendor payments at
+ * all); delete is checked in `VendorPaymentsService` via
+ * `requireOwnershipCapability`.
+ */
 @Controller("vendor-payments")
 @OrgRoles(["owner", "staff"])
 export class VendorPaymentsController {
@@ -35,7 +42,7 @@ export class VendorPaymentsController {
   }
 
   @Post()
-  @RequireCapability("purchases.manage")
+  @RequireCapability("vendor_payments.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -44,7 +51,6 @@ export class VendorPaymentsController {
   }
 
   @Delete(":id")
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { expenses, expenseCategories, accounts, invoiceLines, jobs } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -118,6 +119,13 @@ export class ExpensesService {
     if (!existing) {
       throw new NotFoundException("Expense not found");
     }
+    await requireOwnershipCapability(
+      this.db,
+      { orgId, userId: actorUserId },
+      existing.submittedByUserId,
+      { own: "expenses.edit_own", others: "expenses.edit_others" },
+      true,
+    );
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be edited");
     }
@@ -453,6 +461,13 @@ export class ExpensesService {
     if (!existing) {
       throw new NotFoundException("Expense not found");
     }
+    await requireOwnershipCapability(
+      this.db,
+      { orgId, userId: actorUserId },
+      existing.submittedByUserId,
+      { own: "expenses.delete_own", others: "expenses.delete_others" },
+      true,
+    );
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be deleted");
     }

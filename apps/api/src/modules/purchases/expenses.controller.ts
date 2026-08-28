@@ -15,6 +15,21 @@ import { ExpensesService } from "./expenses.service";
  * `@OrgRoles` — each route declares its own, since the eligible role set
  * genuinely differs by action here (unlike InvoicesController's uniform
  * owner+staff).
+ *
+ * Own/others split (PRD §9): `expenses.submit`/`expenses.approve` are
+ * replaced by `expenses.edit_own`/`edit_others`/`delete_own`/
+ * `delete_others` (create/update/delete, checked in `ExpensesService` via
+ * `requireOwnershipCapability` once the record is loaded — see
+ * contacts.controller.ts's own header comment for why this can't be a
+ * route-level `@RequireCapability`) plus dedicated `expenses.approve`/
+ * `expenses.reject`/`expenses.mark_billed`/`expenses.bill_to_customer`
+ * (an approver reviewing someone else's submission, or a billing action,
+ * is not an "edit" relationship, so these stay single capabilities, not
+ * own/others). Field ALWAYS passes the `_own` half of edit/delete for
+ * their own expense — Field is fixed/non-configurable and never
+ * participates in the Team privilege matrix, so this preserves today's
+ * "field can submit/edit/delete their own expenses" behavior rather than
+ * silently taking it away (see `hasCapability`'s `fieldAlwaysPasses` param).
  */
 @Controller("expenses")
 export class ExpensesController {
@@ -41,7 +56,7 @@ export class ExpensesController {
 
   @Post()
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("expenses.submit")
+  @RequireCapability("expenses.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -51,7 +66,6 @@ export class ExpensesController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("expenses.submit")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -71,7 +85,7 @@ export class ExpensesController {
 
   @Post(":id/reject")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("expenses.approve")
+  @RequireCapability("expenses.reject")
   @UseInterceptors(IdempotencyInterceptor)
   async reject(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -81,7 +95,7 @@ export class ExpensesController {
 
   @Post(":id/mark-billed")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("expenses.mark_billed")
   @UseInterceptors(IdempotencyInterceptor)
   async markBilled(@Session() session: UserSession, @Param("id") id: string, @Body() body: { invoiceLineId: string }) {
     const orgId = requireOrgId(session);
@@ -91,7 +105,7 @@ export class ExpensesController {
   /** S-07.6's one-click UI action — creates a new draft invoice for this expense's job's contact and marks the expense billed in one call, unlike mark-billed above which expects an invoice line to already exist. */
   @Post(":id/bill-to-customer")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("expenses.bill_to_customer")
   @UseInterceptors(IdempotencyInterceptor)
   async billToCustomer(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -100,7 +114,6 @@ export class ExpensesController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("expenses.submit")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

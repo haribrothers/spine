@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { vendorPayments, vendorPaymentAllocations, vendorBills, contacts, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 
@@ -210,6 +211,10 @@ export class VendorPaymentsService {
     if (!existing) {
       throw new NotFoundException("Vendor payment not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "vendor_payments.delete_own",
+      others: "vendor_payments.delete_others",
+    });
     if (existing.allocatedAmount > 0n) {
       throw new BadRequestException("Cannot delete a vendor payment that has been allocated to a bill");
     }

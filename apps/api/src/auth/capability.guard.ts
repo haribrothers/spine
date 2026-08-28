@@ -86,7 +86,7 @@ export class CapabilityGuard implements CanActivate {
       // non-staff role including field, which meant a field user could
       // never actually pass a route explicitly built to allow them —
       // fixed live while adding the same field+capability shape for
-      // S-07.2 (expenses.submit), which surfaced the same bug.
+      // S-07.2 (expenses.edit_own), which surfaced the same bug.
       return true;
     }
 

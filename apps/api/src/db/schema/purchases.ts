@@ -136,6 +136,8 @@ export const expenseCategories = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
+    /** Own/others ownership split (PRD §9) — same nullable/never-reassigned pattern as contacts.createdByUserId. In practice most categories are set up during onboarding by the Primary Owner, so "own" resolves narrowly here — kept for consistency with every other resource in this pattern rather than a special-cased single capability. */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -143,6 +145,7 @@ export const expenseCategories = pgTable(
   (table) => [
     index("expense_categories_org_idx").on(table.orgId),
     index("expense_categories_account_idx").on(table.accountId),
+    index("expense_categories_created_by_idx").on(table.createdByUserId),
   ],
 );
 

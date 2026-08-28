@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { expenseCategories, expenses } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateExpenseCategoryInput = z.infer<typeof createExpenseCategorySchema>;
 export type UpdateExpenseCategoryInput = z.infer<typeof updateExpenseCategorySchema>;
@@ -45,7 +46,7 @@ export class ExpenseCategoriesService {
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .insert(expenseCategories)
-        .values({ orgId, name: input.name, accountId: input.accountId ?? null })
+        .values({ orgId, name: input.name, accountId: input.accountId ?? null, createdByUserId: actorUserId })
         .returning();
       if (!row) {
         throw new BadRequestException("Failed to create expense category");
@@ -65,6 +66,10 @@ export class ExpenseCategoriesService {
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateExpenseCategoryInput) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "expense_categories.edit_own",
+      others: "expense_categories.edit_others",
+    });
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(expenseCategories)
@@ -92,7 +97,11 @@ export class ExpenseCategoriesService {
   }
 
   async archive(orgId: string, id: string, actorUserId: string) {
-    await this.getOne(orgId, id);
+    const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "expense_categories.delete_own",
+      others: "expense_categories.delete_others",
+    });
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(expenseCategories)
@@ -112,7 +121,11 @@ export class ExpenseCategoriesService {
   }
 
   async restore(orgId: string, id: string, actorUserId: string) {
-    await this.getOne(orgId, id);
+    const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "expense_categories.delete_own",
+      others: "expense_categories.delete_others",
+    });
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(expenseCategories)
@@ -134,6 +147,10 @@ export class ExpenseCategoriesService {
   /** Hard delete, blocked once any expense references this category — same "referenced -> block delete" convention as ContactsService.delete's own ledger check. */
   async delete(orgId: string, id: string, actorUserId: string) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "expense_categories.delete_own",
+      others: "expense_categories.delete_others",
+    });
     const [used] = await this.db.select().from(expenses).where(eq(expenses.categoryId, id));
     if (used) {
       throw new BadRequestException("Expense category is used by an expense and cannot be deleted — archive it instead");

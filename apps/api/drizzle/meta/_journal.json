@@ -288,6 +288,20 @@
       "when": 1787942200000,
       "tag": "0040_split_quotes_meetings_manage_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1787943478764,
+      "tag": "0041_spooky_umar",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1787944200000,
+      "tag": "0042_split_purchases_expenses_manage_capability",
+      "breakpoints": true
     }
   ]
 }

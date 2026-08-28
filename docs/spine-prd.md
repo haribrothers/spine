@@ -99,8 +99,27 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Revise a quote | ✅ | ✅ (default) | ❌ | ❌ |
 | Approve quote above discount threshold | ✅ | ❌ (default; Owner-only in practice, but Team-configurable) | ❌ | ❌ |
 | Create invoices, record payments | ✅ | ✅ (default) | ❌ | ❌ |
-| Submit expense | ✅ | ✅ (default) | ✅ | ❌ |
+| Submit/edit own expenses | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
+| Edit others' expenses | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own expenses | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
+| Delete others' expenses | ✅ | ✅ (default) | ❌ | ❌ |
 | Approve expense | ✅ | ✅ (default) | ❌ | ❌ |
+| Reject expense | ✅ | ✅ (default) | ❌ | ❌ |
+| Mark expense as billed | ✅ | ✅ (default) | ❌ | ❌ |
+| Bill expense to customer | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own expense categories | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' expense categories | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete own expense categories | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete others' expense categories | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own vendor bills | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' vendor bills | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own vendor bills | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' vendor bills | ✅ | ✅ (default) | ❌ | ❌ |
+| Record a vendor bill | ✅ | ✅ (default) | ❌ | ❌ |
+| Void a vendor bill | ✅ | ✅ (default) | ❌ | ❌ |
+| Create own vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
 | Upload site photos, update milestone status | ✅ | ✅ (default) | ✅ | ❌ |
 | Create/edit own meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
 | Edit others' meetings | ✅ | ✅ (default) | ❌ | ❌ |
@@ -552,8 +571,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-07.6 | As staff, I want to mark an expense as billable and pull it into a customer invoice, so reimbursables are recovered |
 | S-07.7 | As an owner, I want a payables view with due dates, so I pay on time |
 | S-07.8 | As staff, I want to record a payment to a vendor allocated across bills, so payables clear correctly |
+| S-07.9 | As an owner, I want to grant a Team the ability to edit or delete only the expenses/vendor bills/vendor payments/expense categories they created, or extend that to everyone's, independently per resource and independently from approve/reject/record/void, so I can let junior staff self-manage without giving them review authority over colleagues' submissions |
 
 *Acceptance highlights:* an unapproved expense does not post to the ledger. Approval is the posting trigger.
+
+*Acceptance highlights (S-07.9 — own vs. others' Purchases resources):* `expenses.submit` and `purchases.manage` are replaced by **four independent own/others capability groups**, one per resource — Expenses (`expenses.edit_own`/`edit_others`/`delete_own`/`delete_others`), Expense Categories (`expense_categories.*`, same shape), Vendor Bills (`vendor_bills.*`, same shape), Vendor Payments (`vendor_payments.*`, same shape — `edit_own` only gates create, since there is no update route for vendor payments at all). "Own" is `submittedByUserId` for Expenses, `createdByUserId` for the other three. Approve/reject (Expenses), record/void (Vendor Bills), and mark-billed/bill-to-customer (Expenses) all stay as their OWN dedicated capabilities (`expenses.approve`, `expenses.reject`, `expenses.mark_billed`, `expenses.bill_to_customer`, `vendor_bills.record`, `vendor_bills.void`) rather than folding into edit_own/edit_others — an approver reviewing someone else's submission, or a bill being recorded/voided, is not an ownership relationship. **Field is the one role this split treats specially**: Field can already submit, edit, and delete their OWN expenses today (§2.1's "Submit expense: Field ✅"), and Field never participates in the Team privilege matrix (fixed/non-configurable) — so `expenses.edit_own`/`expenses.delete_own` always resolve true for a Field user acting on their own expense, preserving that exact behavior, while `expenses.edit_others`/`expenses.delete_others` never do (Field has no path to another user's expense, same as before). Expense Categories gained a `createdByUserId` column purely for consistency with this pattern even though it's org-level configuration typically set up once during onboarding — "own" is expected to be narrow in practice, not a meaningful day-to-day distinction for this specific resource.
 
 ### FEAT-08 · Tax
 

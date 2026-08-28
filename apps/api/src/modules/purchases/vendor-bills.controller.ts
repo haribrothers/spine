@@ -6,7 +6,16 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { VendorBillsService } from "./vendor-bills.service";
 
-/** Per §2.1's permission table shape (Owner ✅ / Staff ✅ / Field ❌, same posture as InvoicesController) gated on the new `purchases.manage` capability. */
+/**
+ * Per §2.1's permission table shape (Owner ✅ / Staff ✅ / Field ❌, same
+ * posture as InvoicesController).
+ *
+ * Own/others split (PRD §9): `purchases.manage` is replaced by
+ * `vendor_bills.edit_own`/`edit_others`/`delete_own`/`delete_others`
+ * (create/update/delete, checked in `VendorBillsService` via
+ * `requireOwnershipCapability`) plus dedicated `vendor_bills.record`/
+ * `vendor_bills.void` for the one-way status transitions.
+ */
 @Controller("vendor-bills")
 @OrgRoles(["owner", "staff"])
 export class VendorBillsController {
@@ -30,7 +39,7 @@ export class VendorBillsController {
   }
 
   @Post()
-  @RequireCapability("purchases.manage")
+  @RequireCapability("vendor_bills.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -39,7 +48,6 @@ export class VendorBillsController {
   }
 
   @Put(":id")
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -48,7 +56,7 @@ export class VendorBillsController {
   }
 
   @Post(":id/record")
-  @RequireCapability("purchases.manage")
+  @RequireCapability("vendor_bills.record")
   @UseInterceptors(IdempotencyInterceptor)
   async record(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -56,7 +64,7 @@ export class VendorBillsController {
   }
 
   @Post(":id/void")
-  @RequireCapability("purchases.manage")
+  @RequireCapability("vendor_bills.void")
   @UseInterceptors(IdempotencyInterceptor)
   async void(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -65,7 +73,6 @@ export class VendorBillsController {
   }
 
   @Delete(":id")
-  @RequireCapability("purchases.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
