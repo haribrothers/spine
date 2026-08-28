@@ -25,6 +25,7 @@ import { ArrowUpDown, Plus, Search, SlidersHorizontal, Target } from "lucide-rea
 import { LeadDialog } from "./lead-dialog";
 import { LEAD_STAGES, LEAD_STAGE_LABELS, type Contact, type Lead, type LeadStage } from "../contacts/types";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 
 type SortKey = "value-desc" | "value-asc" | "newest" | "oldest" | "title";
 
@@ -71,6 +72,7 @@ function formatMoney(amount: string | number | bigint, currency: string) {
  * aggregation endpoint for a handful of columns.
  */
 export function LeadsBoard() {
+  const canCreate = useCapability("leads.edit_own");
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -260,10 +262,12 @@ export function LeadsBoard() {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <Button onClick={() => openCreateDialog()}>
-          <Plus size={14} />
-          Add lead
-        </Button>
+        {canCreate && (
+          <Button onClick={() => openCreateDialog()}>
+            <Plus size={14} />
+            Add lead
+          </Button>
+        )}
       </div>
 
       {filteredLeads && filteredLeads.length === 0 && leads.length === 0 ? (
@@ -272,7 +276,7 @@ export function LeadsBoard() {
             icon={<Target />}
             title="No leads yet"
             description="Add your first lead to start tracking your pipeline."
-            action={<Button onClick={() => openCreateDialog()}>Add lead</Button>}
+            action={canCreate ? <Button onClick={() => openCreateDialog()}>Add lead</Button> : undefined}
           />
         </div>
       ) : filteredLeads && filteredLeads.length === 0 ? (
@@ -343,10 +347,12 @@ export function LeadsBoard() {
                     </KanbanCard>
                   );
                 })}
-                <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreateDialog(stage)}>
-                  <Plus size={14} />
-                  Add lead
-                </Button>
+                {canCreate && (
+                  <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreateDialog(stage)}>
+                    <Plus size={14} />
+                    Add lead
+                  </Button>
+                )}
               </KanbanColumn>
             );
           })}

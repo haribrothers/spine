@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard, Switch } from "@spine/ui";
 import { Receipt } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import type { MemberRow } from "../../../lib/members";
 import { useEntityToast } from "./entity-toast";
 import { ExpenseDetailDrawer } from "./expense-detail-drawer";
@@ -28,20 +29,21 @@ const STATUS_OPTIONS = [
  * vendor-bills/vendor-bills-explorer.tsx's structure, minus a contact
  * filter (an expense has no contact) plus the `mine` toggle instead.
  *
- * `canApprove` is passed down to gate Approve/Reject in the detail drawer —
- * resolved the same coarse `GET /org/members` + role check
- * jobs/job-detail.tsx already established (no client-side capability check
- * finer than role exists in this codebase yet); hiding the buttons here is
- * UI signal only, the server independently 403s regardless.
+ * `canApprove`/`canReject` gate Approve/Reject in the detail drawer, backed
+ * by the real `expenses.approve`/`expenses.reject` capabilities (see
+ * capabilities-context.tsx) — these replace an earlier coarse role check
+ * (owner/staff) that predates the own/others capability split.
  */
 export function ExpensesExplorer({ currentUserId }: { currentUserId: string | null }) {
+  const canApprove = useCapability("expenses.approve");
+  const canReject = useCapability("expenses.reject");
+  const canCreate = useCapability("expenses.edit_own");
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [mineOnly, setMineOnly] = useState(false);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
-  const [canApprove, setCanApprove] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
   const { show: showToast, toast } = useEntityToast();
@@ -68,11 +70,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
     if (!currentUserId) return;
     apiClient
       .get<MemberRow[]>("/org/members")
-      .then((rows) => {
-        setMembers(rows);
-        const self = rows.find((m) => m.userId === currentUserId);
-        setCanApprove(self?.role === "owner" || self?.role === "staff");
-      })
+      .then(setMembers)
       .catch(() => {});
   }, [currentUserId]);
 
@@ -123,7 +121,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             My expenses only
           </label>
         </div>
-        <Button onClick={() => setFormOpen(true)}>Submit expense</Button>
+        {canCreate && <Button onClick={() => setFormOpen(true)}>Submit expense</Button>}
       </div>
 
       {!filteredExpenses ? (
@@ -152,7 +150,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
               icon={<Receipt />}
               title="No expenses yet"
               description="Submit an expense — categories are managed from Settings → Purchases."
-              action={<Button onClick={() => setFormOpen(true)}>Submit expense</Button>}
+              action={canCreate ? <Button onClick={() => setFormOpen(true)}>Submit expense</Button> : undefined}
             />
           )}
         </div>
@@ -174,6 +172,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         }}
         expenseId={selectedExpenseId}
         canApprove={canApprove}
+        canReject={canReject}
         onChanged={loadExpenses}
         onDeleted={handleDeleted}
       />

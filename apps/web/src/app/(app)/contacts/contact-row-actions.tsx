@@ -18,6 +18,7 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import type { Contact } from "./types";
 
 /**
@@ -26,6 +27,14 @@ import type { Contact } from "./types";
  * already has full inline-edit; there's no separate edit surface to build),
  * Archive calls the same endpoint the detail page uses, Delete is behind
  * the same AlertDialog confirmation pattern established there.
+ *
+ * Edit/Archive/Restore are shown only with `contacts.edit_own`/
+ * `edit_others` (own vs. others resolved from `contact.createdByUserId`);
+ * Delete needs `delete_own`/`delete_others` — same split the API enforces
+ * server-side (`ContactsService`'s `requireOwnershipCapability` calls).
+ * This is UI convenience only: hiding an action the user can't use, not the
+ * real security boundary — the server independently re-checks every
+ * request regardless of what's shown here.
  */
 export function ContactRowActions({
   contact,
@@ -38,6 +47,8 @@ export function ContactRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canEdit = useCanEditOwnership(contact.createdByUserId, { own: "contacts.edit_own", others: "contacts.edit_others" });
+  const canDelete = useCanEditOwnership(contact.createdByUserId, { own: "contacts.delete_own", others: "contacts.delete_others" });
 
   async function handleArchiveOrRestore() {
     setBusy(true);
@@ -64,6 +75,10 @@ export function ContactRowActions({
     }
   }
 
+  if (!canEdit && !canDelete) {
+    return null;
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -78,13 +93,17 @@ export function ContactRowActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}>Edit</DropdownMenuItem>
-          <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
-            {contact.archivedAt ? "Restore" : "Archive"}
-          </DropdownMenuItem>
-          <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
-            Delete
-          </DropdownMenuItem>
+          {canEdit && <DropdownMenuItem onSelect={() => router.push(`/contacts/${contact.id}`)}>Edit</DropdownMenuItem>}
+          {canDelete && (
+            <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
+              {contact.archivedAt ? "Restore" : "Archive"}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+              Delete
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

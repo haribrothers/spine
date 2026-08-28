@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, Sta
 import { FileText } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { EmailQueueButton } from "./email-queue-dialog";
 import { useEntityToast } from "./entity-toast";
 import { QuotesSkeleton } from "./quotes-skeleton";
@@ -30,6 +31,7 @@ const ALL_CONTACTS = "__all__";
  * time (S-03.11) and this filter matches on the returned `isExpired` flag.
  */
 export function QuotesExplorer() {
+  const canCreate = useCapability("quotes.edit_own");
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -118,9 +120,11 @@ export function QuotesExplorer() {
         </div>
         <div className="flex items-center gap-2">
           <EmailQueueButton />
-          <Button asChild>
-            <Link href="/quotes/new">New quote</Link>
-          </Button>
+          {canCreate && (
+            <Button asChild>
+              <Link href="/quotes/new">New quote</Link>
+            </Button>
+          )}
         </div>
       </div>
 
@@ -151,9 +155,11 @@ export function QuotesExplorer() {
               title="No quotes yet"
               description="Build a multi-line quote for a customer — save it as a draft, then send when it's ready."
               action={
-                <Button asChild>
-                  <Link href="/quotes/new">New quote</Link>
-                </Button>
+                canCreate ? (
+                  <Button asChild>
+                    <Link href="/quotes/new">New quote</Link>
+                  </Button>
+                ) : undefined
               }
             />
           )}

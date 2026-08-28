@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from 
 import { toDecimalString } from "@spine/shared/money";
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { NewVendorPaymentDialog } from "./new-vendor-payment-dialog";
 import { VendorPaymentDetailDrawer } from "./vendor-payment-detail-drawer";
@@ -22,6 +23,7 @@ const ALL_CONTACTS = "__all__";
  * on the vendor side — see types.ts's own doc comment).
  */
 export function VendorPaymentsExplorer() {
+  const canCreate = useCapability("vendor_payments.edit_own");
   const [payments, setPayments] = useState<VendorPayment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
@@ -101,7 +103,7 @@ export function VendorPaymentsExplorer() {
           placeholder="All vendors"
           className="w-48"
         />
-        <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>
+        {canCreate && <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>}
       </div>
 
       {!payments ? (
@@ -124,7 +126,7 @@ export function VendorPaymentsExplorer() {
               icon={<HandCoins />}
               title="No vendor payments recorded yet"
               description="Record a payment against one or more of a vendor's recorded bills."
-              action={<Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>}
+              action={canCreate ? <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button> : undefined}
             />
           )}
         </div>

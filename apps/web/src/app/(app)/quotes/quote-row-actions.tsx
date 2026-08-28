@@ -18,6 +18,7 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import type { Quote } from "./types";
 
 /**
@@ -25,18 +26,23 @@ import type { Quote } from "./types";
  * Catalogue, Quotes DOES have its own detail page (`/quotes/:id`) — the
  * table's Number column already links there (see quotes-table.tsx), so
  * "View" here is a redundant but expected affordance for anyone scanning
- * the actions menu rather than clicking the number cell directly. "Edit"
+ * the actions menu rather than clicking the number cell directly ("View" is
+ * always shown — read is unconditional regardless of Team grants). "Edit"
  * only appears for a draft (a sent quote is immutable — see
  * QuotesService.update's own guard; the edit route itself also blocks a
- * non-draft, this is just not offering a dead-end action). "Delete" only
- * appears for a draft too, matching QuotesService.delete's own guard
- * (nothing but a draft is ever hard-deletable).
+ * non-draft, this is just not offering a dead-end action) AND with
+ * `quotes.edit_own`/`edit_others` (own vs. others from
+ * `quote.createdByUserId`). "Delete" only appears for a draft too, matching
+ * QuotesService.delete's own guard, AND with `quotes.delete_own`/
+ * `delete_others`.
  */
 export function QuoteRowActions({ quote, onDeleted }: { quote: Quote; onDeleted: (quote: Quote) => void }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canEdit = useCanEditOwnership(quote.createdByUserId, { own: "quotes.edit_own", others: "quotes.edit_others" });
+  const canDelete = useCanEditOwnership(quote.createdByUserId, { own: "quotes.delete_own", others: "quotes.delete_others" });
 
   async function handleDelete() {
     setBusy(true);
@@ -67,10 +73,10 @@ export function QuoteRowActions({ quote, onDeleted }: { quote: Quote; onDeleted:
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}`)}>View</DropdownMenuItem>
-          {quote.status === "draft" && (
+          {quote.status === "draft" && canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/quotes/${quote.id}/edit`)}>Edit</DropdownMenuItem>
           )}
-          {quote.status === "draft" && (
+          {quote.status === "draft" && canDelete && (
             <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
               Delete
             </DropdownMenuItem>

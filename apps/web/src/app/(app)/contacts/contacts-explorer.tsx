@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, EmptyState, MultiSelect, PaginationBar, StatCard } from "@spine/ui";
 import { Upload, Users } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { usePagination } from "../../../lib/use-pagination";
 import { ContactCreateDrawer } from "./contact-create-drawer";
 import { ContactsCardView } from "./contacts-card-view";
@@ -35,6 +36,7 @@ const ARCHIVED_OPTIONS = [
  * comment gave for client-side loading).
  */
 export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
+  const canCreate = useCapability("contacts.edit_own");
   const [contacts, setContacts] = useState<Contact[] | null>(null);
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -179,11 +181,13 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
         </div>
         <div className="flex items-center gap-2">
           <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
-          <Button variant="secondary" onClick={() => handleImportOpenChange(true)}>
-            <Upload size={14} />
-            Import CSV
-          </Button>
-          <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>
+          {canCreate && (
+            <Button variant="secondary" onClick={() => handleImportOpenChange(true)}>
+              <Upload size={14} />
+              Import CSV
+            </Button>
+          )}
+          {canCreate && <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
         </div>
       </div>
 
@@ -213,7 +217,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
               icon={<Users />}
               title="No contacts yet"
               description="Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
-              action={<Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
+              action={canCreate ? <Button onClick={() => setDrawerOpen(true)}>Add contact</Button> : undefined}
             />
           )}
         </div>

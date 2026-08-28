@@ -17,6 +17,7 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import type { CatalogItem } from "./types";
 
 /**
@@ -26,6 +27,11 @@ import type { CatalogItem } from "./types";
  * AlertDialog confirmation. Unlike Contacts, there's no separate detail
  * page to navigate to for Edit — Catalogue's scope is a flat list, so Edit
  * opens the Drawer in-place instead.
+ *
+ * Edit/Archive/Restore need `catalog.edit_own`/`edit_others`, Delete needs
+ * `catalog.delete_own`/`delete_others` (own vs. others resolved from
+ * `item.createdByUserId`) — UI convenience only, mirroring what
+ * `CatalogService` already enforces server-side.
  */
 export function CatalogRowActions({
   item,
@@ -39,6 +45,8 @@ export function CatalogRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canEdit = useCanEditOwnership(item.createdByUserId, { own: "catalog.edit_own", others: "catalog.edit_others" });
+  const canDelete = useCanEditOwnership(item.createdByUserId, { own: "catalog.delete_own", others: "catalog.delete_others" });
 
   async function handleArchiveOrRestore() {
     setBusy(true);
@@ -65,6 +73,10 @@ export function CatalogRowActions({
     }
   }
 
+  if (!canEdit && !canDelete) {
+    return null;
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -79,13 +91,17 @@ export function CatalogRowActions({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-          <DropdownMenuItem onSelect={() => onEdit(item)}>Edit</DropdownMenuItem>
-          <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
-            {item.archivedAt ? "Restore" : "Archive"}
-          </DropdownMenuItem>
-          <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
-            Delete
-          </DropdownMenuItem>
+          {canEdit && <DropdownMenuItem onSelect={() => onEdit(item)}>Edit</DropdownMenuItem>}
+          {canDelete && (
+            <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
+              {item.archivedAt ? "Restore" : "Archive"}
+            </DropdownMenuItem>
+          )}
+          {canDelete && (
+            <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+              Delete
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -35,6 +35,7 @@ import {
 import { ChevronDown, PanelRightClose, PanelRightOpen, Users, X } from "lucide-react";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
+import { useCapabilities } from "../../../lib/capabilities-context";
 import type { Activity, ActivityType, Contact } from "../contacts/types";
 import { MeetingAttendeesFields } from "./meeting-attendees-fields";
 import { MeetingAttendeesPanel } from "./meeting-attendees-panel";
@@ -172,6 +173,7 @@ function toMeetingPayload(
  */
 export function MeetingsCalendar() {
   const { data: session } = useSession();
+  const { capabilities } = useCapabilities();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
@@ -505,23 +507,25 @@ export function MeetingsCalendar() {
               .then((rows) => setPopoverAttendees((prev) => ({ ...prev, [meeting.id]: rows })))
               .catch(() => setPopoverAttendees((prev) => ({ ...prev, [meeting.id]: [] })));
           }
-          // No client-side fine-grained capability check exists in this codebase yet
-          // (see expenses-explorer.tsx/job-detail.tsx's own comments on the same
-          // gap) — mirrors their established pattern of gating purely on coarse
-          // role (owner/staff, matching the meetings controller's
-          // @OrgRoles(["owner", "staff"]) on create/update/delete) fetched via
-          // GET /org/members. Hiding these buttons for a
-          // role that lacks the capability is UI signal only; the server
-          // independently 403s regardless.
-          const myRole = members.find((m) => m.userId === session.user.id)?.role;
-          const canManage = myRole === "owner" || myRole === "staff";
+          // Own vs. others resolved manually here (rather than via the
+          // useCanEditOwnership hook) because this is a plain callback
+          // invoked during render, not a component — calling a hook inside
+          // it would violate the Rules of Hooks the moment a different
+          // meeting is rendered on a later call. Same "own" definition as
+          // that hook: organizerUserId matching the session user, null/
+          // unset counts as unowned. UI convenience only — MeetingsService
+          // enforces the same rules server-side via requireOwnershipCapability.
+          const isOwnMeeting = meeting.organizerUserId !== null && meeting.organizerUserId === session.user.id;
+          const canEditMeeting = capabilities?.[isOwnMeeting ? "meetings.edit_own" : "meetings.edit_others"] ?? false;
+          const canDeleteMeeting = capabilities?.[isOwnMeeting ? "meetings.delete_own" : "meetings.delete_others"] ?? false;
           return (
             <MeetingQuickViewPopover
               instance={instance}
               meeting={meeting}
               attendees={popoverAttendees[meeting.id] ?? null}
               currentUserId={session.user.id}
-              canManage={canManage}
+              canEdit={canEditMeeting}
+              canDelete={canDeleteMeeting}
               contactLabel={meeting.contactId ? contactsById.get(meeting.contactId)?.name : undefined}
               organizerName={members.find((m) => m.userId === meeting.organizerUserId)?.name}
               onEdit={(scope) => {

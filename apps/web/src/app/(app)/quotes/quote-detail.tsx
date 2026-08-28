@@ -23,6 +23,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
@@ -96,6 +97,10 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     body: ConversionGuardBody;
   } | null>(null);
   const { show: showToast, toast } = useEntityToast();
+  const hasEditCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.edit_own", others: "quotes.edit_others" });
+  const hasDeleteCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.delete_own", others: "quotes.delete_others" });
+  const hasSendCapability = useCapability("quotes.send");
+  const hasReviseCapability = useCapability("quotes.revise");
 
   const load = useCallback(() => {
     apiClient
@@ -270,8 +275,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
     );
   }
 
-  const canEdit = quote.status === "draft";
-  const canRevise = quote.status !== "draft" && !quote.isSuperseded;
+  // Each combines the status-based rule that was already here with the
+  // matching own/others (or dedicated) capability — see this file's own
+  // capability hooks above. UI convenience only; QuotesService enforces the
+  // same rules server-side regardless of what's shown here.
+  const canEdit = quote.status === "draft" && hasEditCapability;
+  const canDelete = quote.status === "draft" && hasDeleteCapability;
+  const canSendQuote = quote.status === "draft" && hasSendCapability;
+  const canRevise = quote.status !== "draft" && !quote.isSuperseded && hasReviseCapability;
   // S-03.10 — both conversions share the same guard (only an accepted
   // quote is convertible) and are independent actions, not mutually
   // exclusive: a quote can become a job, an invoice, or both.
@@ -327,7 +338,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 <Link href={`/quotes/${quote.id}/edit`}>Edit</Link>
               </Button>
             )}
-            {canEdit && !needsApproval && (
+            {canSendQuote && !needsApproval && (
               <Button onClick={handleMarkAsSent} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Send Quote"}
               </Button>
@@ -347,7 +358,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {busy ? <Spinner size="sm" /> : "Convert to job"}
               </Button>
             )}
-            {canEdit && (
+            {canDelete && (
               <Button variant="ghost" onClick={handleDelete} disabled={busy}>
                 Delete draft
               </Button>

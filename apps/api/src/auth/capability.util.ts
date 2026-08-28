@@ -1,8 +1,20 @@
 import { ForbiddenException } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Capability } from "@spine/shared";
+import { CAPABILITIES, type Capability } from "@spine/shared";
 import type { Database } from "../db/client";
 import { member, teamMemberships, teamPrivileges } from "../db/schema";
+
+/**
+ * Single source of truth for which `_own` capabilities Field always passes
+ * (see `hasCapability`'s `fieldAlwaysPasses` param for the full rationale).
+ * Every `requireOwnershipCapability(..., fieldAlwaysPassesOwn: true)` call
+ * site's `own` capability MUST appear here, and vice versa — kept as one
+ * set rather than a boolean scattered across call sites so
+ * `getEffectiveCapabilities` (used by the web privilege-aware UI) can
+ * answer "does Field have this capability" without re-deriving the same
+ * fact a second, possibly-drifting way.
+ */
+export const FIELD_OWN_CAPABILITIES: ReadonlySet<Capability> = new Set(["expenses.edit_own", "expenses.delete_own"] satisfies Capability[]);
 
 /**
  * The same owner/field/staff resolution `CapabilityGuard` uses, factored out
@@ -99,4 +111,67 @@ export async function requireOwnershipCapability(
   if (!granted) {
     throw new ForbiddenException(`Missing capability: ${required}`);
   }
+}
+
+/**
+ * The full effective capability set for one user in one org — every
+ * `CAPABILITIES` entry mapped to whether they currently have it, unioned
+ * across all their Teams (Staff) or resolved by fixed rule (Owner: all
+ * `true`; Field: `true` only for `FIELD_OWN_CAPABILITIES`, `false`
+ * otherwise — Field never touches the Team privilege matrix). Backs
+ * `GET /org/members/me/capabilities`, which the web privilege-aware UI
+ * (`use-my-capabilities.ts`) calls once per session to decide which
+ * buttons/actions to show — client-side hiding only, never the real
+ * security boundary; the server independently re-checks every mutating
+ * request via `CapabilityGuard`/`requireOwnershipCapability` regardless of
+ * what this endpoint returned.
+ *
+ * One query for the Team/privilege join, not one round-trip per
+ * capability — `hasCapability` is intentionally NOT reused here for
+ * Staff, since calling it `CAPABILITIES.length` times would be
+ * `CAPABILITIES.length` separate queries for what's really one join.
+ */
+export async function getEffectiveCapabilities(db: Database, actor: { orgId: string; userId: string }): Promise<Record<Capability, boolean>> {
+  const allFalse = Object.fromEntries(CAPABILITIES.map((c) => [c, false])) as Record<Capability, boolean>;
+
+  const [membership] = await db
+    .select({ id: member.id, role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, actor.orgId), eq(member.userId, actor.userId)));
+  if (!membership) {
+    return allFalse;
+  }
+
+  if (membership.role === "owner") {
+    return Object.fromEntries(CAPABILITIES.map((c) => [c, true])) as Record<Capability, boolean>;
+  }
+
+  if (membership.role === "field") {
+    return Object.fromEntries(CAPABILITIES.map((c) => [c, FIELD_OWN_CAPABILITIES.has(c)])) as Record<Capability, boolean>;
+  }
+
+  if (membership.role !== "staff") {
+    return allFalse;
+  }
+
+  const teamIds = await db.select({ teamId: teamMemberships.teamId }).from(teamMemberships).where(eq(teamMemberships.memberId, membership.id));
+  if (teamIds.length === 0) {
+    return allFalse;
+  }
+
+  const grantedRows = await db
+    .select({ capability: teamPrivileges.capability })
+    .from(teamPrivileges)
+    .where(
+      and(
+        inArray(
+          teamPrivileges.teamId,
+          teamIds.map((t) => t.teamId),
+        ),
+        eq(teamPrivileges.granted, true),
+      ),
+    );
+  const grantedSet = new Set(grantedRows.map((r) => r.capability));
+
+  return Object.fromEntries(CAPABILITIES.map((c) => [c, grantedSet.has(c)])) as Record<Capability, boolean>;
 }

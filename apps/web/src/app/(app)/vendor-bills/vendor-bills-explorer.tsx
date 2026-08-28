@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, Sta
 import { ClipboardList } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { VendorBillsSkeleton } from "./vendor-bills-skeleton";
 import { VendorBillsTable } from "./vendor-bills-table";
@@ -30,6 +31,7 @@ const ALL_CONTACTS = "__all__";
  * server-computed `isOverdue` flag to filter on here.
  */
 export function VendorBillsExplorer() {
+  const canCreate = useCapability("vendor_bills.edit_own");
   const [bills, setBills] = useState<VendorBill[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -131,9 +133,11 @@ export function VendorBillsExplorer() {
             className="w-48"
           />
         </div>
-        <Button asChild>
-          <Link href="/vendor-bills/new">New vendor bill</Link>
-        </Button>
+        {canCreate && (
+          <Button asChild>
+            <Link href="/vendor-bills/new">New vendor bill</Link>
+          </Button>
+        )}
       </div>
 
       {!filteredBills ? (
@@ -163,9 +167,11 @@ export function VendorBillsExplorer() {
               title="No vendor bills yet"
               description="Record a bill from a vendor — save it as a draft, then record it when it's ready to post to the ledger."
               action={
-                <Button asChild>
-                  <Link href="/vendor-bills/new">New vendor bill</Link>
-                </Button>
+                canCreate ? (
+                  <Button asChild>
+                    <Link href="/vendor-bills/new">New vendor bill</Link>
+                  </Button>
+                ) : undefined
               }
             />
           )}

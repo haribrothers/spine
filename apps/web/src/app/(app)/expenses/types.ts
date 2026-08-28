@@ -49,6 +49,7 @@ export interface ExpenseCategory {
   orgId: string;
   name: string;
   accountId: string | null;
+  createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;

@@ -14,6 +14,7 @@ export interface CatalogItem {
   defaultTaxGroupId: string | null;
   incomeAccountId: string | null;
   expenseAccountId: string | null;
+  createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;

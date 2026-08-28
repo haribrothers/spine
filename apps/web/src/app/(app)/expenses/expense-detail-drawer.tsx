@@ -26,6 +26,7 @@ import {
 } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
 
@@ -50,7 +51,8 @@ const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
  *
  * S-07.6 "Bill to customer" appears once an expense is approved, billable,
  * has a job attached (its contact is who gets billed, since an expense has
- * no contactId of its own), and hasn't already been billed. Creates a
+ * no contactId of its own), hasn't already been billed, AND the caller has
+ * the dedicated `expenses.bill_to_customer` capability. Creates a
  * brand-new draft invoice and redirects, mirroring
  * jobs/[id]/milestones-section.tsx's own "Raise invoice" ->
  * window.location.href redirect exactly.
@@ -60,6 +62,7 @@ export function ExpenseDetailDrawer({
   onOpenChange,
   expenseId,
   canApprove,
+  canReject,
   onChanged,
   onDeleted,
 }: {
@@ -67,6 +70,7 @@ export function ExpenseDetailDrawer({
   onOpenChange: (open: boolean) => void;
   expenseId: string | null;
   canApprove: boolean;
+  canReject: boolean;
   onChanged: () => void;
   onDeleted: (expense: Expense) => void;
 }) {
@@ -80,6 +84,11 @@ export function ExpenseDetailDrawer({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [billOpen, setBillOpen] = useState(false);
   const { show: showToast, toast } = useEntityToast();
+  const hasDeleteCapability = useCanEditOwnership(expense?.submittedByUserId ?? null, {
+    own: "expenses.delete_own",
+    others: "expenses.delete_others",
+  });
+  const hasBillToCustomerCapability = useCapability("expenses.bill_to_customer");
 
   useEffect(() => {
     if (!open || !expenseId) {
@@ -159,9 +168,15 @@ export function ExpenseDetailDrawer({
     }
   }
 
-  const canReviewNow = canApprove && expense?.status === "submitted";
+  const canApproveNow = canApprove && expense?.status === "submitted";
+  const canRejectNow = canReject && expense?.status === "submitted";
+  const canDeleteNow = hasDeleteCapability && expense?.status === "submitted";
   const canBillToCustomer =
-    canApprove && expense?.status === "approved" && expense.isBillable && !expense.billedOnInvoiceLineId && !!expense.jobId;
+    hasBillToCustomerCapability &&
+    expense?.status === "approved" &&
+    expense.isBillable &&
+    !expense.billedOnInvoiceLineId &&
+    !!expense.jobId;
   const billableNoJob = expense?.status === "approved" && expense.isBillable && !expense.billedOnInvoiceLineId && !expense.jobId;
 
   return (
@@ -246,17 +261,17 @@ export function ExpenseDetailDrawer({
             )}
           </DrawerBody>
           <DrawerFooter>
-            {canReviewNow && (
+            {canRejectNow && (
               <Button variant="secondary" onClick={() => setRejectOpen(true)} disabled={busy}>
                 Reject
               </Button>
             )}
-            {canReviewNow && (
+            {canApproveNow && (
               <Button onClick={() => setApproveOpen(true)} disabled={busy}>
                 Approve
               </Button>
             )}
-            {expense?.status === "submitted" && (
+            {canDeleteNow && (
               <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={busy}>
                 Delete
               </Button>

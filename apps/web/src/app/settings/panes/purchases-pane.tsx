@@ -26,12 +26,14 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal, Plus } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { SavedToast } from "../saved-toast";
 
 interface ExpenseCategory {
   id: string;
   name: string;
   accountId: string | null;
+  createdByUserId: string | null;
   archivedAt: string | null;
 }
 
@@ -113,14 +115,17 @@ function CategoriesSection({
   onSaved: () => void;
 }) {
   const [editing, setEditing] = useState<ExpenseCategory | "new" | null>(null);
+  const canCreate = useCapability("expense_categories.edit_own");
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center justify-between">
         <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Expense categories</h3>
-        <Button variant="ghost" size="sm" onClick={() => setEditing("new")} className="gap-1">
-          <Plus size={14} /> Add category
-        </Button>
+        {canCreate && (
+          <Button variant="ghost" size="sm" onClick={() => setEditing("new")} className="gap-1">
+            <Plus size={14} /> Add category
+          </Button>
+        )}
       </div>
 
       {categories.length === 0 && <p className="text-[13px] text-on-surface-muted">No expense categories yet.</p>}
@@ -169,6 +174,8 @@ function CategoryRow({
 }) {
   const [busy, setBusy] = useState(false);
   const account = accounts.find((a) => a.id === category.accountId);
+  const canEdit = useCanEditOwnership(category.createdByUserId, { own: "expense_categories.edit_own", others: "expense_categories.edit_others" });
+  const canDelete = useCanEditOwnership(category.createdByUserId, { own: "expense_categories.delete_own", others: "expense_categories.delete_others" });
 
   async function handleArchiveOrRestore() {
     setBusy(true);
@@ -178,6 +185,20 @@ function CategoryRow({
     } finally {
       setBusy(false);
     }
+  }
+
+  if (!canEdit && !canDelete) {
+    return (
+      <div className="flex items-center justify-between gap-3 px-3 py-2">
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-[13px] font-medium text-on-surface">
+            {category.name}
+            {category.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">Archived</span>}
+          </span>
+          <span className="text-[12px] text-on-surface-muted">{account ? `${account.code} · ${account.name}` : "No default account"}</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -200,10 +221,12 @@ function CategoryRow({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>
-          <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
-            {category.archivedAt ? "Restore" : "Archive"}
-          </DropdownMenuItem>
+          {canEdit && <DropdownMenuItem onSelect={onEdit}>Edit</DropdownMenuItem>}
+          {canDelete && (
+            <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
+              {category.archivedAt ? "Restore" : "Archive"}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

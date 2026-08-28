@@ -51,6 +51,7 @@ export interface Contact {
   taxId: string | null;
   website: string | null;
   logoFileId: string | null;
+  createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;
   updatedAt: string;
@@ -68,6 +69,7 @@ export interface Lead {
   valueCurrency: string;
   source: string | null;
   ownerUserId: string | null;
+  createdByUserId: string | null;
   title: string | null;
   createdAt: string;
   updatedAt: string;

@@ -9,6 +9,7 @@ import { AppShell, AppShellContent, AppShellSidebar, type AppShellNavSection } f
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { NotificationBell } from "./notification-bell";
+import { CapabilitiesProvider } from "../lib/capabilities-context";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -75,37 +76,39 @@ export function AppLayout({ sections, userName, userEmail, children }: AppLayout
   }
 
   return (
-    <AppShell>
-      <AppShellSidebar
-        logo={<AppLogo collapsed={collapsed} />}
-        collapsed={hydrated ? collapsed : false}
-        onCollapsedChange={handleCollapsedChange}
-        sections={sections}
-        isActive={(href) => pathname === href || pathname?.startsWith(`${href}/`)}
-        renderLink={(item, content) => (
-          <Link href={item.href} aria-label={item.label}>
-            {content}
-          </Link>
-        )}
-        userMenu={
-          (hydrated ? collapsed : false) ? (
-            <div className="flex flex-col items-center gap-1">
-              <HelpButton collapsed />
-              <NotificationBell collapsed />
-              <AppUserMenu name={userName} email={userEmail} collapsed />
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              <div className="min-w-0 flex-1">
-                <AppUserMenu name={userName} email={userEmail} collapsed={false} />
+    <CapabilitiesProvider>
+      <AppShell>
+        <AppShellSidebar
+          logo={<AppLogo collapsed={collapsed} />}
+          collapsed={hydrated ? collapsed : false}
+          onCollapsedChange={handleCollapsedChange}
+          sections={sections}
+          isActive={(href) => pathname === href || pathname?.startsWith(`${href}/`)}
+          renderLink={(item, content) => (
+            <Link href={item.href} aria-label={item.label}>
+              {content}
+            </Link>
+          )}
+          userMenu={
+            (hydrated ? collapsed : false) ? (
+              <div className="flex flex-col items-center gap-1">
+                <HelpButton collapsed />
+                <NotificationBell collapsed />
+                <AppUserMenu name={userName} email={userEmail} collapsed />
               </div>
-              <HelpButton collapsed={false} />
-              <NotificationBell collapsed={false} />
-            </div>
-          )
-        }
-      />
-      <AppShellContent fullWidth={fullWidth}>{children}</AppShellContent>
-    </AppShell>
+            ) : (
+              <div className="flex items-center gap-1">
+                <div className="min-w-0 flex-1">
+                  <AppUserMenu name={userName} email={userEmail} collapsed={false} />
+                </div>
+                <HelpButton collapsed={false} />
+                <NotificationBell collapsed={false} />
+              </div>
+            )
+          }
+        />
+        <AppShellContent fullWidth={fullWidth}>{children}</AppShellContent>
+      </AppShell>
+    </CapabilitiesProvider>
   );
 }

@@ -42,20 +42,23 @@ function describeRecurrence(rule: CalendarRecurrenceRule): string {
  * this component owns all meetings-domain content, same "app-local
  * composition" precedent as MeetingAttendeesFields/MeetingAttendeesPanel).
  *
- * Edit/Delete are gated on `canManage` — the same role-derived flag (owner/
- * staff; the API's own `meetings.edit_own`/`edit_others`/`delete_own`/
- * `delete_others` capabilities are the real server-side gate) that already
- * gates the edit dialog's own availability, not a new
- * client-side check invented here. RSVP buttons render only when the
- * current user has their own attendee row (self-service, no capability
- * required — PRD S-01.12).
+ * Edit and Delete are gated independently — `canEdit` from
+ * `meetings.edit_own`/`edit_others`, `canDelete` from `meetings.delete_own`/
+ * `delete_others` (own vs. others resolved by the caller from
+ * `meeting.organizerUserId`, see meetings-calendar.tsx's own comment on why
+ * that happens there rather than via the shared `useCanEditOwnership` hook).
+ * This is UI convenience only — the API independently re-checks both via
+ * `requireOwnershipCapability` regardless of what's shown here. RSVP
+ * buttons render only when the current user has their own attendee row
+ * (self-service, no capability required — PRD S-01.12).
  */
 export function MeetingQuickViewPopover({
   instance,
   meeting,
   attendees,
   currentUserId,
-  canManage,
+  canEdit,
+  canDelete,
   contactLabel,
   organizerName,
   onEdit,
@@ -68,7 +71,8 @@ export function MeetingQuickViewPopover({
   meeting: Meeting;
   attendees: MeetingAttendee[] | null;
   currentUserId: string;
-  canManage: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
   contactLabel?: string;
   organizerName?: string;
   onEdit: (scope?: "series" | "occurrence") => void;
@@ -86,34 +90,36 @@ export function MeetingQuickViewPopover({
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[14px] font-semibold text-on-surface">{event.title}</h3>
         <div className="flex shrink-0 items-center gap-0.5">
-          {canManage && (
-            <>
-              <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit" onClick={() => onEdit(isRecurring ? undefined : "series")}>
-                <Pencil size={14} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7 w-7 p-0 text-overdue hover:bg-overdue-bg"
-                aria-label="Delete"
-                onClick={() => onDelete(isRecurring ? undefined : "series")}
-              >
-                <Trash2 size={14} />
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="More options">
-                    <MoreVertical size={14} />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={onDuplicate}>
-                    <Copy size={14} />
-                    Duplicate
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
+          {canEdit && (
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit" onClick={() => onEdit(isRecurring ? undefined : "series")}>
+              <Pencil size={14} />
+            </Button>
+          )}
+          {canDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 w-7 p-0 text-overdue hover:bg-overdue-bg"
+              aria-label="Delete"
+              onClick={() => onDelete(isRecurring ? undefined : "series")}
+            >
+              <Trash2 size={14} />
+            </Button>
+          )}
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="More options">
+                  <MoreVertical size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onDuplicate}>
+                  <Copy size={14} />
+                  Duplicate
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Close" onClick={onClose}>
             <X size={14} />
@@ -143,7 +149,7 @@ export function MeetingQuickViewPopover({
         {organizerName && <p>Organized by {organizerName}</p>}
       </div>
 
-      {!canManage && myAttendeeRow && (
+      {!canEdit && myAttendeeRow && (
         <div className="flex flex-col gap-2 border-t border-border pt-3">
           <p className="text-[12px] font-medium text-on-surface">Your response</p>
           <div className="flex gap-2">

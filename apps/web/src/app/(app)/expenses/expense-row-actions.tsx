@@ -17,6 +17,7 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import type { Expense } from "./types";
 
 /**
@@ -25,7 +26,12 @@ import type { Expense } from "./types";
  * approved expense has already posted to the ledger (ExpensesService's own
  * "approval is the posting trigger" rule) and a rejected one is a closed
  * review, so both are immutable per ExpensesService.update/delete's own
- * guards. "View" always opens the detail Drawer.
+ * guards. "View" always opens the detail Drawer, unconditionally (read is
+ * always unconditional). Delete additionally needs `expenses.delete_own`/
+ * `delete_others` (own vs. others from `expense.submittedByUserId`) — Field
+ * always has `delete_own` for their own expense regardless of Team grants
+ * (Field is fixed/non-configurable; see `capability.util.ts`'s
+ * `FIELD_OWN_CAPABILITIES`).
  */
 export function ExpenseRowActions({
   expense,
@@ -39,6 +45,7 @@ export function ExpenseRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canDelete = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.delete_own", others: "expenses.delete_others" });
 
   async function handleDelete() {
     setBusy(true);
@@ -69,7 +76,7 @@ export function ExpenseRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => onOpen(expense)}>View</DropdownMenuItem>
-          {expense.status === "submitted" && (
+          {expense.status === "submitted" && canDelete && (
             <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
               Delete
             </DropdownMenuItem>

@@ -25,6 +25,7 @@ import {
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
 
 /**
@@ -83,7 +84,11 @@ export function VendorPaymentDetailDrawer({
     }
   }
 
-  const canDelete = payment && payment.allocatedAmount === "0";
+  const hasDeleteCapability = useCanEditOwnership(payment?.createdByUserId ?? null, {
+    own: "vendor_payments.delete_own",
+    others: "vendor_payments.delete_others",
+  });
+  const canDelete = payment && payment.allocatedAmount === "0" && hasDeleteCapability;
 
   return (
     <>

@@ -30,6 +30,7 @@ import {
 } from "@spine/ui";
 import { Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Contact, type Lead, type LeadStage } from "../contacts/types";
 
 // Same list quote-builder.tsx uses for its currency Combobox — kept in sync
@@ -87,6 +88,8 @@ export function LeadDialog({
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const canEditLead = useCanEditOwnership(lead?.createdByUserId ?? null, { own: "leads.edit_own", others: "leads.edit_others" });
+  const canDeleteLead = useCanEditOwnership(lead?.createdByUserId ?? null, { own: "leads.delete_own", others: "leads.delete_others" });
 
   useEffect(() => {
     if (!open) return;
@@ -133,7 +136,7 @@ export function LeadDialog({
   }, [leads, source]);
 
   const contactOptions = contacts.map((c) => ({ value: c.id, label: c.name }));
-  const canSave = contactId.length > 0 && !saving;
+  const canSave = contactId.length > 0 && !saving && (lead ? canEditLead : true);
 
   async function handleSave() {
     if (!canSave) return;
@@ -241,7 +244,7 @@ export function LeadDialog({
             </FormField>
           </DialogBody>
           <DialogFooter className="justify-between">
-            {lead ? (
+            {lead && canDeleteLead ? (
               <Button variant="ghost" onClick={() => setConfirmDelete(true)} className="text-overdue hover:text-overdue">
                 <Trash2 size={14} />
                 Delete

@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, EmptyState, Input, MultiSelect, StatCa
 import { minorUnitExponent } from "@spine/shared/money";
 import { Package } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { CatalogItemDrawer } from "./catalog-item-drawer";
 import { CatalogSkeleton } from "./catalog-skeleton";
 import { CatalogTable } from "./catalog-table";
@@ -42,6 +43,7 @@ function parseDecimalToMinorUnits(input: string, currency: string): bigint | nul
  * both create and edit (see CatalogItemDrawer's own comment).
  */
 export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
+  const canCreate = useCapability("catalog.edit_own");
   const [items, setItems] = useState<CatalogItem[] | null>(null);
   // Full (unfiltered) list, independent of statusFilter below — stats must
   // stay correct even when the table itself is scoped to "archived only",
@@ -194,7 +196,7 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
             />
           </div>
         </div>
-        <Button onClick={openCreate}>Add item</Button>
+        {canCreate && <Button onClick={openCreate}>Add item</Button>}
       </div>
 
       {!filteredItems ? (
@@ -229,7 +231,7 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
               icon={<Package />}
               title="No catalogue items yet"
               description="Add your first good or service to quote faster — default price and tax rate prefill every new quote line."
-              action={<Button onClick={openCreate}>Add item</Button>}
+              action={canCreate ? <Button onClick={openCreate}>Add item</Button> : undefined}
             />
           )}
         </div>

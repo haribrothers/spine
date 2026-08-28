@@ -32,6 +32,7 @@ import {
 } from "@spine/ui";
 import { ArrowLeft } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import type { Activity, Contact, ContactType, Lead, SpineFile } from "./types";
 import { AddressesSection } from "./addresses-section";
 import { ContactLogo } from "./contact-logo";
@@ -94,6 +95,8 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   const [website, setWebsite] = useState("");
 
   const { show: showToast, toast } = useEntityToast();
+  const canEdit = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.edit_own", others: "contacts.edit_others" });
+  const canDelete = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.delete_own", others: "contacts.delete_others" });
 
   async function reloadContact() {
     try {
@@ -283,39 +286,44 @@ export function ContactDetail({ contactId }: { contactId: string }) {
 
         {!editing && (
           <div className="flex items-center gap-2">
-            {/* Edit is the single primary (filled) action per docs/DESIGN.md; archive/restore/delete are secondary or danger. */}
-            <Button variant="primary" onClick={startEdit}>
-              Edit
-            </Button>
-            {archived ? (
-              <Button variant="secondary" onClick={handleRestore} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Restore"}
-              </Button>
-            ) : (
-              <Button variant="secondary" onClick={handleArchive} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Archive"}
+            {/* Edit is the single primary (filled) action per docs/DESIGN.md; archive/restore/delete are secondary or danger. Each gated by contacts.edit_own/edit_others (Edit) or contacts.delete_own/delete_others (Archive/Restore/Delete) — own vs. others resolved from contact.createdByUserId, mirroring ContactsService's own server-side checks. */}
+            {canEdit && (
+              <Button variant="primary" onClick={startEdit}>
+                Edit
               </Button>
             )}
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="danger" disabled={busy}>
-                  Delete
+            {canDelete &&
+              (archived ? (
+                <Button variant="secondary" onClick={handleRestore} disabled={busy}>
+                  {busy ? <Spinner size="sm" /> : "Restore"}
                 </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete {contact.name}?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This permanently removes the contact and its persons/addresses. This cannot be undone. If this
-                    contact has any financial ledger history, deletion will be blocked — archive it instead.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+              ) : (
+                <Button variant="secondary" onClick={handleArchive} disabled={busy}>
+                  {busy ? <Spinner size="sm" /> : "Archive"}
+                </Button>
+              ))}
+            {canDelete && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="danger" disabled={busy}>
+                    Delete
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete {contact.name}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This permanently removes the contact and its persons/addresses. This cannot be undone. If this
+                      contact has any financial ledger history, deletion will be blocked — archive it instead.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         )}
       </div>
