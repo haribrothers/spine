@@ -160,4 +160,89 @@ describe("signup (requires local Postgres)", () => {
     const danglingOrgs = await db.select().from(organization).where(eq(organization.name, "Signup Fail Test's Organisation"));
     expect(danglingOrgs).toHaveLength(0);
   });
+
+  it("does not create a throwaway solo org for a user signing up to accept a pending invitation", async () => {
+    // Regression test for a real, user-reported bug: an invited user who
+    // signs up via the /signup?inviteId= flow used to ALWAYS get their own
+    // brand-new solo org from `user.create.after` first (there was no check
+    // for a pending invitation), even though they were seconds away from
+    // calling acceptInvitation and joining a real org. That left every
+    // invited user owning a phantom, empty "<name>'s Organisation" in the
+    // DB — and worse, gave them a second membership row that a later
+    // re-login's `session.create.after` fallback could pick over the real
+    // invited org (ordering by recency alone can't tell a throwaway solo org
+    // from a real one), silently re-scoping the user back onto their empty
+    // org with no error — reproduced live as "staff can't see contacts/
+    // catalogue added by others" even after accepting the invite. Fixed by
+    // checking for a pending, unexpired invitation matching the signing-up
+    // user's email server-side and skipping org creation entirely when one
+    // exists — the user gets their org membership from `acceptInvitation`
+    // instead, and ends up with exactly ONE membership, never two.
+    const databaseUrl = process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine";
+    db = createDb(databaseUrl);
+
+    const ownerEmail = `signup-invite-owner-${Date.now()}@example.com`;
+    const staffEmail = `signup-invite-staff-${Date.now()}@example.com`;
+    createdEmails.push(ownerEmail, staffEmail);
+
+    const ownerSignup = await auth.api.signUpEmail({
+      body: { email: ownerEmail, password: "testpassword123", name: "Invite Owner" },
+    });
+    const [ownerMembership] = await db.select().from(member).where(eq(member.userId, ownerSignup.user.id));
+    const orgId = ownerMembership!.organizationId;
+
+    const ownerSignIn = await auth.api.signInEmail({
+      body: { email: ownerEmail, password: "testpassword123" },
+      asResponse: true,
+    });
+    const ownerHeaders = new Headers();
+    ownerHeaders.set("cookie", ownerSignIn.headers.get("set-cookie")!.split(";")[0]!);
+    const invitation = await auth.api.createInvitation({
+      body: { email: staffEmail, role: "staff", organizationId: orgId },
+      headers: ownerHeaders,
+    });
+
+    // Staff signs up while the invitation is pending — must NOT get a solo
+    // org, and must have zero memberships until they accept.
+    const staffSignup = await auth.api.signUpEmail({
+      body: { email: staffEmail, password: "testpassword123", name: "Invite Staff" },
+    });
+    // Zero memberships proves no solo org (or any other org) was created for
+    // this user — a membership row is the only way an org would be visible
+    // to them, so this is a stronger check than matching by org name.
+    const staffMembershipsBeforeAccept = await db.select().from(member).where(eq(member.userId, staffSignup.user.id));
+    expect(staffMembershipsBeforeAccept).toHaveLength(0);
+
+    // Staff accepts the invitation into the owner's real org.
+    const staffFirstSignIn = await auth.api.signInEmail({
+      body: { email: staffEmail, password: "testpassword123" },
+      asResponse: true,
+    });
+    const staffFirstHeaders = new Headers();
+    staffFirstHeaders.set("cookie", staffFirstSignIn.headers.get("set-cookie")!.split(";")[0]!);
+    await auth.api.acceptInvitation({
+      body: { invitationId: invitation.id },
+      headers: staffFirstHeaders,
+    });
+
+    // Exactly one membership now — the real org, nothing else.
+    const staffMembershipsAfterAccept = await db.select().from(member).where(eq(member.userId, staffSignup.user.id));
+    expect(staffMembershipsAfterAccept).toHaveLength(1);
+    expect(staffMembershipsAfterAccept[0]!.organizationId).toBe(orgId);
+
+    // A fresh re-login (sign out + back in, creating a brand-new session
+    // row) must land the staff user on the real org, not anywhere else.
+    const staffSecondSignIn = await auth.api.signInEmail({
+      body: { email: staffEmail, password: "testpassword123" },
+      asResponse: true,
+    });
+    const staffSecondCookie = staffSecondSignIn.headers.get("set-cookie")!.split(";")[0]!;
+    const staffSecondToken = decodeURIComponent(staffSecondCookie.split("=")[1]!).split(".")[0]!;
+    const [staffSessionAfterRelogin] = await db
+      .select()
+      .from(sessionTable)
+      .where(eq(sessionTable.token, staffSecondToken));
+
+    expect(staffSessionAfterRelogin!.activeOrganizationId).toBe(orgId);
+  });
 });

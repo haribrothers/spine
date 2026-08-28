@@ -4,9 +4,15 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { createDb } from "../db/client";
-import { member, organization as organizationTable, session as sessionTable, user as userTable } from "../db/schema";
+import {
+  invitation as invitationTable,
+  member,
+  organization as organizationTable,
+  session as sessionTable,
+  user as userTable,
+} from "../db/schema";
 import { EmailService } from "../modules/email/email.service";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
@@ -99,27 +105,60 @@ export const auth = betterAuth({
         /**
          * Every sign-up is a brand-new organisation's owner — there is no
          * "join an existing org" self-serve path in v1 (§12 Phase 0 exit:
-         * "sign up ... complete the onboarding wizard"). Invited members are
-         * added to an existing org separately, never through this hook.
+         * "sign up ... complete the onboarding wizard") — EXCEPT when this
+         * signup is completing a pending invitation (the `/signup?inviteId=`
+         * flow from `NeedsAccountPrompt` in accept-invite-view.tsx). That
+         * user is about to call `acceptInvitation` and get a real org
+         * membership within seconds; giving them a second, throwaway solo
+         * org first was a real, live-reported bug — not just clutter in the
+         * DB, but a source of a second membership row that a later
+         * re-login's `session.create.after` hook (below) could pick over
+         * the real invited org, since ordering by recency alone can't
+         * distinguish "a solo org nobody asked for" from "a real org the
+         * user works in" when both are real membership rows. The only
+         * robust fix is to never create the throwaway org in the first
+         * place. Checked server-side (a pending, unexpired `invitation` row
+         * matching this email) rather than trusting a client-supplied flag,
+         * so it can't be bypassed or missed if the client forgets to signal
+         * it — same trust model as `acceptInvitation` itself, which also
+         * re-validates the invitation server-side rather than trusting the
+         * caller. Matched case-insensitively, same as `acceptInvitation`'s
+         * own `invitation.email.toLowerCase() !== session.user.email.toLowerCase()`
+         * check.
          *
-         * MUST NOT let this fail silently. `databaseHooks.user.create.after`
-         * runs after the `user` row is already committed — if
-         * `createOrganization`/`seedChartOfAccounts` throws and this hook
-         * lets that propagate uncaught, Better Auth's own hook runner may
-         * swallow it (observed live: a real account ended up with a `user`
-         * row, zero `organization`/`member` rows, and a session whose
-         * `activeOrganizationId` pointed at nothing — every
-         * `@OrgRoles()`-guarded request then 403'd with "You are not a
-         * member of this organization" forever, with no way to recover
-         * short of manual DB surgery). Since a user with no org is
-         * completely unusable regardless (S-01.1 onward assumes one), the
-         * only sound recovery is to delete the just-created user on
-         * failure, so the whole signup genuinely fails end-to-end and the
-         * client sees a real error — leaving them free to retry with the
-         * same email — rather than a phantom "successful" signup that's
-         * broken forever.
+         * MUST NOT let org creation fail silently when it DOES run.
+         * `databaseHooks.user.create.after` runs after the `user` row is
+         * already committed — if `createOrganization`/`seedChartOfAccounts`
+         * throws and this hook lets that propagate uncaught, Better Auth's
+         * own hook runner may swallow it (observed live: a real account
+         * ended up with a `user` row, zero `organization`/`member` rows,
+         * and a session whose `activeOrganizationId` pointed at nothing —
+         * every `@OrgRoles()`-guarded request then 403'd with "You are not
+         * a member of this organization" forever, with no way to recover
+         * short of manual DB surgery). Since a user with no org and no
+         * pending invite is completely unusable regardless (S-01.1 onward
+         * assumes one), the only sound recovery in that case is to delete
+         * the just-created user on failure, so the whole signup genuinely
+         * fails end-to-end and the client sees a real error — leaving them
+         * free to retry with the same email — rather than a phantom
+         * "successful" signup that's broken forever.
          */
         after: async (user) => {
+          const [pendingInvitation] = await db
+            .select({ id: invitationTable.id })
+            .from(invitationTable)
+            .where(
+              and(
+                eq(invitationTable.email, user.email.toLowerCase()),
+                eq(invitationTable.status, "pending"),
+                gt(invitationTable.expiresAt, new Date()),
+              ),
+            )
+            .limit(1);
+          if (pendingInvitation) {
+            return;
+          }
+
           let createdOrgId: string | undefined;
           try {
             const org = await auth.api.createOrganization({
@@ -199,6 +238,22 @@ export const auth = betterAuth({
          * effect. Setting it via a direct `after`-hook UPDATE instead,
          * which goes through Drizzle directly and bypasses that filter,
          * reliably lands the value.
+         *
+         * Ordered by `member.createdAt` DESC (most-recently-joined org
+         * wins), not an arbitrary row. Belt-and-suspenders alongside
+         * `user.create.after`'s pending-invitation check above (which stops
+         * an invited user from ever getting a throwaway solo org in the
+         * first place, so a normal invited user has exactly one membership
+         * here, not two) — this ordering is what makes the fallback correct
+         * on its own terms for any user who does legitimately end up with
+         * multiple memberships, rather than silently picking whatever
+         * unordered row Postgres happens to return first. An earlier,
+         * unordered `.limit(1)` here was a real, live-reproduced bug (found
+         * before the `user.create.after` fix above existed): it could
+         * non-deterministically pick a solo org over the org the user
+         * actually works in, silently scoping every list/read endpoint
+         * (`requireOrgId(session)`) to the wrong, empty organisation with no
+         * error — contacts/catalogue/etc. all appeared empty.
          */
         after: async (createdSession) => {
           if (createdSession.activeOrganizationId) {
@@ -208,6 +263,7 @@ export const auth = betterAuth({
             .select({ organizationId: member.organizationId })
             .from(member)
             .where(eq(member.userId, createdSession.userId))
+            .orderBy(desc(member.createdAt))
             .limit(1);
           if (!membership) {
             return;
