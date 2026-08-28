@@ -4,6 +4,7 @@ import { NumberingModule } from "../numbering/numbering.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { InvoicesModule } from "../invoices/invoices.module";
 import { VendorBillsController } from "./vendor-bills.controller";
 import { VendorBillsService } from "./vendor-bills.service";
 import { ExpenseCategoriesController } from "./expense-categories.controller";
@@ -27,10 +28,13 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  * audit-log writes on every mutation, `NotificationsModule` (added for
  * S-09.14/dashboard v2) so `ExpensesService.approve` can fire an
  * `expense_approved` notification, same `.notify()` pattern
- * `PaymentsService`/`PublicQuotesService` already use.
+ * `PaymentsService`/`PublicQuotesService` already use. `InvoicesModule`
+ * is imported for `InvoicesService` — S-07.6's "bill to customer" action
+ * (`ExpensesService.createInvoiceFromExpense`) composes a new draft
+ * invoice the same way `MilestonesService.invoiceMilestone` does.
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule],
+  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
   controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController],
   providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],

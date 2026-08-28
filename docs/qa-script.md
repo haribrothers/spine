@@ -614,15 +614,22 @@ than building every case from scratch.
    shows up on the **cost** side of that job's profitability (this was
    previously always $0 before Purchases existed — see §5's own "Known
    gaps" note, now resolved).
-2. Submit an expense with **Billable** checked, approve it. Confirm it's
-   flagged billable on its detail page. **Known gap**: there is currently
-   no web UI action to actually pull it into a customer invoice line —
-   `POST /expenses/:id/mark-billed` (S-07.6) is a real, working,
-   Owner/Staff-only endpoint, but nothing in the invoice builder or the
-   expense detail drawer calls it yet. Verify it directly via that
-   endpoint if you need to confirm the one-shot-only behaviour (a second
-   call against the same expense is rejected); don't file "no way to
-   bill a customer for an expense" as a bug — it's this gap.
+2. Submit an expense tagged to a job, with **Billable** checked, and
+   approve it. Open its detail drawer — confirm a **Bill to customer**
+   button appears (Owner/Staff only), the "Billable" field reads
+   "Yes". Click it, confirm the dialog, and confirm you're redirected
+   to a brand-new **draft** invoice for the job's own customer, with
+   one line for the expense's full amount (amount + tax — the expense's
+   own tax was already paid, so this line isn't re-taxed). Reopen the
+   expense's detail drawer — confirm "Billable" now reads
+   "Yes — billed" and the **Bill to customer** button is gone (one-shot
+   only — the underlying `POST /expenses/:id/mark-billed` rejects a
+   second attempt against the same expense).
+3. Submit and approve a **billable** expense with **no job** attached.
+   Confirm its detail drawer shows an explanatory note instead of the
+   **Bill to customer** button (an expense with no job has no
+   unambiguous customer to bill — attaching a job is the fix, not a
+   bug to file).
 
 ### 11.4 Vendor bills (S-07.1)
 
@@ -1008,9 +1015,6 @@ revenue.
   receipt capture and offline expense-submission queueing are Phase 5
   scope; the web-based expense submission built in §11 covers S-07.2's
   web half only, per that story's own "web submission this stage" split.
-- S-07.6 (mark a billable expense and pull it into a customer invoice)
-  has a real, working API (`POST /expenses/:id/mark-billed`) but no web
-  UI action yet — see §11.3 step 2. Not a bug, a follow-up.
 - No standalone `/credit-notes` list page — credit notes are only
   reachable from the invoice they correct.
 - Multi-org (one Owner account across several orgs) is explicitly out of

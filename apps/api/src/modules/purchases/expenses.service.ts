@@ -9,6 +9,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { InvoicesService } from "../invoices/invoices.service";
 import { toDecimalString } from "@spine/shared";
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
@@ -34,6 +35,7 @@ export class ExpensesService {
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
     private readonly notifications: NotificationsService,
+    private readonly invoices: InvoicesService,
   ) {}
 
   async list(orgId: string, options: { status?: string; jobId?: string; submittedByUserId?: string }) {
@@ -363,6 +365,86 @@ export class ExpensesService {
     });
 
     return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * S-07.6's actual one-click UI action — composes InvoicesService.create
+   * (a brand-new DRAFT `standard` invoice, one line for this expense) with
+   * markBilled above, mirroring MilestonesService.invoiceMilestone's exact
+   * composition shape: this service owns the guard checks and the
+   * two-write orchestration, InvoicesService owns invoice creation, each
+   * keeping its own transaction boundary (matching every other
+   * cross-service call in this codebase — see invoiceMilestone's own doc
+   * comment on why that's fine, retry-safety is IdempotencyInterceptor at
+   * the controller layer).
+   *
+   * An expense has no `contactId` of its own — only an optional `jobId` —
+   * so this requires the expense to have a job attached (job.contactId is
+   * who gets billed). An expense logged without a job has no unambiguous
+   * customer to bill and is out of scope here, same as the web action
+   * being disabled in that case.
+   */
+  async createInvoiceFromExpense(orgId: string, id: string, actorUserId: string) {
+    const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+    if (!existing) {
+      throw new NotFoundException("Expense not found");
+    }
+    if (existing.status !== "approved") {
+      throw new BadRequestException("Only an approved expense can be billed to a customer");
+    }
+    if (!existing.isBillable) {
+      throw new BadRequestException("This expense is not marked as billable");
+    }
+    if (existing.billedOnInvoiceLineId) {
+      throw new BadRequestException("This expense has already been billed to a customer");
+    }
+    if (!existing.jobId) {
+      throw new BadRequestException("This expense has no job attached — attach a job to bill its customer");
+    }
+
+    const [job] = await this.db.select().from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, existing.jobId)));
+    if (!job) {
+      throw new NotFoundException("Job not found");
+    }
+
+    const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, existing.categoryId));
+
+    const invoice = await this.invoices.create(orgId, actorUserId, {
+      contactId: job.contactId,
+      type: "standard",
+      currency: existing.currency,
+      issueDate: null,
+      dueDate: null,
+      notes: null,
+      termsAndConditions: null,
+      lines: [
+        {
+          type: "item",
+          catalogItemId: null,
+          // Gross amount (amount + tax) reimburses the expense as paid —
+          // see markBilled's own doc comment on why no tax is re-applied.
+          name: existing.description || category?.name || "Billable expense",
+          description: null,
+          quantity: 1,
+          unitPriceAmount: existing.amount + existing.taxAmount,
+          unitPriceCurrency: existing.currency,
+          discountPercentage: 0,
+          taxRatePercentage: 0,
+          taxRateId: null,
+          taxGroupId: null,
+          isTaxInclusive: false,
+        },
+      ],
+    });
+
+    const line = invoice.lines[0];
+    if (!line) {
+      throw new BadRequestException("Failed to create the invoice line for this expense");
+    }
+
+    await this.markBilled(orgId, id, actorUserId, line.id);
+
+    return this.invoices.getOne(orgId, invoice.id);
   }
 
   /** Only a submitted (never posted) expense can be hard-deleted — matches VendorBillsService.delete/InvoicesService.delete's exact posture. */

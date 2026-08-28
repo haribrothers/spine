@@ -88,6 +88,16 @@ export class ExpensesController {
     return this.expensesService.markBilled(orgId, id, session.user.id, body.invoiceLineId);
   }
 
+  /** S-07.6's one-click UI action — creates a new draft invoice for this expense's job's contact and marks the expense billed in one call, unlike mark-billed above which expects an invoice line to already exist. */
+  @Post(":id/bill-to-customer")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("invoices.manage")
+  @UseInterceptors(IdempotencyInterceptor)
+  async billToCustomer(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expensesService.createInvoiceFromExpense(orgId, id, session.user.id);
+  }
+
   @Delete(":id")
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("expenses.submit")

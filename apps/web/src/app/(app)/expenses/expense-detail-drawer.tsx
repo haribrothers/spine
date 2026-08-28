@@ -47,6 +47,13 @@ const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
  * regardless). Reject REQUIRES a comment (disable confirm until non-empty,
  * mirroring invoice-detail.tsx's void-reason-required pattern); Approve's
  * comment is optional.
+ *
+ * S-07.6 "Bill to customer" appears once an expense is approved, billable,
+ * has a job attached (its contact is who gets billed, since an expense has
+ * no contactId of its own), and hasn't already been billed. Creates a
+ * brand-new draft invoice and redirects, mirroring
+ * jobs/[id]/milestones-section.tsx's own "Raise invoice" ->
+ * window.location.href redirect exactly.
  */
 export function ExpenseDetailDrawer({
   open,
@@ -71,6 +78,7 @@ export function ExpenseDetailDrawer({
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [billOpen, setBillOpen] = useState(false);
   const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
@@ -122,6 +130,19 @@ export function ExpenseDetailDrawer({
     }
   }
 
+  async function handleBillToCustomer() {
+    if (!expense) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const invoice = await apiClient.post<{ id: string }>(`/expenses/${expense.id}/bill-to-customer`);
+      window.location.href = `/invoices/${invoice.id}`;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not bill this expense to the customer.");
+      setBusy(false);
+    }
+  }
+
   async function handleDelete() {
     if (!expense) return;
     setBusy(true);
@@ -139,6 +160,9 @@ export function ExpenseDetailDrawer({
   }
 
   const canReviewNow = canApprove && expense?.status === "submitted";
+  const canBillToCustomer =
+    canApprove && expense?.status === "approved" && expense.isBillable && !expense.billedOnInvoiceLineId && !!expense.jobId;
+  const billableNoJob = expense?.status === "approved" && expense.isBillable && !expense.billedOnInvoiceLineId && !expense.jobId;
 
   return (
     <>
@@ -175,8 +199,17 @@ export function ExpenseDetailDrawer({
                     value={`${toDecimalString({ amount: BigInt(expense.taxAmount), currency: expense.currency })} ${expense.currency}`}
                   />
                   <Field label="Paid by" value={EXPENSE_PAID_BY_LABELS[expense.paidBy]} />
-                  <Field label="Billable" value={expense.isBillable ? "Yes" : "No"} />
+                  <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />
                 </div>
+
+                {billableNoJob && (
+                  <Alert variant="info">
+                    <AlertDescription>
+                      This expense is billable but has no job attached, so there's no customer to bill it to. Attach a job to this
+                      expense first.
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 {expense.description && (
                   <div>
@@ -226,6 +259,11 @@ export function ExpenseDetailDrawer({
             {expense?.status === "submitted" && (
               <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={busy}>
                 Delete
+              </Button>
+            )}
+            {canBillToCustomer && (
+              <Button onClick={() => setBillOpen(true)} disabled={busy}>
+                Bill to customer
               </Button>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
@@ -288,6 +326,25 @@ export function ExpenseDetailDrawer({
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
             <AlertDialogAction disabled={busy} onClick={handleDelete}>
               {busy ? <Spinner size="sm" /> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={billOpen} onOpenChange={setBillOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Bill this expense to the customer?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This creates a new draft invoice for the job's customer, for the expense's full amount, and marks it billed. You'll be
+              taken to the new invoice to review and send it.
+              {error && <span className="mt-2 block text-overdue">{error}</span>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={busy} onClick={handleBillToCustomer}>
+              {busy ? <Spinner size="sm" /> : "Create invoice"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
