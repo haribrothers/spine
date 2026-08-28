@@ -9,6 +9,7 @@ import { jobs, milestones, jobPhotos } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type SetMilestonesInput = z.infer<typeof setMilestonesSchema>;
 export type CompleteMilestoneInput = z.infer<typeof completeMilestoneSchema>;
@@ -113,11 +114,24 @@ export class MilestonesService {
    * an already-invoiced milestone must be included, unchanged, in the
    * submitted set, or this call rejects outright rather than silently
    * dropping billing history.
+   *
+   * Ownership ("own" vs "others") for `milestones.edit_own`/`edit_others`
+   * is keyed off who last replaced the set (any existing row's
+   * `createdByUserId` — they're all written together in the transaction
+   * below, so any one row reflects the whole set's owner), not per-row.
+   * A job with no milestones yet has no owner, so `_own` never applies to
+   * the first-ever call — only `_others` gates it, same "unowned record"
+   * rule every other own/others module uses for a null creator.
    */
   async setAll(orgId: string, jobId: string, actorUserId: string, input: SetMilestonesInput) {
     const job = await this.requireJob(orgId, jobId);
 
     const existing = await this.db.select().from(milestones).where(eq(milestones.jobId, jobId));
+
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing[0]?.createdByUserId ?? null, {
+      own: "milestones.edit_own",
+      others: "milestones.edit_others",
+    });
     const invoicedIds = new Set(existing.filter((m) => m.status === "invoiced").map((m) => m.id));
     for (const invoicedId of invoicedIds) {
       if (!input.milestones.some((m) => m.id === invoicedId)) {
@@ -157,6 +171,7 @@ export class MilestonesService {
               amount: m.amount,
               resolvedAmount: m.resolvedAmount,
               dueDate: m.dueDate,
+              createdByUserId: actorUserId,
               updatedAt: new Date(),
             })
             .where(eq(milestones.id, m.id));
@@ -170,6 +185,7 @@ export class MilestonesService {
             amount: m.amount,
             resolvedAmount: m.resolvedAmount,
             dueDate: m.dueDate,
+            createdByUserId: actorUserId,
           });
         }
       }
@@ -209,6 +225,14 @@ export class MilestonesService {
       throw new BadRequestException("Only a pending milestone can be marked complete");
     }
 
+    await requireOwnershipCapability(
+      this.db,
+      { orgId, userId: actorUserId },
+      milestone.createdByUserId,
+      { own: "milestones.edit_own", others: "milestones.edit_others" },
+      "always",
+    );
+
     await this.db.transaction(async (tx) => {
       const completedAt = new Date();
       await tx
@@ -224,6 +248,7 @@ export class MilestonesService {
             milestoneId,
             fileId,
             uploadedByUserId: actorUserId,
+            createdByUserId: actorUserId,
           })),
         );
       }

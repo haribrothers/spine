@@ -35,7 +35,7 @@ export const DASHBOARD_WIDGETS = [
   { key: "overdue-followups", capability: null, ownerOnly: false },
   { key: "upcoming-meetings", capability: null, ownerOnly: false },
   { key: "invoices-due", capability: "invoices.manage" as Capability, ownerOnly: false },
-  { key: "milestones-due", capability: "jobs.update_milestones" as Capability, ownerOnly: false },
+  { key: "milestones-due", capability: null, ownerOnly: false },
   { key: "activity-feed", capability: null, ownerOnly: false },
 ] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean }[];
 

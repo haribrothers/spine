@@ -106,8 +106,8 @@ describe("CapabilityGuard (requires local Postgres)", () => {
   });
 
   it("Field always passes when @RequireCapability is present — @OrgRoles already gated it, this guard trusts that", async () => {
-    const guard = guardFor("jobs.update_milestones");
-    const context = fakeContext("jobs.update_milestones", {
+    const guard = guardFor("job_photos.edit_own");
+    const context = fakeContext("job_photos.edit_own", {
       session: { activeOrganizationId: orgId },
       user: { id: fieldUserId },
     });

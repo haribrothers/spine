@@ -18,6 +18,7 @@ import {
 } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../../lib/api-client";
+import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
 
@@ -38,19 +39,9 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
  * its total into the job's contract value (S-04.9's own explicit-action
  * design, see VariationOrdersService.apply's doc comment).
  */
-export function VariationOrdersSection({
-  job,
-  canCreate,
-  canApply,
-  onJobChanged,
-}: {
-  job: Job;
-  /** quotes.edit_own — raise a new variation order. */
-  canCreate: boolean;
-  /** invoices.manage — apply an accepted variation order to the job's contract value. */
-  canApply: boolean;
-  onJobChanged: () => void;
-}) {
+export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobChanged: () => void }) {
+  const canCreate = useCapability("variation_orders.edit_own");
+  const canApply = useCapability("variation_orders.apply");
   const [variations, setVariations] = useState<JobVariationOrder[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);

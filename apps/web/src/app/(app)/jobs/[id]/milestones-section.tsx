@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { Plus, Trash2 } from "lucide-react";
+import { authClient } from "../../../../lib/auth-client";
 import { apiClient } from "../../../../lib/api-client";
+import { useCanEditOwnership, useCapabilities, useCapability } from "../../../../lib/capabilities-context";
 import { CompleteMilestoneDialog } from "./complete-milestone-dialog";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
 
@@ -53,19 +55,7 @@ function blankMilestone(sequence: number): EditableMilestone {
  * history, so this UI disables those fields rather than letting a save
  * round-trip fail.
  */
-export function MilestonesSection({
-  job,
-  canManage,
-  canUpdateStatus,
-  onJobChanged,
-}: {
-  job: Job;
-  /** invoices.manage — define/edit the milestone set, raise a progress invoice. */
-  canManage: boolean;
-  /** jobs.update_milestones — mark a milestone complete (field-reachable). */
-  canUpdateStatus: boolean;
-  onJobChanged: () => void;
-}) {
+export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChanged: () => void }) {
   const [milestones, setMilestones] = useState<Milestone[] | null>(null);
   const [editing, setEditing] = useState(false);
   const [rows, setRows] = useState<EditableMilestone[]>([]);
@@ -75,6 +65,21 @@ export function MilestonesSection({
   const [completingMilestone, setCompletingMilestone] = useState<Milestone | null>(null);
   const [invoicingId, setInvoicingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const canManage = useCanEditOwnership(milestones?.[0]?.createdByUserId ?? null, {
+    own: "milestones.edit_own",
+    others: "milestones.edit_others",
+  });
+  const canInvoice = useCapability("milestones.invoice");
+  const { capabilities } = useCapabilities();
+  const { data: session } = authClient.useSession();
+
+  /** Per-milestone "mark complete" gate — can't use useCanEditOwnership inline per row in a .map() (Rules of Hooks: the row count isn't fixed across renders), so this re-derives the same own/others branch manually from the raw capabilities map, same workaround as meetings-calendar.tsx. */
+  function canCompleteMilestone(m: Milestone): boolean {
+    if (!capabilities || !session?.user?.id) return false;
+    const isOwn = m.createdByUserId !== null && m.createdByUserId === session.user.id;
+    return capabilities[isOwn ? "milestones.edit_own" : "milestones.edit_others"] ?? false;
+  }
 
   const load = useCallback(() => {
     apiClient
@@ -327,12 +332,12 @@ export function MilestonesSection({
                   <span className="font-mono text-[13px] tabular-nums text-on-surface">
                     {toDecimalString({ amount: BigInt(m.resolvedAmount), currency: job.currency })} {job.currency}
                   </span>
-                  {m.status === "pending" && canUpdateStatus && (
+                  {m.status === "pending" && canCompleteMilestone(m) && (
                     <Button size="sm" variant="secondary" onClick={() => setCompletingMilestone(m)}>
                       Mark complete
                     </Button>
                   )}
-                  {m.status === "completed" && canManage && (
+                  {m.status === "completed" && canInvoice && (
                     <Button size="sm" onClick={() => handleInvoice(m.id)} disabled={invoicingId === m.id}>
                       {invoicingId === m.id ? <Spinner size="sm" /> : "Raise invoice"}
                     </Button>

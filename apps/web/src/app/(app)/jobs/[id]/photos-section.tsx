@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, AlertDescription, Card, Spinner } from "@spine/ui";
 import { Camera } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobPhoto, UploadedFile } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -20,7 +21,8 @@ function fileUrl(fileId: string): string {
  * CompleteMilestoneDialog: upload to `POST /files` on selection, then
  * `POST /jobs/:id/photos` with the resulting file id.
  */
-export function PhotosSection({ job, canUpload }: { job: Job; canUpload: boolean }) {
+export function PhotosSection({ job }: { job: Job }) {
+  const canUpload = useCapability("job_photos.edit_own");
   const inputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<JobPhoto[] | null>(null);
   const [uploading, setUploading] = useState(false);

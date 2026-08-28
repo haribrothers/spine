@@ -81,8 +81,8 @@ export class CapabilityGuard implements CanActivate {
       // before this guard's canActivate is ever called. A route pairing
       // @OrgRoles([..., "field"]) with @RequireCapability therefore means
       // "field is allowed here unconditionally, no Team grant needed" —
-      // e.g. jobs.controller.ts's completeMilestone route (S-04.4,
-      // jobs.update_milestones). This guard previously threw for any
+      // e.g. jobs.controller.ts's addPhoto/addNote routes (S-04.10/S-04.4,
+      // job_photos.edit_own/job_notes.edit_own). This guard previously threw for any
       // non-staff role including field, which meant a field user could
       // never actually pass a route explicitly built to allow them —
       // fixed live while adding the same field+capability shape for

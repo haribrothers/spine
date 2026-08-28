@@ -22,9 +22,10 @@ import type { Job, Milestone, UploadedFile } from "../types";
 
 /**
  * S-04.4 — "mark a milestone as complete with photos, so office staff can
- * raise the invoice." Field-reachable (gated on `jobs.update_milestones`
- * by the caller, not here — see MilestonesSection's own `canUpdateStatus`
- * prop), so this dialog is deliberately simple: pick photos, add an
+ * raise the invoice." Field-reachable — Field always passes both
+ * `milestones.edit_own`/`edit_others` (gated by the caller via
+ * MilestonesSection's own `canCompleteMilestone`, not here), so this
+ * dialog is deliberately simple: pick photos, add an
  * optional note, submit. Photos use the same two-step upload pattern as
  * every other file attachment in this codebase (`business-logo-upload.tsx`)
  * — each picked file is uploaded to `POST /files` immediately on selection

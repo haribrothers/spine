@@ -101,6 +101,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   const hasDeleteCapability = useCanEditOwnership(quote?.createdByUserId ?? null, { own: "quotes.delete_own", others: "quotes.delete_others" });
   const hasSendCapability = useCapability("quotes.send");
   const hasReviseCapability = useCapability("quotes.revise");
+  const hasCreateJobCapability = useCapability("jobs.edit_own");
 
   const load = useCallback(() => {
     apiClient
@@ -287,7 +288,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   // quote is convertible) and are independent actions, not mutually
   // exclusive: a quote can become a job, an invoice, or both.
   const canConvertToInvoice = quote.status === "accepted";
-  const canConvertToJob = quote.status === "accepted";
+  const canConvertToJob = quote.status === "accepted" && hasCreateJobCapability;
   const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId;
 
   return (

@@ -94,7 +94,7 @@ export class ReportsController {
     return this.reportsService.accountDrilldown(orgId, accountId, from, to);
   }
 
-  /** S-09.6 — all-jobs profitability summary; same `dashboard.view` gate as receivables/payables, not Owner-only, since Staff with `jobs.update_milestones` already sees per-job costing on the job detail page. */
+  /** S-09.6 — all-jobs profitability summary; same `dashboard.view` gate as receivables/payables, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */
   @Get("job-profitability")
   @RequireCapability("dashboard.view")
   async jobProfitability(@Session() session: UserSession) {

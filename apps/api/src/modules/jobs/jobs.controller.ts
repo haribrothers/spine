@@ -22,12 +22,20 @@ import { JobCostingService } from "./job-costing.service";
  * PRD F4 — jobs and their milestones. GET routes are readable by any
  * authenticated org member (owner/staff/field all have legitimate reasons
  * to look at a job — field crews need to see what they're billing
- * against). Mutating routes on the job/milestone-definition surface use
- * `invoices.manage` (closest existing capability — job/milestone creation
- * is billing-adjacent, same "office staff" tier as raising an invoice,
- * per §2.1's persona table). `jobs.update_milestones` is reserved for
- * S-04.4's own field-reachable "mark complete" action (MilestonesController,
- * added in Stage 2), not this controller's job/milestone-definition CRUD.
+ * against). Mutating routes use the own/others capability split (PRD §2.1,
+ * §9 Phase 3): `jobs.edit_own`/`jobs.edit_others` gate job create/update;
+ * `milestones.edit_own`/`milestones.edit_others` gate the milestone-set
+ * definition route, with Field always passing both (see
+ * `FIELD_ALWAYS_CAPABILITIES`'s doc comment — milestone completion was
+ * never meant to be an ownership question for Field); `job_photos.*`/
+ * `job_notes.*`/`variation_orders.*` follow the same own/others shape.
+ * Dedicated workflow-action capabilities (`milestones.invoice`,
+ * `jobs.release_retention`, `variation_orders.apply`) gate actions that
+ * aren't edits. Ownership checks that depend on the loaded record
+ * (`update`, `setMilestones`, `completeMilestone`, `addPhoto`, `addNote`,
+ * `createVariationOrder`) are enforced in the service layer via
+ * `requireOwnershipCapability`, not `@RequireCapability` here — same
+ * pattern as every other own/others module in this codebase.
  */
 @Controller("jobs")
 export class JobsController {
@@ -53,7 +61,6 @@ export class JobsController {
    */
   @Get("milestones/due")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("jobs.update_milestones")
   async milestonesDue(@Session() session: UserSession, @Query("withinDays") withinDays?: string) {
     const orgId = requireOrgId(session);
     return this.milestonesService.dueAcrossJobs(orgId, { withinDays: withinDays ? Number(withinDays) : undefined });
@@ -67,7 +74,7 @@ export class JobsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("jobs.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -83,7 +90,7 @@ export class JobsController {
    */
   @Post("from-quote/:quoteId")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("jobs.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async createFromQuote(
     @Session() session: UserSession,
@@ -96,7 +103,6 @@ export class JobsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = updateJobSchema.parse(body);
@@ -109,10 +115,9 @@ export class JobsController {
     return this.milestonesService.list(orgId, id);
   }
 
-  /** S-04.2/S-04.3 — replaces the job's entire milestone set with server-side percentage-total validation. */
+  /** S-04.2/S-04.3 — replaces the job's entire milestone set with server-side percentage-total validation. Ownership check happens in the service, since "own" here means whoever last replaced the set (see MilestonesService.setAll's own doc comment). */
   @Put(":id/milestones")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
   async setMilestones(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = setMilestonesSchema.parse(body);
@@ -121,16 +126,13 @@ export class JobsController {
 
   /**
    * S-04.4 — mark a milestone complete with photos. Field-reachable (per
-   * §2.1's "Upload site photos, update milestone status: Field ✅"), so
-   * this uses `@OrgRoles(["owner", "staff", "field"])` +
-   * `jobs.update_milestones` rather than the `invoices.manage` gate the
-   * rest of this controller uses — a field crew member has no business
-   * creating jobs or raising invoices, but marking their own work done is
-   * exactly what this capability exists for.
+   * §2.1's "Upload site photos, update milestone status: Field ✅") — Field
+   * always passes both `milestones.edit_own` and `milestones.edit_others`
+   * (see `FIELD_ALWAYS_CAPABILITIES`), so this was never meant to be an
+   * ownership question for Field. Capability check happens in the service.
    */
   @Post(":id/milestones/:milestoneId/complete")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("jobs.update_milestones")
   @UseInterceptors(IdempotencyInterceptor)
   async completeMilestone(
     @Session() session: UserSession,
@@ -143,20 +145,20 @@ export class JobsController {
     return this.milestonesService.completeMilestone(orgId, id, milestoneId, session.user.id, input);
   }
 
-  /** S-04.5 / S-05.1's milestone path — raises a progress invoice directly from a completed milestone. Office-staff action, same gate as job/milestone creation. */
+  /** S-04.5 / S-05.1's milestone path — raises a progress invoice directly from a completed milestone. Dedicated workflow-action capability, not an edit. */
   @Post(":id/milestones/:milestoneId/invoice")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("milestones.invoice")
   @UseInterceptors(IdempotencyInterceptor)
   async invoiceMilestone(@Session() session: UserSession, @Param("id") id: string, @Param("milestoneId") milestoneId: string) {
     const orgId = requireOrgId(session);
     return this.milestonesService.invoiceMilestone(orgId, id, milestoneId, session.user.id);
   }
 
-  /** S-04.7 — releases a job's outstanding retention as a final invoice. */
+  /** S-04.7 — releases a job's outstanding retention as a final invoice. Dedicated workflow-action capability, not an edit. */
   @Post(":id/release-retention")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("jobs.release_retention")
   @UseInterceptors(IdempotencyInterceptor)
   async releaseRetention(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -176,10 +178,10 @@ export class JobsController {
     return this.jobsService.listPhotos(orgId, id);
   }
 
-  /** S-04.10 (web upload) — attach an already-uploaded file (`POST /files`) as a general job/site photo. Field-reachable, same gate as milestone completion. */
+  /** S-04.10 (web upload) — attach an already-uploaded file (`POST /files`) as a general job/site photo. Field-reachable; `job_photos.edit_own` gates create, ownership check happens in the service. */
   @Post(":id/photos")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("jobs.update_milestones")
+  @RequireCapability("job_photos.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async addPhoto(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -193,9 +195,10 @@ export class JobsController {
     return this.jobsService.listNotes(orgId, id);
   }
 
+  /** Field-reachable, same shape as addPhoto above. */
   @Post(":id/notes")
   @OrgRoles(["owner", "staff", "field"])
-  @RequireCapability("jobs.update_milestones")
+  @RequireCapability("job_notes.edit_own")
   async addNote(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = addJobNoteSchema.parse(body);
@@ -209,17 +212,9 @@ export class JobsController {
     return this.variationOrdersService.list(orgId, id);
   }
 
-  /**
-   * Creating a variation order is quote-like document creation, so it
-   * reuses `quotes.edit_own` for now rather than inventing a Jobs-specific
-   * capability — Jobs itself doesn't yet have an own/others split (planned
-   * as a later phase, PRD §9), so `quotes.edit_own` is the closest existing
-   * capability with the right shape. Revisit once Jobs gets its own
-   * capability family.
-   */
   @Post(":id/variation-orders")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("quotes.edit_own")
+  @RequireCapability("variation_orders.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async createVariationOrder(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -227,10 +222,10 @@ export class JobsController {
     return this.variationOrdersService.create(orgId, session.user.id, id, input);
   }
 
-  /** Folds an accepted variation order's total into the job's contract value — see VariationOrdersService.apply's own doc comment on why this is a deliberate, explicit action rather than automatic on quote acceptance. */
+  /** Folds an accepted variation order's total into the job's contract value — see VariationOrdersService.apply's own doc comment on why this is a deliberate, explicit action rather than automatic on quote acceptance. Dedicated workflow-action capability, not an edit. */
   @Post(":id/variation-orders/:variationOrderId/apply")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("invoices.manage")
+  @RequireCapability("variation_orders.apply")
   @UseInterceptors(IdempotencyInterceptor)
   async applyVariationOrder(
     @Session() session: UserSession,

@@ -35,6 +35,7 @@ export interface Milestone {
   resolvedAmount: string;
   status: MilestoneStatus;
   dueDate: string | null;
+  createdByUserId: string | null;
   completedByUserId: string | null;
   completedAt: string | null;
   completionNotes: string | null;
@@ -51,6 +52,7 @@ export interface JobPhoto {
   fileId: string;
   caption: string | null;
   uploadedByUserId: string | null;
+  createdByUserId: string | null;
   createdAt: string;
 }
 

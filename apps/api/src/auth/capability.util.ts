@@ -6,15 +6,39 @@ import { member, teamMemberships, teamPrivileges } from "../db/schema";
 
 /**
  * Single source of truth for which `_own` capabilities Field always passes
- * (see `hasCapability`'s `fieldAlwaysPasses` param for the full rationale).
- * Every `requireOwnershipCapability(..., fieldAlwaysPassesOwn: true)` call
- * site's `own` capability MUST appear here, and vice versa — kept as one
- * set rather than a boolean scattered across call sites so
+ * for their OWN record only (see `hasCapability`'s `fieldAlwaysPasses`
+ * param for the full rationale). Every
+ * `requireOwnershipCapability(..., fieldAlwaysPassesOwn: true)` call site's
+ * `own` capability MUST appear here, and vice versa — kept as one set
+ * rather than a boolean scattered across call sites so
  * `getEffectiveCapabilities` (used by the web privilege-aware UI) can
  * answer "does Field have this capability" without re-deriving the same
  * fact a second, possibly-drifting way.
  */
-export const FIELD_OWN_CAPABILITIES: ReadonlySet<Capability> = new Set(["expenses.edit_own", "expenses.delete_own"] satisfies Capability[]);
+export const FIELD_OWN_CAPABILITIES: ReadonlySet<Capability> = new Set([
+  "expenses.edit_own",
+  "expenses.delete_own",
+  "job_photos.edit_own",
+  "job_notes.edit_own",
+] satisfies Capability[]);
+
+/**
+ * Capabilities Field always passes UNCONDITIONALLY — both `_own` and
+ * `_others` — because the underlying action was never meant to be an
+ * ownership question for Field in the first place. So far this is only
+ * `milestones.edit_own`/`milestones.edit_others`: milestone "own" is
+ * whoever last defined the milestone SET (office Staff/Owner via
+ * `PUT /:id/milestones`), but completing a milestone is field-crew work
+ * regardless of who defined it — Field has always been able to mark ANY
+ * milestone complete (S-04.4), and this preserves that rather than
+ * accidentally scoping it to "only milestones I personally defined,"
+ * which no Field user would ever satisfy. Every call site passing BOTH
+ * `own` and `others` capabilities from this set to `hasCapability`'s
+ * `fieldAlwaysPasses` param (not `requireOwnershipCapability`'s
+ * `fieldAlwaysPassesOwn`, which only covers the `own` branch) MUST have
+ * both halves listed here.
+ */
+export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set(["milestones.edit_own", "milestones.edit_others"] satisfies Capability[]);
 
 /**
  * The same owner/field/staff resolution `CapabilityGuard` uses, factored out
@@ -28,8 +52,9 @@ export const FIELD_OWN_CAPABILITIES: ReadonlySet<Capability> = new Set(["expense
  *
  * `fieldAlwaysPasses` (default false): Field is fixed/non-configurable per
  * PRD §2.1 and never participates in the Team privilege matrix — but a
- * handful of resources (Expenses: submit/edit/delete their OWN expense)
- * already grant Field real write access today via `@OrgRoles` alone, same
+ * handful of resources (Expenses: submit/edit/delete their OWN expense;
+ * job photos/notes: add their OWN) already grant Field real write access
+ * today via `@OrgRoles` alone, same
  * as Owner's blanket bypass. Passing `true` here (only ever paired with an
  * `_own` capability, never `_others` — a Field user has no path to another
  * user's record regardless) preserves that pre-existing behavior instead of
@@ -93,21 +118,25 @@ export async function hasCapability(
  * throws, so callers get consistent 403 behaviour regardless of whether the
  * check happened at the route guard or inside a service method.
  *
- * `fieldAlwaysPassesOwn` (default false): forwarded to `hasCapability` only
- * on the `own` branch — see that function's own doc comment. Never applies
- * to `others`, so a Field user still can never touch a colleague's record
- * regardless of this flag.
+ * `fieldAccess` (default `"none"`): `"own"` forwards `fieldAlwaysPasses` to
+ * `hasCapability` only on the `own` branch (see that function's own doc
+ * comment) — never applies to `others`, so a Field user still can never
+ * touch a colleague's record. `"always"` forwards it on BOTH branches —
+ * for the rare resource (so far only Milestones) where the action was
+ * never an ownership question for Field to begin with, see
+ * `FIELD_ALWAYS_CAPABILITIES`'s own doc comment.
  */
 export async function requireOwnershipCapability(
   db: Database,
   actor: { orgId: string; userId: string },
   resourceCreatedByUserId: string | null,
   capabilities: { own: Capability; others: Capability },
-  fieldAlwaysPassesOwn = false,
+  fieldAccess: "none" | "own" | "always" = "none",
 ): Promise<void> {
   const isOwnRecord = resourceCreatedByUserId !== null && resourceCreatedByUserId === actor.userId;
   const required = isOwnRecord ? capabilities.own : capabilities.others;
-  const granted = await hasCapability(db, actor, required, isOwnRecord && fieldAlwaysPassesOwn);
+  const fieldAlwaysPasses = fieldAccess === "always" || (fieldAccess === "own" && isOwnRecord);
+  const granted = await hasCapability(db, actor, required, fieldAlwaysPasses);
   if (!granted) {
     throw new ForbiddenException(`Missing capability: ${required}`);
   }
@@ -117,8 +146,9 @@ export async function requireOwnershipCapability(
  * The full effective capability set for one user in one org — every
  * `CAPABILITIES` entry mapped to whether they currently have it, unioned
  * across all their Teams (Staff) or resolved by fixed rule (Owner: all
- * `true`; Field: `true` only for `FIELD_OWN_CAPABILITIES`, `false`
- * otherwise — Field never touches the Team privilege matrix). Backs
+ * `true`; Field: `true` for `FIELD_OWN_CAPABILITIES` and
+ * `FIELD_ALWAYS_CAPABILITIES`, `false` otherwise — Field never touches the
+ * Team privilege matrix). Backs
  * `GET /org/members/me/capabilities`, which the web privilege-aware UI
  * (`use-my-capabilities.ts`) calls once per session to decide which
  * buttons/actions to show — client-side hiding only, never the real
@@ -147,7 +177,9 @@ export async function getEffectiveCapabilities(db: Database, actor: { orgId: str
   }
 
   if (membership.role === "field") {
-    return Object.fromEntries(CAPABILITIES.map((c) => [c, FIELD_OWN_CAPABILITIES.has(c)])) as Record<Capability, boolean>;
+    return Object.fromEntries(
+      CAPABILITIES.map((c) => [c, FIELD_OWN_CAPABILITIES.has(c) || FIELD_ALWAYS_CAPABILITIES.has(c)]),
+    ) as Record<Capability, boolean>;
   }
 
   if (membership.role !== "staff") {

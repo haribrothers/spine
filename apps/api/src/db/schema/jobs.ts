@@ -114,6 +114,8 @@ export const milestones = pgTable(
     resolvedAmount: bigint("resolved_amount", { mode: "bigint" }).notNull().default(sql`0`),
     status: milestoneStatusEnum("status").notNull().default("pending"),
     dueDate: date("due_date", { mode: "date" }),
+    /** Whoever last replaced the job's milestone set via `PUT /:id/milestones` (MilestonesService.setAll) — this is what "own" means for `milestones.edit_own`/`edit_others`, not who completes the milestone. Field always passes both own and others when completing (see FIELD_ALWAYS_CAPABILITIES), so this column never gates completion. */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set by S-04.4 (field user marks complete) — who and when, for the office's own "ready to bill" view. */
     completedByUserId: text("completed_by_user_id").references(() => user.id, { onDelete: "set null" }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -155,6 +157,8 @@ export const jobPhotos = pgTable(
       .references(() => files.id, { onDelete: "cascade" }),
     caption: text("caption"),
     uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** Same value as uploadedByUserId, duplicated under the standard `createdByUserId` name so `job_photos.edit_own`/`edit_others` ownership checks use the same column name every other own/others module uses. */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [

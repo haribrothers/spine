@@ -120,7 +120,16 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Create own vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete own vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete others' vendor payments | ✅ | ✅ (default) | ❌ | ❌ |
-| Upload site photos, update milestone status | ✅ | ✅ (default) | ✅ | ❌ |
+| Create/edit own jobs | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' jobs | ✅ | ✅ (default) | ❌ | ❌ |
+| Release a job's retention | ✅ | ✅ (default) | ❌ | ❌ |
+| Define own milestone set / mark it complete | ✅ | ✅ (default) | ✅ (fixed — always both own and others when completing) | ❌ |
+| Define/edit others' milestone set / mark it complete | ✅ | ✅ (default) | ✅ (fixed — see own column) | ❌ |
+| Raise an invoice from a completed milestone | ✅ | ✅ (default) | ❌ | ❌ |
+| Add own job notes | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
+| Add own job photos | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
+| Create own variation orders | ✅ | ✅ (default) | ❌ | ❌ |
+| Apply an accepted variation order to a job | ✅ | ✅ (default) | ❌ | ❌ |
 | Create/edit own meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
 | Edit others' meetings | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete own meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
@@ -525,8 +534,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-04.8 | As an owner, I want to see cost, revenue and margin for a job as it runs, so I know if it's going wrong before it's finished |
 | S-04.9 | As staff, I want to raise a variation order as a supplementary quote linked to the job, so scope changes are tracked and billed |
 | S-04.10 | As a field user, I want to upload site photos tagged to a job, so there's a record of progress and condition |
+| S-04.11 | As an owner, I want to control which staff can edit jobs and milestones they didn't create, so field crews and back-office staff can't overwrite each other's billing setup |
 
 *Acceptance highlights:* retention posts to a separate Retention Receivable account, not AR, so aging reports aren't distorted. Job costing pulls from journal lines tagged with `job_id`, which means expenses, bills and labour all count without a parallel subsystem.
+
+*Acceptance highlights (S-04.11 — own vs. others' Jobs & Milestones):* same own/others model as every other resource in §2.1 — `jobs.edit_own`/`jobs.edit_others` gate job create/update (no delete route exists for Jobs, so no delete capability pair either). Milestones are the one resource in this pattern where "own" is not "who created the record I'm acting on" but **who last replaced the whole milestone set** via the milestone-definition endpoint — `milestones.edit_own`/`milestones.edit_others` gate both defining/redefining the set AND marking any one of its milestones complete. A job with no milestones yet has no owner, so only `milestones.edit_others` can define the very first set. **Field always passes both `milestones.edit_own` and `milestones.edit_others`** when completing a milestone — S-04.4 has always let a field crew mark any milestone complete regardless of who defined it, and this was never meant to be an ownership question for Field, unlike every other Field-reachable capability in this codebase which grants only the `_own` half. Field also keeps its existing real write access to add its own job photos/notes (`job_photos.edit_own`/`job_notes.edit_own`, fixed, not Team-configurable — same shape as Field's expense access). Dedicated workflow-action capabilities, not folded into edit_own/edit_others: `jobs.release_retention`, `milestones.invoice` (raising a progress invoice from a completed milestone), `variation_orders.apply` (folding an accepted variation order's total into the job's contract value).
 
 ### FEAT-05 · Invoicing
 
@@ -787,7 +799,7 @@ Invoices (draft → issue → void), credit notes, payments with multi-invoice a
 
 ### Phase 3 · Jobs & Construction Billing *(4 weeks)*
 Jobs from quotes, milestones with validation, progress invoicing, advance application, retention hold and release, variation orders, site photos and notes, job dashboard. Also wires up the **Construction industry template's** effect from onboarding — milestones and retention become visible by default only for businesses that picked it.
-**Stories:** S-04.1 → S-04.3 · S-04.4 *(web only; mobile in Phase 5)* · S-04.5 → S-04.7 · S-04.8 *(revenue side only until Phase 4 supplies costs)* · S-04.9 · S-04.10 *(web upload)* · S-03.10 *(quote → job half, completes the story)* · S-05.1 *(milestone path, completes the story)* · S-12.3 *(completes the story)*
+**Stories:** S-04.1 → S-04.3 · S-04.4 *(web only; mobile in Phase 5)* · S-04.5 → S-04.7 · S-04.8 *(revenue side only until Phase 4 supplies costs)* · S-04.9 · S-04.10 *(web upload)* · S-04.11 *(own/others privilege split)* · S-03.10 *(quote → job half, completes the story)* · S-05.1 *(milestone path, completes the story)* · S-12.3 *(completes the story)*
 **Exit:** a full contract lifecycle — advance, three progress bills, retention held, retention released — reconciles to the correct final position.
 
 ### Phase 4 · Money Out & Books *(3 weeks)*

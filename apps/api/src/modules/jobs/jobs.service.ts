@@ -8,6 +8,7 @@ import { jobs, contacts, quotes, jobPhotos, jobNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
@@ -151,6 +152,11 @@ export class JobsService {
       throw new NotFoundException("Job not found");
     }
 
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "jobs.edit_own",
+      others: "jobs.edit_others",
+    });
+
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(jobs)
@@ -205,7 +211,15 @@ export class JobsService {
 
     const [row] = await this.db
       .insert(jobPhotos)
-      .values({ jobId, orgId, milestoneId: null, fileId: input.fileId, caption: input.caption ?? null, uploadedByUserId: actorUserId })
+      .values({
+        jobId,
+        orgId,
+        milestoneId: null,
+        fileId: input.fileId,
+        caption: input.caption ?? null,
+        uploadedByUserId: actorUserId,
+        createdByUserId: actorUserId,
+      })
       .returning();
 
     await this.auditLog.record(this.db, {

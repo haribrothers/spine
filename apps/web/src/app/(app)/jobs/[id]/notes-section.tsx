@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Card, Spinner, Textarea } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobNote } from "../types";
 
 /** A free-text timeline note (site conditions, a call with the customer, etc.) — simple append-only list, field-reachable same as photos. */
-export function NotesSection({ job, canAdd }: { job: Job; canAdd: boolean }) {
+export function NotesSection({ job }: { job: Job }) {
+  const canAdd = useCapability("job_notes.edit_own");
   const [notes, setNotes] = useState<JobNote[] | null>(null);
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);

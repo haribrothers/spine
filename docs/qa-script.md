@@ -985,6 +985,56 @@ where Field has real write access to their own records.
 
 ---
 
+### 13.6 Jobs & Milestones — own/others split, with Field always passing both branches on milestone completion (§9 S-04.11)
+
+Needs a Staff account in two Teams, plus a **Field** account. Milestones
+are the one resource in this pattern where "own" means whoever last
+*defined the whole milestone set*, not who's completing it — Field always
+passes both own and others when completing, since that's never been an
+ownership question for Field.
+
+1. Confirm a **Manage Jobs** collapsible group in the privilege matrix
+   listing: Create/edit own jobs, Edit others' jobs, Release retention,
+   Define/complete own milestone set, Define/complete others' milestone
+   set, Raise invoice from milestone, Add own job notes, Add own job
+   photos, Create own variation orders, Apply variation order. No delete
+   rows exist for any of these — there's no delete route on this resource
+   family.
+2. Grant Team A (Staff User 1) only **Create/edit own jobs**. Create a
+   job as User 1 — succeeds. Edit it — succeeds. As Staff User 2 (no
+   grants), confirm the job is visible (read stays unconditional) but
+   **Edit job**/**Release retention** buttons are hidden, and attempting
+   the API call directly is rejected.
+3. Grant Team B (Staff User 2) **Edit others' jobs**. Confirm User 2 can
+   now edit User 1's job.
+4. As Staff User 1 with **Define/complete own milestone set** granted,
+   define a job's first milestone set. Since the job had no milestones
+   yet (no owner), confirm this actually required the **others** grant,
+   not own — a fresh job's first milestone set has no creator to "own"
+   it against.
+5. Still as User 1, redefine (edit) the same milestone set again — this
+   time only the **own** grant is needed, since User 1 is now the set's
+   owner (whoever last replaced it).
+6. As Staff User 2 with only **Define/complete own milestone set**
+   granted (not others'), try to redefine User 1's milestone set —
+   blocked. Grant **others'** too — succeeds.
+7. As a **Field** user with ZERO Team memberships, mark a pending
+   milestone complete on a job whose milestone set was defined by someone
+   else entirely — succeeds. This must work unconditionally; Field never
+   needs a Team grant for milestone completion regardless of who defined
+   the set.
+8. As a Staff user with only **Define/complete own milestone set**
+   granted, try to mark complete a milestone on a set they didn't define
+   — blocked, unlike Field in step 7. Grant the **others'** capability
+   too — succeeds.
+9. Confirm **Add own job notes**/**Add own job photos** work for a
+   **Field** user with zero Team grants (same fixed-access shape as
+   Expenses) — the Notes/Photos tabs' add actions must be visible and
+   functional purely from the Field role, no grant needed.
+10. As Owner, confirm every action above works regardless of Team grants.
+
+---
+
 ## 14. Design system spot-check
 
 Not a full audit — just confirm nothing obviously broke:

@@ -124,7 +124,7 @@ export class ExpensesService {
       { orgId, userId: actorUserId },
       existing.submittedByUserId,
       { own: "expenses.edit_own", others: "expenses.edit_others" },
-      true,
+      "own",
     );
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be edited");
@@ -466,7 +466,7 @@ export class ExpensesService {
       { orgId, userId: actorUserId },
       existing.submittedByUserId,
       { own: "expenses.delete_own", others: "expenses.delete_others" },
-      true,
+      "own",
     );
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be deleted");

@@ -44,6 +44,7 @@ import {
 import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { CostingSection } from "./[id]/costing-section";
 import { MilestonesSection } from "./[id]/milestones-section";
 import { NotesSection } from "./[id]/notes-section";
@@ -51,11 +52,6 @@ import { PhotosSection } from "./[id]/photos-section";
 import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
-
-interface MemberRow {
-  userId: string;
-  role: string;
-}
 
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
@@ -69,31 +65,16 @@ const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
  * contract value, retention %) plus tabbed sections for Milestones,
  * Variation Orders, Photos, Notes, and Costing.
  *
- * **Capability gating**: this codebase has no client-side fine-grained
- * capability check yet (grepped for one — doesn't exist; `quote-detail.tsx`
- * and `team-detail-view.tsx` both only ever check `role === "owner"` via
- * `GET /org/members/me` / `/org/members`, since `GET /org/teams` — the
- * only place a member's effective Team grants are readable — is hard-coded
- * Owner-only and a Staff/Field member can't read their own capability set).
- * So this page follows that exact precedent: gates purely on `role`
- * (owner/staff can do the `invoices.manage`-gated actions, i.e. define
- * milestones/raise invoices/apply variations/release retention;
- * owner/staff/field can all do the `jobs.update_milestones`-gated actions,
- * i.e. mark a milestone complete/add photos/add notes). This is a
- * necessarily coarser approximation than the server's own per-Team
- * enforcement — a Staff member whose Team doesn't actually grant
- * `invoices.manage` will still see these buttons here and get a real 403
- * from the server on click, exactly like every other page in this app
- * (hiding a button is UI signal, never access control, per this
- * codebase's own established doc comments on `getMyMembership`/nav
- * placement).
+ * **Capability gating**: own/others split (PRD §2.1, §9 Phase 3) via
+ * `useCapability`/`useCanEditOwnership` (`capabilities-context.tsx`), same
+ * pattern as every other module past Phase 1. Hiding a button is UI signal
+ * only — the server independently re-checks every mutating request.
  */
-export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUserId: string | null }) {
+export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
   const router = useRouter();
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [role, setRole] = useState<string | null>(null);
   const [isConstruction, setIsConstruction] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
@@ -110,17 +91,6 @@ export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUser
     load();
   }, [load]);
 
-  useEffect(() => {
-    if (!currentUserId) return;
-    apiClient
-      .get<MemberRow[]>("/org/members")
-      .then((members) => {
-        const self = members.find((m) => m.userId === currentUserId);
-        setRole(self?.role ?? null);
-      })
-      .catch(() => {});
-  }, [currentUserId]);
-
   // S-12.3 — the org's onboarding-wizard industry template, re-read here
   // (not just at onboarding time) since it's editable later from Settings
   // per CLAUDE.md's onboarding rules. Used only to decide whether the
@@ -135,8 +105,8 @@ export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUser
       .catch(() => {});
   }, []);
 
-  const canManage = role === "owner" || role === "staff";
-  const canUpdateStatus = role === "owner" || role === "staff" || role === "field";
+  const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
+  const canReleaseRetention = useCapability("jobs.release_retention");
 
   async function handleReleaseRetention() {
     if (!job) return;
@@ -201,12 +171,12 @@ export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUser
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {canManage && (
+            {canEditJob && (
               <Button variant="secondary" onClick={() => setEditOpen(true)}>
                 Edit job
               </Button>
             )}
-            {canManage && job.retentionPct > 0 && (
+            {canReleaseRetention && job.retentionPct > 0 && (
               <Button variant="secondary" onClick={() => setReleaseOpen(true)} disabled={busy}>
                 Release retention
               </Button>
@@ -246,16 +216,16 @@ export function JobDetail({ jobId, currentUserId }: { jobId: string; currentUser
           <TabsTrigger value="costing">Costing</TabsTrigger>
         </TabsList>
         <TabsContent value="milestones">
-          <MilestonesSection job={job} canManage={canManage} canUpdateStatus={canUpdateStatus} onJobChanged={load} />
+          <MilestonesSection job={job} onJobChanged={load} />
         </TabsContent>
         <TabsContent value="variations">
-          <VariationOrdersSection job={job} canCreate={canManage} canApply={canManage} onJobChanged={load} />
+          <VariationOrdersSection job={job} onJobChanged={load} />
         </TabsContent>
         <TabsContent value="photos">
-          <PhotosSection job={job} canUpload={canUpdateStatus} />
+          <PhotosSection job={job} />
         </TabsContent>
         <TabsContent value="notes">
-          <NotesSection job={job} canAdd={canUpdateStatus} />
+          <NotesSection job={job} />
         </TabsContent>
         <TabsContent value="costing">
           <CostingSection job={job} />

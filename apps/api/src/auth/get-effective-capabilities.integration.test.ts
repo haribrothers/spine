@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CAPABILITIES } from "@spine/shared";
 import { auth } from "./auth";
-import { FIELD_OWN_CAPABILITIES, getEffectiveCapabilities } from "./capability.util";
+import { FIELD_ALWAYS_CAPABILITIES, FIELD_OWN_CAPABILITIES, getEffectiveCapabilities } from "./capability.util";
 import { createDb, type Database } from "../db/client";
 import { member, teamMemberships, teamPrivileges, teams, user } from "../db/schema";
 
@@ -37,7 +37,7 @@ describe("getEffectiveCapabilities (requires local Postgres)", () => {
     await db.delete(user).where(eq(user.id, owner.user.id));
   });
 
-  it("Field gets true only for FIELD_OWN_CAPABILITIES, false for everything else", async () => {
+  it("Field gets true only for FIELD_OWN_CAPABILITIES and FIELD_ALWAYS_CAPABILITIES, false for everything else", async () => {
     const ownerEmail = `caps-field-owner-${randomUUID()}@example.com`;
     const fieldEmail = `caps-field-${randomUUID()}@example.com`;
     const owner = await auth.api.signUpEmail({ body: { email: ownerEmail, password: "testpassword123", name: "Owner" } });
@@ -50,7 +50,7 @@ describe("getEffectiveCapabilities (requires local Postgres)", () => {
 
     const result = await getEffectiveCapabilities(db, { orgId, userId: field.user.id });
     for (const capability of CAPABILITIES) {
-      expect(result[capability]).toBe(FIELD_OWN_CAPABILITIES.has(capability));
+      expect(result[capability]).toBe(FIELD_OWN_CAPABILITIES.has(capability) || FIELD_ALWAYS_CAPABILITIES.has(capability));
     }
 
     await db.delete(user).where(eq(user.id, owner.user.id));
