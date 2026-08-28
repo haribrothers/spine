@@ -194,7 +194,22 @@ export const leads = pgTable(
     valueAmount: bigint("value_amount", { mode: "bigint" }).notNull().default(sql`0`),
     valueCurrency: text("value_currency").notNull(),
     source: text("source"),
+    /** Assigned pipeline owner (the rep working this lead) — distinct from `createdByUserId` below, and reassignable; never used as the "own vs others" ownership signal, only `createdByUserId` is (see that column's comment). */
     ownerUserId: text("owner_user_id").references(() => user.id, { onDelete: "set null" }),
+    /**
+     * PRD §2.1/§9 S-01.16 — the "own vs others" capability split
+     * (`leads.edit_own`/`edit_others`/`delete_own`/`delete_others`), same
+     * pattern as `contacts.createdByUserId` above: nullable (pre-migration
+     * rows have no known creator and are treated as unowned by anyone, only
+     * touchable via the `_others` capability), set once at creation, never
+     * reassigned, `onDelete: "set null"` so deleting the creating user never
+     * blocks or cascades onto a lead that still has real business value.
+     * Deliberately NOT `ownerUserId` above — that field is a reassignable
+     * pipeline-rep assignment, not a fixed "who created this" fact, so it's
+     * the wrong signal for a permission check that must stay stable even
+     * after a lead changes hands.
+     */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     title: text("title"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -204,6 +219,7 @@ export const leads = pgTable(
     index("leads_org_stage_idx").on(table.orgId, table.stage),
     index("leads_contact_idx").on(table.contactId),
     index("leads_owner_idx").on(table.ownerUserId),
+    index("leads_created_by_idx").on(table.createdByUserId),
   ],
 );
 

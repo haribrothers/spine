@@ -847,6 +847,42 @@ restore/delete are gated, independently for Contacts vs. Catalogue.
    catalogue item regardless of who created it — Owner bypasses this
    split entirely, same as every other capability in §2.1.
 
+### 13.2 Leads & Activities — same "own vs others" split, independent of Contacts/Catalogue (§9 S-01.16)
+
+Same setup and pattern as §13.1, applied to the **Manage Leads** and
+**Manage Activities** groups instead — verify these two are also
+independent of each other and of Contacts/Catalogue.
+
+1. As Owner, confirm the privilege matrix now has four resource groups
+   total: **Manage Contacts**, **Manage Catalogue**, **Manage Leads**,
+   **Manage Activities** — each collapsible, each with its own "grant
+   all" switch, each listing Create/edit own, Edit others', Delete own,
+   Delete others' for that resource.
+2. Grant Team A only **Manage Leads → Create/edit own**. As Staff User 1
+   (Team A), create a new lead — succeeds. Try to edit a lead someone
+   else created — blocked. Try to create or edit an **Activity** (a
+   logged call/note/task) — also blocked, since Leads access grants
+   nothing for Activities.
+3. Grant Team A **Manage Activities → Create/edit own** as well. Staff
+   User 1 can now log a new activity (e.g. a call against a contact) and
+   edit their own — but still can't edit one logged by someone else
+   without **Edit others' activities**.
+4. **Reassignment doesn't equal ownership**: as Owner, create a lead and
+   assign it (the "pipeline owner"/rep field, not the creator) to Staff
+   User 2, who has no Leads grants at all. Confirm Staff User 2 still
+   **cannot** edit that lead just because it's assigned to them — only
+   whoever *created* it (or someone with `edit_others`) can. Repeat with
+   an Activity's "assigned to" field instead of a lead's pipeline owner.
+5. Confirm "mark done" / "mark undone" on an activity someone else
+   logged requires **Edit others' activities**, same as a text edit
+   would — it's not a separately-gated action.
+6. Confirm the pipeline-by-stage dashboard chart (Dashboard →
+   "pipeline by stage" widget, if visible) shows for every Staff/Field
+   user regardless of Leads grants — this became an unconditional read,
+   same as the Leads list itself.
+7. As Owner, confirm you can edit/delete every lead and activity
+   regardless of who created it, same as Contacts/Catalogue.
+
 ---
 
 ## 14. Design system spot-check

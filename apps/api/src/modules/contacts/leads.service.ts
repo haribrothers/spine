@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { leads, leadStageEnum } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
@@ -101,6 +102,7 @@ export class LeadsService {
           source: input.source ?? null,
           ownerUserId: input.ownerUserId ?? null,
           title: input.title ?? null,
+          createdByUserId: actorUserId,
         })
         .returning();
       if (lead) {
@@ -121,6 +123,10 @@ export class LeadsService {
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateLeadInput) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "leads.edit_own",
+      others: "leads.edit_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(leads)
@@ -155,6 +161,10 @@ export class LeadsService {
 
   async delete(orgId: string, id: string, actorUserId: string) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "leads.delete_own",
+      others: "leads.delete_others",
+    });
     await this.db.transaction(async (tx) => {
       await this.auditLog.record(tx, {
         orgId,

@@ -267,6 +267,20 @@
       "when": 1787939999000,
       "tag": "0037_split_catalog_from_contacts_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1787940949731,
+      "tag": "0038_panoramic_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1787941500000,
+      "tag": "0039_split_leads_manage_capability",
+      "breakpoints": true
     }
   ]
 }

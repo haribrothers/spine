@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { activities, leads } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
@@ -91,6 +92,10 @@ export class ActivitiesService {
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateActivityInput) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "activities.edit_own",
+      others: "activities.edit_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(activities)
@@ -123,6 +128,10 @@ export class ActivitiesService {
 
   async markDone(orgId: string, id: string, actorUserId: string) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "activities.edit_own",
+      others: "activities.edit_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(activities)
@@ -145,6 +154,10 @@ export class ActivitiesService {
 
   async markUndone(orgId: string, id: string, actorUserId: string) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "activities.edit_own",
+      others: "activities.edit_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(activities)
@@ -167,6 +180,10 @@ export class ActivitiesService {
 
   async delete(orgId: string, id: string, actorUserId: string) {
     const existing = await this.getOne(orgId, id);
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "activities.delete_own",
+      others: "activities.delete_others",
+    });
     await this.db.transaction(async (tx) => {
       const contactId = await this.resolveContactId(orgId, existing);
       await this.auditLog.record(tx, {

@@ -6,6 +6,15 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { LeadsService, type LeadStage } from "./leads.service";
 
+/**
+ * Own/others ownership-aware capability split (PRD §9 S-01.16), same
+ * pattern as Contacts/Catalogue — see contacts.controller.ts's own header
+ * comment for the full rationale on why update/delete carry no
+ * `@RequireCapability` here and instead defer to `LeadsService`'s
+ * `requireOwnershipCapability` call. `GET` routes (including
+ * `summary-by-stage`) carry no capability gate at all — read is
+ * unconditional for every Staff/Field user.
+ */
 @Controller("leads")
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
@@ -18,8 +27,6 @@ export class LeadsController {
 
   /** S-09.11 (dashboard v2) — "pipeline by stage" chart. Declared before `:id` — see JobsController.milestonesDue's own comment on why route order matters here. */
   @Get("summary-by-stage")
-  @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   async summaryByStage(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.leadsService.summaryByStage(orgId);
@@ -33,7 +40,7 @@ export class LeadsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
+  @RequireCapability("leads.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -43,7 +50,6 @@ export class LeadsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -53,7 +59,6 @@ export class LeadsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

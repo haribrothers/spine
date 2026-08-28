@@ -6,6 +6,15 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { ActivitiesService } from "./activities.service";
 
+/**
+ * Own/others ownership-aware capability split (PRD §9 S-01.16), same
+ * pattern as Contacts/Catalogue/Leads — see contacts.controller.ts's own
+ * header comment for the full rationale on why update/markDone/markUndone/
+ * delete carry no `@RequireCapability` here and instead defer to
+ * `ActivitiesService`'s `requireOwnershipCapability` call. `GET` routes
+ * carry no capability gate at all — read is unconditional for every
+ * Staff/Field user.
+ */
 @Controller("activities")
 export class ActivitiesController {
   constructor(private readonly activitiesService: ActivitiesService) {}
@@ -34,7 +43,7 @@ export class ActivitiesController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
+  @RequireCapability("activities.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -44,7 +53,6 @@ export class ActivitiesController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -54,7 +62,6 @@ export class ActivitiesController {
 
   @Post(":id/done")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async markDone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -63,7 +70,6 @@ export class ActivitiesController {
 
   @Post(":id/undone")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async markUndone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -72,7 +78,6 @@ export class ActivitiesController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
