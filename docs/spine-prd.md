@@ -91,13 +91,21 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Edit others' activities | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete own activities | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete others' activities | ✅ | ✅ (default) | ❌ | ❌ |
-| Create/edit quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' quotes | ✅ | ✅ (default) | ❌ | ❌ |
+| Send a quote | ✅ | ✅ (default) | ❌ | ❌ |
+| Revise a quote | ✅ | ✅ (default) | ❌ | ❌ |
 | Approve quote above discount threshold | ✅ | ❌ (default; Owner-only in practice, but Team-configurable) | ❌ | ❌ |
 | Create invoices, record payments | ✅ | ✅ (default) | ❌ | ❌ |
 | Submit expense | ✅ | ✅ (default) | ✅ | ❌ |
 | Approve expense | ✅ | ✅ (default) | ❌ | ❌ |
 | Upload site photos, update milestone status | ✅ | ✅ (default) | ✅ | ❌ |
-| Create/invite/manage meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
+| Create/edit own meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
+| Edit others' meetings | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own meetings | ✅ | ✅ (default) | View own + invited only | ❌ |
+| Delete others' meetings | ✅ | ✅ (default) | ❌ | ❌ |
 | View ledger / journals | ✅ | ❌ (default) | ❌ | ❌ |
 | Manage users, teams, permissions, org settings, tax rules | ✅ | ❌, not Team-configurable — Owner-only | ❌ | ❌ |
 | View & accept a specific quote | — | — | — | ✅ |
@@ -426,6 +434,7 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-01.14 | As any user editing or deleting a recurring meeting, I want to choose whether my change applies to just this occurrence or the whole series, so I can adjust one instance without disturbing the rest of the recurrence |
 | S-01.15 | As an owner, I want to grant a Team the ability to edit or delete only the contacts they created, or extend that to everyone's contacts, separately for editing vs. deleting, so a junior Team can help maintain the CRM without being able to alter or remove a colleague's records |
 | S-01.16 | As an owner, I want the same own-vs-others edit/delete split available for Contacts (S-01.15) to apply separately to Leads and to Activities, so a Team's access to the pipeline and to logged calls/notes/tasks can be tuned independently of its Contacts access |
+| S-01.17 | As an owner, I want to grant a Team the ability to edit or delete only the meetings they organize, or extend that to everyone's meetings, so scheduling access can be tuned per Team without touching who can already SEE a given meeting |
 
 *Acceptance highlights:* duplicate detection warns on matching phone or email but does not block. Deleting a contact with financial documents is blocked; deactivation is offered instead.
 
@@ -444,6 +453,8 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 *Acceptance highlights (S-01.14 — per-occurrence edit/delete scope):* editing or deleting a recurring meeting from the popover first shows a scope-choice alert with two options — **"This event"** or **"All events"** — no "this and following" split (not needed for v1; a full series-split adds meaningful complexity — renumbering, re-linking attendee history — that isn't justified yet). Choosing **"All events"** behaves exactly as recurring meetings do today: the edit dialog opens against the series (title, time, recurrence rule, attendees, etc.), or delete removes the whole series after the existing confirmation dialog. Choosing **"This event"** introduces a new concept, occurrence exceptions, tracked in a new `meeting_occurrence_exceptions` table (`meeting_id`, `occurrence_date`, `status: modified|cancelled`, plus nullable overrides for the fields a single occurrence can diverge from: `start_at`, `end_at`, `title`, `location`, `description`) — editing "this event" opens the edit dialog pre-filled from the series but scoped to just that occurrence's date, and saving writes/updates the exception row rather than the series; deleting "this event" writes a `cancelled` exception rather than removing the series. Occurrence expansion (turning a `recurrence` rule into calendar instances for display) must consult `meeting_occurrence_exceptions` and skip `cancelled` dates / apply `modified` overrides to the matching instance. The invite list and visibility remain series-level only in v1 — occurrence exceptions cover schedule/detail fields, not attendees (consistent with S-01.10/S-01.11's existing "no per-occurrence attendee overrides" constraint, which stays true for attendees specifically even as scheduling gains occurrence-level overrides). A meeting linked to a contact's Timeline (S-01.9) reflects occurrence exceptions the same way the calendar does — a cancelled occurrence doesn't appear, a modified one shows its overridden time.
 
 *Acceptance highlights (edit dialog restructure, applies to S-01.9 → S-01.11):* the create/edit dialog splits into two tabs — **Details** (title, contact link, time/recurrence, category, location, notes — unchanged from today) and **People** (visibility and invitees, moved out of the Details flow). On the People tab, the private/org choice becomes a single switch, "Visible to everyone in the org" (off = `private`, on = `org`), replacing the two-option radio — same two visibility values underneath, presentation-only change. Adding invitees changes from an instant multi-select to an explicit two-step flow: a searchable combobox for picking one org member at a time plus an **Add** button that commits them into a list below, where each added person has their own remove control. This makes adding and removing attendees each a distinct, undoable-feeling action rather than a single toggle-heavy multi-select, and scales better as an org's member list grows.
+
+*Acceptance highlights (S-01.17 — own vs. others' meetings):* `meetings.manage` is replaced by `meetings.edit_own`/`meetings.edit_others`/`meetings.delete_own`/`meetings.delete_others`, same own/others model as Contacts/Catalogue/Leads/Activities/Quotes. "Own" is keyed on `organizerUserId` (meetings have no separate `createdByUserId` — the organizer set at create time is the ownership signal, the same "assigned person" pattern already used for leads' `ownerUserId`). This is completely independent of, and layered on top of, the pre-existing read-visibility system (S-01.10/S-01.11's private/org + invite list) — a Team's own/others grants control who can create/edit/delete a meeting they can already see; they never widen who can SEE a meeting in the first place. `respond()` (RSVP, S-01.12) remains self-service and capability-free, unaffected by this split.
 
 ### FEAT-02 · Catalogue
 
@@ -475,8 +486,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-03.10 | As staff, I want to convert an accepted quote into a job and its first invoice in one action, so nothing is retyped |
 | S-03.11 | As staff, I want quotes to expire on a validity date and show as expired, so old prices aren't honoured by accident |
 | S-03.12 | As a field user, I want to show the quote on my phone and capture the customer's acceptance on site, so we close on the spot |
+| S-03.13 | As an owner, I want to grant a Team the ability to edit or delete only the quotes they created, or extend that to everyone's, separately from who can send or revise a quote, so junior staff can draft without being able to issue on my behalf |
 
 *Acceptance highlights:* the public token is unguessable, scoped to one quote, and expires with the quote's validity date plus a grace period. Accepting a superseded version is blocked with an explanation. An accepted quote becomes read-only.
+
+*Acceptance highlights (S-03.13 — own vs. others' quotes):* same own/others model as Contacts/Catalogue/Leads/Activities (§2.1) — `quotes.edit_own`/`quotes.edit_others` gate create and edit (already draft-only; a sent quote can never be edited by anyone), `quotes.delete_own`/`quotes.delete_others` gate delete (already draft-only). Sending (`POST /:id/send`) and revising (`POST /:id/revise`) are one-way workflow transitions, not edits, so they get their own dedicated capabilities — `quotes.send` and `quotes.revise` — independent of the edit/delete pair; an Owner can let a Team draft quotes without letting them send, or vice versa. `quotes.approve_discount` (S-03.9) is unaffected.
 
 ### FEAT-04 · Jobs & Milestones
 

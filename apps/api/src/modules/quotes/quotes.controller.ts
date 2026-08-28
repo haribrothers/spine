@@ -17,6 +17,17 @@ import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
  * CatalogController, EVERY route here — including GETs — carries
  * `@OrgRoles(["owner", "staff"])`. `POST /:id/approve-discount` is further
  * restricted to `["owner"]` per S-03.9 ("requires my approval").
+ *
+ * `quotes.manage` is replaced by an own/others split (PRD §9, same pattern
+ * as Contacts/Catalogue/Leads/Activities/Meetings): `quotes.edit_own`
+ * gates create; update/delete carry no `@RequireCapability` here since
+ * ownership depends on the record's `createdByUserId`, checked inside
+ * `QuotesService` via `requireOwnershipCapability` right after its
+ * existing read-before-write lookup. `send`/`revise` are one-way status
+ * transitions, not edits, so they get their own dedicated capabilities
+ * (`quotes.send`/`quotes.revise`) rather than folding into edit_own —
+ * "can I edit my own draft" and "can I send it" are different questions
+ * an Owner may want to grant separately.
  */
 @Controller("quotes")
 @OrgRoles(["owner", "staff"])
@@ -75,7 +86,7 @@ export class QuotesController {
   }
 
   @Post()
-  @RequireCapability("quotes.manage")
+  @RequireCapability("quotes.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -84,7 +95,6 @@ export class QuotesController {
   }
 
   @Put(":id")
-  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -101,7 +111,7 @@ export class QuotesController {
    * request or the number allocation it just performed).
    */
   @Post(":id/send")
-  @RequireCapability("quotes.manage")
+  @RequireCapability("quotes.send")
   @UseInterceptors(IdempotencyInterceptor)
   async send(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -109,7 +119,7 @@ export class QuotesController {
   }
 
   @Post(":id/revise")
-  @RequireCapability("quotes.manage")
+  @RequireCapability("quotes.revise")
   @UseInterceptors(IdempotencyInterceptor)
   async revise(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -135,7 +145,6 @@ export class QuotesController {
 
   /** Only a draft is ever hard-deletable — see QuotesService.delete's own comment. */
   @Delete(":id")
-  @RequireCapability("quotes.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

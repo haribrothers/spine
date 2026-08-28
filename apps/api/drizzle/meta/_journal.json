@@ -281,6 +281,13 @@
       "when": 1787941500000,
       "tag": "0039_split_leads_manage_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1787942200000,
+      "tag": "0040_split_quotes_meetings_manage_capability",
+      "breakpoints": true
     }
   ]
 }

@@ -42,8 +42,10 @@ function describeRecurrence(rule: CalendarRecurrenceRule): string {
  * this component owns all meetings-domain content, same "app-local
  * composition" precedent as MeetingAttendeesFields/MeetingAttendeesPanel).
  *
- * Edit/Delete are gated on `canManage` — the same `meetings.manage`-derived
- * flag that already gates the edit dialog's own availability, not a new
+ * Edit/Delete are gated on `canManage` — the same role-derived flag (owner/
+ * staff; the API's own `meetings.edit_own`/`edit_others`/`delete_own`/
+ * `delete_others` capabilities are the real server-side gate) that already
+ * gates the edit dialog's own availability, not a new
  * client-side check invented here. RSVP buttons render only when the
  * current user has their own attendee row (self-service, no capability
  * required — PRD S-01.12).

@@ -11,6 +11,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { meetingAttendees, meetingOccurrenceExceptions, meetings, member, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 
@@ -278,10 +279,15 @@ export class MeetingsService {
   }
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateMeetingInput) {
-    // Bypass visibility for the pre-fetch here — only meetings.manage
-    // holders reach this method at all (see controller's @RequireCapability),
+    // Bypass visibility for the pre-fetch here — only meetings.edit_own/
+    // edit_others holders reach this method at all (checked immediately
+    // below via requireOwnershipCapability, once the record is loaded),
     // and the update itself must still target the right org-scoped row.
     const existing = await this.getOne(orgId, id, { userId: actorUserId, role: "owner" });
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.organizerUserId, {
+      own: "meetings.edit_own",
+      others: "meetings.edit_others",
+    });
 
     if (input.scope === "occurrence") {
       return this.updateOccurrenceException(orgId, existing, actorUserId, input);
@@ -434,6 +440,10 @@ export class MeetingsService {
 
   async delete(orgId: string, id: string, actorUserId: string, scope: DeleteMeetingScopeInput = {}) {
     const existing = await this.getOne(orgId, id, { userId: actorUserId, role: "owner" });
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.organizerUserId, {
+      own: "meetings.delete_own",
+      others: "meetings.delete_others",
+    });
 
     if (scope.scope === "occurrence") {
       return this.deleteOccurrenceException(orgId, existing, actorUserId, scope);

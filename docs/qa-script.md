@@ -328,14 +328,16 @@ real, also walk ONE job manually through the full sequence below.
     current status (Invited/Accepted/Declined/Tentative) — no need to
     ask them separately.
 
-### 6.3 `meetings.manage` permission (cross-check with §13)
+### 6.3 Meetings own/others permissions (cross-check with §13.3)
 
-15. From Users/Teams/Permissions, turn OFF `meetings.manage` for a
-    Team. Confirm a Staff member on only that Team can no longer
-    create/edit/delete meetings (the "+ New meeting" flow or edit
-    dialog should fail with a permission error), but CAN still respond
-    to an existing invite and see `org`-visibility meetings — this
-    capability gates mutation only, never read access.
+15. From Users/Teams/Permissions, turn OFF every row in the **Manage
+    Meetings** group for a Team (edit_own/edit_others/delete_own/
+    delete_others). Confirm a Staff member on only that Team can no
+    longer create/edit/delete meetings (the "+ New meeting" flow or
+    edit dialog should fail with a permission error), but CAN still
+    respond to an existing invite and see `org`-visibility meetings —
+    this capability group gates mutation only, never read access. See
+    §13.3 for the full own-vs-others walkthrough.
 
 ---
 
@@ -882,6 +884,63 @@ independent of each other and of Contacts/Catalogue.
    same as the Leads list itself.
 7. As Owner, confirm you can edit/delete every lead and activity
    regardless of who created it, same as Contacts/Catalogue.
+
+### 13.3 Quotes — own/others split, plus separate Send/Revise capabilities (§9 S-03.13)
+
+1. In the privilege matrix, confirm a **Manage Quotes** group with six
+   rows: Create/edit own, Edit others', Delete own, Delete others',
+   Send a quote, Revise a quote.
+2. Grant Team A only **Create/edit own**. As Staff User 1 (Team A),
+   create a draft quote — succeeds. Confirm the quote is fully visible
+   to every other Staff/Field user regardless of their own Quotes
+   grants (read stays unconditional).
+3. Still as Staff User 1, try to click **Send** on the draft — should
+   be **blocked** even though they created it: Send is a separate
+   capability, not implied by edit_own.
+4. Grant Team A **Send a quote** too. Staff User 1 can now send their
+   own draft. Confirm a SENT quote can no longer be edited by anyone
+   (Edit control disappears/errors), regardless of any grant — this was
+   already true before the split and must stay true.
+5. As Staff User 2 (a different Team, granted only **Edit others'**),
+   open Staff User 1's still-draft quote and edit it — succeeds. Try to
+   send it — blocked (no Send grant).
+6. Confirm **Revise a quote** (creating a new draft version of a sent
+   quote) is gated independently — a user with Edit own/others but no
+   Revise grant should be blocked from the "Revise" action on a sent
+   quote.
+7. As Owner, confirm every action above is always available regardless
+   of Team grants.
+
+### 13.4 Meetings — own/others split, independent of read-visibility (§9 S-01.17)
+
+Needs two Staff accounts in different Teams, as in §13.1-13.3. This is
+the one resource in this pattern where "own" means **organizer**, not
+literal creator — but functionally the same person in practice (whoever
+creates a meeting becomes its organizer).
+
+1. Confirm the privilege matrix now shows a **Manage Meetings** group
+   (edit_own/edit_others/delete_own/delete_others) in place of the old
+   single "Create/invite/manage meetings" row.
+2. Grant Team A only **Create/edit own**. As Staff User 1 (Team A),
+   create an `org`-visibility meeting — succeeds. As Staff User 2 (no
+   meetings grants at all), confirm they can still **see** this meeting
+   on the calendar (org-visibility read is completely independent of
+   the Manage Meetings group — do not confuse this with S-01.10/S-01.11's
+   private/org visibility system, which this change does not touch).
+3. Staff User 2 tries to **edit** that same meeting — blocked (no
+   edit_own — they didn't organize it — and no edit_others).
+4. Grant Team B (Staff User 2) **Edit others'** — now editing Staff
+   User 1's meeting succeeds.
+5. Create a **private** meeting as Staff User 1, inviting only
+   themselves (no other attendees). Confirm Staff User 2 — even WITH
+   full Manage Meetings access — still cannot SEE this meeting at all
+   in list/calendar views (403/absent, not just hidden buttons) unless
+   they're invited or the meeting is switched to org-visibility. This
+   is the critical regression check: the own/others split must never
+   widen who can see a private meeting.
+6. As Owner, confirm you can edit/delete every meeting (private or
+   org, organized by anyone) regardless of Team grants — same
+   blanket-access rule as everywhere else in §2.1.
 
 ---
 

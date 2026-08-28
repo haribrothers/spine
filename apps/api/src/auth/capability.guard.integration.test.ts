@@ -115,8 +115,8 @@ describe("CapabilityGuard (requires local Postgres)", () => {
   });
 
   it("Staff with no Teams is rejected", async () => {
-    const guard = guardFor("quotes.manage");
-    const context = fakeContext("quotes.manage", {
+    const guard = guardFor("quotes.edit_own");
+    const context = fakeContext("quotes.edit_own", {
       session: { activeOrganizationId: orgId },
       user: { id: staffUserId },
     });
@@ -126,36 +126,36 @@ describe("CapabilityGuard (requires local Postgres)", () => {
   it("Staff with a Team granting the capability passes", async () => {
     const [team] = await db.insert(teams).values({ orgId, name: "Grant Team" }).returning();
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "quotes.manage", granted: true });
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "quotes.edit_own", granted: true });
 
-    const guard = guardFor("quotes.manage");
-    const context = fakeContext("quotes.manage", {
+    const guard = guardFor("quotes.edit_own");
+    const context = fakeContext("quotes.edit_own", {
       session: { activeOrganizationId: orgId },
       user: { id: staffUserId },
     });
     await expect(guard.canActivate(context)).resolves.toBe(true);
   });
 
-  it("Staff without meetings.manage granted is rejected from creating/editing/deleting meetings", async () => {
+  it("Staff without meetings.edit_own granted is rejected from creating/editing meetings", async () => {
     const [team] = await db.insert(teams).values({ orgId, name: "No Meetings Team" }).returning();
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.manage", granted: false });
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.edit_own", granted: false });
 
-    const guard = guardFor("meetings.manage");
-    const context = fakeContext("meetings.manage", {
+    const guard = guardFor("meetings.edit_own");
+    const context = fakeContext("meetings.edit_own", {
       session: { activeOrganizationId: orgId },
       user: { id: staffUserId },
     });
     await expect(guard.canActivate(context)).rejects.toThrow(/missing capability/i);
   });
 
-  it("Staff with meetings.manage granted passes — this capability does NOT control read/visibility, only mutation, see MeetingsService", async () => {
+  it("Staff with meetings.edit_own granted passes — this capability does NOT control read/visibility, only mutation, see MeetingsService", async () => {
     const [team] = await db.insert(teams).values({ orgId, name: "Meetings Team" }).returning();
     await db.insert(teamMemberships).values({ teamId: team!.id, memberId: staffMemberId });
-    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.manage", granted: true });
+    await db.insert(teamPrivileges).values({ teamId: team!.id, capability: "meetings.edit_own", granted: true });
 
-    const guard = guardFor("meetings.manage");
-    const context = fakeContext("meetings.manage", {
+    const guard = guardFor("meetings.edit_own");
+    const context = fakeContext("meetings.edit_own", {
       session: { activeOrganizationId: orgId },
       user: { id: staffUserId },
     });
@@ -184,8 +184,8 @@ describe("CapabilityGuard (requires local Postgres)", () => {
   });
 
   it("rejects when session has no active organisation", async () => {
-    const guard = guardFor("quotes.manage");
-    const context = fakeContext("quotes.manage", { session: {}, user: { id: staffUserId } });
+    const guard = guardFor("quotes.edit_own");
+    const context = fakeContext("quotes.edit_own", { session: {}, user: { id: staffUserId } });
     await expect(guard.canActivate(context)).rejects.toThrow(/no active organisation/i);
   });
 });

@@ -4,7 +4,7 @@ import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
-import { member, meetingAttendees, meetingOccurrenceExceptions, meetings, user } from "../../db/schema";
+import { member, meetingAttendees, meetingOccurrenceExceptions, meetings, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
@@ -67,7 +67,25 @@ describe("MeetingsService visibility (requires local Postgres)", () => {
     const organizer = await auth.api.signUpEmail({ body: { email: organizerEmail, password: "testpassword123", name: "Vis Organizer" } });
     organizerUserId = organizer.user.id;
     await db.delete(member).where(eq(member.userId, organizer.user.id));
-    await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: organizer.user.id, role: "staff", createdAt: new Date() });
+    const [organizerMember] = await db
+      .insert(member)
+      .values({ id: randomUUID(), organizationId: orgId, userId: organizer.user.id, role: "staff", createdAt: new Date() })
+      .returning();
+
+    // This file predates the own/others capability split — MeetingsService's
+    // update()/delete() now check meetings.edit_own/edit_others/delete_own/
+    // delete_others internally (see capability.util.ts's
+    // requireOwnershipCapability), so the organizer used throughout these
+    // tests needs a real grant, same as any real Staff user would via the
+    // Team privilege matrix. Every call below acts on the organizer's own
+    // meetings, so *_own is sufficient — no test here exercises the
+    // *_others path (that's meetings-ownership.integration.test.ts's job).
+    const [organizerTeam] = await db.insert(teams).values({ orgId, name: "Vis Organizer Team" }).returning();
+    await db.insert(teamMemberships).values({ teamId: organizerTeam!.id, memberId: organizerMember!.id });
+    await db.insert(teamPrivileges).values([
+      { teamId: organizerTeam!.id, capability: "meetings.edit_own", granted: true },
+      { teamId: organizerTeam!.id, capability: "meetings.delete_own", granted: true },
+    ]);
 
     const invited = await auth.api.signUpEmail({ body: { email: invitedEmail, password: "testpassword123", name: "Vis Invited" } });
     invitedUserId = invited.user.id;

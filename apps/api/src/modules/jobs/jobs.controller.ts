@@ -209,9 +209,17 @@ export class JobsController {
     return this.variationOrdersService.list(orgId, id);
   }
 
+  /**
+   * Creating a variation order is quote-like document creation, so it
+   * reuses `quotes.edit_own` for now rather than inventing a Jobs-specific
+   * capability — Jobs itself doesn't yet have an own/others split (planned
+   * as a later phase, PRD §9), so `quotes.edit_own` is the closest existing
+   * capability with the right shape. Revisit once Jobs gets its own
+   * capability family.
+   */
   @Post(":id/variation-orders")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("quotes.manage")
+  @RequireCapability("quotes.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async createVariationOrder(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);

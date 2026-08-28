@@ -6,6 +6,20 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { MeetingsService } from "./meetings.service";
 
+/**
+ * Own/others ownership-aware capability split (PRD §9), same pattern as
+ * Contacts/Catalogue/Leads/Activities — `meetings.manage` is replaced by
+ * `meetings.edit_own`/`edit_others`/`delete_own`/`delete_others`, keyed on
+ * `organizerUserId` (meetings have no separate `createdByUserId`; the
+ * organizer set at create time is the closest equivalent, same
+ * "assigned/owning person, not a literal audit-log creator" pattern as
+ * leads' `ownerUserId`). Update/delete carry no `@RequireCapability` here
+ * — `MeetingsService` performs the check itself via
+ * `requireOwnershipCapability` once the record is loaded. This is
+ * completely independent of the separate, unconditional read-visibility
+ * system (private/org + invite list, enforced in `MeetingsService`
+ * regardless of any capability) — see that service's own comments.
+ */
 @Controller("meetings")
 export class MeetingsController {
   constructor(private readonly meetingsService: MeetingsService) {}
@@ -57,7 +71,7 @@ export class MeetingsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("meetings.manage")
+  @RequireCapability("meetings.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -67,7 +81,6 @@ export class MeetingsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -78,7 +91,6 @@ export class MeetingsController {
   /** PRD S-01.14 — `scope`/`occurrenceDate` are query params, not a DELETE body, to avoid the body-on-DELETE question entirely; `?scope=occurrence&occurrenceDate=...` deletes just that occurrence, defaulting to the whole series when omitted. */
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("meetings.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(
     @Session() session: UserSession,

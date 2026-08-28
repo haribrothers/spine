@@ -119,8 +119,8 @@ describe("TeamsService (requires local Postgres)", () => {
 
     it("returns the full capability set with unset rows defaulting to false", async () => {
       const team = await teamsService.create(orgId, "Sparse Team");
-      const result = await teamsService.setPrivileges(orgId, team.id, [{ capability: "quotes.manage", granted: true }]);
-      expect(result["quotes.manage"]).toBe(true);
+      const result = await teamsService.setPrivileges(orgId, team.id, [{ capability: "quotes.edit_own", granted: true }]);
+      expect(result["quotes.edit_own"]).toBe(true);
       expect(result["ledger.view"]).toBe(false);
     });
   });

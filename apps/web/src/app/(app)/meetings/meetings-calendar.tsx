@@ -508,8 +508,9 @@ export function MeetingsCalendar() {
           // No client-side fine-grained capability check exists in this codebase yet
           // (see expenses-explorer.tsx/job-detail.tsx's own comments on the same
           // gap) — mirrors their established pattern of gating purely on coarse
-          // role (owner/staff, matching meetings.manage's @OrgRoles(["owner",
-          // "staff"])) fetched via GET /org/members. Hiding these buttons for a
+          // role (owner/staff, matching the meetings controller's
+          // @OrgRoles(["owner", "staff"]) on create/update/delete) fetched via
+          // GET /org/members. Hiding these buttons for a
           // role that lacks the capability is UI signal only; the server
           // independently 403s regardless.
           const myRole = members.find((m) => m.userId === session.user.id)?.role;

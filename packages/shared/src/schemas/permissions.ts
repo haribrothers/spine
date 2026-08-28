@@ -28,14 +28,22 @@ export const CAPABILITIES = [
   "activities.edit_others",
   "activities.delete_own",
   "activities.delete_others",
-  "quotes.manage",
+  "quotes.edit_own",
+  "quotes.edit_others",
+  "quotes.delete_own",
+  "quotes.delete_others",
+  "quotes.send",
+  "quotes.revise",
   "quotes.approve_discount",
   "invoices.manage",
   "expenses.submit",
   "expenses.approve",
   "purchases.manage",
   "jobs.update_milestones",
-  "meetings.manage",
+  "meetings.edit_own",
+  "meetings.edit_others",
+  "meetings.delete_own",
+  "meetings.delete_others",
   "ledger.view",
 ] as const;
 
@@ -141,9 +149,36 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Delete an activity that a different user logged.",
     group: "Manage Activities",
   },
-  "quotes.manage": {
-    label: "Create/edit quotes",
-    description: "Create and edit quotes.",
+  "quotes.edit_own": {
+    label: "Create/edit own quotes",
+    description:
+      "Create new quotes, and edit ones this user created themselves (only a draft quote can ever be edited — a sent quote is immutable regardless of this grant). Viewing every quote in the org, including ones created by others, needs no capability at all — read is always unconditional.",
+    group: "Manage Quotes",
+  },
+  "quotes.edit_others": {
+    label: "Edit others' quotes",
+    description: "Edit a draft quote that a different user created.",
+    group: "Manage Quotes",
+  },
+  "quotes.delete_own": {
+    label: "Delete own quotes",
+    description: "Delete a draft quote this user created themselves (only a draft is ever deletable).",
+    group: "Manage Quotes",
+  },
+  "quotes.delete_others": {
+    label: "Delete others' quotes",
+    description: "Delete a draft quote that a different user created.",
+    group: "Manage Quotes",
+  },
+  "quotes.send": {
+    label: "Send a quote",
+    description: "Issue a draft quote (allocates its number and emails it to the contact) — a one-way transition, not an edit, so it's gated separately from edit_own/edit_others.",
+    group: "Manage Quotes",
+  },
+  "quotes.revise": {
+    label: "Revise a quote",
+    description: "Create a new draft version of a sent quote.",
+    group: "Manage Quotes",
   },
   "quotes.approve_discount": {
     label: "Approve quote above discount threshold",
@@ -169,10 +204,26 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Upload site photos, update milestone status",
     description: "Attach job photos/notes and update milestone status.",
   },
-  "meetings.manage": {
-    label: "Create/invite/manage meetings",
+  "meetings.edit_own": {
+    label: "Create/edit own meetings",
     description:
-      "Create, edit, delete meetings and invite attendees. Read access to a specific meeting is enforced independently of this grant, by that meeting's own visibility and invite list — this capability never widens who can see a meeting, only who can create/edit/delete one.",
+      "Create new meetings, and edit ones this user organizes themselves (invite attendees, change time/details). \"Own\" is based on who organizes the meeting. Whether a user can SEE a given meeting at all is a separate, unconditional check — that meeting's own visibility (private/org) and invite list, independent of this grant.",
+    group: "Manage Meetings",
+  },
+  "meetings.edit_others": {
+    label: "Edit others' meetings",
+    description: "Edit a meeting that a different user organizes.",
+    group: "Manage Meetings",
+  },
+  "meetings.delete_own": {
+    label: "Delete own meetings",
+    description: "Delete a meeting this user organizes themselves.",
+    group: "Manage Meetings",
+  },
+  "meetings.delete_others": {
+    label: "Delete others' meetings",
+    description: "Delete a meeting that a different user organizes.",
+    group: "Manage Meetings",
   },
   "ledger.view": {
     label: "View ledger / journals",
@@ -201,13 +252,21 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "activities.edit_others": true,
   "activities.delete_own": true,
   "activities.delete_others": true,
-  "quotes.manage": true,
+  "quotes.edit_own": true,
+  "quotes.edit_others": true,
+  "quotes.delete_own": true,
+  "quotes.delete_others": true,
+  "quotes.send": true,
+  "quotes.revise": true,
   "quotes.approve_discount": false,
   "invoices.manage": true,
   "expenses.submit": true,
   "expenses.approve": true,
   "purchases.manage": true,
   "jobs.update_milestones": true,
-  "meetings.manage": true,
+  "meetings.edit_own": true,
+  "meetings.edit_others": true,
+  "meetings.delete_own": true,
+  "meetings.delete_others": true,
   "ledger.view": false,
 };

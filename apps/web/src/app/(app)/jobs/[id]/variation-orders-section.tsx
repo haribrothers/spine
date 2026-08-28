@@ -45,7 +45,7 @@ export function VariationOrdersSection({
   onJobChanged,
 }: {
   job: Job;
-  /** quotes.manage — raise a new variation order. */
+  /** quotes.edit_own — raise a new variation order. */
   canCreate: boolean;
   /** invoices.manage — apply an accepted variation order to the job's contract value. */
   canApply: boolean;

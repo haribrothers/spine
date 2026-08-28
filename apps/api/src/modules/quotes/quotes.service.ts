@@ -7,6 +7,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { quotes, quoteLines, contacts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
@@ -347,6 +348,10 @@ export class QuotesService {
     if (!existing) {
       throw new NotFoundException("Quote not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "quotes.edit_own",
+      others: "quotes.edit_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft quote can be edited. Revise it to create a new version instead.");
     }
@@ -693,6 +698,10 @@ export class QuotesService {
     if (!existing) {
       throw new NotFoundException("Quote not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "quotes.delete_own",
+      others: "quotes.delete_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft quote can be deleted");
     }

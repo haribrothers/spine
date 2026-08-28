@@ -9,7 +9,7 @@ export const CAPABILITY_KEY = "spine:requiredCapability";
  * Staff-reachable endpoint:
  *
  *   @OrgRoles(["owner", "staff"])
- *   @RequireCapability("quotes.manage")
+ *   @RequireCapability("quotes.edit_own")
  *   @Post()
  *   createQuote(...) { ... }
  *
