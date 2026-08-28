@@ -71,6 +71,19 @@ export const contacts = pgTable(
      * any list UI — it's purely a filter key for that one bulk-delete op.
      */
     isDemo: boolean("is_demo").notNull().default(false),
+    /**
+     * PRD §2.1/§9 S-01.15 — the "own vs others" capability split
+     * (`contacts.edit_own`/`edit_others`/`delete_own`/`delete_others`) needs
+     * to know who created a contact. Nullable: rows written before this
+     * column existed have no known creator and are treated as unowned by
+     * anyone (only the `_others` capability can touch them, never `_own` —
+     * see ContactsService/CatalogService's ownership-check call sites).
+     * `onDelete: "set null"` rather than `restrict`/`cascade` — deleting the
+     * creating user (e.g. a deactivated staff account removed later) must
+     * never block or cascade-delete a contact that still has real business
+     * value; the contact simply reverts to unowned.
+     */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -81,6 +94,7 @@ export const contacts = pgTable(
     index("contacts_org_email_idx").on(table.orgId, table.email),
     index("contacts_org_phone_idx").on(table.orgId, table.phone),
     index("contacts_org_demo_idx").on(table.orgId, table.isDemo),
+    index("contacts_created_by_idx").on(table.createdByUserId),
   ],
 );
 

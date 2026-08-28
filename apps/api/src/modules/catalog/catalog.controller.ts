@@ -7,13 +7,22 @@ import { requireOrgId } from "../org/settings.controller";
 import { CatalogService } from "./catalog.service";
 
 /**
- * Per §2.1's permission table ("Manage contacts & catalogue: Owner ✅,
- * Staff ✅, Field View"), GET routes carry no `@OrgRoles` restriction — any
- * authenticated org member (owner, staff, or field) can read. Every
+ * Per §2.1's permission table, GET routes carry no `@OrgRoles` restriction —
+ * any authenticated org member (owner, staff, or field) can read,
+ * unconditionally, regardless of who created a given catalogue item. Every
  * mutating route requires `@OrgRoles(["owner", "staff"])`, which also
  * blocks field server-side regardless of what the client sends. Route
  * prefix is `catalog-items` (plural resource, kebab-case), matching the
  * flat `contacts` prefix convention rather than nesting under `/catalog`.
+ *
+ * Own/others ownership-aware capability split (PRD §9 S-02.5), structurally
+ * identical to Contacts but using its own independent `catalog.*`
+ * capabilities (`catalog.edit_own`/`edit_others`/`delete_own`/
+ * `delete_others`) — a Team's Contacts and Catalogue grants are configured
+ * separately, not shared. See contacts.controller.ts's own header comment
+ * for the full rationale on why update/archive/restore/delete carry no
+ * `@RequireCapability` here and instead defer to `CatalogService`'s
+ * `requireOwnershipCapability` call.
  */
 @Controller("catalog-items")
 export class CatalogController {
@@ -38,7 +47,7 @@ export class CatalogController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("catalog.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -48,7 +57,6 @@ export class CatalogController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -58,7 +66,6 @@ export class CatalogController {
 
   @Post(":id/archive")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async archive(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -67,7 +74,6 @@ export class CatalogController {
 
   @Post(":id/restore")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async restore(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -76,7 +82,6 @@ export class CatalogController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

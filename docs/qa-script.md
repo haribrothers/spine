@@ -794,6 +794,59 @@ invited user alongside your Owner session.
     variation order** (all gated on `invoices.manage`/`quotes.manage`,
     which Field never has).
 
+### 13.1 Contacts & Catalogue — "own vs others" edit/delete split, per resource (§9 S-01.15/S-02.5)
+
+Needs two Staff accounts in different Teams. Read is unconditional for
+every Staff user regardless of Team grants — only create/edit/archive/
+restore/delete are gated, independently for Contacts vs. Catalogue.
+
+1. As Owner, go to **Team** → a team's **Privileges** tab. Confirm the
+   old single "Manage contacts & catalogue" row is gone, replaced by two
+   separate collapsible groups, each with its own header-level "grant
+   all" switch:
+   - **Manage Contacts**: Create/edit own contacts, Edit others'
+     contacts, Archive/delete own contacts, Archive/delete others'
+     contacts.
+   - **Manage Catalogue**: Create/edit own catalogue, Edit others'
+     catalogue, Archive/delete own catalogue, Archive/delete others'
+     catalogue.
+   Plus a separate, ungrouped **Manage leads & activities** row
+   (leads/activities kept their own gate, unrelated to this split).
+   Toggling a group header's switch ON/OFF should set all four of that
+   group's rows together in one action; toggling an individual row
+   should update just that row (and flip the group header's switch to
+   reflect whether all four are now granted).
+2. Create two Teams: "Team A" with only **Manage Contacts → Create/edit
+   own** granted (nothing else in either group), "Team B" with only
+   **Manage Contacts → Edit others'** and **Archive/delete others'**
+   granted. Assign Staff User 1 to Team A, Staff User 2 to Team B.
+3. As Staff User 1 (Team A), create a new contact. Confirm it appears in
+   the list immediately. Edit it — should succeed (their own record).
+   Try to archive/delete it — should be blocked (no delete_own grant).
+4. As Staff User 2 (Team B), open the **same contact** Staff User 1 just
+   created (confirm you can see it at all — read is unconditional, no
+   grant needed). Try to edit it — should succeed (`edit_others`). Try
+   to archive it — should succeed (`delete_others`).
+5. As Staff User 2, create a brand-new contact of their own, then try to
+   edit or archive it. Both should be **blocked** — Team B has no
+   `edit_own`/`delete_own` grant, only the "others" pair, and Staff User
+   2 is the creator of this one.
+6. **Confirm the two resources are independent, not shared**: as Staff
+   User 1 (who has Contacts `edit_own` but nothing in Manage Catalogue
+   at all), try to create or edit a **Catalogue item**. Should be
+   **blocked** — having Contacts access grants nothing for Catalogue.
+7. Grant Team A **Manage Catalogue → Create/edit own** as well, then
+   repeat step 3 for a Catalogue item as Staff User 1 — should now
+   succeed, independently of their Contacts grants.
+8. As Staff User 1 (Contacts `edit_own` only, no `edit_others`), confirm
+   the "add contact" form is still reachable and the privilege matrix
+   change didn't accidentally block creation — creating a new record
+   only requires `edit_own` for that resource (a new record is always
+   "your own" the moment you make it).
+9. As Owner, confirm you can edit/archive/delete every contact and
+   catalogue item regardless of who created it — Owner bypasses this
+   split entirely, same as every other capability in §2.1.
+
 ---
 
 ## 14. Design system spot-check

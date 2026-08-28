@@ -246,6 +246,27 @@
       "when": 1786783370598,
       "tag": "0034_meeting_occurrence_exceptions",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1787938628107,
+      "tag": "0035_real_molten_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1787939112219,
+      "tag": "0036_split_contacts_manage_capability",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1787939999000,
+      "tag": "0037_split_catalog_from_contacts_capability",
+      "breakpoints": true
     }
   ]
 }

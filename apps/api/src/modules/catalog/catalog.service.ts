@@ -7,6 +7,7 @@ import type { Database } from "../../db/client";
 import { catalogItems } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateCatalogItemInput = z.infer<typeof createCatalogItemSchema>;
 export type UpdateCatalogItemInput = z.infer<typeof updateCatalogItemSchema>;
@@ -93,6 +94,7 @@ export class CatalogService {
           defaultTaxGroupId: input.defaultTaxGroupId ?? null,
           incomeAccountId: input.incomeAccountId ?? null,
           expenseAccountId: input.expenseAccountId ?? null,
+          createdByUserId: actorUserId,
         })
         .returning();
       if (!item) {
@@ -123,6 +125,10 @@ export class CatalogService {
     if (!existing) {
       throw new NotFoundException("Catalog item not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "catalog.edit_own",
+      others: "catalog.edit_others",
+    });
 
     const taxRefChanged = input.defaultTaxRateId !== undefined || input.defaultTaxGroupId !== undefined;
     const resolvedTax = taxRefChanged
@@ -184,6 +190,10 @@ export class CatalogService {
     if (!existing) {
       throw new NotFoundException("Catalog item not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "catalog.delete_own",
+      others: "catalog.delete_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(catalogItems)
@@ -211,6 +221,10 @@ export class CatalogService {
     if (!existing) {
       throw new NotFoundException("Catalog item not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "catalog.delete_own",
+      others: "catalog.delete_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(catalogItems)
@@ -249,6 +263,10 @@ export class CatalogService {
     if (!existing) {
       throw new NotFoundException("Catalog item not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "catalog.delete_own",
+      others: "catalog.delete_others",
+    });
     await this.db.transaction(async (tx) => {
       await this.auditLog.record(tx, {
         orgId,

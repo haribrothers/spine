@@ -22,11 +22,22 @@ const MAX_IMPORT_ROWS = 500;
 const importContactsSchema = z.object({ rows: z.array(createContactSchema).min(1).max(MAX_IMPORT_ROWS) });
 
 /**
- * Per §2.1's permission table ("Manage contacts & catalogue: Owner ✅,
- * Staff ✅, Field View"), GET routes carry no `@OrgRoles` restriction — any
- * authenticated org member (owner, staff, or field) can read. Every
+ * Per §2.1's permission table, GET routes carry no `@OrgRoles` restriction
+ * — any authenticated org member (owner, staff, or field) can read,
+ * unconditionally, regardless of who created a given contact. Every
  * mutating route requires `@OrgRoles(["owner", "staff"])`, which also
  * blocks field server-side regardless of what the client sends.
+ *
+ * `contacts.manage` (a single capability) is replaced by four ownership-
+ * aware ones — `contacts.edit_own`/`edit_others`, `contacts.delete_own`/
+ * `delete_others` (PRD §9 S-01.15). Create only ever needs `edit_own` (a
+ * brand-new record is always "own" the moment it's created), so that route
+ * keeps a simple `@RequireCapability`. Update/archive/restore/delete
+ * depend on data the route guard can't see yet — whether the record being
+ * acted on was created by the caller or someone else — so those routes
+ * carry no `@RequireCapability` at all; `ContactsService` performs the
+ * ownership-aware check itself, right after its existing read-before-write
+ * lookup, via `requireOwnershipCapability` (capability.util.ts).
  */
 @Controller("contacts")
 export class ContactsController {
@@ -72,7 +83,7 @@ export class ContactsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("contacts.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -89,7 +100,7 @@ export class ContactsController {
    */
   @Post("import")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("contacts.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async import(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -99,7 +110,6 @@ export class ContactsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -109,7 +119,6 @@ export class ContactsController {
 
   @Post(":id/archive")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async archive(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -118,7 +127,6 @@ export class ContactsController {
 
   @Post(":id/restore")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async restore(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -127,7 +135,6 @@ export class ContactsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

@@ -19,7 +19,7 @@ export class LeadsController {
   /** S-09.11 (dashboard v2) — "pipeline by stage" chart. Declared before `:id` — see JobsController.milestonesDue's own comment on why route order matters here. */
   @Get("summary-by-stage")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   async summaryByStage(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.leadsService.summaryByStage(orgId);
@@ -33,7 +33,7 @@ export class LeadsController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -43,7 +43,7 @@ export class LeadsController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -53,7 +53,7 @@ export class LeadsController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

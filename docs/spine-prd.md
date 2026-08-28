@@ -74,7 +74,15 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Capability | Owner | Staff (Team-configurable, defaults shown) | Field (fixed) | Customer (link) |
 |---|:---:|:---:|:---:|:---:|
 | View dashboard & reports | ✅ | Partial (default) | ❌ | ❌ |
-| Manage contacts & catalogue | ✅ | ✅ (default) | View | ❌ |
+| View contacts & catalogue | ✅ | ✅, unconditional | View | ❌ |
+| Create/edit own contacts | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' contacts | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete own contacts | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete others' contacts | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own catalogue | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' catalogue | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete own catalogue | ✅ | ✅ (default) | ❌ | ❌ |
+| Archive/delete others' catalogue | ✅ | ✅ (default) | ❌ | ❌ |
 | Create/edit quotes | ✅ | ✅ (default) | ❌ | ❌ |
 | Approve quote above discount threshold | ✅ | ❌ (default; Owner-only in practice, but Team-configurable) | ❌ | ❌ |
 | Create invoices, record payments | ✅ | ✅ (default) | ❌ | ❌ |
@@ -89,6 +97,8 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 "Partial" for the Staff default means: receivables and their own activity, not P&L or balance sheet. Every row except "Manage users, teams, permissions, org settings, tax rules" is configurable per Team — that row is a hard Owner-only capability regardless of Team configuration, since it is the capability that could otherwise be used to grant itself broader access. The table above shows the **default** Team ("General Staff") an instance seeds on first run; Owners are free to create additional Teams with narrower or broader (within the configurable rows) grants.
 
 Field's ❌ on "View dashboard & reports" means Field never sees any *financial* report or widget (P&L, receivables, revenue trend, job profitability, etc.) — it does not mean Field's dashboard is blank. Field still has their own dashboard populated from capabilities they DO hold elsewhere in this table: their own overdue follow-ups and upcoming meetings (no capability required, scoped to the requesting user), and job milestones due (gated by "Upload site photos, update milestone status," which Field holds by default) — see S-09.12.
+
+**Contacts & catalogue read is unconditional, ownership-based capabilities gate writes, independently per resource** (§9 FEAT-01/FEAT-02, S-01.15/S-02.5): every authenticated org member — Owner, every Staff user regardless of Team grants, and Field (view-only) — can always see every contact, lead-linked contact, and catalogue item in the org, including ones created by someone else; this was already true of the API and is now made explicit in this table as its own row rather than folded into a single "Manage" capability. What *is* Team-configurable, split by creator, is **two independent capability groups** — Contacts (`contacts.edit_own`/`contacts.edit_others`/`contacts.delete_own`/`contacts.delete_others`) and Catalogue (`catalog.edit_own`/`catalog.edit_others`/`catalog.delete_own`/`catalog.delete_others`) — a Team's Contacts grants and Catalogue grants are configured separately in the privilege-matrix UI (two collapsible groups, each with its own "grant all" toggle) and enforced separately server-side; granting a Team full access to others' contacts does not imply anything about its catalogue access, or vice versa. Within each group: `edit_own`/`edit_others` (create a new record — which always makes you its creator — and edit an existing one) and `delete_own`/`delete_others` (archive/restore/hard-delete). "Own" means the record's `createdByUserId` matches the acting user; it is set once at creation and never reassigned in v1 (no "transfer ownership" action — see the acceptance highlight in §9 for why). A Team with neither `edit_own` nor `edit_others` granted for a resource cannot create new records of that type at all, only view the org's existing ones. The four capabilities within a group are independent — e.g. a Team can be granted `edit_own` + `edit_others` (edit anything) but only `delete_own` (can't delete a colleague's record, only their own).
 
 Regardless of the "Create/invite/manage meetings" grant, **every meeting's visibility is independently enforced per §S-01.9's private/org model** — Owners always see every meeting (private or org-wide) per §2.1's blanket-access rule; Staff and Field only ever see meetings that are `visibility: org`, or `private` meetings where they are the organizer or an invited attendee, regardless of what the capability table grants them for *creating* meetings. Read-access to a specific meeting is never something the capability matrix alone can widen.
 
@@ -406,8 +416,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-01.12 | As an invited attendee, I want to accept, decline, or mark myself tentative on a meeting invite, so the organizer knows who's actually coming |
 | S-01.13 | As any user, I want clicking a meeting on the calendar to first show a quick-view popover (details, RSVP, edit/delete), so I don't have to open the full edit form just to check what an event is |
 | S-01.14 | As any user editing or deleting a recurring meeting, I want to choose whether my change applies to just this occurrence or the whole series, so I can adjust one instance without disturbing the rest of the recurrence |
+| S-01.15 | As an owner, I want to grant a Team the ability to edit or delete only the contacts they created, or extend that to everyone's contacts, separately for editing vs. deleting, so a junior Team can help maintain the CRM without being able to alter or remove a colleague's records |
 
 *Acceptance highlights:* duplicate detection warns on matching phone or email but does not block. Deleting a contact with financial documents is blocked; deactivation is offered instead.
+
+*Acceptance highlights (S-01.15 — own vs. others' contacts):* see §2.1's "Contacts & catalogue read is unconditional, ownership-based capabilities gate writes, independently per resource" for the full model — this story is that model's Contacts half, using its own `contacts.*` capability group; FEAT-02's own acceptance highlight below is the independent Catalogue half.
 
 *Acceptance highlights (S-01.9):* a dedicated `/meetings` page reuses the existing `Calendar` component (Day/Week/Month/Agenda, drag to create/move/resize, recurrence) plus `MiniCalendar` as a side month-picker, matching the app's existing Outlook-style scheduling UI rather than inventing a new one. A meeting optionally links to a contact via a picker in the create/edit form — meetings aren't required to have a contact (e.g. an internal team meeting). A meeting linked to a contact appears on that contact's Timeline tab (S-01.3) as a new event type, alongside quotes and activities. Meetings are stored in their own table, separate from `activities` — a real calendar event needs a time range and optional recurrence that `activities`' flat, single-due-date model was never designed to hold; `activities`' own `meeting` type is unaffected and continues to serve quick call/meeting logging without a scheduled time range. External calendar sync (Google/Outlook) is explicitly **out of scope for v1** — self-hosted only, no OAuth/external API dependency, consistent with the PRD's existing caution around external integrations (§1.5's "no bank feed auto-import").
 
@@ -429,8 +442,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-02.2 | As staff, I want to override price on a quote line without changing the catalogue, so I can negotiate |
 | S-02.3 | As an owner, I want each item to map to an income account, so revenue reports break down meaningfully |
 | S-02.4 | As staff, I want to add an item inline while building a quote, so I'm not interrupted |
+| S-02.5 | As an owner, I want the same own-vs-others edit/delete split available for Contacts (S-01.15) to apply to the catalogue, so the same Team privilege matrix governs both |
 
 *Acceptance highlights:* changing a catalogue price never alters existing documents. Documents store a snapshot of name, price and tax at the time of issue.
+
+*Acceptance highlights (S-02.5):* catalogue items use their own `catalog.edit_own`/`catalog.edit_others`/`catalog.delete_own`/`catalog.delete_others` capabilities and `createdByUserId` ownership model, structurally identical to Contacts (§2.1, S-01.15) but independently configurable — the privilege-matrix UI renders "Manage Contacts" and "Manage Catalogue" as two separate collapsible groups, each with its own "grant all" toggle, so an Owner can give a Team full Catalogue access without touching its Contacts access or vice versa. Read stays unconditional for every Staff/Field user, same as Contacts.
 
 ### FEAT-03 · Quotes
 

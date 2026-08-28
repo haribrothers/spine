@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { addresses, contactPersons, contacts, journalLines } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
@@ -96,6 +97,7 @@ export class ContactsService {
           taxId: input.taxId ?? null,
           website: input.website ?? null,
           logoFileId: input.logoFileId ?? null,
+          createdByUserId: actorUserId,
         })
         .returning();
       if (!contact) {
@@ -209,6 +211,10 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "contacts.edit_own",
+      others: "contacts.edit_others",
+    });
 
     // Read-before-write for the persons/addresses arrays too — needed to
     // diff old-vs-new by id (see diffArrayById below), not just for the
@@ -420,6 +426,10 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "contacts.delete_own",
+      others: "contacts.delete_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(contacts)
@@ -447,6 +457,10 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "contacts.delete_own",
+      others: "contacts.delete_others",
+    });
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(contacts)
@@ -482,6 +496,10 @@ export class ContactsService {
     if (!existing) {
       throw new NotFoundException("Contact not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "contacts.delete_own",
+      others: "contacts.delete_others",
+    });
     const [referenced] = await this.db.select().from(journalLines).where(eq(journalLines.contactId, id)).limit(1);
     if (referenced) {
       throw new BadRequestException("Contact has financial ledger history and cannot be deleted — archive it instead");

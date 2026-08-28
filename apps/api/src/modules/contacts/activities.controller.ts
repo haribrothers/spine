@@ -34,7 +34,7 @@ export class ActivitiesController {
 
   @Post()
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -44,7 +44,7 @@ export class ActivitiesController {
 
   @Put(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -54,7 +54,7 @@ export class ActivitiesController {
 
   @Post(":id/done")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async markDone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -63,7 +63,7 @@ export class ActivitiesController {
 
   @Post(":id/undone")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async markUndone(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -72,7 +72,7 @@ export class ActivitiesController {
 
   @Delete(":id")
   @OrgRoles(["owner", "staff"])
-  @RequireCapability("contacts.manage")
+  @RequireCapability("leads.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

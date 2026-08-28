@@ -1,6 +1,6 @@
 import { pgTable, uuid, text, bigint, boolean, real, timestamp, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { organization } from "./auth";
+import { organization, user } from "./auth";
 import { accounts } from "./ledger";
 import { taxRates, taxGroups } from "./tax";
 
@@ -78,6 +78,8 @@ export const catalogItems = pgTable(
     expenseAccountId: uuid("expense_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     /** Same demo-data marker as contacts.isDemo — see that column's comment. */
     isDemo: boolean("is_demo").notNull().default(false),
+    /** Same "own vs others" ownership marker as contacts.createdByUserId — see that column's comment for the full rationale (nullable = unowned, onDelete: "set null"). */
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -89,5 +91,6 @@ export const catalogItems = pgTable(
     index("catalog_items_income_account_idx").on(table.incomeAccountId),
     index("catalog_items_expense_account_idx").on(table.expenseAccountId),
     index("catalog_items_org_demo_idx").on(table.orgId, table.isDemo),
+    index("catalog_items_created_by_idx").on(table.createdByUserId),
   ],
 );

@@ -29,7 +29,7 @@ import type { Capability } from "./permissions.ts";
  */
 export const DASHBOARD_WIDGETS = [
   { key: "revenue-trend", capability: "dashboard.view" as Capability, ownerOnly: true },
-  { key: "pipeline-by-stage", capability: "contacts.manage" as Capability, ownerOnly: false },
+  { key: "pipeline-by-stage", capability: "leads.manage" as Capability, ownerOnly: false },
   { key: "ar-aging", capability: "dashboard.view" as Capability, ownerOnly: false },
   { key: "job-profitability", capability: "dashboard.view" as Capability, ownerOnly: false },
   { key: "overdue-followups", capability: null, ownerOnly: false },

@@ -15,7 +15,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@spine/ui";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
 import { CAPABILITIES, CAPABILITY_LABELS, type Capability } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
@@ -36,6 +36,11 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
+  // Which capability groups ("Manage Contacts", "Manage Catalogue", ...)
+  // are expanded — keyed by group label. Groups default expanded (a group
+  // not yet in this set counts as open) so the matrix looks the same as
+  // before grouping existed until a user actually collapses one.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
 
   const reload = useCallback(async () => {
     try {
@@ -95,6 +100,31 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
     }
   }
 
+  /** Group-level "toggle all" switch (S-01.15/S-02.5's matrix UI) — sets every capability in the group to the same value in one request. */
+  async function toggleGroup(capabilities: Capability[], granted: boolean) {
+    setError(null);
+    try {
+      await apiClient.put(`/org/teams/${teamId}/privileges`, {
+        privileges: capabilities.map((capability) => ({ capability, granted })),
+      });
+      await reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update privileges.");
+    }
+  }
+
+  function toggleGroupCollapsed(label: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }
+
   if (!detail || !staffMembers) {
     return (
       <div className="flex items-center justify-center py-8">
@@ -110,6 +140,29 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   }
 
   const memberIds = new Set(detail.members.map((m) => m.memberId));
+
+  // Nest capabilities sharing a CAPABILITY_LABELS `group` under one header
+  // row with a "toggle all" switch (S-01.15/S-02.5) — an ungrouped
+  // capability renders as its own top-level row, same as before grouping
+  // existed. Built from CAPABILITIES' own order so group membership can
+  // never drift from the single source of truth in @spine/shared.
+  const privilegeRows: ({ kind: "single"; capability: Capability } | { kind: "group"; label: string; capabilities: Capability[] })[] = [];
+  const groupIndexByLabel = new Map<string, number>();
+  for (const capability of CAPABILITIES) {
+    const group = CAPABILITY_LABELS[capability].group;
+    if (!group) {
+      privilegeRows.push({ kind: "single", capability });
+      continue;
+    }
+    const existingIndex = groupIndexByLabel.get(group);
+    if (existingIndex === undefined) {
+      groupIndexByLabel.set(group, privilegeRows.length);
+      privilegeRows.push({ kind: "group", label: group, capabilities: [capability] });
+    } else {
+      const row = privilegeRows[existingIndex];
+      if (row?.kind === "group") row.capabilities.push(capability);
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -185,18 +238,55 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
               of their teams grant.
             </p>
             <div className="rounded-md border border-border-strong">
-              {CAPABILITIES.map((capability) => (
-                <div key={capability} className="flex items-center gap-3 border-b border-border px-3 py-2.5 text-[13px] last:border-0">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium text-on-surface">{CAPABILITY_LABELS[capability].label}</p>
-                    <p className="text-on-surface-muted">{CAPABILITY_LABELS[capability].description}</p>
+              {privilegeRows.map((row) => {
+                if (row.kind === "single") {
+                  const capability = row.capability;
+                  return (
+                    <div key={capability} className="flex items-center gap-3 border-b border-border px-3 py-2.5 text-[13px] last:border-0">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-on-surface">{CAPABILITY_LABELS[capability].label}</p>
+                        <p className="text-on-surface-muted">{CAPABILITY_LABELS[capability].description}</p>
+                      </div>
+                      <Switch
+                        checked={detail.privileges[capability] ?? false}
+                        onCheckedChange={(checked) => togglePrivilege(capability, checked)}
+                      />
+                    </div>
+                  );
+                }
+
+                const allGranted = row.capabilities.every((c) => detail.privileges[c] ?? false);
+                const isCollapsed = collapsedGroups.has(row.label);
+                return (
+                  <div key={row.label} className="border-b border-border last:border-0">
+                    <div className="flex items-center gap-3 bg-surface-muted px-3 py-2.5 text-[13px]">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroupCollapsed(row.label)}
+                        className="flex min-w-0 flex-1 items-center gap-1.5 text-left font-semibold text-on-surface"
+                        aria-expanded={!isCollapsed}
+                      >
+                        {isCollapsed ? <ChevronRight size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
+                        <span className="truncate">{row.label}</span>
+                      </button>
+                      <Switch checked={allGranted} onCheckedChange={(checked) => toggleGroup(row.capabilities, checked)} />
+                    </div>
+                    {!isCollapsed &&
+                      row.capabilities.map((capability) => (
+                        <div key={capability} className="flex items-center gap-3 border-t border-border py-2.5 pl-6 pr-3 text-[13px]">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium text-on-surface">{CAPABILITY_LABELS[capability].label}</p>
+                            <p className="text-on-surface-muted">{CAPABILITY_LABELS[capability].description}</p>
+                          </div>
+                          <Switch
+                            checked={detail.privileges[capability] ?? false}
+                            onCheckedChange={(checked) => togglePrivilege(capability, checked)}
+                          />
+                        </div>
+                      ))}
                   </div>
-                  <Switch
-                    checked={detail.privileges[capability] ?? false}
-                    onCheckedChange={(checked) => togglePrivilege(capability, checked)}
-                  />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </TabsContent>
