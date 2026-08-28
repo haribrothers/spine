@@ -747,6 +747,65 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
     });
   };
 
+  // Shared by the pointer-drag commit (handleUp below) and keyboard resize
+  // (onKeyboardResize passed to TimeGridEvent) — both end up with the same
+  // "occurrence's original start/end vs. its new start/end" shape and must
+  // resolve recurrence exceptions identically, so this is the single place
+  // that decides series-move vs. this-event vs. defer-to-scope-choice.
+  const commitMoveOrResize = (
+    originalEvent: CalendarEvent,
+    dragStartOccurrenceStart: Date,
+    dragStartOccurrenceEnd: Date,
+    newStart: Date,
+    newEnd: Date,
+    isRecurring: boolean | undefined,
+    originalOccurrenceStart: Date | undefined,
+  ) => {
+    const startOffset = newStart.getTime() - dragStartOccurrenceStart.getTime();
+    const endOffset = newEnd.getTime() - dragStartOccurrenceEnd.getTime();
+    if (startOffset === 0 && endOffset === 0) return;
+    suppressNextClickRef.current = true;
+    const seriesUpdate: CalendarEvent = {
+      ...originalEvent,
+      start: new Date(originalEvent.start.getTime() + startOffset),
+      end: new Date(originalEvent.end.getTime() + endOffset),
+    };
+    if (isRecurring && originalOccurrenceStart && !isOccurrenceAlreadyModified(originalEvent, originalOccurrenceStart, true)) {
+      onRecurringMoveOrResize?.({
+        seriesEvent: seriesUpdate,
+        occurrenceStart: newStart,
+        occurrenceEnd: newEnd,
+        originalOccurrenceStart,
+      });
+    } else if (isRecurring && originalOccurrenceStart) {
+      onEventUpdate({ ...seriesUpdate, start: newStart, end: newEnd }, "occurrence", originalOccurrenceStart);
+    } else {
+      onEventUpdate(seriesUpdate);
+    }
+  };
+
+  const handleKeyboardResize = (instance: CalendarEventInstance, edge: "start" | "end", direction: 1 | -1) => {
+    const deltaMs = direction * SNAP_MINUTES * 60000;
+    let newStart = instance.occurrenceStart;
+    let newEnd = instance.occurrenceEnd;
+    if (edge === "start") {
+      const candidate = new Date(instance.occurrenceStart.getTime() + deltaMs);
+      newStart = candidate < instance.occurrenceEnd ? candidate : new Date(instance.occurrenceEnd.getTime() - SNAP_MINUTES * 60000);
+    } else {
+      const candidate = new Date(instance.occurrenceEnd.getTime() + deltaMs);
+      newEnd = candidate > instance.occurrenceStart ? candidate : new Date(instance.occurrenceStart.getTime() + SNAP_MINUTES * 60000);
+    }
+    commitMoveOrResize(
+      instance.event,
+      instance.occurrenceStart,
+      instance.occurrenceEnd,
+      newStart,
+      newEnd,
+      instance.isRecurring,
+      instance.originalOccurrenceStart,
+    );
+  };
+
   useEffect(() => {
     if (!drag) return;
 
@@ -808,46 +867,17 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
         // (instance.occurrenceStart/End), not the series' real
         // originalEvent.start/end, so committing an update here on every
         // click would silently move the whole recurring series to whatever
-        // occurrence was clicked. Only commit when the event actually moved.
-        const startOffset = finished.currentStart.getTime() - finished.dragStartOccurrenceStart.getTime();
-        const endOffset = finished.currentEnd.getTime() - finished.dragStartOccurrenceEnd.getTime();
-        if (startOffset !== 0 || endOffset !== 0) {
-          suppressNextClickRef.current = true;
-          const seriesUpdate: CalendarEvent = {
-            ...finished.originalEvent,
-            start: new Date(finished.originalEvent.start.getTime() + startOffset),
-            end: new Date(finished.originalEvent.end.getTime() + endOffset),
-          };
-          if (
-            finished.isRecurring &&
-            finished.originalOccurrenceStart &&
-            !isOccurrenceAlreadyModified(finished.originalEvent, finished.originalOccurrenceStart, true)
-          ) {
-            // PRD S-01.14 — dragging/resizing one occurrence of a recurring
-            // event must not silently move the whole series. Defer to the
-            // consumer for a This event/All events choice; only commit
-            // directly (as a plain series move) once it resolves.
-            onRecurringMoveOrResize?.({
-              seriesEvent: seriesUpdate,
-              // The occurrence's own new absolute time — what "this event"
-              // scope should save as the exception's start/end override,
-              // as opposed to seriesEvent's offset-shifted series anchor.
-              occurrenceStart: finished.currentStart,
-              occurrenceEnd: finished.currentEnd,
-              originalOccurrenceStart: finished.originalOccurrenceStart,
-            });
-          } else if (finished.isRecurring && finished.originalOccurrenceStart) {
-            // Already individually modified — no ambiguity left to resolve,
-            // this drag/resize commits straight to "this event" again.
-            onEventUpdate(
-              { ...seriesUpdate, start: finished.currentStart, end: finished.currentEnd },
-              "occurrence",
-              finished.originalOccurrenceStart,
-            );
-          } else {
-            onEventUpdate(seriesUpdate);
-          }
-        }
+        // occurrence was clicked. commitMoveOrResize itself no-ops when
+        // nothing actually moved.
+        commitMoveOrResize(
+          finished.originalEvent,
+          finished.dragStartOccurrenceStart,
+          finished.dragStartOccurrenceEnd,
+          finished.currentStart,
+          finished.currentEnd,
+          finished.isRecurring,
+          finished.originalOccurrenceStart,
+        );
       }
     };
 
@@ -966,6 +996,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
                     onEventDoubleClick={onEventDoubleClick}
                     onMoveStart={(e) => beginMove(slot.instance, dayIndex, e)}
                     onResizeStart={(edge, e) => beginResize(slot.instance, dayIndex, edge, e)}
+                    onKeyboardResize={(edge, direction) => handleKeyboardResize(slot.instance, edge, direction)}
                   />
                 ))}
 
@@ -1016,9 +1047,11 @@ interface TimeGridEventProps {
   onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onMoveStart: (e: React.PointerEvent) => void;
   onResizeStart: (edge: "start" | "end", e: React.PointerEvent) => void;
+  /** Keyboard equivalent of dragging a resize handle — the pointer-only handles below have no other way to reach via keyboard. */
+  onKeyboardResize: (edge: "start" | "end", direction: 1 | -1) => void;
 }
 
-function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onEventDoubleClick, onMoveStart, onResizeStart }: TimeGridEventProps) {
+function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onEventDoubleClick, onMoveStart, onResizeStart, onKeyboardResize }: TimeGridEventProps) {
   const { instance, column, columnCount } = slot;
   const dayBase = startOfDay(instance.occurrenceStart);
   const top = minutesToY(diffMinutes(instance.occurrenceStart, dayBase), gridHeight);
@@ -1032,7 +1065,11 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
     <div
       role="button"
       tabIndex={0}
-      aria-label={`${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}`}
+      aria-label={
+        isReadOnly
+          ? `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}`
+          : `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open, or Shift plus Arrow Up or Down to change the start time, Shift plus Alt plus Arrow Up or Down to change the end time.`
+      }
       className={cn(
         "group absolute select-none overflow-hidden rounded border px-1.5 py-0.5 text-left text-[11.5px] shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         colors.bg,
@@ -1051,6 +1088,15 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           onEventClick(instance, e.currentTarget);
+          return;
+        }
+        // Keyboard equivalent of dragging the pointer-only resize handles:
+        // Shift+Arrow adjusts the start edge, Shift+Alt+Arrow the end edge —
+        // mirrors the same snap increment as a pointer resize.
+        if (!isReadOnly && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+          e.preventDefault();
+          const direction = e.key === "ArrowUp" ? -1 : 1;
+          onKeyboardResize(e.altKey ? "end" : "start", direction);
         }
       }}
     >

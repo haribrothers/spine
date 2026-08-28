@@ -612,7 +612,11 @@ export default function Example() {
           blocks, Month bars, Agenda rows) is a real button or has a button role with an
           accessible name describing its title and time range. The event editor is a Dialog,
           inheriting Radix's focus trap and Escape-to-close. A drag-create/move/resize in
-          progress can always be cancelled with Escape before it commits.
+          progress can always be cancelled with Escape before it commits. Day/Week events also
+          have a keyboard equivalent for the pointer-only resize handles: with an event focused,
+          Shift+Arrow adjusts its start time and Shift+Alt+Arrow its end time, in the same
+          15-minute increments as a pointer drag — recurring occurrences go through the same
+          This event/All events confirmation as a pointer resize.
         </DocLead>
         <KeyboardTable
           rows={[
@@ -622,6 +626,8 @@ export default function Example() {
             { keys: "ArrowDown", description: "Month view: moves focus one week forward." },
             { keys: "ArrowUp", description: "Month view: moves focus one week back." },
             { keys: "Enter / Space", description: "Activates focused day (opens the event editor) or focused event (opens it for editing)." },
+            { keys: "Shift+ArrowUp / Shift+ArrowDown", description: "Day/Week view, event focused: moves the event's start time 15 minutes earlier/later." },
+            { keys: "Shift+Alt+ArrowUp / Shift+Alt+ArrowDown", description: "Day/Week view, event focused: moves the event's end time 15 minutes earlier/later." },
             { keys: "Esc", description: "Cancels an in-progress drag (create/move/resize) without committing it, or closes the event editor." },
           ]}
         />

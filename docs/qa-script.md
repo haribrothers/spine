@@ -272,10 +272,22 @@ real, also walk ONE job manually through the full sequence below.
 4. Delete a meeting from the calendar. Confirm a confirmation dialog
    appears before it's actually removed (user-reported gap — deletion
    used to happen immediately on click, no confirmation at all).
+5. In Day or Week view, drag an event to a new time (move), then drag
+   its top or bottom edge to a new time (resize). Confirm both commit
+   the new time and the event doesn't lose its resized duration on a
+   subsequent move (regression check — this was a real bug fixed
+   earlier).
+6. Tab to focus an event block in Day/Week view (don't open it).
+   Press Shift+ArrowDown a few times — confirm the event's start time
+   moves 15 minutes later each press without opening the editor. Press
+   Shift+Alt+ArrowDown — confirm the end time moves instead. Try this
+   on a single occurrence of a recurring meeting — confirm it triggers
+   the same "This event / All events" confirmation a pointer resize
+   would, not a silent whole-series change.
 
 ### 6.1 Private invites and visibility (S-01.10, S-01.11)
 
-5. Create a new meeting as Staff user A. Confirm the "Visibility"/
+7. Create a new meeting as Staff user A. Confirm the "Visibility"/
    "Invite people" fields appear directly inside the SAME "New
    meeting" dialog, alongside title/time/location — no separate
    follow-up popup after clicking Save. Leave visibility at its
@@ -283,42 +295,42 @@ real, also walk ONE job manually through the full sequence below.
    (same Team, no invite, no `owner` role), confirm the meeting is
    invisible on B's calendar — check both the calendar UI and a direct
    `GET /meetings/:id` call (should 404, not 403).
-6. Open that meeting to EDIT it — confirm the same Visibility/Invite
+8. Open that meeting to EDIT it — confirm the same Visibility/Invite
    fields appear inline in the edit dialog too (not just create), and
    are pre-filled with the meeting's actual current visibility (don't
    just default back to Private) and its current invite list. Invite
    user B and save. Confirm B now sees it on their calendar, and B's
    notification bell shows a "you've been invited" notification
    (§12).
-7. As the Owner, confirm you can see A's private meeting even without
+9. As the Owner, confirm you can see A's private meeting even without
    being invited or organizing it (Owner sees everything regardless of
    visibility, §2.1).
-8. Switch the same meeting's visibility to "Everyone in the org" from
-   its edit dialog. Confirm every role (Staff, Field) can now see it
-   on their calendar without an explicit invite.
-9. As Field, confirm you can create your own private meeting (if
-   `meetings.manage` is granted to your Team) but never see another
-   user's private meeting you're not invited to — Field gets the same
-   visibility treatment as Staff, only Owner is special-cased.
+10. Switch the same meeting's visibility to "Everyone in the org" from
+    its edit dialog. Confirm every role (Staff, Field) can now see it
+    on their calendar without an explicit invite.
+11. As Field, confirm you can create your own private meeting (if
+    `meetings.manage` is granted to your Team) but never see another
+    user's private meeting you're not invited to — Field gets the same
+    visibility treatment as Staff, only Owner is special-cased.
 
 ### 6.2 Responding to an invite (S-01.12)
 
-10. As invited user B, open the meeting's "Manage attendees" panel
+12. As invited user B, open the meeting's "Manage attendees" panel
     (the small people-icon button next to a meeting in the sidebar's
     "Upcoming" list, or a notification's deep link) and click Accept.
     Confirm no notification fires to the organizer for this first
     response (check A's notification bell — nothing new).
-11. Change your response from Accepted to Declined. Confirm the
+13. Change your response from Accepted to Declined. Confirm the
     organizer (A) DOES now get a "changed their response" notification
     — this is the one case that notifies, deliberately different from
     the first response.
-12. As the organizer, confirm the attendee list shows each invitee's
+14. As the organizer, confirm the attendee list shows each invitee's
     current status (Invited/Accepted/Declined/Tentative) — no need to
     ask them separately.
 
 ### 6.3 `meetings.manage` permission (cross-check with §13)
 
-13. From Users/Teams/Permissions, turn OFF `meetings.manage` for a
+15. From Users/Teams/Permissions, turn OFF `meetings.manage` for a
     Team. Confirm a Staff member on only that Team can no longer
     create/edit/delete meetings (the "+ New meeting" flow or edit
     dialog should fail with a permission error), but CAN still respond
