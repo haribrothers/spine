@@ -426,6 +426,13 @@ real, also walk ONE job manually through the full sequence below.
    - Trying to issue a second credit note larger than the now-reduced
      remaining balance is rejected with a clear error.
    - The invoice PDF now shows the "Credited" line too.
+   - **Click the credit note row itself** (new) — confirm a detail
+     Drawer opens showing its status badge, reason, line items, total,
+     a "View source invoice" link back to this same invoice, and a
+     **History** section at the bottom showing at least "created this
+     credit note" and "issued this credit note." This is the first
+     detail view credit notes have ever had (previously just a
+     read-only row).
 9. **Advance/deposit invoice (S-05.4)**: create a new invoice, set
    **Type** to **Advance**, add a line for the deposit amount, save as
    draft, then **Issue**. Confirm:
@@ -461,6 +468,16 @@ real, also walk ONE job manually through the full sequence below.
     A non-job invoice (`retentionAmount = 0`) should be completely
     unaffected — its balance due should still just be
     `total - paid - credited`, exactly as before Phase 3.
+11. **History section (new)**: on any invoice's detail page, scroll to
+    the **History** card at the bottom. Confirm it shows a reverse-
+    chronological list starting with "{your name} created this invoice."
+    Edit a draft invoice's notes, save — confirm a new "{your name}
+    updated this invoice: notes {old} → {new}" entry appears at the top.
+    Issue it — confirm an "issued this invoice" entry with no field
+    diff (issuing isn't a field edit). Void it — confirm a "voided this
+    invoice" entry appears too. Confirm this invoice's History never
+    shows entries from a different invoice or from a credit note issued
+    against it (they have their own separate History, see below).
 
 ---
 
@@ -500,6 +517,11 @@ real, also walk ONE job manually through the full sequence below.
    and confirm the suggested allocation offers at most `total -
    retention` for that invoice — never the full total, and never more
    than the DB's own allocation-limit trigger would accept.
+8. **History section (new)**: in the same payment's detail drawer,
+   scroll to the **History** card below Notes. Confirm it shows
+   "{your name} created this payment" — payments have no update route,
+   so this is typically the only entry unless the payment was later
+   deleted (in which case, check via a different still-open payment).
 
 ---
 

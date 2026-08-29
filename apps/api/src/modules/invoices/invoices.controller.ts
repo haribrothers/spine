@@ -43,6 +43,13 @@ export class InvoicesController {
     return this.invoicesService.getOne(orgId, id);
   }
 
+  /** `GET /invoices/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "invoice"`), same pattern as ContactsController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.invoicesService.getHistory(orgId, id);
+  }
+
   /** Live-rendered branded PDF, same convention as QuotesController.getPdf. */
   @Get(":id/pdf")
   async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {

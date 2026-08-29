@@ -26,6 +26,7 @@ import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
@@ -197,6 +198,8 @@ export function PaymentDetailDrawer({
                     <p className="text-[13px] text-on-surface">{payment.notes}</p>
                   </div>
                 )}
+
+                <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />
               </div>
             )}
           </DrawerBody>

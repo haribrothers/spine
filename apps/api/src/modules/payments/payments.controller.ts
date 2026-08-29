@@ -54,6 +54,13 @@ export class PaymentsController {
     return this.paymentsService.getOne(orgId, id);
   }
 
+  /** `GET /payments/:id/history` — same pattern as InvoicesController.getHistory. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.paymentsService.getHistory(orgId, id);
+  }
+
   /** S-06.6 — live-rendered branded receipt PDF, same convention as InvoicesController.getPdf. */
   @Get(":id/pdf")
   async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {

@@ -137,3 +137,48 @@ export interface InvoicePaymentRow {
   /** This payment's allocation specifically against the invoice being viewed — not the payment's own total. */
   allocatedToThisInvoice: string;
 }
+
+export type CreditNoteStatus = "draft" | "issued";
+export type CreditNoteLineType = "item" | "heading" | "text";
+
+/** Mirrors apps/api/src/db/schema/credit-notes.ts's creditNoteLines row shape. */
+export interface CreditNoteLine {
+  id: string;
+  creditNoteId: string;
+  sortOrder: number;
+  type: CreditNoteLineType;
+  catalogItemId: string | null;
+  name: string;
+  description: string | null;
+  quantity: number;
+  unitPriceAmount: string;
+  unitPriceCurrency: string;
+  taxRatePercentage: number;
+  lineSubtotalAmount: string;
+  lineTaxAmount: string;
+  lineTotalAmount: string;
+}
+
+/** Mirrors GET /credit-notes/:id's response shape (CreditNotesService.getOne). */
+export interface CreditNote {
+  id: string;
+  orgId: string;
+  invoiceId: string;
+  contactId: string;
+  number: string | null;
+  status: CreditNoteStatus;
+  reason: string | null;
+  date: string | null;
+  currency: string;
+  subtotalAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  createdByUserId: string | null;
+  issuedAt: string | null;
+  isDemo: boolean;
+  createdAt: string;
+  updatedAt: string;
+  contactName: string | null;
+  invoiceNumber: string | null;
+  lines: CreditNoteLine[];
+}

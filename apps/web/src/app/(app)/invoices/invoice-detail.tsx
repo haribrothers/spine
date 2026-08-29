@@ -25,6 +25,7 @@ import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
@@ -365,6 +366,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
       <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
+      <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />

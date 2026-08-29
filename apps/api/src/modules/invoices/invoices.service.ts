@@ -230,6 +230,12 @@ export class InvoicesService {
     };
   }
 
+  /** `GET /invoices/:id/history` — confirms the invoice exists (org-scoped) before delegating to AuditLogService, same pattern as ContactsService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "invoice", id);
+  }
+
   /**
    * Creates a new draft, always unnumbered — see invoices.ts's schema
    * comment. `isDemo` mirrors QuotesService.create's own convention: never

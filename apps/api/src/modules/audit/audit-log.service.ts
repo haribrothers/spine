@@ -141,4 +141,34 @@ export class AuditLogService {
       .orderBy(desc(auditLog.createdAt));
     return rows;
   }
+
+  /**
+   * `GET /invoices/:id/history` and its Payments/Credit-Notes equivalents —
+   * unlike `listForContact` (every row tied to a contact across ALL entity
+   * types), this returns only the rows for one specific document: exactly
+   * `entityType`+`entityId`, nothing pulled in from a related contact's
+   * other documents. Backed by `audit_log_entity_idx` (already present in
+   * schema since before any query used it — see audit.ts's own comment),
+   * so no migration was needed to add this. Same actor-name left join and
+   * row shape as `listForContact`, so both can share one web-side
+   * `HistorySection` component.
+   */
+  async listForEntity(orgId: string, entityType: AuditEntityType, entityId: string) {
+    const rows = await this.db
+      .select({
+        id: auditLog.id,
+        action: auditLog.action,
+        entityType: auditLog.entityType,
+        entityId: auditLog.entityId,
+        changes: auditLog.changes,
+        createdAt: auditLog.createdAt,
+        actorUserId: auditLog.actorUserId,
+        actorName: user.name,
+      })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityType, entityType), eq(auditLog.entityId, entityId)))
+      .orderBy(desc(auditLog.createdAt));
+    return rows;
+  }
 }

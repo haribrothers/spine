@@ -151,6 +151,12 @@ export class CreditNotesService {
     return { ...row.creditNote, contactName: row.contactName, invoiceNumber: row.invoiceNumber, lines };
   }
 
+  /** `GET /credit-notes/:id/history` — same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "credit_note", id);
+  }
+
   /** Creates a new draft, always unnumbered — see credit-notes.ts's schema comment. The target invoice must be `issued` — a credit note against a draft or void invoice makes no sense (nothing has posted to AR yet, or the posting was already reversed). */
   async create(orgId: string, actorUserId: string, input: CreateCreditNoteInput, isDemo = false) {
     const [invoice] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, input.invoiceId)));

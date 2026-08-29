@@ -33,6 +33,13 @@ export class CreditNotesController {
     return this.creditNotesService.getOne(orgId, id);
   }
 
+  /** `GET /credit-notes/:id/history` — same pattern as InvoicesController.getHistory. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.creditNotesService.getHistory(orgId, id);
+  }
+
   @Post()
   @RequireCapability("credit_notes.edit_own")
   @UseInterceptors(IdempotencyInterceptor)

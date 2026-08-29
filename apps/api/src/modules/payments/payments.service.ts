@@ -124,6 +124,12 @@ export class PaymentsService {
     };
   }
 
+  /** `GET /payments/:id/history` — same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "payment", id);
+  }
+
   /**
    * S-06.3 — suggests an oldest-first allocation of `amount` across every
    * outstanding (`issued`, balance > 0) invoice for `contactId`, oldest
