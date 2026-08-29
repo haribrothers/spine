@@ -288,11 +288,27 @@ real, also walk ONE job manually through the full sequence below.
     **draft quote** linked to the job (check the quote appears under
     **Quotes** too, fully editable/sendable like any other quote).
 11. Send that variation quote and accept it via the public link (same
-    steps as §4.4-4.7). Back on the job's Variation orders tab, confirm
-    an **Apply to job** button now appears next to it — click it, and
-    confirm the job's **contract value** on the header increases by
-    exactly the variation's total, and any percent-type milestones'
-    resolved amounts recompute against the new total.
+    steps as §4.4-4.7). As the accepting customer, confirm you land back
+    on the public page with an "accepted" state, same as any quote.
+    **As the owner/staff user**, confirm the notification bell shows a
+    new unread notification — you should see TWO new entries: the usual
+    "[customer] accepted quote [number]" one (as for any quote), and a
+    second, distinct **"[customer] accepted variation order [number] —
+    apply it to the job"** one. Click the variation-order notification —
+    confirm it navigates straight to the job's page with the
+    **Variation orders** tab already selected (`?tab=variations` in the
+    URL), not the Milestones tab. Confirm an **Apply to job** button now
+    appears next to the accepted variation — click it, and confirm the
+    job's **contract value** on the header increases by exactly the
+    variation's total, and any percent-type milestones' resolved amounts
+    recompute against the new total.
+    - Regression: reject a second variation order via the public link
+      instead of accepting it — confirm only the usual "rejected quote"
+      notification appears, with no variation-order-specific one (nothing
+      to apply when it's rejected).
+    - Regression: accept an ordinary (non-variation) quote elsewhere in
+      the app (§4.7) — confirm it still produces exactly one
+      "accepted quote" notification, never a variation-order one.
 12. On the **Photos** tab, upload a general site photo (not tied to a
     milestone) — confirm it appears in the grid separately from any
     milestone-completion photos from step 5.
@@ -1497,8 +1513,9 @@ revenue.
   retrofitted.
 - A variation order's acceptance does NOT automatically fold its value
   into the job's contract value — applying it (§5.11) is a deliberate,
-  separate manual step. There's no proactive nudge when a variation
-  quote gets accepted; you have to check the job's Variation orders tab.
+  separate manual step. A proactive in-app + email notification now
+  fires when a variation order is accepted (§5.11), but the "Apply to
+  job" click itself is still required and intentionally not automated.
 - Mobile (`apps/mobile`) doesn't exist yet — S-07.2/S-07.3's mobile-native
   receipt capture and offline expense-submission queueing are Phase 5
   scope; the web-based expense submission built in §11 covers S-07.2's

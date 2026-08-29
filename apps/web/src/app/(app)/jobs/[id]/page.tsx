@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../../lib/get-session";
 import { JobDetail } from "../job-detail";
@@ -9,7 +10,10 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   return (
     <>
       <AppShellHeader breadcrumb={[{ label: "Jobs", href: "/jobs" }, { label: "Detail" }]} title="Job" />
-      <JobDetail jobId={id} currentUserId={session?.user?.id ?? null} />
+      {/* JobDetail reads ?tab= (variation-order-accepted notification deep links) via useSearchParams, which requires a Suspense boundary. */}
+      <Suspense>
+        <JobDetail jobId={id} currentUserId={session?.user?.id ?? null} />
+      </Suspense>
     </>
   );
 }

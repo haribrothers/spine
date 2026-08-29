@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
-import { contacts, member, notifications, quotes, user } from "../../db/schema";
+import { contacts, jobs, jobVariationOrders, member, notifications, quotes, user } from "../../db/schema";
 import { QuotesService } from "./quotes.service";
 import { PublicQuotesService } from "./public-quotes.service";
 import { QuotePublicTokenService } from "./quote-public-token.service";
@@ -100,5 +100,60 @@ describe("PublicQuotesService respond() owner notifications (requires local Post
 
     expect(await countNotificationsOfType("quote_accepted")).toBe(1);
     expect(await countNotificationsOfType("quote_rejected")).toBe(0);
+  });
+
+  it("accepting an ordinary (non-variation) quote does not send a variation_order_accepted notification", async () => {
+    const [quote] = await db.select().from(quotes).where(eq(quotes.orgId, orgId));
+    const token = await issueTokenFor(quote!.id);
+
+    await publicQuotesService.accept(token, undefined, PROVENANCE);
+    await flushNotify();
+
+    expect(await countNotificationsOfType("variation_order_accepted")).toBe(0);
+  });
+
+  it("accepting a variation order's quote sends both quote_accepted and variation_order_accepted notifications", async () => {
+    const [contact] = await db.select().from(contacts).where(eq(contacts.orgId, orgId));
+    const [job] = await db
+      .insert(jobs)
+      .values({ orgId, contactId: contact!.id, name: "Test Job", currency: "USD" })
+      .returning();
+
+    const variationQuote = await quotesService.create(orgId, actorUserId, { contactId: contact!.id, currency: "USD", lines: [] });
+    await quotesService.send(orgId, variationQuote.id, actorUserId);
+    await db.insert(jobVariationOrders).values({ jobId: job!.id, quoteId: variationQuote.id, orgId, createdByUserId: actorUserId });
+
+    const token = await issueTokenFor(variationQuote.id);
+
+    await publicQuotesService.accept(token, undefined, PROVENANCE);
+    await flushNotify();
+
+    expect(await countNotificationsOfType("quote_accepted")).toBe(1);
+    expect(await countNotificationsOfType("variation_order_accepted")).toBe(1);
+
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.orgId, orgId), eq(notifications.type, "variation_order_accepted")));
+    expect(notification?.link).toBe(`/jobs/${job!.id}?tab=variations`);
+  });
+
+  it("rejecting a variation order's quote does not send a variation_order_accepted notification", async () => {
+    const [contact] = await db.select().from(contacts).where(eq(contacts.orgId, orgId));
+    const [job] = await db
+      .insert(jobs)
+      .values({ orgId, contactId: contact!.id, name: "Test Job", currency: "USD" })
+      .returning();
+
+    const variationQuote = await quotesService.create(orgId, actorUserId, { contactId: contact!.id, currency: "USD", lines: [] });
+    await quotesService.send(orgId, variationQuote.id, actorUserId);
+    await db.insert(jobVariationOrders).values({ jobId: job!.id, quoteId: variationQuote.id, orgId, createdByUserId: actorUserId });
+
+    const token = await issueTokenFor(variationQuote.id);
+
+    await publicQuotesService.reject(token, "Not needed", PROVENANCE);
+    await flushNotify();
+
+    expect(await countNotificationsOfType("variation_order_accepted")).toBe(0);
   });
 });

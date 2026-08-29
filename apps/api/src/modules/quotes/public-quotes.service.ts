@@ -3,7 +3,7 @@ import { and, desc, eq, gt } from "drizzle-orm";
 import { parse } from "node-html-parser";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { quotes, quoteLines, quoteEvents, contacts } from "../../db/schema";
+import { quotes, quoteLines, quoteEvents, contacts, jobVariationOrders } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
@@ -268,9 +268,10 @@ export class PublicQuotesService {
       throw new NotFoundException("This quote link is invalid or has expired");
     }
 
+    const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
+    const businessName = business?.name || "Your business";
+
     {
-      const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
-      const businessName = business?.name || "Your business";
       const verb = outcome === "accepted" ? "accepted" : "rejected";
       void this.notifications.notify(verified.orgId, {
         subject: `${view.contactName ?? "Your customer"} ${verb} quote ${view.number ?? ""}`.trim(),
@@ -285,6 +286,37 @@ export class PublicQuotesService {
           link: `/quotes/${view.id}`,
         },
       });
+    }
+
+    // S-04.9 follow-up: if this quote is a variation order's underlying
+    // quote and it was just accepted, nudge owner/staff to review and apply
+    // it — otherwise the only way to notice is checking the job's Variation
+    // Orders tab manually (this was a known, documented gap; see CHANGELOG).
+    // This is a distinct in-app notification from the quote_accepted one
+    // above (different type/link), not a replacement — a variation order is
+    // still an ordinary quote as far as PublicQuotesService is concerned, so
+    // this stays a targeted lookup here rather than teaching this service a
+    // general concept of jobs.
+    if (outcome === "accepted") {
+      const [variation] = await this.db
+        .select({ jobId: jobVariationOrders.jobId })
+        .from(jobVariationOrders)
+        .where(and(eq(jobVariationOrders.orgId, verified.orgId), eq(jobVariationOrders.quoteId, verified.quoteId)));
+
+      if (variation) {
+        void this.notifications.notify(verified.orgId, {
+          subject: `Variation order accepted — ready to apply to job`,
+          text: `${view.contactName ?? "Your customer"} accepted variation order ${view.number ?? ""} on ${businessName}. Review it and apply it to the job to update the contract value.`,
+          recipientRoles: ["owner", "staff"],
+          inApp: {
+            type: "variation_order_accepted",
+            message: `${view.contactName ?? "Your customer"} accepted variation order ${
+              view.number ?? ""
+            } — apply it to the job.`,
+            link: `/jobs/${variation.jobId}?tab=variations`,
+          },
+        });
+      }
     }
 
     return view;

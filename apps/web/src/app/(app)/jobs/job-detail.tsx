@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -54,6 +54,9 @@ import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 
+const JOB_TABS = ["milestones", "variations", "photos", "notes", "costing"] as const;
+type JobTab = (typeof JOB_TABS)[number];
+
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
   on_hold: "bg-draft-bg text-draft",
@@ -73,6 +76,10 @@ const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
  */
 export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedTab = searchParams.get("tab");
+  const initialTab: JobTab = JOB_TABS.includes(requestedTab as JobTab) ? (requestedTab as JobTab) : "milestones";
+  const [activeTab, setActiveTab] = useState<JobTab>(initialTab);
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -209,7 +216,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         )}
       </Card>
 
-      <Tabs defaultValue="milestones">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as JobTab)}>
         <TabsList>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="variations">Variation orders</TabsTrigger>
