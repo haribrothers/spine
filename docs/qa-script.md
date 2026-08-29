@@ -931,6 +931,18 @@ independent of each other and of Contacts/Catalogue.
 5. Confirm "mark done" / "mark undone" on an activity someone else
    logged requires **Edit others' activities**, same as a text edit
    would — it's not a separately-gated action.
+5a. **Activities' Edit pencil and done/undone checkbox web gating
+    (user-reported, fixed)**: on a contact's detail page, confirm the
+    small pencil "Edit activity" icon next to each logged activity is
+    HIDDEN (not just disabled) for an activity the current Staff user
+    didn't create and has no `edit_others` grant for — previously it
+    showed unconditionally on every activity and only 403'd on save.
+    Confirm the done/undone Checkbox is disabled (not hidden — it's
+    still useful to see the state) under the same condition. Confirm
+    **Log activity** itself is hidden without `activities.edit_own`.
+    There is no delete affordance for activities anywhere in the web UI
+    today (a pre-existing feature gap, not a privilege bug) — nothing to
+    check there.
 6. Confirm the pipeline-by-stage dashboard chart (Dashboard →
    "pipeline by stage" widget, if visible) shows for every Staff/Field
    user regardless of Leads grants — this became an unconditional read,

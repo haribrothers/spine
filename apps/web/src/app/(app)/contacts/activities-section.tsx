@@ -23,6 +23,7 @@ import {
 } from "@spine/ui";
 import { Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Activity, ActivityType } from "./types";
 
 const TYPE_OPTIONS: ActivityType[] = ["call", "meeting", "note", "task"];
@@ -51,6 +52,7 @@ export function ActivitiesSection({
   const [dueAt, setDueAt] = useState("");
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const canCreate = useCapability("activities.edit_own");
 
   function openAddDialog() {
     setEditingId(null);
@@ -110,43 +112,26 @@ export function ActivitiesSection({
         <Spinner size="sm" />
       ) : activities.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {activities.map((activity) => {
-            const overdue = !activity.doneAt && activity.dueAt && new Date(activity.dueAt) < new Date();
-            return (
-              <li key={activity.id} className="flex items-center gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
-                <Checkbox
-                  checked={Boolean(activity.doneAt)}
-                  onCheckedChange={() => handleToggle(activity)}
-                  disabled={togglingId === activity.id}
-                />
-                <div className="flex-1">
-                  <span className="font-medium capitalize text-on-surface">{activity.type}</span>
-                  {activity.notes && <span className="text-on-surface-muted"> · {activity.notes}</span>}
-                  {activity.dueAt && (
-                    <span className="text-on-surface-muted"> · due {new Date(activity.dueAt).toLocaleDateString()}</span>
-                  )}
-                </div>
-                {overdue && <Badge>Overdue</Badge>}
-                <button
-                  type="button"
-                  aria-label="Edit activity"
-                  onClick={() => openEditDialog(activity)}
-                  className="text-on-surface-muted transition-colors hover:text-on-surface"
-                >
-                  <Pencil size={14} />
-                </button>
-              </li>
-            );
-          })}
+          {activities.map((activity) => (
+            <ActivityRow
+              key={activity.id}
+              activity={activity}
+              onToggle={handleToggle}
+              onEdit={openEditDialog}
+              toggling={togglingId === activity.id}
+            />
+          ))}
         </ul>
       ) : (
         <p className="text-[13px] text-on-surface-muted">No activities logged.</p>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-          Log activity
-        </Button>
+        {canCreate && (
+          <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
+            Log activity
+          </Button>
+        )}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit activity" : "Log activity"}</DialogTitle>
@@ -186,5 +171,54 @@ export function ActivitiesSection({
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+/**
+ * Extracted per-row so `useCanEditOwnership` can be called normally —
+ * calling it once per item inside the parent's `.map()` would violate the
+ * Rules of Hooks the moment the activity count changes between renders.
+ * `edit_own`/`edit_others` gates both the Edit button AND the done/undone
+ * Checkbox, since toggling completion is a form of editing the record —
+ * matching ActivitiesService.markDone/markUndone's own server-side gate.
+ */
+function ActivityRow({
+  activity,
+  onToggle,
+  onEdit,
+  toggling,
+}: {
+  activity: Activity;
+  onToggle: (activity: Activity) => void;
+  onEdit: (activity: Activity) => void;
+  toggling: boolean;
+}) {
+  const canEdit = useCanEditOwnership(activity.createdByUserId, { own: "activities.edit_own", others: "activities.edit_others" });
+  const overdue = !activity.doneAt && activity.dueAt && new Date(activity.dueAt) < new Date();
+
+  return (
+    <li className="flex items-center gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
+      <Checkbox
+        checked={Boolean(activity.doneAt)}
+        onCheckedChange={() => onToggle(activity)}
+        disabled={!canEdit || toggling}
+      />
+      <div className="flex-1">
+        <span className="font-medium capitalize text-on-surface">{activity.type}</span>
+        {activity.notes && <span className="text-on-surface-muted"> · {activity.notes}</span>}
+        {activity.dueAt && <span className="text-on-surface-muted"> · due {new Date(activity.dueAt).toLocaleDateString()}</span>}
+      </div>
+      {overdue && <Badge>Overdue</Badge>}
+      {canEdit && (
+        <button
+          type="button"
+          aria-label="Edit activity"
+          onClick={() => onEdit(activity)}
+          className="text-on-surface-muted transition-colors hover:text-on-surface"
+        >
+          <Pencil size={14} />
+        </button>
+      )}
+    </li>
   );
 }
