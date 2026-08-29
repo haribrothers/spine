@@ -37,8 +37,22 @@ export const FIELD_OWN_CAPABILITIES: ReadonlySet<Capability> = new Set([
  * `fieldAlwaysPasses` param (not `requireOwnershipCapability`'s
  * `fieldAlwaysPassesOwn`, which only covers the `own` branch) MUST have
  * both halves listed here.
+ *
+ * `quotes.accept_in_person` (Phase 5, S-11.7) is here too even though it's
+ * a single plain capability with no own/others pair — Field is fixed/
+ * non-configurable and this is the whole point of the story ("as a field
+ * user, I want to present a quote and capture acceptance on site"), so it
+ * must always pass for Field regardless of the Team matrix, same reasoning
+ * as milestone completion. `hasCapability` calls for this capability pass
+ * `fieldAlwaysPasses: true` directly rather than going through
+ * `requireOwnershipCapability` (there's no ownership dimension to this
+ * action at all — see `QuotesService.acceptInPerson`'s own doc comment).
  */
-export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set(["milestones.edit_own", "milestones.edit_others"] satisfies Capability[]);
+export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set([
+  "milestones.edit_own",
+  "milestones.edit_others",
+  "quotes.accept_in_person",
+] satisfies Capability[]);
 
 /**
  * The same owner/field/staff resolution `CapabilityGuard` uses, factored out

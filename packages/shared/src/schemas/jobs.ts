@@ -70,6 +70,11 @@ export const addJobPhotoSchema = z.object({
   caption: z.string().optional().nullable(),
 });
 
+/** Phase 5 (Mobile) — assigns one field/staff/owner user to a job's crew. See jobs.ts's `jobAssignments` schema comment for why this is a join table, not a single column. */
+export const assignJobSchema = z.object({
+  userId: z.string().min(1),
+});
+
 /**
  * S-04.9 — builds the supplementary quote a variation order wraps.
  * `contactId`/`currency` are optional here (unlike `createQuoteSchema`,

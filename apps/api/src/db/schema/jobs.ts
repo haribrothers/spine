@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -184,6 +184,41 @@ export const jobNotes = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("job_notes_job_idx").on(table.jobId), index("job_notes_org_idx").on(table.orgId)],
+);
+
+/**
+ * Phase 5 (Mobile) — which field users are assigned to a job, backing
+ * S-11.2's "today's assigned jobs" home-screen query. A join table rather
+ * than a single `jobs.assignedToUserId` column (unlike `contacts.
+ * assignedToUserId`'s single-pipeline-rep shape) because a field-service
+ * job commonly has a crew, not one owner. Assigning/unassigning is its own
+ * workflow action (`jobs.assign` capability, owner/staff only) — not part
+ * of `jobs.edit_own`/`edit_others`, since "can I edit this job's fields"
+ * and "can I decide who's on the crew" are different questions an Owner
+ * may want to grant separately, matching every other dedicated
+ * workflow-action capability in this codebase (see permissions.ts).
+ */
+export const jobAssignments = pgTable(
+  "job_assignments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    jobId: uuid("job_id")
+      .notNull()
+      .references(() => jobs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    assignedAt: timestamp("assigned_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("job_assignments_job_idx").on(table.jobId),
+    index("job_assignments_user_idx").on(table.userId),
+    index("job_assignments_org_idx").on(table.orgId),
+    uniqueIndex("job_assignments_job_user_uidx").on(table.jobId, table.userId),
+  ],
 );
 
 /**

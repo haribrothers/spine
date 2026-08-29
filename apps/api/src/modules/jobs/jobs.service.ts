@@ -1,19 +1,20 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { addJobNoteSchema, addJobPhotoSchema, createJobSchema, updateJobSchema } from "@spine/shared";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, updateJobSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, contacts, quotes, jobPhotos, jobNotes } from "../../db/schema";
+import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
-import { requireOwnershipCapability } from "../../auth/capability.util";
+import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
 export type AddJobNoteInput = z.infer<typeof addJobNoteSchema>;
 export type AddJobPhotoInput = z.infer<typeof addJobPhotoSchema>;
+export type AssignJobInput = z.infer<typeof assignJobSchema>;
 
 /**
  * PRD F4 (Phase 3 · Jobs & Construction Billing) — job CRUD and the S-04.1
@@ -33,10 +34,31 @@ export class JobsService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async list(orgId: string, options: { status?: string; contactId?: string }) {
+  /**
+   * `assignedToUserId` (Phase 5, S-11.2) — "today's assigned jobs" on the
+   * mobile home screen. Filters via an `INNER JOIN` on `job_assignments`
+   * rather than a subquery, matching this method's existing join-based
+   * shape for `contacts`; mirrors `ExpensesService.list`'s `mine`
+   * query-param precedent (`purchases/expenses.controller.ts`) — same
+   * "narrow to the requesting user" shape, applied here to job assignment
+   * instead of expense submission.
+   */
+  async list(orgId: string, options: { status?: string; contactId?: string; assignedToUserId?: string }) {
     const conditions = [eq(jobs.orgId, orgId)];
     if (options.contactId) conditions.push(eq(jobs.contactId, options.contactId));
     if (options.status) conditions.push(eq(jobs.status, options.status as (typeof jobs.$inferSelect)["status"]));
+
+    if (options.assignedToUserId) {
+      conditions.push(eq(jobAssignments.userId, options.assignedToUserId));
+      const rows = await this.db
+        .select({ job: jobs, contactName: contacts.name })
+        .from(jobs)
+        .innerJoin(jobAssignments, eq(jobAssignments.jobId, jobs.id))
+        .leftJoin(contacts, eq(jobs.contactId, contacts.id))
+        .where(and(...conditions))
+        .orderBy(desc(jobs.createdAt));
+      return rows.map((r) => ({ ...r.job, contactName: r.contactName }));
+    }
 
     const rows = await this.db
       .select({ job: jobs, contactName: contacts.name })
@@ -336,5 +358,107 @@ export class JobsService {
       throw new NotFoundException("Job note not found");
     }
     return this.auditLog.listForEntity(orgId, "job_note", noteId);
+  }
+
+  /** Phase 5 (Mobile) — who's on a job's crew. Any authenticated org member can read, same as every other GET on this controller. */
+  async listAssignees(orgId: string, jobId: string) {
+    await this.getOne(orgId, jobId);
+    const rows = await this.db
+      .select({ id: jobAssignments.id, userId: jobAssignments.userId, assignedAt: jobAssignments.assignedAt, name: user.name, email: user.email })
+      .from(jobAssignments)
+      .innerJoin(user, eq(jobAssignments.userId, user.id))
+      .where(and(eq(jobAssignments.orgId, orgId), eq(jobAssignments.jobId, jobId)))
+      .orderBy(desc(jobAssignments.assignedAt));
+    return rows;
+  }
+
+  /**
+   * `jobs.assign` — a dedicated workflow-action capability (see
+   * permissions.ts's own doc comment), not part of `jobs.edit_own`/
+   * `edit_others`. `actorUserId` isn't checked against the job's
+   * `createdByUserId` here (own/others doesn't apply — "who can decide the
+   * crew" isn't an ownership question), matching `jobs.release_retention`/
+   * `variation_orders.apply`'s identical shape. Idempotent: re-assigning an
+   * already-assigned user is a no-op (the unique index on
+   * `(jobId, userId)` would otherwise throw), matching how this action
+   * would naturally be retried from a flaky office connection.
+   */
+  async assign(orgId: string, jobId: string, actorUserId: string, input: AssignJobInput) {
+    const granted = await hasCapability(this.db, { orgId, userId: actorUserId }, "jobs.assign");
+    if (!granted) {
+      throw new ForbiddenException("Missing capability: jobs.assign");
+    }
+
+    const job = await this.getOne(orgId, jobId);
+
+    const [targetMember] = await this.db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, input.userId));
+    if (!targetMember) {
+      throw new BadRequestException("User not found");
+    }
+
+    const [existing] = await this.db
+      .select({ id: jobAssignments.id })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.jobId, jobId), eq(jobAssignments.userId, input.userId)));
+    if (existing) {
+      return existing;
+    }
+
+    const row = await this.db.transaction(async (tx) => {
+      const [assignment] = await tx
+        .insert(jobAssignments)
+        .values({ jobId, orgId, userId: input.userId })
+        .returning();
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "assigned",
+        entityType: "job",
+        entityId: jobId,
+        contactId: job.contactId,
+        changes: [{ field: "assignedUserId", from: null, to: input.userId }],
+      });
+
+      return assignment;
+    });
+
+    return row;
+  }
+
+  async unassign(orgId: string, jobId: string, actorUserId: string, targetUserId: string) {
+    const granted = await hasCapability(this.db, { orgId, userId: actorUserId }, "jobs.assign");
+    if (!granted) {
+      throw new ForbiddenException("Missing capability: jobs.assign");
+    }
+
+    const job = await this.getOne(orgId, jobId);
+
+    const [existing] = await this.db
+      .select({ id: jobAssignments.id })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.jobId, jobId), eq(jobAssignments.userId, targetUserId)));
+    if (!existing) {
+      throw new NotFoundException("Job assignment not found");
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx.delete(jobAssignments).where(eq(jobAssignments.id, existing.id));
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "unassigned",
+        entityType: "job",
+        entityId: jobId,
+        contactId: job.contactId,
+        changes: [{ field: "assignedUserId", from: targetUserId, to: null }],
+      });
+    });
+
+    return { success: true };
   }
 }

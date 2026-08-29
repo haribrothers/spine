@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import {
   createJobSchema,
@@ -8,6 +8,7 @@ import {
   addJobPhotoSchema,
   addJobNoteSchema,
   createVariationOrderSchema,
+  assignJobSchema,
 } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -47,10 +48,16 @@ export class JobsController {
     private readonly jobCostingService: JobCostingService,
   ) {}
 
+  /** `assignedToMe` (Phase 5 mobile home screen, S-11.2) mirrors `GET /expenses?mine=true`'s own precedent — narrows to jobs the requesting user is assigned to via `job_assignments`. */
   @Get()
-  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string) {
+  async list(
+    @Session() session: UserSession,
+    @Query("status") status?: string,
+    @Query("contactId") contactId?: string,
+    @Query("assignedToMe") assignedToMe?: string,
+  ) {
     const orgId = requireOrgId(session);
-    return this.jobsService.list(orgId, { status, contactId });
+    return this.jobsService.list(orgId, { status, contactId, assignedToUserId: assignedToMe === "true" ? session.user.id : undefined });
   }
 
   /**
@@ -114,6 +121,30 @@ export class JobsController {
     const orgId = requireOrgId(session);
     const input = updateJobSchema.parse(body);
     return this.jobsService.update(orgId, id, session.user.id, input);
+  }
+
+  /** Phase 5 (Mobile) — who's on a job's crew. Read is unconditional, same as every other GET on this controller. */
+  @Get(":id/assignees")
+  async listAssignees(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.listAssignees(orgId, id);
+  }
+
+  /** Dedicated `jobs.assign` workflow-action capability, checked in the service (not `@RequireCapability` here) since it isn't own/others-shaped but still follows this codebase's "capability check lives with the mutation" convention for actions gated purely by role, not record ownership. */
+  @Post(":id/assignees")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async assign(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = assignJobSchema.parse(body);
+    return this.jobsService.assign(orgId, id, session.user.id, input);
+  }
+
+  @Delete(":id/assignees/:userId")
+  @OrgRoles(["owner", "staff"])
+  async unassign(@Session() session: UserSession, @Param("id") id: string, @Param("userId") userId: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.unassign(orgId, id, session.user.id, userId);
   }
 
   @Get(":id/milestones")

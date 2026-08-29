@@ -208,4 +208,56 @@ describe("Jobs & Milestones ownership split (requires local Postgres)", () => {
       ).resolves.toBeDefined();
     });
   });
+
+  /**
+   * Phase 5 (Mobile) — `jobs.assign` is a plain workflow-action capability,
+   * not own/others-shaped (there's no "creator" of an assignment to split
+   * by), so this covers the single-capability gate plus the idempotent
+   * re-assign and unassign-then-reassign behavior JobsService.assign/
+   * unassign rely on for a flaky mobile/office connection retrying safely.
+   */
+  describe("Crew assignment", () => {
+    it("a Staff user with no jobs.assign grant cannot assign a crew member", async () => {
+      const job = await jobsService.create(orgId, creatorUserId, jobInput());
+      await expect(jobsService.assign(orgId, job.id, creatorUserId, { userId: fieldUserId })).rejects.toThrow(/missing capability/i);
+    });
+
+    it("jobs.assign lets a Staff user assign and unassign a crew member", async () => {
+      const job = await jobsService.create(orgId, creatorUserId, jobInput());
+      await grantTeam(creatorMemberId, { "jobs.assign": true });
+
+      await expect(jobsService.assign(orgId, job.id, creatorUserId, { userId: fieldUserId })).resolves.toBeDefined();
+      const assignees = await jobsService.listAssignees(orgId, job.id);
+      expect(assignees.map((a) => a.userId)).toEqual([fieldUserId]);
+
+      await expect(jobsService.unassign(orgId, job.id, creatorUserId, fieldUserId)).resolves.toEqual({ success: true });
+      expect(await jobsService.listAssignees(orgId, job.id)).toEqual([]);
+    });
+
+    it("re-assigning an already-assigned user is idempotent, not a duplicate-key error", async () => {
+      const job = await jobsService.create(orgId, creatorUserId, jobInput());
+      await grantTeam(creatorMemberId, { "jobs.assign": true });
+
+      await jobsService.assign(orgId, job.id, creatorUserId, { userId: fieldUserId });
+      await expect(jobsService.assign(orgId, job.id, creatorUserId, { userId: fieldUserId })).resolves.toBeDefined();
+      expect(await jobsService.listAssignees(orgId, job.id)).toHaveLength(1);
+    });
+
+    it("Owner bypasses jobs.assign entirely, regardless of Team grants", async () => {
+      const job = await jobsService.create(orgId, creatorUserId, jobInput());
+      const [ownerMembership] = await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.role, "owner")));
+      await expect(jobsService.assign(orgId, job.id, ownerMembership!.userId, { userId: fieldUserId })).resolves.toBeDefined();
+    });
+
+    it("`assignedToUserId` filter on list() returns only jobs that user is assigned to", async () => {
+      const assignedJob = await jobsService.create(orgId, creatorUserId, jobInput());
+      const otherJob = await jobsService.create(orgId, creatorUserId, jobInput());
+      await grantTeam(creatorMemberId, { "jobs.assign": true });
+      await jobsService.assign(orgId, assignedJob.id, creatorUserId, { userId: fieldUserId });
+
+      const rows = await jobsService.list(orgId, { assignedToUserId: fieldUserId });
+      expect(rows.map((r) => r.id)).toEqual([assignedJob.id]);
+      expect(rows.map((r) => r.id)).not.toContain(otherJob.id);
+    });
+  });
 });

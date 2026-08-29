@@ -47,6 +47,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { CostingSection } from "./[id]/costing-section";
+import { CrewSection } from "./[id]/crew-section";
 import { MilestonesSection } from "./[id]/milestones-section";
 import { NotesSection } from "./[id]/notes-section";
 import { PhotosSection } from "./[id]/photos-section";
@@ -54,7 +55,7 @@ import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 
-const JOB_TABS = ["milestones", "variations", "photos", "notes", "costing"] as const;
+const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
 
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
@@ -222,6 +223,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
           <TabsTrigger value="variations">Variation orders</TabsTrigger>
           <TabsTrigger value="photos">Photos</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
+          <TabsTrigger value="crew">Crew</TabsTrigger>
           <TabsTrigger value="costing">Costing</TabsTrigger>
         </TabsList>
         <TabsContent value="milestones">
@@ -235,6 +237,9 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </TabsContent>
         <TabsContent value="notes">
           <NotesSection job={job} />
+        </TabsContent>
+        <TabsContent value="crew">
+          <CrewSection job={job} />
         </TabsContent>
         <TabsContent value="costing">
           <CostingSection job={job} />

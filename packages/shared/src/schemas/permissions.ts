@@ -41,6 +41,7 @@ export const CAPABILITIES = [
   "quotes.send",
   "quotes.revise",
   "quotes.approve_discount",
+  "quotes.accept_in_person",
   "invoices.edit_own",
   "invoices.edit_others",
   "invoices.delete_own",
@@ -85,6 +86,7 @@ export const CAPABILITIES = [
   "jobs.edit_own",
   "jobs.edit_others",
   "jobs.release_retention",
+  "jobs.assign",
   "milestones.edit_own",
   "milestones.edit_others",
   "milestones.invoice",
@@ -270,6 +272,12 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   "quotes.approve_discount": {
     label: "Approve quote above discount threshold",
     description: "Approve a quote whose discount exceeds the org's configured threshold.",
+    group: "Manage Quotes",
+  },
+  "quotes.accept_in_person": {
+    label: "Accept a quote in person",
+    description:
+      "Present a quote on your device and capture the customer's on-site acceptance with a signature (Phase 5, mobile) — a distinct workflow action from the customer's own public accept link, gated separately since it lets a Field/Staff/Owner user resolve a quote on the customer's behalf.",
     group: "Manage Quotes",
   },
   "invoices.edit_own": {
@@ -500,6 +508,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Release a job's outstanding retention as a final invoice — a one-way billing action, not an edit, so it's gated separately from edit_own/edit_others.",
     group: "Manage Jobs",
   },
+  "jobs.assign": {
+    label: "Assign crew to a job",
+    description: "Assign or unassign field users to/from a job's crew — decides who sees the job on their mobile home screen (Phase 5, S-11.2). A one-way workflow action, not an edit to the job's own fields, so it's gated separately from edit_own/edit_others.",
+    group: "Manage Jobs",
+  },
   "milestones.edit_own": {
     label: "Define/edit own milestones",
     description:
@@ -608,6 +621,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "quotes.send": true,
   "quotes.revise": true,
   "quotes.approve_discount": false,
+  "quotes.accept_in_person": true,
   "invoices.edit_own": true,
   "invoices.edit_others": true,
   "invoices.delete_own": true,
@@ -652,6 +666,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "jobs.edit_own": true,
   "jobs.edit_others": true,
   "jobs.release_retention": true,
+  "jobs.assign": true,
   "milestones.edit_own": true,
   "milestones.edit_others": true,
   "milestones.invoice": true,

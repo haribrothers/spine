@@ -161,3 +161,12 @@ export interface EditableMilestone {
 export interface UploadedFile {
   id: string;
 }
+
+/** GET /jobs/:id/assignees row shape — JobsService.listAssignees joins in the assigned user's name/email (Phase 5, S-11.2 — who sees this job on their mobile home screen). */
+export interface JobAssignee {
+  id: string;
+  userId: string;
+  assignedAt: string;
+  name: string;
+  email: string;
+}
