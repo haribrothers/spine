@@ -479,6 +479,28 @@ real, also walk ONE job manually through the full sequence below.
     shows entries from a different invoice or from a credit note issued
     against it (they have their own separate History, see below).
 
+### 7.1 Standalone Credit Notes page (new — Billing → Credit Notes)
+
+12. Go to **Billing → Credit Notes** (a new top-level nav entry, between
+    Invoices and Payments). Confirm every credit note across the org
+    appears — not just the ones tied to one invoice — with stat cards
+    for total count and total credited (issued only).
+13. Confirm the **Status** filter offers Draft/Issued and the **contact**
+    filter narrows the list the same way Invoices' own filters do.
+    Confirm there is **no "New credit note" button anywhere on this
+    page** — creation stays exclusively on an invoice's own detail page
+    ("Issue credit note"), since a credit note always needs an
+    already-issued invoice picked first.
+14. Click a row's number — confirm the same detail Drawer from §7 step 8
+    opens (status, reason, lines, total, a link back to the source
+    invoice, and its own History section). Click the **Invoice** column
+    link on a row instead — confirm it navigates to that invoice's
+    detail page directly, without opening the drawer.
+15. Confirm a credit note issued from the invoice-detail flow (§7 step
+    8) shows up here immediately (reload if needed) with the correct
+    status, and that its History here matches what you saw on the
+    invoice's own detail page.
+
 ---
 
 ## 8. Payments (FEAT-06)

@@ -13,6 +13,7 @@ import {
   ReceiptText,
   Shield,
   Target,
+  Undo2,
   UserCog,
   Users,
   Wallet,
@@ -75,6 +76,7 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     label: "Billing",
     items: [
       { href: "/invoices", label: "Invoices", icon: <Receipt /> },
+      { href: "/credit-notes", label: "Credit Notes", icon: <Undo2 /> },
       { href: "/payments", label: "Payments", icon: <Banknote /> },
       { href: "/receivables", label: "Receivables", icon: <Inbox /> },
     ],

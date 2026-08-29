@@ -50,7 +50,7 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - Smaller open items within Phase 2's own scope (not blocking Phase 3, but still open):
   - **No dedicated "payment instructions" block/payment link** in the invoice PDF/email body — the balance-due summary is the closest thing built so far, since no payment gateway/link exists yet.
   - ~~**No `GET /:id/history` endpoint for invoices** (or credit notes, or payments)~~ — **done**, see the 2026-08-29 Completed entry.
-  - **No standalone `/credit-notes` list page** — reachable only from the invoice it corrects, same "invoice-triggered, not yet standalone" scope Payments started with before S-06.4 gave it its own page. A minimal per-credit-note detail Drawer now exists (built for the history endpoint above), but there's still no list/filter page of its own.
+  - ~~**No standalone `/credit-notes` list page**~~ — **done**, see the 2026-08-29 Completed entry.
 - ~~**Vendor payments (S-07.8, Phase 4 scope) will want the same allocation-limit trigger pattern**~~ — **done**, see the Phase 4 Stage 2 Completed entry (`0029_vendor_payment_allocation_limits.sql`).
 - ~~**Demo data still doesn't cover Jobs (Phase 3) or vendor bills/expenses (Phase 4)**~~ — **done**, see the 2026-08-10 "Demo data now covers every previously-unseeded entity" Completed entry, plus the Phase 3/Phase 4 Stage 2 entries' own demo-data notes.
 - Quotes Stage 3's own known gaps/rough edges, left as-is because nothing in the task brief called for going further:
@@ -75,6 +75,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - MinIO's `spine` bucket isn't provisioned by `docker-compose.dev.yml`/the prod compose file — `FilesService` now self-heals this on first upload (`HeadBucket` → `CreateBucket` on 404, cached after), so no manual `mc mb` step is required, but a `docker-compose` `minio-init` sidecar (the more conventional pattern) would still be cleaner long-term than a lazy per-process check.
 
 ## Completed
+
+### 2026-08-29 — A standalone `/credit-notes` list page (closes a long-standing "Next up" item)
+
+- **New `apps/web/src/app/(app)/credit-notes/` module**: `page.tsx` (breadcrumb `Billing > Credit Notes`), `credit-notes-explorer.tsx` (client body — stat cards, status + contact filters, table, click-to-drawer), `credit-notes-table.tsx`, `credit-notes-skeleton.tsx`, `use-credit-note-stats.ts`, `types.ts`. Mirrors `payments/payments-explorer.tsx`'s structure closely (same contact-filter Combobox, same click-opens-drawer-not-route precedent for a small record) plus a status filter (`draft`/`issued`) like `invoices/invoices-explorer.tsx` has, since `GET /credit-notes` already returns drafts too — a lingering draft is a real, if usually short-lived, state worth being able to find (confirmed with the user before adding it, since `credit-notes-section.tsx`'s own list only ever shows issued ones).
+- **Deliberately no "New credit note" entry point** (confirmed with the user) — `POST /credit-notes` requires an already-issued, non-advance invoice id (`CreditNotesService.create`'s own validation has no path to blank-slate creation), so a bare "New" button on this page would need to reinvent an invoice-picker step that already exists, with full context, on the invoice detail page's own "Issue credit note" button. This page is list-and-drill-down only.
+- **`GET /credit-notes` needed zero API changes** — it already supported `contactId`/no-filter (returning every credit note in the org, unpaged, ordered newest-first) with no pagination/status param; the status filter is applied client-side against the already-fetched list, matching how the Invoices page's own status filter already works. `credit_notes_org_idx` already covers the unfiltered query; no new index needed.
+- **`credit-notes-section.tsx`'s previously-inert rows** (added today for the history feature above) now double as this page's own row-click target — same `CreditNoteDetailDrawer` component, reused as-is rather than duplicated, since `creditNoteId: string | null` alone already fully drives its open state.
+- Registered in the sidebar: **Billing → Credit Notes**, between Invoices and Payments (a `Undo2` icon from `lucide-react`).
+- Full typecheck/lint/build clean for `@spine/web`. Verified live: `GET /credit-notes` returns 401 unauthenticated (route registered, auth-gated correctly) and `/credit-notes` server-renders 200 against the running dev instance.
 
 ### 2026-08-29 — History (audit log view) for Invoices, Payments, and Credit Notes (closes a long-standing "Next up" item)
 
