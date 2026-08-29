@@ -66,6 +66,12 @@ export class CatalogService {
     return item;
   }
 
+  /** `GET /catalog-items/:id/history` — confirms the item exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "catalog_item", id);
+  }
+
   /**
    * Self-contained on purpose (S-02.4 — "add an item inline while building
    * a quote"): this endpoint takes nothing beyond `orgId` + the create

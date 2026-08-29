@@ -24,6 +24,7 @@ import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
@@ -458,6 +459,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
         </div>
       </Card>
+
+      <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
 
       {(quote.notes || quote.termsAndConditions) && (
         <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">

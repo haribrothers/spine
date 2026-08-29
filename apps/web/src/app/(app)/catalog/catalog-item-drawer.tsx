@@ -12,6 +12,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { useId, useState } from "react";
+import { HistorySection } from "../../../components/history-section";
 import { CatalogForm } from "./catalog-form";
 import type { CatalogItem } from "./types";
 
@@ -67,6 +68,7 @@ export function CatalogItemDrawer({
         </DrawerHeader>
         <DrawerBody>
           <CatalogForm formId={formId} item={item} onSubmittingChange={setSaving} onSuccess={handleSuccess} />
+          {item && <HistorySection endpoint={`/catalog-items/${item.id}/history`} subjectLabel="this item" />}
         </DrawerBody>
         <DrawerFooter>
           <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={saving}>

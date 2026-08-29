@@ -321,6 +321,24 @@ export class QuotesService {
     };
   }
 
+  /**
+   * `GET /quotes/:id/history` — confirms the quote exists (org-scoped)
+   * before delegating to AuditLogService, same pattern as
+   * InvoicesService.getHistory. Also surfaces the public-link
+   * accept/reject events recorded by `PublicQuotesService.respond()`,
+   * since those write to the same `audit_log` table with
+   * `entityType: "quote"`. Repeat "viewed" events do NOT appear here —
+   * those are logged to the separate `quote_events` table (see its own
+   * schema doc comment), not `audit_log`, precisely because every single
+   * view getting its own row in a document's own edit/status-change
+   * history would be noise; this stays consistent with that design
+   * rather than merging the two event streams.
+   */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "quote", id);
+  }
+
   /** Creates a new draft (version 1, no parent). Always unnumbered — see quotes.ts's schema comment. */
   /**
    * `isDemo` is not part of `CreateQuoteInput`/`createQuoteSchema` — it's

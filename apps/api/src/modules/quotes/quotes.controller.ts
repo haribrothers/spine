@@ -65,6 +65,13 @@ export class QuotesController {
     return this.quotesService.getOne(orgId, id);
   }
 
+  /** `GET /quotes/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "quote"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.quotesService.getHistory(orgId, id);
+  }
+
   /**
    * PRD S-03.3 — streams a branded PDF of the quote, rendered live from its
    * stored line/total snapshot on every call (not served from

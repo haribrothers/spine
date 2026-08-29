@@ -45,6 +45,13 @@ export class CatalogController {
     return this.catalogService.getOne(orgId, id);
   }
 
+  /** `GET /catalog-items/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "catalog_item"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.catalogService.getHistory(orgId, id);
+  }
+
   @Post()
   @OrgRoles(["owner", "staff"])
   @RequireCapability("catalog.edit_own")

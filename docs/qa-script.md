@@ -137,6 +137,9 @@ before considering that work's QA "done."
 2. Edit an existing item's price — confirm this does NOT retroactively
    change any already-issued quote/invoice that used it (documents
    snapshot their data).
+2a. Re-open that same item (opens the edit drawer). Confirm a **History**
+    section appears below the form showing both the creation and the
+    price-update entries, newest first.
 3. Archive an item, confirm the delete-confirmation dialog suggests
    Archive over Delete when the item might be referenced elsewhere.
 4. Delete an item that's referenced by an existing quote line — confirm
@@ -178,6 +181,11 @@ before considering that work's QA "done."
     authenticated app, and an owner notification (email + in-app bell)
     fires for "quote rejected" — the same as step 7's acceptance
     notification, just worded for a rejection.
+7b. On the quote's own detail page, confirm a **History** section shows
+    the creation, send, and accept/reject entries, newest first —
+    repeat "viewed" events from step 6a do NOT clutter this list (those
+    stay in the public quote's own throttled-notification/`quote_events`
+    trail, not this edit/status history).
 8. Revise a **sent** quote — confirm it creates a new version
    (`parent_quote_id` set) and the original is marked "superseded,"
    rather than mutating the sent one.
