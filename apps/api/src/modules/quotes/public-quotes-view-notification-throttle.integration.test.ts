@@ -59,7 +59,7 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     const fakePush = { isConfigured: () => false };
     const notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
 
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, notificationsService);
     publicQuotesService = new PublicQuotesService(db, tokens, auditLog, notificationsService, settings);
 
     const ownerEmail = `qview-owner-${randomUUID()}@example.com`;

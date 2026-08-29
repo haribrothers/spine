@@ -31,6 +31,23 @@ import { taxRates, taxGroups } from "./tax";
 export const quoteStatusEnum = pgEnum("quote_status", ["draft", "sent", "accepted", "rejected"]);
 
 /**
+ * Phase 5 (Mobile) — how an accepted quote was actually accepted. Only
+ * meaningful once `status === "accepted"`; both this and
+ * `quotes.acceptedByUserId` stay null for a rejected or still-outstanding
+ * quote. `"public_link"` is the existing, unauthenticated customer-facing
+ * flow (`PublicQuotesService.accept`, no acting user); `"in_person"` is
+ * `POST /quotes/:id/accept-in-person` — an authenticated Owner/Staff/Field
+ * user inside the app captures the customer's signature on their own
+ * device, on site. These are deliberately distinct code paths (see
+ * QuotesService.acceptInPerson's own doc comment for why this isn't just
+ * PublicQuotesService with a session bolted on) but both leave the quote in
+ * the exact same terminal `accepted` state — this column is purely a
+ * reportable fact about which channel resolved it, not a different
+ * acceptance outcome.
+ */
+export const quoteAcceptanceMethodEnum = pgEnum("quote_acceptance_method", ["public_link", "in_person"]);
+
+/**
  * PRD S-03.2 — a quote line can be a priced item, a section heading, or a
  * free-text note, not only a priced item. `heading`/`text` lines carry only
  * `name`/`description` and zero out every money/qty/tax field rather than
@@ -135,6 +152,9 @@ export const quotes = pgTable(
      */
     respondedAt: timestamp("responded_at", { withTimezone: true }),
     responseComment: text("response_comment"),
+    /** Phase 5 (Mobile, S-11.7) — see quoteAcceptanceMethodEnum's own doc comment above. Both null unless/until this quote is accepted via POST /quotes/:id/accept-in-person specifically (never set by the public-link accept path). */
+    acceptanceMethod: quoteAcceptanceMethodEnum("acceptance_method"),
+    acceptedByUserId: text("accepted_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /**
      * PRD F3 Stage 2 (S-03.3/S-03.4) — the exact PDF generated at send time,
      * persisted via `FilesService` (S3/MinIO) rather than regenerated on

@@ -11,6 +11,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
+import { NotificationsService } from "../notifications/notifications.service";
 
 /**
  * Regression coverage for `GET /catalog-items/:id/history` and
@@ -49,9 +50,11 @@ describe("Catalogue/Quotes history (requires local Postgres)", () => {
     // constructed by hand in a test. Faked here since `send()`'s queued
     // quote-send-email job isn't what this test cares about.
     const fakeQueue = { send: async () => {} };
+    const fakePush = { isConfigured: () => false };
+    const notifications = new NotificationsService(db, fakeQueue as never, fakePush as never);
 
     catalogService = new CatalogService(db, auditLog, taxResolver);
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver, notifications);
 
     const ownerEmail = `catquote-history-owner-${randomUUID()}@example.com`;
     createdEmails.push(ownerEmail);

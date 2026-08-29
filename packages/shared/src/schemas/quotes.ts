@@ -64,3 +64,15 @@ export const createQuoteSchema = z.object({
 
 /** A draft-only update — see QuotesService.update's own guard against editing a sent quote. */
 export const updateQuoteSchema = createQuoteSchema.partial();
+
+/**
+ * Phase 5 (Mobile, S-11.7) — `POST /quotes/:id/accept-in-person`. The
+ * signature is uploaded first via the existing `POST /files` (two-step
+ * upload, same pattern as every other file-attaching endpoint in this
+ * codebase — see addJobPhotoSchema's own comment) and referenced here by
+ * id, never sent inline.
+ */
+export const acceptQuoteInPersonSchema = z.object({
+  signatureFileId: uuidSchema,
+  comment: z.string().optional().nullable(),
+});

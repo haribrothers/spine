@@ -1,17 +1,19 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import type { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import { computeLineTax, money, roundHalfUp } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { quotes, quoteLines, contacts } from "../../db/schema";
+import { quotes, quoteLines, contacts, files } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
-import { requireOwnershipCapability } from "../../auth/capability.util";
+import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { NotificationsService } from "../notifications/notifications.service";
+import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { QuotePublicTokenService } from "./quote-public-token.service";
 
@@ -187,6 +189,7 @@ export class QuotesService {
     private readonly queue: QueueService,
     private readonly publicTokens: QuotePublicTokenService,
     private readonly taxResolver: TaxResolverService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
@@ -738,6 +741,111 @@ export class QuotesService {
       await tx.delete(quotes).where(eq(quotes.id, id));
     });
     return { id };
+  }
+
+  /**
+   * Phase 5 (Mobile, S-11.7) — `POST /quotes/:id/accept-in-person`. An
+   * authenticated Owner/Staff/Field user, inside the app, captures the
+   * customer's on-site signature and resolves the quote to `accepted` on
+   * their behalf. Deliberately a SEPARATE code path from
+   * `PublicQuotesService.respond` rather than that service with a session
+   * bolted on: the public path is architecturally token-only and
+   * unauthenticated by design (`@Public()`, no `@Session()` read anywhere
+   * in that service, `RequestProvenance` is IP+user-agent only, no actor
+   * concept at all) — reusing it here would mean smuggling an authenticated
+   * actor through a code path built specifically to have none, and the
+   * audit trail needs a genuinely different fact recorded (`acceptedByUserId`
+   * + `acceptanceMethod: "in_person"`, which the public path's schema has
+   * no column for and should never set). Both paths still leave the quote
+   * in the identical terminal `status: "accepted"` state and both fire the
+   * same "quote accepted" owner notification + variation-order nudge, so
+   * duplicating that small tail (not the whole state machine) here is a
+   * deliberate, bounded amount of overlap in exchange for keeping the
+   * public flow's "no session, ever" invariant airtight.
+   *
+   * `quotes.accept_in_person` gates this — Field always passes it
+   * (`FIELD_ALWAYS_CAPABILITIES`, since this is the entire point of S-11.7
+   * and was never an ownership question), Owner bypasses via
+   * `hasCapability`'s existing role check, Staff needs the Team grant.
+   * Checked directly via `hasCapability`, not `requireOwnershipCapability`
+   * — there's no own/others dimension to "did I capture this signature,"
+   * only "am I allowed to."
+   */
+  async acceptInPerson(orgId: string, id: string, actorUserId: string, input: z.infer<typeof acceptQuoteInPersonSchema>) {
+    const granted = await hasCapability(this.db, { orgId, userId: actorUserId }, "quotes.accept_in_person", true);
+    if (!granted) {
+      throw new ForbiddenException("Missing capability: quotes.accept_in_person");
+    }
+
+    const [signatureFile] = await this.db.select({ id: files.id }).from(files).where(and(eq(files.orgId, orgId), eq(files.id, input.signatureFileId)));
+    if (!signatureFile) {
+      throw new BadRequestException("Signature file not found");
+    }
+
+    const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!preCheck) {
+      throw new NotFoundException("Quote not found");
+    }
+
+    const respondedAt = new Date();
+
+    await this.db.transaction(async (tx) => {
+      // Row-locked re-select, same concurrency discipline as send()/revise()
+      // above and PublicQuotesService.respond — an in-person accept racing a
+      // customer's own public-link accept (or a second in-person attempt)
+      // must not both succeed.
+      const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
+      if (!existing) {
+        throw new NotFoundException("Quote not found");
+      }
+      if (existing.status !== "sent") {
+        throw new GoneException(
+          existing.status === "accepted" || existing.status === "rejected"
+            ? `This quote has already been ${existing.status}`
+            : "This quote is not currently open for a response",
+        );
+      }
+
+      await tx
+        .update(quotes)
+        .set({
+          status: "accepted",
+          respondedAt,
+          responseComment: input.comment ?? null,
+          acceptanceMethod: "in_person",
+          acceptedByUserId: actorUserId,
+          updatedAt: respondedAt,
+        })
+        .where(eq(quotes.id, id));
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "accepted_in_person",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: "sent", to: "accepted" }],
+      });
+    });
+
+    const updated = await this.getOne(orgId, id);
+
+    const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
+    const businessName = business?.name || "Your business";
+
+    void this.notifications.notify(orgId, {
+      subject: `Quote ${updated.number ?? ""} accepted in person`.trim(),
+      text: `Quote ${updated.number ?? ""} was accepted in person on ${businessName}.`,
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "quote_accepted",
+        message: `Quote ${updated.number ?? "your quote"} was accepted in person.`,
+        link: `/quotes/${updated.id}`,
+      },
+    });
+
+    return updated;
   }
 
   private async persistDraft(

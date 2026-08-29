@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -131,6 +131,25 @@ export class QuotesController {
   async revise(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.quotesService.revise(orgId, id, session.user.id);
+  }
+
+  /**
+   * Phase 5 (Mobile, S-11.7) — the one route on this controller Field can
+   * reach, overriding the class-level `@OrgRoles(["owner", "staff"])`
+   * (route-level wins per NestJS's `getAllAndOverride`, same override
+   * pattern `approveDiscount` below uses in the other direction). See
+   * QuotesService.acceptInPerson's own doc comment for why this is a
+   * separate endpoint from the public accept link, not a session bolted
+   * onto that one.
+   */
+  @Post(":id/accept-in-person")
+  @OrgRoles(["owner", "staff", "field"])
+  @RequireCapability("quotes.accept_in_person")
+  @UseInterceptors(IdempotencyInterceptor)
+  async acceptInPerson(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = acceptQuoteInPersonSchema.parse(body);
+    return this.quotesService.acceptInPerson(orgId, id, session.user.id, input);
   }
 
   /**
