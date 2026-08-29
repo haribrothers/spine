@@ -68,9 +68,9 @@ export function CatalogItemDrawer({
         </DrawerHeader>
         <DrawerBody>
           <CatalogForm formId={formId} item={item} onSubmittingChange={setSaving} onSuccess={handleSuccess} />
-          {item && <HistorySection endpoint={`/catalog-items/${item.id}/history`} subjectLabel="this item" />}
         </DrawerBody>
         <DrawerFooter>
+          {item && <HistorySection endpoint={`/catalog-items/${item.id}/history`} subjectLabel="this item" />}
           <Button type="button" variant="secondary" onClick={() => handleOpenChange(false)} disabled={saving}>
             Cancel
           </Button>

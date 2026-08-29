@@ -198,12 +198,11 @@ export function PaymentDetailDrawer({
                     <p className="text-[13px] text-on-surface">{payment.notes}</p>
                   </div>
                 )}
-
-                <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />
               </div>
             )}
           </DrawerBody>
           <DrawerFooter>
+            {payment && <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />}
             {payment && (
               <Button variant="secondary" asChild>
                 <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">

@@ -118,12 +118,11 @@ export function CreditNoteDetailDrawer({
                   View source invoice ({creditNote.invoiceNumber})
                 </a>
               )}
-
-              <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />
             </div>
           )}
         </DrawerBody>
         <DrawerFooter>
+          {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, Spinner } from "@spine/ui";
+import { Button, Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Spinner } from "@spine/ui";
+import { History } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { apiClient } from "../lib/api-client";
 
@@ -62,41 +63,58 @@ function describeEntry(entry: AuditEntry, subjectLabel: string): string {
 }
 
 /**
- * A reverse-chronological read of a `GET .../:id/history` endpoint backed
- * by real `audit_log` rows (`AuditLogService.listForEntity`) — the generic
- * counterpart to `contacts/history-section.tsx` (which predates this and
- * stays contact-specific, since it also merges in sub-entity rows like
- * contact_person/address/lead/activity that this simpler single-entity
- * version doesn't need). `subjectLabel` is the human phrase substituted
- * into "{actor} {verb} {subjectLabel}" — e.g. "this invoice".
+ * A subtle "History" trigger button that opens a Dialog on click, rather
+ * than rendering the list inline and unconditionally — user feedback was
+ * that an always-visible, always-fetched history block was noise on every
+ * document view when almost no one looks at it. The `GET .../:id/history`
+ * request is deferred until the dialog actually opens (the effect below is
+ * gated on `open`), not fired on mount, so a page whose History dialog is
+ * never opened costs nothing extra — same "only poll/fetch while open"
+ * convention as EmailQueueDialog. `subjectLabel` is the human phrase
+ * substituted into "{actor} {verb} {subjectLabel}" — e.g. "this invoice".
  */
 export function HistorySection({ endpoint, subjectLabel }: { endpoint: string; subjectLabel: string }) {
+  const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
 
   useEffect(() => {
-    setEntries(null);
+    if (!open || entries !== null) return;
     apiClient.get<AuditEntry[]>(endpoint).then(setEntries);
-  }, [endpoint]);
+  }, [open, entries, endpoint]);
 
   return (
-    <Card className="flex flex-col gap-3">
-      <h3 className="text-[14px] font-semibold text-on-surface">History</h3>
-      {entries === null ? (
-        <Spinner size="sm" />
-      ) : entries.length > 0 ? (
-        <ul className="flex flex-col gap-2">
-          {entries.map((entry) => (
-            <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
-              <span className="text-on-surface">{describeEntry(entry, subjectLabel)}</span>
-              <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
-                {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-[13px] text-on-surface-muted">No history yet.</p>
-      )}
-    </Card>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="ghost" size="sm" className="self-start gap-1.5 text-on-surface-muted">
+          <History size={14} />
+          History
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>History</DialogTitle>
+        </DialogHeader>
+        <DialogBody>
+          {entries === null ? (
+            <div className="flex justify-center py-6">
+              <Spinner size="sm" />
+            </div>
+          ) : entries.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {entries.map((entry) => (
+                <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
+                  <span className="text-on-surface">{describeEntry(entry, subjectLabel)}</span>
+                  <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
+                    {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[13px] text-on-surface-muted">No history yet.</p>
+          )}
+        </DialogBody>
+      </DialogContent>
+    </Dialog>
   );
 }

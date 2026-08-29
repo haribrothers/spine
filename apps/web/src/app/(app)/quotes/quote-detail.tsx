@@ -328,7 +328,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
             {/* PRD S-03.3 — live preview/download, rendered on demand from the quote's current snapshot (see quotes.controller.ts's GET /:id/pdf comment for why this is always a live render, even for a sent quote). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
             <Button variant="secondary" asChild>
               <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
@@ -459,8 +460,6 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
         </div>
       </Card>
-
-      <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
 
       {(quote.notes || quote.termsAndConditions) && (
         <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">

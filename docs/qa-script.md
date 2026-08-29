@@ -137,9 +137,11 @@ before considering that work's QA "done."
 2. Edit an existing item's price — confirm this does NOT retroactively
    change any already-issued quote/invoice that used it (documents
    snapshot their data).
-2a. Re-open that same item (opens the edit drawer). Confirm a **History**
-    section appears below the form showing both the creation and the
-    price-update entries, newest first.
+2a. Re-open that same item (opens the edit drawer). Confirm a small
+    **History** button appears in the drawer's footer, with no history
+    content shown or fetched until clicked. Click it — confirm a popup
+    dialog opens showing both the creation and the price-update
+    entries, newest first.
 3. Archive an item, confirm the delete-confirmation dialog suggests
    Archive over Delete when the item might be referenced elsewhere.
 4. Delete an item that's referenced by an existing quote line — confirm
@@ -181,10 +183,12 @@ before considering that work's QA "done."
     authenticated app, and an owner notification (email + in-app bell)
     fires for "quote rejected" — the same as step 7's acceptance
     notification, just worded for a rejection.
-7b. On the quote's own detail page, confirm a **History** section shows
-    the creation, send, and accept/reject entries, newest first —
-    repeat "viewed" events from step 6a do NOT clutter this list (those
-    stay in the public quote's own throttled-notification/`quote_events`
+7b. On the quote's own detail page, find the small **History** button
+    next to Preview/Download PDF — confirm nothing is shown or fetched
+    until clicked. Click it — confirm a popup dialog shows the
+    creation, send, and accept/reject entries, newest first — repeat
+    "viewed" events from step 6a do NOT clutter this list (those stay
+    in the public quote's own throttled-notification/`quote_events`
     trail, not this edit/status history).
 8. Revise a **sent** quote — confirm it creates a new version
    (`parent_quote_id` set) and the original is marked "superseded,"
@@ -448,11 +452,13 @@ real, also walk ONE job manually through the full sequence below.
    - The invoice PDF now shows the "Credited" line too.
    - **Click the credit note row itself** (new) — confirm a detail
      Drawer opens showing its status badge, reason, line items, total,
-     a "View source invoice" link back to this same invoice, and a
-     **History** section at the bottom showing at least "created this
-     credit note" and "issued this credit note." This is the first
-     detail view credit notes have ever had (previously just a
-     read-only row).
+     and a "View source invoice" link back to this same invoice. This
+     is the first detail view credit notes have ever had (previously
+     just a read-only row). Click the small **History** button in the
+     drawer's footer — confirm a popup dialog opens (not an inline
+     section) showing at least "created this credit note" and "issued
+     this credit note," and that it's empty/not fetched at all until
+     you click the button.
 9. **Advance/deposit invoice (S-05.4)**: create a new invoice, set
    **Type** to **Advance**, add a line for the deposit amount, save as
    draft, then **Issue**. Confirm:
@@ -488,16 +494,19 @@ real, also walk ONE job manually through the full sequence below.
     A non-job invoice (`retentionAmount = 0`) should be completely
     unaffected — its balance due should still just be
     `total - paid - credited`, exactly as before Phase 3.
-11. **History section (new)**: on any invoice's detail page, scroll to
-    the **History** card at the bottom. Confirm it shows a reverse-
-    chronological list starting with "{your name} created this invoice."
-    Edit a draft invoice's notes, save — confirm a new "{your name}
-    updated this invoice: notes {old} → {new}" entry appears at the top.
-    Issue it — confirm an "issued this invoice" entry with no field
-    diff (issuing isn't a field edit). Void it — confirm a "voided this
-    invoice" entry appears too. Confirm this invoice's History never
-    shows entries from a different invoice or from a credit note issued
-    against it (they have their own separate History, see below).
+11. **History (click-to-view popup)**: on any invoice's detail page, find
+    the small **History** button (clock icon, ghost style) next to
+    Preview/Download PDF — confirm nothing is fetched or shown until you
+    click it (no visible history block on page load). Click it — confirm
+    a popup dialog opens with a reverse-chronological list starting with
+    "{your name} created this invoice." Edit a draft invoice's notes,
+    save, reopen the dialog — confirm a new "{your name} updated this
+    invoice: notes {old} → {new}" entry appears at the top. Issue it —
+    confirm an "issued this invoice" entry with no field diff (issuing
+    isn't a field edit). Void it — confirm a "voided this invoice" entry
+    appears too. Confirm this invoice's History never shows entries from
+    a different invoice or from a credit note issued against it (they
+    have their own separate History, see below).
 
 ### 7.1 Standalone Credit Notes page (new — Billing → Credit Notes)
 
@@ -513,12 +522,12 @@ real, also walk ONE job manually through the full sequence below.
     already-issued invoice picked first.
 14. Click a row's number — confirm the same detail Drawer from §7 step 8
     opens (status, reason, lines, total, a link back to the source
-    invoice, and its own History section). Click the **Invoice** column
-    link on a row instead — confirm it navigates to that invoice's
-    detail page directly, without opening the drawer.
+    invoice, and its own History button in the footer). Click the
+    **Invoice** column link on a row instead — confirm it navigates to
+    that invoice's detail page directly, without opening the drawer.
 15. Confirm a credit note issued from the invoice-detail flow (§7 step
     8) shows up here immediately (reload if needed) with the correct
-    status, and that its History here matches what you saw on the
+    status, and that its History popup here matches what you saw on the
     invoice's own detail page.
 
 ---
@@ -559,11 +568,12 @@ real, also walk ONE job manually through the full sequence below.
    and confirm the suggested allocation offers at most `total -
    retention` for that invoice — never the full total, and never more
    than the DB's own allocation-limit trigger would accept.
-8. **History section (new)**: in the same payment's detail drawer,
-   scroll to the **History** card below Notes. Confirm it shows
-   "{your name} created this payment" — payments have no update route,
-   so this is typically the only entry unless the payment was later
-   deleted (in which case, check via a different still-open payment).
+8. **History (click-to-view popup)**: in the same payment's detail
+   drawer footer, click the small **History** button — confirm a popup
+   dialog opens (nothing shown/fetched before clicking) showing "{your
+   name} created this payment" — payments have no update route, so this
+   is typically the only entry unless the payment was later deleted (in
+   which case, check via a different still-open payment).
 
 ---
 

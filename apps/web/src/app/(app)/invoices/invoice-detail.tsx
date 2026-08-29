@@ -254,7 +254,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" />
             <Button variant="secondary" asChild>
               <a href={invoicePdfUrl(invoice.id)} target="_blank" rel="noreferrer">
                 {invoice.status === "draft" ? "Preview PDF" : "Download PDF"}
@@ -366,7 +367,6 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
       <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
-      <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
