@@ -13,7 +13,7 @@ import {
   type CalendarEventInstance,
   type CalendarRecurrenceRule,
 } from "@spine/ui";
-import { Copy, MapPin, MoreVertical, Pencil, Repeat, Trash2, Users, X } from "lucide-react";
+import { Copy, Eye, MapPin, MoreVertical, Pencil, Repeat, Trash2, Users, X } from "lucide-react";
 import { STATUS_CLASSNAME, STATUS_LABEL } from "./meeting-attendee-status";
 import type { Meeting, MeetingAttendee } from "./types";
 import { useMeetingRespond } from "./use-meeting-respond";
@@ -90,10 +90,18 @@ export function MeetingQuickViewPopover({
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-[14px] font-semibold text-on-surface">{event.title}</h3>
         <div className="flex shrink-0 items-center gap-0.5">
-          {canEdit && (
+          {canEdit ? (
             <Button variant="ghost" size="sm" className="h-7 w-7 p-0" aria-label="Edit" onClick={() => onEdit(isRecurring ? undefined : "series")}>
               <Pencil size={14} />
             </Button>
+          ) : (
+            <span
+              className="flex h-7 w-7 items-center justify-center text-on-surface-muted"
+              aria-label="View only — you don't have permission to edit this meeting"
+              title="View only"
+            >
+              <Eye size={14} />
+            </span>
           )}
           {canDelete && (
             <Button

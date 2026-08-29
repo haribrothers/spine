@@ -451,6 +451,17 @@ export default function Example() {
                 description: "Required alongside readOnlyEventIds — called instead of opening the editor.",
               },
               {
+                prop: "nonEditableEventIds",
+                type: "Set<string>",
+                description: "Like readOnlyEventIds for drag/resize/keyboard-resize purposes, but click and double-click still fire normally — for an event the viewer lacks EDIT permission on but should still be able to open/view (e.g. a meeting owned by a colleague), unlike readOnlyEventIds' events, which aren't owned by this calendar at all.",
+              },
+              {
+                prop: "canCreateEvents",
+                type: "boolean",
+                defaultValue: "true",
+                description: "When false, clicking/dragging empty calendar space to create a new event is disabled entirely — no draft block, no editor dialog. For a viewer who lacks create permission.",
+              },
+              {
                 prop: "renderExtraFields",
                 type: "(ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode",
                 description: "Escape hatch for consumer-specific fields the built-in editor has no concept of (e.g. meeting attendees). Rendered inline in the create/edit dialog. Call setExtra with whatever your onEventCreate/onEventUpdate handler expects back as extra — Calendar never inspects it. event is null in create mode (no id exists yet).",

@@ -152,6 +152,29 @@ export interface CalendarProps {
   /** Required when `readOnlyEventIds` is set — called with the clicked instance instead of opening the built-in editor. `target` is the clicked DOM element, e.g. for anchoring a consumer-rendered Popover the same way `renderEventPopover` anchors its own. */
   onReadOnlyEventClick?: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   /**
+   * Ids of events this calendar owns the lifecycle of, but the current
+   * viewer lacks permission to edit — e.g. a meeting created by a
+   * colleague the viewer's Team grants aren't wide enough to touch.
+   * Distinct from `readOnlyEventIds` (events from a source this calendar
+   * doesn't own at all): a non-editable event still opens
+   * `renderEventPopover`/fires `onEventDoubleClick` normally, so the
+   * consumer can render a read-only detail view — only drag-move,
+   * resize (pointer and keyboard), and the click-and-drag-to-create
+   * gesture on top of it are suppressed. Click/double-click routing is
+   * entirely the consumer's call (e.g. show the same popover read-only)
+   * — Calendar itself makes no assumption about what "non-editable"
+   * should look like beyond disabling the gestures that would silently
+   * attempt a write.
+   */
+  nonEditableEventIds?: Set<string>;
+  /**
+   * When `false`, clicking/dragging on empty calendar space to create a
+   * new event is disabled entirely (no draft block, no editor dialog) —
+   * for a viewer who lacks create permission. Defaults to `true` (today's
+   * behavior, unchanged) so no existing consumer needs to pass this.
+   */
+  canCreateEvents?: boolean;
+  /**
    * Escape hatch for consumer-specific fields the built-in editor form has
    * no concept of (e.g. meeting attendees/visibility) — same "generic slot
    * fed consumer-owned data" shape as `contactOptions`/`CalendarEvent.
@@ -251,6 +274,8 @@ export function Calendar({
   contactOptions,
   readOnlyEventIds,
   onReadOnlyEventClick,
+  nonEditableEventIds,
+  canCreateEvents = true,
   renderExtraFields,
   renderEventPopover,
   duplicateRequest,
@@ -282,6 +307,7 @@ export function Calendar({
   const goNext = () => onDateChange(stepDate(date, view, 1));
 
   const handleSlotCreate = (range: DraftRange, allDay?: boolean) => {
+    if (!canCreateEvents) return;
     setEditorState({ mode: "create", range, allDay });
   };
 
@@ -345,12 +371,12 @@ export function Calendar({
   };
 
   const handleEventUpdate = (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => {
-    if (readOnlyEventIds?.has(event.id)) return;
+    if (readOnlyEventIds?.has(event.id) || nonEditableEventIds?.has(event.id)) return;
     onEventUpdate?.(event, undefined, scope, occurrenceDate);
   };
 
   const handleRecurringMoveOrResize = (request: RecurringMoveOrResizeRequest) => {
-    if (readOnlyEventIds?.has(request.seriesEvent.id)) return;
+    if (readOnlyEventIds?.has(request.seriesEvent.id) || nonEditableEventIds?.has(request.seriesEvent.id)) return;
     if (!onRecurringMoveOrResize) {
       // No consumer opt-in — preserve pre-S-01.14 behavior (whole series moves).
       onEventUpdate?.(request.seriesEvent);
@@ -400,6 +426,8 @@ export function Calendar({
             onEventUpdate={handleEventUpdate}
             onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
+            nonEditableEventIds={nonEditableEventIds}
+            canCreateEvents={canCreateEvents}
           />
         )}
         {view === "week" && (
@@ -412,6 +440,8 @@ export function Calendar({
             onEventUpdate={handleEventUpdate}
             onRecurringMoveOrResize={handleRecurringMoveOrResize}
             readOnlyEventIds={readOnlyEventIds}
+            nonEditableEventIds={nonEditableEventIds}
+            canCreateEvents={canCreateEvents}
           />
         )}
         {view === "month" && (
@@ -648,6 +678,8 @@ interface TimeGridProps {
   /** PRD S-01.14 — when set, a move/resize on a recurring occurrence defers here instead of calling onEventUpdate directly. Omit to fall back to today's whole-series-move behavior (matches renderEventPopover's own opt-in shape). */
   onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
   readOnlyEventIds?: Set<string>;
+  nonEditableEventIds?: Set<string>;
+  canCreateEvents?: boolean;
 }
 
 /**
@@ -657,7 +689,18 @@ interface TimeGridProps {
  * so touch works and live feedback (the draft block following the pointer)
  * is simple to render — see calendar.tsx's module doc for why.
  */
-function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: TimeGridProps) {
+function TimeGrid({
+  days,
+  events,
+  onSlotCreate,
+  onEventClick,
+  onEventDoubleClick,
+  onEventUpdate,
+  onRecurringMoveOrResize,
+  readOnlyEventIds,
+  nonEditableEventIds,
+  canCreateEvents = true,
+}: TimeGridProps) {
   const gridRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState<TimeGridDragState | null>(null);
   const dragRef = useRef<TimeGridDragState | null>(null);
@@ -689,6 +732,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
   const dayAt = (index: number): Date => days[index] ?? days[0] ?? new Date();
 
   const beginCreate = (dayIndex: number, e: React.PointerEvent) => {
+    if (!canCreateEvents) return;
     const column = columnRefs.current[dayIndex];
     if (!column) return;
     const rect = column.getBoundingClientRect();
@@ -986,6 +1030,7 @@ function TimeGrid({ days, events, onSlotCreate, onEventClick, onEventDoubleClick
                     gridHeight={gridHeight}
                     isDragging={drag?.instanceId === slot.instance.instanceId}
                     isReadOnly={readOnlyEventIds?.has(slot.instance.event.id) ?? false}
+                    isNonEditable={nonEditableEventIds?.has(slot.instance.event.id) ?? false}
                     onEventClick={(instance, target) => {
                       if (suppressNextClickRef.current) {
                         suppressNextClickRef.current = false;
@@ -1043,6 +1088,14 @@ interface TimeGridEventProps {
   gridHeight: number;
   isDragging: boolean;
   isReadOnly?: boolean;
+  /**
+   * Like `isReadOnly` for drag/resize/keyboard-resize purposes (all three
+   * stay disabled), but click and double-click still fire normally —
+   * for an event the viewer lacks EDIT permission on but should still be
+   * able to open/view (e.g. via `renderEventPopover`), unlike
+   * `isReadOnly`'s events, which aren't owned by this calendar at all.
+   */
+  isNonEditable?: boolean;
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onEventDoubleClick?: (instance: CalendarEventInstance) => void;
   onMoveStart: (e: React.PointerEvent) => void;
@@ -1051,7 +1104,19 @@ interface TimeGridEventProps {
   onKeyboardResize: (edge: "start" | "end", direction: 1 | -1) => void;
 }
 
-function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEventClick, onEventDoubleClick, onMoveStart, onResizeStart, onKeyboardResize }: TimeGridEventProps) {
+function TimeGridEvent({
+  slot,
+  gridHeight,
+  isDragging,
+  isReadOnly = false,
+  isNonEditable = false,
+  onEventClick,
+  onEventDoubleClick,
+  onMoveStart,
+  onResizeStart,
+  onKeyboardResize,
+}: TimeGridEventProps) {
+  const disableDragResize = isReadOnly || isNonEditable;
   const { instance, column, columnCount } = slot;
   const dayBase = startOfDay(instance.occurrenceStart);
   const top = minutesToY(diffMinutes(instance.occurrenceStart, dayBase), gridHeight);
@@ -1066,8 +1131,8 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
       role="button"
       tabIndex={0}
       aria-label={
-        isReadOnly
-          ? `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}`
+        disableDragResize
+          ? `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open.`
           : `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open, or Shift plus Arrow Up or Down to change the start time, Shift plus Alt plus Arrow Up or Down to change the end time.`
       }
       className={cn(
@@ -1078,7 +1143,7 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
         isDragging && "opacity-60",
       )}
       style={{ top, height, left: `calc(${left}% + 2px)`, width: `calc(${width}% - 4px)`, cursor: "pointer" }}
-      onPointerDown={isReadOnly ? (e) => e.stopPropagation() : onMoveStart}
+      onPointerDown={disableDragResize ? (e) => e.stopPropagation() : onMoveStart}
       onClick={(e) => onEventClick(instance, e.currentTarget)}
       onDoubleClick={(e) => {
         e.stopPropagation();
@@ -1093,7 +1158,7 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
         // Keyboard equivalent of dragging the pointer-only resize handles:
         // Shift+Arrow adjusts the start edge, Shift+Alt+Arrow the end edge —
         // mirrors the same snap increment as a pointer resize.
-        if (!isReadOnly && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        if (!disableDragResize && e.shiftKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
           e.preventDefault();
           const direction = e.key === "ArrowUp" ? -1 : 1;
           onKeyboardResize(e.altKey ? "end" : "start", direction);
@@ -1106,7 +1171,7 @@ function TimeGridEvent({ slot, gridHeight, isDragging, isReadOnly = false, onEve
       </div>
       {height > 32 && <span className="block truncate opacity-80">{format(instance.occurrenceStart, "h:mm a")}</span>}
 
-      {!isReadOnly && (
+      {!disableDragResize && (
         <>
           <div
             className="absolute inset-x-0 top-0 h-1.5 cursor-ns-resize"
@@ -1135,9 +1200,22 @@ interface DayLikeViewProps {
   onEventUpdate: (event: CalendarEvent, scope?: "series" | "occurrence", occurrenceDate?: Date) => void;
   onRecurringMoveOrResize?: (request: RecurringMoveOrResizeRequest) => void;
   readOnlyEventIds?: Set<string>;
+  nonEditableEventIds?: Set<string>;
+  canCreateEvents?: boolean;
 }
 
-function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarDayView({
+  date,
+  events,
+  onSlotCreate,
+  onEventClick,
+  onEventDoubleClick,
+  onEventUpdate,
+  onRecurringMoveOrResize,
+  readOnlyEventIds,
+  nonEditableEventIds,
+  canCreateEvents,
+}: DayLikeViewProps) {
   return (
     <TimeGrid
       days={[date]}
@@ -1148,6 +1226,8 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventDoub
       onEventUpdate={onEventUpdate}
       onRecurringMoveOrResize={onRecurringMoveOrResize}
       readOnlyEventIds={readOnlyEventIds}
+      nonEditableEventIds={nonEditableEventIds}
+      canCreateEvents={canCreateEvents}
     />
   );
 }
@@ -1156,7 +1236,18 @@ function CalendarDayView({ date, events, onSlotCreate, onEventClick, onEventDoub
 // Week view
 // ---------------------------------------------------------------------------
 
-function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventDoubleClick, onEventUpdate, onRecurringMoveOrResize, readOnlyEventIds }: DayLikeViewProps) {
+function CalendarWeekView({
+  date,
+  events,
+  onSlotCreate,
+  onEventClick,
+  onEventDoubleClick,
+  onEventUpdate,
+  onRecurringMoveOrResize,
+  readOnlyEventIds,
+  nonEditableEventIds,
+  canCreateEvents,
+}: DayLikeViewProps) {
   const days = useMemo(() => eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) }), [date]);
 
   return (
@@ -1188,6 +1279,8 @@ function CalendarWeekView({ date, events, onSlotCreate, onEventClick, onEventDou
         onEventUpdate={onEventUpdate}
         onRecurringMoveOrResize={onRecurringMoveOrResize}
         readOnlyEventIds={readOnlyEventIds}
+        nonEditableEventIds={nonEditableEventIds}
+        canCreateEvents={canCreateEvents}
       />
     </div>
   );

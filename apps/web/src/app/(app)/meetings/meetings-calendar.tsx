@@ -165,6 +165,23 @@ function toMeetingPayload(
  * they render as inert markers with their own small detail popover rather
  * than opening the meeting editor).
  *
+ * **Capability gating** (user-reported: the create dialog used to open and
+ * fail with a raw API 403 for anyone without `meetings.edit_own`, and a
+ * meeting the viewer couldn't edit was still draggable/resizable and
+ * double-click still jumped straight to the full edit dialog). Create is
+ * gated by `canCreateEvents={canCreateMeetings}` — clicking/dragging empty
+ * calendar space is fully inert without `meetings.edit_own`, so the
+ * dialog never opens rather than opening and erroring on Save. Per-meeting
+ * edit is gated by `nonEditableEventIds` (own/others resolved the same way
+ * `renderEventPopover` already resolves it below) — Calendar suppresses
+ * drag/resize/keyboard-resize for those ids but still routes click and
+ * double-click through to `renderEventPopover`/`onEventDoubleClick` as
+ * normal, so the quick-view popover — which already read-only-gates its
+ * own Edit/Delete/Duplicate affordances — is reachable either way; the
+ * double-click handler below additionally short-circuits to a no-op for a
+ * non-editable meeting rather than opening the full edit dialog, since a
+ * double-click's whole purpose is to skip straight past the popover.
+ *
  * Meetings are fetched for a generous ±2-month window around the current
  * date (not a per-view-exact range) — computing Day/Week/Month/Agenda's
  * exact visible range would duplicate logic that's private to calendar.tsx,
@@ -346,6 +363,25 @@ export function MeetingsCalendar() {
 
   const readOnlyEventIds = useMemo(() => new Set(activityEvents.map((e) => e.id)), [activityEvents]);
 
+  // A meeting is non-editable for the current viewer when neither the own
+  // nor others own/others capability applies — same "own" resolution as
+  // renderEventPopover's own manual re-derivation below (organizerUserId
+  // matching the session user, null/unset counts as unowned), computed
+  // once here per meeting rather than per-callback since this is a plain
+  // top-level memo, not a render-prop with Rules-of-Hooks constraints.
+  const nonEditableEventIds = useMemo(() => {
+    if (!session?.user?.id) return new Set<string>();
+    const ids = new Set<string>();
+    for (const meeting of visibleMeetings) {
+      const isOwnMeeting = meeting.organizerUserId !== null && meeting.organizerUserId === session.user.id;
+      const canEditMeeting = capabilities?.[isOwnMeeting ? "meetings.edit_own" : "meetings.edit_others"] ?? false;
+      if (!canEditMeeting) ids.add(meeting.id);
+    }
+    return ids;
+  }, [visibleMeetings, session?.user?.id, capabilities]);
+
+  const canCreateMeetings = capabilities?.["meetings.edit_own"] ?? false;
+
   const events = useMemo<CalendarEvent[]>(
     () => [...visibleMeetings.map(toCalendarEvent), ...activityEvents],
     [visibleMeetings, activityEvents],
@@ -476,11 +512,22 @@ export function MeetingsCalendar() {
           activityDetailAnchorRef.current = target ?? null;
           setActivityDetail(instance);
         }}
+        nonEditableEventIds={nonEditableEventIds}
+        canCreateEvents={canCreateMeetings}
         duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
         onRecurringMoveOrResize={(request, onConfirm, onCancel) => {
           setScopeChoice({ action: "move", onConfirm, onCancel });
         }}
         onEventDoubleClick={({ instance, onEdit, onDelete }) => {
+          // A non-editable meeting's double-click must NOT reach the
+          // built-in edit dialog — Calendar itself has no capability
+          // concept, so this consumer-level check is the only gate. There
+          // is no separate "read-only dialog" to open instead (per this
+          // component's own design): the quick-view popover already IS
+          // the read-only view, so a double-click on a non-editable
+          // meeting is simply a no-op, same as clicking it once already
+          // opens that same popover via renderEventPopover.
+          if (nonEditableEventIds.has(instance.event.id)) return;
           resolveEditOrDeleteScope("edit", instance, onEdit, onDelete);
         }}
         renderExtraFields={({ isEdit, event, setExtra }) => {

@@ -309,7 +309,7 @@ real, also walk ONE job manually through the full sequence below.
     its edit dialog. Confirm every role (Staff, Field) can now see it
     on their calendar without an explicit invite.
 11. As Field, confirm you can create your own private meeting (if
-    `meetings.manage` is granted to your Team) but never see another
+    `meetings.edit_own` is granted to your Team) but never see another
     user's private meeting you're not invited to — Field gets the same
     visibility treatment as Staff, only Owner is special-cased.
 
@@ -338,6 +338,30 @@ real, also walk ONE job manually through the full sequence below.
     respond to an existing invite and see `org`-visibility meetings —
     this capability group gates mutation only, never read access. See
     §13.3 for the full own-vs-others walkthrough.
+16. **Create gating on the calendar itself (user-reported)**: as that
+    same no-grants Staff user, click and drag on an empty slot in
+    Day/Week view, and click an empty day cell in Month view. Confirm
+    NOTHING happens — no draft block, no "New meeting" dialog at all.
+    Previously the dialog always opened regardless of grants, and
+    clicking Save threw a raw API error instead of the dialog never
+    appearing.
+17. Grant that Team `meetings.edit_own` only. Create a meeting as this
+    user (now the organizer/"own"). Confirm they CAN edit/drag/resize
+    their own meeting (Pencil icon in the popover, drag/resize both
+    work), but for a colleague's meeting they don't organize: the
+    popover shows an Eye icon instead of Pencil (and no Duplicate
+    menu), dragging the meeting snaps back / never starts moving,
+    resize handles don't appear on hover, and double-clicking it does
+    nothing (does NOT open the full edit dialog). Single-clicking it
+    still opens the same read-only popover with all its details
+    visible.
+18. Grant `meetings.edit_others` too and confirm the colleague's
+    meeting becomes fully editable (Pencil icon, drag/resize/
+    double-click all work) without having touched `meetings.edit_own`
+    again.
+19. As Owner, confirm every action above works regardless of Team
+    grants — create, edit, drag, resize, and double-click all work on
+    every meeting, including ones organized by someone else.
 
 ---
 
