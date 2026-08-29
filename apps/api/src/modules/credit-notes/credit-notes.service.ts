@@ -9,6 +9,7 @@ import { creditNotes, creditNoteLines, invoices, contacts, accounts } from "../.
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateCreditNoteInput = z.infer<typeof createCreditNoteSchema>;
 export type UpdateCreditNoteInput = z.infer<typeof updateCreditNoteSchema>;
@@ -210,6 +211,10 @@ export class CreditNotesService {
     if (!existing) {
       throw new NotFoundException("Credit note not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "credit_notes.edit_own",
+      others: "credit_notes.edit_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft credit note can be edited");
     }
@@ -359,6 +364,10 @@ export class CreditNotesService {
     if (!existing) {
       throw new NotFoundException("Credit note not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "credit_notes.delete_own",
+      others: "credit_notes.delete_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft credit note can be deleted");
     }

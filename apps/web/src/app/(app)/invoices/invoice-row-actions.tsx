@@ -18,6 +18,7 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Invoice } from "./types";
 
 /**
@@ -45,6 +46,9 @@ export function InvoiceRowActions({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const canEdit = useCanEditOwnership(invoice.createdByUserId, { own: "invoices.edit_own", others: "invoices.edit_others" });
+  const canDelete = useCanEditOwnership(invoice.createdByUserId, { own: "invoices.delete_own", others: "invoices.delete_others" });
+  const canSendReminder = useCapability("invoices.send_reminder");
 
   async function handleDelete() {
     setBusy(true);
@@ -87,15 +91,15 @@ export function InvoiceRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => router.push(`/invoices/${invoice.id}`)}>View</DropdownMenuItem>
-          {invoice.isOverdue && (
+          {invoice.isOverdue && canSendReminder && (
             <DropdownMenuItem disabled={busy} onSelect={handleSendReminder}>
               Send reminder
             </DropdownMenuItem>
           )}
-          {invoice.status === "draft" && (
+          {invoice.status === "draft" && canEdit && (
             <DropdownMenuItem onSelect={() => router.push(`/invoices/${invoice.id}/edit`)}>Edit</DropdownMenuItem>
           )}
-          {invoice.status === "draft" && (
+          {invoice.status === "draft" && canDelete && (
             <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
               Delete
             </DropdownMenuItem>

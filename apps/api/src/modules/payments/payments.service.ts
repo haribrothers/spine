@@ -13,6 +13,7 @@ import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 import { PaymentPdfService } from "../pdf/payment-pdf.service";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type ApplyPaymentCreditInput = z.infer<typeof applyPaymentCreditSchema>;
@@ -577,6 +578,10 @@ export class PaymentsService {
     if (!existing) {
       throw new NotFoundException("Payment not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "payments.delete_own",
+      others: "payments.delete_others",
+    });
     if (existing.allocatedAmount > 0n) {
       throw new BadRequestException("Cannot delete a payment that has been allocated to an invoice");
     }

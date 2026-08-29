@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, Sta
 import { Receipt } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { InvoicesSkeleton } from "./invoices-skeleton";
 import { InvoicesTable } from "./invoices-table";
@@ -30,6 +31,7 @@ const ALL_CONTACTS = "__all__";
  * quotes' own "expired" filter.
  */
 export function InvoicesExplorer() {
+  const canCreate = useCapability("invoices.edit_own");
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -119,9 +121,11 @@ export function InvoicesExplorer() {
             className="w-48"
           />
         </div>
-        <Button asChild>
-          <Link href="/invoices/new">New invoice</Link>
-        </Button>
+        {canCreate && (
+          <Button asChild>
+            <Link href="/invoices/new">New invoice</Link>
+          </Button>
+        )}
       </div>
 
       {!filteredInvoices ? (
@@ -151,9 +155,11 @@ export function InvoicesExplorer() {
               title="No invoices yet"
               description="Build a multi-line invoice for a customer — save it as a draft, then issue when it's ready."
               action={
-                <Button asChild>
-                  <Link href="/invoices/new">New invoice</Link>
-                </Button>
+                canCreate ? (
+                  <Button asChild>
+                    <Link href="/invoices/new">New invoice</Link>
+                  </Button>
+                ) : undefined
               }
             />
           )}

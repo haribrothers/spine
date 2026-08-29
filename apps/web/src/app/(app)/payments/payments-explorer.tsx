@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from 
 import { toDecimalString } from "@spine/shared/money";
 import { Banknote } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { NewPaymentDialog } from "./new-payment-dialog";
 import { PaymentDetailDrawer } from "./payment-detail-drawer";
@@ -24,6 +25,7 @@ const ALL_CONTACTS = "__all__";
  * schema comment: no draft state, just recorded-or-not).
  */
 export function PaymentsExplorer() {
+  const canCreate = useCapability("payments.edit_own");
   const [payments, setPayments] = useState<Payment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
@@ -103,7 +105,7 @@ export function PaymentsExplorer() {
           placeholder="All contacts"
           className="w-48"
         />
-        <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>
+        {canCreate && <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>}
       </div>
 
       {!payments ? (
@@ -126,7 +128,7 @@ export function PaymentsExplorer() {
               icon={<Banknote />}
               title="No payments recorded yet"
               description="Record a payment against one or more invoices, or hold it as unallocated customer credit."
-              action={<Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>}
+              action={canCreate ? <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button> : undefined}
             />
           )}
         </div>

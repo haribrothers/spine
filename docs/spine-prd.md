@@ -98,7 +98,24 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Send a quote | ✅ | ✅ (default) | ❌ | ❌ |
 | Revise a quote | ✅ | ✅ (default) | ❌ | ❌ |
 | Approve quote above discount threshold | ✅ | ❌ (default; Owner-only in practice, but Team-configurable) | ❌ | ❌ |
-| Create invoices, record payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own invoices | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' invoices | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own invoices | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' invoices | ✅ | ✅ (default) | ❌ | ❌ |
+| Issue an invoice | ✅ | ✅ (default) | ❌ | ❌ |
+| Void an invoice | ✅ | ✅ (default) | ❌ | ❌ |
+| Email an invoice | ✅ | ✅ (default) | ❌ | ❌ |
+| Send a payment reminder | ✅ | ✅ (default) | ❌ | ❌ |
+| Record own payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' payments | ✅ | ✅ (default) | ❌ | ❌ |
+| Apply payment credit | ✅ | ✅ (default) | ❌ | ❌ |
+| Re-send a receipt | ✅ | ✅ (default) | ❌ | ❌ |
+| Create/edit own credit notes | ✅ | ✅ (default) | ❌ | ❌ |
+| Edit others' credit notes | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete own credit notes | ✅ | ✅ (default) | ❌ | ❌ |
+| Delete others' credit notes | ✅ | ✅ (default) | ❌ | ❌ |
+| Issue a credit note | ✅ | ✅ (default) | ❌ | ❌ |
 | Submit/edit own expenses | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
 | Edit others' expenses | ✅ | ✅ (default) | ❌ | ❌ |
 | Delete own expenses | ✅ | ✅ (default) | ✅ (fixed, not Team-configurable) | ❌ |
@@ -554,8 +571,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-05.8 | As an owner, I want to void an invoice with a reason, so mistakes are reversible and traceable |
 | S-05.9 | As an owner, I want overdue invoices flagged with days outstanding, so chasing is obvious |
 | S-05.10 | As staff, I want to send a payment reminder in one click, so following up isn't a chore |
+| S-05.11 | As an owner, I want to control which staff can edit invoices and credit notes they didn't create, so a mistake on someone else's document requires a deliberate grant, not blanket access |
 
 *Acceptance highlights:* an issued invoice can never be edited or deleted — only voided or credited. Voiding posts a reversing journal entry. The PDF is generated from the same snapshot data, so a reprint years later is byte-identical.
+
+*Acceptance highlights (S-05.11 — own vs. others' Invoices/Credit Notes):* same own/others model as every other financial document in §2.1 — `invoices.edit_own`/`invoices.edit_others` gate create/update (already draft-only; an issued invoice can never be edited by anyone), `invoices.delete_own`/`invoices.delete_others` gate delete (already draft-only). Issue/void/email/send-reminder are one-way workflow actions, not edits, so they get their own dedicated capabilities — `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder` — independent of the edit/delete pair, same shape as Quotes' `quotes.send`/`quotes.revise`. Credit Notes get the identical treatment: `credit_notes.edit_own`/`edit_others`/`delete_own`/`delete_others` plus a dedicated `credit_notes.issue`. This replaces the single undifferentiated `invoices.manage` capability that had covered invoice creation, issuing, voiding, emailing, reminders, payment recording, and credit notes all at once since Phase 2 — an Owner can now, for example, let a Team issue invoices without letting them void one, or let them record payments without letting them delete another user's draft invoice.
 
 ### FEAT-06 · Payments
 
@@ -568,8 +588,11 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-06.5 | As staff, I want to record a partial payment and see the remaining balance, so part-payments don't break anything |
 | S-06.6 | As staff, I want to generate a receipt PDF, so the customer has proof |
 | S-06.7 | As an owner, I want a receivables view showing who owes what and for how long, so I know who to chase |
+| S-06.8 | As an owner, I want to control which staff can delete payments they didn't record, so a mistaken deletion requires a deliberate grant |
 
 *Acceptance highlights:* allocations can never exceed either the payment amount or the invoice balance — enforced at the database level, not just the UI.
+
+*Acceptance highlights (S-06.8 — own vs. others' Payments):* `payments.edit_own` gates create (there is no update route for payments at all — this capability only gates creation, `payments.edit_others` is reserved with nothing to gate yet, same shape as `vendor_payments.edit_others`), `payments.delete_own`/`delete_others` gate delete (only possible while unallocated). Applying sitting credit to an invoice and re-sending a receipt are workflow actions, not edits, so they get their own dedicated capabilities — `payments.apply_credit`, `payments.send_receipt` — independent of the edit/delete pair.
 
 ### FEAT-07 · Purchases & Expenses
 
@@ -794,7 +817,7 @@ Contacts, leads, activities, catalogue, quotes with lines and versioning, PDF re
 
 ### Phase 2 · Money In *(3 weeks)*
 Invoices (draft → issue → void), credit notes, payments with multi-invoice allocation, advances, receipts, journal postings for all of the above, AR aging, receivables dashboard.
-**Stories:** S-05.1 *(scratch + from-quote paths)* · S-05.2 → S-05.10 · S-06.1 → S-06.7 · S-03.10 *(quote → invoice half)* · S-09.5 *(AR half)*
+**Stories:** S-05.1 *(scratch + from-quote paths)* · S-05.2 → S-05.10 · S-05.11 *(own/others privilege split)* · S-06.1 → S-06.7 · S-06.8 *(own/others privilege split)* · S-03.10 *(quote → invoice half)* · S-09.5 *(AR half)*
 **Exit:** quote → invoice → partial payment → balance, with a correct trial balance at every step.
 
 ### Phase 3 · Jobs & Construction Billing *(4 weeks)*

@@ -24,6 +24,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
@@ -68,6 +69,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const [creditNoteOpen, setCreditNoteOpen] = useState(false);
   const [creditNotesRefreshKey, setCreditNotesRefreshKey] = useState(0);
   const { show: showToast, toast } = useEntityToast();
+
+  const hasEditCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.edit_own", others: "invoices.edit_others" });
+  const hasDeleteCapability = useCanEditOwnership(invoice?.createdByUserId ?? null, { own: "invoices.delete_own", others: "invoices.delete_others" });
+  const hasIssueCapability = useCapability("invoices.issue");
+  const hasVoidCapability = useCapability("invoices.void");
+  const hasSendCapability = useCapability("invoices.send");
+  const hasSendReminderCapability = useCapability("invoices.send_reminder");
+  const hasRecordPaymentCapability = useCapability("payments.edit_own");
+  const hasIssueCreditNoteCapability = useCapability("credit_notes.issue");
 
   const load = useCallback(() => {
     apiClient
@@ -193,11 +203,12 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     );
   }
 
-  const canEdit = invoice.status === "draft";
-  const canIssue = invoice.status === "draft";
-  const canVoid = invoice.status === "issued";
-  const canSendEmail = invoice.status === "issued";
-  const canSendReminder = invoice.isOverdue;
+  const canEdit = invoice.status === "draft" && hasEditCapability;
+  const canDelete = invoice.status === "draft" && hasDeleteCapability;
+  const canIssue = invoice.status === "draft" && hasIssueCapability;
+  const canVoid = invoice.status === "issued" && hasVoidCapability;
+  const canSendEmail = invoice.status === "issued" && hasSendCapability;
+  const canSendReminder = invoice.isOverdue && hasSendReminderCapability;
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
   // S-05.4 — an advance invoice never posts to AR on issue (see
@@ -206,8 +217,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   // flows through PaymentsService.create's own "Advance received"
   // posting (S-06.4, record the deposit as an unallocated payment)
   // instead, not through this invoice.
-  const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance";
-  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance";
+  const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasRecordPaymentCapability;
+  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasIssueCreditNoteCapability;
   const creditedAmount = BigInt(invoice.creditedAmount);
 
   return (
@@ -283,7 +294,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 Void
               </Button>
             )}
-            {canEdit && (
+            {canDelete && (
               <Button variant="ghost" onClick={handleDelete} disabled={busy}>
                 Delete draft
               </Button>

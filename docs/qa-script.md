@@ -756,8 +756,8 @@ invited user alongside your Owner session.
    confirm a Staff/Field user does NOT see this nav item at all once you
    test with one below).
 2. Create a new **Team** (e.g. "Sales") and configure its privilege
-   matrix — toggle a few capabilities on/off (e.g. "Create invoices,
-   record payments").
+   matrix — toggle a few capabilities on/off (e.g. "Manage Invoices →
+   Issue an invoice").
 3. Invite a new user as **Staff**. Confirm:
    - The invite form does NOT allow selecting "Owner" as a role.
    - MailDev shows a real invitation email with a working link.
@@ -773,7 +773,7 @@ invited user alongside your Owner session.
    the new Staff user; confirm they now appear in the members list with
    a remove (trash) button, and that they no longer appear in the
    picker's own dropdown once added. Confirm their access now reflects
-   that Team's privilege matrix — e.g. if you left "Create invoices" off,
+   that Team's privilege matrix — e.g. if you left "Issue an invoice" off,
    they should be blocked from issuing an invoice (both the button should
    be hidden/disabled AND, if you have API access, a direct API call
    should 403 — never trust client-side hiding alone). Remove them via
@@ -1040,6 +1040,52 @@ ownership question for Field.
    Expenses) — the Notes/Photos tabs' add actions must be visible and
    functional purely from the Field role, no grant needed.
 10. As Owner, confirm every action above works regardless of Team grants.
+
+---
+
+### 13.7 Invoices, Payments & Credit Notes — own/others split, the final phase (§9 S-05.11/S-06.8)
+
+Needs a Staff account in two Teams. This replaces the single blanket
+"Create invoices, record payments" capability that used to cover
+everything in this section — every action below now has its own toggle.
+
+1. Confirm three new collapsible groups in the privilege matrix: **Manage
+   Invoices** (Create/edit own, Edit others', Delete own, Delete others',
+   Issue, Void, Email, Send reminder), **Manage Payments** (Record own,
+   Delete own, Delete others', Apply credit, Re-send receipt — no
+   "edit others" action since payments have no update route), **Manage
+   Credit Notes** (Create/edit own, Edit others', Delete own, Delete
+   others', Issue).
+2. Grant Team A (Staff User 1) only **Manage Invoices → Create/edit own**.
+   Create a draft invoice as User 1 — succeeds, but they can't click
+   **Issue Invoice**, **Void**, **Email invoice**, or **Send reminder** —
+   all hidden until their own dedicated grant is added. As Staff User 2
+   (no grants), confirm the draft is visible (read stays unconditional)
+   but **Edit**/**Delete** are hidden, and a direct API call is rejected.
+3. Grant Team B (Staff User 2) **Edit others' invoices**. Confirm User 2
+   can now edit User 1's draft. Grant **Delete others' invoices** too and
+   confirm they can now delete it.
+4. Confirm the ownership check runs before the draft-only status check:
+   issue an invoice (own + Issue capability), then as a user with zero
+   invoice grants try to edit it — confirm you get a permission error,
+   not a "only a draft can be edited" error, even though it's also true
+   the invoice is no longer a draft.
+5. Grant Team A **Manage Invoices → Issue**. As User 1, issue a draft
+   invoice — succeeds even without Void/Email/Send reminder granted;
+   confirm those three buttons stay hidden until granted individually.
+6. On the issued invoice, confirm **Record payment** requires **Manage
+   Payments → Record own payments**, and **Issue credit note** requires
+   **Manage Credit Notes → Issue** — both buttons should be hidden until
+   their respective capability is granted, even if the user already has
+   full Invoices access.
+7. Record a payment as User 1 (Record own granted). Confirm User 2 can
+   see it (read unconditional) but **Delete payment** stays hidden until
+   **Delete own**/**Delete others'** is granted as appropriate — same
+   own/others split as Vendor Payments (§13.5). Confirm **Apply credit**
+   and **Email receipt** each require their own dedicated grant
+   independently of delete.
+8. As Owner, confirm every action above works regardless of Team grants,
+   for all three resources.
 
 ---
 

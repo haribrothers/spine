@@ -13,6 +13,7 @@ import { QueueService } from "../queue/queue.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
+import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
@@ -559,6 +560,10 @@ export class InvoicesService {
     if (!existing) {
       throw new NotFoundException("Invoice not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "invoices.edit_own",
+      others: "invoices.edit_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft invoice can be edited");
     }
@@ -1027,6 +1032,10 @@ export class InvoicesService {
     if (!existing) {
       throw new NotFoundException("Invoice not found");
     }
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing.createdByUserId, {
+      own: "invoices.delete_own",
+      others: "invoices.delete_others",
+    });
     if (existing.status !== "draft") {
       throw new BadRequestException("Only a draft invoice can be deleted");
     }

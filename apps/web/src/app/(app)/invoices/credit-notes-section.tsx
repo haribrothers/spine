@@ -13,6 +13,7 @@ interface CreditNoteRow {
   currency: string;
   totalAmount: string;
   issuedAt: string | null;
+  createdByUserId: string | null;
 }
 
 /**

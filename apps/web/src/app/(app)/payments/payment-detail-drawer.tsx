@@ -25,6 +25,7 @@ import {
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
@@ -121,8 +122,14 @@ export function PaymentDetailDrawer({
     }
   }
 
-  const canDelete = payment && payment.allocatedAmount === "0";
-  const canApplyCredit = payment && payment.unallocatedAmount !== "0";
+  const hasDeleteCapability = useCanEditOwnership(payment?.createdByUserId ?? null, {
+    own: "payments.delete_own",
+    others: "payments.delete_others",
+  });
+  const hasApplyCreditCapability = useCapability("payments.apply_credit");
+  const hasSendReceiptCapability = useCapability("payments.send_receipt");
+  const canDelete = payment && payment.allocatedAmount === "0" && hasDeleteCapability;
+  const canApplyCredit = payment && payment.unallocatedAmount !== "0" && hasApplyCreditCapability;
 
   return (
     <>
@@ -201,7 +208,7 @@ export function PaymentDetailDrawer({
                 </a>
               </Button>
             )}
-            {payment && (
+            {payment && hasSendReceiptCapability && (
               <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email receipt"}
               </Button>

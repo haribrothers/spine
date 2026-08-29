@@ -9,7 +9,19 @@ import { requireOrgId } from "../org/settings.controller";
 import { PaymentsService } from "./payments.service";
 import { PaymentPdfService } from "../pdf/payment-pdf.service";
 
-/** Per §2.1, "Create invoices, record payments" is Owner ✅ / Staff ✅ / Field ❌ — same shape as InvoicesController. */
+/**
+ * PRD §2.1/§9 — Payments use the own/others capability split:
+ * `payments.edit_own` gates create (there's no update route at all, so
+ * `payments.edit_others` is reserved with nothing to gate yet, same shape
+ * as `vendor_payments.edit_others`); `payments.delete_own`/`delete_others`
+ * gate delete (only possible while unallocated). `apply-credit` and
+ * `send-receipt` are workflow actions, not edits, so they get their own
+ * dedicated capabilities — `payments.apply_credit`, `payments.send_receipt`
+ * — independent of the edit/delete pair. Ownership checks that depend on
+ * the loaded record (`delete`) are enforced in the service layer via
+ * `requireOwnershipCapability`, not `@RequireCapability` here. No view
+ * access at all for Field — same shape as InvoicesController.
+ */
 @Controller("payments")
 @OrgRoles(["owner", "staff"])
 export class PaymentsController {
@@ -54,7 +66,7 @@ export class PaymentsController {
 
   /** S-06.6 — re-sends the receipt PDF to the paying contact on demand (create() already sends a plain-text confirmation; this attaches the actual PDF). */
   @Post(":id/send-receipt")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("payments.send_receipt")
   @UseInterceptors(IdempotencyInterceptor)
   async sendReceipt(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -63,7 +75,7 @@ export class PaymentsController {
 
   /** S-06.1/S-06.2/S-06.4/S-06.5 — records a payment, optionally allocating it across invoices in the same call. Optional `bankAccountId` in the body lets the caller pick which cash/bank account received the funds; omitted defaults to "Bank Account". */
   @Post()
-  @RequireCapability("invoices.manage")
+  @RequireCapability("payments.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -74,7 +86,7 @@ export class PaymentsController {
 
   /** S-05.5 — applies an existing payment's sitting unallocated credit against one or more invoices not available (or not chosen) when the payment was originally recorded. */
   @Post(":id/apply-credit")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("payments.apply_credit")
   @UseInterceptors(IdempotencyInterceptor)
   async applyCredit(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -84,7 +96,6 @@ export class PaymentsController {
 
   /** Only an unallocated payment is ever deletable — see PaymentsService.delete's own comment. */
   @Delete(":id")
-  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

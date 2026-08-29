@@ -9,13 +9,19 @@ import { InvoicesService } from "./invoices.service";
 import { InvoicePdfService } from "../pdf/invoice-pdf.service";
 
 /**
- * Per §2.1's permission table, "Create invoices, record payments" is
- * Owner ✅ / Staff ✅ / Field ❌ — no view access at all for Field, same
- * shape as QuotesController. Every route here carries
- * `@OrgRoles(["owner", "staff"])`; issue/void further restrict per their
- * own S-05.3/S-05.8 wording (both stay owner+staff — voiding a mistake is
- * explicitly staff-doable too, unlike quotes' discount-approval which is
- * owner-only per S-03.9).
+ * PRD §2.1/§9 — Invoices use the own/others capability split:
+ * `invoices.edit_own`/`edit_others` gate create/update (already
+ * draft-only; an issued invoice can never be edited by anyone),
+ * `invoices.delete_own`/`delete_others` gate delete (already draft-only).
+ * Issue/void/send/send-reminder are one-way workflow actions, not edits,
+ * so they get their own dedicated capabilities — `invoices.issue`,
+ * `invoices.void`, `invoices.send`, `invoices.send_reminder` — independent
+ * of the edit/delete pair, same pattern as Quotes'
+ * `quotes.send`/`quotes.revise`. Ownership checks that depend on the
+ * loaded record (`update`, `delete`) are enforced in the service layer via
+ * `requireOwnershipCapability`, not `@RequireCapability` here. No view
+ * access at all for Field — every route carries
+ * `@OrgRoles(["owner", "staff"])`.
  */
 @Controller("invoices")
 @OrgRoles(["owner", "staff"])
@@ -48,7 +54,7 @@ export class InvoicesController {
   }
 
   @Post()
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -66,7 +72,7 @@ export class InvoicesController {
    * converted before.
    */
   @Post("from-quote/:quoteId")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async convertFromQuote(@Session() session: UserSession, @Param("quoteId") quoteId: string, @Body("confirm") confirm?: boolean) {
     const orgId = requireOrgId(session);
@@ -74,7 +80,6 @@ export class InvoicesController {
   }
 
   @Put(":id")
-  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -84,7 +89,7 @@ export class InvoicesController {
 
   /** S-05.3 — allocates the gapless number, flips to issued, posts the "Invoice issued" journal entry (§7.2). Optional `revenueAccountId` in the body lets the caller pick an income account; omitted defaults to "Sales — Services". */
   @Post(":id/issue")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.issue")
   @UseInterceptors(IdempotencyInterceptor)
   async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string } = {}) {
     const orgId = requireOrgId(session);
@@ -93,7 +98,7 @@ export class InvoicesController {
 
   /** S-05.7 — queues emailing the invoice PDF to its contact. Deliberately separate from `issue` — see InvoicesService.sendEmail's own doc comment. */
   @Post(":id/send-email")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.send")
   @UseInterceptors(IdempotencyInterceptor)
   async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -102,7 +107,7 @@ export class InvoicesController {
 
   /** S-05.10 — one-click payment reminder for an overdue invoice; reuses sendEmail's own queue/worker with reminder-flavored copy, see InvoicesService.sendReminder's own doc comment. */
   @Post(":id/send-reminder")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.send_reminder")
   @UseInterceptors(IdempotencyInterceptor)
   async sendReminder(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -111,7 +116,7 @@ export class InvoicesController {
 
   /** S-05.8 — void with a required reason; posts a reversing journal entry. */
   @Post(":id/void")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("invoices.void")
   @UseInterceptors(IdempotencyInterceptor)
   async void(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -121,7 +126,6 @@ export class InvoicesController {
 
   /** Only a draft is ever hard-deletable — see InvoicesService.delete's own comment. */
   @Delete(":id")
-  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

@@ -42,9 +42,8 @@ export class ReportsController {
     return this.reportsService.revenueTrend(orgId, safeMonths);
   }
 
-  /** S-09.12 (dashboard v2) — "invoices due this week" widget. Same capability invoice-management already requires elsewhere. */
+  /** S-09.12 (dashboard v2) — "invoices due this week" widget. Read-only across every invoice, same unconditional-GET convention as every other list/report route in this codebase. */
   @Get("invoices-due-this-week")
-  @RequireCapability("invoices.manage")
   async invoicesDueThisWeek(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.invoicesDueThisWeek(orgId);

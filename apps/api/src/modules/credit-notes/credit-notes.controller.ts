@@ -6,7 +6,16 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { CreditNotesService } from "./credit-notes.service";
 
-/** Same shape as InvoicesController — "Create invoices, record payments" (§2.1) covers credit notes too, they're the same financial-document-authoring capability. */
+/**
+ * PRD §2.1/§9 — Credit Notes use the own/others capability split, same
+ * shape as InvoicesController: `credit_notes.edit_own`/`edit_others` gate
+ * create/update (draft-only), `credit_notes.delete_own`/`delete_others`
+ * gate delete (draft-only). `issue` is a one-way workflow action, not an
+ * edit, so it gets its own dedicated capability — `credit_notes.issue`.
+ * Ownership checks that depend on the loaded record (`update`, `delete`)
+ * are enforced in the service layer via `requireOwnershipCapability`, not
+ * `@RequireCapability` here.
+ */
 @Controller("credit-notes")
 @OrgRoles(["owner", "staff"])
 export class CreditNotesController {
@@ -25,7 +34,7 @@ export class CreditNotesController {
   }
 
   @Post()
-  @RequireCapability("invoices.manage")
+  @RequireCapability("credit_notes.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -34,7 +43,6 @@ export class CreditNotesController {
   }
 
   @Put(":id")
-  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -44,7 +52,7 @@ export class CreditNotesController {
 
   /** S-05.6 — allocates the gapless number, flips to issued, posts the "Credit note issued" journal entry (§7.2). Optional `revenueAccountId` in the body, same convention as InvoicesController.issue. */
   @Post(":id/issue")
-  @RequireCapability("invoices.manage")
+  @RequireCapability("credit_notes.issue")
   @UseInterceptors(IdempotencyInterceptor)
   async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string } = {}) {
     const orgId = requireOrgId(session);
@@ -53,7 +61,6 @@ export class CreditNotesController {
 
   /** Only a draft is ever hard-deletable — see CreditNotesService.delete's own comment. */
   @Delete(":id")
-  @RequireCapability("invoices.manage")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
