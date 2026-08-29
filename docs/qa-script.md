@@ -287,6 +287,17 @@ real, also walk ONE job manually through the full sequence below.
     Enter a description and amount, submit — confirm it creates a
     **draft quote** linked to the job (check the quote appears under
     **Quotes** too, fully editable/sendable like any other quote).
+    - **Tax picker regression (FEAT-08)**: on an item line in the
+      variation-order editor, confirm the **Tax** field is the same
+      searchable rate/group `Combobox` used in Quotes/Invoices (not a raw
+      percentage box) — select a tax group that includes a compound rate
+      (e.g. the demo org's GST + State Tax combo), toggle **Price includes
+      tax** on and off, and confirm the line total preview updates live to
+      match the equivalent selection on an ordinary quote line. After
+      submitting, open the linked quote under **Quotes** and confirm its
+      line shows the same tax rate/group and total — proving the
+      variation order's tax resolves through the same pipeline as a normal
+      quote, not the old flat-percentage fallback.
 11. Send that variation quote and accept it via the public link (same
     steps as §4.4-4.7). As the accepting customer, confirm you land back
     on the public page with an "accepted" state, same as any quote.

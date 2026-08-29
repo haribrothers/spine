@@ -17,9 +17,11 @@ export interface TaxRateStepProps {
 }
 
 /**
- * A single default named tax rate (S-12.5). Full multi-rate tax-group CRUD
- * / inclusive-exclusive pricing is FEAT-08, explicitly out of scope here —
- * this step exists only so the first quote can price correctly.
+ * A single default named tax rate (S-12.5) — a deliberate quick-start step
+ * so the first quote can price correctly. Full multi-rate tax-group CRUD /
+ * inclusive-exclusive pricing (FEAT-08) is built and lives in Settings →
+ * Tax (`settings/panes/tax-pane.tsx`), not here; this step intentionally
+ * stays a single-rate shortcut, editable/expandable later from Settings.
  */
 export function TaxRateStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: TaxRateStepProps) {
   const [name, setName] = useState(initialValue.name || "Tax");

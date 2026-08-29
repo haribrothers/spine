@@ -83,6 +83,36 @@ export interface JobVariationOrder {
   };
 }
 
+/** Minimal shape used by the variation-order line editor's catalog-item picker. Mirrors quotes/types.ts's CatalogItemOption (kept as its own copy per this module's existing duplication precedent — see variation-order-line-editor.tsx's own doc comment). */
+export interface VariationOrderCatalogItemOption {
+  id: string;
+  name: string;
+  description: string | null;
+  unit: string;
+  defaultPriceAmount: string;
+  defaultPriceCurrency: string;
+  defaultTaxRatePercentage: number;
+  defaultTaxRateId: string | null;
+  defaultTaxGroupId: string | null;
+  archivedAt: string | null;
+}
+
+/** FEAT-08 — used by the variation-order line editor's tax picker. Mirrors apps/api's TaxRatesService/TaxGroupsService row shapes (and quotes/types.ts's own copy). */
+export interface TaxRateOption {
+  id: string;
+  name: string;
+  rate: number;
+  isCompound: boolean;
+  archivedAt: string | null;
+}
+
+export interface TaxGroupOption {
+  id: string;
+  name: string;
+  archivedAt: string | null;
+  taxRates: TaxRateOption[];
+}
+
 /** JobCostingService.report's response shape — revenue side only until Phase 4 supplies costs (see that service's own doc comment). `cost`/`margin` are correctly 0 today, not a bug. */
 export interface JobCostingReport {
   jobId: string;

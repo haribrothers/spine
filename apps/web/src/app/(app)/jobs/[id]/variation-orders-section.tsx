@@ -85,6 +85,9 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
           unitPriceAmount: l.unitPriceAmount.toString(),
           discountPercentage: l.discountPercentage,
           taxRatePercentage: l.taxRatePercentage,
+          taxRateId: l.taxRateId,
+          taxGroupId: l.taxGroupId,
+          isTaxInclusive: l.isTaxInclusive,
         })),
       });
       setCreateOpen(false);
