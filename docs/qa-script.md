@@ -810,7 +810,11 @@ Needs two Staff accounts in different Teams. Read is unconditional for
 every Staff user regardless of Team grants — only create/edit/archive/
 restore/delete are gated, independently for Contacts vs. Catalogue.
 
-1. As Owner, go to **Team** → a team's **Privileges** tab. Confirm the
+1. As Owner, go to **Team** → a team's **Privileges** tab. Confirm every
+   collapsible group (here and throughout this tab — Manage Contacts,
+   Manage Catalogue, Manage Quotes, Manage Jobs, Reports & Ledger, etc.)
+   starts **collapsed** on page load — no group's individual rows are
+   visible until you click its chevron/header to expand it. Confirm the
    old single "Manage contacts & catalogue" row is gone, replaced by two
    separate collapsible groups, each with its own header-level "grant
    all" switch:

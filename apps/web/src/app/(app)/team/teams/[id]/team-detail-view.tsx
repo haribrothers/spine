@@ -38,10 +38,10 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
   // Which capability groups ("Manage Contacts", "Manage Catalogue", ...)
-  // are expanded — keyed by group label. Groups default expanded (a group
-  // not yet in this set counts as open) so the matrix looks the same as
-  // before grouping existed until a user actually collapses one.
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  // are expanded — keyed by group label. Groups default COLLAPSED (a
+  // group not yet in this set counts as closed) so the matrix opens
+  // compact and a user expands only the groups they care about.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [pendingMemberId, setPendingMemberId] = useState("");
 
   const reload = useCallback(async () => {
@@ -135,8 +135,8 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
     }
   }
 
-  function toggleGroupCollapsed(label: string) {
-    setCollapsedGroups((prev) => {
+  function toggleGroupExpanded(label: string) {
+    setExpandedGroups((prev) => {
       const next = new Set(prev);
       if (next.has(label)) {
         next.delete(label);
@@ -303,22 +303,22 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                 }
 
                 const allGranted = row.capabilities.every((c) => detail.privileges[c] ?? false);
-                const isCollapsed = collapsedGroups.has(row.label);
+                const isExpanded = expandedGroups.has(row.label);
                 return (
                   <div key={row.label} className="border-b border-border last:border-0">
                     <div className="flex items-center gap-3 bg-surface-muted px-3 py-2.5 text-[13px]">
                       <button
                         type="button"
-                        onClick={() => toggleGroupCollapsed(row.label)}
+                        onClick={() => toggleGroupExpanded(row.label)}
                         className="flex min-w-0 flex-1 items-center gap-1.5 text-left font-semibold text-on-surface"
-                        aria-expanded={!isCollapsed}
+                        aria-expanded={isExpanded}
                       >
-                        {isCollapsed ? <ChevronRight size={14} className="shrink-0" /> : <ChevronDown size={14} className="shrink-0" />}
+                        {isExpanded ? <ChevronDown size={14} className="shrink-0" /> : <ChevronRight size={14} className="shrink-0" />}
                         <span className="truncate">{row.label}</span>
                       </button>
                       <Switch checked={allGranted} onCheckedChange={(checked) => toggleGroup(row.capabilities, checked)} />
                     </div>
-                    {!isCollapsed &&
+                    {isExpanded &&
                       row.capabilities.map((capability) => (
                         <div key={capability} className="flex items-center gap-3 border-t border-border py-2.5 pl-6 pr-3 text-[13px]">
                           <div className="min-w-0 flex-1">

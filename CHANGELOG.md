@@ -76,6 +76,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-29 — Privilege-matrix groups now start collapsed (user-reported)
+
+- With every module now split into own/others capability groups (Contacts, Catalogue, Leads, Activities, Quotes, Meetings, Purchases' 4 resources, Jobs' 5 resources, Invoices, Payments, Credit Notes, plus the new Reports & Ledger group), the Privileges tab defaulted every group to EXPANDED on page load — a wall of dozens of rows before a user could see anything. `team-detail-view.tsx`'s local state was renamed from `collapsedGroups` (default expanded, a group in the set counts as closed) to `expandedGroups` (default collapsed, a group in the set counts as open) — same chevron/switch UI, just flipped which state is the default. No API change.
+
 ### 2026-08-29 — Split `dashboard.view` into four report capabilities; wire the previously-unused `ledger.view`; move `quotes.approve_discount` into its group (S-09.15)
 
 - **User-reported gap**: `quotes.approve_discount` and `ledger.view` rendered as ungrouped top-level rows in the privilege matrix — the former sat right next to "Manage Quotes" (the group it obviously belongs to) without being nested under it, and `dashboard.view` was one blanket toggle covering four genuinely separate reports (dashboard summary, receivables, payables, job profitability) with no way for an Owner to grant one without the others.
