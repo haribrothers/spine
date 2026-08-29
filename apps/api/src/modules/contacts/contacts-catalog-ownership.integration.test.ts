@@ -142,6 +142,63 @@ describe("Contacts/Catalog ownership split (requires local Postgres)", () => {
     });
   });
 
+  describe("Contact persons / addresses — independent, non-ownership capabilities (§9)", () => {
+    it("contacts.manage_persons is required in addition to contacts.edit_own to touch the contactPersons array", async () => {
+      await grantTeam(creatorMemberId, { "contacts.edit_own": true });
+      const contact = await contactsService.create(orgId, creatorUserId, { type: "customer", isCompany: false, name: "Has People" });
+
+      // edit_own alone is not enough to touch contactPersons.
+      await expect(
+        contactsService.update(orgId, contact.id, creatorUserId, { contactPersons: [{ name: "Jane Doe", isPrimary: true }] }),
+      ).rejects.toThrow(/missing capability.*contacts\.manage_persons/i);
+
+      // A scalar-only update still works with just edit_own.
+      await expect(contactsService.update(orgId, contact.id, creatorUserId, { name: "Renamed" })).resolves.toBeDefined();
+
+      await grantTeam(creatorMemberId, { "contacts.manage_persons": true });
+      await expect(
+        contactsService.update(orgId, contact.id, creatorUserId, { contactPersons: [{ name: "Jane Doe", isPrimary: true }] }),
+      ).resolves.toBeDefined();
+    });
+
+    it("contacts.manage_addresses is required in addition to contacts.edit_own to touch the addresses array, independently of manage_persons", async () => {
+      await grantTeam(creatorMemberId, { "contacts.edit_own": true, "contacts.manage_persons": true });
+      const contact = await contactsService.create(orgId, creatorUserId, { type: "customer", isCompany: false, name: "Has Addresses" });
+
+      // manage_persons grant does not imply manage_addresses.
+      await expect(
+        contactsService.update(orgId, contact.id, creatorUserId, { addresses: [{ type: "billing", line1: "1 Main St", isPrimary: true }] }),
+      ).rejects.toThrow(/missing capability.*contacts\.manage_addresses/i);
+
+      await grantTeam(creatorMemberId, { "contacts.manage_addresses": true });
+      await expect(
+        contactsService.update(orgId, contact.id, creatorUserId, { addresses: [{ type: "billing", line1: "1 Main St", isPrimary: true }] }),
+      ).resolves.toBeDefined();
+    });
+
+    it("the base ownership check still applies — manage_persons/manage_addresses don't bypass edit_own/edit_others", async () => {
+      await grantTeam(creatorMemberId, { "contacts.edit_own": true });
+      const contact = await contactsService.create(orgId, creatorUserId, { type: "customer", isCompany: false, name: "Owned By Creator" });
+
+      // otherUserId has manage_persons but no edit access to this contact at all.
+      await grantTeam(otherMemberId, { "contacts.manage_persons": true, "contacts.manage_addresses": true });
+      await expect(
+        contactsService.update(orgId, contact.id, otherUserId, { contactPersons: [{ name: "Jane Doe", isPrimary: true }] }),
+      ).rejects.toThrow(/missing capability/i);
+    });
+
+    it("Owner bypasses both checks entirely, regardless of Team grants", async () => {
+      const contact = await contactsService.create(orgId, creatorUserId, { type: "customer", isCompany: false, name: "Any Contact" });
+      const [ownerMembership] = await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.role, "owner")));
+      await expect(
+        contactsService.update(orgId, contact.id, ownerMembership!.userId, {
+          contactPersons: [{ name: "Jane Doe", isPrimary: true }],
+          addresses: [{ type: "billing", line1: "1 Main St", isPrimary: true }],
+        }),
+      ).resolves.toBeDefined();
+    });
+  });
+
   describe("Catalogue", () => {
     it("creator with only edit_own can update their own item but not another user's", async () => {
       await grantTeam(creatorMemberId, { "catalog.edit_own": true });

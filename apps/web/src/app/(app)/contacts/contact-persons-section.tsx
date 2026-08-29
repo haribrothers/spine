@@ -27,6 +27,7 @@ import {
 } from "@spine/ui";
 import { Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactPerson } from "./types";
 
@@ -64,6 +65,14 @@ function initials(name: string) {
  * row"), pre-filled from the row's current values and calling `persist()`
  * with that one array element's fields replaced in place rather than
  * appended — not a second form.
+ *
+ * Gated on `contacts.manage_persons` (user-reported gap) — a single,
+ * non-ownership capability, since contact persons have no creator of
+ * their own to split "own" from "others" by (see permissions.ts's own
+ * description). Independent of `contacts.edit_own`/`edit_others` and of
+ * `contacts.manage_addresses` — `ContactsService.update` requires both
+ * the base contact-edit ownership check AND this capability whenever the
+ * payload includes `contactPersons`.
  */
 export function ContactPersonsSection({
   contact,
@@ -81,6 +90,7 @@ export function ContactPersonsSection({
   const [email, setEmail] = useState("");
   const [logoFileId, setLogoFileId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const canManage = useCapability("contacts.manage_persons");
 
   const people = contact.contactPersons ?? [];
 
@@ -149,48 +159,52 @@ export function ContactPersonsSection({
                   {person.email && <span className="text-on-surface-muted"> · {person.email}</span>}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  aria-label={`Edit ${person.name}`}
-                  disabled={saving}
-                  onClick={() => openEditDialog(person)}
-                  className="text-on-surface-muted transition-colors hover:text-on-surface"
-                >
-                  <Pencil size={14} />
-                </button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label={`Remove ${person.name}`}
-                      disabled={saving}
-                      className="text-on-surface-muted transition-colors hover:text-overdue"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remove {person.name}?</AlertDialogTitle>
-                      <AlertDialogDescription>This removes the contact person from this contact. This cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+              {canManage && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    aria-label={`Edit ${person.name}`}
+                    disabled={saving}
+                    onClick={() => openEditDialog(person)}
+                    className="text-on-surface-muted transition-colors hover:text-on-surface"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={`Remove ${person.name}`}
+                        disabled={saving}
+                        className="text-on-surface-muted transition-colors hover:text-overdue"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove {person.name}?</AlertDialogTitle>
+                        <AlertDialogDescription>This removes the contact person from this contact. This cannot be undone.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-          Add contact person
-        </Button>
+        {canManage && (
+          <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
+            Add contact person
+          </Button>
+        )}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit contact person" : "Add contact person"}</DialogTitle>

@@ -29,6 +29,7 @@ import {
 } from "@spine/ui";
 import { Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import type { Address, AddressType, Contact } from "./types";
 
 const TYPE_OPTIONS: AddressType[] = ["billing", "shipping", "site", "other"];
@@ -52,6 +53,11 @@ type AddressInput = {
  * type) is this section's own live exercise of the Select-inside-Dialog
  * z-index fix (Issue 3). Edit reuses the same Dialog, pre-filled, keyed off
  * `editingId` the same way ContactPersonsSection does.
+ *
+ * Gated on `contacts.manage_addresses` (user-reported gap) — same
+ * single-non-ownership-capability reasoning as ContactPersonsSection's own
+ * `contacts.manage_persons`, independent of it and of
+ * `contacts.edit_own`/`edit_others`.
  */
 export function AddressesSection({
   contact,
@@ -68,6 +74,7 @@ export function AddressesSection({
   const [line1, setLine1] = useState("");
   const [city, setCity] = useState("");
   const [saving, setSaving] = useState(false);
+  const canManage = useCapability("contacts.manage_addresses");
 
   const addresses = contact.addresses ?? [];
 
@@ -129,48 +136,52 @@ export function AddressesSection({
                   {address.city ? `, ${address.city}` : ""}
                 </span>
               </div>
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  aria-label="Edit address"
-                  disabled={saving}
-                  onClick={() => openEditDialog(address)}
-                  className="text-on-surface-muted transition-colors hover:text-on-surface"
-                >
-                  <Pencil size={14} />
-                </button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Remove address"
-                      disabled={saving}
-                      className="text-on-surface-muted transition-colors hover:text-overdue"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Remove this address?</AlertDialogTitle>
-                      <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
+              {canManage && (
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    aria-label="Edit address"
+                    disabled={saving}
+                    onClick={() => openEditDialog(address)}
+                    className="text-on-surface-muted transition-colors hover:text-on-surface"
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Remove address"
+                        disabled={saving}
+                        className="text-on-surface-muted transition-colors hover:text-overdue"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Remove this address?</AlertDialogTitle>
+                        <AlertDialogDescription>This removes the address from this contact. This cannot be undone.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              )}
             </li>
           ))}
         </ul>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-          Add address
-        </Button>
+        {canManage && (
+          <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
+            Add address
+          </Button>
+        )}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit address" : "Add address"}</DialogTitle>

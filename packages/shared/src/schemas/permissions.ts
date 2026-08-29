@@ -20,6 +20,8 @@ export const CAPABILITIES = [
   "contacts.edit_others",
   "contacts.delete_own",
   "contacts.delete_others",
+  "contacts.manage_persons",
+  "contacts.manage_addresses",
   "catalog.edit_own",
   "catalog.edit_others",
   "catalog.delete_own",
@@ -157,6 +159,18 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   "contacts.delete_others": {
     label: "Archive/delete others' contacts",
     description: "Archive, restore, or delete a contact that a different user created.",
+    group: "Manage Contacts",
+  },
+  "contacts.manage_persons": {
+    label: "Manage contact persons",
+    description:
+      "Add, edit, or remove a contact's people (name, title, email, phone). Independent of edit_own/edit_others — contact persons have no creator of their own to split \"own\" from \"others\" by, so this is a single grant covering every contact's persons, not an ownership-based pair. Still requires edit access to the contact itself.",
+    group: "Manage Contacts",
+  },
+  "contacts.manage_addresses": {
+    label: "Manage contact addresses",
+    description:
+      "Add, edit, or remove a contact's addresses. Independent of edit_own/edit_others and of manage_persons, same \"no creator to split by\" reasoning. Still requires edit access to the contact itself.",
     group: "Manage Contacts",
   },
   "catalog.edit_own": {
@@ -573,6 +587,8 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "contacts.edit_others": true,
   "contacts.delete_own": true,
   "contacts.delete_others": true,
+  "contacts.manage_persons": true,
+  "contacts.manage_addresses": true,
   "catalog.edit_own": true,
   "catalog.edit_others": true,
   "catalog.delete_own": true,

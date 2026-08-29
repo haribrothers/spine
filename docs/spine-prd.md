@@ -82,6 +82,8 @@ Role is per-user, per-organisation, enforced server-side on every endpoint. Ther
 | Edit others' contacts | ✅ | ✅ (default) | ❌ | ❌ |
 | Archive/delete own contacts | ✅ | ✅ (default) | ❌ | ❌ |
 | Archive/delete others' contacts | ✅ | ✅ (default) | ❌ | ❌ |
+| Manage contact persons | ✅ | ✅ (default) | ❌ | ❌ |
+| Manage contact addresses | ✅ | ✅ (default) | ❌ | ❌ |
 | Create/edit own catalogue | ✅ | ✅ (default) | ❌ | ❌ |
 | Edit others' catalogue | ✅ | ✅ (default) | ❌ | ❌ |
 | Archive/delete own catalogue | ✅ | ✅ (default) | ❌ | ❌ |
@@ -483,10 +485,13 @@ Stories are grouped by feature with acceptance highlights. Story IDs are stable 
 | S-01.15 | As an owner, I want to grant a Team the ability to edit or delete only the contacts they created, or extend that to everyone's contacts, separately for editing vs. deleting, so a junior Team can help maintain the CRM without being able to alter or remove a colleague's records |
 | S-01.16 | As an owner, I want the same own-vs-others edit/delete split available for Contacts (S-01.15) to apply separately to Leads and to Activities, so a Team's access to the pipeline and to logged calls/notes/tasks can be tuned independently of its Contacts access |
 | S-01.17 | As an owner, I want to grant a Team the ability to edit or delete only the meetings they organize, or extend that to everyone's meetings, so scheduling access can be tuned per Team without touching who can already SEE a given meeting |
+| S-01.18 | As an owner, I want to control which staff can manage a contact's people and addresses, independently of who can edit the contact's own core fields, so a Team can have contact-info-entry access without full contact management, or vice versa |
 
 *Acceptance highlights:* duplicate detection warns on matching phone or email but does not block. Deleting a contact with financial documents is blocked; deactivation is offered instead.
 
 *Acceptance highlights (S-01.15 — own vs. others' contacts):* see §2.1's "Contacts & catalogue read is unconditional, ownership-based capabilities gate writes, independently per resource" for the full model — this story is that model's Contacts half, using its own `contacts.*` capability group; FEAT-02's own acceptance highlight below is the independent Catalogue half.
+
+*Acceptance highlights (S-01.18 — contact persons/addresses):* contact persons and addresses are pure sub-fields of a contact (a whole-array-replace on the contact's own `PUT`, not independently created/updated/deleted entities), with no `createdByUserId` of their own — an own-vs-others split doesn't apply. `contacts.manage_persons`/`contacts.manage_addresses` are instead a single, non-ownership capability each, checked in ADDITION to (not instead of) the base `contacts.edit_own`/`edit_others` ownership check that already governs the parent contact — a user needs both to touch a given array, and the two new capabilities are independent of each other (managing persons doesn't imply managing addresses, or vice versa).
 
 *Acceptance highlights (S-01.16 — own vs. others' leads & activities):* Leads and Activities each get their own independent four-capability group — `leads.edit_own`/`leads.edit_others`/`leads.delete_own`/`leads.delete_others` and `activities.edit_own`/`activities.edit_others`/`activities.delete_own`/`activities.delete_others` — replacing the single `leads.manage` capability that previously covered both together, following the exact same "own vs others, independent per resource" model established by S-01.15/S-02.5. "Own" is based on `createdByUserId` (who created the record), deliberately distinct from either resource's own reassignable people-fields: a lead's `ownerUserId` (the assigned pipeline rep) and an activity's `assignedToUserId` (who a follow-up is delegated to) can both be reassigned to someone else without changing who the ownership check treats as the creator — reassignment is a separate concern from "who is allowed to edit/delete this record." An activity's "mark done"/"mark undone" actions are gated the same way as editing (`edit_own`/`edit_others`), since toggling completion status is a form of editing the record, not a distinct action. `GET /leads/summary-by-stage` (the pipeline dashboard widget, S-09.11) becomes unconditional like every other read in this feature — it no longer requires any capability, matching `GET /leads` and `GET /leads/:id`, which were already ungated.
 

@@ -865,8 +865,11 @@ restore/delete are gated, independently for Contacts vs. Catalogue.
    - **Manage Catalogue**: Create/edit own catalogue, Edit others'
      catalogue, Archive/delete own catalogue, Archive/delete others'
      catalogue.
-   Plus a separate, ungrouped **Manage leads & activities** row
-   (leads/activities kept their own gate, unrelated to this split).
+   **Manage Contacts** also includes two more rows, independent of the
+   own/others four above and of each other: **Manage contact persons**
+   and **Manage contact addresses** (§9 S-01.18) — each a single toggle,
+   not an own/others pair, since contact persons/addresses have no
+   creator of their own to split by.
    Toggling a group header's switch ON/OFF should set all four of that
    group's rows together in one action; toggling an individual row
    should update just that row (and flip the group header's switch to
@@ -901,12 +904,30 @@ restore/delete are gated, independently for Contacts vs. Catalogue.
 9. As Owner, confirm you can edit/archive/delete every contact and
    catalogue item regardless of who created it — Owner bypasses this
    split entirely, same as every other capability in §2.1.
+10. **Contact persons/addresses gating (user-reported)**: as Staff User 1
+    with **Manage Contacts → Create/edit own** granted but neither
+    **Manage contact persons** nor **Manage contact addresses**, open a
+    contact they can edit. Confirm the **Add contact person** and
+    **Add address** buttons, and every existing row's Edit/Remove icons,
+    are all HIDDEN in both sections — previously these were shown
+    unconditionally and only failed with a 403 on save. Grant **Manage
+    contact persons** only — confirm the Contact persons section's
+    buttons appear while Addresses stays hidden (the two are
+    independent). Grant **Manage contact addresses** too — confirm both
+    now work. As Owner, confirm both work regardless of Team grants.
 
 ### 13.2 Leads & Activities — same "own vs others" split, independent of Contacts/Catalogue (§9 S-01.16)
 
 Same setup and pattern as §13.1, applied to the **Manage Leads** and
 **Manage Activities** groups instead — verify these two are also
-independent of each other and of Contacts/Catalogue.
+independent of each other and of Contacts/Catalogue. Both the per-contact
+Leads/Activities lists (on a contact's own detail page) and the org-wide
+`/leads` kanban board respect the same grants — the per-contact Leads list
+in particular had no client-side gating at all until a user-reported fix
+(same class of bug as Activities', fixed the same day): confirm a Staff
+user without `leads.edit_own`/`leads.edit_others` sees no "Add lead"
+button and no Edit pencil on any lead row inside a contact's detail page,
+not just on the standalone `/leads` board.
 
 1. As Owner, confirm the privilege matrix now has four resource groups
    total: **Manage Contacts**, **Manage Catalogue**, **Manage Leads**,

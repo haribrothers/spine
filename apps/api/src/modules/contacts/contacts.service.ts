@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { addressInputSchema, contactPersonInputSchema, createContactSchema, updateContactSchema } from "@spine/shared";
 import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
@@ -6,7 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { addresses, contactPersons, contacts, journalLines } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
-import { requireOwnershipCapability } from "../../auth/capability.util";
+import { requireOwnershipCapability, hasCapability } from "../../auth/capability.util";
 
 export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
@@ -215,6 +215,22 @@ export class ContactsService {
       own: "contacts.edit_own",
       others: "contacts.edit_others",
     });
+
+    // Contact persons/addresses are pure sub-fields of the contact record
+    // (no createdByUserId of their own — see contacts.ts's own schema
+    // comment), so "own vs others" doesn't apply; instead each array gets
+    // its own single, non-ownership capability, independent of
+    // contacts.edit_own/edit_others and of each other — an Owner can grant
+    // a Team "manage contact info" without "manage addresses," or vice
+    // versa. Checked in ADDITION to the ownership check above (a user
+    // still needs base edit access to the contact at all), not instead of
+    // it.
+    if (input.contactPersons !== undefined && !(await hasCapability(this.db, { orgId, userId: actorUserId }, "contacts.manage_persons"))) {
+      throw new ForbiddenException("Missing capability: contacts.manage_persons");
+    }
+    if (input.addresses !== undefined && !(await hasCapability(this.db, { orgId, userId: actorUserId }, "contacts.manage_addresses"))) {
+      throw new ForbiddenException("Missing capability: contacts.manage_addresses");
+    }
 
     // Read-before-write for the persons/addresses arrays too — needed to
     // diff old-vs-new by id (see diffArrayById below), not just for the

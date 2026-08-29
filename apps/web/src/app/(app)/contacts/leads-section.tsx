@@ -22,6 +22,7 @@ import {
 } from "@spine/ui";
 import { Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
 
 /**
@@ -32,6 +33,13 @@ import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./typ
  * (paid/due-soon/overdue/draft), and a lead stage isn't that. "Add"/"Edit"
  * share the same Dialog (Issue 4 pattern) — `editingId` set means editing
  * via `PUT /leads/:id`, null means creating via `POST /leads`.
+ *
+ * Gated on `leads.edit_own`/`leads.edit_others` (own/others resolved by
+ * `createdByUserId`, matching `LeadsService`'s own server-side check) —
+ * this is a separate component from the org-wide kanban board
+ * (`leads/leads-board.tsx`), which was already correctly gated; this
+ * per-contact list needed the same treatment applied independently
+ * (user-reported gap).
  */
 export function LeadsSection({
   contactId,
@@ -51,6 +59,7 @@ export function LeadsSection({
   const [amount, setAmount] = useState(0n);
   const [currency, setCurrency] = useState("USD");
   const [saving, setSaving] = useState(false);
+  const canCreate = useCapability("leads.edit_own");
 
   function openAddDialog() {
     setEditingId(null);
@@ -105,26 +114,7 @@ export function LeadsSection({
       ) : leads.length > 0 ? (
         <ul className="flex flex-col gap-2">
           {leads.map((lead) => (
-            <li key={lead.id} className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
-              <div>
-                <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
-                <span className="text-on-surface-muted">
-                  {" "}
-                  · {(Number(lead.valueAmount) / 100).toLocaleString(undefined, { style: "currency", currency: lead.valueCurrency })}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge>{LEAD_STAGE_LABELS[lead.stage]}</Badge>
-                <button
-                  type="button"
-                  aria-label={`Edit ${lead.title ?? "lead"}`}
-                  onClick={() => openEditDialog(lead)}
-                  className="text-on-surface-muted transition-colors hover:text-on-surface"
-                >
-                  <Pencil size={14} />
-                </button>
-              </div>
-            </li>
+            <LeadRow key={lead.id} lead={lead} onEdit={openEditDialog} />
           ))}
         </ul>
       ) : (
@@ -132,9 +122,11 @@ export function LeadsSection({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
-          Add lead
-        </Button>
+        {canCreate && (
+          <Button size="sm" variant="secondary" className="self-start" onClick={openAddDialog}>
+            Add lead
+          </Button>
+        )}
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit lead" : "Add lead"}</DialogTitle>
@@ -177,5 +169,35 @@ export function LeadsSection({
         </DialogContent>
       </Dialog>
     </section>
+  );
+}
+
+/** Extracted per-row so useCanEditOwnership can be called normally — calling it once per item inside the parent's .map() would violate the Rules of Hooks the moment the lead count changes between renders. Same pattern as activities-section.tsx's ActivityRow. */
+function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void }) {
+  const canEdit = useCanEditOwnership(lead.createdByUserId, { own: "leads.edit_own", others: "leads.edit_others" });
+
+  return (
+    <li className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
+      <div>
+        <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
+        <span className="text-on-surface-muted">
+          {" "}
+          · {(Number(lead.valueAmount) / 100).toLocaleString(undefined, { style: "currency", currency: lead.valueCurrency })}
+        </span>
+      </div>
+      <div className="flex items-center gap-3">
+        <Badge>{LEAD_STAGE_LABELS[lead.stage]}</Badge>
+        {canEdit && (
+          <button
+            type="button"
+            aria-label={`Edit ${lead.title ?? "lead"}`}
+            onClick={() => onEdit(lead)}
+            className="text-on-surface-muted transition-colors hover:text-on-surface"
+          >
+            <Pencil size={14} />
+          </button>
+        )}
+      </div>
+    </li>
   );
 }
