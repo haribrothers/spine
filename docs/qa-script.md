@@ -766,12 +766,19 @@ invited user alongside your Owner session.
      pre-filled and **locked** (not editable).
    - After completing signup, the invite is accepted and the new user
      lands in the app as a Staff member.
-5. As Owner, assign the new Staff user to the Team you created in step
-   2. Confirm their access now reflects that Team's privilege matrix —
-   e.g. if you left "Create invoices" off, they should be blocked from
-   issuing an invoice (both the button should be hidden/disabled AND, if
-   you have API access, a direct API call should 403 — never trust
-   client-side hiding alone).
+5. As Owner, open the Team you created in step 2 and go to its
+   **Members** tab. Confirm it shows only current members (empty at
+   first) plus an "Add a staff member" picker/Add button — NOT a
+   checkbox against every Staff user in the org. Use the picker to add
+   the new Staff user; confirm they now appear in the members list with
+   a remove (trash) button, and that they no longer appear in the
+   picker's own dropdown once added. Confirm their access now reflects
+   that Team's privilege matrix — e.g. if you left "Create invoices" off,
+   they should be blocked from issuing an invoice (both the button should
+   be hidden/disabled AND, if you have API access, a direct API call
+   should 403 — never trust client-side hiding alone). Remove them via
+   the trash button and confirm they disappear from the members list and
+   reappear in the picker.
 6. Test capability enforcement end-to-end: toggle a capability ON for
    their Team, confirm they can now do that action; toggle it OFF,
    confirm they immediately can't (may need a session refresh).
@@ -789,12 +796,13 @@ invited user alongside your Owner session.
     Confirm Field never sees financial reports/data — no Receivables,
     no invoice amounts beyond what's explicitly allowed, per §S-11.8.
 11. Still as that **Field** user, open a job (§5 above) with a pending
-    milestone. Confirm **Mark complete** and adding a job photo/note are
-    all usable (Field is fixed-granted `jobs.update_milestones` — see
-    §2.1) — but confirm they do NOT see **Edit job**, **Define
-    milestones**, **Raise invoice**, **Release retention**, or **Raise
-    variation order** (all gated on `invoices.manage`/`quotes.manage`,
-    which Field never has).
+    milestone. Confirm **Mark complete** (fixed-granted regardless of who
+    defined the milestone set — see §13.6) and adding a job photo/note
+    are all usable (Field is fixed-granted `job_photos.edit_own`/
+    `job_notes.edit_own` — see §2.1) — but confirm they do NOT see
+    **Edit job**, **Define milestones**, **Raise invoice**, **Release
+    retention**, or **Raise variation order** (all gated on Team-
+    configurable capabilities Field never has).
 
 ### 13.1 Contacts & Catalogue — "own vs others" edit/delete split, per resource (§9 S-01.15/S-02.5)
 

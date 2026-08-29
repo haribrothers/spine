@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
-  Checkbox,
+  Button,
+  Combobox,
   Input,
   Label,
   Spinner,
@@ -15,7 +16,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@spine/ui";
-import { ArrowLeft, ChevronDown, ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
 import { CAPABILITIES, CAPABILITY_LABELS, type Capability } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
@@ -41,6 +42,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   // not yet in this set counts as open) so the matrix looks the same as
   // before grouping existed until a user actually collapses one.
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [pendingMemberId, setPendingMemberId] = useState("");
 
   const reload = useCallback(async () => {
     try {
@@ -77,10 +79,17 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
     }
   }
 
-  async function toggleMember(memberId: string, checked: boolean) {
-    if (!detail) return;
-    const currentIds = detail.members.map((m) => m.memberId);
-    const nextIds = checked ? [...currentIds, memberId] : currentIds.filter((id) => id !== memberId);
+  /**
+   * The Members tab shows only current members plus a picker of Staff not
+   * yet on THIS team (a Staff user may legitimately belong to several
+   * teams at once, per §2.1's most-permissive-wins model, so the picker
+   * doesn't hide someone already on another team) — replaced an earlier
+   * checkbox-per-org-staff-member list that didn't scale past a handful of
+   * users. Still backed by the same full-replace `PUT .../members`
+   * endpoint (no incremental add/remove route exists), so add/remove both
+   * resend the complete id array.
+   */
+  async function setMemberIds(nextIds: string[]) {
     setError(null);
     try {
       await apiClient.put(`/org/teams/${teamId}/members`, { memberIds: nextIds });
@@ -88,6 +97,19 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update team members.");
     }
+  }
+
+  async function handleAddMember() {
+    if (!detail || !pendingMemberId) return;
+    const currentIds = detail.members.map((m) => m.memberId);
+    await setMemberIds([...currentIds, pendingMemberId]);
+    setPendingMemberId("");
+  }
+
+  async function handleRemoveMember(memberId: string) {
+    if (!detail) return;
+    const currentIds = detail.members.map((m) => m.memberId);
+    await setMemberIds(currentIds.filter((id) => id !== memberId));
   }
 
   async function togglePrivilege(capability: Capability, granted: boolean) {
@@ -140,6 +162,8 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   }
 
   const memberIds = new Set(detail.members.map((m) => m.memberId));
+  const teamMembers = staffMembers.filter((m) => memberIds.has(m.id));
+  const availableStaff = staffMembers.filter((m) => !memberIds.has(m.id));
 
   // Nest capabilities sharing a CAPABILITY_LABELS `group` under one header
   // row with a "toggle all" switch (S-01.15/S-02.5) — an ungrouped
@@ -205,29 +229,52 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
         </TabsList>
 
         <TabsContent value="members">
-          <div className="flex flex-col gap-3">
-            <p className="text-[13px] text-on-surface-muted">Staff members assigned to this team.</p>
-            {staffMembers.length === 0 ? (
-              <p className="text-[13px] text-on-surface-muted">No Staff members in this organisation yet.</p>
-            ) : (
-              <div className="rounded-md border border-border-strong">
-                {staffMembers.map((member) => (
-                  <label
-                    key={member.id}
-                    htmlFor={`member-${member.id}`}
-                    className="flex cursor-pointer items-center gap-3 border-b border-border px-3 py-2.5 text-[13px] last:border-0"
-                  >
-                    <Checkbox
-                      id={`member-${member.id}`}
-                      checked={memberIds.has(member.id)}
-                      onCheckedChange={(checked) => toggleMember(member.id, checked === true)}
-                    />
-                    <span className="min-w-0 flex-1 truncate font-medium text-on-surface">{member.name}</span>
-                    <span className="truncate text-on-surface-muted">{member.email}</span>
-                  </label>
-                ))}
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="add-team-member">Add a staff member</Label>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <Combobox
+                    options={availableStaff.map((m) => ({ value: m.id, label: `${m.name} (${m.email})` }))}
+                    value={pendingMemberId}
+                    onValueChange={setPendingMemberId}
+                    placeholder={availableStaff.length ? "Select a staff member…" : "Every Staff member is already on this team"}
+                    emptyText="No matching staff."
+                  />
+                </div>
+                <Button variant="secondary" disabled={!pendingMemberId} onClick={handleAddMember}>
+                  Add
+                </Button>
               </div>
-            )}
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-[13px] text-on-surface-muted">Members of this team.</p>
+              {teamMembers.length === 0 ? (
+                <p className="text-[13px] text-on-surface-muted">No members yet — add one above.</p>
+              ) : (
+                <div className="rounded-md border border-border-strong">
+                  {teamMembers.map((member) => (
+                    <div
+                      key={member.id}
+                      className="flex items-center gap-3 border-b border-border px-3 py-2.5 text-[13px] last:border-0"
+                    >
+                      <span className="min-w-0 flex-1 truncate font-medium text-on-surface">{member.name}</span>
+                      <span className="truncate text-on-surface-muted">{member.email}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 shrink-0 p-0 text-overdue hover:bg-overdue-bg"
+                        aria-label={`Remove ${member.name} from this team`}
+                        onClick={() => handleRemoveMember(member.id)}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </TabsContent>
 
