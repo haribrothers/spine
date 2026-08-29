@@ -105,7 +105,14 @@ export function CreditNotesExplorer() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <MultiSelect options={STATUS_OPTIONS} value={statusFilter} onValueChange={setStatusFilter} placeholder="Status" className="w-40" />
+        <MultiSelect
+          options={STATUS_OPTIONS}
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          placeholder="Status"
+          aria-label="Filter by status"
+          className="w-40"
+        />
         <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" className="w-48" />
       </div>
 

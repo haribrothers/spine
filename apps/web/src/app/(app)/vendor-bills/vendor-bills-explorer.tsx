@@ -123,6 +123,7 @@ export function VendorBillsExplorer() {
             value={statusFilter}
             onValueChange={setStatusFilter}
             placeholder="Status"
+            aria-label="Filter by status"
             className="w-40"
           />
           <Combobox

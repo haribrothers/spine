@@ -163,6 +163,7 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
             value={statusFilter}
             onValueChange={setStatusFilter}
             placeholder="Status"
+            aria-label="Filter by status"
             className="w-36"
           />
           <MultiSelect
@@ -170,6 +171,7 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
             value={categoryFilter}
             onValueChange={setCategoryFilter}
             placeholder="Category"
+            aria-label="Filter by category"
             className="w-40"
           />
           <div className="flex items-center gap-1.5">

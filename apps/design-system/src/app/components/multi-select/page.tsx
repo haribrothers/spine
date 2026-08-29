@@ -22,6 +22,7 @@ function MultiSelectDemo({ className }: { className?: string }) {
       value={value}
       onValueChange={setValue}
       placeholder="Select contacts…"
+      aria-label="Contacts"
       className={className}
     />
   );
@@ -79,6 +80,8 @@ export default () => {
             { prop: "onValueChange", type: "(value: string[]) => void" },
             { prop: "placeholder", type: "string", defaultValue: '"Select…"' },
             { prop: "disabled", type: "boolean", defaultValue: "false" },
+            { prop: "aria-label", type: "string", description: "Accessible name for the trigger — provide this or aria-labelledby." },
+            { prop: "aria-labelledby", type: "string" },
           ]}
         />
       </DocSection>

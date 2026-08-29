@@ -1339,17 +1339,17 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="grid grid-cols-7 border-b border-border">
+    <div role="grid" aria-label={format(date, "MMMM yyyy")} className="flex h-full flex-col">
+      <div role="row" className="grid grid-cols-7 border-b border-border">
         {WEEKDAY_HEADERS.map((label) => (
-          <div key={label} className="border-r border-border px-2 py-1.5 text-center text-[11px] font-medium text-on-surface-muted last:border-r-0">
+          <div key={label} role="columnheader" className="border-r border-border px-2 py-1.5 text-center text-[11px] font-medium text-on-surface-muted last:border-r-0">
             {label}
           </div>
         ))}
       </div>
       <div className="flex flex-1 flex-col">
         {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} className="grid flex-1 grid-cols-7 border-b border-border last:border-b-0">
+          <div key={weekIndex} role="row" className="grid flex-1 grid-cols-7 border-b border-border last:border-b-0">
             {week.map((day) => {
               const dayInstances = instances
                 .filter((i) => isInstanceWithinDay(i, day))

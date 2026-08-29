@@ -41,6 +41,11 @@ export function MiniCalendar({ selected, onSelect, className, headerAction }: Mi
     ...Array.from({ length: firstWeekday }, () => null),
     ...Array.from({ length: totalDays }, (_, i) => new Date(year, month, i + 1)),
   ];
+  // Trailing nulls so the last week is a full 7-cell row too — role="row"
+  // needs a consistent row width, and it keeps the CSS grid rectangular.
+  while (cells.length % 7 !== 0) {
+    cells.push(null);
+  }
 
   return (
     <div className={cn("w-64", className)}>
@@ -68,35 +73,41 @@ export function MiniCalendar({ selected, onSelect, className, headerAction }: Mi
         </div>
         {headerAction}
       </div>
-      <div role="grid" aria-label={viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })} className="grid grid-cols-7 gap-1">
-        {WEEKDAY_LABELS.map((label) => (
-          <div key={label} role="columnheader" aria-hidden="true" className="flex h-7 items-center justify-center text-[11px] font-medium text-on-surface-muted">
-            {label}
+      <div role="grid" aria-label={viewDate.toLocaleDateString(undefined, { month: "long", year: "numeric" })} className="flex flex-col gap-1">
+        <div role="row" className="grid grid-cols-7 gap-1">
+          {WEEKDAY_LABELS.map((label) => (
+            <div key={label} role="columnheader" className="flex h-7 items-center justify-center text-[11px] font-medium text-on-surface-muted">
+              {label}
+            </div>
+          ))}
+        </div>
+        {Array.from({ length: Math.ceil(cells.length / 7) }, (_, weekIndex) => (
+          <div key={weekIndex} role="row" className="grid grid-cols-7 gap-1">
+            {cells.slice(weekIndex * 7, weekIndex * 7 + 7).map((date, index) => {
+              if (!date) return <div key={`empty-${weekIndex}-${index}`} role="presentation" />;
+              const isSelected = Boolean(selected && isSameDay(date, selected));
+              const isToday = isSameDay(date, today);
+              return (
+                <button
+                  key={date.toISOString()}
+                  type="button"
+                  role="gridcell"
+                  aria-selected={isSelected}
+                  aria-current={isToday ? "date" : undefined}
+                  aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
+                  onClick={() => onSelect(date)}
+                  className={cn(
+                    "flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                    isToday && !isSelected && "font-semibold text-primary",
+                    isSelected && "bg-primary text-white hover:bg-primary-hover",
+                  )}
+                >
+                  {date.getDate()}
+                </button>
+              );
+            })}
           </div>
         ))}
-        {cells.map((date, index) => {
-          if (!date) return <div key={`empty-${index}`} role="presentation" />;
-          const isSelected = Boolean(selected && isSameDay(date, selected));
-          const isToday = isSameDay(date, today);
-          return (
-            <button
-              key={date.toISOString()}
-              type="button"
-              role="gridcell"
-              aria-selected={isSelected}
-              aria-current={isToday ? "date" : undefined}
-              aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}
-              onClick={() => onSelect(date)}
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                isToday && !isSelected && "font-semibold text-primary",
-                isSelected && "bg-primary text-white hover:bg-primary-hover",
-              )}
-            >
-              {date.getDate()}
-            </button>
-          );
-        })}
       </div>
     </div>
   );

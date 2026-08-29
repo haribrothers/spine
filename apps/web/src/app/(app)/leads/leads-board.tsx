@@ -213,6 +213,7 @@ export function LeadsBoard() {
             value={stageFilter}
             onValueChange={setStageFilter}
             placeholder="All stages"
+            aria-label="Filter by stage"
             className="w-40"
           />
           <DropdownMenu>

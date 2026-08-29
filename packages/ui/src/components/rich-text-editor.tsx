@@ -120,6 +120,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
+        aria-label="Bold"
         aria-pressed={editor.isActive("bold")}
         data-state={editor.isActive("bold") ? "on" : "off"}
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -130,6 +131,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
+        aria-label="Italic"
         aria-pressed={editor.isActive("italic")}
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={cn(editor.isActive("italic") && "bg-surface-sunken text-primary")}
@@ -140,6 +142,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
+        aria-label="Bulleted list"
         aria-pressed={editor.isActive("bulletList")}
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={cn(editor.isActive("bulletList") && "bg-surface-sunken text-primary")}
@@ -149,6 +152,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
+        aria-label="Numbered list"
         aria-pressed={editor.isActive("orderedList")}
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={cn(editor.isActive("orderedList") && "bg-surface-sunken text-primary")}
@@ -159,6 +163,7 @@ function RichTextToolbar({ editor, disabled }: { editor: Editor | null; disabled
       <ToolbarButton
         type="button"
         disabled={disabled}
+        aria-label={editor.isActive("link") ? "Remove link" : "Add link"}
         aria-pressed={editor.isActive("link")}
         onClick={() => {
           if (editor.isActive("link")) {

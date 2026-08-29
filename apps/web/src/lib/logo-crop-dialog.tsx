@@ -107,6 +107,7 @@ export function LogoCropDialog({
               min={1}
               max={3}
               step={0.01}
+              aria-label="Zoom"
               className="flex-1"
             />
           </div>

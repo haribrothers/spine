@@ -17,6 +17,9 @@ export interface MultiSelectProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Accessible name for the trigger — required since it has no visible <label>-able text node of its own once a role="combobox" override is applied. Provide this or aria-labelledby. */
+  "aria-label"?: string;
+  "aria-labelledby"?: string;
 }
 
 /**
@@ -34,6 +37,8 @@ export function MultiSelect({
   placeholder = "Select…",
   className,
   disabled,
+  "aria-label": ariaLabel,
+  "aria-labelledby": ariaLabelledBy,
 }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
   const selected = options.filter((option) => value.includes(option.value));
@@ -52,6 +57,8 @@ export function MultiSelect({
           role="combobox"
           aria-expanded={open}
           aria-haspopup="listbox"
+          aria-label={ariaLabel}
+          aria-labelledby={ariaLabelledBy}
           disabled={disabled}
           className={cn(
             "flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-border-strong bg-surface px-2.5 text-[14px] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",

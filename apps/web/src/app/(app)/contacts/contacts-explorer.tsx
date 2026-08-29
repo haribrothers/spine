@@ -169,6 +169,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             value={typeFilter}
             onValueChange={setTypeFilter}
             placeholder="All types"
+            aria-label="Filter by type"
             className="w-44"
           />
           <MultiSelect
@@ -176,6 +177,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
             value={statusFilter}
             onValueChange={setStatusFilter}
             placeholder="Status"
+            aria-label="Filter by status"
             className="w-36"
           />
         </div>

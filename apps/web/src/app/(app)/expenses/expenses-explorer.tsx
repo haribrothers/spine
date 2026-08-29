@@ -114,6 +114,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             value={statusFilter}
             onValueChange={setStatusFilter}
             placeholder="Status"
+            aria-label="Filter by status"
             className="w-40"
           />
           <label className="flex items-center gap-2 text-[13px] text-on-surface">

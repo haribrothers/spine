@@ -592,6 +592,7 @@ function TaxGroupDialog({
                   value={taxRateIds}
                   onValueChange={setTaxRateIds}
                   placeholder="Select rates…"
+                  aria-label="Rates"
                 />
               </div>
               {error && <p className="text-[13px] text-overdue">{error}</p>}
