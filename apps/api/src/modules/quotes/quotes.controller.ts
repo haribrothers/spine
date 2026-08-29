@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
@@ -9,6 +10,7 @@ import { QuotesService } from "./quotes.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { QueueService } from "../queue/queue.service";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
+import { AcceptQuoteInPersonDto } from "./quotes.dto";
 
 /**
  * Per §2.1's permission table, quotes are NOT "Manage contacts & catalogue"
@@ -146,6 +148,7 @@ export class QuotesController {
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("quotes.accept_in_person")
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: AcceptQuoteInPersonDto })
   async acceptInPerson(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = acceptQuoteInPersonSchema.parse(body);

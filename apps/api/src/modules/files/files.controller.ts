@@ -9,6 +9,7 @@ import {
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
+import { ApiBody, ApiConsumes } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -45,6 +46,8 @@ export class FilesController {
   @Post()
   @OrgRoles(["owner", "staff", "field"])
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_UPLOAD_BYTES } }), IdempotencyInterceptor)
+  @ApiConsumes("multipart/form-data")
+  @ApiBody({ schema: { type: "object", properties: { file: { type: "string", format: "binary" } } } })
   async upload(
     @Session() session: UserSession,
     @UploadedFile() file: Express.Multer.File | undefined,

@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import {
   createJobSchema,
@@ -18,6 +19,7 @@ import { MilestonesService } from "./milestones.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { VariationOrdersService } from "./variation-orders.service";
 import { JobCostingService } from "./job-costing.service";
+import { AddJobNoteDto, AddJobPhotoDto, AssignJobDto, CompleteMilestoneDto } from "./jobs.dto";
 
 /**
  * PRD F4 — jobs and their milestones. GET routes are readable by any
@@ -134,6 +136,7 @@ export class JobsController {
   @Post(":id/assignees")
   @OrgRoles(["owner", "staff"])
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: AssignJobDto })
   async assign(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = assignJobSchema.parse(body);
@@ -179,6 +182,7 @@ export class JobsController {
   @Post(":id/milestones/:milestoneId/complete")
   @OrgRoles(["owner", "staff", "field"])
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: CompleteMilestoneDto })
   async completeMilestone(
     @Session() session: UserSession,
     @Param("id") id: string,
@@ -228,6 +232,7 @@ export class JobsController {
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("job_photos.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: AddJobPhotoDto })
   async addPhoto(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = addJobPhotoSchema.parse(body);
@@ -251,6 +256,7 @@ export class JobsController {
   @Post(":id/notes")
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("job_notes.edit_own")
+  @ApiBody({ type: AddJobNoteDto })
   async addNote(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = addJobNoteSchema.parse(body);

@@ -1,10 +1,12 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createExpenseSchema, rejectExpenseSchema, reviewExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { ExpensesService } from "./expenses.service";
+import { CreateExpenseDto } from "./expenses.dto";
 
 /**
  * Per §2.1's permission table ("Submit expense: Owner ✅, Staff ✅
@@ -66,6 +68,7 @@ export class ExpensesController {
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("expenses.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: CreateExpenseDto })
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = createExpenseSchema.parse(body);
