@@ -85,9 +85,8 @@ export function HistorySection({ endpoint, subjectLabel }: { endpoint: string; s
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="sm" className="self-start gap-1.5 text-on-surface-muted">
-          <History size={14} />
-          History
+        <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
+          <History size={16} />
         </Button>
       </DialogTrigger>
       <DialogContent>
