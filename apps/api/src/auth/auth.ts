@@ -50,6 +50,27 @@ export const auth = betterAuth({
       verify: verifyPassword,
     },
   },
+  /**
+   * Explicit, not Better Auth's undocumented defaults (7-day expiresIn /
+   * 1-day updateAge) — Phase 5 (Mobile) needs "log in once, stay logged
+   * in" (S-11.1) to be a real, intentional value rather than an implicit
+   * one nobody chose. There is no per-client-type session config in Better
+   * Auth (confirmed against @better-auth/core's init-options.d.mts before
+   * assuming otherwise) — web and the Expo app share this one setting.
+   * 30 days with a 7-day rolling refresh means any session used at least
+   * once a week never actually expires (each use resets the clock), which
+   * covers a field crew's realistic weekly-or-more usage pattern without
+   * an unboundedly long session on a device that's lost or reassigned.
+   * Mobile itself never touches this session directly — it re-mints a
+   * short-lived JWT (`jwt()` plugin below, 15 min) from the underlying
+   * session via /api/auth/token on every app foreground; only a session
+   * that's actually expired or revoked forces mobile back to a real login
+   * screen. See CHANGELOG's Phase 5 entry for the full auth-flow design.
+   */
+  session: {
+    expiresIn: 60 * 60 * 24 * 30,
+    updateAge: 60 * 60 * 24 * 7,
+  },
   plugins: [
     organization({
       ac: accessControl,
