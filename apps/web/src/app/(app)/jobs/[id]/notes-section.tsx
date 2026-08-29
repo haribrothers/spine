@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Card, Spinner, Textarea } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
+import { HistorySection } from "../../../../components/history-section";
 import type { Job, JobNote } from "../types";
 
 /** A free-text timeline note (site conditions, a call with the customer, etc.) — simple append-only list, field-reachable same as photos. */
@@ -74,9 +75,12 @@ export function NotesSection({ job }: { job: Job }) {
       ) : (
         <div className="flex flex-col divide-y divide-border">
           {notes.map((note) => (
-            <div key={note.id} className="py-2.5">
-              <p className="text-[13px] text-on-surface">{note.body}</p>
-              <p className="mt-0.5 text-[11px] text-on-surface-muted">{new Date(note.createdAt).toLocaleString()}</p>
+            <div key={note.id} className="flex items-start justify-between gap-3 py-2.5">
+              <div>
+                <p className="text-[13px] text-on-surface">{note.body}</p>
+                <p className="mt-0.5 text-[11px] text-on-surface-muted">{new Date(note.createdAt).toLocaleString()}</p>
+              </div>
+              <HistorySection endpoint={`/jobs/${job.id}/notes/${note.id}/history`} subjectLabel="this note" />
             </div>
           ))}
         </div>

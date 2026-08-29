@@ -60,6 +60,12 @@ export class JobsService {
     return { ...row.job, contactName: row.contactName };
   }
 
+  /** `GET /jobs/:id/history` — confirms the job exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. Only rows with `entityType: "job"` — a job's own create/update/photo_added/note_added/milestones_set events, not its milestones'/notes'/photos' own dedicated history (see getHistory on MilestonesService and the job_note/job_photo history routes below), matching QuotesService.getHistory's "no cross-entity aggregation" precedent. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "job", id);
+  }
+
   /** A job created directly, not from a quote — see this table's own PRD doc comment: S-04.1's own wording is specifically "from an accepted quote," so this path exists for completeness/flexibility (a job started without ever quoting, e.g. a handshake deal later formalised) rather than being the primary story path. */
   async create(orgId: string, actorUserId: string, input: CreateJobInput, isDemo = false, sourceQuoteId?: string) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
@@ -205,31 +211,56 @@ export class JobsService {
     return this.getOne(orgId, updated!.id);
   }
 
-  /** S-04.10 (web upload) — a general site/progress photo, not tied to a specific milestone's completion (that's MilestonesService.completeMilestone's own `photoFileIds`, which writes to this same `job_photos` table with `milestoneId` set). */
+  /**
+   * S-04.10 (web upload) — a general site/progress photo, not tied to a
+   * specific milestone's completion (that's MilestonesService.
+   * completeMilestone's own `photoFileIds`, which writes to this same
+   * `job_photos` table with `milestoneId` set). Wrapped in `db.transaction`
+   * so the insert and both audit writes are atomic, per AuditLogService's
+   * own top comment. Writes TWO audit rows: the pre-existing job-level
+   * `entityType: "job", action: "photo_added"` row (kept as-is — it's the
+   * job's own activity feed entry, read by `getHistory` above) plus a new
+   * `entityType: "job_photo", entityId: <photo id>` row so the photo gets
+   * its own dedicated single-row history (see getPhotoHistory below).
+   */
   async addPhoto(orgId: string, jobId: string, actorUserId: string, input: AddJobPhotoInput) {
     const job = await this.getOne(orgId, jobId);
 
-    const [row] = await this.db
-      .insert(jobPhotos)
-      .values({
-        jobId,
-        orgId,
-        milestoneId: null,
-        fileId: input.fileId,
-        caption: input.caption ?? null,
-        uploadedByUserId: actorUserId,
-        createdByUserId: actorUserId,
-      })
-      .returning();
+    const row = await this.db.transaction(async (tx) => {
+      const [photo] = await tx
+        .insert(jobPhotos)
+        .values({
+          jobId,
+          orgId,
+          milestoneId: null,
+          fileId: input.fileId,
+          caption: input.caption ?? null,
+          uploadedByUserId: actorUserId,
+          createdByUserId: actorUserId,
+        })
+        .returning();
 
-    await this.auditLog.record(this.db, {
-      orgId,
-      actorUserId,
-      action: "photo_added",
-      entityType: "job",
-      entityId: jobId,
-      contactId: job.contactId,
-      changes: [{ field: "photoFileId", from: null, to: input.fileId }],
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "photo_added",
+        entityType: "job",
+        entityId: jobId,
+        contactId: job.contactId,
+        changes: [{ field: "photoFileId", from: null, to: input.fileId }],
+      });
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "job_photo",
+        entityId: photo!.id,
+        contactId: job.contactId,
+        changes: null,
+      });
+
+      return photo;
     });
 
     return row;
@@ -240,19 +271,51 @@ export class JobsService {
     return this.db.select().from(jobPhotos).where(eq(jobPhotos.jobId, jobId)).orderBy(desc(jobPhotos.createdAt));
   }
 
+  /** `GET /jobs/:id/photos/:photoId/history` — confirms the photo exists (org- and job-scoped) before delegating to AuditLogService. Create-only resource, so this will show a single "created" row — still built for consistency with every other resource's History button. */
+  async getPhotoHistory(orgId: string, jobId: string, photoId: string) {
+    const [row] = await this.db
+      .select()
+      .from(jobPhotos)
+      .where(and(eq(jobPhotos.orgId, orgId), eq(jobPhotos.jobId, jobId), eq(jobPhotos.id, photoId)));
+    if (!row) {
+      throw new NotFoundException("Job photo not found");
+    }
+    return this.auditLog.listForEntity(orgId, "job_photo", photoId);
+  }
+
+  /**
+   * Wrapped in `db.transaction` for the same reason as addPhoto above.
+   * Writes both the pre-existing job-level `entityType: "job"` row (kept,
+   * feeds `getHistory` above) and a new `entityType: "job_note"` row scoped
+   * to just this note.
+   */
   async addNote(orgId: string, jobId: string, actorUserId: string, input: AddJobNoteInput) {
     const job = await this.getOne(orgId, jobId);
 
-    const [row] = await this.db.insert(jobNotes).values({ jobId, orgId, body: input.body, createdByUserId: actorUserId }).returning();
+    const row = await this.db.transaction(async (tx) => {
+      const [note] = await tx.insert(jobNotes).values({ jobId, orgId, body: input.body, createdByUserId: actorUserId }).returning();
 
-    await this.auditLog.record(this.db, {
-      orgId,
-      actorUserId,
-      action: "note_added",
-      entityType: "job",
-      entityId: jobId,
-      contactId: job.contactId,
-      changes: [{ field: "note", from: null, to: input.body }],
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "note_added",
+        entityType: "job",
+        entityId: jobId,
+        contactId: job.contactId,
+        changes: [{ field: "note", from: null, to: input.body }],
+      });
+
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "created",
+        entityType: "job_note",
+        entityId: note!.id,
+        contactId: job.contactId,
+        changes: null,
+      });
+
+      return note;
     });
 
     return row;
@@ -261,5 +324,17 @@ export class JobsService {
   async listNotes(orgId: string, jobId: string) {
     await this.getOne(orgId, jobId);
     return this.db.select().from(jobNotes).where(eq(jobNotes.jobId, jobId)).orderBy(desc(jobNotes.createdAt));
+  }
+
+  /** `GET /jobs/:id/notes/:noteId/history` — same shape as getPhotoHistory above. */
+  async getNoteHistory(orgId: string, jobId: string, noteId: string) {
+    const [row] = await this.db
+      .select()
+      .from(jobNotes)
+      .where(and(eq(jobNotes.orgId, orgId), eq(jobNotes.jobId, jobId), eq(jobNotes.id, noteId)));
+    if (!row) {
+      throw new NotFoundException("Job note not found");
+    }
+    return this.auditLog.listForEntity(orgId, "job_note", noteId);
   }
 }

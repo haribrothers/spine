@@ -107,6 +107,12 @@ export class MilestonesService {
     return row;
   }
 
+  /** `GET /jobs/:id/milestones/:milestoneId/history` — confirms the milestone exists (org- and job-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. Only rows with `entityType: "milestone", entityId: milestoneId` — e.g. `milestone_completed`/`milestone_invoiced` — not the job's own `milestones_set` row (that's job-level, surfaced via JobsService.getHistory instead). */
+  async getHistory(orgId: string, jobId: string, milestoneId: string) {
+    await this.getOne(orgId, jobId, milestoneId);
+    return this.auditLog.listForEntity(orgId, "milestone", milestoneId);
+  }
+
   /**
    * Replaces the job's entire milestone set. Refuses to touch any
    * milestone that's already `invoiced` (S-04.5 makes a milestone's

@@ -27,6 +27,7 @@ import {
 import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
 
@@ -261,6 +262,7 @@ export function ExpenseDetailDrawer({
             )}
           </DrawerBody>
           <DrawerFooter>
+            {expense && <HistorySection endpoint={`/expenses/${expense.id}/history`} subjectLabel="this expense" />}
             {canRejectNow && (
               <Button variant="secondary" onClick={() => setRejectOpen(true)} disabled={busy}>
                 Reject

@@ -20,6 +20,8 @@ export type AuditEntityType =
   | "payment"
   | "job"
   | "milestone"
+  | "job_note"
+  | "job_photo"
   | "tax_rate"
   | "tax_group"
   | "vendor_bill"

@@ -82,6 +82,12 @@ export class VendorPaymentsService {
     };
   }
 
+  /** `GET /vendor-payments/:id/history` — confirms the payment exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "vendor_payment", id);
+  }
+
   /** S-07.7's own "due dates" half — oldest dueDate first, mirrors PaymentsService.suggestAllocation exactly. */
   async suggestAllocation(orgId: string, contactId: string, amount: bigint) {
     const outstanding = await this.db

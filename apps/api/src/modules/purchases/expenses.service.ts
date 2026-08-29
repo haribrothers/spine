@@ -66,6 +66,12 @@ export class ExpensesService {
     return { ...row.expense, categoryName: row.categoryName };
   }
 
+  /** `GET /expenses/:id/history` — confirms the expense exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "expense", id);
+  }
+
   async create(orgId: string, actorUserId: string, input: CreateExpenseInput, isDemo = false) {
     const [category] = await this.db
       .select()

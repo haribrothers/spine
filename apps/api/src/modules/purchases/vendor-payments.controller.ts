@@ -41,6 +41,13 @@ export class VendorPaymentsController {
     return this.vendorPaymentsService.getOne(orgId, id);
   }
 
+  /** `GET /vendor-payments/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "vendor_payment"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.vendorPaymentsService.getHistory(orgId, id);
+  }
+
   @Post()
   @RequireCapability("vendor_payments.edit_own")
   @UseInterceptors(IdempotencyInterceptor)

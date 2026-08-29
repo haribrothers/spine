@@ -45,6 +45,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { CostingSection } from "./[id]/costing-section";
 import { MilestonesSection } from "./[id]/milestones-section";
 import { NotesSection } from "./[id]/notes-section";
@@ -170,7 +171,8 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <HistorySection endpoint={`/jobs/${job.id}/history`} subjectLabel="this job" />
             {canEditJob && (
               <Button variant="secondary" onClick={() => setEditOpen(true)}>
                 Edit job

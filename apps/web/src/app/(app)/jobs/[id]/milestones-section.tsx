@@ -7,6 +7,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { authClient } from "../../../../lib/auth-client";
 import { apiClient } from "../../../../lib/api-client";
 import { useCanEditOwnership, useCapabilities, useCapability } from "../../../../lib/capabilities-context";
+import { HistorySection } from "../../../../components/history-section";
 import { CompleteMilestoneDialog } from "./complete-milestone-dialog";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
 
@@ -332,6 +333,7 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
                   <span className="font-mono text-[13px] tabular-nums text-on-surface">
                     {toDecimalString({ amount: BigInt(m.resolvedAmount), currency: job.currency })} {job.currency}
                   </span>
+                  <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />
                   {m.status === "pending" && canCompleteMilestone(m) && (
                     <Button size="sm" variant="secondary" onClick={() => setCompletingMilestone(m)}>
                       Mark complete

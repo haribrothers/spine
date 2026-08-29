@@ -23,6 +23,7 @@ import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
+import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
@@ -173,7 +174,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <HistorySection endpoint={`/vendor-bills/${bill.id}/history`} subjectLabel="this vendor bill" />
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/vendor-bills/${bill.id}/edit`}>Edit</Link>

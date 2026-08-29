@@ -54,6 +54,14 @@ export class ExpensesController {
     return this.expensesService.getOne(orgId, id);
   }
 
+  /** `GET /expenses/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "expense"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  @OrgRoles(["owner", "staff", "field"])
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.expensesService.getHistory(orgId, id);
+  }
+
   @Post()
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("expenses.edit_own")

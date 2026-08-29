@@ -238,6 +238,13 @@ real, also walk ONE job manually through the full sequence below.
    disclosure, not a top-level field, and that it's still fully editable
    regardless of the org's industry template (Jobs itself is never gated
    by template — only whether this field starts expanded).
+3a. **History (click-to-view popup, new)**: next to the job's other
+    action buttons, click the small **History** button — confirm a
+    popup dialog opens showing "created this job," and (after step 3's
+    edit) an "updated this job" entry too. Confirm it does NOT show any
+    milestone/photo/note entries from later steps on this same job —
+    each of those has its own separate History button (steps 5a, 12a,
+    13a below).
 4. On the **Milestones** tab, click **Define milestones** (or **Edit
    milestones** if some exist). Add 2-3 milestones as percentages of the
    contract value that do NOT sum to 100%, try to save — confirm it's
@@ -248,6 +255,11 @@ real, also walk ONE job manually through the full sequence below.
    the milestone's status flips to **Completed** (S-04.4) — this action
    should also be reachable/usable by a Field-role user (§13), unlike
    the rest of this page's mutating actions.
+5a. **Milestone History (new)**: click the small History button next to
+    this milestone's row — confirm a popup shows a "completed this
+    milestone" entry, but NOT the job-level "defined milestones" entry
+    from step 4 (that stays on the job's own History from step 3a, not
+    here — each has its own separate, non-overlapping history).
 6. On the now-**completed** milestone, click **Raise invoice**. Confirm
    you land on a new invoice whose type is **progress**, whose total
    matches the milestone's resolved amount, and — if the job has a
@@ -284,8 +296,15 @@ real, also walk ONE job manually through the full sequence below.
 12. On the **Photos** tab, upload a general site photo (not tied to a
     milestone) — confirm it appears in the grid separately from any
     milestone-completion photos from step 5.
+12a. **Photo History (new)**: click the small History button on that
+     photo's card — confirm a popup shows a single "created this photo"
+     entry. Confirm the job's own History (step 3a) shows a job-level
+     "added a photo" entry but not this dedicated per-photo entry.
 13. On the **Notes** tab, add a free-text note — confirm it appears with
     a timestamp, newest first.
+13a. **Note History (new)**: click the small History button next to
+     that note — confirm a popup shows a single "created this note"
+     entry, same job-level-vs-dedicated split as photos in step 12a.
 
 ---
 
@@ -697,6 +716,10 @@ than building every case from scratch.
 4. Attempt to delete a category that's used by an existing expense —
    confirm this is rejected ("used by an expense and cannot be deleted —
    archive it instead").
+5. **History (click-to-view popup, new)**: next to a category's row
+   (both a read-only row and one you can edit), click the small
+   **History** button — confirm a popup shows "created this category"
+   and, after step 2's edit, "updated this category."
 
 ### 11.2 Submit and approve an expense (S-07.2, S-07.4)
 
@@ -723,6 +746,10 @@ than building every case from scratch.
 6. **Regression check**: an approved or rejected expense should be
    read-only — no Edit/Delete action should be offered on it, only on a
    still-**Submitted** one.
+7. **History (click-to-view popup, new)**: in the expense's detail
+   drawer footer, click the small **History** button — confirm a popup
+   shows "created this expense" and "approved"/"rejected this expense"
+   entries as applicable.
 
 ### 11.3 Job tagging and billable expenses (S-07.5, S-07.6)
 
@@ -769,6 +796,10 @@ than building every case from scratch.
 6. **Job tagging (S-07.5)**: create and record a vendor bill tagged to a
    job. Confirm its amount appears on that job's Costing tab, same as
    §11.3's expense check above.
+7. **History (click-to-view popup, new)**: on the vendor bill's detail
+   page, next to its other action buttons, click the small **History**
+   button — confirm a popup shows "created," "recorded," and (if
+   voided) "voided this vendor bill" entries.
 
 ### 11.5 Payables (S-07.7)
 
@@ -802,6 +833,9 @@ than building every case from scratch.
    remaining balance (enforced both client-side and server-side; the
    server enforcement is backed by a real DB constraint trigger, same
    pattern as customer payment allocations).
+6. **History (click-to-view popup, new)**: in the vendor payment's
+   detail drawer footer, click the small **History** button — confirm a
+   popup shows a "created this vendor payment" entry.
 
 ### 11.7 Field access (§2.1 permission model)
 

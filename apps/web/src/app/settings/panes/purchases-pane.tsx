@@ -27,6 +27,7 @@ import {
 import { MoreHorizontal, Plus } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { SavedToast } from "../saved-toast";
 
 interface ExpenseCategory {
@@ -197,6 +198,7 @@ function CategoryRow({
           </span>
           <span className="text-[12px] text-on-surface-muted">{account ? `${account.code} · ${account.name}` : "No default account"}</span>
         </div>
+        <HistorySection endpoint={`/expense-categories/${category.id}/history`} subjectLabel="this category" />
       </div>
     );
   }
@@ -210,6 +212,7 @@ function CategoryRow({
         </span>
         <span className="text-[12px] text-on-surface-muted">{account ? `${account.code} · ${account.name}` : "No default account"}</span>
       </div>
+      <HistorySection endpoint={`/expense-categories/${category.id}/history`} subjectLabel="this category" />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button

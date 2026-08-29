@@ -72,6 +72,13 @@ export class JobsController {
     return this.jobsService.getOne(orgId, id);
   }
 
+  /** `GET /jobs/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "job"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
+  @Get(":id/history")
+  async getHistory(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.getHistory(orgId, id);
+  }
+
   @Post()
   @OrgRoles(["owner", "staff"])
   @RequireCapability("jobs.edit_own")
@@ -131,6 +138,13 @@ export class JobsController {
    * (see `FIELD_ALWAYS_CAPABILITIES`), so this was never meant to be an
    * ownership question for Field. Capability check happens in the service.
    */
+  /** `GET /jobs/:id/milestones/:milestoneId/history` — mirrors JobsController.getHistory but scoped to one milestone (`entityType: "milestone"`), delegated to MilestonesService since milestones are its own sub-resource. */
+  @Get(":id/milestones/:milestoneId/history")
+  async getMilestoneHistory(@Session() session: UserSession, @Param("id") id: string, @Param("milestoneId") milestoneId: string) {
+    const orgId = requireOrgId(session);
+    return this.milestonesService.getHistory(orgId, id, milestoneId);
+  }
+
   @Post(":id/milestones/:milestoneId/complete")
   @OrgRoles(["owner", "staff", "field"])
   @UseInterceptors(IdempotencyInterceptor)
@@ -189,6 +203,13 @@ export class JobsController {
     return this.jobsService.addPhoto(orgId, id, session.user.id, input);
   }
 
+  /** `GET /jobs/:id/photos/:photoId/history` — mirrors the milestones history route above, scoped to a single job photo (`entityType: "job_photo"`). Create-only resource, so this shows a single "created" row. */
+  @Get(":id/photos/:photoId/history")
+  async getPhotoHistory(@Session() session: UserSession, @Param("id") id: string, @Param("photoId") photoId: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.getPhotoHistory(orgId, id, photoId);
+  }
+
   @Get(":id/notes")
   async listNotes(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -203,6 +224,13 @@ export class JobsController {
     const orgId = requireOrgId(session);
     const input = addJobNoteSchema.parse(body);
     return this.jobsService.addNote(orgId, id, session.user.id, input);
+  }
+
+  /** `GET /jobs/:id/notes/:noteId/history` — mirrors getPhotoHistory above, scoped to a single job note (`entityType: "job_note"`). */
+  @Get(":id/notes/:noteId/history")
+  async getNoteHistory(@Session() session: UserSession, @Param("id") id: string, @Param("noteId") noteId: string) {
+    const orgId = requireOrgId(session);
+    return this.jobsService.getNoteHistory(orgId, id, noteId);
   }
 
   /** S-04.9 — variation orders raised against this job. */

@@ -216,6 +216,12 @@ export class VendorBillsService {
     };
   }
 
+  /** `GET /vendor-bills/:id/history` — confirms the bill exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
+  async getHistory(orgId: string, id: string) {
+    await this.getOne(orgId, id);
+    return this.auditLog.listForEntity(orgId, "vendor_bill", id);
+  }
+
   async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {

@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Card, Spinner } from "@spine/ui";
 import { Camera } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
+import { HistorySection } from "../../../../components/history-section";
 import type { Job, JobPhoto, UploadedFile } from "../types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -93,28 +94,25 @@ export function PhotosSection({ job }: { job: Job }) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {photos.map((photo) => (
-            <a
-              key={photo.id}
-              href={fileUrl(photo.fileId)}
-              target="_blank"
-              rel="noreferrer"
-              className="group flex flex-col gap-1 overflow-hidden rounded-md border border-border"
-            >
-              <div className="aspect-square overflow-hidden bg-surface-sunken">
+            <div key={photo.id} className="group flex flex-col gap-1 overflow-hidden rounded-md border border-border">
+              <a href={fileUrl(photo.fileId)} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden bg-surface-sunken">
                 {/* Remote file served by our own API, not a Next-optimizable local asset. */}
                 <img
                   src={fileUrl(photo.fileId)}
                   alt={photo.caption ?? "Job photo"}
                   className="h-full w-full object-cover transition-transform group-hover:scale-105"
                 />
+              </a>
+              <div className="flex items-start justify-between gap-1 px-2 pb-2">
+                <div className="min-w-0">
+                  {photo.caption && <p className="truncate text-[12px] text-on-surface">{photo.caption}</p>}
+                  <p className="text-[11px] text-on-surface-muted">
+                    {photo.milestoneId ? "Milestone completion" : "Site photo"} · {new Date(photo.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <HistorySection endpoint={`/jobs/${job.id}/photos/${photo.id}/history`} subjectLabel="this photo" />
               </div>
-              <div className="px-2 pb-2">
-                {photo.caption && <p className="truncate text-[12px] text-on-surface">{photo.caption}</p>}
-                <p className="text-[11px] text-on-surface-muted">
-                  {photo.milestoneId ? "Milestone completion" : "Site photo"} · {new Date(photo.createdAt).toLocaleDateString()}
-                </p>
-              </div>
-            </a>
+            </div>
           ))}
         </div>
       )}

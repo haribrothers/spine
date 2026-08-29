@@ -26,6 +26,7 @@ import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
+import { HistorySection } from "../../../components/history-section";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
 
 /**
@@ -150,6 +151,7 @@ export function VendorPaymentDetailDrawer({
             )}
           </DrawerBody>
           <DrawerFooter>
+            {payment && <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel="this vendor payment" />}
             {canDelete && (
               <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
                 Delete payment
