@@ -6,9 +6,11 @@
   "main": "index.js",
   "exports": {
     "./eslint": "./eslint.config.js",
+    "./eslint/expo": "./eslint.expo.config.js",
     "./tsconfig/base": "./tsconfig.base.json",
     "./tsconfig/nestjs": "./tsconfig.nestjs.json",
     "./tsconfig/nextjs": "./tsconfig.nextjs.json",
+    "./tsconfig/expo": "./tsconfig.expo.json",
     "./tailwind": "./tailwind-preset.css"
   },
   "dependencies": {

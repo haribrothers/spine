@@ -1,0 +1,3 @@
+{
+  "extends": "@spine/config/tsconfig/expo"
+}
