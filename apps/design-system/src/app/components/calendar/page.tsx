@@ -456,6 +456,11 @@ export default function Example() {
                 description: "Like readOnlyEventIds for drag/resize/keyboard-resize purposes, but click and double-click still fire normally — for an event the viewer lacks EDIT permission on but should still be able to open/view (e.g. a meeting owned by a colleague), unlike readOnlyEventIds' events, which aren't owned by this calendar at all.",
               },
               {
+                prop: "nonDeletableEventIds",
+                type: "Set<string>",
+                description: "Ids of events the viewer lacks DELETE permission on — independent of nonEditableEventIds, since edit and delete are frequently separate capability grants. Hides the built-in edit dialog's Delete button for these ids only; has no effect on drag/resize/click routing.",
+              },
+              {
                 prop: "canCreateEvents",
                 type: "boolean",
                 defaultValue: "true",

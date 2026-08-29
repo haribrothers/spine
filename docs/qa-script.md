@@ -362,6 +362,16 @@ real, also walk ONE job manually through the full sequence below.
 19. As Owner, confirm every action above works regardless of Team
     grants — create, edit, drag, resize, and double-click all work on
     every meeting, including ones organized by someone else.
+20. **Delete gating inside the full edit dialog (user-reported)**: grant
+    a Staff user `meetings.edit_own` but explicitly leave
+    `meetings.delete_own` OFF. Open one of their own meetings via the
+    popover's Pencil icon (edit is allowed) — confirm the full edit
+    dialog that opens has NO Delete button at all, even though the
+    popover's own Delete button was already correctly hidden before
+    this fix. Grant `meetings.delete_own` and confirm Delete now
+    appears in that same dialog. Repeat for a colleague's meeting using
+    `meetings.edit_others`/`meetings.delete_others` to confirm the own
+    and others pairs are independent for delete too.
 
 ---
 

@@ -168,6 +168,16 @@ export interface CalendarProps {
    */
   nonEditableEventIds?: Set<string>;
   /**
+   * Ids of events the current viewer lacks permission to DELETE —
+   * independent of `nonEditableEventIds`, since edit and delete are
+   * frequently separate capability grants (e.g. `edit_own`/`delete_own`).
+   * Hides the built-in edit dialog's Delete button for these ids; has no
+   * effect on drag/resize/click routing (use `nonEditableEventIds` for
+   * that). An event absent from both sets is fully editable and
+   * deletable, matching behavior before either prop existed.
+   */
+  nonDeletableEventIds?: Set<string>;
+  /**
    * When `false`, clicking/dragging on empty calendar space to create a
    * new event is disabled entirely (no draft block, no editor dialog) —
    * for a viewer who lacks create permission. Defaults to `true` (today's
@@ -275,6 +285,7 @@ export function Calendar({
   readOnlyEventIds,
   onReadOnlyEventClick,
   nonEditableEventIds,
+  nonDeletableEventIds,
   canCreateEvents = true,
   renderExtraFields,
   renderEventPopover,
@@ -471,6 +482,7 @@ export function Calendar({
         }}
         contactOptions={contactOptions}
         renderExtraFields={renderExtraFields}
+        canDelete={editorState?.mode === "edit" ? !nonDeletableEventIds?.has(editorState.instance.event.id) : true}
       />
 
       {renderEventPopover && (
@@ -1537,6 +1549,8 @@ interface CalendarEventEditorProps {
   events?: CalendarEvent[];
   contactOptions?: { value: string; label: string }[];
   renderExtraFields?: (ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode;
+  /** Whether the Delete button should render at all when editing an existing event — defaults `true` (today's behavior). Irrelevant in create mode, where there's nothing to delete yet. */
+  canDelete?: boolean;
 }
 
 function toLocalInputValue(date: Date): string {
@@ -1548,7 +1562,17 @@ function fromLocalInputValue(value: string): Date {
   return new Date(value);
 }
 
-function CalendarEventEditor({ state, events, onClose, onSave, onDelete, onScopeChange, contactOptions, renderExtraFields }: CalendarEventEditorProps) {
+function CalendarEventEditor({
+  state,
+  events,
+  onClose,
+  onSave,
+  onDelete,
+  onScopeChange,
+  contactOptions,
+  renderExtraFields,
+  canDelete = true,
+}: CalendarEventEditorProps) {
   const isEdit = state?.mode === "edit";
   const baseEvent: CalendarEvent | null = isEdit ? state.instance.event : null;
   const extraRef = useRef<Record<string, unknown> | undefined>(undefined);
@@ -1914,7 +1938,7 @@ function CalendarEventEditor({ state, events, onClose, onSave, onDelete, onScope
 
           <DialogFooter className="justify-between">
             <div>
-              {isEdit && baseEvent && (
+              {isEdit && baseEvent && canDelete && (
                 <Button
                   type="button"
                   variant="ghost"

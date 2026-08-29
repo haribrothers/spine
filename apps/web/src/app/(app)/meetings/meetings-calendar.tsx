@@ -181,6 +181,12 @@ function toMeetingPayload(
  * double-click handler below additionally short-circuits to a no-op for a
  * non-editable meeting rather than opening the full edit dialog, since a
  * double-click's whole purpose is to skip straight past the popover.
+ * `nonDeletableEventIds` (own/others resolved the same way against
+ * `meetings.delete_own`/`delete_others`, independent of the edit grants
+ * above) hides the built-in edit dialog's own Delete button — that
+ * dialog is reachable whenever edit is allowed, so its Delete button
+ * needed its own separate gate rather than assuming edit access implies
+ * delete access (user-reported: it didn't check this at all before).
  *
  * Meetings are fetched for a generous ±2-month window around the current
  * date (not a per-view-exact range) — computing Day/Week/Month/Agenda's
@@ -380,6 +386,22 @@ export function MeetingsCalendar() {
     return ids;
   }, [visibleMeetings, session?.user?.id, capabilities]);
 
+  // Same own/others resolution as nonEditableEventIds above, but against
+  // meetings.delete_own/delete_others — edit and delete are independent
+  // grants, so a user with edit_own but not delete_own can reach the
+  // built-in edit dialog (opened via the popover's own already-gated
+  // Edit button) yet must still not see Delete inside it.
+  const nonDeletableEventIds = useMemo(() => {
+    if (!session?.user?.id) return new Set<string>();
+    const ids = new Set<string>();
+    for (const meeting of visibleMeetings) {
+      const isOwnMeeting = meeting.organizerUserId !== null && meeting.organizerUserId === session.user.id;
+      const canDeleteMeeting = capabilities?.[isOwnMeeting ? "meetings.delete_own" : "meetings.delete_others"] ?? false;
+      if (!canDeleteMeeting) ids.add(meeting.id);
+    }
+    return ids;
+  }, [visibleMeetings, session?.user?.id, capabilities]);
+
   const canCreateMeetings = capabilities?.["meetings.edit_own"] ?? false;
 
   const events = useMemo<CalendarEvent[]>(
@@ -513,6 +535,7 @@ export function MeetingsCalendar() {
           setActivityDetail(instance);
         }}
         nonEditableEventIds={nonEditableEventIds}
+        nonDeletableEventIds={nonDeletableEventIds}
         canCreateEvents={canCreateMeetings}
         duplicateRequest={duplicatePrefill ? { event: duplicatePrefill } : null}
         onRecurringMoveOrResize={(request, onConfirm, onCancel) => {

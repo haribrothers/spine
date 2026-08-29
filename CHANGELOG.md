@@ -76,6 +76,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-29 — The built-in edit dialog's Delete button ignored delete capability entirely (user-reported follow-up)
+
+- **Gap**: the calendar-surface gating fix above closed create/drag/resize/double-click gaps, but missed one more: `@spine/ui`'s `CalendarEventEditor` (the full create/edit Dialog, reached via the popover's already-correctly-gated Pencil button) rendered its own Delete button unconditionally whenever editing an existing event — with zero capability awareness. A Staff user granted `meetings.edit_own` but NOT `meetings.delete_own` could open their own meeting to edit it, and Delete was sitting right there in that dialog, working, even though the popover's own Delete button was already correctly hidden.
+- **`@spine/ui` `Calendar` gained a third capability-adjacent prop**: `nonDeletableEventIds?: Set<string>`, independent of `nonEditableEventIds` since edit and delete are frequently separate grants (`edit_own`/`delete_own`). Threads down to a new `CalendarEventEditor` prop `canDelete` (default `true`), which now gates that dialog's Delete button — has no effect on drag/resize/click routing, only that one button's visibility.
+- **`meetings-calendar.tsx`** computes `nonDeletableEventIds` the same own/others way `nonEditableEventIds` already does, against `meetings.delete_own`/`meetings.delete_others` instead of the edit pair, and passes it through.
+- **`apps/design-system`**'s Calendar doc page gained a row for the new prop.
+- Full typecheck/lint/build clean for `@spine/ui`/`@spine/web`/`@spine/design-system`. `docs/qa-script.md` §6.3 gained a regression step confirming the edit dialog's Delete button independently respects `delete_own`/`delete_others` even when edit is granted.
+
 ### 2026-08-29 — Meetings calendar now enforces capability gating on the calendar surface itself, not just the popover (user-reported)
 
 - **Gap**: `meetings.edit_own`/`meetings.edit_others` were already correctly enforced server-side and in the quick-view popover's Edit/Delete buttons, but three other paths bypassed all of it: (1) clicking/dragging empty calendar space always opened the "New meeting" dialog regardless of capability, and clicking Save threw a raw API 403 instead of the dialog never appearing; (2) double-clicking a meeting the viewer couldn't edit jumped straight to the full edit dialog, skipping the (correctly-gated) popover entirely; (3) a meeting the viewer couldn't edit was still draggable and resizable on the calendar grid.
