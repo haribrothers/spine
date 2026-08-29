@@ -268,28 +268,24 @@ export class PublicQuotesService {
       throw new NotFoundException("This quote link is invalid or has expired");
     }
 
-    if (outcome === "accepted") {
+    {
       const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
       const businessName = business?.name || "Your business";
+      const verb = outcome === "accepted" ? "accepted" : "rejected";
       void this.notifications.notify(verified.orgId, {
-        subject: `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? ""}`.trim(),
+        subject: `${view.contactName ?? "Your customer"} ${verb} quote ${view.number ?? ""}`.trim(),
         text: [
-          `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? ""} on ${businessName}.`,
+          `${view.contactName ?? "Your customer"} ${verb} quote ${view.number ?? ""} on ${businessName}.`,
           comment ? `\nTheir comment: "${stripHtmlToText(comment)}"` : "",
         ].join("\n"),
         recipientRoles: ["owner", "staff"],
         inApp: {
-          type: "quote_accepted",
-          message: `${view.contactName ?? "Your customer"} accepted quote ${view.number ?? "your quote"}.`,
+          type: `quote_${outcome}`,
+          message: `${view.contactName ?? "Your customer"} ${verb} quote ${view.number ?? "your quote"}.`,
           link: `/quotes/${view.id}`,
         },
       });
     }
-    // A rejection is deliberately not a separate owner-notification path in
-    // Stage 3 — S-03.7's own wording only calls out "viewed or accepted".
-    // The quote's own status flip (visible on the authenticated detail page)
-    // is how a rejection surfaces; a future stage could extend this if a
-    // genuine need for a "rejected" notification shows up.
 
     return view;
   }

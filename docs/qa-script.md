@@ -173,6 +173,11 @@ before considering that work's QA "done."
    - The quote's status flips to "accepted" in the authenticated app.
    - An owner notification (email + in-app bell) fires for "quote
      accepted."
+7a. On a **different** sent quote, click **Reject** on the public page
+    instead. Confirm the quote's status flips to "rejected" in the
+    authenticated app, and an owner notification (email + in-app bell)
+    fires for "quote rejected" — the same as step 7's acceptance
+    notification, just worded for a rejection.
 8. Revise a **sent** quote — confirm it creates a new version
    (`parent_quote_id` set) and the original is marked "superseded,"
    rather than mutating the sent one.
