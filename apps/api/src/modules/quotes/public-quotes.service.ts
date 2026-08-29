@@ -1,5 +1,5 @@
 import { GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gt } from "drizzle-orm";
 import { parse } from "node-html-parser";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -23,6 +23,19 @@ import { QuotePublicTokenService } from "./quote-public-token.service";
 function stripHtmlToText(html: string): string {
   return parse(html).textContent.trim();
 }
+
+/**
+ * S-03.7's "the moment a quote is viewed" was implemented as a literal,
+ * unconditional notify-on-every-view for Stage 3 — noisy in practice for a
+ * customer who opens the link several times while reading it (CHANGELOG's
+ * own pre-documented "Next up" caveat). This throttles just the
+ * NOTIFICATION, not the underlying `quote_events` audit row (every view
+ * still gets logged, per that table's own doc comment on why repeat views
+ * are individually worth recording) — a repeat view within the window is
+ * silent to the owner, but still fully present in the quote's own activity
+ * history.
+ */
+const VIEW_NOTIFICATION_THROTTLE_MS = 60 * 60 * 1000;
 
 /**
  * The deliberately reduced, public-safe projection of a quote — everything
@@ -102,9 +115,10 @@ export class PublicQuotesService {
    * quotes.ts's `quoteEvents` doc comment for why every view gets its own
    * row rather than deduplicating to "first view only" — the token is
    * intentionally reusable, and a repeat view is itself a signal worth
-   * logging/notifying on, per S-03.7's literal "the moment a quote is
-   * viewed"). Throws a clear, generic error for every invalid/expired/
-   * revoked/wrong-status case — never a silent empty response.
+   * logging, even when (per `VIEW_NOTIFICATION_THROTTLE_MS`) it doesn't
+   * generate a fresh owner notification). Throws a clear, generic error for
+   * every invalid/expired/revoked/wrong-status case — never a silent empty
+   * response.
    */
   async view(token: string, provenance: RequestProvenance): Promise<PublicQuoteView> {
     const verified = await this.tokens.verify(token);
@@ -117,11 +131,29 @@ export class PublicQuotesService {
       throw new NotFoundException("This quote link is invalid or has expired");
     }
 
-    // Recording the view (and notifying the owner) happens even for an
-    // already-resolved (accepted/rejected) quote — a customer re-opening
-    // the link after deciding is still a real "viewed" event worth logging,
-    // and the projection above already reflects the resolved state, so
-    // there's no risk of this reopening the decision.
+    // Checked BEFORE inserting this view's own row, so it reflects only
+    // PRIOR views — the throttle window is anchored to the last time the
+    // owner was actually notified, not to this request's own timestamp.
+    // Read-then-write, not race-proof against two near-simultaneous public
+    // views of the same link both reading "no recent view" before either
+    // inserts — deliberately not worth a locking/transaction upgrade for a
+    // best-effort noise-reduction heuristic on a non-critical notification;
+    // an occasional duplicate email under that narrow race is an acceptable
+    // tradeoff against the complexity of a stricter guarantee here.
+    const throttleSince = new Date(Date.now() - VIEW_NOTIFICATION_THROTTLE_MS);
+    const [recentNotifiedView] = await this.db
+      .select({ createdAt: quoteEvents.createdAt })
+      .from(quoteEvents)
+      .where(and(eq(quoteEvents.quoteId, verified.quoteId), eq(quoteEvents.type, "viewed"), gt(quoteEvents.createdAt, throttleSince)))
+      .orderBy(desc(quoteEvents.createdAt))
+      .limit(1);
+    const shouldNotify = !recentNotifiedView;
+
+    // Recording the view happens even for an already-resolved
+    // (accepted/rejected) quote, and regardless of the throttle above — a
+    // customer re-opening the link after deciding is still a real "viewed"
+    // event worth logging, and the projection above already reflects the
+    // resolved state, so there's no risk of this reopening the decision.
     await this.db.insert(quoteEvents).values({
       quoteId: verified.quoteId,
       orgId: verified.orgId,
@@ -130,27 +162,29 @@ export class PublicQuotesService {
       userAgent: provenance.userAgent,
     });
 
-    const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
-    const businessName = business?.name || "Your supplier";
-    // recipientRoles: ["owner", "staff"] — matches QuotesController's own
-    // access to quotes (@OrgRoles(["owner", "staff"]), no Field access at
-    // all per §2.1) per S-10.11's acceptance highlight: an in-app
-    // notification about a quote is visible to every user who could see
-    // that quote, not owner-only like the pre-S-10.11 email channel was.
-    void this.notifications.notify(verified.orgId, {
-      subject: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? ""}`.trim(),
-      text: [
-        `${view.contactName ?? "Your customer"} just opened quote ${view.number ?? ""} on ${businessName}.`,
-        "",
-        "No action needed — this is just a heads up while it's fresh.",
-      ].join("\n"),
-      recipientRoles: ["owner", "staff"],
-      inApp: {
-        type: "quote_viewed",
-        message: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? "your quote"}.`,
-        link: `/quotes/${view.id}`,
-      },
-    });
+    if (shouldNotify) {
+      const business = await this.settings.get<QuotePdfBusinessProfile>(verified.orgId, "business_profile");
+      const businessName = business?.name || "Your supplier";
+      // recipientRoles: ["owner", "staff"] — matches QuotesController's own
+      // access to quotes (@OrgRoles(["owner", "staff"]), no Field access at
+      // all per §2.1) per S-10.11's acceptance highlight: an in-app
+      // notification about a quote is visible to every user who could see
+      // that quote, not owner-only like the pre-S-10.11 email channel was.
+      void this.notifications.notify(verified.orgId, {
+        subject: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? ""}`.trim(),
+        text: [
+          `${view.contactName ?? "Your customer"} just opened quote ${view.number ?? ""} on ${businessName}.`,
+          "",
+          "No action needed — this is just a heads up while it's fresh.",
+        ].join("\n"),
+        recipientRoles: ["owner", "staff"],
+        inApp: {
+          type: "quote_viewed",
+          message: `${view.contactName ?? "Your customer"} viewed quote ${view.number ?? "your quote"}.`,
+          link: `/quotes/${view.id}`,
+        },
+      });
+    }
 
     return view;
   }

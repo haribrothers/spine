@@ -161,7 +161,14 @@ before considering that work's QA "done."
    PDF attached and/or a link to the public quote page.
 6. Open the **public quote link** (either from the email or the quote's
    own detail page) in an incognito/private window — confirm it renders
-   without requiring login, and shows Accept/Reject actions.
+   without requiring login, and shows Accept/Reject actions. Confirm an
+   owner "viewed" notification (email + in-app bell) fires.
+6a. **Repeat-view throttle**: reload the same public link a few more
+    times within the same hour. Confirm each reload still shows up in
+    the quote's own **History** section (one "viewed" entry per reload —
+    the activity trail is never de-duplicated), but no additional
+    "viewed" email/in-app notification fires after the first one — at
+    most one per quote per hour.
 7. Accept the quote from the public page. Confirm:
    - The quote's status flips to "accepted" in the authenticated app.
    - An owner notification (email + in-app bell) fires for "quote

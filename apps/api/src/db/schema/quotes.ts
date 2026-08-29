@@ -329,11 +329,14 @@ export const quoteEventTypeEnum = pgEnum("quote_event_type", ["viewed", "accepte
  * customer can legitimately view multiple times, each view is a real event
  * worth its own row for the owner's activity trail (a "viewed 3 times"
  * signal is more informative than deduplicating to one). The owner
- * notification for "viewed" is still sent from every such row's insert per
- * S-03.7's literal wording ("the moment a quote is viewed") — there's no
- * PRD language calling for de-duplicating repeat-view notifications, though
- * this is a reasonable follow-up if it proves noisy in practice (see
- * CHANGELOG's "Next up" for this caveat).
+ * NOTIFICATION for "viewed" is throttled, though — at most one per hour per
+ * quote (`PublicQuotesService.VIEW_NOTIFICATION_THROTTLE_MS`) — a repeat
+ * view within the window still gets its own row here, it just doesn't fire
+ * a fresh email/in-app notification. This was a deliberately deferred
+ * follow-up (see CHANGELOG) closed once real usage confirmed the
+ * unconditional version was noisy in practice, per S-03.7's own "the moment
+ * a quote is viewed" wording read as "notify promptly," not "notify on
+ * every single request."
  *
  * `comment` is set only on `accepted`/`rejected` rows (S-03.6's "optional
  * comment"), always null on `viewed`. Quote-level resolution — `status`,
