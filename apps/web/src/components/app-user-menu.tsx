@@ -41,7 +41,18 @@ const THEME_OPTIONS = [
  * the shell has real persistent chrome to put it in — /login and /signup
  * keep their own floating ThemeToggle since they render outside this shell.
  */
-export function AppUserMenu({ name, email, collapsed }: { name: string; email: string; collapsed: boolean }) {
+export function AppUserMenu({
+  name,
+  email,
+  collapsed,
+  isOwner,
+}: {
+  name: string;
+  email: string;
+  collapsed: boolean;
+  /** CLAUDE.md — org Settings is Owner-only. Hides the "Settings" item entirely for Staff/Field, same UI-nicety-not-security-boundary framing as the Team nav section (the API independently rejects any non-Owner PUT regardless). */
+  isOwner: boolean;
+}) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
@@ -109,10 +120,12 @@ export function AppUserMenu({ name, email, collapsed }: { name: string; email: s
             <UserCircle size={14} className="mr-2" />
             Profile &amp; Preferences
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
-            <Settings size={14} className="mr-2" />
-            Settings
-          </DropdownMenuItem>
+          {isOwner && (
+            <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
+              <Settings size={14} className="mr-2" />
+              Settings
+            </DropdownMenuItem>
+          )}
           <div className="px-2 py-1.5">
             <ToggleGroup
               type="single"
@@ -134,7 +147,7 @@ export function AppUserMenu({ name, email, collapsed }: { name: string; email: s
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} isOwner={isOwner} />
     </>
   );
 }

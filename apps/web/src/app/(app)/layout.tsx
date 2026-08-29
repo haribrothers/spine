@@ -19,7 +19,12 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   const sections = membership?.role === "owner" ? [...NAV_SECTIONS, TEAM_NAV_SECTION] : NAV_SECTIONS;
 
   return (
-    <AppLayout sections={sections} userName={session?.user?.name ?? "Signed in"} userEmail={session?.user?.email ?? ""}>
+    <AppLayout
+      sections={sections}
+      userName={session?.user?.name ?? "Signed in"}
+      userEmail={session?.user?.email ?? ""}
+      isOwner={membership?.role === "owner"}
+    >
       {children}
     </AppLayout>
   );

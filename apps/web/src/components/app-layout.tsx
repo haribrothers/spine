@@ -37,6 +37,8 @@ export interface AppLayoutProps {
   sections: AppShellNavSection[];
   userName: string;
   userEmail: string;
+  /** CLAUDE.md — "org settings" is Owner-only, never Team-configurable. Sourced server-side (AuthenticatedLayout's getMyMembership) rather than trusting a client-supplied role, same trust boundary the Team nav section already uses. */
+  isOwner: boolean;
   children: React.ReactNode;
 }
 
@@ -58,7 +60,7 @@ export interface AppLayoutProps {
  * profile row. Collapsed: help, notifications, and the profile avatar stack
  * vertically, help on top.
  */
-export function AppLayout({ sections, userName, userEmail, children }: AppLayoutProps) {
+export function AppLayout({ sections, userName, userEmail, isOwner, children }: AppLayoutProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -94,12 +96,12 @@ export function AppLayout({ sections, userName, userEmail, children }: AppLayout
               <div className="flex flex-col items-center gap-1">
                 <HelpButton collapsed />
                 <NotificationBell collapsed />
-                <AppUserMenu name={userName} email={userEmail} collapsed />
+                <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
               </div>
             ) : (
               <div className="flex items-center gap-1">
                 <div className="min-w-0 flex-1">
-                  <AppUserMenu name={userName} email={userEmail} collapsed={false} />
+                  <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
                 </div>
                 <HelpButton collapsed={false} />
                 <NotificationBell collapsed={false} />

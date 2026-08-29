@@ -51,6 +51,13 @@ before considering that work's QA "done."
 5. From the sidebar/user menu, open **Settings** (a dialog, not a route)
    — confirm business profile, tax, numbering, and branding are all
    editable here even after onboarding is done.
+5a. **Owner-only gating (user-reported)**: log in as Sarah Mendes (Staff)
+    or Marcus Webb (Field) — either from the demo seed, or any Staff/Field
+    account. Confirm the user menu does NOT show a **Settings** item at
+    all (Profile & Preferences, theme switcher, and sign-out still do).
+    Previously Settings was visible and openable by every role, and every
+    pane except Tax/Chart-of-accounts would let you fill in and submit a
+    form the API silently rejected with a 403 on save.
 6. In Settings, upload a business logo. Confirm it persists (reload the
    page, logo still shows) and later appears on a quote/invoice PDF
    (see §3/§4 below).

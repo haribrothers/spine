@@ -85,10 +85,27 @@ const SECTIONS: SettingsSection[] = [
  * standard workaround is to keep the Dialog's open state external to the
  * dropdown and flip it from the menu item's onSelect instead of nesting a
  * trigger inside the item.
+ *
+ * `isOwner` is a defense-in-depth check, not the real security boundary —
+ * every settings-mutating API route independently rejects any non-Owner
+ * request server-side regardless. AppUserMenu already hides the "Settings"
+ * menu item entirely for non-Owners; this additionally refuses to render
+ * any pane content if the dialog is somehow still opened (e.g. a future
+ * second entry point), rather than trusting the caller alone.
  */
-export function SettingsDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function SettingsDialog({
+  open,
+  onOpenChange,
+  isOwner,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  isOwner: boolean;
+}) {
   const [query, setQuery] = useState("");
   const [activeKey, setActiveKey] = useState("business");
+
+  if (!isOwner) return null;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
