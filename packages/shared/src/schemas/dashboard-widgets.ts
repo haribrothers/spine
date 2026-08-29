@@ -28,10 +28,10 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
-  { key: "revenue-trend", capability: "dashboard.view" as Capability, ownerOnly: true },
+  { key: "revenue-trend", capability: null, ownerOnly: true },
   { key: "pipeline-by-stage", capability: null, ownerOnly: false },
-  { key: "ar-aging", capability: "dashboard.view" as Capability, ownerOnly: false },
-  { key: "job-profitability", capability: "dashboard.view" as Capability, ownerOnly: false },
+  { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false },
+  { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false },
   { key: "overdue-followups", capability: null, ownerOnly: false },
   { key: "upcoming-meetings", capability: null, ownerOnly: false },
   { key: "invoices-due", capability: null, ownerOnly: false },

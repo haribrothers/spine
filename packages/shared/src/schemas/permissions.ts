@@ -11,7 +11,11 @@ import { z } from "zod";
  * Team-configurable.
  */
 export const CAPABILITIES = [
-  "dashboard.view",
+  "reports.view_dashboard_summary",
+  "reports.view_receivables",
+  "reports.view_payables",
+  "reports.view_job_profitability",
+  "ledger.view",
   "contacts.edit_own",
   "contacts.edit_others",
   "contacts.delete_own",
@@ -93,7 +97,6 @@ export const CAPABILITIES = [
   "meetings.edit_others",
   "meetings.delete_own",
   "meetings.delete_others",
-  "ledger.view",
 ] as const;
 
 export type Capability = (typeof CAPABILITIES)[number];
@@ -110,9 +113,30 @@ export const capabilitySchema = z.enum(CAPABILITIES);
  * `group` render as their own top-level row, same as before this existed.
  */
 export const CAPABILITY_LABELS: Record<Capability, { label: string; description: string; group?: string }> = {
-  "dashboard.view": {
-    label: "View dashboard & reports",
-    description: "Receivables and their own activity — P&L/balance sheet stay Owner-only regardless of this grant.",
+  "reports.view_dashboard_summary": {
+    label: "View dashboard summary",
+    description: "The KPI row (cash position, receivables, overdue count, month revenue) — P&L/Balance Sheet stay Owner-only regardless of this grant.",
+    group: "Reports & Ledger",
+  },
+  "reports.view_receivables": {
+    label: "View receivables",
+    description: "AR aging — who owes the org money and for how long.",
+    group: "Reports & Ledger",
+  },
+  "reports.view_payables": {
+    label: "View payables",
+    description: "AP aging — what the org owes vendors and for how long.",
+    group: "Reports & Ledger",
+  },
+  "reports.view_job_profitability": {
+    label: "View job profitability",
+    description: "Revenue, cost, and margin across every job.",
+    group: "Reports & Ledger",
+  },
+  "ledger.view": {
+    label: "View ledger / journals",
+    description: "Drill into the journal entries behind a P&L/Balance Sheet figure. P&L, Balance Sheet, revenue trend, and tax summary themselves stay Owner-only regardless of this grant — this only covers the drill-down into raw journal entries.",
+    group: "Reports & Ledger",
   },
   "contacts.edit_own": {
     label: "Create/edit own contacts",
@@ -232,6 +256,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   "quotes.approve_discount": {
     label: "Approve quote above discount threshold",
     description: "Approve a quote whose discount exceeds the org's configured threshold.",
+    group: "Manage Quotes",
   },
   "invoices.edit_own": {
     label: "Create/edit own invoices",
@@ -533,17 +558,17 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Delete a meeting that a different user organizes.",
     group: "Manage Meetings",
   },
-  "ledger.view": {
-    label: "View ledger / journals",
-    description: "View journal entries and drill into source documents.",
-  },
 };
 
 /** Every fresh org seeds one team with this name and these grants. */
 export const DEFAULT_TEAM_NAME = "General Staff";
 
 export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
-  "dashboard.view": true,
+  "reports.view_dashboard_summary": true,
+  "reports.view_receivables": true,
+  "reports.view_payables": true,
+  "reports.view_job_profitability": true,
+  "ledger.view": false,
   "contacts.edit_own": true,
   "contacts.edit_others": true,
   "contacts.delete_own": true,
@@ -625,5 +650,4 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "meetings.edit_others": true,
   "meetings.delete_own": true,
   "meetings.delete_others": true,
-  "ledger.view": false,
 };

@@ -10,23 +10,26 @@ import { ReportsService } from "./reports.service";
  * `@OrgRoles(["owner", "staff"])` at the class level — Field never reaches
  * any financial report, per PRD §S-11.8 ("mobile hides all financial
  * reports") and CLAUDE.md's own restatement of that rule. Within
- * owner+staff, `@RequireCapability("dashboard.view")` further gates Staff
- * on the Team-configurable grant whose own label is literally "View
- * dashboard & reports" and whose description calls out "Receivables ...
- * P&L/balance sheet stay Owner-only regardless of this grant" — receivables
- * (and, added in Phase 4 Stage 3, payables/job profitability) is what Staff
- * can be granted. P&L, Balance Sheet, and the account drill-down behind
- * them are `@OrgRoles(["owner"])` per-route below — Owner-only with no
- * capability escape hatch, matching that description literally.
+ * owner+staff, the single `dashboard.view` capability that used to gate
+ * dashboard-summary/receivables/payables/job-profitability together is
+ * split into four independent capabilities —
+ * `reports.view_dashboard_summary`, `reports.view_receivables`,
+ * `reports.view_payables`, `reports.view_job_profitability` — so an Owner
+ * can grant a Team visibility into one report without the others (e.g.
+ * receivables without payables). `ledger.view` similarly gates
+ * `account-drilldown` for Staff, alongside its existing `@OrgRoles(["owner"])`
+ * floor (Owner always passes regardless of any grant). P&L, Balance Sheet,
+ * and revenue-trend stay `@OrgRoles(["owner"])` with no capability bypass
+ * at all — genuinely Owner-only, not Team-configurable.
  */
 @Controller("reports")
 @OrgRoles(["owner", "staff"])
 export class ReportsController {
   constructor(private readonly reportsService: ReportsService) {}
 
-  /** S-09.10 — the real dashboard summary; same `dashboard.view` gate as everything else Staff can see. */
+  /** S-09.10 — the real dashboard summary. */
   @Get("dashboard-summary")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_dashboard_summary")
   async dashboardSummary(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.dashboardSummary(orgId);
@@ -50,15 +53,15 @@ export class ReportsController {
   }
 
   @Get("receivables")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_receivables")
   async receivables(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.receivables(orgId);
   }
 
-  /** S-07.7 — the AP-side mirror of receivables above; same `dashboard.view` gate, since Staff already manages vendor bills/payments end-to-end via the `vendor_bills.*`/`vendor_payments.*` capabilities and reasonably needs to see what's due. */
+  /** S-07.7 — the AP-side mirror of receivables above; its own independent capability, since Staff already manages vendor bills/payments end-to-end via the `vendor_bills.*`/`vendor_payments.*` capabilities and reasonably needs to see what's due, but that doesn't imply visibility into who owes THE ORG money. */
   @Get("payables")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_payables")
   async payables(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.payables(orgId);
@@ -80,9 +83,10 @@ export class ReportsController {
     return this.reportsService.balanceSheet(orgId, asOf);
   }
 
-  /** S-09.4 — drill-down behind a P&L/Balance Sheet figure; Owner-only, matching those two reports' own gate (a Staff user without P&L access shouldn't be able to reach its underlying entries via this route either). */
+  /** S-09.4 — drill-down behind a P&L/Balance Sheet figure. `@OrgRoles(["owner"])` is a floor (Owner always passes); `ledger.view` additionally lets a Staff user in a granted Team reach this too, even though P&L/Balance Sheet themselves stay Owner-only with no bypass — drilling into raw journal entries is a narrower, more literal "view the ledger" grant than seeing the full financial statements. */
   @Get("account-drilldown")
-  @OrgRoles(["owner"])
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("ledger.view")
   async accountDrilldown(
     @Session() session: UserSession,
     @Query("accountId") accountId: string,
@@ -93,9 +97,9 @@ export class ReportsController {
     return this.reportsService.accountDrilldown(orgId, accountId, from, to);
   }
 
-  /** S-09.6 — all-jobs profitability summary; same `dashboard.view` gate as receivables/payables, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */
+  /** S-09.6 — all-jobs profitability summary; its own independent capability, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */
   @Get("job-profitability")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_job_profitability")
   async jobProfitability(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.jobProfitability(orgId);
@@ -144,7 +148,7 @@ export class ReportsController {
   }
 
   @Get("receivables/export.csv")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_receivables")
   async exportReceivables(@Session() session: UserSession, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.receivables(orgId);
@@ -153,7 +157,7 @@ export class ReportsController {
   }
 
   @Get("payables/export.csv")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_payables")
   async exportPayables(@Session() session: UserSession, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.payables(orgId);
@@ -162,7 +166,7 @@ export class ReportsController {
   }
 
   @Get("job-profitability/export.csv")
-  @RequireCapability("dashboard.view")
+  @RequireCapability("reports.view_job_profitability")
   async exportJobProfitability(@Session() session: UserSession, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.jobProfitability(orgId);

@@ -1245,16 +1245,25 @@ revenue.
     vendor bill + expense) — every other demo job showing `cost: 0` (no
     vendor bills/expenses tagged to them) is correct, not a bug. Click a
     job name — confirm it navigates to that job's detail page.
-19. As a Staff user with `dashboard.view` granted but not Owner: confirm
-    the dashboard KPI row, the aging/pipeline/job-profitability chart
-    widgets, the non-financial widgets (step 4), Recent activity (step 7),
-    Customize dashboard (step 9), and the Job Profitability report tab
-    all load normally, but the **Revenue trend chart** widget and Profit &
-    Loss / Balance Sheet / drill-down on the Reports page all render
-    nothing / show a clear "Owner-only report" message
-    (S-09.2/S-09.3/S-09.11's revenue trend stay Owner-only per CLAUDE.md's
-    permission model; the capability's own description already says
-    "P&L/balance sheet stay Owner-only regardless of this grant").
+19. As a Staff user with **View dashboard summary**, **View receivables**,
+    **View payables**, and **View job profitability** all granted (the
+    four capabilities that replaced the old single "View dashboard &
+    reports" toggle — confirm they're independently toggleable in the
+    privilege matrix, e.g. granting only "View receivables" shows the AR
+    aging widget/report but not payables or job profitability) but not
+    Owner: confirm the dashboard KPI row, the aging/pipeline/
+    job-profitability chart widgets, the non-financial widgets (step 4),
+    Recent activity (step 7), Customize dashboard (step 9), and the Job
+    Profitability report tab all load normally, but the **Revenue trend
+    chart** widget and Profit & Loss / Balance Sheet on the Reports page
+    all render nothing / show a clear "Owner-only report" message
+    (S-09.2/S-09.3/S-09.11's revenue trend stay Owner-only with no
+    capability bypass at all). Additionally grant **View ledger /
+    journals** and confirm the account **drill-down** behind a P&L/Balance
+    Sheet figure now works for this Staff user too (Owner already has
+    this unconditionally) — without that grant, drilling down should be
+    rejected even though the underlying P&L/Balance Sheet figure itself
+    is still Owner-only regardless.
 20. **Period close (S-09.8)**: open **Settings → Chart of accounts**,
     scroll to **Period close**. Add a period covering today, click
     **Close**. Try to issue a new invoice or record/approve an

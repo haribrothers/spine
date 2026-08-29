@@ -47,9 +47,10 @@ const FULL_WIDTH_KEYS = new Set<string>(["activity-feed"]);
  * `DashboardSummary` (the KPI row) renders as a PINNED header, above and
  * outside the reorderable grid entirely — per explicit user direction it
  * must never be movable or hideable. It's gated the same way it always
- * was (self-gates to nothing on a 403, so Field/no-`dashboard.view`
- * sessions correctly never see it) but isn't part of the customizable
- * widget set at all, so there's no "Edit layout" affordance on it.
+ * was (self-gates to nothing on a 403, so Field/no-
+ * `reports.view_dashboard_summary` sessions correctly never see it) but
+ * isn't part of the customizable widget set at all, so there's no
+ * "Edit layout" affordance on it.
  */
 export function DashboardShell({ role }: { role: string | null }) {
   const [savedLayout, setSavedLayout] = useState<DashboardLayout | null | undefined>(undefined);

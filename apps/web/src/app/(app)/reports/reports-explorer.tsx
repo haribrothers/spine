@@ -58,11 +58,11 @@ function ownerOnlyMessage(err: unknown): string {
 /**
  * S-09.2/S-09.3/S-09.4/S-09.6/S-09.7 — the Reports page's client body.
  * Three tabs (P&L, Balance Sheet, Job Profitability), each independently
- * loaded — a Staff user with `dashboard.view` but not Owner sees Job
- * Profitability load fine and P&L/Balance Sheet show the real 403 inline
- * (same "no client-side capability check, surface the server's real
- * error" convention as tax-pane.tsx's own TaxSummarySection), rather than
- * hiding the tabs entirely.
+ * loaded — a Staff user with `reports.view_job_profitability` but not
+ * Owner sees Job Profitability load fine and P&L/Balance Sheet show the
+ * real 403 inline (same "no client-side capability check, surface the
+ * server's real error" convention as tax-pane.tsx's own
+ * TaxSummarySection), rather than hiding the tabs entirely.
  */
 export function ReportsExplorer() {
   return (

@@ -15,8 +15,9 @@ interface DashboardSummaryReport {
 /**
  * S-09.10 — "a dashboard with cash position, receivables, overdue count
  * and month revenue, so one screen tells me how things stand." Backed by
- * `GET /reports/dashboard-summary` (`dashboard.view`-gated, same as every
- * other Staff-reachable report) — renders nothing on a 403/error rather
+ * `GET /reports/dashboard-summary` (`reports.view_dashboard_summary`-gated,
+ * its own independent capability, same shape as every other Staff-reachable
+ * report) — renders nothing on a 403/error rather
  * than showing a broken card row, since a Field user never reaches this
  * page at all and a Staff user without the grant just sees the checklist
  * below with no KPI row, matching every other pane's "no client-side
