@@ -5,6 +5,7 @@ import { BadgeScreen } from "../../app/components/badge";
 import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
+import { PrinciplesScreen } from "../../app/principles";
 import { TokensScreen } from "../../app/foundation";
 import { AppShellScreen } from "../../app/layouts";
 import { SampleScreensScreen } from "../../app/templates";
@@ -19,6 +20,7 @@ import type { DocScreenMap } from "./nav-sections";
 export const DOC_SCREENS: DocScreenMap = {
   overview: {
     introduction: IntroductionScreen,
+    principles: PrinciplesScreen,
   },
   foundation: {
     tokens: TokensScreen,

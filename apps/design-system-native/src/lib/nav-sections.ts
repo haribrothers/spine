@@ -38,7 +38,10 @@ export const NAV_SECTIONS: DocSection[] = [
     slug: "overview",
     title: "Overview",
     icon: Compass,
-    items: [{ slug: "introduction", name: "Introduction", description: "What @spine/ui-native is and how this app documents it." }],
+    items: [
+      { slug: "introduction", name: "Introduction", description: "What @spine/ui-native is, who it's for, and how to install it." },
+      { slug: "principles", name: "Principles", description: "The rules every component and screen in Spine's native apps follows." },
+    ],
   },
   {
     slug: "foundation",
