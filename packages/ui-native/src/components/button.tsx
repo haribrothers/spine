@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { ActivityIndicator, Pressable, Text, type PressableProps } from "react-native";
 import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "../lib/cn";
 
 /**
  * Ports `packages/ui`'s Button (variants/sizing) to RN primitives —
@@ -14,6 +15,20 @@ import { cva, type VariantProps } from "class-variance-authority";
  * No `asChild`/`Slot` equivalent — RN has no `Slot` primitive the way
  * Radix does; a future icon-button/link-button need is solved with its
  * own dedicated variant, not composition, if/when one arises.
+ *
+ * The final className is run through `cn` (clsx + tailwind-merge), not just
+ * `cva`'s own plain string concatenation — `packages/ui`'s Button resolves
+ * its disabled look via Tailwind's `disabled:` pseudo-class (a real
+ * specificity bump that reliably overrides the variant classes), but
+ * NativeWind has no such pseudo-class for `Pressable`, so `disabled`'s
+ * override classes here are ordinary same-specificity utilities (e.g.
+ * `bg-transparent`) competing with the variant's own (e.g. `bg-primary`).
+ * Without `tailwind-merge` deduping, which one wins is decided by
+ * Tailwind's CSS-discovery order at build time, NOT by class-string order —
+ * this silently broke disabled-text visibility on web (`<Button disabled>`
+ * with the default `primary` variant rendered white text on a transparent
+ * background). `cn` makes the later class in the list win deterministically,
+ * matching what the string order already visually implies.
  */
 export const buttonVariants = cva("flex-row items-center justify-center gap-2 rounded-md", {
   variants: {
@@ -75,13 +90,13 @@ export const Button = forwardRef<React.ComponentRef<typeof Pressable>, ButtonPro
         accessibilityRole="button"
         accessibilityState={{ disabled: isDisabled, busy: loading }}
         disabled={isDisabled}
-        className={buttonVariants({ variant, size, disabled: isDisabled, className })}
+        className={cn(buttonVariants({ variant, size, disabled: isDisabled }), className)}
         {...props}
       >
         {loading ? (
           <ActivityIndicator size="small" color={variant === "secondary" || variant === "ghost" ? undefined : "#FFFFFF"} />
         ) : typeof children === "string" ? (
-          <Text className={textVariants({ variant, disabled: isDisabled })}>{children}</Text>
+          <Text className={cn(textVariants({ variant, disabled: isDisabled }))}>{children}</Text>
         ) : (
           children
         )}

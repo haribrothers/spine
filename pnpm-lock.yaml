@@ -700,9 +700,15 @@ importers:
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       nativewind:
         specifier: ^4.2.6
         version: 4.2.6(l5o7j2jp4a4yk4m6zycm44oeny)
+      tailwind-merge:
+        specifier: ^3.6.0
+        version: 3.6.0
     devDependencies:
       '@testing-library/jest-native':
         specifier: ^5.4.3

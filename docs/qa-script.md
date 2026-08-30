@@ -1313,6 +1313,20 @@ Not a full audit — just confirm nothing obviously broke:
    app — confirm it persists across a reload and that a few screens
    (dashboard, an invoice detail page, a dialog) look correct in both
    modes.
+3. **`apps/design-system-native`** (`pnpm dev:ui-native`, then `--web`
+   or a simulator): browse Button, Text Field, Card, Badge. Confirm a
+   wide browser window shows the desktop shell (top bar + left sidebar
+   at a fixed ~224px width, not full-width) and narrowing it below
+   ~768px switches to the mobile list → push-detail stack. Click the
+   Search button (or ⌘K on web) and confirm it filters the component
+   list and jumps to the selected one. Click the theme-toggle icon in
+   the top bar/header and cycle light → dark → system, confirming the
+   icon changes (moon/monitor/sun) and colors update immediately.
+   **On the Button page specifically**, check every variant's
+   **Disabled** example in the States/Examples section — the label
+   text must be clearly visible (muted gray, not white-on-transparent)
+   in both light and dark mode; this was a real shipped bug (invisible
+   disabled-button text) fixed 2026-08-30.
 
 ---
 

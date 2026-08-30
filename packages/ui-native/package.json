@@ -16,7 +16,9 @@
   "dependencies": {
     "@spine/config": "workspace:*",
     "class-variance-authority": "^0.7.1",
-    "nativewind": "^4.2.6"
+    "clsx": "^2.1.1",
+    "nativewind": "^4.2.6",
+    "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
     "@testing-library/jest-native": "^5.4.3",
