@@ -1,7 +1,9 @@
 import { forwardRef } from "react";
 import { ActivityIndicator, Pressable, Text, type PressableProps } from "react-native";
 import { cva, type VariantProps } from "class-variance-authority";
+import { useColorScheme } from "nativewind";
 import { cn } from "../lib/cn";
+import { lightColors, darkColors } from "../tokens";
 
 /**
  * Ports `packages/ui`'s Button (variants/sizing) to RN primitives —
@@ -84,6 +86,8 @@ export interface ButtonProps extends Omit<PressableProps, "disabled" | "children
 export const Button = forwardRef<React.ComponentRef<typeof Pressable>, ButtonProps>(
   ({ className, variant, size, disabled = false, loading = false, children, ...props }, ref) => {
     const isDisabled = disabled || loading;
+    const { colorScheme } = useColorScheme();
+
     return (
       <Pressable
         ref={ref}
@@ -94,7 +98,13 @@ export const Button = forwardRef<React.ComponentRef<typeof Pressable>, ButtonPro
         {...props}
       >
         {loading ? (
-          <ActivityIndicator size="small" color={variant === "secondary" || variant === "ghost" ? undefined : "#FFFFFF"} />
+          // `loading` sets `isDisabled`, so the button's background is
+          // always the disabled look (bg-transparent, see buttonVariants'
+          // own doc comment) regardless of variant — the spinner must use
+          // the same on-surface-muted color the disabled label text uses,
+          // not a variant-specific color like the old hardcoded white,
+          // which was invisible against the (now-transparent) button.
+          <ActivityIndicator size="small" color={colorScheme === "dark" ? darkColors.onSurfaceMuted : lightColors.onSurfaceMuted} />
         ) : typeof children === "string" ? (
           <Text className={cn(textVariants({ variant, disabled: isDisabled }))}>{children}</Text>
         ) : (

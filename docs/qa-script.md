@@ -1326,7 +1326,11 @@ Not a full audit — just confirm nothing obviously broke:
    **Disabled** example in the States/Examples section — the label
    text must be clearly visible (muted gray, not white-on-transparent)
    in both light and dark mode; this was a real shipped bug (invisible
-   disabled-button text) fixed 2026-08-30.
+   disabled-button text) fixed 2026-08-30. Also check the **Loading**
+   example (all variants) — the spinner must be clearly visible (muted
+   gray, not white-on-transparent) in both light and dark mode; this
+   was a second, related shipped bug (invisible loading spinner) fixed
+   the same day.
 
 ---
 

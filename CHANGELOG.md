@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-30 — Fixed a second, related shipped bug: Button's loading spinner was invisible too (user-reported)
+
+- **User report**: "The loading is not visible properly in the button" — a direct follow-on to the disabled-text fix immediately below. `<Button loading>` (default `primary`/`danger` variant) rendered a white `ActivityIndicator` against the button's own now-transparent disabled-look background, invisible in light mode.
+- **Same root cause as the disabled-text bug, missed the first time**: `loading` sets `isDisabled` internally, which correctly makes `buttonVariants` apply the disabled look (`bg-transparent`) regardless of variant — but the `ActivityIndicator`'s `color` prop was still hardcoded to `#FFFFFF` for `primary`/`danger`, a leftover from before that background became transparent. The earlier fix addressed the reported disabled-TEXT symptom but didn't re-derive the spinner's color, which depends on the exact same `isDisabled`-driven background change.
+- **Fix**: spinner color now resolves from `nativewind`'s `useColorScheme()` against `lightColors.onSurfaceMuted`/`darkColors.onSurfaceMuted` (`packages/ui-native/src/tokens`) — the same color the disabled label text uses — instead of a variant-conditioned hardcoded hex, for every variant.
+- **Regression test added and verified to actually catch the bug**, same discipline as the disabled-text fix: `button.a11y.test.tsx` gained a test asserting the rendered `ActivityIndicator`'s `color` prop is `lightColors.onSurfaceMuted` and never `#FFFFFF`, confirmed to fail (reproducing the exact reported symptom) when the color-resolution change is reverted, before shipping.
+- **CLAUDE.md updated** with the general lesson: when a prop changes visual state via a shared flag like `isDisabled`, audit every other prop/element whose value was computed assuming the OLD state, not just the one originally reported — a partial fix can leave a sibling bug from the same root cause.
+- Verified beyond the new test: full workspace `typecheck`/`lint`/`test` (12/12, 11/11, 10/10) all pass; a real `expo export --platform web` bundle still builds successfully.
+- Stories: bug fix in `packages/ui-native` foundational work — no PRD story of its own.
+- Phase: Phase 5 · Mobile Field Companion (`packages/ui-native` foundational stage).
+
 ### 2026-08-30 — Fixed a real, shipped bug: Button's disabled label text was invisible on web (user-reported)
 
 - **User report**: "The disabled button text is not visible" — reproduced on `apps/design-system-native`'s Button doc screen, `<Button disabled>` (default `primary` variant) rendered white text (`text-white`, from the variant) on its disabled transparent background instead of the intended `text-on-surface-muted`.

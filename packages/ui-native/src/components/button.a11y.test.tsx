@@ -1,5 +1,7 @@
+import { ActivityIndicator } from "react-native";
 import { render, screen } from "@testing-library/react-native";
 import { Button } from "./button";
+import { lightColors } from "../tokens";
 import { expectAccessibilityState, expectAccessibleRole } from "../test/a11y";
 
 describe("Button a11y", () => {
@@ -61,6 +63,26 @@ describe("Button a11y", () => {
       const flatClassName = ([] as string[]).concat(label.props.className ?? []).join(" ");
       expect(flatClassName).toContain("text-on-surface-muted");
       expect(flatClassName).not.toMatch(/\btext-white\b/);
+      unmount();
+    }
+  });
+
+  it("loading spinner isn't invisible white on the now-transparent disabled background (regression)", () => {
+    // Real bug: `loading` sets isDisabled, which makes buttonVariants apply
+    // the disabled look (bg-transparent) regardless of variant — but the
+    // ActivityIndicator's color was hardcoded to white for primary/danger,
+    // which is invisible against a transparent/light button. The spinner
+    // must always use the same on-surface-muted color the disabled label
+    // text uses, for every variant.
+    for (const variant of ["primary", "secondary", "danger", "ghost"] as const) {
+      const { UNSAFE_getByType, unmount } = render(
+        <Button onPress={() => {}} variant={variant} loading>
+          Action
+        </Button>,
+      );
+      const spinner = UNSAFE_getByType(ActivityIndicator);
+      expect(spinner.props.color).toBe(lightColors.onSurfaceMuted);
+      expect(spinner.props.color).not.toBe("#FFFFFF");
       unmount();
     }
   });
