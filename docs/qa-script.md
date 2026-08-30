@@ -1344,12 +1344,20 @@ Not a full audit — just confirm nothing obviously broke:
    adjacent to the currently selected one, e.g. Home → Messages, to
    make any snap-vs-slide difference obvious) — this was added
    2026-08-30, replacing an earlier instant-swap. **Also confirm all 5
-   tab icons are level with each other** — same vertical position and
-   size, none sitting higher or lower than the others (a real shipped
-   bug had icons at inconsistent heights due to icon-font glyph
-   inconsistency, fixed 2026-08-30 by migrating from `@expo/vector-icons`
-   to `lucide-react-native`); check this on both Bottom Tab Bar and
-   Floating Tab Bar, in both light and dark mode. Click the
+   tab icons AND labels are level with each other** — same vertical
+   position and size for every tab, none sitting higher or lower than
+   the others; check this specifically at a NARROW/phone-width layout
+   (a real device or simulator, or a narrow browser window — not just
+   a wide desktop window) since two distinct bugs shipped here and
+   only showed up at real phone widths: (1) icons at inconsistent
+   heights due to icon-font glyph inconsistency, fixed 2026-08-30 by
+   migrating from `@expo/vector-icons` to `lucide-react-native`; (2)
+   "Messages"/"Expenses" (the longest labels) wrapping to two lines on
+   a narrow screen and shifting that tab's whole icon+label block,
+   fixed 2026-08-30 by forbidding label wrapping — confirm long labels
+   truncate with an ellipsis ("Expens…", "Messa…") rather than
+   wrapping or clipping abruptly. Check this on both Bottom Tab Bar
+   and Floating Tab Bar, in both light and dark mode. Click the
    theme-toggle icon in
    the top bar/header and cycle through all three states, confirming
    at each step that BOTH the icon AND every background/text/border

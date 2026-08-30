@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-30 — `FloatingTabBar`: fixed a real, distinct tab-label misalignment bug on iOS simulator (user report), and the verification gap that let it through
+
+- **User report, on a real iOS simulator**: "Messages" sat visibly lower than the other 4 tabs — reported right after the icon-alignment fix (entry below) shipped, which made it initially look like a regression of that same bug. It wasn't: this was a genuinely different bug the icon-library migration never touched.
+- **Root cause**: the label `<Text>` in `floating-tab-bar.tsx` had no `numberOfLines` set. "Messages" (tied with "Expenses" for the longest label) could wrap to two lines on a real, narrow ~390pt-wide iPhone screen — each of 5 tabs shares one `max-w-md` pill, so per-tab horizontal space is genuinely tight — while shorter labels ("Home", "Jobs") stayed on one line. Since each tab's `Pressable` centers its icon+label as one vertical block, a two-line label shifts that whole block relative to its single-line neighbors.
+- **The real lesson**: the previous fix's own verification (a headless-browser check confirming identical icon positions) used a ~900px-wide desktop browser window — far wider than any real phone, so it could not have caught a width-constrained text-wrapping bug. This time, re-verified at a genuinely realistic narrow viewport (390×844, an iPhone 14-class size) instead of an arbitrary desktop window.
+- **Fix**: added `numberOfLines={1}` (forbids wrapping) plus `adjustsFontSizeToFit`/`minimumFontScale={0.8}` (shrinks a genuinely-too-long label slightly rather than clipping it, matching iOS's own `UITabBarItem` behavior for long labels) to the label `Text`.
+- **Verified at the correct viewport this time**: a headless-browser check at 390×844 showed identical icon `top`/`height` and label `top` values across all 5 tabs after the fix, with "Expenses"/"Messages" correctly truncating ("Expens…"/"Messa…") instead of wrapping — confirmed both via measured coordinates and a screenshot.
+- Verified beyond that: full workspace `typecheck`/`lint`/`test` clean (12/12/11/11/10/10, 18 `ui-native` tests); a real `expo export --platform ios` for `apps/mobile` bundles successfully.
+- **CLAUDE.md updated** with both the fix and the explicit lesson: verify mobile components at a realistic narrow viewport (not just "some browser window"), especially anything with per-item flex-divided horizontal space and text content.
+- Stories: `packages/ui-native` component fix — no PRD story of its own.
+- Phase: Phase 5 · Mobile Field Companion (`packages/ui-native` foundational stage).
+
 ### 2026-08-30 — Migrated `packages/ui-native`'s icons from `@expo/vector-icons` to `lucide-react-native`, fixing a real icon-alignment bug (user request)
 
 - **User report + request**: tab bar icons/labels weren't level with each other (a screenshot showed Home sitting visibly lower than the other four tabs), plus a request to switch to Lucide icons — the same set web's `packages/ui` already uses via `lucide-react` — for cross-platform consistency, with 24×24pt icon sizing.

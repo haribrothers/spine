@@ -163,7 +163,30 @@ export function FloatingTabBar({ state, descriptors, navigation, insets, resolve
               className="z-10 flex-1 items-center justify-center gap-0.5 px-2"
             >
               {options.tabBarIcon?.({ focused: isFocused, color, size: TAB_ICON_SIZE })}
-              <Text style={{ color, fontSize: TAB_LABEL_FONT_SIZE }} className="font-semibold">
+              {/*
+                A real, user-reported bug on a real iPhone simulator (not
+                caught by the earlier desktop-browser check, which gave
+                each tab far more horizontal room than a real ~390pt-wide
+                screen does): with 5 tabs sharing one `max-w-md` pill and
+                no line-wrap guard, the widest labels ("Messages",
+                "Expenses") could wrap to two lines while shorter ones
+                ("Home", "Jobs") stayed on one — visually shifting that
+                tab's icon+label block relative to its neighbors, since
+                each Pressable is vertically centered as a whole. This is
+                a text-layout bug, NOT the earlier icon-glyph-alignment bug
+                (that one was fixed by the Lucide migration and is unrelated).
+                `numberOfLines={1}` forbids wrapping; `adjustsFontSizeToFit`
+                + `minimumFontScale={0.8}` lets a genuinely-too-long label
+                shrink slightly rather than clip, matching iOS's own
+                UITabBarItem behavior for long labels.
+              */}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.8}
+                style={{ color, fontSize: TAB_LABEL_FONT_SIZE }}
+                className="font-semibold"
+              >
                 {label}
               </Text>
             </Pressable>
