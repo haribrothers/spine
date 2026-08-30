@@ -1,6 +1,8 @@
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useTheme } from "@spine/ui-native";
+import { spineDarkNavigationTheme, spineLightNavigationTheme } from "@spine/ui-native/navigation";
 import { ExpensesScreen } from "../features/expenses/expenses-screen";
 import { HomeScreen } from "../features/home/home-screen";
 import { JobsScreen } from "../features/jobs/jobs-screen";
@@ -38,6 +40,7 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
  */
 export function RootNavigator() {
   const { data: session, isPending } = useSession();
+  const { resolvedMode } = useTheme();
 
   if (isPending) {
     return (
@@ -52,7 +55,7 @@ export function RootNavigator() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={resolvedMode === "dark" ? spineDarkNavigationTheme : spineLightNavigationTheme}>
       <Tab.Navigator screenOptions={{ headerShown: false }}>
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Jobs" component={JobsScreen} />

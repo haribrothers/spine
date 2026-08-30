@@ -4,12 +4,12 @@ import { Feather } from "@expo/vector-icons";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator, type NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@spine/ui-native";
+import { spineDarkNavigationTheme, spineLightNavigationTheme } from "@spine/ui-native/navigation";
 import { HomeScreen } from "../../app/home";
 import { ComponentDetailScreen } from "../../app/component-detail";
 import { COMPONENT_REGISTRY } from "../lib/component-registry";
 import { ThemeToggle } from "../components/theme-toggle";
 import { SearchPalette } from "../components/search-palette";
-import { spineDarkNavigationTheme, spineLightNavigationTheme } from "./navigation-theme";
 
 export type RootStackParamList = {
   Home: undefined;

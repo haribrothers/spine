@@ -6,7 +6,8 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./tokens": "./src/tokens/index.ts"
+    "./tokens": "./src/tokens/index.ts",
+    "./navigation": "./src/navigation/navigation-theme.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -21,6 +22,7 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@react-navigation/native": "^7.3.18",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.9.0",
     "@types/jest": "^30.0.0",
@@ -37,7 +39,13 @@
     "typescript": "~6.0.3"
   },
   "peerDependencies": {
+    "@react-navigation/native": "^7.3.18",
     "react": "19.2.3",
     "react-native": "0.86.3"
+  },
+  "peerDependenciesMeta": {
+    "@react-navigation/native": {
+      "optional": true
+    }
   }
 }
