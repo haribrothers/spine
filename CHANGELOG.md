@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-30 — Theme preference now persists across reloads in `apps/design-system-native` (user-reported)
+
+- **User report**: "when reload the page or mobile app, my selected preference is not saved" — the app's original `ThemeStorage` implementation (`inMemoryThemeStorage`) was deliberately in-memory-only, a scoping choice made when the app was first scaffolded (documented at the time as "resets on reload, no real session to persist across"), but it became real friction once the toggle was actually used across reloads day to day.
+- **Fix**: new `persistentThemeStorage` in `src/lib/theme-storage.ts`, branching on `Platform.OS` — `localStorage` on web, `expo-secure-store` on native (matching `apps/mobile`'s own storage choice for the same `ThemeStorage` contract). `expo-secure-store` was confirmed to have NO web implementation at all (its `.web.ts` is an empty stub, checked directly in the installed package) before choosing to branch rather than assuming one mechanism would cover both platforms.
+- **Verified live**, not just by reading the code: a headless-browser test set the preference to dark, confirmed it was written to `localStorage`, reloaded the page, and confirmed the app booted straight back into dark mode with the correct value still in storage.
+- Verified beyond that: full workspace `typecheck`/`lint`/`test` (12/12, 11/11, 10/10) all pass; a real `expo export --platform web` bundle still builds successfully with the new `expo-secure-store` dependency.
+- Stories: bug fix in `apps/design-system-native` tooling — no PRD story of its own.
+- Phase: Phase 5 · Mobile Field Companion (tooling, alongside the `packages/ui-native` foundational stage).
+
 ### 2026-08-30 — Two more real theming bugs found via live headless-browser testing: nav header stayed light in dark mode, and "system" never tracked the real OS/browser preference (user-reported)
 
 - **User reports, two items with a screenshot**: (1) on mobile, the top nav header bar stayed light while the rest of the screen was correctly dark; (2) in the web browser, switching to "system" didn't pick up the real OS/browser dark preference.

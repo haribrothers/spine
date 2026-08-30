@@ -1347,7 +1347,11 @@ Not a full audit — just confirm nothing obviously broke:
    your OS/browser preference to light while the app is on "system"
    and confirm it live-updates to light without a reload. All three of
    these were broken (system always resolved to light on web) and
-   fixed 2026-08-30.
+   fixed 2026-08-30. **Also confirm the preference survives a reload**
+   — pick light or dark explicitly, reload the page (web) or restart
+   the app (native), and confirm it comes back in the same mode
+   instead of resetting to system; this was a real shipped bug
+   (preference was in-memory only) fixed 2026-08-30.
    **On the Button page specifically**, check every variant's
    **Disabled** example in the States/Examples section — the label
    text must be clearly visible (muted gray, not white-on-transparent)
