@@ -1343,7 +1343,13 @@ Not a full audit — just confirm nothing obviously broke:
    from one and reappearing on the other (tap a tab that's NOT
    adjacent to the currently selected one, e.g. Home → Messages, to
    make any snap-vs-slide difference obvious) — this was added
-   2026-08-30, replacing an earlier instant-swap. Click the
+   2026-08-30, replacing an earlier instant-swap. **Also confirm all 5
+   tab icons are level with each other** — same vertical position and
+   size, none sitting higher or lower than the others (a real shipped
+   bug had icons at inconsistent heights due to icon-font glyph
+   inconsistency, fixed 2026-08-30 by migrating from `@expo/vector-icons`
+   to `lucide-react-native`); check this on both Bottom Tab Bar and
+   Floating Tab Bar, in both light and dark mode. Click the
    theme-toggle icon in
    the top bar/header and cycle through all three states, confirming
    at each step that BOTH the icon AND every background/text/border

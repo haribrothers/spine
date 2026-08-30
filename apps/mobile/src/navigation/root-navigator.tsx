@@ -2,6 +2,10 @@ import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import HomeIcon from "lucide-react-native/icons/house";
+import Briefcase from "lucide-react-native/icons/briefcase";
+import DollarSign from "lucide-react-native/icons/dollar-sign";
+import User from "lucide-react-native/icons/user";
 import { useTheme } from "@spine/ui-native";
 import {
   FLOATING_TAB_BAR_RESERVED_HEIGHT,
@@ -74,22 +78,22 @@ export function RootNavigator() {
         <Tab.Screen
           name="Home"
           component={HomeScreen}
-          options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+          options={{ tabBarIcon: (props) => <TabBarIcon icon={HomeIcon} {...props} /> }}
         />
         <Tab.Screen
           name="Jobs"
           component={JobsScreen}
-          options={{ tabBarIcon: (props) => <TabBarIcon name="briefcase" {...props} /> }}
+          options={{ tabBarIcon: (props) => <TabBarIcon icon={Briefcase} {...props} /> }}
         />
         <Tab.Screen
           name="Expenses"
           component={ExpensesScreen}
-          options={{ tabBarIcon: (props) => <TabBarIcon name="dollar-sign" {...props} /> }}
+          options={{ tabBarIcon: (props) => <TabBarIcon icon={DollarSign} {...props} /> }}
         />
         <Tab.Screen
           name="Profile"
           component={ProfileScreen}
-          options={{ tabBarIcon: (props) => <TabBarIcon name="user" {...props} /> }}
+          options={{ tabBarIcon: (props) => <TabBarIcon icon={User} {...props} /> }}
         />
       </Tab.Navigator>
     </NavigationContainer>

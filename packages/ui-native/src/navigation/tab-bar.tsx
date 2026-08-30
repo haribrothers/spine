@@ -1,4 +1,4 @@
-import { Feather } from "@expo/vector-icons";
+import type { LucideIcon } from "lucide-react-native";
 import type { BottomTabNavigationOptions } from "@react-navigation/bottom-tabs";
 import { lightColors, darkColors } from "../tokens";
 
@@ -30,17 +30,29 @@ export function spineTabBarScreenOptions(resolvedMode: "light" | "dark"): Bottom
   };
 }
 
-/** `Feather` icon names used by `apps/mobile`'s tab bar — kept as a named type so a typo in a screen's `name` prop is a build error, not a silent blank icon. */
-export type TabBarIconName = React.ComponentProps<typeof Feather>["name"];
-
 /**
  * Renders a themed tab icon for a `Tab.Screen`'s `tabBarIcon` — a thin
- * wrapper so apps don't need their own `@expo/vector-icons` import and
- * per-tab color-resolution boilerplate; React Navigation already resolves
- * `color` correctly per tab (active vs. inactive) from
- * `spineTabBarScreenOptions`'s tint colors above and passes it straight
- * through.
+ * wrapper so a screen doesn't need to resolve stroke width/size boilerplate
+ * itself; React Navigation already resolves `color` correctly per tab
+ * (active vs. inactive) from `spineTabBarScreenOptions`'s tint colors above
+ * and passes it straight through.
+ *
+ * Takes the icon COMPONENT directly (`icon={Home}`, from `lucide-react-native`
+ * — the same icon set web's `packages/ui` uses via `lucide-react`, so both
+ * platforms share one visual icon language) rather than a string name
+ * looked up at render time: a typo becomes an import error at the call
+ * site, not a silently-blank icon, and there's no separate icon-name union
+ * type to keep in sync with whatever's actually imported.
+ *
+ * Migrated off `@expo/vector-icons`' `Feather` (confirmed removed as a
+ * dependency in the same change): Feather's icon-FONT glyphs have
+ * inconsistent internal vertical centering per icon (a well-known icon-font
+ * characteristic), which showed up as a real, user-reported bug — icons
+ * across different tabs sitting at visibly different heights despite an
+ * identical declared `size`. Lucide's SVG-based icons render a uniform,
+ * predictable bounding box per icon, which fixes that misalignment as a
+ * side effect of the migration, not a separate fix.
  */
-export function TabBarIcon({ name, color, size }: { name: TabBarIconName; color: string; size: number }) {
-  return <Feather name={name} color={color} size={size} />;
+export function TabBarIcon({ icon: Icon, color, size }: { icon: LucideIcon; color: string; size: number }) {
+  return <Icon color={color} size={size} />;
 }

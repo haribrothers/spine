@@ -1,6 +1,11 @@
 import { Text, View } from "react-native";
 import { NavigationContainer, NavigationIndependentTree } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Home from "lucide-react-native/icons/house";
+import Briefcase from "lucide-react-native/icons/briefcase";
+import DollarSign from "lucide-react-native/icons/dollar-sign";
+import MessageCircle from "lucide-react-native/icons/message-circle";
+import User from "lucide-react-native/icons/user";
 import { useTheme } from "@spine/ui-native";
 import {
   spineDarkNavigationTheme,
@@ -63,31 +68,31 @@ export function TabBarScreen() {
               <DemoTab.Navigator screenOptions={spineTabBarScreenOptions(resolvedMode)}>
                 <DemoTab.Screen
                   name="Home"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={Home} {...props} /> }}
                 >
                   {() => <DemoScreen label="Home" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Jobs"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="briefcase" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={Briefcase} {...props} /> }}
                 >
                   {() => <DemoScreen label="Jobs" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Expenses"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="dollar-sign" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={DollarSign} {...props} /> }}
                 >
                   {() => <DemoScreen label="Expenses" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Messages"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="message-circle" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={MessageCircle} {...props} /> }}
                 >
                   {() => <DemoScreen label="Messages" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Profile"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="user" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={User} {...props} /> }}
                 >
                   {() => <DemoScreen label="Profile" />}
                 </DemoTab.Screen>
@@ -101,8 +106,8 @@ export function TabBarScreen() {
         <FeatureList
           items={[
             "spineTabBarScreenOptions(resolvedMode) themes the tab bar's background, border, and active/inactive tint colors from the same light/dark tokens every other component uses.",
-            "TabBarIcon wraps @expo/vector-icons' Feather so apps don't need their own icon-library import or per-tab color-resolution boilerplate — React Navigation already passes the correct active/inactive color into tabBarIcon.",
-            "Each Tab.Screen still supplies its own icon name and title — those are necessarily per-route, not shared.",
+            "TabBarIcon renders a lucide-react-native icon component (the same icon set web's packages/ui uses via lucide-react) — passed as a component reference, not a string name, so a typo is a build error, not a silently-blank icon.",
+            "Each Tab.Screen still supplies its own icon component and title — those are necessarily per-route, not shared.",
           ]}
         />
       </DocSection>
@@ -110,6 +115,7 @@ export function TabBarScreen() {
       <DocSection title="Anatomy">
         <CodeBlock
           code={`import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Home from "lucide-react-native/icons/house";
 import { useTheme } from "@spine/ui-native";
 import { spineTabBarScreenOptions, TabBarIcon } from "@spine/ui-native/navigation";
 
@@ -122,7 +128,7 @@ function RootNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+        options={{ tabBarIcon: (props) => <TabBarIcon icon={Home} {...props} /> }}
       />
     </Tab.Navigator>
   );
@@ -134,7 +140,7 @@ function RootNavigator() {
         <ApiTable
           rows={[
             { prop: "spineTabBarScreenOptions(resolvedMode)", type: '"light" | "dark" -> BottomTabNavigationOptions' },
-            { prop: "TabBarIcon", type: "{ name: Feather icon name; color: string; size: number }" },
+            { prop: "TabBarIcon", type: "{ icon: LucideIcon; color: string; size: number }" },
           ]}
         />
       </DocSection>

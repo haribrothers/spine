@@ -1,6 +1,11 @@
 import { Text, View } from "react-native";
 import { NavigationContainer, NavigationIndependentTree } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Home from "lucide-react-native/icons/house";
+import Briefcase from "lucide-react-native/icons/briefcase";
+import DollarSign from "lucide-react-native/icons/dollar-sign";
+import MessageCircle from "lucide-react-native/icons/message-circle";
+import User from "lucide-react-native/icons/user";
 import { useTheme } from "@spine/ui-native";
 import {
   FLOATING_TAB_BAR_RESERVED_HEIGHT,
@@ -45,7 +50,7 @@ export function FloatingTabBarScreen() {
       <DocLead>
         A fully custom bottom tab bar — a floating, rounded, inset pill with each tab&apos;s icon stacked above its
         label, and the active tab&apos;s highlight capsule sliding smoothly between tabs on selection, matching
-        iOS&apos;s standard tab bar height/icon/label sizing. Replaces React Navigation&apos;s default tab bar
+        iOS&apos;s standard tab bar height/label sizing. Replaces React Navigation&apos;s default tab bar
         entirely rather than just theming it (see Bottom Tab Bar for that lighter
         option).
       </DocLead>
@@ -63,31 +68,31 @@ export function FloatingTabBarScreen() {
               >
                 <DemoTab.Screen
                   name="Home"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={Home} {...props} /> }}
                 >
                   {() => <DemoScreen label="Home" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Jobs"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="briefcase" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={Briefcase} {...props} /> }}
                 >
                   {() => <DemoScreen label="Jobs" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Expenses"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="dollar-sign" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={DollarSign} {...props} /> }}
                 >
                   {() => <DemoScreen label="Expenses" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Messages"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="message-circle" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={MessageCircle} {...props} /> }}
                 >
                   {() => <DemoScreen label="Messages" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Profile"
-                  options={{ tabBarIcon: (props) => <TabBarIcon name="user" {...props} /> }}
+                  options={{ tabBarIcon: (props) => <TabBarIcon icon={User} {...props} /> }}
                 >
                   {() => <DemoScreen label="Profile" />}
                 </DemoTab.Screen>
@@ -101,7 +106,8 @@ export function FloatingTabBarScreen() {
         <FeatureList
           items={[
             "Fully replaces React Navigation's default tab bar via the tabBar prop — every tab shows its icon stacked above its label; the active tab's highlight capsule slides smoothly to the newly selected tab instead of instantly swapping.",
-            "Height (49pt), icon size (25pt), and label size (10pt) match iOS's own UITabBar/UITabBarItem defaults — the same numbers every unmodified iOS app's tab bar uses.",
+            "Height (49pt) and label size (10pt) match iOS's own UITabBar/UITabBarItem defaults; icon size (24pt) matches lucide-react-native's own default rather than iOS's 25pt, a deliberate 1pt departure.",
+            "Uses lucide-react-native icons (the same set web's packages/ui uses via lucide-react) for a uniform, predictable glyph bounding box per icon — fixes a real icon-vertical-alignment bug the earlier icon-font-based icons had.",
             "Reads each screen's tabBarIcon/title from React Navigation's own descriptors — no separate icon/label config needed beyond what a themed tab bar already requires.",
             "Uses BottomTabBarProps' own insets (no separate useSafeAreaInsets call) to pad above the home indicator.",
             "Reimplements press handling with the same tabPress event contract the default tab bar uses, and sets accessibilityRole/accessibilityState itself, since replacing the tab bar means none of that comes for free anymore.",
@@ -113,6 +119,7 @@ export function FloatingTabBarScreen() {
         <CodeBlock
           code={`import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Home from "lucide-react-native/icons/house";
 import { useTheme } from "@spine/ui-native";
 import { FLOATING_TAB_BAR_RESERVED_HEIGHT, FloatingTabBar, TabBarIcon } from "@spine/ui-native/navigation";
 
@@ -136,7 +143,7 @@ function RootNavigator() {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+        options={{ tabBarIcon: (props) => <TabBarIcon icon={Home} {...props} /> }}
       />
     </Tab.Navigator>
   );

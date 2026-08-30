@@ -1,7 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
+import type { LucideIcon } from "lucide-react-native";
+import Home from "lucide-react-native/icons/house";
+import Briefcase from "lucide-react-native/icons/briefcase";
 import { FloatingTabBar } from "./floating-tab-bar";
-import { TabBarIcon, type TabBarIconName } from "./tab-bar";
+import { TabBarIcon } from "./tab-bar";
 import { lightColors, darkColors } from "../tokens";
 
 /**
@@ -12,9 +15,9 @@ import { lightColors, darkColors } from "../tokens";
  * label, which accessibility state) is what's under test, not React
  * Navigation's routing.
  */
-function makeIconOption(name: TabBarIconName) {
+function makeIconOption(icon: LucideIcon) {
   function IconOption(props: { focused: boolean; color: string; size: number }) {
-    return <TabBarIcon name={name} {...props} />;
+    return <TabBarIcon icon={icon} {...props} />;
   }
   return IconOption;
 }
@@ -31,8 +34,8 @@ function makeProps(overrides: { focusedIndex?: number } = {}) {
       ],
     } as BottomTabBarProps["state"],
     descriptors: {
-      "home-key": { options: { title: "Home", tabBarIcon: makeIconOption("home") } },
-      "jobs-key": { options: { title: "Jobs", tabBarIcon: makeIconOption("briefcase") } },
+      "home-key": { options: { title: "Home", tabBarIcon: makeIconOption(Home) } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: makeIconOption(Briefcase) } },
     } as unknown as BottomTabBarProps["descriptors"],
     navigation: { emit: () => ({ defaultPrevented: false }), navigate } as unknown as BottomTabBarProps["navigation"],
     insets: { top: 0, bottom: 20, left: 0, right: 0 },

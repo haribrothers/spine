@@ -13,11 +13,21 @@ import { lightColors, darkColors } from "../tokens";
  * tab bar (see `tab-bar.tsx`'s `spineTabBarScreenOptions`/`TabBarIcon` for
  * that lighter option).
  *
- * Height/icon-size/label-size follow iOS's own `UITabBar` defaults
- * (Apple's Human Interface Guidelines / the stock `UITabBarItem`
- * appearance): 49pt bar content height, 25×25pt icons, 10pt labels — the
- * same numbers every unmodified iOS app's tab bar uses, so this reads as a
- * genuinely native-feeling bar rather than an arbitrary custom size.
+ * Height/label-size follow iOS's own `UITabBar` defaults (Apple's Human
+ * Interface Guidelines / the stock `UITabBarItem` appearance): 49pt bar
+ * content height, 10pt labels — the same numbers every unmodified iOS
+ * app's tab bar uses, so this reads as a genuinely native-feeling bar
+ * rather than an arbitrary custom size. Icon size is 24pt (a deliberate
+ * 1pt departure from iOS's own 25pt default, matching Lucide's natural
+ * default size instead).
+ *
+ * Icons are `lucide-react-native` components (the same icon set web's
+ * `packages/ui` uses via `lucide-react`), passed as a component reference
+ * via each `Tab.Screen`'s `tabBarIcon` option, not a string name — see
+ * `tab-bar.tsx`'s `TabBarIcon` doc comment for why this migrated off
+ * `@expo/vector-icons`' Feather (a real, user-reported icon-vertical-
+ * alignment bug caused by icon-font glyph-metric inconsistency, which
+ * Lucide's uniform SVG bounding boxes fix as a side effect).
  *
  * Passed via `Tab.Navigator`'s `tabBar` prop, which fully replaces React
  * Navigation's default tab bar — this component is therefore responsible
@@ -41,8 +51,8 @@ export interface FloatingTabBarProps extends BottomTabBarProps {
 
 /** iOS `UITabBar`'s standard content height (excludes the home-indicator safe-area inset, added separately via `insets.bottom`). */
 const TAB_BAR_HEIGHT = 49;
-/** iOS `UITabBarItem`'s standard icon glyph size. */
-const TAB_ICON_SIZE = 25;
+/** Lucide's natural default icon size — see this file's own doc comment on the deliberate 1pt departure from iOS's 25pt default. */
+const TAB_ICON_SIZE = 24;
 /** iOS `UITabBarItem`'s standard label size. */
 const TAB_LABEL_FONT_SIZE = 10;
 const TAB_BAR_OUTER_PADDING = 6;

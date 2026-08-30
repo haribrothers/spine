@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react-native";
+import { render, screen } from "@testing-library/react-native";
+import Home from "lucide-react-native/icons/house";
 import { spineTabBarScreenOptions, TabBarIcon } from "./tab-bar";
 import { lightColors, darkColors } from "../tokens";
 
@@ -29,11 +30,8 @@ describe("spineTabBarScreenOptions", () => {
 });
 
 describe("TabBarIcon", () => {
-  it("renders the given Feather icon name with the passed color", async () => {
-    render(<TabBarIcon name="home" color="#2954E5" size={20} />);
-    // @expo/vector-icons' Icon does an async font-load state update on mount
-    // — waitFor wraps the flush in act() so it doesn't warn, unlike a bare
-    // setTimeout/Promise flush.
-    await waitFor(() => expect(screen.root).toBeTruthy());
+  it("renders the given lucide-react-native icon component with the passed color", () => {
+    render(<TabBarIcon icon={Home} color="#2954E5" size={20} />);
+    expect(screen.root).toBeTruthy();
   });
 });

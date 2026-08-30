@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import Search from "lucide-react-native/icons/search";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator, type NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useTheme } from "@spine/ui-native";
@@ -30,7 +30,7 @@ function SearchButton() {
         onPress={() => setOpen(true)}
         className="h-8 w-8 items-center justify-center rounded-md active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
       >
-        <Feather name="search" size={18} color="#726C5A" />
+        <Search size={18} color="#726C5A" />
       </Pressable>
       <SearchPalette open={open} onOpenChange={setOpen} onSelect={(slug) => navigation.navigate("Component", { slug })} />
     </>
