@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
 import { organization } from "better-auth/plugins/organization";
 import { and, desc, eq, gt } from "drizzle-orm";
@@ -28,10 +29,14 @@ const db = createDb(databaseUrl);
 const authLogger = new Logger("Auth");
 
 /**
- * Cookie sessions for web, JWT for mobile — per docs/spine-prd.md §5. The
- * organization plugin is what makes membership/role per-org (§2.1); the JWT
- * plugin issues short-lived, JWKS-verifiable tokens for the Expo app without
- * a second auth system.
+ * Cookie sessions for web, a Bearer-sent session token for mobile — see
+ * the `bearer()` plugin's own doc comment below for why this is the
+ * `bearer` plugin, not the `jwt` plugin, despite docs/spine-prd.md §5's
+ * original "JWT for mobile" phrasing (a real design correction made
+ * during Phase 5's mobile-auth build, not the original plan). The
+ * organization plugin is what makes membership/role per-org (§2.1); `jwt()`
+ * stays configured for future third-party/external JWKS-verification needs,
+ * unrelated to how this API's own AuthGuard authenticates mobile's requests.
  */
 export const auth = betterAuth({
   database: drizzleAdapter(db, { provider: "pg" }),
@@ -61,11 +66,12 @@ export const auth = betterAuth({
    * once a week never actually expires (each use resets the clock), which
    * covers a field crew's realistic weekly-or-more usage pattern without
    * an unboundedly long session on a device that's lost or reassigned.
-   * Mobile itself never touches this session directly — it re-mints a
-   * short-lived JWT (`jwt()` plugin below, 15 min) from the underlying
-   * session via /api/auth/token on every app foreground; only a session
-   * that's actually expired or revoked forces mobile back to a real login
-   * screen. See CHANGELOG's Phase 5 entry for the full auth-flow design.
+   * Mobile sends this session's own token directly as a Bearer header on
+   * every request (via the `bearer()` plugin below, persisted through
+   * `expo-secure-store` by `expoClient`) rather than minting a separate
+   * short-lived token per request — only a session that's actually
+   * expired or revoked forces mobile back to a real login screen. See
+   * CHANGELOG's Phase 5 Stage 4 entry for the full auth-flow design.
    */
   session: {
     expiresIn: 60 * 60 * 24 * 30,
@@ -119,6 +125,26 @@ export const auth = betterAuth({
         expirationTime: "15m",
       },
     }),
+    /**
+     * Phase 5 (Mobile) — corrects a real design gap found while building
+     * mobile's auth flow: `@thallesp/nestjs-better-auth`'s `AuthGuard`
+     * forwards every request header (including `Authorization`) into
+     * `auth.api.getSession(...)`, but that only ever resolves a COOKIE or
+     * (with this plugin) a raw session token sent as `Authorization:
+     * Bearer <session token>` — it never verifies a `jwt()`-minted JWT.
+     * The two plugins solve different problems: `jwt()` above issues
+     * short-lived, JWKS-verifiable tokens for a THIRD PARTY to verify
+     * independently (no round-trip to this API); `bearer()` here is the
+     * standard "send the session over a header instead of a cookie"
+     * mechanism RN needs since it has no cookie jar. Mobile's own auth
+     * client (`apps/mobile/src/lib/auth/auth-client.ts`) sends the
+     * session token `expoClient` already persists via `expo-secure-store`
+     * as this Bearer value — no separate JWT-minting round trip per
+     * request. See CHANGELOG's Phase 5 Stage 4 entry for the full
+     * corrected auth-flow design and how this was discovered (a live
+     * 401 against a real endpoint, not a typecheck).
+     */
+    bearer(),
   ],
   databaseHooks: {
     user: {
