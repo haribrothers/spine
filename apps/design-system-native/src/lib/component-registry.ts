@@ -16,4 +16,9 @@ export const COMPONENT_REGISTRY: ComponentRegistryEntry[] = [
   { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
   { slug: "card", name: "Card", description: "Card, Header, Title, Description, Content, and Footer composition." },
   { slug: "badge", name: "Badge", description: "Neutral inline label — never used for financial status." },
+  {
+    slug: "tab-bar",
+    name: "Bottom Tab Bar",
+    description: "Themed screenOptions and icon helper for createBottomTabNavigator.",
+  },
 ];

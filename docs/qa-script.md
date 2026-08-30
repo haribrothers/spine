@@ -1314,12 +1314,19 @@ Not a full audit — just confirm nothing obviously broke:
    (dashboard, an invoice detail page, a dialog) look correct in both
    modes.
 3. **`apps/design-system-native`** (`pnpm dev:ui-native`, then `--web`
-   or a simulator): browse Button, Text Field, Card, Badge. Confirm a
-   wide browser window shows the desktop shell (top bar + left sidebar
-   at a fixed ~224px width, not full-width) and narrowing it below
-   ~768px switches to the mobile list → push-detail stack. Click the
-   Search button (or ⌘K on web) and confirm it filters the component
-   list and jumps to the selected one. Click the theme-toggle icon in
+   or a simulator): browse Button, Text Field, Card, Badge, **Bottom
+   Tab Bar**. Confirm a wide browser window shows the desktop shell
+   (top bar + left sidebar at a fixed ~224px width, not full-width)
+   and narrowing it below ~768px switches to the mobile list →
+   push-detail stack. Click the Search button (or ⌘K on web) and
+   confirm it filters the component list and jumps to the selected
+   one. **On Bottom Tab Bar specifically**, confirm the "Live demo"
+   section actually works — click between its Home/Jobs/Profile tabs
+   and confirm the content changes and the active tab's icon/color
+   updates — check this on BOTH the desktop layout and the mobile
+   layout (a real shipped bug had the live demo crash with "Couldn't
+   register the navigator" specifically on the desktop layout, fixed
+   2026-08-30). Click the theme-toggle icon in
    the top bar/header and cycle through all three states, confirming
    at each step that BOTH the icon AND every background/text/border
    color on screen (the sidebar, top bar, card borders, body text,

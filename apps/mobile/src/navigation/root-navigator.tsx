@@ -2,7 +2,12 @@ import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@spine/ui-native";
-import { spineDarkNavigationTheme, spineLightNavigationTheme } from "@spine/ui-native/navigation";
+import {
+  spineDarkNavigationTheme,
+  spineLightNavigationTheme,
+  spineTabBarScreenOptions,
+  TabBarIcon,
+} from "@spine/ui-native/navigation";
 import { ExpensesScreen } from "../features/expenses/expenses-screen";
 import { HomeScreen } from "../features/home/home-screen";
 import { JobsScreen } from "../features/jobs/jobs-screen";
@@ -56,11 +61,27 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer theme={resolvedMode === "dark" ? spineDarkNavigationTheme : spineLightNavigationTheme}>
-      <Tab.Navigator screenOptions={{ headerShown: false }}>
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Jobs" component={JobsScreen} />
-        <Tab.Screen name="Expenses" component={ExpensesScreen} />
-        <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Navigator screenOptions={spineTabBarScreenOptions(resolvedMode)}>
+        <Tab.Screen
+          name="Home"
+          component={HomeScreen}
+          options={{ tabBarIcon: (props) => <TabBarIcon name="home" {...props} /> }}
+        />
+        <Tab.Screen
+          name="Jobs"
+          component={JobsScreen}
+          options={{ tabBarIcon: (props) => <TabBarIcon name="briefcase" {...props} /> }}
+        />
+        <Tab.Screen
+          name="Expenses"
+          component={ExpensesScreen}
+          options={{ tabBarIcon: (props) => <TabBarIcon name="dollar-sign" {...props} /> }}
+        />
+        <Tab.Screen
+          name="Profile"
+          component={ProfileScreen}
+          options={{ tabBarIcon: (props) => <TabBarIcon name="user" {...props} /> }}
+        />
       </Tab.Navigator>
     </NavigationContainer>
   );

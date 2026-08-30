@@ -7,7 +7,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens": "./src/tokens/index.ts",
-    "./navigation": "./src/navigation/navigation-theme.ts"
+    "./navigation": "./src/navigation/index.ts"
   },
   "scripts": {
     "lint": "eslint .",
@@ -22,6 +22,8 @@
     "tailwind-merge": "^3.6.0"
   },
   "devDependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "@react-navigation/bottom-tabs": "^7.18.18",
     "@react-navigation/native": "^7.3.18",
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.9.0",
@@ -39,11 +41,19 @@
     "typescript": "~6.0.3"
   },
   "peerDependencies": {
+    "@expo/vector-icons": "^15.0.2",
+    "@react-navigation/bottom-tabs": "^7.18.18",
     "@react-navigation/native": "^7.3.18",
     "react": "19.2.3",
     "react-native": "0.86.3"
   },
   "peerDependenciesMeta": {
+    "@expo/vector-icons": {
+      "optional": true
+    },
+    "@react-navigation/bottom-tabs": {
+      "optional": true
+    },
     "@react-navigation/native": {
       "optional": true
     }
