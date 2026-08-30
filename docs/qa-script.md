@@ -1337,7 +1337,14 @@ Not a full audit — just confirm nothing obviously broke:
    label, and there's no white area visible behind the bar in either
    light or dark mode (a real shipped bug had the demo's preview box
    and its `NavigationContainer` both losing their theme — fixed
-   2026-08-30). Click the theme-toggle icon in
+   2026-08-30). **Also confirm**: tapping a different tab makes the
+   highlight capsule visibly SLIDE from the previously selected tab to
+   the newly selected one, rather than instantly jumping/disappearing
+   from one and reappearing on the other (tap a tab that's NOT
+   adjacent to the currently selected one, e.g. Home → Messages, to
+   make any snap-vs-slide difference obvious) — this was added
+   2026-08-30, replacing an earlier instant-swap. Click the
+   theme-toggle icon in
    the top bar/header and cycle through all three states, confirming
    at each step that BOTH the icon AND every background/text/border
    color on screen (the sidebar, top bar, card borders, body text,

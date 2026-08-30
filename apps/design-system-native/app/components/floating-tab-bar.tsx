@@ -44,8 +44,9 @@ export function FloatingTabBarScreen() {
       <DocTitle>Floating Tab Bar</DocTitle>
       <DocLead>
         A fully custom bottom tab bar — a floating, rounded, inset pill with each tab&apos;s icon stacked above its
-        label, and the active tab additionally shown inside its own soft highlight capsule, replacing React
-        Navigation&apos;s default tab bar entirely rather than just theming it (see Bottom Tab Bar for that lighter
+        label, and the active tab&apos;s highlight capsule sliding smoothly between tabs on selection, matching
+        iOS&apos;s standard tab bar height/icon/label sizing. Replaces React Navigation&apos;s default tab bar
+        entirely rather than just theming it (see Bottom Tab Bar for that lighter
         option).
       </DocLead>
 
@@ -99,7 +100,8 @@ export function FloatingTabBarScreen() {
       <DocSection title="Features">
         <FeatureList
           items={[
-            "Fully replaces React Navigation's default tab bar via the tabBar prop — every tab shows its icon stacked above its label; the active tab additionally gets a soft rounded highlight capsule.",
+            "Fully replaces React Navigation's default tab bar via the tabBar prop — every tab shows its icon stacked above its label; the active tab's highlight capsule slides smoothly to the newly selected tab instead of instantly swapping.",
+            "Height (49pt), icon size (25pt), and label size (10pt) match iOS's own UITabBar/UITabBarItem defaults — the same numbers every unmodified iOS app's tab bar uses.",
             "Reads each screen's tabBarIcon/title from React Navigation's own descriptors — no separate icon/label config needed beyond what a themed tab bar already requires.",
             "Uses BottomTabBarProps' own insets (no separate useSafeAreaInsets call) to pad above the home indicator.",
             "Reimplements press handling with the same tabPress event contract the default tab bar uses, and sets accessibilityRole/accessibilityState itself, since replacing the tab bar means none of that comes for free anymore.",
@@ -146,7 +148,7 @@ function RootNavigator() {
         <ApiTable
           rows={[
             { prop: "FloatingTabBar", type: "BottomTabBarProps & { resolvedMode: \"light\" | \"dark\" }" },
-            { prop: "FLOATING_TAB_BAR_RESERVED_HEIGHT", type: "number (76)" },
+            { prop: "FLOATING_TAB_BAR_RESERVED_HEIGHT", type: "number (77 — iOS's 49pt UITabBar height + outer padding)" },
           ]}
         />
       </DocSection>

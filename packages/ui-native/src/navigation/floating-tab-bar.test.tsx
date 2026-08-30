@@ -64,16 +64,37 @@ describe("FloatingTabBar", () => {
     expect(navigate).toHaveBeenCalledWith("Jobs");
   });
 
-  it("resolves light/dark colors from the design tokens", async () => {
+  it("resolves the focused/unfocused colors from the design tokens (passed into each tab's icon)", async () => {
+    // The active-tab highlight itself is a shared Animated.View positioned
+    // from measured onLayout results, which don't fire under
+    // react-test-renderer's fake layout engine — so color resolution is
+    // asserted via the color each tab's tabBarIcon actually receives
+    // instead, which exercises the same isFocused ? primary : onSurfaceMuted
+    // branch without depending on real layout.
+    let capturedColors: string[] = [];
+    const captureIcon = jest.fn((props: { color: string }) => {
+      capturedColors.push(props.color);
+      return null;
+    });
+
     const light = makeProps({ focusedIndex: 0 });
+    light.props.descriptors = {
+      "home-key": { options: { title: "Home", tabBarIcon: captureIcon } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: captureIcon } },
+    } as unknown as BottomTabBarProps["descriptors"];
     const { unmount } = render(<FloatingTabBar {...light.props} resolvedMode="light" />);
     await waitFor(() => screen.getByLabelText("Home"));
-    expect(screen.getByLabelText("Home").props.style).toMatchObject({ backgroundColor: lightColors.infoBg });
+    expect(capturedColors).toEqual([lightColors.primary, lightColors.onSurfaceMuted]);
     unmount();
 
+    capturedColors = [];
     const dark = makeProps({ focusedIndex: 0 });
+    dark.props.descriptors = {
+      "home-key": { options: { title: "Home", tabBarIcon: captureIcon } },
+      "jobs-key": { options: { title: "Jobs", tabBarIcon: captureIcon } },
+    } as unknown as BottomTabBarProps["descriptors"];
     render(<FloatingTabBar {...dark.props} resolvedMode="dark" />);
     await waitFor(() => screen.getByLabelText("Home"));
-    expect(screen.getByLabelText("Home").props.style).toMatchObject({ backgroundColor: darkColors.infoBg });
+    expect(capturedColors).toEqual([darkColors.primary, darkColors.onSurfaceMuted]);
   });
 });
