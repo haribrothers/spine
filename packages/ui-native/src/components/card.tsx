@@ -2,7 +2,14 @@ import { Text, View, type TextProps, type ViewProps } from "react-native";
 
 /** Ports `packages/ui`'s Card family to RN `View`/`Text` — same sub-component shape (Header/Title/Description/Content/Footer). */
 export function Card({ className, ...props }: ViewProps) {
-  return <View className={["rounded-lg border border-border bg-surface p-5", className].filter(Boolean).join(" ")} {...props} />;
+  return (
+    <View
+      className={["rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark p-5", className]
+        .filter(Boolean)
+        .join(" ")}
+      {...props}
+    />
+  );
 }
 
 export function CardHeader({ className, ...props }: ViewProps) {
@@ -11,12 +18,21 @@ export function CardHeader({ className, ...props }: ViewProps) {
 
 export function CardTitle({ className, ...props }: TextProps) {
   return (
-    <Text accessibilityRole="header" className={["text-[15px] font-semibold text-on-surface", className].filter(Boolean).join(" ")} {...props} />
+    <Text
+      accessibilityRole="header"
+      className={["text-[15px] font-semibold text-on-surface dark:text-on-surface-dark", className].filter(Boolean).join(" ")}
+      {...props}
+    />
   );
 }
 
 export function CardDescription({ className, ...props }: TextProps) {
-  return <Text className={["text-[13px] text-on-surface-muted", className].filter(Boolean).join(" ")} {...props} />;
+  return (
+    <Text
+      className={["text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark", className].filter(Boolean).join(" ")}
+      {...props}
+    />
+  );
 }
 
 export function CardContent({ className, ...props }: ViewProps) {

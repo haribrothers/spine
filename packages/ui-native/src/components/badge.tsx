@@ -5,7 +5,7 @@ export function Badge({ className, ...props }: TextProps) {
   return (
     <Text
       className={[
-        "self-start rounded-full bg-surface-sunken px-2.5 py-0.5 text-[12px] font-medium text-on-surface-muted",
+        "self-start rounded-full bg-surface-sunken dark:bg-surface-sunken-dark px-2.5 py-0.5 text-[12px] font-medium text-on-surface-muted dark:text-on-surface-muted-dark",
         className,
       ]
         .filter(Boolean)

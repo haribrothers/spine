@@ -53,7 +53,7 @@ export function SearchPalette({
       <Pressable className="flex-1 items-center bg-black/30 pt-[15vh]" onPress={() => onOpenChange(false)}>
         <Pressable
           onPress={(e) => e.stopPropagation()}
-          className="w-full max-w-lg overflow-hidden rounded-lg border border-border bg-surface"
+          className="w-full max-w-lg overflow-hidden rounded-lg border border-border dark:border-border-dark bg-surface dark:bg-surface-dark"
         >
           <TextInput
             autoFocus
@@ -61,14 +61,18 @@ export function SearchPalette({
             onChangeText={setQuery}
             placeholder="Search components…"
             placeholderTextColor="#726C5A"
-            className="border-b border-border px-4 py-3 text-[14px] text-on-surface"
+            className="border-b border-border dark:border-border-dark px-4 py-3 text-[14px] text-on-surface dark:text-on-surface-dark"
           />
           <FlatList
             className="max-h-80"
             contentContainerClassName="p-2"
             data={results}
             keyExtractor={(item) => item.slug}
-            ListEmptyComponent={<Text className="px-2 py-6 text-center text-[13px] text-on-surface-muted">No results found.</Text>}
+            ListEmptyComponent={
+              <Text className="px-2 py-6 text-center text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
+                No results found.
+              </Text>
+            }
             renderItem={({ item }) => (
               <Pressable
                 accessibilityRole="button"
@@ -76,10 +80,10 @@ export function SearchPalette({
                   onSelect(item.slug);
                   onOpenChange(false);
                 }}
-                className="flex-row items-center justify-between rounded-md px-2 py-2 active:bg-surface-sunken"
+                className="flex-row items-center justify-between rounded-md px-2 py-2 active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
               >
-                <Text className="text-[13px] text-on-surface">{item.name}</Text>
-                <Text className="text-[12px] text-on-surface-muted">Components</Text>
+                <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{item.name}</Text>
+                <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">Components</Text>
               </Pressable>
             )}
           />

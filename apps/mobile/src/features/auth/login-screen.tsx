@@ -34,19 +34,22 @@ export function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView className="flex-1 bg-background" behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      className="flex-1 bg-background dark:bg-background-dark"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView contentContainerClassName="flex-1 justify-center px-6" keyboardShouldPersistTaps="handled">
         <View className="gap-4">
-          <Text className="text-[24px] font-bold text-on-surface">Sign in to Spine</Text>
+          <Text className="text-[24px] font-bold text-on-surface dark:text-on-surface-dark">Sign in to Spine</Text>
 
           {error && (
-            <View className="rounded-md border border-overdue bg-overdue-bg px-3 py-2">
-              <Text className="text-[13px] text-overdue">{error}</Text>
+            <View className="rounded-md border border-overdue dark:border-overdue-dark bg-overdue-bg dark:bg-overdue-bg-dark px-3 py-2">
+              <Text className="text-[13px] text-overdue dark:text-overdue-dark">{error}</Text>
             </View>
           )}
 
           <View className="gap-1">
-            <Text className="text-[13px] font-semibold text-on-surface-muted">Email</Text>
+            <Text className="text-[13px] font-semibold text-on-surface-muted dark:text-on-surface-muted-dark">Email</Text>
             <TextField
               value={email}
               onChangeText={setEmail}
@@ -59,7 +62,7 @@ export function LoginScreen() {
           </View>
 
           <View className="gap-1">
-            <Text className="text-[13px] font-semibold text-on-surface-muted">Password</Text>
+            <Text className="text-[13px] font-semibold text-on-surface-muted dark:text-on-surface-muted-dark">Password</Text>
             <TextField
               value={password}
               onChangeText={setPassword}

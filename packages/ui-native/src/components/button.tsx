@@ -35,10 +35,11 @@ import { lightColors, darkColors } from "../tokens";
 export const buttonVariants = cva("flex-row items-center justify-center gap-2 rounded-md", {
   variants: {
     variant: {
-      primary: "bg-primary active:bg-primary-hover",
-      secondary: "border border-border-strong bg-transparent active:bg-surface-sunken",
-      danger: "bg-overdue active:opacity-90",
-      ghost: "bg-transparent active:bg-surface-sunken",
+      primary: "bg-primary dark:bg-primary-dark active:bg-primary-hover active:dark:bg-primary-hover-dark",
+      secondary:
+        "border border-border-strong dark:border-border-strong-dark bg-transparent active:bg-surface-sunken active:dark:bg-surface-sunken-dark",
+      danger: "bg-overdue dark:bg-overdue-dark active:opacity-90",
+      ghost: "bg-transparent active:bg-surface-sunken active:dark:bg-surface-sunken-dark",
     },
     size: {
       default: "h-10 px-4",
@@ -47,7 +48,7 @@ export const buttonVariants = cva("flex-row items-center justify-center gap-2 ro
       icon: "h-11 w-11",
     },
     disabled: {
-      true: "border border-border bg-transparent opacity-100",
+      true: "border border-border dark:border-border-dark bg-transparent opacity-100",
       false: "",
     },
   },
@@ -62,12 +63,12 @@ const textVariants = cva("font-semibold text-[13px]", {
   variants: {
     variant: {
       primary: "text-white",
-      secondary: "text-on-surface",
+      secondary: "text-on-surface dark:text-on-surface-dark",
       danger: "text-white",
-      ghost: "text-on-surface",
+      ghost: "text-on-surface dark:text-on-surface-dark",
     },
     disabled: {
-      true: "text-on-surface-muted",
+      true: "text-on-surface-muted dark:text-on-surface-muted-dark",
       false: "",
     },
   },

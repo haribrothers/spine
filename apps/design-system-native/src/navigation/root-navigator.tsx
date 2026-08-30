@@ -26,7 +26,7 @@ function SearchButton() {
         accessibilityRole="button"
         accessibilityLabel="Search components"
         onPress={() => setOpen(true)}
-        className="h-8 w-8 items-center justify-center rounded-md active:bg-surface-sunken"
+        className="h-8 w-8 items-center justify-center rounded-md active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
       >
         <Feather name="search" size={18} color="#726C5A" />
       </Pressable>

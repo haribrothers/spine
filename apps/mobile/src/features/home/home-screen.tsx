@@ -12,7 +12,7 @@ import { Badge, Button, Card, CardContent, CardDescription, CardHeader, CardTitl
  */
 export function HomeScreen() {
   return (
-    <ScrollView className="flex-1 bg-background">
+    <ScrollView className="flex-1 bg-background dark:bg-background-dark">
       <View className="gap-4 p-4">
         <Card>
           <CardHeader>

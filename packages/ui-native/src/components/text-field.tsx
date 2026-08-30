@@ -13,8 +13,8 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(({ className, err
     accessibilityState={{ disabled: !editable }}
     placeholderTextColor="#726C5A"
     className={[
-      "h-11 w-full rounded-sm border bg-surface px-2.5 text-[14px] text-on-surface",
-      error ? "border-overdue" : "border-border-strong",
+      "h-11 w-full rounded-sm border bg-surface dark:bg-surface-dark px-2.5 text-[14px] text-on-surface dark:text-on-surface-dark",
+      error ? "border-overdue dark:border-overdue-dark" : "border-border-strong dark:border-border-strong-dark",
       editable ? "" : "opacity-50",
       className,
     ]

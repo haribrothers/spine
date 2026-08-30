@@ -15,10 +15,12 @@ export function DesktopSidebar({ selectedSlug, onSelect }: { selectedSlug: strin
   return (
     <ScrollView
       style={{ width: 224, flexGrow: 0, flexShrink: 0 }}
-      className="border-r border-border bg-background"
+      className="border-r border-border dark:border-border-dark bg-background dark:bg-background-dark"
       contentContainerClassName="gap-0.5 p-4"
     >
-      <Text className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted">Components</Text>
+      <Text className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
+        Components
+      </Text>
       {COMPONENT_REGISTRY.map((item) => {
         const isActive = item.slug === selectedSlug;
         return (
@@ -26,9 +28,14 @@ export function DesktopSidebar({ selectedSlug, onSelect }: { selectedSlug: strin
             key={item.slug}
             accessibilityRole="button"
             onPress={() => onSelect(item.slug)}
-            className={["rounded-md px-2 py-1.5", isActive ? "bg-surface-sunken" : ""].join(" ")}
+            className={["rounded-md px-2 py-1.5", isActive ? "bg-surface-sunken dark:bg-surface-sunken-dark" : ""].join(" ")}
           >
-            <Text className={["text-[13px]", isActive ? "font-medium text-primary" : "text-on-surface-muted"].join(" ")}>
+            <Text
+              className={[
+                "text-[13px]",
+                isActive ? "font-medium text-primary dark:text-primary-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark",
+              ].join(" ")}
+            >
               {item.name}
             </Text>
           </Pressable>

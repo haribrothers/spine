@@ -19,7 +19,7 @@ export function DesktopShell() {
   const ScreenComponent = COMPONENT_SCREENS[selectedSlug];
 
   return (
-    <View className="flex-1 bg-background">
+    <View className="flex-1 bg-background dark:bg-background-dark">
       <DesktopTopBar onSearchOpen={() => setSearchOpen(true)} />
       <View className="flex-1 flex-row">
         <DesktopSidebar selectedSlug={selectedSlug} onSelect={setSelectedSlug} />
