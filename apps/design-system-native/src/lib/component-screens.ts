@@ -11,7 +11,7 @@ import { TypographyScreen } from "../../app/foundation/typography";
 import { SpacingScreen } from "../../app/foundation/spacing";
 import { IconsScreen } from "../../app/foundation/icons";
 import { MotionScreen } from "../../app/foundation/motion";
-import { AppShellScreen } from "../../app/layouts";
+import { LayoutPrimitivesScreen } from "../../app/layouts/primitives";
 import { SampleScreensScreen } from "../../app/templates";
 import type { DocScreenMap } from "./nav-sections";
 
@@ -34,7 +34,7 @@ export const DOC_SCREENS: DocScreenMap = {
     motion: MotionScreen,
   },
   layouts: {
-    "app-shell": AppShellScreen,
+    primitives: LayoutPrimitivesScreen,
   },
   components: {
     button: ButtonScreen,

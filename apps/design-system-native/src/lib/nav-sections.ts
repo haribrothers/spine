@@ -59,7 +59,13 @@ export const NAV_SECTIONS: DocSection[] = [
     slug: "layouts",
     title: "Layouts",
     icon: LayoutGrid,
-    items: [{ slug: "app-shell", name: "App shell", description: "Structural primitives for screen layout." }],
+    items: [
+      {
+        slug: "primitives",
+        name: "Layout primitives",
+        description: "Why there's no Box/Flex/Grid/Container/Section here, and what plays their role instead.",
+      },
+    ],
   },
   {
     slug: "components",
