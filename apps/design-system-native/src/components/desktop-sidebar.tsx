@@ -1,8 +1,10 @@
 import { Pressable, ScrollView, Text } from "react-native";
-import { COMPONENT_REGISTRY } from "../lib/component-registry";
+import { findSection, type SectionSlug } from "../lib/nav-sections";
 
 /**
- * RN port of apps/design-system's sidebar.tsx — a single "Components" group, matching this app's current single-section nav.
+ * RN port of apps/design-system's sidebar.tsx — renders only the ACTIVE
+ * top-level section's items (matching web's `activeTop.sections`), since
+ * section switching itself now lives in DesktopTopBar's pill nav, not here.
  *
  * Width is an inline style, not a NativeWind `w-56`/`shrink-0` className:
  * on ScrollView + react-native-web those width/flex classNames were
@@ -11,7 +13,17 @@ import { COMPONENT_REGISTRY } from "../lib/component-registry";
  * the output CSS at all), which is what caused the sidebar to render at
  * full width instead of 224px. Don't revert this to a className.
  */
-export function DesktopSidebar({ selectedSlug, onSelect }: { selectedSlug: string; onSelect: (slug: string) => void }) {
+export function DesktopSidebar({
+  activeSection,
+  selectedSlug,
+  onSelect,
+}: {
+  activeSection: SectionSlug;
+  selectedSlug: string;
+  onSelect: (slug: string, section: SectionSlug) => void;
+}) {
+  const section = findSection(activeSection);
+
   return (
     <ScrollView
       style={{ width: 224, flexGrow: 0, flexShrink: 0 }}
@@ -19,15 +31,15 @@ export function DesktopSidebar({ selectedSlug, onSelect }: { selectedSlug: strin
       contentContainerClassName="gap-0.5 p-4"
     >
       <Text className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
-        Components
+        {section.title}
       </Text>
-      {COMPONENT_REGISTRY.map((item) => {
+      {section.items.map((item) => {
         const isActive = item.slug === selectedSlug;
         return (
           <Pressable
             key={item.slug}
             accessibilityRole="button"
-            onPress={() => onSelect(item.slug)}
+            onPress={() => onSelect(item.slug, section.slug)}
             className={["rounded-md px-2 py-1.5", isActive ? "bg-surface-sunken dark:bg-surface-sunken-dark" : ""].join(" ")}
           >
             <Text

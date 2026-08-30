@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { FlatList, Modal, Platform, Pressable, Text, TextInput } from "react-native";
-import { COMPONENT_REGISTRY, type ComponentRegistryEntry } from "../lib/component-registry";
+import { flatDocEntries, type SectionSlug } from "../lib/nav-sections";
+
+type SearchResult = ReturnType<typeof flatDocEntries>[number];
 
 /**
  * RN port of apps/design-system's search-palette.tsx: a modal overlay
- * filtering the same component registry the sidebar/home screen use.
- * `cmdk` itself is DOM-only (built on web-specific portal/keyboard
+ * filtering every section's doc entries (flattened across Overview,
+ * Foundation, Layouts, Components, Templates) the sidebar/section lists
+ * use. `cmdk` itself is DOM-only (built on web-specific portal/keyboard
  * behavior), so this re-implements the same "type to filter, press to
  * select" behavior with RN's Modal/TextInput/FlatList instead of porting
  * the library. Cmd/Ctrl+K global capture is web-only (native has no
@@ -19,7 +22,7 @@ export function SearchPalette({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (slug: string) => void;
+  onSelect: (slug: string, section: SectionSlug) => void;
 }) {
   const [query, setQuery] = useState("");
 
@@ -40,13 +43,15 @@ export function SearchPalette({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, onOpenChange]);
 
-  const results = useMemo<ComponentRegistryEntry[]>(() => {
+  const allEntries = useMemo(() => flatDocEntries(), []);
+
+  const results = useMemo<SearchResult[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return COMPONENT_REGISTRY;
-    return COMPONENT_REGISTRY.filter(
+    if (!q) return allEntries;
+    return allEntries.filter(
       (item) => item.name.toLowerCase().includes(q) || item.description.toLowerCase().includes(q),
     );
-  }, [query]);
+  }, [query, allEntries]);
 
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={() => onOpenChange(false)}>
@@ -77,13 +82,13 @@ export function SearchPalette({
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {
-                  onSelect(item.slug);
+                  onSelect(item.slug, item.section);
                   onOpenChange(false);
                 }}
                 className="flex-row items-center justify-between rounded-md px-2 py-2 active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
               >
                 <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{item.name}</Text>
-                <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">Components</Text>
+                <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{item.sectionTitle}</Text>
               </Pressable>
             )}
           />
