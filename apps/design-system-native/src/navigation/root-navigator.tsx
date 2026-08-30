@@ -3,11 +3,13 @@ import { Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { NavigationContainer, useNavigation } from "@react-navigation/native";
 import { createNativeStackNavigator, type NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useTheme } from "@spine/ui-native";
 import { HomeScreen } from "../../app/home";
 import { ComponentDetailScreen } from "../../app/component-detail";
 import { COMPONENT_REGISTRY } from "../lib/component-registry";
 import { ThemeToggle } from "../components/theme-toggle";
 import { SearchPalette } from "../components/search-palette";
+import { spineDarkNavigationTheme, spineLightNavigationTheme } from "./navigation-theme";
 
 export type RootStackParamList = {
   Home: undefined;
@@ -36,8 +38,10 @@ function SearchButton() {
 }
 
 export function RootNavigator() {
+  const { resolvedMode } = useTheme();
+
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={resolvedMode === "dark" ? spineDarkNavigationTheme : spineLightNavigationTheme}>
       <Stack.Navigator
         screenOptions={{
           headerRight: () => (

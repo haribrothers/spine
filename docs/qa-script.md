@@ -1335,7 +1335,19 @@ Not a full audit — just confirm nothing obviously broke:
    broken because the icon didn't match the state a user would expect
    from pressing it. Confirm both the icon-to-state mapping and the
    actual color change on a device/simulator AND in a web browser
-   (`--web`).
+   (`--web`). **Also confirm**: the top bar/header itself (not just
+   the page content below it) changes color with the theme — a real
+   shipped bug had the React Navigation header stay light in dark mode
+   while the rest of the screen correctly went dark, fixed 2026-08-30.
+   **Also confirm "system" actually tracks your real OS/browser
+   preference** — set your OS or browser to dark, reload the app fresh
+   (don't just click the toggle) and confirm it boots straight into
+   dark mode with no click needed; then explicitly cycle the toggle
+   back to the monitor icon and confirm it's still dark; then switch
+   your OS/browser preference to light while the app is on "system"
+   and confirm it live-updates to light without a reload. All three of
+   these were broken (system always resolved to light on web) and
+   fixed 2026-08-30.
    **On the Button page specifically**, check every variant's
    **Disabled** example in the States/Examples section — the label
    text must be clearly visible (muted gray, not white-on-transparent)
