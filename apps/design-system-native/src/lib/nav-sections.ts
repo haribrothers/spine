@@ -47,7 +47,13 @@ export const NAV_SECTIONS: DocSection[] = [
     slug: "foundation",
     title: "Foundation",
     icon: Palette,
-    items: [{ slug: "tokens", name: "Tokens", description: "Color, typography, spacing, and icon tokens shared with @spine/ui." }],
+    items: [
+      { slug: "color", name: "Color", description: "The restrained palette: one accent, a warm neutral scale, reserved financial-status colors." },
+      { slug: "typography", name: "Typography", description: "The type scale and font families tokens define — and what's actually wired up today." },
+      { slug: "spacing", name: "Spacing", description: "The 12px spacing scale and the 44x44pt touch-target rule." },
+      { slug: "icons", name: "Icons", description: "Lucide via lucide-react-native, the sizes used across the app, and the per-icon subpath import rule." },
+      { slug: "motion", name: "Motion", description: "How animation is used today, and what's not yet a shared token." },
+    ],
   },
   {
     slug: "layouts",

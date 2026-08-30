@@ -6,7 +6,11 @@ import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
 import { PrinciplesScreen } from "../../app/principles";
-import { TokensScreen } from "../../app/foundation";
+import { ColorScreen } from "../../app/foundation/color";
+import { TypographyScreen } from "../../app/foundation/typography";
+import { SpacingScreen } from "../../app/foundation/spacing";
+import { IconsScreen } from "../../app/foundation/icons";
+import { MotionScreen } from "../../app/foundation/motion";
 import { AppShellScreen } from "../../app/layouts";
 import { SampleScreensScreen } from "../../app/templates";
 import type { DocScreenMap } from "./nav-sections";
@@ -23,7 +27,11 @@ export const DOC_SCREENS: DocScreenMap = {
     principles: PrinciplesScreen,
   },
   foundation: {
-    tokens: TokensScreen,
+    color: ColorScreen,
+    typography: TypographyScreen,
+    spacing: SpacingScreen,
+    icons: IconsScreen,
+    motion: MotionScreen,
   },
   layouts: {
     "app-shell": AppShellScreen,
