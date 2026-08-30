@@ -1320,15 +1320,22 @@ Not a full audit — just confirm nothing obviously broke:
    ~768px switches to the mobile list → push-detail stack. Click the
    Search button (or ⌘K on web) and confirm it filters the component
    list and jumps to the selected one. Click the theme-toggle icon in
-   the top bar/header and cycle light → dark → system, confirming the
-   icon changes (moon/monitor/sun) AND every background/text/border
-   color on screen actually flips between light and dark (the sidebar,
-   top bar, card borders, body text, code-block-adjacent chrome, etc.)
-   — this was a real shipped bug (the toggle changed the icon and
-   internal state but nothing visibly changed color at all) fixed
-   2026-08-30; confirm it works both on a device/simulator and in a
-   web browser (`--web`), since the underlying bug was a build-time
-   CSS generation gap that affects both equally.
+   the top bar/header and cycle through all three states, confirming
+   at each step that BOTH the icon AND every background/text/border
+   color on screen (the sidebar, top bar, card borders, body text,
+   etc.) are consistent with the reported preference: **sun icon =
+   light mode**, **moon icon = dark mode**, **monitor icon = system**
+   (resolves to the device/browser's real light/dark preference). Two
+   real shipped bugs were found and fixed here 2026-08-30: (1) the
+   toggle changed internal state but no color on screen ever visibly
+   changed (a build-time CSS generation gap affecting web and native
+   equally), and (2) after fixing that, the icons themselves were
+   mapped to the wrong preference (moon shown for light, sun shown for
+   system, etc.), which made a now-correctly-working toggle look
+   broken because the icon didn't match the state a user would expect
+   from pressing it. Confirm both the icon-to-state mapping and the
+   actual color change on a device/simulator AND in a web browser
+   (`--web`).
    **On the Button page specifically**, check every variant's
    **Disabled** example in the States/Examples section — the label
    text must be clearly visible (muted gray, not white-on-transparent)

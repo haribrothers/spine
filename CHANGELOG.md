@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-08-30 — Theme-toggle icons were mapped to the wrong preference; the underlying dark-mode fix itself was independently re-verified working (user-reported)
+
+- **User report, following up on the entry immediately below**: after the dark-mode CSS fix landed, the toggle still looked broken — pressing it to what the user expected to be dark mode didn't visibly do anything. Investigated live (not just re-reading the fix) with a real headless-browser (Playwright) run against a freshly started dev server: clicking through the toggle DID correctly flip every color to the right dark values (`.dark` class toggled on `<html>`, `bg-background` genuinely resolved to the dark token's `rgb(18, 17, 16)`) — the CSS/runtime fix from the entry below is confirmed genuinely working, not still broken.
+- **The real remaining bug**: `theme-toggle.tsx`'s `ICON_BY_PREFERENCE` map had `light: "moon"`, `dark: "monitor"`, `system: "sun"` — completely scrambled relative to the intuitive mapping (sun = light, moon = dark, monitor = system). A user pressing the toggle and reasoning about state from the icon shown would end up on the wrong actual preference relative to what they intended, making a correctly-working toggle look broken.
+- **Fix**: corrected the map to `light: "sun"`, `dark: "moon"`, `system: "monitor"` — icon now reflects the CURRENT preference (not the state you'd switch to), matching normal theme-toggle icon conventions.
+- **Re-verified end-to-end after the fix**, live against a fresh dev server: cycling the toggle three times now goes light (white background) → dark (`rgb(18, 17, 16)`, `.dark` class present) → system (resolves to the real light/dark preference) in the expected order with the expected icon at each step.
+- Stories: bug fix / UX correction in `packages/ui-native`-adjacent tooling — no PRD story of its own.
+- Phase: Phase 5 · Mobile Field Companion (tooling, alongside the `packages/ui-native` foundational stage).
+
 ### 2026-08-30 — Fixed a third, deeper shipped bug: the light/dark/system theme toggle never actually changed anything (user-reported)
 
 - **User report**: "the dark/light/system toggle does not work" — a third bug found in the same theming investigation chain as the two entries immediately below, and the deepest one: this wasn't a single-component fix, it was a repo-wide latent bug.

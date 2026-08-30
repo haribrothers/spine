@@ -9,11 +9,11 @@ const NEXT: Record<ThemePreference, ThemePreference> = {
   system: "light",
 };
 
-/** icon per preference, matching apps/design-system's Sun/Moon icon-button toggle look — this app adds "system" (a monitor icon) as a third state, since ui-native's ThemeProvider is deliberately three-state (see its own doc comment on matching web's light/dark/system precedence exactly). */
+/** icon per preference, matching apps/design-system's Sun/Moon icon-button toggle look — this app adds "system" (a monitor icon) as a third state, since ui-native's ThemeProvider is deliberately three-state (see its own doc comment on matching web's light/dark/system precedence exactly). Icon shows the CURRENT preference, not the state you'd switch to: sun = light, moon = dark, monitor = system. */
 const ICON_BY_PREFERENCE: Record<ThemePreference, React.ComponentProps<typeof Feather>["name"]> = {
-  light: "moon",
-  dark: "monitor",
-  system: "sun",
+  light: "sun",
+  dark: "moon",
+  system: "monitor",
 };
 
 /** Cycles light -> dark -> system, placed in the navigator header so every screen can flip theme. */
