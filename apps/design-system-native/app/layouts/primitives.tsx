@@ -4,13 +4,17 @@ import { DocTitle, DocLead, DocSection, DocSubsection, ApiTable } from "../../sr
 import { ComponentPreview } from "../../src/components/component-preview";
 import { CodeBlock } from "../../src/components/code-block";
 
+// border-strong, not border — these render inside ComponentPreview's
+// surface-sunken background, which in dark mode is the exact same color as
+// the plain `border` token (#2C2B26 both), making that border invisible.
+// border-strong is a distinct color from surface-sunken in both themes.
 function Demo({ children }: { children: React.ReactNode }) {
-  return <View className="gap-1 rounded-md border border-border dark:border-border-dark p-2">{children}</View>;
+  return <View className="gap-1 rounded-md border border-border-strong dark:border-border-strong-dark p-2">{children}</View>;
 }
 
 function Chip({ children }: { children: string }) {
   return (
-    <View className="rounded-md border border-border dark:border-border-dark p-2">
+    <View className="rounded-md border border-border-strong dark:border-border-strong-dark p-2">
       <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{children}</Text>
     </View>
   );
