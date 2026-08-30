@@ -12,7 +12,7 @@ import { SpacingScreen } from "../../app/foundation/spacing";
 import { IconsScreen } from "../../app/foundation/icons";
 import { MotionScreen } from "../../app/foundation/motion";
 import { LayoutPrimitivesScreen } from "../../app/layouts/primitives";
-import { SampleScreensScreen } from "../../app/templates";
+import { JobListScreen } from "../../app/templates/job-list";
 import type { DocScreenMap } from "./nav-sections";
 
 /**
@@ -45,6 +45,6 @@ export const DOC_SCREENS: DocScreenMap = {
     "floating-tab-bar": FloatingTabBarScreen,
   },
   templates: {
-    "sample-screens": SampleScreensScreen,
+    "job-list": JobListScreen,
   },
 };

@@ -84,7 +84,9 @@ export const NAV_SECTIONS: DocSection[] = [
     slug: "templates",
     title: "Templates",
     icon: LayoutTemplate,
-    items: [{ slug: "sample-screens", name: "Sample screens", description: "End-to-end example screens composed from @spine/ui-native." }],
+    items: [
+      { slug: "job-list", name: "Today's jobs", description: "A field user's assigned jobs, composed from real @spine/ui-native components." },
+    ],
   },
 ];
 
