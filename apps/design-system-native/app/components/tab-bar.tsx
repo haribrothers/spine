@@ -2,7 +2,12 @@ import { Text, View } from "react-native";
 import { NavigationContainer, NavigationIndependentTree } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useTheme } from "@spine/ui-native";
-import { spineTabBarScreenOptions, TabBarIcon } from "@spine/ui-native/navigation";
+import {
+  spineDarkNavigationTheme,
+  spineLightNavigationTheme,
+  spineTabBarScreenOptions,
+  TabBarIcon,
+} from "@spine/ui-native/navigation";
 import { DocScreen } from "../../src/components/doc-section";
 import { DocTitle, DocLead, DocSection, FeatureList, ApiTable } from "../../src/components/doc-page";
 import { CodeBlock } from "../../src/components/code-block";
@@ -10,6 +15,8 @@ import { CodeBlock } from "../../src/components/code-block";
 type DemoTabParamList = {
   Home: undefined;
   Jobs: undefined;
+  Expenses: undefined;
+  Messages: undefined;
   Profile: undefined;
 };
 
@@ -50,9 +57,9 @@ export function TabBarScreen() {
       </DocLead>
 
       <DocSection title="Live demo">
-        <View className="h-72 overflow-hidden rounded-lg border border-border dark:border-border-dark">
+        <View className="h-72 overflow-hidden rounded-lg border border-border bg-background dark:border-border-dark dark:bg-background-dark">
           <NavigationIndependentTree>
-            <NavigationContainer>
+            <NavigationContainer theme={resolvedMode === "dark" ? spineDarkNavigationTheme : spineLightNavigationTheme}>
               <DemoTab.Navigator screenOptions={spineTabBarScreenOptions(resolvedMode)}>
                 <DemoTab.Screen
                   name="Home"
@@ -65,6 +72,18 @@ export function TabBarScreen() {
                   options={{ tabBarIcon: (props) => <TabBarIcon name="briefcase" {...props} /> }}
                 >
                   {() => <DemoScreen label="Jobs" />}
+                </DemoTab.Screen>
+                <DemoTab.Screen
+                  name="Expenses"
+                  options={{ tabBarIcon: (props) => <TabBarIcon name="dollar-sign" {...props} /> }}
+                >
+                  {() => <DemoScreen label="Expenses" />}
+                </DemoTab.Screen>
+                <DemoTab.Screen
+                  name="Messages"
+                  options={{ tabBarIcon: (props) => <TabBarIcon name="message-circle" {...props} /> }}
+                >
+                  {() => <DemoScreen label="Messages" />}
                 </DemoTab.Screen>
                 <DemoTab.Screen
                   name="Profile"

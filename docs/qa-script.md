@@ -1315,17 +1315,28 @@ Not a full audit — just confirm nothing obviously broke:
    modes.
 3. **`apps/design-system-native`** (`pnpm dev:ui-native`, then `--web`
    or a simulator): browse Button, Text Field, Card, Badge, **Bottom
-   Tab Bar**. Confirm a wide browser window shows the desktop shell
-   (top bar + left sidebar at a fixed ~224px width, not full-width)
-   and narrowing it below ~768px switches to the mobile list →
-   push-detail stack. Click the Search button (or ⌘K on web) and
-   confirm it filters the component list and jumps to the selected
-   one. **On Bottom Tab Bar specifically**, confirm the "Live demo"
-   section actually works — click between its Home/Jobs/Profile tabs
-   and confirm the content changes and the active tab's icon/color
-   updates — check this on BOTH the desktop layout and the mobile
-   layout (a real shipped bug had the live demo crash with "Couldn't
-   register the navigator" specifically on the desktop layout, fixed
+   Tab Bar**, **Floating Tab Bar**. Confirm a wide browser window
+   shows the desktop shell (top bar + left sidebar at a fixed ~224px
+   width, not full-width) and narrowing it below ~768px switches to
+   the mobile list → push-detail stack. Click the Search button (or
+   ⌘K on web) and confirm it filters the component list and jumps to
+   the selected one. **On Bottom Tab Bar and Floating Tab Bar**,
+   confirm the "Live demo" section actually works — click between all
+   5 tabs (Home/Jobs/Expenses/Messages/Profile) and confirm the
+   content changes and the active tab's icon/color updates — check
+   this on BOTH the desktop layout and the mobile layout (a real
+   shipped bug had the live demo crash with "Couldn't register the
+   navigator" specifically on the desktop layout, fixed 2026-08-30).
+   **On Floating Tab Bar specifically**, confirm: the bar is a true
+   floating pill with visible margin on all sides (not flush with the
+   preview box's edges, not a rounded rectangle), the active tab's
+   highlight is a true rounded capsule matching the outer pill's
+   curvature (most visible on the rightmost tab, where a flatter
+   radius showed as a visible seam against the pill's own curve —
+   fixed 2026-08-30), every tab shows its icon stacked above its
+   label, and there's no white area visible behind the bar in either
+   light or dark mode (a real shipped bug had the demo's preview box
+   and its `NavigationContainer` both losing their theme — fixed
    2026-08-30). Click the theme-toggle icon in
    the top bar/header and cycle through all three states, confirming
    at each step that BOTH the icon AND every background/text/border

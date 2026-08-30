@@ -1,11 +1,13 @@
 import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "@spine/ui-native";
 import {
+  FLOATING_TAB_BAR_RESERVED_HEIGHT,
+  FloatingTabBar,
   spineDarkNavigationTheme,
   spineLightNavigationTheme,
-  spineTabBarScreenOptions,
   TabBarIcon,
 } from "@spine/ui-native/navigation";
 import { ExpensesScreen } from "../features/expenses/expenses-screen";
@@ -46,6 +48,7 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
 export function RootNavigator() {
   const { data: session, isPending } = useSession();
   const { resolvedMode } = useTheme();
+  const insets = useSafeAreaInsets();
 
   if (isPending) {
     return (
@@ -61,7 +64,13 @@ export function RootNavigator() {
 
   return (
     <NavigationContainer theme={resolvedMode === "dark" ? spineDarkNavigationTheme : spineLightNavigationTheme}>
-      <Tab.Navigator screenOptions={spineTabBarScreenOptions(resolvedMode)}>
+      <Tab.Navigator
+        tabBar={(props) => <FloatingTabBar {...props} resolvedMode={resolvedMode} />}
+        screenOptions={{
+          headerShown: false,
+          sceneStyle: { paddingBottom: FLOATING_TAB_BAR_RESERVED_HEIGHT + insets.bottom },
+        }}
+      >
         <Tab.Screen
           name="Home"
           component={HomeScreen}

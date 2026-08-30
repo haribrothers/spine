@@ -21,4 +21,9 @@ export const COMPONENT_REGISTRY: ComponentRegistryEntry[] = [
     name: "Bottom Tab Bar",
     description: "Themed screenOptions and icon helper for createBottomTabNavigator.",
   },
+  {
+    slug: "floating-tab-bar",
+    name: "Floating Tab Bar",
+    description: "Fully custom floating pill tab bar with an active-tab highlight capsule.",
+  },
 ];
