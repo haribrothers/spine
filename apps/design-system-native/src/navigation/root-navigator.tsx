@@ -79,6 +79,7 @@ function makeSectionStackNavigator(section: SectionSlug) {
     return (
       <SectionStack.Navigator
         screenOptions={{
+          headerBackButtonDisplayMode: "minimal",
           headerRight: () => (
             <>
               <SearchButton />
