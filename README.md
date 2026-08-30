@@ -152,6 +152,32 @@ Turborepo, with hot-reload.
 To run just one of these (e.g. only the API while you work on a script),
 use `pnpm --filter @spine/api dev` instead.
 
+### 6. (Optional) Run the mobile app
+
+`apps/mobile` (Expo) deliberately does **not** join `pnpm dev` above —
+Expo's CLI is its own interactive terminal (QR code, keyboard shortcuts)
+that doesn't multiplex well alongside `next dev`/`nest start --watch`'s
+log output in one Turborepo pane. It has its own env file too, since Metro
+reads `EXPO_PUBLIC_*` vars natively from an `.env` at the app's own root
+rather than the `dotenv-cli` pattern `apps/web`/`apps/api` use:
+
+```bash
+cp apps/mobile/.env.development.example apps/mobile/.env
+```
+
+The default (`http://localhost:4000`) works as-is for the **iOS
+Simulator** only, since it shares the Mac's own network stack. A physical
+device or the **Android emulator** can't reach `localhost` (on-device,
+that means the device itself) — see the comments in
+`apps/mobile/.env.development.example` for the LAN-IP / `10.0.2.2`
+alternatives. Then, with `apps/api` already running (step 5 above):
+
+```bash
+pnpm dev:mobile    # Expo Dev Tools — scan the QR code with Expo Go
+pnpm dev:ios       # boots the iOS Simulator directly (needs Xcode)
+pnpm dev:android   # boots an Android emulator directly (needs Android Studio)
+```
+
 ### Everyday commands
 
 Run from the repo root, applied across every package via Turborepo:
