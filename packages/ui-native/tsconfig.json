@@ -1,0 +1,7 @@
+{
+  "extends": "@spine/config/tsconfig/expo",
+  "compilerOptions": {
+    "types": ["jest", "react-native"]
+  },
+  "include": ["src", "nativewind-env.d.ts"]
+}
