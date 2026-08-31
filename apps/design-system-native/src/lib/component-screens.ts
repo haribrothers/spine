@@ -7,6 +7,7 @@ import { StatusChipScreen } from "../../app/components/status-chip";
 import { EmptyStateScreen } from "../../app/components/empty-state";
 import { SpinnerScreen } from "../../app/components/spinner";
 import { ToastScreen } from "../../app/components/toast";
+import { SkeletonScreen } from "../../app/components/skeleton";
 import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
@@ -51,6 +52,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "empty-state": EmptyStateScreen,
     spinner: SpinnerScreen,
     toast: ToastScreen,
+    skeleton: SkeletonScreen,
     "tab-bar": TabBarScreen,
     "floating-tab-bar": FloatingTabBarScreen,
   },

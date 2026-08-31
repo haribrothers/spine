@@ -7,4 +7,5 @@ export { EmptyState, type EmptyStateProps } from "./components/empty-state";
 export { Avatar, type AvatarProps } from "./components/avatar";
 export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Toast, useToast, type ToastProps, type ToastMessage } from "./components/toast";
+export { Skeleton } from "./components/skeleton";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
