@@ -2,6 +2,7 @@ import { ButtonScreen } from "../../app/components/button";
 import { TextFieldScreen } from "../../app/components/text-field";
 import { CardScreen } from "../../app/components/card";
 import { BadgeScreen } from "../../app/components/badge";
+import { StatusChipScreen } from "../../app/components/status-chip";
 import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
@@ -41,6 +42,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "text-field": TextFieldScreen,
     card: CardScreen,
     badge: BadgeScreen,
+    "status-chip": StatusChipScreen,
     "tab-bar": TabBarScreen,
     "floating-tab-bar": FloatingTabBarScreen,
   },
