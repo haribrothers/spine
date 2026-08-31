@@ -15,8 +15,8 @@ import { cn } from "../lib/cn";
  * `Animated` API instead — the same primitive `FloatingTabBar`'s highlight
  * transition already uses elsewhere in this package.
  *
- * The `className` (bg-border, sizing, rounding) is applied to a plain
- * `View` NESTED inside the `Animated.View`, not on the `Animated.View`
+ * The `className` (bg-border-strong, sizing, rounding) is applied to a
+ * plain `View` NESTED inside the `Animated.View`, not on the `Animated.View`
  * itself — confirmed live via a real `expo export --platform web` render
  * that `Animated.View`'s own `className` prop does not compile through
  * NativeWind on the web target (the opacity animation worked, but every
@@ -25,6 +25,16 @@ import { cn } from "../lib/cn";
  * the outer `Animated.View`; every themed class lives on the inner `View`,
  * which fills its parent so the pulse still applies visually to the whole
  * shape.
+ *
+ * Uses `border-strong`, not the plain `border` token web's own Skeleton
+ * uses (`bg-border`) — `border`'s dark value (#2C2B26) is IDENTICAL to
+ * `surface-sunken`'s dark value, the background `ComponentPreview` (and any
+ * similarly sunken container) renders this against, making the skeleton
+ * invisible in dark mode by token coincidence (the same class of bug
+ * already fixed once in the Layouts primitives demo — see that file's own
+ * comment). `border-strong` is a genuinely distinct color from
+ * `surface-sunken` in both themes, and reads better for a placeholder block
+ * anyway, which should be more visible than a subtle 1px border color.
  */
 export function Skeleton({ className, style, ...props }: ViewProps) {
   const opacity = useRef(new Animated.Value(1)).current;
@@ -42,7 +52,7 @@ export function Skeleton({ className, style, ...props }: ViewProps) {
 
   return (
     <Animated.View style={[{ opacity }, style]}>
-      <View className={cn("h-full w-full rounded-sm bg-border dark:bg-border-dark", className)} {...props} />
+      <View className={cn("h-full w-full rounded-sm bg-border-strong dark:bg-border-strong-dark", className)} {...props} />
     </Animated.View>
   );
 }
