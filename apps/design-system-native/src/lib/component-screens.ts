@@ -1,6 +1,7 @@
 import { ButtonScreen } from "../../app/components/button";
 import { TextFieldScreen } from "../../app/components/text-field";
 import { CardScreen } from "../../app/components/card";
+import { AvatarScreen } from "../../app/components/avatar";
 import { BadgeScreen } from "../../app/components/badge";
 import { StatusChipScreen } from "../../app/components/status-chip";
 import { EmptyStateScreen } from "../../app/components/empty-state";
@@ -42,6 +43,7 @@ export const DOC_SCREENS: DocScreenMap = {
     button: ButtonScreen,
     "text-field": TextFieldScreen,
     card: CardScreen,
+    avatar: AvatarScreen,
     badge: BadgeScreen,
     "status-chip": StatusChipScreen,
     "empty-state": EmptyStateScreen,

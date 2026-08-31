@@ -4,4 +4,5 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 export { Badge } from "./components/badge";
 export { StatusChip, statusChipVariants, type StatusChipProps } from "./components/status-chip";
 export { EmptyState, type EmptyStateProps } from "./components/empty-state";
+export { Avatar, type AvatarProps } from "./components/avatar";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";

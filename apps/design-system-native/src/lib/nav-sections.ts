@@ -75,6 +75,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "button", name: "Button", description: "Primary, secondary, danger, and ghost variants with loading/disabled states." },
       { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
       { slug: "card", name: "Card", description: "Card, Header, Title, Description, Content, and Footer composition." },
+      { slug: "avatar", name: "Avatar", description: "Circular image with an initials fallback, in three sizes." },
       { slug: "badge", name: "Badge", description: "Neutral inline label — never used for financial status." },
       { slug: "status-chip", name: "StatusChip", description: "Reserved paid/due-soon/overdue/draft palette — never repurposed." },
       { slug: "empty-state", name: "EmptyState", description: "Icon, heading, description, and action for every zero-results list." },
