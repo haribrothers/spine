@@ -74,6 +74,7 @@ export const NAV_SECTIONS: DocSection[] = [
     items: [
       { slug: "button", name: "Button", description: "Primary, secondary, danger, and ghost variants with loading/disabled states." },
       { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
+      { slug: "select", name: "Select", description: "Single-choice picker using the OS's native picker chrome." },
       { slug: "card", name: "Card", description: "Card, Header, Title, Description, Content, and Footer composition." },
       { slug: "avatar", name: "Avatar", description: "Circular image with an initials fallback, in three sizes." },
       { slug: "badge", name: "Badge", description: "Neutral inline label — never used for financial status." },
