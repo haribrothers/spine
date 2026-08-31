@@ -3,6 +3,7 @@ import { TextFieldScreen } from "../../app/components/text-field";
 import { CardScreen } from "../../app/components/card";
 import { BadgeScreen } from "../../app/components/badge";
 import { StatusChipScreen } from "../../app/components/status-chip";
+import { EmptyStateScreen } from "../../app/components/empty-state";
 import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
@@ -43,6 +44,7 @@ export const DOC_SCREENS: DocScreenMap = {
     card: CardScreen,
     badge: BadgeScreen,
     "status-chip": StatusChipScreen,
+    "empty-state": EmptyStateScreen,
     "tab-bar": TabBarScreen,
     "floating-tab-bar": FloatingTabBarScreen,
   },
