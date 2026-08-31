@@ -5,6 +5,7 @@ import { AvatarScreen } from "../../app/components/avatar";
 import { BadgeScreen } from "../../app/components/badge";
 import { StatusChipScreen } from "../../app/components/status-chip";
 import { EmptyStateScreen } from "../../app/components/empty-state";
+import { SpinnerScreen } from "../../app/components/spinner";
 import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { IntroductionScreen } from "../../app/overview";
@@ -47,6 +48,7 @@ export const DOC_SCREENS: DocScreenMap = {
     badge: BadgeScreen,
     "status-chip": StatusChipScreen,
     "empty-state": EmptyStateScreen,
+    spinner: SpinnerScreen,
     "tab-bar": TabBarScreen,
     "floating-tab-bar": FloatingTabBarScreen,
   },

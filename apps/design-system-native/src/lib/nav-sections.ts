@@ -79,6 +79,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "badge", name: "Badge", description: "Neutral inline label — never used for financial status." },
       { slug: "status-chip", name: "StatusChip", description: "Reserved paid/due-soon/overdue/draft palette — never repurposed." },
       { slug: "empty-state", name: "EmptyState", description: "Icon, heading, description, and action for every zero-results list." },
+      { slug: "spinner", name: "Spinner", description: "Indeterminate loading indicator for actions with no known duration." },
       { slug: "tab-bar", name: "Bottom Tab Bar", description: "Themed screenOptions and icon helper for createBottomTabNavigator." },
       { slug: "floating-tab-bar", name: "Floating Tab Bar", description: "Fully custom floating pill tab bar with an active-tab highlight capsule." },
     ],
