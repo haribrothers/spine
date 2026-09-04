@@ -30,21 +30,23 @@ import { useNativeColors } from "@spine/ui-native";
  * `@expo/ui`-backed component in this rework uses — rather than left at
  * the OS default tint.
  *
- * The Home tab's `Trigger` uses `name="(home)"`, NOT `name="index"` —
- * confirmed by tracing `expo-router`'s own route-matching code
- * (`useScreens.js`'s `getSortedChildren`, which only special-cases an
- * unmatched name by trying `${name}/index`, never strips a group's
- * parentheses). Groups are transparent to the URL, not to the route name
- * `expo-router` registers for a `NativeTabs` child — `app/(tabs)/(home)/`
- * (a group folder holding its own `_layout.tsx` Stack, so this tab alone
- * gets a real native-stack header) registers as route name `"(home)"`
- * itself, not `"index"`. Using `"index"` here silently drops the whole tab
- * with no visible error (`withLayoutContext`'s `useOnlyUserDefinedScreens`
- * filters out the unmatched route) — confirmed empirically before landing
- * this file. `components`/`templates` work with a plain `name="components"`
- * only because `getSortedChildren` DOES special-case the `${name}/index`
- * fallback for a plain (non-group) subdirectory; that fallback doesn't
- * apply to a parenthesized group segment.
+ * The Home and Profile tabs' `Trigger`s use `name="(home)"`/`name="(profile)"`,
+ * NOT `name="index"`/`name="profile"` — confirmed by tracing `expo-router`'s
+ * own route-matching code (`useScreens.js`'s `getSortedChildren`, which
+ * only special-cases an unmatched name by trying `${name}/index`, never
+ * strips a group's parentheses). Groups are transparent to the URL, not to
+ * the route name `expo-router` registers for a `NativeTabs` child —
+ * `app/(tabs)/(home)/` and `app/(tabs)/(profile)/` (group folders each
+ * holding their own `_layout.tsx` Stack, so each tab gets its own real
+ * native-stack header) register as route names `"(home)"`/`"(profile)"`
+ * themselves, not `"index"`/`"profile"`. Using the bare name here silently
+ * drops the whole tab with no visible error (`withLayoutContext`'s
+ * `useOnlyUserDefinedScreens` filters out the unmatched route) — confirmed
+ * empirically before landing this file. `components`/`templates` work with
+ * a plain `name="components"` only because `getSortedChildren` DOES
+ * special-case the `${name}/index` fallback for a plain (non-group)
+ * subdirectory; that fallback doesn't apply to a parenthesized group
+ * segment.
  */
 export default function TabsLayout() {
   const colors = useNativeColors();
@@ -67,7 +69,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: "rectangle.stack", selected: "rectangle.stack.fill" }} md="dashboard" />
         <NativeTabs.Trigger.Label>Templates</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="profile">
+      <NativeTabs.Trigger name="(profile)">
         <NativeTabs.Trigger.Icon sf={{ default: "person", selected: "person.fill" }} md="person" />
         <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
