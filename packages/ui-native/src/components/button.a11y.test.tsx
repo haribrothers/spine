@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react-native";
+import { Text } from "react-native";
 import { Button } from "./button";
 
 /**
@@ -83,5 +84,30 @@ describe("Button a11y", () => {
     );
     const host = findByPropName(root, "seedColor");
     expect(host.props.seedColor).not.toBe("#2954E5");
+  });
+
+  it("routes a plain string children through label, never as a raw children node (regression)", () => {
+    // Real bug, reproduced on a real iOS device (not caught by jest-expo's
+    // mock render): passing a bare string as `children` straight through to
+    // `@expo/ui`'s native Button crashes Fabric with
+    // NSInternalInconsistencyException ("ComponentView... (`RawText`) not
+    // found") — the native host view expects a structured element for
+    // custom `children`, not raw text. `label` is the only correct path for
+    // plain-text button content.
+    const root = render(<Button onPress={() => {}}>Save</Button>);
+    const node = findByPropName(root, "onButtonPress");
+    expect(node.props.label).toBe("Save");
+    expect(node.props.children).toBeUndefined();
+  });
+
+  it("still renders a real element child (e.g. an icon) as children, not label", () => {
+    const root = render(
+      <Button onPress={() => {}}>
+        <Text>Custom</Text>
+      </Button>,
+    );
+    const node = findByPropName(root, "onButtonPress");
+    expect(node.props.label).toBeUndefined();
+    expect(node.props.children).toBeDefined();
   });
 });

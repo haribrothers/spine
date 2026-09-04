@@ -8,8 +8,12 @@ import { useNativeColors } from "@spine/ui-native";
  * header of its own), so a tab that wants a real native-stack header needs
  * its own `Stack.Screen` here.
  *
- * `headerLargeTitle` is the only iOS-specific option set — NOT
- * `headerTransparent`/`headerBlurEffect` (the older pre-iOS-26 mechanism
+ * `headerLargeTitleEnabled` (NOT the deprecated `headerLargeTitle` — using
+ * the deprecated prop produced a real on-device layout bug during Phase 4
+ * verification: the large title rendered OVER the screen's content instead
+ * of reserving space above it, confirmed via screenshot) is the only
+ * iOS-specific option set — NOT `headerTransparent`/`headerBlurEffect`
+ * (the older pre-iOS-26 mechanism
  * `apps/design-system-native`'s own `native-header.tsx` doc page still
  * demonstrates, since that app targets a wider iOS range). This app's
  * toolchain runs against a real iOS 26 simulator, where
@@ -43,7 +47,7 @@ export default function HomeLayout() {
         options={{
           title: "Home",
           ...(Platform.OS === "ios"
-            ? { headerLargeTitle: true }
+            ? { headerLargeTitleEnabled: true }
             : {
                 headerStyle: { backgroundColor: colors.surface },
                 headerTintColor: colors.onSurface,

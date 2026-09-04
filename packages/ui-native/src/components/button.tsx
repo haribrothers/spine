@@ -55,10 +55,28 @@ export function Button({ variant = "primary", disabled = false, onPress, childre
   const seedColor = variant === "danger" ? colors.overdue : undefined;
   const hostTheme = useNativeHostTheme(seedColor);
 
+  // A bare string `children` (e.g. `<Button>Save</Button>`, the common
+  // case) must go through `label`, NEVER passed as `children` directly to
+  // `@expo/ui`'s native Button — confirmed as a real, reproduced crash on
+  // a real device (`NSInternalInconsistencyException`: "ComponentView...
+  // (`RawText`) not found"), since the native host view expects a
+  // structured React element for custom `children`, not raw text Fabric
+  // has to reconcile as its own component. `@expo/ui`'s own `children` doc
+  // comment ("Custom content rendered inside the button") implies element
+  // content, not a plain string — jest-expo's mock render never caught
+  // this, since it doesn't perform real native-view reconciliation.
+  const isPlainString = typeof children === "string";
+
   return (
     <Host matchContents colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
-      <ExpoButton variant={VARIANT_TO_EXPO_UI_VARIANT[variant]} disabled={disabled} onPress={onPress} testID={testID} label={!children ? label : undefined}>
-        {children}
+      <ExpoButton
+        variant={VARIANT_TO_EXPO_UI_VARIANT[variant]}
+        disabled={disabled}
+        onPress={onPress}
+        testID={testID}
+        label={isPlainString ? (children as string) : label}
+      >
+        {isPlainString ? undefined : children}
       </ExpoButton>
     </Host>
   );
