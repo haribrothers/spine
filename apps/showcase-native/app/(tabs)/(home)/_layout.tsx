@@ -36,22 +36,36 @@ import { useNativeColors } from "@spine/ui-native";
  * `spineLightNavigationTheme`/`spineDarkNavigationTheme` mechanism (which
  * still exists for `apps/mobile`/`apps/design-system-native`'s React
  * Navigation-based screens, untouched by this rework).
+ *
+ * `headerTintColor`/`headerTitleStyle.color` are now set UNCONDITIONALLY
+ * (both platforms, via `screenOptions` so every screen in this stack
+ * inherits it) — a real, user-reported bug: the previous version only set
+ * these on Android's branch, so on iOS the header title stayed at
+ * whatever color the native default resolves to and never tracked this
+ * app's own light/dark/system theme toggle (`useTheme()`'s `resolvedMode`,
+ * which is independent of the OS's own appearance and can disagree with
+ * it). `headerBackButtonDisplayMode: "minimal"` (iOS/web only per its own
+ * type — Android already defaults to icon-only) is also set here, another
+ * real user report: without it, iOS's back button shows the previous
+ * screen's title text next to the chevron by default, which the user only
+ * wanted as a bare icon.
  */
 export default function HomeLayout() {
   const colors = useNativeColors();
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerTintColor: colors.onSurface,
+        headerTitleStyle: { color: colors.onSurface },
+        headerBackButtonDisplayMode: "minimal",
+      }}
+    >
       <Stack.Screen
         name="index"
         options={{
           title: "Home",
-          ...(Platform.OS === "ios"
-            ? { headerLargeTitleEnabled: true }
-            : {
-                headerStyle: { backgroundColor: colors.surface },
-                headerTintColor: colors.onSurface,
-              }),
+          ...(Platform.OS === "ios" ? { headerLargeTitleEnabled: true } : { headerStyle: { backgroundColor: colors.surface } }),
         }}
       />
     </Stack>
