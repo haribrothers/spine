@@ -1,4 +1,4 @@
-export { Button, buttonVariants, type ButtonProps } from "./components/button";
+export { Button, type ButtonProps, type ButtonVariant } from "./components/button";
 export { TextField, type TextFieldProps } from "./components/text-field";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/card";
 export { Badge } from "./components/badge";
@@ -9,4 +9,5 @@ export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Toast, useToast, type ToastProps, type ToastMessage } from "./components/toast";
 export { Skeleton } from "./components/skeleton";
 export { Select, type SelectProps, type SelectOption } from "./components/select";
+export { Switch, type SwitchProps } from "./components/switch";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";

@@ -76,9 +76,9 @@ export function ButtonScreen() {
 <Button size="touch">Touch (44px)</Button>`}
         >
           <View className="flex-row flex-wrap items-center gap-3">
-            <Button size="sm">Small</Button>
-            <Button size="default">Default</Button>
-            <Button size="touch">Touch (44px)</Button>
+            <Button>Small</Button>
+            <Button>Default</Button>
+            <Button>Touch (44px)</Button>
           </View>
         </ComponentPreview>
 
@@ -89,7 +89,7 @@ export function ButtonScreen() {
         >
           <View className="flex-row flex-wrap items-center gap-3">
             <Button disabled>Disabled</Button>
-            <Button loading>Loading</Button>
+            <Button disabled>Loading</Button>
           </View>
         </ComponentPreview>
       </DocSection>

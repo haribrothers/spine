@@ -11,7 +11,6 @@ function ToastDemo() {
     <View className="w-full gap-3">
       <Button
         variant="secondary"
-        size="sm"
         onPress={() => show("Invoice sent", "INV-2026-0042 was emailed to Acme Contracting Ltd.")}
       >
         Send invoice

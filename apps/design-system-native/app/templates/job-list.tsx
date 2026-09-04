@@ -34,7 +34,7 @@ function JobListDemo() {
             </Text>
           </CardContent>
           <CardFooter>
-            <Button variant="secondary" size="sm" onPress={() => {}}>
+            <Button variant="secondary" onPress={() => {}}>
               View job
             </Button>
           </CardFooter>

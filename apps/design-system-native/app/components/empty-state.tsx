@@ -24,9 +24,7 @@ export function EmptyStateScreen() {
           title="No quotes yet"
           description="Create your first quote to start the enquiry-to-invoice workflow."
           action={
-            <Button size="sm" onPress={() => {}}>
-              Create quote
-            </Button>
+            <Button onPress={() => {}}>Create quote</Button>
           }
         />
       </ComponentPreview>
@@ -74,11 +72,7 @@ export function EmptyStateScreen() {
             icon={<Inbox size={24} color={iconColor} />}
             title="No quotes yet"
             description="Create your first quote to start the enquiry-to-invoice workflow."
-            action={
-              <Button size="sm" onPress={() => {}}>
-                Create quote
-              </Button>
-            }
+            action={<Button onPress={() => {}}>Create quote</Button>}
           />
         </ComponentPreview>
 

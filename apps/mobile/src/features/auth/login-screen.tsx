@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
-import { Button, TextField } from "@spine/ui-native";
+import { Button, Spinner, TextField } from "@spine/ui-native";
 import { authClient } from "../../lib/auth/auth-client";
 
 /**
@@ -73,8 +73,8 @@ export function LoginScreen() {
             />
           </View>
 
-          <Button onPress={handleSignIn} loading={loading} disabled={!email.trim() || !password}>
-            Sign in
+          <Button onPress={handleSignIn} disabled={loading || !email.trim() || !password}>
+            {loading ? <Spinner size="sm" label="Signing in" /> : "Sign in"}
           </Button>
         </View>
       </ScrollView>

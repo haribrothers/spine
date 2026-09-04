@@ -85,6 +85,8 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "skeleton", name: "Skeleton", description: "Pulsing placeholder block matching the shape of loading content." },
       { slug: "tab-bar", name: "Bottom Tab Bar", description: "Themed screenOptions and icon helper for createBottomTabNavigator." },
       { slug: "floating-tab-bar", name: "Floating Tab Bar", description: "Fully custom floating pill tab bar with an active-tab highlight capsule." },
+      { slug: "native-tab-view", name: "Native Tab View (iOS)", description: "@expo/ui's real SwiftUI TabView with liquid glass — iOS only, embedded in-screen, not a router replacement." },
+      { slug: "native-header", name: "Native Header", description: "React Navigation native-stack's real native header — iOS blur/large-title, Android Material — with themed controls." },
     ],
   },
   {

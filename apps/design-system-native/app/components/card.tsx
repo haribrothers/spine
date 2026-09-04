@@ -21,7 +21,7 @@ export function CardScreen() {
             <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Acme Contracting Ltd. — $1,240.00</Text>
           </CardContent>
           <CardFooter>
-            <Button size="sm">View</Button>
+            <Button>View</Button>
           </CardFooter>
         </Card>
       </ComponentPreview>
@@ -76,7 +76,7 @@ export function CardScreen() {
               <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Acme Contracting Ltd. — $1,240.00</Text>
             </CardContent>
             <CardFooter>
-              <Button size="sm">View</Button>
+              <Button>View</Button>
             </CardFooter>
           </Card>
         </ComponentPreview>

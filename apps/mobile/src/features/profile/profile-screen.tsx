@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Button } from "@spine/ui-native";
+import { Button, Spinner } from "@spine/ui-native";
 import { authClient, useSession } from "../../lib/auth/auth-client";
 
 /** S-11.1's sign-out half. Real profile/theme-preference screens land in a later Phase 5 stage. */
@@ -25,8 +25,8 @@ export function ProfileScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.text}>{session?.user.name ?? session?.user.email}</Text>
-      <Button onPress={handleSignOut} loading={loading} variant="secondary">
-        Sign out
+      <Button onPress={handleSignOut} disabled={loading} variant="secondary">
+        {loading ? <Spinner size="sm" label="Signing out" /> : "Sign out"}
       </Button>
     </View>
   );
