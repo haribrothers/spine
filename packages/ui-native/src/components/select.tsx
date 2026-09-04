@@ -1,8 +1,5 @@
-import { Picker, type PickerProps } from "@react-native-picker/picker";
-import { View } from "react-native";
-import { useColorScheme } from "nativewind";
-import { cn } from "../lib/cn";
-import { lightColors, darkColors } from "../tokens";
+import { Picker, Host } from "@expo/ui";
+import { useNativeHostTheme } from "../theme/use-native-colors";
 
 export type SelectOption<T extends string | number> = {
   label: string;
@@ -12,78 +9,41 @@ export type SelectOption<T extends string | number> = {
 export interface SelectProps<T extends string | number> {
   options: SelectOption<T>[];
   value: T;
-  onValueChange: PickerProps<T>["onValueChange"];
-  error?: boolean;
+  onValueChange: (value: T) => void;
   enabled?: boolean;
-  className?: string;
+  testID?: string;
 }
 
 /**
- * Ports `packages/ui`'s NativeSelect to `@react-native-picker/picker` — the
- * standard Expo-supported picker (an OS-native wheel/dialog on iOS/Android,
- * a real `<select>` on web), the RN equivalent of a plain flat-option-list
- * `<select>`. Reach for a custom Modal + FlatList (matching
- * `SearchPalette`'s own pattern) if a richer, custom-styled menu is ever
- * needed — same "escalate past this for custom chrome" relationship
- * `NativeSelect`/`Select` have on web.
+ * `@expo/ui`'s universal `Picker` — real SwiftUI `Picker`/Jetpack Compose
+ * dropdown via a `Host` bridge, replacing the previous
+ * `@react-native-picker/picker` implementation entirely (that dependency is
+ * dropped from this package's package.json in the same change). The public
+ * API (`options`/`value`/`onValueChange`) is preserved from the old
+ * implementation to minimize churn for callers.
  *
- * `@react-native-picker/picker` is a NEW dependency of this package (not
- * previously installed anywhere in the repo) — a real native module (not
- * pure JS/RN), added specifically for this component per an explicit
- * decision to prefer the standard library over a hand-rolled Modal+FlatList
- * picker.
+ * `appearance="menu"` (the default) is used rather than `"wheel"` — `wheel`
+ * is iOS-only and falls back to a menu on Android/web anyway (per
+ * `PickerAppearance`'s own doc comment), so there's no cross-platform
+ * benefit to requesting it explicitly.
  *
- * `Picker` only accepts a `style` prop (not `className` — confirmed against
- * its own type definitions, which type `style` as `StyleProp<TextStyle>`
- * with no `className` in its props at all, since it's a third-party native
- * module rather than a plain RN core component NativeWind's babel plugin
- * transforms). Given the real, confirmed-live bug already hit with
- * `Animated.View`'s `className` silently no-op'ing on web (see
- * `skeleton.tsx`), this doesn't risk the same class of bug on a component
- * that was never going to support `className` in the first place: the
- * border/background/error styling lives on a wrapping `View` (which DOES
- * support `className`, being a plain RN core component), and `Picker`
- * itself only receives resolved raw colors via `style`.
- *
- * `style` needs an explicit `backgroundColor`, not just `color` — confirmed
- * live: on the web target, `@react-native-picker/picker` renders a real
- * `<select>` (its `Picker.web.js` uses `react-native-web`'s
- * `unstable_createElement("select", ...)`), and passing only `color` left
- * the browser's own white `<select>` background showing through in dark
- * mode, since nothing else in this component sets it. `dropdownIconColor`
- * is iOS/Android-only per its own type comment and has no effect on web.
+ * Unlike `Button`, `error` styling has no equivalent here — `@expo/ui`'s
+ * `Picker` has no border/background style props (confirmed against its
+ * real TS type, which only exposes `selectedValue`/`onValueChange`/
+ * `appearance`/`enabled`/`children`/`testID`) — an invalid-state affordance
+ * for this control needs to live in a wrapping label/helper-text element at
+ * the call site, not inside this component.
  */
-export function Select<T extends string | number>({
-  options,
-  value,
-  onValueChange,
-  error = false,
-  enabled = true,
-  className,
-}: SelectProps<T>) {
-  const { colorScheme } = useColorScheme();
-  const colors = colorScheme === "dark" ? darkColors : lightColors;
+export function Select<T extends string | number>({ options, value, onValueChange, enabled = true, testID }: SelectProps<T>) {
+  const hostTheme = useNativeHostTheme();
 
   return (
-    <View
-      className={cn(
-        "h-11 w-full justify-center overflow-hidden rounded-sm border bg-surface dark:bg-surface-dark",
-        error ? "border-overdue dark:border-overdue-dark" : "border-border-strong dark:border-border-strong-dark",
-        enabled ? "" : "opacity-50",
-        className,
-      )}
-    >
-      <Picker
-        selectedValue={value}
-        onValueChange={onValueChange}
-        enabled={enabled}
-        style={{ color: colors.onSurface, backgroundColor: colors.surface }}
-        dropdownIconColor={colors.onSurfaceMuted}
-      >
+    <Host matchContents colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
+      <Picker selectedValue={value} onValueChange={onValueChange} enabled={enabled} testID={testID}>
         {options.map((option) => (
-          <Picker.Item key={String(option.value)} label={option.label} value={option.value} color={colors.onSurface} />
+          <Picker.Item key={String(option.value)} label={option.label} value={option.value} />
         ))}
       </Picker>
-    </View>
+    </Host>
   );
 }

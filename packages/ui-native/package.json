@@ -16,7 +16,6 @@
   },
   "dependencies": {
     "@expo/ui": "57.0.16",
-    "@react-native-picker/picker": "2.11.4",
     "@spine/config": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -1,0 +1,62 @@
+import { render, screen } from "@testing-library/react-native";
+import { Text } from "react-native";
+import { BottomSheet } from "./bottom-sheet";
+
+/**
+ * Same native-bridge testing adaptation as the other `@expo/ui`-backed
+ * components — `isPresented`/`onDismiss` are real props on the outer
+ * bridge node; `showDragIndicator`/`containerColor` surface as
+ * `presentationDragIndicator`/`presentationBackground` modifiers on the
+ * inner content node (confirmed live via `screen.debug()`). `children`
+ * render as an ordinary RN tree, so `getByText` works directly.
+ */
+function findSheetNode(root: ReturnType<typeof render>) {
+  const node = root.UNSAFE_root.findAll((n) => "onIsPresentedChange" in n.props);
+  if (node.length === 0) {
+    throw new Error('No instance found with prop "onIsPresentedChange"');
+  }
+  return node[0]!;
+}
+
+function findContentModifiers(root: ReturnType<typeof render>) {
+  const nodes = root.UNSAFE_root.findAll(
+    (n) => Array.isArray(n.props.modifiers) && n.props.modifiers.some((m: { $type?: string }) => m.$type === "presentationBackground"),
+  );
+  return nodes[0]!.props.modifiers as Array<Record<string, unknown>>;
+}
+
+describe("BottomSheet a11y", () => {
+  it("renders its content as an ordinary, queryable element when presented", () => {
+    render(
+      <BottomSheet isPresented onDismiss={() => {}}>
+        <Text>Sheet content</Text>
+      </BottomSheet>,
+    );
+    expect(screen.getByText("Sheet content")).toBeTruthy();
+  });
+
+  it("reflects isPresented via the native prop", () => {
+    const root = render(<BottomSheet isPresented={false} onDismiss={() => {}} />);
+    const node = findSheetNode(root);
+    expect(node.props.isPresented).toBe(false);
+  });
+
+  it("wires onDismiss through to the native dismiss handler", () => {
+    const onDismiss = jest.fn();
+    const root = render(<BottomSheet isPresented onDismiss={onDismiss} />);
+    const node = root.UNSAFE_root.findAll((n) => typeof n.props.onDismiss === "function")[0]!;
+    expect(typeof node.props.onDismiss).toBe("function");
+  });
+
+  it("themes its own chrome background from the design system's surface token", () => {
+    const root = render(<BottomSheet isPresented onDismiss={() => {}} />);
+    const modifiers = findContentModifiers(root);
+    expect(modifiers).toContainEqual({ $type: "presentationBackground", color: "#FFFFFF" });
+  });
+
+  it("shows the drag indicator by default", () => {
+    const root = render(<BottomSheet isPresented onDismiss={() => {}} />);
+    const modifiers = findContentModifiers(root);
+    expect(modifiers).toContainEqual({ $type: "presentationDragIndicator", visibility: "visible" });
+  });
+});

@@ -8,51 +8,48 @@ const STATUS_OPTIONS = [
 ];
 
 /**
- * `Picker` is a native host component (RNCPicker) — its `Picker.Item`
- * children are consumed and re-derived into an `items` prop array on the
- * rendered native host node, not preserved as traversable child elements
- * (confirmed by dumping the actual render tree via `toJSON()` while
- * building this test). The first assertion checks that host node's
- * `items` directly rather than `getByText`, which finds nothing since
- * there's no `Text` node in the tree at all. `enabled={false}` doesn't
- * surface as a prop on the mocked host node in this test environment
- * (also confirmed by dumping the tree) — the second test instead asserts
- * the real, actually-rendered signal: the wrapping View's `opacity-50`
- * className.
+ * Same native-bridge testing adaptation as `button.a11y.test.tsx`/
+ * `switch.a11y.test.tsx` — `@expo/ui`'s `Picker` renders as
+ * `ViewManagerAdapter_ExpoUI` mocks under jest-expo with no RNTL-queryable
+ * role. The outer node carries `selection`/`onSelectionChange` directly and
+ * a `disabled` modifier for `enabled={false}` (confirmed live via
+ * `screen.debug()`); each `Picker.Item` renders as its own node with
+ * `text` (the label) and a `{$type: "tag", tag: value}` modifier carrying
+ * the value.
  */
+function findPickerNode(root: ReturnType<typeof render>) {
+  const node = root.UNSAFE_root.findAll((n) => "onSelectionChange" in n.props);
+  if (node.length === 0) {
+    throw new Error('No instance found with prop "onSelectionChange"');
+  }
+  return node[0]!;
+}
+
 describe("Select a11y", () => {
-  it("passes every option through to the underlying native picker", () => {
-    const { toJSON } = render(<Select options={STATUS_OPTIONS} value="in_progress" onValueChange={() => {}} />);
-    const picker = findByType(toJSON(), "RNCPicker");
-    const items = picker?.props.items as { label: string }[];
-    expect(items.map((item) => item.label)).toEqual(["Scheduled", "In progress", "Complete"]);
+  it("reflects the selected value via the native selection prop", () => {
+    const root = render(<Select options={STATUS_OPTIONS} value="in_progress" onValueChange={() => {}} />);
+    const picker = findPickerNode(root);
+    expect(picker.props.selection).toBe("in_progress");
   });
 
-  it("visually reflects a disabled state on its wrapping container", () => {
-    const { toJSON } = render(
-      <Select options={STATUS_OPTIONS} value="complete" onValueChange={() => {}} enabled={false} />,
-    );
-    const root = toJSON();
-    const node = Array.isArray(root) ? root[0] : root;
-    expect(String(node?.props.className)).toContain("opacity-50");
+  it("passes every option through as its own native item, label and value included", () => {
+    const root = render(<Select options={STATUS_OPTIONS} value="scheduled" onValueChange={() => {}} />);
+    const itemTexts = [...new Set(root.UNSAFE_root.findAll((n) => typeof n.props.text === "string").map((n) => n.props.text))];
+    expect(itemTexts).toEqual(["Scheduled", "In progress", "Complete"]);
+
+    const itemTags = [
+      ...new Set(
+        root.UNSAFE_root
+          .findAll((n) => Array.isArray(n.props.modifiers) && n.props.modifiers.some((m: { $type?: string }) => m.$type === "tag"))
+          .map((n) => n.props.modifiers.find((m: { $type: string; tag: string }) => m.$type === "tag").tag),
+      ),
+    ];
+    expect(itemTags).toEqual(["scheduled", "in_progress", "complete"]);
+  });
+
+  it("reports disabled via a modifier when enabled=false", () => {
+    const root = render(<Select options={STATUS_OPTIONS} value="complete" onValueChange={() => {}} enabled={false} />);
+    const picker = findPickerNode(root);
+    expect(picker.props.modifiers).toContainEqual({ $type: "disabled", disabled: true });
   });
 });
-
-interface JsonNode {
-  type: string;
-  props: Record<string, unknown>;
-  children: (JsonNode | string)[] | null;
-}
-
-function findByType(node: JsonNode | JsonNode[] | null, type: string): JsonNode | null {
-  if (!node) return null;
-  const nodes = Array.isArray(node) ? node : [node];
-  for (const n of nodes) {
-    if (n.type === type) return n;
-    if (n.children) {
-      const found = findByType(n.children.filter((c): c is JsonNode => typeof c !== "string"), type);
-      if (found) return found;
-    }
-  }
-  return null;
-}

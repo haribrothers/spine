@@ -33,9 +33,8 @@ export function SelectScreen() {
       <DocSection title="Features">
         <FeatureList
           items={[
-            "Uses @react-native-picker/picker, the standard Expo-supported native picker — a new dependency of this package, added specifically for this component.",
-            "The wrapping container (border/background/error state) supports NativeWind className; Picker itself only accepts style, since it's a native host component rather than a plain RN core component NativeWind's babel plugin transforms.",
-            "error renders an overdue-colored border, matching TextField's own error styling.",
+            "Uses @expo/ui's universal Picker — a real native SwiftUI/Jetpack Compose dropdown via a Host bridge, not a NativeWind-styled RN primitive.",
+            "Themed via Host's seedColor/colorScheme, matching every other @expo/ui-backed component in this package — not a per-component color prop.",
           ]}
         />
       </DocSection>
@@ -59,8 +58,7 @@ const [value, setValue] = useState("usd");
           rows={[
             { prop: "options", type: "{ label: string; value: T }[]" },
             { prop: "value", type: "T" },
-            { prop: "onValueChange", type: "(value: T, index: number) => void" },
-            { prop: "error", type: "boolean", defaultValue: "false" },
+            { prop: "onValueChange", type: "(value: T) => void" },
             { prop: "enabled", type: "boolean", defaultValue: "true" },
           ]}
         />
@@ -81,8 +79,9 @@ const [value, setValue] = useState("usd");
 
       <DocSection title="Accessibility">
         <DocLead>
-          Inherits the OS&apos;s own native picker accessibility support automatically — VoiceOver/TalkBack announce
-          the current selection and available options the same way they do for any native picker control.
+          Renders a real native SwiftUI/Jetpack Compose picker, so VoiceOver/TalkBack announce the current selection
+          and available options the same way they do for any native picker control — verified on-device, not via an
+          automated test (the native bridge view carries no RNTL-queryable accessibility tree under jest-expo).
         </DocLead>
       </DocSection>
     </DocScreen>

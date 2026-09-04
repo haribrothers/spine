@@ -10,4 +10,8 @@ export { Toast, useToast, type ToastProps, type ToastMessage } from "./component
 export { Skeleton } from "./components/skeleton";
 export { Select, type SelectProps, type SelectOption } from "./components/select";
 export { Switch, type SwitchProps } from "./components/switch";
+export { Slider, type SliderProps } from "./components/slider";
+export { ContextMenu, type ContextMenuProps, type ContextMenuAction } from "./components/context-menu";
+export { DateTimePicker, type DateTimePickerProps } from "./components/date-time-picker";
+export { BottomSheet, type BottomSheetProps } from "./components/bottom-sheet";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
