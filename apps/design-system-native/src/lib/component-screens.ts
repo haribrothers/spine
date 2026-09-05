@@ -1,6 +1,8 @@
 import { ButtonScreen } from "../../app/components/button";
 import { TextFieldScreen } from "../../app/components/text-field";
 import { SelectScreen } from "../../app/components/select";
+import { SelectFieldScreen } from "../../app/components/select-field";
+import { DateTimePickerScreen } from "../../app/components/date-time-picker";
 import { CardScreen } from "../../app/components/card";
 import { AvatarScreen } from "../../app/components/avatar";
 import { BadgeScreen } from "../../app/components/badge";
@@ -49,6 +51,8 @@ export const DOC_SCREENS: DocScreenMap = {
     button: ButtonScreen,
     "text-field": TextFieldScreen,
     select: SelectScreen,
+    "select-field": SelectFieldScreen,
+    "date-time-picker": DateTimePickerScreen,
     card: CardScreen,
     avatar: AvatarScreen,
     badge: BadgeScreen,

@@ -1,4 +1,7 @@
-import { Platform } from "react-native";
+import { Platform, Pressable, Text } from "react-native";
+import { useState } from "react";
+import CalendarIcon from "lucide-react-native/icons/calendar";
+import ClockIcon from "lucide-react-native/icons/clock";
 import ExpoDateTimePicker, { type DateTimePickerProps as ExpoDateTimePickerProps } from "@expo/ui/community/datetime-picker";
 import { useNativeColors } from "../theme/use-native-colors";
 
@@ -15,69 +18,76 @@ import { useNativeColors } from "../theme/use-native-colors";
  * `@expo/ui`'s `onValueChange`, discarding the event wrapper's
  * timestamp/utcOffset fields callers don't need for a controlled `Date`.
  *
- * `accentColor` defaults to the design system's `primary` token (via
- * `useNativeColors()`) rather than requiring every call site to pass it —
- * this is a plain color prop on `@expo/ui`'s own component (unlike Button/
- * Switch/Slider/Picker, which take no color prop at all and rely entirely
- * on `Host`'s `seedColor`), so it's resolved the same way `select.tsx`
- * resolved raw colors for `@react-native-picker/picker` before this
- * rework: a direct prop, not a `Host` wrapper.
+ * **FIFTH design — reverted the fourth design's iOS branch after a real,
+ * reported "not working properly on iOS" regression, and changed the
+ * intended LAYOUT for both platforms from a full-width block field to a
+ * compact, inline, `Switch`-style row control (label left, control right).
+ * Read this before touching platform branches again — there is real
+ * history here, not just taste.**
  *
- * **`presentation="inline"` is forced, overriding `@expo/ui`'s own
- * `"dialog"` default on Android** — a real, reported, reproduced bug on a
- * real device otherwise: `@expo/ui`'s own `DateTimePickerProps.presentation`
- * doc comment says outright that `'dialog'` "shows a modal dialog that
- * opens on mount... The caller should unmount the component in response,"
- * i.e. it is not a self-contained control with its own open/closed state —
- * rendering `<ExpoDateTimePicker>` at all IS "show the dialog," and there is
- * no prop to close it again short of unmounting the whole component. This
- * wrapper never did that (it's meant to be an always-visible inline
- * control, matching every other `packages/ui-native` field-style
- * component), so on Android the dialog appeared but neither its Cancel nor
- * OK button could ever actually dismiss it — both fire a callback, but the
- * component stays mounted and the dialog stays open. iOS was never affected
- * because `presentation` "is accepted but ignored" there (SwiftUI's
- * `DatePicker` is always inline, per the same doc comment) — which is
- * exactly why this shipped unnoticed until real Android device testing.
- * `presentation="inline"` uses Android's Compose inline `DateTimePicker`
- * variant instead of the dialog one, matching iOS's always-inline behavior
- * — consistent cross-platform UX, and the dialog lifecycle problem doesn't
- * apply to an inline control at all.
+ * - **iOS**: back to rendering `<ExpoDateTimePicker>` directly (no
+ *   `BottomSheet`, no custom trigger) — but now with `display="compact"`
+ *   instead of the original always-visible `presentation="inline"`
+ *   graphical calendar. SwiftUI's `.compact` style IS a small, real native
+ *   pill that pops its OWN built-in calendar/wheel overlay on tap — this is
+ *   the fully-native inline-row control being asked for, not a
+ *   reimplementation of one. The fourth design's `BottomSheet` wrapper is
+ *   REMOVED entirely: it was a custom-built substitute for tap-to-open
+ *   presentation that this SwiftUI style already provides natively, and it
+ *   was the fourth design's own regression (reported as "date picker not
+ *   working properly on iOS") — do not reintroduce it for this control.
+ * - **Android**: unchanged mechanism from the third/fourth design — tapping
+ *   a small trigger mounts `<ExpoDateTimePicker presentation="dialog">`,
+ *   Android's own native Material dialog, mounted only while `open` is
+ *   true and unmounted via `onDismiss` (fires for both Cancel and a
+ *   confirmed OK). Only the trigger's WIDTH changed: no longer `w-full` (a
+ *   block-level field), now sized to its own content so it fits inline in
+ *   a row next to a label, matching iOS's compact pill and `Switch`'s own
+ *   row shape.
  *
- * **KNOWN OPEN BUG, not yet fixed — Android's inline variant renders with a
- * giant, near-fullscreen empty box when nested inside a `ScrollView`,**
- * found on a real Android emulator while fixing the dialog-lifecycle bug
- * above. `@expo/ui`'s own Android implementation wraps the inline Compose
- * picker in `Host matchContents={{vertical: true}}` (`@expo/ui/src/
- * community/datetime-picker/DateTimePicker.android.tsx`, intended to size
- * the Host to the picker's own intrinsic content height) — but this
- * collapses to an unbounded/near-fullscreen height instead of the
- * ~300-350dp a Material3 calendar grid actually needs, when the Host sits
- * inside an RN `ScrollView`'s unbounded vertical layout (plausibly a
- * Compose-inside-RN-ScrollView measurement ambiguity: the `ScrollView`
- * offers unbounded height, so "match my content" has no finite constraint
- * to resolve against). Confirmed the picker is still FUNCTIONALLY correct
- * despite the layout bug — tapping inside the oversized box and checking
- * the demo screen's own `date.toDateString()` output confirmed a real date
- * selection round-trips correctly — this is a pure layout/legibility bug,
- * not a functional blocker. iOS is unaffected (`presentation` is ignored
- * there; SwiftUI's own inline `DatePicker` sizes correctly).
+ * **Do not go back to the fourth design's shared `TextField`-styled
+ * trigger + calendar/clock icon + `BottomSheet`-on-iOS shape.** That design
+ * was a deliberate visual-consistency fix (matching Android's trigger
+ * chrome to `TextField`) but broke iOS in practice — a `BottomSheet`
+ * hosting `presentation="inline"`'s full graphical calendar is a real,
+ * different code path from this component's original, long-working inline
+ * calendar, and evidently was not equivalent. `display="compact"` sidesteps
+ * this entirely by using a real native SwiftUI mechanism instead of a
+ * custom-built one.
  *
- * An explicit Android-only `height` passed through the `style` prop
- * `@expo/ui`'s component already accepts was tried as the fix and DID NOT
- * work — confirmed via a full app reload (not just Fast Refresh) that the
- * box stayed exactly the same oversized height regardless, meaning
- * `Host`'s own `matchContents` sizing wins over an explicit `style.height`
- * here rather than the reverse. Left in place below since it's harmless and
- * may start working with a future `@expo/ui` release, but it is NOT a
- * confirmed fix — do not remove the "known open bug" framing above until a
- * real device screenshot confirms the calendar grid renders at a normal,
- * bounded height. Next things worth trying if this is picked up again:
- * wrapping the picker in a fixed-height outer `View` instead of a
- * `ScrollView`-nested one, or filing/checking for an upstream `@expo/ui`
- * issue about `matchContents` inside `ScrollView`.
+ * **History — earlier Android-only designs, still do not re-attempt:**
+ * 1. `presentation="inline"` unconditionally on both platforms — Android's
+ *    own dialog-mode default has no way to close short of unmounting, and
+ *    this wrapper never did, so the dialog appeared and could never close.
+ * 2. `presentation="inline"` + forced `display="spinner"` on Android to
+ *    dodge a real bug where the inline Compose `DatePicker` grid never
+ *    lays out inside `@expo/ui`'s own `Host matchContents={{vertical:
+ *    true}}` (traced into `@expo/ui`'s native `HostView.kt`:
+ *    `matchContentsVertical` forces `MeasureSpec.UNSPECIFIED`
+ *    UNCONDITIONALLY, ignoring any `style.height`) — this "fixed" the
+ *    layout by rendering a text-entry field instead of a calendar, which
+ *    changed the interaction model, not just the styling.
+ * Android's current dialog-trigger mechanism (mount-only-while-open,
+ * `presentation="dialog"`, `onDismiss` unmounts) fixes #1 properly and
+ * sidesteps #2 by never laying the grid out inside this component's own
+ * `Host` at all — a `presentation="dialog"` picker renders in its own
+ * dialog window. This mechanism is unchanged in this fifth design.
+ *
+ * **Fifth-design FOLLOW-UP FIX, iOS**: the initial fifth-design iOS branch
+ * passed no `style` at all to `<ExpoDateTimePicker>`. `Host`'s
+ * `matchContents={{ vertical: true }}` (`@expo/ui`'s own iOS
+ * `DateTimePicker.tsx`) only constrains HEIGHT, never width — with no
+ * explicit width, the compact pill's `Host` had no bounded width to lay
+ * out against inside a `flex-row justify-between` row, and was reported
+ * overflowing past its card's right edge (clipped) with taps landing
+ * nowhere useful. Fixed with an explicit `style={{ width, height }}` (140pt
+ * for date/datetime, 90pt for time — SwiftUI's compact pill is genuinely
+ * that small, this isn't a guess at some larger field size). Also
+ * restored the calendar/clock icon on Android's trigger (present in the
+ * fourth design, dropped when the fifth design shrank the trigger to
+ * content width) — the icon and the width change are independent; the
+ * icon was never the problem, only forgotten during the row-layout pass.
  */
-const ANDROID_INLINE_DATE_PICKER_HEIGHT = 340;
 
 export interface DateTimePickerProps {
   value: Date;
@@ -89,22 +99,94 @@ export interface DateTimePickerProps {
   testID?: string;
 }
 
+function formatValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
+  if (mode === "time") {
+    return value.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  if (mode === "datetime") {
+    return value.toLocaleString();
+  }
+  return value.toLocaleDateString();
+}
+
 export function DateTimePicker({ value, onChange, mode = "date", minimumDate, maximumDate, disabled = false, testID }: DateTimePickerProps) {
   const colors = useNativeColors();
-  const needsExplicitHeight = Platform.OS === "android" && mode !== "time";
+
+  if (Platform.OS === "android") {
+    return (
+      <AndroidDateTimePickerField
+        value={value}
+        onChange={onChange}
+        mode={mode}
+        minimumDate={minimumDate}
+        maximumDate={maximumDate}
+        disabled={disabled}
+        testID={testID}
+        accentColor={colors.primary}
+        iconColor={colors.onSurfaceMuted}
+      />
+    );
+  }
 
   return (
     <ExpoDateTimePicker
       value={value}
       onValueChange={(_event, date) => onChange(date)}
       mode={mode}
-      presentation="inline"
+      display="compact"
       minimumDate={minimumDate}
       maximumDate={maximumDate}
       disabled={disabled}
       accentColor={colors.primary}
-      style={needsExplicitHeight ? { height: ANDROID_INLINE_DATE_PICKER_HEIGHT } : undefined}
+      style={{ width: mode === "time" ? 90 : 140, height: 32 }}
       testID={testID}
     />
+  );
+}
+
+function AndroidDateTimePickerField({
+  value,
+  onChange,
+  mode,
+  minimumDate,
+  maximumDate,
+  disabled,
+  testID,
+  accentColor,
+  iconColor,
+}: Required<Pick<DateTimePickerProps, "value" | "onChange" | "mode" | "disabled">> &
+  Pick<DateTimePickerProps, "minimumDate" | "maximumDate" | "testID"> & { accentColor: string; iconColor: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <>
+      <Pressable
+        disabled={disabled}
+        onPress={() => setOpen(true)}
+        accessibilityRole="button"
+        accessibilityState={{ disabled }}
+        testID={testID}
+        className={[
+          "h-9 flex-row items-center justify-center gap-1.5 self-start rounded-lg border bg-surface px-3 dark:bg-surface-dark",
+          "border-border-strong dark:border-border-strong-dark",
+          disabled ? "opacity-50" : "",
+        ].join(" ")}
+      >
+        <Text className="text-[14px] text-on-surface dark:text-on-surface-dark">{formatValue(value, mode)}</Text>
+        {mode === "time" ? <ClockIcon size={16} color={iconColor} /> : <CalendarIcon size={16} color={iconColor} />}
+      </Pressable>
+      {open ? (
+        <ExpoDateTimePicker
+          value={value}
+          onValueChange={(_event, date) => onChange(date)}
+          onDismiss={() => setOpen(false)}
+          mode={mode}
+          presentation="dialog"
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          accentColor={accentColor}
+        />
+      ) : null}
+    </>
   );
 }

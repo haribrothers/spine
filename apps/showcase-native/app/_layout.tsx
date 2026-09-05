@@ -2,7 +2,7 @@ import "../global.css";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "@spine/ui-native";
+import { ThemeProvider, useNativeColors } from "@spine/ui-native";
 import { persistentThemeStorage } from "../src/lib/theme-storage";
 import { ProfileSheetProvider } from "../src/lib/profile-sheet-context";
 import { ProfileSheet } from "../src/components/profile-sheet";
@@ -25,15 +25,47 @@ import { ProfileSheet } from "../src/components/profile-sheet";
  * moving Profile out of the router entirely sidesteps that whole class of
  * bug, since a plain `<Modal>` has no interaction with `NativeTabs`' own
  * native view-controller hierarchy at all.
+ *
+ * **`job-edit/[jobId]` is a DIFFERENT case from Profile — a real routed
+ * sibling `Stack.Screen`, not a bare `<Modal>` — and this is intentional,
+ * not an oversight.** It's an ordinary, default-presentation (`card`) push,
+ * NOT a modal — the bug above was specifically about
+ * `presentation: "formSheet"`. Moving `job-edit` here (out of
+ * `(tabs)/templates/`, where it lived until it was reported that its
+ * sticky Cancel/Save footer rendered underneath the Templates tab's own
+ * always-visible native tab bar) is the WhatsApp-chat-screen pattern: a
+ * screen that isn't a descendant of `NativeTabs` at all never has the tab
+ * bar mounted over it, no per-screen "hide the tab bar" flag needed (none
+ * exists on `NativeTabs` in this version anyway). Verified on-device before
+ * landing this — no repeat of the Profile boot-order bug. If a similar bug
+ * ever resurfaces here, suspect a presentation-mode change first, not this
+ * screen's placement outside the tabs group.
  */
+function RootStack() {
+  const colors = useNativeColors();
+
+  return (
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="job-edit/[jobId]"
+        options={{
+          headerShown: true,
+          headerTintColor: colors.onSurface,
+          headerTitleStyle: { color: colors.onSurface },
+          headerBackButtonDisplayMode: "minimal",
+        }}
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
     <ThemeProvider storage={persistentThemeStorage}>
       <SafeAreaProvider>
         <ProfileSheetProvider>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-          </Stack>
+          <RootStack />
           <ProfileSheet />
         </ProfileSheetProvider>
         <StatusBar style="auto" />

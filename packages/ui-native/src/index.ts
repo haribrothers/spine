@@ -9,6 +9,7 @@ export { Spinner, type SpinnerProps } from "./components/spinner";
 export { Toast, useToast, type ToastProps, type ToastMessage } from "./components/toast";
 export { Skeleton } from "./components/skeleton";
 export { Select, type SelectProps, type SelectOption } from "./components/select";
+export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./components/select-field";
 export { Switch, type SwitchProps } from "./components/switch";
 export { Slider, type SliderProps } from "./components/slider";
 export { ContextMenu, type ContextMenuProps, type ContextMenuAction } from "./components/context-menu";
