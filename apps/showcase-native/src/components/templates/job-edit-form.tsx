@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
-import { Stack, useNavigation, useRouter } from "expo-router";
+import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
 import { Button, DateTimePicker, SelectField, Spinner, Switch, TextField, Toast, useNativeColors, useToast } from "@spine/ui-native";
 
 const JOB_STATUS_OPTIONS = [
@@ -85,14 +85,44 @@ function FormSection({ title, description, children }: { title: string; descript
 
 /**
  * Edit template — the "form" screen shape complementing List + Detail and
- * Settings: grouped sections, inline validation, a sticky save/cancel
- * footer, an unsaved-changes guard on back navigation, and a destructive
- * action, all built from real `@spine/ui-native` field components
- * (TextField, SelectField, DateTimePicker, Switch). Shared by two routes —
- * `templates/edit.tsx` (a top-level catalog entry, fixed demo `jobId`) and
- * `templates/list-detail/edit/[jobId].tsx` (reached from a real job's
- * detail screen) — so the form itself lives here once instead of being
+ * Settings: grouped sections, inline validation, an unsaved-changes guard
+ * on back navigation, and a destructive action, all built from real
+ * `@spine/ui-native` field components (TextField, SelectField,
+ * DateTimePicker, Switch). Shared by two routes — the top-level
+ * `app/job-edit/[jobId]` route (reached from a real job's detail screen)
+ * and `templates/edit.tsx` (a Templates-tab catalog entry, fixed demo
+ * `jobId`) — so the form itself lives here once instead of being
  * duplicated per route.
+ *
+ * **Save/Delete are PLATFORM-DIVERGENT by design, not an oversight — read
+ * this before "fixing" one to match the other.**
+ *
+ * - **iOS**: real native header items via `unstable_headerRightItems`
+ *   (the same mechanism `profile-header-items.tsx` already uses for the
+ *   bell/avatar) — a `type: "button"` checkmark (`variant: "done"`, the
+ *   genuine iOS convention for a modal-form's primary Save action) plus a
+ *   separate `type: "menu"` "•••" item opening a real native menu
+ *   (`NativeStackHeaderItemMenu`) containing a single destructive "Delete
+ *   job" action. No bottom Cancel/Save footer and no standalone "Delete
+ *   job" button render on iOS at all — this was an explicit, requested
+ *   redesign (real native header actions instead of a sticky footer,
+ *   matching standard iOS form-screen conventions), not a bug fix. Cancel
+ *   has NO separate header item on iOS by explicit request — the existing
+ *   back chevron (and its already-wired unsaved-changes guard, unchanged)
+ *   is the only way back.
+ * - **Android**: UNCHANGED — the sticky bottom Cancel/Save footer and the
+ *   standalone danger-variant "Delete job" button both still render
+ *   exactly as before. Android has no equivalent of iOS's `variant:
+ *   "done"` checkmark convention, so this divergence is deliberate scope
+ *   ("iOS only for now," per explicit user decision), not a gap to close
+ *   reflexively — do not add matching header items on Android without a
+ *   separate, explicit request to do so.
+ *
+ * Both the header checkmark and the header menu's Delete action reflect
+ * `saving` via their own `disabled` prop, mirroring what the (now
+ * Android-only) footer `Button`s already did — `unstable_headerRightItems`
+ * is a plain function re-invoked on every render, so a new array
+ * reflecting current `saving` state is exactly what re-renders it.
  *
  * **Status uses `SelectField`, not `Select`** — `Select` (`@expo/ui`'s
  * universal `Picker`) has no border/background style props at all, so it
@@ -198,9 +228,45 @@ export function JobEditForm({ jobId }: { jobId: string }) {
     ]);
   }
 
+  const iosHeaderRightItems: NativeStackHeaderItem[] = [
+    {
+      type: "menu",
+      label: "More",
+      icon: { type: "sfSymbol", name: "ellipsis" },
+      accessibilityLabel: "More",
+      menu: {
+        items: [
+          {
+            type: "action",
+            label: "Delete job",
+            icon: { type: "sfSymbol", name: "trash" },
+            destructive: true,
+            disabled: saving,
+            onPress: handleDelete,
+          },
+        ],
+      },
+    },
+    {
+      type: "button",
+      label: "Save",
+      icon: { type: "sfSymbol", name: "checkmark" },
+      accessibilityLabel: "Save",
+      variant: "done",
+      disabled: saving,
+      onPress: handleSave,
+    },
+  ];
+
   return (
     <>
-      <Stack.Screen options={{ title: `Edit job #${jobId}`, headerStyle: { backgroundColor: colors.surface } }} />
+      <Stack.Screen
+        options={{
+          title: `Edit job #${jobId}`,
+          headerStyle: { backgroundColor: colors.surface },
+          ...(Platform.OS === "ios" ? { unstable_headerRightItems: () => iosHeaderRightItems } : undefined),
+        }}
+      />
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
@@ -270,27 +336,31 @@ export function JobEditForm({ jobId }: { jobId: string }) {
             />
           </FormSection>
 
-          <Button variant="danger" onPress={handleDelete} disabled={saving}>
-            Delete job
-          </Button>
+          {Platform.OS === "android" ? (
+            <Button variant="danger" onPress={handleDelete} disabled={saving}>
+              Delete job
+            </Button>
+          ) : null}
         </ScrollView>
 
-        <View className="flex-row gap-3 border-t border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
-          <View className="flex-1">
-            <Button variant="secondary" onPress={handleCancel} disabled={saving}>
-              Cancel
-            </Button>
+        {Platform.OS === "android" ? (
+          <View className="flex-row gap-3 border-t border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
+            <View className="flex-1">
+              <Button variant="secondary" onPress={handleCancel} disabled={saving}>
+                Cancel
+              </Button>
+            </View>
+            <View className="flex-1">
+              <Button onPress={handleSave} disabled={saving}>
+                {saving ? <Spinner size="sm" label="Saving" /> : "Save"}
+              </Button>
+            </View>
           </View>
-          <View className="flex-1">
-            <Button onPress={handleSave} disabled={saving}>
-              {saving ? <Spinner size="sm" label="Saving" /> : "Save"}
-            </Button>
-          </View>
-        </View>
+        ) : null}
       </KeyboardAvoidingView>
 
       {message ? (
-        <View className="absolute bottom-24 left-4 right-4">
+        <View className={["absolute left-4 right-4", Platform.OS === "android" ? "bottom-24" : "bottom-8"].join(" ")}>
           <Toast title={message.title} description={message.description} onDismiss={dismiss} />
         </View>
       ) : null}
