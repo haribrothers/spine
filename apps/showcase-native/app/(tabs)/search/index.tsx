@@ -94,6 +94,27 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * genuinely stays present; see this file's git history for two earlier,
  * reverted attempts at hand-computing top padding instead, both of which
  * regressed once the header's actual presence/height changed.
+ *
+ * **`FlatList` is this screen's own direct root on iOS — NOT wrapped in an
+ * outer `View`, a real, reproduced, user-reported bug matching the one
+ * `(home)/index.tsx`'s own doc comment already documents for `ScrollView`.**
+ * The large title never collapsed on scroll at all: it stayed rendered at
+ * its full expanded size, floating on top of the list's own scrolled
+ * content underneath (confirmed via screenshot — result rows visibly
+ * scrolled up underneath a still-fully-expanded "Search" title). Root
+ * cause: this screen wrapped its `FlatList` in an outer `<View
+ * className="flex-1 ...">` (originally just to give the background color
+ * a home and hold the `Stack.Screen` config element and the Android-only
+ * search-pill `View` as siblings) — but `react-native-screens`' large-
+ * title collapse tracking auto-detects a screen's own scroll view via a
+ * heuristic that only walks the screen's first-level subview, and that
+ * extra wrapping `View` defeats it, exactly as documented for Home. Since
+ * `Stack.Screen` renders no actual UI (it's a pure config element) it can
+ * sit as a true sibling of `FlatList` with zero visual effect, so the fix
+ * is platform-conditional like Home's: iOS renders `FlatList` as the real
+ * root (styled directly via `className`, no wrapper `View`) with
+ * `Stack.Screen` alongside it; Android keeps the wrapping `View` it
+ * actually needs (to hold its hand-built search pill above the list).
  */
 type Row = { kind: "result"; entry: ComponentCatalogEntry } | { kind: "recent"; query: string };
 
@@ -131,9 +152,76 @@ export default function SearchScreen() {
     setRecent([]);
   }, []);
 
-  return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      {Platform.OS === "ios" ? (
+  const list = (
+    <FlatList
+      contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
+      data={rows}
+      keyExtractor={(row) => (row.kind === "result" ? row.entry.slug : `recent-${row.query}`)}
+      className={Platform.OS === "ios" ? "flex-1 bg-background dark:bg-background-dark" : undefined}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 16 }}
+      ItemSeparatorComponent={() => <View className={isSearching ? "h-2" : "h-6"} />}
+      ListHeaderComponent={
+        !isSearching && recent.length > 0 ? (
+          <View className="mb-4 flex-row items-center justify-between">
+            <Text className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">
+              Recent searches ({recent.length})
+            </Text>
+            <Pressable onPress={handleClearRecent} hitSlop={8}>
+              <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Edit</Text>
+            </Pressable>
+          </View>
+        ) : null
+      }
+      ListEmptyComponent={
+        isSearching ? (
+          <EmptyState
+            icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
+            title="No components found"
+            description={`Nothing matches "${query}".`}
+          />
+        ) : (
+          <EmptyState
+            className="pt-12"
+            icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
+            title="Search components"
+            description="Find any component by name or description."
+          />
+        )
+      }
+      renderItem={({ item: row }) =>
+        row.kind === "result" ? (
+          <Link href={`/search/${row.entry.slug}`} asChild>
+            <Pressable
+              onPress={() => recordSearch(query)}
+              className="flex-row items-center justify-between rounded-lg border border-border bg-surface p-3.5 dark:border-border-dark dark:bg-surface-dark active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
+            >
+              <View className="flex-1 gap-0.5 pr-2">
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{row.entry.title}</Text>
+                  {row.entry.native ? (
+                    <View className="rounded-full bg-info-bg px-1.5 py-0.5 dark:bg-info-bg-dark">
+                      <Text className="text-[10px] font-medium text-info dark:text-info-dark">Native</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{row.entry.description}</Text>
+              </View>
+              <ChevronRight size={18} color={colors.onSurfaceMuted} />
+            </Pressable>
+          </Link>
+        ) : (
+          <Pressable onPress={() => setQuery(row.query)}>
+            <Text className="text-[17px] font-semibold text-on-surface dark:text-on-surface-dark">{row.query}</Text>
+          </Pressable>
+        )
+      }
+    />
+  );
+
+  if (Platform.OS === "ios") {
+    return (
+      <>
         <Stack.Screen
           options={{
             headerSearchBarOptions: {
@@ -149,95 +237,37 @@ export default function SearchScreen() {
             },
           }}
         />
-      ) : (
-        <View className="px-4 pb-2 pt-3">
-          <View className="h-14 flex-row items-center gap-3 rounded-full bg-surface-sunken px-4 dark:bg-surface-sunken-dark">
-            <SearchIcon size={20} color={colors.onSurfaceMuted} />
-            <TextInput
-              value={query}
-              onChangeText={setQuery}
-              placeholder="Search components"
-              placeholderTextColor={colors.onSurfaceMuted}
-              autoCapitalize="none"
-              autoCorrect={false}
-              returnKeyType="search"
-              onSubmitEditing={() => {
-                if (query.trim()) recordSearch(query);
-              }}
-              className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark"
-            />
-            {query.length > 0 ? (
-              <Pressable onPress={() => setQuery("")} hitSlop={8}>
-                <Text className="text-[13px] font-medium text-on-surface-muted dark:text-on-surface-muted-dark">Clear</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
-      )}
+        {list}
+      </>
+    );
+  }
 
-      <FlatList
-        contentInsetAdjustmentBehavior="automatic"
-        keyboardShouldPersistTaps="handled"
-        data={rows}
-        keyExtractor={(row) => (row.kind === "result" ? row.entry.slug : `recent-${row.query}`)}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 16 }}
-        ItemSeparatorComponent={() => <View className={isSearching ? "h-2" : "h-6"} />}
-        ListHeaderComponent={
-          !isSearching && recent.length > 0 ? (
-            <View className="mb-4 flex-row items-center justify-between">
-              <Text className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">
-                Recent searches ({recent.length})
-              </Text>
-              <Pressable onPress={handleClearRecent} hitSlop={8}>
-                <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Edit</Text>
-              </Pressable>
-            </View>
-          ) : null
-        }
-        ListEmptyComponent={
-          isSearching ? (
-            <EmptyState
-              icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
-              title="No components found"
-              description={`Nothing matches "${query}".`}
-            />
-          ) : (
-            <EmptyState
-              className="pt-12"
-              icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
-              title="Search components"
-              description="Find any component by name or description."
-            />
-          )
-        }
-        renderItem={({ item: row }) =>
-          row.kind === "result" ? (
-            <Link href={`/search/${row.entry.slug}`} asChild>
-              <Pressable
-                onPress={() => recordSearch(query)}
-                className="flex-row items-center justify-between rounded-lg border border-border bg-surface p-3.5 dark:border-border-dark dark:bg-surface-dark active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
-              >
-                <View className="flex-1 gap-0.5 pr-2">
-                  <View className="flex-row items-center gap-2">
-                    <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{row.entry.title}</Text>
-                    {row.entry.native ? (
-                      <View className="rounded-full bg-info-bg px-1.5 py-0.5 dark:bg-info-bg-dark">
-                        <Text className="text-[10px] font-medium text-info dark:text-info-dark">Native</Text>
-                      </View>
-                    ) : null}
-                  </View>
-                  <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{row.entry.description}</Text>
-                </View>
-                <ChevronRight size={18} color={colors.onSurfaceMuted} />
-              </Pressable>
-            </Link>
-          ) : (
-            <Pressable onPress={() => setQuery(row.query)}>
-              <Text className="text-[17px] font-semibold text-on-surface dark:text-on-surface-dark">{row.query}</Text>
+  return (
+    <View className="flex-1 bg-background dark:bg-background-dark">
+      <View className="px-4 pb-2 pt-3">
+        <View className="h-14 flex-row items-center gap-3 rounded-full bg-surface-sunken px-4 dark:bg-surface-sunken-dark">
+          <SearchIcon size={20} color={colors.onSurfaceMuted} />
+          <TextInput
+            value={query}
+            onChangeText={setQuery}
+            placeholder="Search components"
+            placeholderTextColor={colors.onSurfaceMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              if (query.trim()) recordSearch(query);
+            }}
+            className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark"
+          />
+          {query.length > 0 ? (
+            <Pressable onPress={() => setQuery("")} hitSlop={8}>
+              <Text className="text-[13px] font-medium text-on-surface-muted dark:text-on-surface-muted-dark">Clear</Text>
             </Pressable>
-          )
-        }
-      />
+          ) : null}
+        </View>
+      </View>
+      {list}
     </View>
   );
 }
