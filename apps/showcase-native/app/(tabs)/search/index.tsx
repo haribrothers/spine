@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Platform, Pressable, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, Stack, useFocusEffect } from "expo-router";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import ClockIcon from "lucide-react-native/icons/clock";
@@ -52,9 +53,24 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * `gap-*` utility didn't apply there, so results rendered flush with no
  * space between rows. `ItemSeparatorComponent` is RN's own supported
  * mechanism for inter-item spacing and isn't subject to this gap.
+ *
+ * **iOS results list gets an explicit `insets.top` padding on its own —
+ * a real, user-reported bug.** `headerSearchBarOptions`'s activated/typing
+ * state is a genuine native `UISearchController` interaction (confirmed:
+ * Apple's own apps, e.g. Podcasts/Music, hide the nav title the same way
+ * while a search bar is focused — not a bug on its own), but this screen
+ * has no large title and lives inside a `NativeTabs` host with very little
+ * header chrome to begin with, so once search is active the results list's
+ * `contentInsetAdjustmentBehavior="automatic"` has nothing stable to
+ * compute insets from and the first row rendered flush under the status
+ * bar with zero top space. Fixed with an explicit `paddingTop:
+ * insets.top` (iOS only — Android's own hand-built pill already reserves
+ * its own top spacing via the `View` above the list, and never loses its
+ * header/title the way iOS's native search-activation does).
  */
 export default function SearchScreen() {
   const colors = useNativeColors();
+  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
 
@@ -131,6 +147,7 @@ export default function SearchScreen() {
           data={results}
           keyExtractor={(entry) => entry.slug}
           contentContainerClassName="px-4 pb-4 pt-4"
+          contentContainerStyle={Platform.OS === "ios" ? { paddingTop: insets.top + 16 } : undefined}
           ItemSeparatorComponent={() => <View className="h-2" />}
           ListEmptyComponent={
             <EmptyState
