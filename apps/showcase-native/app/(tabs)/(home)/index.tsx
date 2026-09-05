@@ -110,8 +110,8 @@ function KpiCard({ label, value, trend, icon: Icon, tone, gradient }: (typeof KP
   );
 }
 
-const GAUGE_SIZE = 148;
-const GAUGE_STROKE = 12;
+const GAUGE_SIZE = 200;
+const GAUGE_STROKE = 8;
 
 /**
  * A semi-circular (180°) gauge, arc + filled progress + a centered value —
@@ -171,7 +171,17 @@ const AnimatedPath = Animated.createAnimatedComponent(Path);
  * zone/segment framing this single continuous revenue-goal percentage
  * doesn't actually have.
  */
-function GaugeIndicator({ progress, trackColor, fillGradient }: { progress: number; trackColor: string; fillGradient: { from: string; to: string } }) {
+function GaugeIndicator({
+  progress,
+  trackColor,
+  fillGradient,
+  textColorClass,
+}: {
+  progress: number;
+  trackColor: string;
+  fillGradient: { from: string; to: string };
+  textColorClass: string;
+}) {
   const clamped = Math.max(0, Math.min(1, progress));
   const animatedProgress = useRef(new Animated.Value(0)).current;
   const [renderedProgress, setRenderedProgress] = useState(0);
@@ -278,76 +288,91 @@ function GaugeIndicator({ progress, trackColor, fillGradient }: { progress: numb
         ) : null}
         {sweepProgress > 0.02 ? (
           <>
-            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 6} fill={fillGradient.to} opacity={0.35} />
-            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 - 1} fill="#FFFFFF" />
+            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 7} fill={fillGradient.to} opacity={0.3} />
+            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 1} fill="#FFFFFF" />
+            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 - 2} fill={fillGradient.to} />
           </>
         ) : null}
       </Svg>
       <View style={{ position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" }}>
-        <Text className="text-[28px] font-bold text-white">{Math.round(sweepProgress * 100)}%</Text>
+        <Text className={`text-[32px] font-bold ${textColorClass}`}>{Math.round(sweepProgress * 100)}%</Text>
       </View>
     </View>
   );
 }
 
 /**
- * The welcome/hero card — a wide, short, rounded rectangle reading as
- * credit-card-shaped (`minHeight: 280` at full screen width gives roughly
- * the same ~1.4-1.6:1 wide-short proportion the original strict
- * `CARD_ASPECT_RATIO` (~1.586:1, the real bank-card ratio) had — but as a
- * plain `minHeight`, NOT `aspectRatio`. This is a real, fixed bug from an
+ * The welcome/hero card — a wide, short, rounded rectangle at a real
+ * `CARD_ASPECT_RATIO` of `1.5` (3:2 width:height, per explicit user
+ * request — landscape-photo proportions, noticeably wider/shorter than
+ * the earlier ~1.586:1 credit-card ratio). `aspectRatio` alone, NOT
+ * combined with `minHeight` — a real, previously-fixed bug from an
  * earlier version: `aspectRatio` + `minHeight` together on a `View` with
- * no explicit `width` let React Native derive WIDTH from `minHeight` (`280
- * * 1.586 ≈ 444pt`) rather than the other way around, since nothing
- * else constrained the width — the card rendered wider than the screen
- * and ran off the right edge, confirmed live via screenshot. Dropping
- * `aspectRatio` entirely and using only `minHeight` lets the card's width
- * fill its flex container normally (as every other card on this screen
- * already does) while still growing tall enough for its own content.
+ * no explicit `width` let React Native derive WIDTH from `minHeight`
+ * instead of deriving height from the (already width-constrained-by-its-
+ * flex-parent) width, and the card rendered wider than the screen. Using
+ * `aspectRatio` alone here is safe specifically BECAUSE nothing else on
+ * this card requires more vertical room than 3:2 at full screen width
+ * actually gives (~239pt at a ~358pt-wide screen) — the gauge below grew
+ * larger specifically to use that space well, not to fight it.
  *
- * The `minHeight` grew from a strict ratio's ~226pt in the first version
- * to 280pt in this one for a real content reason, not an arbitrary
- * change: that version put the greeting and gauge in two SIDE-BY-SIDE
- * columns specifically because ~226pt wasn't enough for a STACKED
- * "greeting, then gauge, then revenue-goal text" order (a later, explicit
- * user request) at a comfortably readable size for each — stacking needs
- * genuinely more vertical room than a two-column layout at the same
- * width did.
- *
- * **Background is a subtler, lower-contrast gradient than the KPI cards'
- * bold single-hue fills** — a real, explicit user request. Uses the same
- * `colors.primary`/`primaryHover` pair, but blended toward a darker,
- * desaturated tone (`SUBTLE_WELCOME_GRADIENT`, precomputed per theme like
- * `KPI_GRADIENTS`) rather than the vivid, high-chroma stops the KPI
- * carousel cards use — this card is the screen's own visual anchor/frame,
- * not one of several equally-loud stat tiles, so it reads as calmer,
- * premium background chrome rather than competing with the KPI carousel
- * for attention.
+ * **Background is now a light, airy orange → yellow → green gradient**
+ * (`WARM_WELCOME_GRADIENT`) — a real, explicit user request replacing the
+ * previous blue-toned, lower-contrast version, which was ITSELF a fix for
+ * an even-earlier bold/saturated blue. All three stops are pastel/light
+ * (not saturated, per "should look more lighter"), sweeping corner-to-
+ * corner diagonally — this is now a distinct, non-brand hero treatment
+ * (no `colors.primary`/`primaryHover` derivation at all, unlike the KPI
+ * cards), a deliberate choice since a 3-color warm sweep has no natural
+ * single "semantic base color" to derive from the way the KPI cards'
+ * single-hue gradients do.
  *
  * Stacked layout, largest-to-smallest visual weight top-to-bottom:
- * greeting (now larger, `text-[26px]`, up from the original `text-[19px]`
- * — another explicit request) → the gauge, centered → the revenue-goal
- * numbers, centered below it. The sparkline this card previously had is
- * REMOVED entirely per explicit request — the gauge is this card's one
- * indicator now, not two competing ones.
+ * greeting (`text-[26px]`) → the gauge, centered, now larger/thinner
+ * (`GAUGE_SIZE`/`GAUGE_STROKE`, see that component's own doc comment) →
+ * the revenue-goal numbers, centered below it. Text/gauge-track colors
+ * switched from white/white-translucent to dark `on-surface`-toned values
+ * specifically because the new light background no longer has enough
+ * contrast for white text — a real, necessary consequence of "lighter
+ * background," not an unrelated change.
  */
+const CARD_ASPECT_RATIO = 1.5;
 
-const SUBTLE_WELCOME_GRADIENT = {
-  light: { from: "#3E62D8", to: "#26399C" },
-  dark: { from: "#4B5FA8", to: "#333F73" },
+const WARM_WELCOME_GRADIENT = {
+  light: { from: "#FFE9C7", via: "#FFF3B0", to: "#D8F3D2" },
+  dark: { from: "#4A3826", via: "#4A4626", to: "#2C4A30" },
 } as const;
 
-function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
+const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
+const GAUGE_FILL_GRADIENT = {
+  light: { from: "#F2994A", to: "#27AE60" },
+  dark: { from: "#F2B23D", to: "#4ADE94" },
+} as const;
+
+function WelcomeCard({
+  gradient,
+  gaugeTrackColor,
+  gaugeFillGradient,
+  textColorClass,
+  mutedTextColorClass,
+}: {
+  gradient: { from: string; via: string; to: string };
+  gaugeTrackColor: string;
+  gaugeFillGradient: { from: string; to: string };
+  textColorClass: string;
+  mutedTextColorClass: string;
+}) {
   const goal = 25000;
   const current = 18900;
   const progress = current / goal;
 
   return (
-    <View style={{ minHeight: 280, borderRadius: 20, overflow: "hidden" }}>
+    <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
       <Svg width="100%" height="100%" style={{ position: "absolute" }}>
         <Defs>
           <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
             <Stop offset="0" stopColor={gradient.from} />
+            <Stop offset="0.5" stopColor={gradient.via} />
             <Stop offset="1" stopColor={gradient.to} />
           </SvgLinearGradient>
         </Defs>
@@ -355,13 +380,13 @@ function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
       </Svg>
       <View className="flex-1 items-center gap-2 p-5">
         <View className="w-full">
-          <Text className="text-[26px] font-semibold text-white">Good morning, Sam</Text>
-          <Text className="text-[13px] text-white/75">Spine Showcase Co.</Text>
+          <Text className={`text-[26px] font-semibold ${textColorClass}`}>Good morning, Sam</Text>
+          <Text className={`text-[13px] ${mutedTextColorClass}`}>Spine Showcase Co.</Text>
         </View>
-        <GaugeIndicator progress={progress} trackColor="rgba(255,255,255,0.25)" fillGradient={{ from: "#FFFFFF", to: "#E4E9FF" }} />
+        <GaugeIndicator progress={progress} trackColor={gaugeTrackColor} fillGradient={gaugeFillGradient} textColorClass={textColorClass} />
         <View className="items-center gap-0.5">
-          <Text className="text-[12px] text-white/75">Revenue goal</Text>
-          <Text className="text-[15px] font-medium text-white">
+          <Text className={`text-[12px] ${mutedTextColorClass}`}>Revenue goal</Text>
+          <Text className={`text-[15px] font-medium ${textColorClass}`}>
             ${current.toLocaleString()} / ${goal.toLocaleString()}
           </Text>
         </View>
@@ -417,12 +442,20 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
-  const welcomeGradient = isDark ? SUBTLE_WELCOME_GRADIENT.dark : SUBTLE_WELCOME_GRADIENT.light;
+  const welcomeGradient = isDark ? WARM_WELCOME_GRADIENT.dark : WARM_WELCOME_GRADIENT.light;
+  const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
+  const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
   const [period, setPeriod] = useState(1);
 
   return (
     <>
-      <WelcomeCard gradient={welcomeGradient} />
+      <WelcomeCard
+        gradient={welcomeGradient}
+        gaugeTrackColor={gaugeTrackColor}
+        gaugeFillGradient={gaugeFillGradient}
+        textColorClass="text-on-surface dark:text-on-surface-dark"
+        mutedTextColorClass="text-on-surface-muted dark:text-on-surface-muted-dark"
+      />
 
       <SegmentedControl
         values={["This week", "This month", "This year"]}
