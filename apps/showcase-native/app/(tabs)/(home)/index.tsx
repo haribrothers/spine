@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Animated, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
 import { SegmentedControl } from "@expo/ui/community/segmented-control";
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { Card, CardContent, CardDescription, CardTitle, StatusChip, ScrollEdgeMask, useNativeColors, type StatusChipProps } from "@spine/ui-native";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
@@ -133,8 +133,70 @@ const GAUGE_STROKE = 12;
  * exactly half a circumference here, whereas an explicit arc path takes
  * the end angle directly.
  */
-function GaugeIndicator({ progress, trackColor, fillColor }: { progress: number; trackColor: string; fillColor: string }) {
+const AnimatedPath = Animated.createAnimatedComponent(Path);
+
+/**
+ * Animates a genuine sweep-in from 0% on mount, not an instant jump to the
+ * final value — a real, explicit user request. `react-native`'s built-in
+ * `Animated` API (already a transitive dependency of `react-native` itself,
+ * no new package) drives a plain JS-side numeric value from 0 to `progress`
+ * with `Animated.spring` (a slight overshoot-then-settle at the end, per
+ * Mobbin research inferring this "snap into place" feel from Oura/CRED's
+ * high-polish score reveals) rather than a linear `Animated.timing`;
+ * `useNativeDriver: false` is required here (not a shortcut) since the
+ * animated output feeds a `Path`'s own `d` STRING prop (recomputed every
+ * frame from the current angle), and only transform/opacity style props
+ * are eligible for the native driver — this is the same documented
+ * tradeoff `FloatingTabBar`'s own tab-highlight animation in
+ * `packages/ui-native` already accepts for an analogous non-transform
+ * animated value, not a new pattern. A `Circle`'s `strokeDashoffset` COULD
+ * run on the native driver instead, but this component already committed
+ * to an explicit arc-path approach (see the doc comment above `arcPath`)
+ * for its simpler, more predictable geometry at this small size —
+ * switching just the animated portion to a dash-offset circle would
+ * reintroduce exactly the half-circumference math this file deliberately
+ * avoided, for a driver benefit that doesn't matter at one single small
+ * animation running once per screen mount.
+ *
+ * A small glow-ringed dot rides the fill's leading tip (Experian/CRED's
+ * and Oura's own "comet head"/slider-thumb detail, per Mobbin research) —
+ * a second, smaller circle drawn at the same animated angle as the arc's
+ * own end point, with a soft blurred halo behind it (a larger,
+ * low-opacity circle at the same position, the cheapest fake-glow
+ * technique available without a real blur filter). Tick marks at 0/25/
+ * 50/75/100% are the other real stylistic detail this research surfaced
+ * (small decorative reference points around the track, not functional
+ * labels) — Mobbin's zone-gauge/dashed-arc references (Monzo, Rocket
+ * Money) were considered too but not used: those imply a discrete
+ * zone/segment framing this single continuous revenue-goal percentage
+ * doesn't actually have.
+ */
+function GaugeIndicator({ progress, trackColor, fillGradient }: { progress: number; trackColor: string; fillGradient: { from: string; to: string } }) {
   const clamped = Math.max(0, Math.min(1, progress));
+  const animatedProgress = useRef(new Animated.Value(0)).current;
+  const [renderedProgress, setRenderedProgress] = useState(0);
+
+  useEffect(() => {
+    // Deliberately NOT clamped to [0,1] here — `Animated.spring`'s own
+    // slight overshoot past `clamped` before settling back IS the "snap
+    // into place" polish this animation is going for (per Mobbin research
+    // on Oura/CRED's score reveals); clamping the raw value here would
+    // silently flatten the spring into a plain ease-out and defeat the
+    // whole point. The arc angle and glow-dot position below both clamp
+    // their OWN derived values instead, so the overshoot bounces the fill
+    // slightly past its final angle and back, while the displayed
+    // percentage text still clamps to a sane 0-100 range.
+    const id = animatedProgress.addListener(({ value }) => setRenderedProgress(value));
+    Animated.spring(animatedProgress, {
+      toValue: clamped,
+      useNativeDriver: false,
+      friction: 7,
+      tension: 40,
+    }).start();
+    return () => animatedProgress.removeListener(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- animate once per mount to `clamped`'s value at that time, matching a one-shot load-in sweep, not re-triggering on every re-render.
+  }, []);
+
   const r = GAUGE_SIZE / 2 - GAUGE_STROKE / 2;
   // The SVG canvas is only half-height (a semi-circle, open side up) plus
   // room for the stroke's own rounded caps — `cy` must sit at that canvas's
@@ -161,76 +223,119 @@ function GaugeIndicator({ progress, trackColor, fillColor }: { progress: number;
   // side down, the correct speedometer/rainbow shape. Verified by direct
   // trig (not assumed): cos/sin at 180/270/360 place the arc's top point
   // at negative y, confirming the bulge is genuinely upward, not downward.
+  // The arc's own SWEEP clamps to [0,1] (an SVG arc path can't visually
+  // extend past the semicircle's own endpoints anyway, and letting it try
+  // during a spring overshoot risks `largeArc` flipping unpredictably) —
+  // only the glow dot below rides the raw, unclamped animated value for a
+  // touch of extra life at the bounce.
+  const sweepProgress = Math.max(0, Math.min(1, renderedProgress));
   const trackD = arcPath(180, 360);
-  const progressD = arcPath(180, 180 + clamped * 180);
+  const progressD = arcPath(180, 180 + sweepProgress * 180);
+
+  // The glow-ringed dot at the fill's leading tip (Experian/CRED's/Oura's
+  // "comet head" detail, per Mobbin research) — allowed to ride slightly
+  // PAST the arc's own endpoint during the spring's overshoot (clamped
+  // only to a small overrun margin, not hard-clamped to 1), so the dot
+  // visibly bounces a little beyond 100% before settling back, echoing the
+  // spring's own motion rather than freezing at the arc's fixed end.
+  const dotProgress = Math.max(0, Math.min(1.04, renderedProgress));
+  const dotDeg = 180 + dotProgress * 180;
+  const dotRad = (dotDeg * Math.PI) / 180;
+  const dotX = cx + r * Math.cos(dotRad);
+  const dotY = cy + r * Math.sin(dotRad);
+
+  // Tick marks at 0/25/50/75/100% — small, decorative, stylish reference
+  // points around the arc's own track (a real detail found in Mobbin's
+  // credit-score/readiness-gauge references), NOT functional labels.
+  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => {
+    const deg = 180 + t * 180;
+    const rad = (deg * Math.PI) / 180;
+    const outer = r + GAUGE_STROKE / 2 + 4;
+    const inner = r + GAUGE_STROKE / 2 + 1;
+    return {
+      x1: cx + inner * Math.cos(rad),
+      y1: cy + inner * Math.sin(rad),
+      x2: cx + outer * Math.cos(rad),
+      y2: cy + outer * Math.sin(rad),
+    };
+  });
 
   return (
-    <View style={{ width: GAUGE_SIZE, height: canvasHeight }}>
-      <Svg width={GAUGE_SIZE} height={canvasHeight}>
+    <View style={{ width: GAUGE_SIZE, height: canvasHeight + 8 }}>
+      <Svg width={GAUGE_SIZE} height={canvasHeight + 8}>
+        <Defs>
+          <SvgLinearGradient id="gauge-fill" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={fillGradient.from} />
+            <Stop offset="1" stopColor={fillGradient.to} />
+          </SvgLinearGradient>
+        </Defs>
         <Path d={trackD} stroke={trackColor} strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
-        {clamped > 0 ? (
-          <Path d={progressD} stroke={fillColor} strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
+        {ticks.map((t, i) => (
+          <Path key={i} d={`M ${t.x1} ${t.y1} L ${t.x2} ${t.y2}`} stroke={trackColor} strokeWidth={1.5} strokeLinecap="round" />
+        ))}
+        {sweepProgress > 0 ? (
+          <AnimatedPath d={progressD} stroke="url(#gauge-fill)" strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
+        ) : null}
+        {sweepProgress > 0.02 ? (
+          <>
+            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 6} fill={fillGradient.to} opacity={0.35} />
+            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 - 1} fill="#FFFFFF" />
+          </>
         ) : null}
       </Svg>
-      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, alignItems: "center" }}>
-        <Text className="text-[24px] font-bold text-white">{Math.round(clamped * 100)}%</Text>
+      <View style={{ position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" }}>
+        <Text className="text-[28px] font-bold text-white">{Math.round(sweepProgress * 100)}%</Text>
       </View>
     </View>
   );
 }
 
-const SPARKLINE_WEEKLY_REVENUE = [3200, 4100, 3800, 5200, 4700, 6100, 5900];
-
 /**
- * A small inline sparkline — plain `react-native-svg` `Path` polyline, no
- * charting library. Per Mobbin research, real apps place a sparkline
- * directly under a plain balance number (Revolut Business, Wealthsimple)
- * rather than layered onto other card content — placed here directly below
- * the revenue-goal line in the welcome card's own left column, in the
- * whitespace that column already had, not overlapping the gauge.
- */
-function Sparkline({ data, width, height, color }: { data: number[]; width: number; height: number; color: string }) {
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-  const stepX = width / (data.length - 1);
-  const points = data.map((value, i) => ({
-    x: i * stepX,
-    y: height - ((value - min) / range) * height,
-  }));
-  const d = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
-
-  return (
-    <Svg width={width} height={height}>
-      <Path d={d} stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
-    </Svg>
-  );
-}
-
-/**
- * The welcome/hero card — sized to real physical-credit-card proportions
- * (`CARD_ASPECT_RATIO`, the standard ~1.586:1 bank-card ratio), gradient
- * background, greeting on the left and a semi-circular revenue-goal gauge
- * on the right — a deliberate, explicit user choice to embed the gauge
- * INSIDE the credit-card hero rather than as its own separate card below
- * it (the more common real-app pattern per Mobbin research — Apple
- * Wallet/CRED/bunq/Klarna all keep a card-shaped tile as a plain
- * balance/identity surface, with gauges like Cleo's/Acorns' living on
- * their own separate plain rectangular card elsewhere) — confirmed and
- * proceeded with per explicit instruction, not a default recommendation.
- * Side-by-side (not stacked) layout is a direct consequence of the fixed
- * card aspect ratio: at a realistic ~358pt card width the 1.586:1 ratio
- * gives only ~226pt of height total, and a stacked "greeting on top,
- * gauge below" layout doesn't comfortably fit both a 2-line greeting AND a
- * gauge tall enough to read — greeting-left/gauge-right uses the width
- * this card shape actually has plenty of instead.
+ * The welcome/hero card — a wide, short, rounded rectangle reading as
+ * credit-card-shaped (`minHeight: 280` at full screen width gives roughly
+ * the same ~1.4-1.6:1 wide-short proportion the original strict
+ * `CARD_ASPECT_RATIO` (~1.586:1, the real bank-card ratio) had — but as a
+ * plain `minHeight`, NOT `aspectRatio`. This is a real, fixed bug from an
+ * earlier version: `aspectRatio` + `minHeight` together on a `View` with
+ * no explicit `width` let React Native derive WIDTH from `minHeight` (`280
+ * * 1.586 ≈ 444pt`) rather than the other way around, since nothing
+ * else constrained the width — the card rendered wider than the screen
+ * and ran off the right edge, confirmed live via screenshot. Dropping
+ * `aspectRatio` entirely and using only `minHeight` lets the card's width
+ * fill its flex container normally (as every other card on this screen
+ * already does) while still growing tall enough for its own content.
  *
- * Gradient built the same way as `KpiCard` (`react-native-svg`'s
- * `LinearGradient`, no new dependency) using `colors.primary`/
- * `primaryHover` — the same brand pair already used elsewhere, not an
- * invented new hue for this one card.
+ * The `minHeight` grew from a strict ratio's ~226pt in the first version
+ * to 280pt in this one for a real content reason, not an arbitrary
+ * change: that version put the greeting and gauge in two SIDE-BY-SIDE
+ * columns specifically because ~226pt wasn't enough for a STACKED
+ * "greeting, then gauge, then revenue-goal text" order (a later, explicit
+ * user request) at a comfortably readable size for each — stacking needs
+ * genuinely more vertical room than a two-column layout at the same
+ * width did.
+ *
+ * **Background is a subtler, lower-contrast gradient than the KPI cards'
+ * bold single-hue fills** — a real, explicit user request. Uses the same
+ * `colors.primary`/`primaryHover` pair, but blended toward a darker,
+ * desaturated tone (`SUBTLE_WELCOME_GRADIENT`, precomputed per theme like
+ * `KPI_GRADIENTS`) rather than the vivid, high-chroma stops the KPI
+ * carousel cards use — this card is the screen's own visual anchor/frame,
+ * not one of several equally-loud stat tiles, so it reads as calmer,
+ * premium background chrome rather than competing with the KPI carousel
+ * for attention.
+ *
+ * Stacked layout, largest-to-smallest visual weight top-to-bottom:
+ * greeting (now larger, `text-[26px]`, up from the original `text-[19px]`
+ * — another explicit request) → the gauge, centered → the revenue-goal
+ * numbers, centered below it. The sparkline this card previously had is
+ * REMOVED entirely per explicit request — the gauge is this card's one
+ * indicator now, not two competing ones.
  */
-const CARD_ASPECT_RATIO = 1.586;
+
+const SUBTLE_WELCOME_GRADIENT = {
+  light: { from: "#3E62D8", to: "#26399C" },
+  dark: { from: "#4B5FA8", to: "#333F73" },
+} as const;
 
 function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
   const goal = 25000;
@@ -238,7 +343,7 @@ function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
   const progress = current / goal;
 
   return (
-    <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
+    <View style={{ minHeight: 280, borderRadius: 20, overflow: "hidden" }}>
       <Svg width="100%" height="100%" style={{ position: "absolute" }}>
         <Defs>
           <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
@@ -248,19 +353,18 @@ function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
         </Defs>
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#welcome-gradient)" />
       </Svg>
-      <View className="flex-1 flex-row items-center justify-between p-5">
-        <View className="flex-1 gap-1 pr-3">
-          <Text className="text-[19px] font-semibold text-white">Good morning, Sam</Text>
-          <Text className="text-[12px] text-white/75">Spine Showcase Co.</Text>
-          <Text className="mt-3 text-[12px] text-white/75">Revenue goal</Text>
-          <Text className="text-[13px] font-medium text-white">
+      <View className="flex-1 items-center gap-2 p-5">
+        <View className="w-full">
+          <Text className="text-[26px] font-semibold text-white">Good morning, Sam</Text>
+          <Text className="text-[13px] text-white/75">Spine Showcase Co.</Text>
+        </View>
+        <GaugeIndicator progress={progress} trackColor="rgba(255,255,255,0.25)" fillGradient={{ from: "#FFFFFF", to: "#E4E9FF" }} />
+        <View className="items-center gap-0.5">
+          <Text className="text-[12px] text-white/75">Revenue goal</Text>
+          <Text className="text-[15px] font-medium text-white">
             ${current.toLocaleString()} / ${goal.toLocaleString()}
           </Text>
-          <View className="mt-3">
-            <Sparkline data={SPARKLINE_WEEKLY_REVENUE} width={120} height={28} color="rgba(255,255,255,0.85)" />
-          </View>
         </View>
-        <GaugeIndicator progress={progress} trackColor="rgba(255,255,255,0.25)" fillColor="#FFFFFF" />
       </View>
     </View>
   );
@@ -311,12 +415,14 @@ function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
  */
 function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> }) {
   const { colorScheme } = useColorScheme();
-  const gradients = colorScheme === "dark" ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
+  const isDark = colorScheme === "dark";
+  const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
+  const welcomeGradient = isDark ? SUBTLE_WELCOME_GRADIENT.dark : SUBTLE_WELCOME_GRADIENT.light;
   const [period, setPeriod] = useState(1);
 
   return (
     <>
-      <WelcomeCard gradient={gradients.primary} />
+      <WelcomeCard gradient={welcomeGradient} />
 
       <SegmentedControl
         values={["This week", "This month", "This year"]}
