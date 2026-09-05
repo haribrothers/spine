@@ -7,10 +7,16 @@ import { useNativeColors } from "@spine/ui-native";
  * files' own doc comments, including why `headerTintColor`/
  * `headerTitleStyle`/`headerBackButtonDisplayMode: "minimal"` are set
  * unconditionally via `screenOptions` rather than only on Android.
+ *
+ * `headerOptions` (`headerStyle.backgroundColor`) is likewise applied
+ * unconditionally to every non-large-title screen in this stack (both
+ * platforms) — the same real, user-reported bug as `components/_layout.tsx`
+ * (iOS detail screens rendering a native-default white header regardless of
+ * dark mode), fixed the same way here across all three nested screens.
  */
 export default function TemplatesLayout() {
   const colors = useNativeColors();
-  const androidHeaderOptions = { headerStyle: { backgroundColor: colors.surface } };
+  const headerOptions = { headerStyle: { backgroundColor: colors.surface } };
 
   return (
     <Stack
@@ -24,12 +30,12 @@ export default function TemplatesLayout() {
         name="index"
         options={{
           title: "Templates",
-          ...(Platform.OS === "ios" ? { headerLargeTitleEnabled: true } : androidHeaderOptions),
+          ...(Platform.OS === "ios" ? { headerLargeTitleEnabled: true } : headerOptions),
         }}
       />
-      <Stack.Screen name="list-detail/index" options={Platform.OS === "android" ? androidHeaderOptions : undefined} />
-      <Stack.Screen name="list-detail/[jobId]" options={Platform.OS === "android" ? androidHeaderOptions : undefined} />
-      <Stack.Screen name="settings" options={Platform.OS === "android" ? androidHeaderOptions : undefined} />
+      <Stack.Screen name="list-detail/index" options={headerOptions} />
+      <Stack.Screen name="list-detail/[jobId]" options={headerOptions} />
+      <Stack.Screen name="settings" options={headerOptions} />
     </Stack>
   );
 }
