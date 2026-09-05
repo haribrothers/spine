@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FlatList, Platform, Pressable, Text, TextInput, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Link, Stack, useFocusEffect } from "expo-router";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import ClockIcon from "lucide-react-native/icons/clock";
@@ -79,29 +78,40 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * NativeWind classNames the way a plain `View`/`ScrollView` does),
  * producing edge-to-edge result cards with no left/right margin, visibly
  * inconsistent with the Components tab's own padded list. Fixed by moving
- * ALL content-container spacing (`paddingHorizontal`, `paddingBottom`, and
- * the iOS-only `paddingTop: insets.top + 16` from the fix below) into one
- * plain `contentContainerStyle` object instead of splitting it across
- * `contentContainerClassName` + `contentContainerStyle` — a single style
- * source that unambiguously applies, rather than two mechanisms where one
- * silently no-ops on this particular component.
+ * ALL content-container spacing into one plain `contentContainerStyle`
+ * object instead of splitting it across `contentContainerClassName` +
+ * `contentContainerStyle` — a single style source that unambiguously
+ * applies, rather than two mechanisms where one silently no-ops on this
+ * particular component.
  *
- * `contentInsetAdjustmentBehavior="never"` (iOS only) + explicit
- * `paddingTop: insets.top + 16`: without a large title, once search
- * activates iOS's `UIScrollView` still applies its own automatic top
- * content inset from the tab/nav chrome's last-known height — stacking
- * with a naively-added manual `paddingTop: insets.top` produced a much
- * larger dead-space gap above the first row than intended (confirmed live
- * via screenshot, a real regression from an earlier fix attempt). Setting
- * `"never"` stops the automatic inset so only the explicit padding
- * applies. Android is untouched (`"automatic"`, `paddingTop: 16` fixed) —
- * its hand-built pill already reserves its own top spacing and never loses
- * its header/title the way iOS's native search-activation did before the
- * `hideNavigationBar` fix above.
+ * **`contentInsetAdjustmentBehavior` is back to `"automatic"` on iOS (not
+ * `"never"`) — a real, two-part reversal now that `hideNavigationBar:
+ * false` (above) keeps the nav bar genuinely present during search.**
+ * When the nav bar/title was disappearing during search (before that fix),
+ * `"automatic"` + a manually-added `paddingTop: insets.top` double-counted
+ * — iOS still applied its own automatic inset from the chrome's
+ * last-known height AND the manual padding stacked on top, so switching to
+ * `"never"` (dropping automatic entirely in favor of one explicit
+ * `insets.top + 16` padding) was the right fix at the time. But once the
+ * nav bar started staying visible instead of disappearing,
+ * `insets.top` (~59pt, the status-bar/safe-area inset only) under-counted
+ * the real, now-present nav bar's own additional height (~44pt) that
+ * `"never"` no longer had `"automatic"` to correctly account for — the
+ * first list row rendered clipped underneath the header, a real,
+ * user-reported regression from THIS reversal's own predecessor state,
+ * not a re-emergence of the original bug. Since the nav bar is now stable
+ * and genuinely present (not intermittently disappearing), `"automatic"`
+ * is the correct mechanism again — it's iOS's own purpose-built solution
+ * for "add exactly enough top inset for whatever header actually exists
+ * right now," which handles a present-vs-absent nav bar correctly without
+ * this file needing to hand-compute it. `useSafeAreaInsets` is no longer
+ * needed in this file at all as a result — removed along with the
+ * `insets.top` calculation. Android is untouched (`"automatic"`, flat
+ * `paddingTop: 16`) — its hand-built pill has never lost its header/title,
+ * so this back-and-forth never applied to it.
  */
 export default function SearchScreen() {
   const colors = useNativeColors();
-  const insets = useSafeAreaInsets();
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
 
@@ -174,14 +184,14 @@ export default function SearchScreen() {
       )}
       {isSearching ? (
         <FlatList
-          contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "never" : "automatic"}
+          contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           data={results}
           keyExtractor={(entry) => entry.slug}
           contentContainerStyle={{
             paddingHorizontal: 16,
             paddingBottom: 16,
-            paddingTop: Platform.OS === "ios" ? insets.top + 16 : 16,
+            paddingTop: 16,
           }}
           ItemSeparatorComponent={() => <View className="h-2" />}
           ListEmptyComponent={
