@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FlatList, Pressable, Text, View } from "react-native";
+import { FlatList, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { Link, Stack, useFocusEffect } from "expo-router";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import ClockIcon from "lucide-react-native/icons/clock";
@@ -11,15 +11,26 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
 /**
  * Search tab — filters `COMPONENT_CATALOG` by title/description.
  *
- * The search FIELD itself is `headerSearchBarOptions` (`react-native-screens`'
- * real `UISearchController`-integrated bar on iOS, with a genuine Android
- * fallback), not a hand-rolled `TextField` — per
- * https://developer.apple.com/design/human-interface-guidelines/search-fields,
- * a real native search field is the correct component here, not an
- * approximation. `hideWhenScrolling: false` keeps it always visible (this
- * screen has no large title to collapse away from under it); `autoCapitalize:
- * "none"` matches the previous `TextField`'s behavior (component names are
+ * **The search FIELD itself is genuinely platform-divergent, not shared —
+ * a real, confirmed gap, not a stylistic choice.** On iOS it's
+ * `headerSearchBarOptions` (`react-native-screens`' real
+ * `UISearchController`-integrated bar), per
+ * https://developer.apple.com/design/human-interface-guidelines/search-fields
+ * — a real native search field is the correct component there.
+ * `hideWhenScrolling: false` keeps it always visible (this screen has no
+ * large title to collapse away from under it); `autoCapitalize: "none"`
+ * matches the Android field's own behavior (component names are
  * lowercase).
+ *
+ * On Android, `headerSearchBarOptions` is backed by
+ * `androidx.appcompat.widget.SearchView` (confirmed by reading
+ * `react-native-screens`' own `CustomSearchView.kt`) — the OLD, pre-Material-3
+ * search widget, NOT the rounded pill-shaped `SearchBar` modern Android apps
+ * (Google Photos, etc.) actually use. There is no way to get that Material 3
+ * look "for free" from `react-native-screens` on Android, so it's hand-built
+ * below instead (a plain `TextField`-style `View`+`TextInput`, full-width,
+ * `rounded-full`, search icon inline) — a real, user-reported requirement
+ * matching a Google Photos reference screenshot, not a design preference.
  *
  * When the query is empty, this shows RECENT SEARCHES (not the full
  * unfiltered catalog, which is what an earlier version showed) — also per
@@ -33,6 +44,14 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * Selecting a result links to `/search/[slug]` (this tab's OWN copy of the
  * detail route), not `/components/[slug]` — see that file's own doc
  * comment for the real, user-reported back-navigation bug this fixes.
+ *
+ * Result-list spacing uses `ItemSeparatorComponent`, NOT a `gap-2` on
+ * `contentContainerClassName` — a real, user-reported bug: unlike a plain
+ * `ScrollView` (every other list in this app), `FlatList`'s content
+ * container is rendered by `VirtualizedList` internally, and NativeWind's
+ * `gap-*` utility didn't apply there, so results rendered flush with no
+ * space between rows. `ItemSeparatorComponent` is RN's own supported
+ * mechanism for inter-item spacing and isn't subject to this gap.
  */
 export default function SearchScreen() {
   const colors = useNativeColors();
@@ -65,27 +84,54 @@ export default function SearchScreen() {
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
-      <Stack.Screen
-        options={{
-          headerSearchBarOptions: {
-            placeholder: "Search components",
-            autoCapitalize: "none",
-            hideWhenScrolling: false,
-            onChangeText: (e) => setQuery(e.nativeEvent.text),
-            onSearchButtonPress: (e) => {
-              if (e.nativeEvent.text.trim()) recordSearch(e.nativeEvent.text);
+      {Platform.OS === "ios" ? (
+        <Stack.Screen
+          options={{
+            headerSearchBarOptions: {
+              placeholder: "Search components",
+              autoCapitalize: "none",
+              hideWhenScrolling: false,
+              onChangeText: (e) => setQuery(e.nativeEvent.text),
+              onSearchButtonPress: (e) => {
+                if (e.nativeEvent.text.trim()) recordSearch(e.nativeEvent.text);
+              },
+              onCancelButtonPress: () => setQuery(""),
             },
-            onCancelButtonPress: () => setQuery(""),
-          },
-        }}
-      />
+          }}
+        />
+      ) : (
+        <View className="px-4 pb-2 pt-3">
+          <View className="h-14 flex-row items-center gap-3 rounded-full bg-surface-sunken px-4 dark:bg-surface-sunken-dark">
+            <SearchIcon size={20} color={colors.onSurfaceMuted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search components"
+              placeholderTextColor={colors.onSurfaceMuted}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+              onSubmitEditing={() => {
+                if (query.trim()) recordSearch(query);
+              }}
+              className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark"
+            />
+            {query.length > 0 ? (
+              <Pressable onPress={() => setQuery("")} hitSlop={8}>
+                <Text className="text-[13px] font-medium text-on-surface-muted dark:text-on-surface-muted-dark">Clear</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      )}
       {isSearching ? (
         <FlatList
           contentInsetAdjustmentBehavior="automatic"
           keyboardShouldPersistTaps="handled"
           data={results}
           keyExtractor={(entry) => entry.slug}
-          contentContainerClassName="gap-2 px-4 pb-4 pt-4"
+          contentContainerClassName="px-4 pb-4 pt-4"
+          ItemSeparatorComponent={() => <View className="h-2" />}
           ListEmptyComponent={
             <EmptyState
               icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
