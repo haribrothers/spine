@@ -79,6 +79,23 @@ import { useNativeColors } from "@spine/ui-native";
  * exist too ("takes precedence over the value set on `NativeTabs`," per
  * its own doc comment) but aren't needed here since every tab wants the
  * same always-labeled behavior.
+ *
+ * `backgroundColor={colors.surfaceSunken}`, NOT `colors.surface` — a
+ * real, user-reported bug fix, Android-only in practice. `colors.surface`
+ * is literally `#FFFFFF` in light mode, IDENTICAL to `colors.background`
+ * (also `#FFFFFF`) — confirmed directly in `packages/ui-native`'s own
+ * color tokens — so the bottom nav bar and the screen body had zero
+ * visible boundary between them in light mode specifically (dark mode
+ * happened to look fine only because `dark.surface`/`dark.background`
+ * genuinely differ, `#191815` vs `#121110`, not because the tab bar was
+ * doing anything different). `colors.surfaceSunken` (`#FAFAF9` light /
+ * `#2C2B26` dark) is genuinely distinct from `background` in BOTH themes,
+ * giving the nav bar a real, subtle boundary consistently rather than one
+ * that only worked by accident in dark mode. This is the same light-gray
+ * token already used elsewhere on this screen (the welcome card, the
+ * quick-action tiles) — a subtle elevation-style tint, not a stark
+ * contrast, matching real Material Design bottom-nav styling and an
+ * explicit user preference over a more visibly distinct gray.
  */
 export default function TabsLayout() {
   const colors = useNativeColors();
@@ -87,7 +104,7 @@ export default function TabsLayout() {
     <NativeTabs
       tintColor={colors.primary}
       iconColor={{ default: colors.onSurfaceMuted, selected: colors.primary }}
-      backgroundColor={colors.surface}
+      backgroundColor={colors.surfaceSunken}
       labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="(home)">
