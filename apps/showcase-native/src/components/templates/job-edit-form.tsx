@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View, type FocusEvent } from "react-native";
 import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
 import { Button, DateTimePicker, SelectField, Spinner, Switch, TextField, Toast, useNativeColors, useToast } from "@spine/ui-native";
 
@@ -157,18 +157,43 @@ function FormSection({ title, description, children }: { title: string; descript
  * standard mechanism for intercepting ANY removal of the screen (hardware
  * back, swipe-back gesture, header back button, or a programmatic
  * `router.back()`), not just one of those paths.
+ *
+ * **Focusing a field near the bottom of the form (Notes especially) hid it
+ * behind the keyboard on iOS — a real, reported bug, and a well-known RN
+ * gap, not a regression in this screen's own layout.**
+ * `KeyboardAvoidingView behavior="padding"` only pads/resizes the view for
+ * the keyboard's height; it does NOT auto-scroll a focused `TextInput`
+ * into view inside a nested `ScrollView` — that's a separate concern RN
+ * leaves to the app. Fixed with `ScrollView`'s own built-in
+ * `scrollResponderScrollNativeHandleToKeyboard` (documented on the RN
+ * source itself as "should be used as the callback to onFocus in a
+ * TextInput's parent view") — `scrollFocusedFieldIntoView`, wired as every
+ * `TextField`'s `onFocus` in this form, calls it with the focused input's
+ * native node handle (`event.target`, a `number`), which RN measures
+ * against the `ScrollView` (via `scrollViewRef`) and scrolls itself; no
+ * manual layout math needed on this end. Deliberately NOT a new dependency
+ * (e.g. `react-native-keyboard-controller`) — no keyboard-handling library
+ * exists anywhere in this monorepo yet, and this RN-builtin API covers the
+ * need without one. Any future `TextField` added to this form (or a
+ * similar scrollable form elsewhere) needs the same `onFocus` wiring — it
+ * is NOT automatic just from being inside a `ScrollView`.
  */
 export function JobEditForm({ jobId }: { jobId: string }) {
   const router = useRouter();
   const navigation = useNavigation();
   const colors = useNativeColors();
   const { message, show, dismiss } = useToast();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const initialValues = useMemo(() => loadJob(jobId), [jobId]);
   const [values, setValues] = useState<JobFormValues>(initialValues);
   const [errors, setErrors] = useState<FormErrors>({});
   const [saving, setSaving] = useState(false);
   const isDirty = useRef(false);
+
+  const scrollFocusedFieldIntoView = useCallback((event: FocusEvent) => {
+    scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(event.target, 32, true);
+  }, []);
 
   function update<K extends keyof JobFormValues>(key: K, value: JobFormValues[K]) {
     isDirty.current = true;
@@ -269,6 +294,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
       />
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: colors.background }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
+          ref={scrollViewRef}
           contentInsetAdjustmentBehavior="automatic"
           className="flex-1"
           contentContainerClassName="gap-6 p-4 pb-8"
@@ -277,13 +303,25 @@ export function JobEditForm({ jobId }: { jobId: string }) {
           <FormSection title="Details">
             <View className="gap-1.5">
               <FieldLabel required>Title</FieldLabel>
-              <TextField value={values.title} onChangeText={(text) => update("title", text)} error={!!errors.title} accessibilityLabel="Title" />
+              <TextField
+                value={values.title}
+                onChangeText={(text) => update("title", text)}
+                onFocus={scrollFocusedFieldIntoView}
+                error={!!errors.title}
+                accessibilityLabel="Title"
+              />
               <FieldError message={errors.title} />
             </View>
 
             <View className="gap-1.5">
               <FieldLabel required>Client</FieldLabel>
-              <TextField value={values.client} onChangeText={(text) => update("client", text)} error={!!errors.client} accessibilityLabel="Client" />
+              <TextField
+                value={values.client}
+                onChangeText={(text) => update("client", text)}
+                onFocus={scrollFocusedFieldIntoView}
+                error={!!errors.client}
+                accessibilityLabel="Client"
+              />
               <FieldError message={errors.client} />
             </View>
 
@@ -297,6 +335,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
               <TextField
                 value={values.value}
                 onChangeText={(text) => update("value", text)}
+                onFocus={scrollFocusedFieldIntoView}
                 error={!!errors.value}
                 keyboardType="decimal-pad"
                 accessibilityLabel="Job value"
@@ -328,6 +367,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
             <TextField
               value={values.notes}
               onChangeText={(text) => update("notes", text)}
+              onFocus={scrollFocusedFieldIntoView}
               placeholder="Internal notes about this job…"
               multiline
               numberOfLines={4}
