@@ -339,28 +339,49 @@ function GaugeIndicator({
 const CARD_ASPECT_RATIO = 1.5;
 
 /**
- * A real user-supplied CSS radial gradient, converted to
- * `react-native-svg`'s `RadialGradient` element — a genuine radial
- * (circle-from-center) gradient, NOT a linear approximation, since
- * `react-native-svg` has a real `RadialGradient` component with `cx`/`cy`/
- * `r` props that map directly onto CSS's `radial-gradient(circle, ...)`
- * semantics (both default to a centered circle). Original CSS:
- * `radial-gradient(circle, rgba(41,84,229,0.41) 0%, rgba(230,92,92,0.4)
- * 74%, rgba(255,241,115,0.29) 100%)`. `react-native-svg`'s `Stop` takes
- * `stopColor` and `stopOpacity` as SEPARATE props, not a combined `rgba()`
- * string, so each CSS `rgba(r,g,b,a)` stop is split into its opaque hex
- * equivalent (`stopColor`) plus its own alpha (`stopOpacity`) — done here
- * by hand since there are only 3 fixed stops, not a runtime rgba parser.
- * Applied identically in both light and dark mode (unlike
- * `GAUGE_FILL_GRADIENT`/`GAUGE_TRACK_COLOR`, which do vary by theme) since
- * the user supplied one fixed gradient, not a light/dark pair — if this
- * reads poorly in dark mode in practice, that's the next thing to revisit
- * with the user, not something to silently invent a dark variant for now.
+ * A radial (circle-from-center) gradient via `react-native-svg`'s real
+ * `RadialGradient` element (`cx`/`cy`/`r` map directly onto CSS's
+ * `radial-gradient(circle, ...)` semantics) — NOT a linear approximation.
+ *
+ * Started from a real user-supplied CSS gradient (`radial-gradient(circle,
+ * rgba(41,84,229,0.41) 0%, rgba(230,92,92,0.4) 74%, rgba(255,241,115,0.29)
+ * 100%)`), but that version's actual rendered result — confirmed via
+ * screenshot — read as roughly equal thirds of blue/pink/peach with no
+ * single dominant hue, which the user explicitly rejected: "blue shade
+ * should be prominent and then yellow and red." Two real changes make
+ * that true this time, not just a color swap:
+ *
+ * 1. STOP POSITIONS, not just colors, control which hue dominates a
+ *    radial gradient's visual weight — a stop's OWN offset marks where
+ *    it reaches full strength, and the color BEFORE that offset already
+ *    occupies that entire inner area. Blue now holds solid from 0% to
+ *    55% (over half the circle's radius, i.e. the visual majority of its
+ *    AREA, which scales with radius squared) before yellow takes over as
+ *    a narrow transition band (55-80%), with red confined to a thin outer
+ *    ring (80-100%) — a real "blue dominant, yellow secondary, red
+ *    accent" hierarchy, not the earlier version's near-even 0/74/100
+ *    thirds.
+ * 2. Blue's own `stopOpacity` raised from 0.41 to 0.62 so it reads as a
+ *    genuinely present color against the card's light backdrop, not a
+ *    faint tint competing evenly with the other two.
+ *
+ * The user's requested order (blue → yellow → red) also reorders the
+ * original CSS's own stops, which went blue → RED → yellow — a real,
+ * deliberate reordering, not an oversight carried over from the source
+ * gradient.
+ *
+ * `react-native-svg`'s `Stop` takes `stopColor`/`stopOpacity` as SEPARATE
+ * props, not a combined `rgba()` string — each stop's alpha is set that
+ * way here rather than folded into an rgba color literal, following the
+ * same conversion pattern the original CSS import already established.
+ * Applied identically in both light and dark mode (no separate dark
+ * variant exists yet) — revisit with the user if it reads poorly there.
  */
 const WELCOME_RADIAL_GRADIENT_STOPS = [
-  { offset: "0%", stopColor: "#2954E5", stopOpacity: 0.41 },
-  { offset: "74%", stopColor: "#E65C5C", stopOpacity: 0.4 },
-  { offset: "100%", stopColor: "#FFF173", stopOpacity: 0.29 },
+  { offset: "0%", stopColor: "#2954E5", stopOpacity: 0.62 },
+  { offset: "55%", stopColor: "#2954E5", stopOpacity: 0.55 },
+  { offset: "80%", stopColor: "#FFF173", stopOpacity: 0.4 },
+  { offset: "100%", stopColor: "#E65C5C", stopOpacity: 0.35 },
 ] as const;
 
 const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
