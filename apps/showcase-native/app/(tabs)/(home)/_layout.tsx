@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
+import { useProfileHeaderOptions } from "../../../src/lib/profile-header-items";
 
 /**
  * A nested `Stack` inside the Home tab's own route group — `NativeTabs`
@@ -49,6 +50,28 @@ import { useNativeColors } from "@spine/ui-native";
  * real user report: without it, iOS's back button shows the previous
  * screen's title text next to the chevron by default, which the user only
  * wanted as a bare icon.
+ *
+ * `headerRight`/`unstable_headerRightItems` render two controls: a bell
+ * (triggers React Native's own built-in `Alert.alert(...)` — a real native
+ * `UIAlertController` on iOS / `AlertDialog` on Android, no new dependency)
+ * and `ProfileHeaderButton` (`src/components/profile-header-button.tsx`,
+ * the shared avatar that opens the Profile `<Modal>` via
+ * `useProfileSheet().open()` — Profile is not a routed screen, see
+ * `profile-sheet-context.tsx`'s own doc comment). Every other tab's own
+ * `_layout.tsx` renders the same `ProfileHeaderButton`.
+ *
+ * **On iOS, these render as two SEPARATE pill-shaped groups** (a real
+ * user-reported requirement, matching a reference screenshot of iOS 26's
+ * own multi-item header) via `unstable_headerRightItems` — each `custom`
+ * item's `hidesSharedBackground: true` is the actual documented mechanism
+ * for "don't merge this item's glass background with its neighbor," which
+ * is what produces the two-distinct-pills look; without it, adjacent
+ * header items share one continuous pill instead. This API is
+ * `@platform iOS`-only (per its own doc comment) with no stated Android
+ * equivalent, and Android's Material design language has no real analog to
+ * this glass-pill-grouping concept at all — so Android keeps the simpler,
+ * previous `headerRight` (one plain `View` row, no pill styling), which is
+ * itself the idiomatic Material header-actions look.
  */
 export default function HomeLayout() {
   const colors = useNativeColors();
@@ -66,6 +89,7 @@ export default function HomeLayout() {
         options={{
           title: "Home",
           ...(Platform.OS === "ios" ? { headerLargeTitleEnabled: true } : { headerStyle: { backgroundColor: colors.surface } }),
+          ...useProfileHeaderOptions(colors, true),
         }}
       />
     </Stack>

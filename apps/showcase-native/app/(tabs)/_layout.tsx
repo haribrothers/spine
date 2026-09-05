@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useNativeColors } from "@spine/ui-native";
 
@@ -30,23 +31,42 @@ import { useNativeColors } from "@spine/ui-native";
  * `@expo/ui`-backed component in this rework uses — rather than left at
  * the OS default tint.
  *
- * The Home and Profile tabs' `Trigger`s use `name="(home)"`/`name="(profile)"`,
- * NOT `name="index"`/`name="profile"` — confirmed by tracing `expo-router`'s
- * own route-matching code (`useScreens.js`'s `getSortedChildren`, which
- * only special-cases an unmatched name by trying `${name}/index`, never
- * strips a group's parentheses). Groups are transparent to the URL, not to
- * the route name `expo-router` registers for a `NativeTabs` child —
- * `app/(tabs)/(home)/` and `app/(tabs)/(profile)/` (group folders each
- * holding their own `_layout.tsx` Stack, so each tab gets its own real
- * native-stack header) register as route names `"(home)"`/`"(profile)"`
- * themselves, not `"index"`/`"profile"`. Using the bare name here silently
- * drops the whole tab with no visible error (`withLayoutContext`'s
+ * The Home tab's `Trigger` uses `name="(home)"`, NOT `name="index"` —
+ * confirmed by tracing `expo-router`'s own route-matching code
+ * (`useScreens.js`'s `getSortedChildren`, which only special-cases an
+ * unmatched name by trying `${name}/index`, never strips a group's
+ * parentheses). Groups are transparent to the URL, not to the route name
+ * `expo-router` registers for a `NativeTabs` child — `app/(tabs)/(home)/`
+ * (a group folder holding its own `_layout.tsx` Stack, so this tab gets
+ * its own real native-stack header) registers as the route name `"(home)"`
+ * itself, not `"index"`. Using the bare name here silently drops the whole
+ * tab with no visible error (`withLayoutContext`'s
  * `useOnlyUserDefinedScreens` filters out the unmatched route) — confirmed
- * empirically before landing this file. `components`/`templates` work with
- * a plain `name="components"` only because `getSortedChildren` DOES
- * special-case the `${name}/index` fallback for a plain (non-group)
- * subdirectory; that fallback doesn't apply to a parenthesized group
- * segment.
+ * empirically before landing this file. `components`/`templates`/`search`
+ * work with a plain `name="components"` etc. only because
+ * `getSortedChildren` DOES special-case the `${name}/index` fallback for a
+ * plain (non-group) subdirectory; that fallback doesn't apply to a
+ * parenthesized group segment.
+ *
+ * **Profile is no longer a tab at all** (user request) — it moved to a
+ * root-level modal sheet reached via a header avatar icon on every other
+ * tab (`ProfileHeaderButton`, see `app/_layout.tsx`'s own doc comment for
+ * the `presentation: "formSheet"` registration). Removing its `Trigger`
+ * here was the other half of that change — a route can still be pushed to
+ * without ever appearing as a `NativeTabs.Trigger`.
+ *
+ * **Search's `Trigger` is genuinely platform-divergent, not a shared
+ * pattern like Profile's avatar was** — iOS gets `role="search"`, a real,
+ * confirmed `@platform iOS`-only feature of `NativeTabs.Trigger`
+ * (confirmed in `expo-router`'s own bundled types:
+ * `SUPPORTED_TAB_BAR_ITEM_ROLES` includes `"search"`, and the `role` prop
+ * itself is tagged `@platform iOS` with no Android counterpart at all) —
+ * this produces the native separated/floating search-tab treatment
+ * (`UITabBar`'s own built-in search-tab presentation, iOS 18+). Android's
+ * Material bottom nav has no equivalent concept whatsoever, so per
+ * explicit user decision it gets an ordinary 4th tab there instead — same
+ * destination screen (`/search`), no special chrome to mimic since none
+ * exists on Android to begin with.
  */
 export default function TabsLayout() {
   const colors = useNativeColors();
@@ -69,10 +89,14 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: "rectangle.stack", selected: "rectangle.stack.fill" }} md="dashboard" />
         <NativeTabs.Trigger.Label>Templates</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="(profile)">
-        <NativeTabs.Trigger.Icon sf={{ default: "person", selected: "person.fill" }} md="person" />
-        <NativeTabs.Trigger.Label>Profile</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
+      {Platform.OS === "ios" ? (
+        <NativeTabs.Trigger name="search" role="search" />
+      ) : (
+        <NativeTabs.Trigger name="search">
+          <NativeTabs.Trigger.Icon sf={{ default: "magnifyingglass", selected: "magnifyingglass" }} md="search" />
+          <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
+        </NativeTabs.Trigger>
+      )}
     </NativeTabs>
   );
 }
