@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Rect, Stop } from "react-native-svg";
+import { SegmentedControl } from "@expo/ui/community/segmented-control";
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { Card, CardContent, CardDescription, CardTitle, StatusChip, ScrollEdgeMask, useNativeColors, type StatusChipProps } from "@spine/ui-native";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
@@ -108,46 +110,159 @@ function KpiCard({ label, value, trend, icon: Icon, tone, gradient }: (typeof KP
   );
 }
 
+const GAUGE_SIZE = 148;
+const GAUGE_STROKE = 12;
+
 /**
- * Compact welcome card — a greeting plus ONE lightweight progress
- * indicator (a plain horizontal bar, not a chart) toward this month's
- * revenue goal. Per real-app research (Mobbin: bunq/Grab/Monzo use a real
- * line chart; Fiverr/Cleo use a simpler progress bar/slider instead) —
- * this app's daily financial data is thin (a handful of invoices/jobs, not
- * continuous transaction volume), so a real line chart would have almost
- * no meaningful shape to show and would read as decoration rather than
- * information. A single progress bar toward a concrete, named goal
- * ("$18,900 of $25,000 goal") is honest about the data this app actually
- * has, and needs no charting library — plain `View`s only.
+ * A semi-circular (180°) gauge, arc + filled progress + a centered value —
+ * NOT a full 360° ring. Per Mobbin research (Cleo's credit-score gauge,
+ * TradingView's buy/sell needle gauge, Acorns' Weak/Fair/Strong gauge,
+ * Binance's Fear & Greed gauge): every real "speedometer-style" dashboard
+ * indicator found was consistently a semi-circle with the value centered
+ * inside the arc, never a full ring (full rings — Apple Fitness/WHOOP-style
+ * — are a different, more common pattern reserved for a different framing
+ * this component deliberately does NOT use here).
+ *
+ * Built as a plain `react-native-svg` arc path (already this package's
+ * established gradient/shape mechanism — see `KpiCard`/`ScrollEdgeMask` —
+ * no new charting dependency). The arc is drawn as two stacked `Path`s: a
+ * full semi-circle track at low opacity, and a progress arc on top whose
+ * end angle is `progress`-driven — simpler and more predictable at this
+ * small size than a `strokeDasharray`/`strokeDashoffset` approach on a
+ * `Circle`, since a true circle's dash-offset math has to be adjusted for
+ * exactly half a circumference here, whereas an explicit arc path takes
+ * the end angle directly.
  */
-function WelcomeCard() {
-  const goal = 25000;
-  const current = 18900;
-  const progress = Math.min(1, current / goal);
+function GaugeIndicator({ progress, trackColor, fillColor }: { progress: number; trackColor: string; fillColor: string }) {
+  const clamped = Math.max(0, Math.min(1, progress));
+  const r = GAUGE_SIZE / 2 - GAUGE_STROKE / 2;
+  // The SVG canvas is only half-height (a semi-circle, open side up) plus
+  // room for the stroke's own rounded caps — `cy` must sit at that canvas's
+  // OWN bottom edge (canvasHeight), not at `GAUGE_SIZE / 2` (half of the
+  // full, never-rendered circle) — that mismatch was a real bug: the arc's
+  // true center point sat below the visible canvas, so only its very top
+  // sliver was visible and the "76%" label (positioned assuming a centered
+  // arc) rendered too high, overlapping the arc's own opening instead of
+  // sitting inside it.
+  const canvasHeight = GAUGE_SIZE / 2 + GAUGE_STROKE;
+  const cx = GAUGE_SIZE / 2;
+  const cy = canvasHeight;
+
+  const arcPath = (fromDeg: number, toDeg: number) => {
+    const toRad = (deg: number) => (deg * Math.PI) / 180;
+    const start = { x: cx + r * Math.cos(toRad(fromDeg)), y: cy + r * Math.sin(toRad(fromDeg)) };
+    const end = { x: cx + r * Math.cos(toRad(toDeg)), y: cy + r * Math.sin(toRad(toDeg)) };
+    const largeArc = toDeg - fromDeg > 180 ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+  };
+
+  // 180deg (left) through 270deg (top, since SVG's y-axis grows downward so
+  // negative-y is "up") to 360deg (right) — a dome bulging upward, flat
+  // side down, the correct speedometer/rainbow shape. Verified by direct
+  // trig (not assumed): cos/sin at 180/270/360 place the arc's top point
+  // at negative y, confirming the bulge is genuinely upward, not downward.
+  const trackD = arcPath(180, 360);
+  const progressD = arcPath(180, 180 + clamped * 180);
 
   return (
-    <Card className="gap-4">
-      <View>
-        <Text className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">Good morning, Sam</Text>
-        <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-          Here's how Spine Showcase Co. is doing this month.
-        </Text>
+    <View style={{ width: GAUGE_SIZE, height: canvasHeight }}>
+      <Svg width={GAUGE_SIZE} height={canvasHeight}>
+        <Path d={trackD} stroke={trackColor} strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
+        {clamped > 0 ? (
+          <Path d={progressD} stroke={fillColor} strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
+        ) : null}
+      </Svg>
+      <View style={{ position: "absolute", bottom: 0, left: 0, right: 0, alignItems: "center" }}>
+        <Text className="text-[24px] font-bold text-white">{Math.round(clamped * 100)}%</Text>
       </View>
-      <View className="gap-2">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[13px] font-medium text-on-surface dark:text-on-surface-dark">Revenue goal</Text>
-          <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
+    </View>
+  );
+}
+
+const SPARKLINE_WEEKLY_REVENUE = [3200, 4100, 3800, 5200, 4700, 6100, 5900];
+
+/**
+ * A small inline sparkline — plain `react-native-svg` `Path` polyline, no
+ * charting library. Per Mobbin research, real apps place a sparkline
+ * directly under a plain balance number (Revolut Business, Wealthsimple)
+ * rather than layered onto other card content — placed here directly below
+ * the revenue-goal line in the welcome card's own left column, in the
+ * whitespace that column already had, not overlapping the gauge.
+ */
+function Sparkline({ data, width, height, color }: { data: number[]; width: number; height: number; color: string }) {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const stepX = width / (data.length - 1);
+  const points = data.map((value, i) => ({
+    x: i * stepX,
+    y: height - ((value - min) / range) * height,
+  }));
+  const d = points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`).join(" ");
+
+  return (
+    <Svg width={width} height={height}>
+      <Path d={d} stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </Svg>
+  );
+}
+
+/**
+ * The welcome/hero card — sized to real physical-credit-card proportions
+ * (`CARD_ASPECT_RATIO`, the standard ~1.586:1 bank-card ratio), gradient
+ * background, greeting on the left and a semi-circular revenue-goal gauge
+ * on the right — a deliberate, explicit user choice to embed the gauge
+ * INSIDE the credit-card hero rather than as its own separate card below
+ * it (the more common real-app pattern per Mobbin research — Apple
+ * Wallet/CRED/bunq/Klarna all keep a card-shaped tile as a plain
+ * balance/identity surface, with gauges like Cleo's/Acorns' living on
+ * their own separate plain rectangular card elsewhere) — confirmed and
+ * proceeded with per explicit instruction, not a default recommendation.
+ * Side-by-side (not stacked) layout is a direct consequence of the fixed
+ * card aspect ratio: at a realistic ~358pt card width the 1.586:1 ratio
+ * gives only ~226pt of height total, and a stacked "greeting on top,
+ * gauge below" layout doesn't comfortably fit both a 2-line greeting AND a
+ * gauge tall enough to read — greeting-left/gauge-right uses the width
+ * this card shape actually has plenty of instead.
+ *
+ * Gradient built the same way as `KpiCard` (`react-native-svg`'s
+ * `LinearGradient`, no new dependency) using `colors.primary`/
+ * `primaryHover` — the same brand pair already used elsewhere, not an
+ * invented new hue for this one card.
+ */
+const CARD_ASPECT_RATIO = 1.586;
+
+function WelcomeCard({ gradient }: { gradient: { from: string; to: string } }) {
+  const goal = 25000;
+  const current = 18900;
+  const progress = current / goal;
+
+  return (
+    <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
+      <Svg width="100%" height="100%" style={{ position: "absolute" }}>
+        <Defs>
+          <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={gradient.from} />
+            <Stop offset="1" stopColor={gradient.to} />
+          </SvgLinearGradient>
+        </Defs>
+        <Rect x="0" y="0" width="100%" height="100%" fill="url(#welcome-gradient)" />
+      </Svg>
+      <View className="flex-1 flex-row items-center justify-between p-5">
+        <View className="flex-1 gap-1 pr-3">
+          <Text className="text-[19px] font-semibold text-white">Good morning, Sam</Text>
+          <Text className="text-[12px] text-white/75">Spine Showcase Co.</Text>
+          <Text className="mt-3 text-[12px] text-white/75">Revenue goal</Text>
+          <Text className="text-[13px] font-medium text-white">
             ${current.toLocaleString()} / ${goal.toLocaleString()}
           </Text>
+          <View className="mt-3">
+            <Sparkline data={SPARKLINE_WEEKLY_REVENUE} width={120} height={28} color="rgba(255,255,255,0.85)" />
+          </View>
         </View>
-        <View className="h-2 overflow-hidden rounded-full bg-surface-sunken dark:bg-surface-sunken-dark">
-          <View
-            className="h-full rounded-full bg-primary dark:bg-primary-dark"
-            style={{ width: `${Math.round(progress * 100)}%` }}
-          />
-        </View>
+        <GaugeIndicator progress={progress} trackColor="rgba(255,255,255,0.25)" fillColor="#FFFFFF" />
       </View>
-    </Card>
+    </View>
   );
 }
 
@@ -174,14 +289,41 @@ function WelcomeCard() {
  * `ScrollView` is a SEPARATE, nested scroll view and doesn't interact with
  * this outer rule at all (only the screen's own top-level scroll view must
  * avoid an extra wrapper).
+ *
+ * **The period `SegmentedControl` above the KPI carousel is `@expo/ui`'s
+ * real, genuinely native component** (`@expo/ui/community/segmented-
+ * control` — a real SwiftUI `Picker` in `.segmented` style on iOS, a real
+ * Jetpack Compose `SingleChoiceSegmentedButtonRow` on Android, confirmed by
+ * reading both platform implementation files directly), not a hand-rolled
+ * NativeWind row of `Pressable`s — matching this codebase's established
+ * native-first rule for any control with a real native equivalent (see
+ * `packages/ui-native/src/components/select.tsx`'s own precedent for the
+ * same `@expo/ui` consumption pattern). Placed directly below the "Home"
+ * large title and above the KPI carousel it conceptually filters,
+ * mirroring where real reference apps (TIDE/Me+/timespent, via Mobbin
+ * research) place a Week/Month/Year control relative to the stat card it
+ * controls — never floating on top of the gradient hero card itself. It's
+ * currently DISPLAY-ONLY (selecting a period doesn't yet change which
+ * numbers the KPI cards show — this showcase app has no real backing data
+ * per-period to switch between) — a real, honest limitation, not a bug;
+ * wiring it to actually filter `KPIS`/`WelcomeCard`'s numbers is a
+ * follow-up once/if this screen gets real mocked per-period data.
  */
 function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> }) {
   const { colorScheme } = useColorScheme();
   const gradients = colorScheme === "dark" ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
+  const [period, setPeriod] = useState(1);
 
   return (
     <>
-      <WelcomeCard />
+      <WelcomeCard gradient={gradients.primary} />
+
+      <SegmentedControl
+        values={["This week", "This month", "This year"]}
+        selectedIndex={period}
+        onChange={(event) => setPeriod(event.nativeEvent.selectedSegmentIndex)}
+        style={{ height: 36 }}
+      />
 
       <RNScrollView
         horizontal
