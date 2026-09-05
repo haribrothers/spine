@@ -44,20 +44,39 @@ import { ProfileHeaderButton } from "../components/profile-header-button";
  * confirmed choice, not an oversight) — the real native button item only
  * accepts an SF Symbol or a static image as its `icon`, not an arbitrary
  * React element, so it can't render our dynamic "SP"-initials Avatar
- * directly. Since the initials bubble is this app's actual brand/identity
- * element (kept over swapping to a generic `person.crop.circle.fill` SF
- * Symbol, a real alternative that was explicitly considered and rejected),
- * its own `className` carries the `surfaceSunken` background directly —
- * NOT a separate padded wrapper `View` around a smaller Avatar, which is
- * what the first version of this fix did and which was itself a real,
- * user-reported bug: a `size="sm"` (24pt) `Avatar` inside a `h-9 w-9`
- * (36pt) background `View` left a visible ring of empty padding around the
- * avatar circle, and that 36pt outer box didn't actually match the real
- * native bell button's own rendered circle size either, so the two header
- * items visibly differed in size. Fixed by applying `surfaceSunken`
- * straight onto `size="md"` (32pt) Avatar's own `className` — no wrapper,
- * no gap between the colored circle and its content, and 32pt reads as
- * the same visual weight as the native bell button beside it.
+ * directly.
+ *
+ * **Avatar keeps its own default blue `bg-primary` fill — it does NOT try
+ * to match the bell's neutral gray/glass chrome color, a real reverted
+ * mistake.** An earlier version of this fix overrode Avatar's background
+ * with `surfaceSunken` (a light neutral gray) to visually pair with the
+ * bell's native chrome, but that broke the fallback's hardcoded
+ * `text-white` initials text in light mode specifically — white "SP" text
+ * on `surfaceSunken`'s near-white light-mode value was nearly invisible
+ * (confirmed live via screenshot: a real, user-reported regression, not a
+ * cosmetic nitpick). Reverted: Avatar's own blue fill is correct here on
+ * both themes (white text on blue always has enough contrast) — the bell
+ * and avatar are simply two different-colored circles by design, the same
+ * way Apple's own apps often pair a neutral icon button with a colored
+ * profile photo/initial, and that's fine; only their SIZE needs to match,
+ * not their color.
+ *
+ * **Sizing: an explicit `h-[42px] w-[42px]` override on Avatar's
+ * `className`, not any of its existing `sm`/`md`/`lg` size variants — a
+ * real, measured fix, not a guess.** The first attempt used `size="md"`
+ * (32pt), assumed to visually match the native bell button's circle;
+ * comparing actual rendered pixels (cropped screenshots, dark mode, with a
+ * grid overlay and a per-pixel color-boundary scan) showed the real native
+ * bell chrome renders at roughly 42pt (~127-131px in a 3x-scale
+ * screenshot) — about 1.5x bigger than the 32pt avatar sat next to it, a
+ * clearly visible, real mismatch matching the user's report. `size="md"`
+ * is kept as the base (for its font-size/overflow/rounding classes) with
+ * `className`'s `h-[42px] w-[42px]` winning over the base size's `h-8 w-8`
+ * via `cn()`'s tailwind-merge (later class wins on the same property) —
+ * this pattern (a `className` override on top of a component's own size
+ * prop) is the same one already established elsewhere in this codebase,
+ * not a new mechanism. If a future SF Symbol/native chrome size changes,
+ * re-measure with the same pixel-scan approach rather than eyeballing it.
  *
  * `profileImageSource` (optional) is threaded through to `Avatar`'s own
  * `source` prop — `Avatar` already supports a real photo via `source:
@@ -95,12 +114,7 @@ export function useProfileHeaderOptions(
           hidesSharedBackground: true,
           element: (
             <Pressable onPress={open} hitSlop={8} accessibilityLabel="Profile">
-              <Avatar
-                fallback="SP"
-                size="md"
-                source={profileImageSource}
-                style={{ backgroundColor: colors.surfaceSunken }}
-              />
+              <Avatar fallback="SP" size="md" source={profileImageSource} className="h-[42px] w-[42px]" />
             </Pressable>
           ),
         },
