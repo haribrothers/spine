@@ -54,19 +54,28 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * space between rows. `ItemSeparatorComponent` is RN's own supported
  * mechanism for inter-item spacing and isn't subject to this gap.
  *
- * **iOS results list gets an explicit `insets.top` padding on its own —
- * a real, user-reported bug.** `headerSearchBarOptions`'s activated/typing
- * state is a genuine native `UISearchController` interaction (confirmed:
- * Apple's own apps, e.g. Podcasts/Music, hide the nav title the same way
- * while a search bar is focused — not a bug on its own), but this screen
- * has no large title and lives inside a `NativeTabs` host with very little
- * header chrome to begin with, so once search is active the results list's
- * `contentInsetAdjustmentBehavior="automatic"` has nothing stable to
- * compute insets from and the first row rendered flush under the status
- * bar with zero top space. Fixed with an explicit `paddingTop:
- * insets.top` (iOS only — Android's own hand-built pill already reserves
- * its own top spacing via the `View` above the list, and never loses its
- * header/title the way iOS's native search-activation does).
+ * **iOS results list uses an explicit `insets.top` padding INSTEAD of
+ * `contentInsetAdjustmentBehavior="automatic"`, not alongside it — a real,
+ * user-reported bug, found in two stages.** `headerSearchBarOptions`'s
+ * activated/typing state is a genuine native `UISearchController`
+ * interaction (confirmed: Apple's own apps, e.g. Podcasts/Music, hide the
+ * nav title the same way while a search bar is focused — not a bug on its
+ * own), but this screen has no large title and lives inside a `NativeTabs`
+ * host with very little header chrome to begin with. First attempt: kept
+ * `"automatic"` and added a manual `paddingTop: insets.top` alongside it,
+ * assuming automatic adjustment had nothing to compute from — this
+ * undercorrected the actual bug into an OVER-correction instead: iOS's
+ * `UIScrollView` still applied its own automatic top content inset (using
+ * the tab/nav chrome's last-known height, not zero) AND my manual padding
+ * stacked on top of it, producing a much larger dead-space gap above the
+ * first row than intended (confirmed live via screenshot — a real
+ * regression, not the original bug recurring). Fixed by setting
+ * `contentInsetAdjustmentBehavior="never"` on iOS specifically so only the
+ * explicit `insets.top + 16` padding applies, with nothing automatic
+ * stacking on top of it. Android is untouched (`"automatic"`, no manual
+ * padding) — its hand-built pill already reserves its own top spacing via
+ * the `View` above the list and never loses its header/title the way iOS's
+ * native search-activation does, so it never had either bug.
  */
 export default function SearchScreen() {
   const colors = useNativeColors();
@@ -142,7 +151,7 @@ export default function SearchScreen() {
       )}
       {isSearching ? (
         <FlatList
-          contentInsetAdjustmentBehavior="automatic"
+          contentInsetAdjustmentBehavior={Platform.OS === "ios" ? "never" : "automatic"}
           keyboardShouldPersistTaps="handled"
           data={results}
           keyExtractor={(entry) => entry.slug}
