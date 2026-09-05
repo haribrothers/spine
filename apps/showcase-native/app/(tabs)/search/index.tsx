@@ -96,25 +96,37 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * regressed once the header's actual presence/height changed.
  *
  * **`FlatList` is this screen's own direct root on iOS — NOT wrapped in an
- * outer `View`, a real, reproduced, user-reported bug matching the one
- * `(home)/index.tsx`'s own doc comment already documents for `ScrollView`.**
- * The large title never collapsed on scroll at all: it stayed rendered at
- * its full expanded size, floating on top of the list's own scrolled
- * content underneath (confirmed via screenshot — result rows visibly
- * scrolled up underneath a still-fully-expanded "Search" title). Root
- * cause: this screen wrapped its `FlatList` in an outer `<View
- * className="flex-1 ...">` (originally just to give the background color
- * a home and hold the `Stack.Screen` config element and the Android-only
- * search-pill `View` as siblings) — but `react-native-screens`' large-
- * title collapse tracking auto-detects a screen's own scroll view via a
- * heuristic that only walks the screen's first-level subview, and that
- * extra wrapping `View` defeats it, exactly as documented for Home. Since
- * `Stack.Screen` renders no actual UI (it's a pure config element) it can
- * sit as a true sibling of `FlatList` with zero visual effect, so the fix
- * is platform-conditional like Home's: iOS renders `FlatList` as the real
- * root (styled directly via `className`, no wrapper `View`) with
- * `Stack.Screen` alongside it; Android keeps the wrapping `View` it
- * actually needs (to hold its hand-built search pill above the list).
+ * outer `View`** — the same "extra wrapping `View` defeats
+ * `react-native-screens`' scroll-view auto-detection" fix `(home)/
+ * index.tsx`'s own doc comment documents for `ScrollView`. Since
+ * `Stack.Screen` renders no actual UI (a pure config element), it sits as
+ * a true sibling of `FlatList` with zero visual effect on iOS; Android
+ * keeps the wrapping `View` it actually needs (to hold its hand-built
+ * search pill above the list). This fix is real and correct, but it did
+ * NOT resolve the large title staying permanently expanded — see below for
+ * why that's actually separate, and not this same bug recurring.
+ *
+ * **The large title genuinely does NOT collapse into the small pinned
+ * title on scroll here, unlike Home/Components — and this is real,
+ * correct, permanent native iOS behavior, not a bug to keep chasing.**
+ * Confirmed by reading `react-native-screens`' own iOS implementation
+ * (`RNSScreenStackHeaderConfig.mm`): `headerSearchBarOptions.hideWhenScrolling`
+ * maps directly to `UINavigationItem.hidesSearchBarWhenScrolling`, and this
+ * screen sets it to `false` (a deliberate, confirmed choice — the user
+ * wants the search field always visible, never tucked away mid-scroll).
+ * Apple's own `UINavigationBar` large-title collapse mechanism requires the
+ * search bar to be allowed to hide/tuck under the large title as part of
+ * that same transition; forcing it to stay pinned (`hidesSearchBarWhenScrolling
+ * = false`) is documented Apple platform behavior that freezes the title in
+ * its large, expanded state for exactly that reason — there is no
+ * additional prop or structural fix that reconciles "search bar always
+ * visible" with "title collapses on scroll" on iOS; the two are mutually
+ * exclusive by Apple's own design. Components/Home never hit this because
+ * neither has a search bar at all. If a collapsing title becomes more
+ * important than an always-visible search field, the fix is flipping
+ * `hideWhenScrolling` to `true` (iOS's own default) — a real, available
+ * tradeoff, not attempted here per explicit user preference to keep the
+ * field pinned.
  */
 type Row = { kind: "result"; entry: ComponentCatalogEntry } | { kind: "recent"; query: string };
 
