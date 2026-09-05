@@ -1,16 +1,22 @@
+import { Platform } from "react-native";
 import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
 import { useProfileHeaderOptions } from "../../../src/lib/profile-header-items";
 
 /**
- * No `headerLargeTitleEnabled` here, unlike `(home)`/`components`/
- * `templates` — this screen's primary control is the search field itself,
- * not a title, and a plain small header keeps this screen's own `View`
- * wrapper (needed so the `TextField` and `FlatList` are siblings, not the
- * `FlatList` alone as the screen's root) from ever hitting the large-title
- * "ScrollView must be the direct root" collapse-tracking bug documented in
- * `(home)/_layout.tsx`'s own doc comment — a plain (non-large) header has
- * no collapse animation to track in the first place.
+ * `headerLargeTitleEnabled` (iOS), matching `(home)`/`components`/
+ * `templates` — a real, user-requested reversal of this file's own earlier
+ * decision to skip large title here. The earlier rationale (a plain small
+ * header avoids ever hitting the large-title "ScrollView must be the
+ * direct root" collapse-tracking bug, since this screen's `FlatList` sat
+ * alongside a sibling search-field `View`) is addressed at the SCREEN
+ * level instead of by avoiding large title altogether — `index.tsx` now
+ * renders exactly one `FlatList` as its direct root at all times (results,
+ * recent searches, and the empty state are all just different `data`/
+ * `ListHeaderComponent`/`ListEmptyComponent` values on that SAME list
+ * instance, never three separately-mounted trees), so the large-title
+ * collapse tracker always has a single, stable scroll view to attach to —
+ * see `index.tsx`'s own doc comment for the full rationale.
  */
 export default function SearchLayout() {
   const colors = useNativeColors();
@@ -24,7 +30,14 @@ export default function SearchLayout() {
         headerStyle: { backgroundColor: colors.surface },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Search", ...useProfileHeaderOptions(colors, false) }} />
+      <Stack.Screen
+        name="index"
+        options={{
+          title: "Search",
+          ...(Platform.OS === "ios" ? { headerLargeTitleEnabled: true } : null),
+          ...useProfileHeaderOptions(colors, false),
+        }}
+      />
       <Stack.Screen name="[slug]" />
     </Stack>
   );

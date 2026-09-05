@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { FlatList, Platform, Pressable, Text, TextInput, View } from "react-native";
 import { Link, Stack, useFocusEffect } from "expo-router";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
-import ClockIcon from "lucide-react-native/icons/clock";
 import SearchIcon from "lucide-react-native/icons/search";
 import { EmptyState, useNativeColors } from "@spine/ui-native";
-import { COMPONENT_CATALOG } from "../../../src/lib/component-catalog";
+import { COMPONENT_CATALOG, type ComponentCatalogEntry } from "../../../src/lib/component-catalog";
 import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../../src/lib/recent-searches-storage";
 
 /**
@@ -17,10 +16,11 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * `UISearchController`-integrated bar), per
  * https://developer.apple.com/design/human-interface-guidelines/search-fields
  * — a real native search field is the correct component there.
- * `hideWhenScrolling: false` keeps it always visible (this screen has no
- * large title to collapse away from under it); `autoCapitalize: "none"`
- * matches the Android field's own behavior (component names are
- * lowercase).
+ * `hideWhenScrolling: false` keeps it always visible; `autoCapitalize:
+ * "none"` matches the Android field's own behavior (component names are
+ * lowercase). `hideNavigationBar: false` keeps the "Search" title visible
+ * throughout the active/typing search state — see below for the full
+ * history of that fix.
  *
  * On Android, `headerSearchBarOptions` is backed by
  * `androidx.appcompat.widget.SearchView` (confirmed by reading
@@ -32,10 +32,43 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * `rounded-full`, search icon inline) — a real, user-reported requirement
  * matching a Google Photos reference screenshot, not a design preference.
  *
- * When the query is empty, this shows RECENT SEARCHES (not the full
- * unfiltered catalog, which is what an earlier version showed) — also per
- * the HIG doc's own guidance that a search field's results area should
- * offer recent searches/suggestions before the user types anything.
+ * **This screen renders exactly ONE `FlatList` at all times — never three
+ * separately-mounted trees for results/recent/empty — specifically so
+ * `headerLargeTitleEnabled` (see `_layout.tsx`) always has the same single,
+ * stable scroll view to track for its collapse animation.** `(home)/
+ * index.tsx`'s own doc comment documents the real, reproduced bug this
+ * guards against: `react-native-screens`' large-title collapse tracking
+ * auto-detects a screen's own scroll view via a heuristic that only walks
+ * the screen's first-level subview, and swapping between different
+ * mounted trees (or wrapping the scroll view in an extra `View`) defeats
+ * that detection, leaving the large title floating on top of scrolled
+ * content instead of collapsing into the small pinned title. This screen
+ * used to render three conditionally-mounted trees (a results `FlatList`,
+ * a plain non-scrolling recent-searches `View`, and a non-scrolling
+ * `EmptyState`) and deliberately skipped large title altogether to avoid
+ * ever hitting this bug — seeing large title on every sibling tab was a
+ * real, explicit user request that this restructuring now satisfies
+ * instead of continuing to avoid. `results`/`recent search rows`/nothing
+ * are now just different `data` arrays (a small tagged-row union, `Row`)
+ * on the SAME `FlatList` instance, with the "Recent searches (N)" header
+ * row + "Edit" action rendered via `ListHeaderComponent` and the
+ * zero-state via `ListEmptyComponent` — both real `FlatList` props that
+ * render regardless of which `data` is currently set, so the identity of
+ * the scroll view itself never changes as the user types or clears a
+ * query.
+ *
+ * **Recent-searches row styling matches a reference screenshot of a real
+ * iOS Recent Searches list** (bold, plain white/on-surface titles, no
+ * clock icon, no row separators, generous vertical rhythm) — replacing an
+ * earlier version's bordered rows with a small gray clock icon per row,
+ * which read as a generic settings list rather than a real search
+ * history. The "Recent searches (N)" + "Edit" header row also matches
+ * that reference (a plain text action, not a styled button) — tapping
+ * "Edit" clears all recent searches directly (this app has no
+ * per-row-delete affordance to enter a real edit mode for, so "Edit" and
+ * "Clear all" collapse to the same action here; a real per-row swipe-to-
+ * delete would be the next step if this list grows a genuine edit mode).
+ *
  * Recent searches persist across app restarts via
  * `recent-searches-storage.ts` (`expo-secure-store`, same mechanism
  * `theme-storage.ts` already uses) — a query is recorded once the user
@@ -45,71 +78,25 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * detail route), not `/components/[slug]` — see that file's own doc
  * comment for the real, user-reported back-navigation bug this fixes.
  *
- * Result-list spacing uses `ItemSeparatorComponent`, NOT a `gap-2` on
+ * Row spacing uses `ItemSeparatorComponent`, NOT a `gap-2` on
  * `contentContainerClassName` — a real, user-reported bug: unlike a plain
  * `ScrollView` (every other list in this app), `FlatList`'s content
  * container is rendered by `VirtualizedList` internally, and NativeWind's
  * `gap-*` utility didn't apply there, so results rendered flush with no
  * space between rows. `ItemSeparatorComponent` is RN's own supported
- * mechanism for inter-item spacing and isn't subject to this gap.
+ * mechanism for inter-item spacing and isn't subject to this gap. Content
+ * padding is likewise a plain numeric `contentContainerStyle`, not
+ * `contentContainerClassName`, for the same underlying reason.
  *
- * **`hideNavigationBar: false` on `headerSearchBarOptions` — the "Search"
- * title disappearing while the search bar is active was NOT actually
- * correct/expected behavior after all, a real reversal from an earlier
- * assumption in this same file.** An earlier version of this comment
- * argued the title-hiding was intentional native `UISearchController`
- * behavior (citing Podcasts/Music hiding their nav title the same way) and
- * left it unfixed. The user re-reported it as a real problem — with no
- * large title on this screen, losing the title entirely during search left
- * the header area completely blank, not a deliberate collapse-to-nothing
- * like a large title would do. `SearchBarProps.hideNavigationBar` (real,
- * documented prop: "If value is `undefined`, uses native behavior... on
- * iOS 26, value is determined by context") was defaulting to hidden in
- * this screen's context; setting it explicitly to `false` keeps the
- * "Search" title visible throughout the active/typing search state.
- * Confirmed live: title now stays visible with the field focused and
- * results showing.
- *
- * **Results list padding: plain numeric `contentContainerStyle`, NOT
- * `contentContainerClassName` — a real, user-reported bug.** `px-4`/`pb-4`
- * on `contentContainerClassName` were silently not applying on this
- * `FlatList` (same underlying gap as the `gap-2` bug above — `FlatList`'s
- * `VirtualizedList`-rendered content container doesn't reliably resolve
- * NativeWind classNames the way a plain `View`/`ScrollView` does),
- * producing edge-to-edge result cards with no left/right margin, visibly
- * inconsistent with the Components tab's own padded list. Fixed by moving
- * ALL content-container spacing into one plain `contentContainerStyle`
- * object instead of splitting it across `contentContainerClassName` +
- * `contentContainerStyle` — a single style source that unambiguously
- * applies, rather than two mechanisms where one silently no-ops on this
- * particular component.
- *
- * **`contentInsetAdjustmentBehavior` is back to `"automatic"` on iOS (not
- * `"never"`) — a real, two-part reversal now that `hideNavigationBar:
- * false` (above) keeps the nav bar genuinely present during search.**
- * When the nav bar/title was disappearing during search (before that fix),
- * `"automatic"` + a manually-added `paddingTop: insets.top` double-counted
- * — iOS still applied its own automatic inset from the chrome's
- * last-known height AND the manual padding stacked on top, so switching to
- * `"never"` (dropping automatic entirely in favor of one explicit
- * `insets.top + 16` padding) was the right fix at the time. But once the
- * nav bar started staying visible instead of disappearing,
- * `insets.top` (~59pt, the status-bar/safe-area inset only) under-counted
- * the real, now-present nav bar's own additional height (~44pt) that
- * `"never"` no longer had `"automatic"` to correctly account for — the
- * first list row rendered clipped underneath the header, a real,
- * user-reported regression from THIS reversal's own predecessor state,
- * not a re-emergence of the original bug. Since the nav bar is now stable
- * and genuinely present (not intermittently disappearing), `"automatic"`
- * is the correct mechanism again — it's iOS's own purpose-built solution
- * for "add exactly enough top inset for whatever header actually exists
- * right now," which handles a present-vs-absent nav bar correctly without
- * this file needing to hand-compute it. `useSafeAreaInsets` is no longer
- * needed in this file at all as a result — removed along with the
- * `insets.top` calculation. Android is untouched (`"automatic"`, flat
- * `paddingTop: 16`) — its hand-built pill has never lost its header/title,
- * so this back-and-forth never applied to it.
+ * `contentInsetAdjustmentBehavior="automatic"` (both platforms) — the
+ * correct mechanism now that the header (large title + search bar, or the
+ * small title `hideNavigationBar: false` keeps visible while searching)
+ * genuinely stays present; see this file's git history for two earlier,
+ * reverted attempts at hand-computing top padding instead, both of which
+ * regressed once the header's actual presence/height changed.
  */
+type Row = { kind: "result"; entry: ComponentCatalogEntry } | { kind: "recent"; query: string };
+
 export default function SearchScreen() {
   const colors = useNativeColors();
   const [query, setQuery] = useState("");
@@ -121,11 +108,18 @@ export default function SearchScreen() {
     }, []),
   );
 
+  const isSearching = query.trim().length > 0;
+
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
     return COMPONENT_CATALOG.filter((entry) => entry.title.toLowerCase().includes(q) || entry.description.toLowerCase().includes(q));
   }, [query]);
+
+  const rows: Row[] = useMemo(() => {
+    if (isSearching) return results.map((entry) => ({ kind: "result", entry }) as const);
+    return recent.map((q) => ({ kind: "recent", query: q }) as const);
+  }, [isSearching, results, recent]);
 
   const recordSearch = useCallback(async (value: string) => {
     const next = await addRecentSearch(value);
@@ -136,8 +130,6 @@ export default function SearchScreen() {
     await clearRecentSearches();
     setRecent([]);
   }, []);
-
-  const isSearching = query.trim().length > 0;
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">
@@ -182,76 +174,70 @@ export default function SearchScreen() {
           </View>
         </View>
       )}
-      {isSearching ? (
-        <FlatList
-          contentInsetAdjustmentBehavior="automatic"
-          keyboardShouldPersistTaps="handled"
-          data={results}
-          keyExtractor={(entry) => entry.slug}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 16,
-            paddingTop: 16,
-          }}
-          ItemSeparatorComponent={() => <View className="h-2" />}
-          ListEmptyComponent={
+
+      <FlatList
+        contentInsetAdjustmentBehavior="automatic"
+        keyboardShouldPersistTaps="handled"
+        data={rows}
+        keyExtractor={(row) => (row.kind === "result" ? row.entry.slug : `recent-${row.query}`)}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 16, paddingTop: 16 }}
+        ItemSeparatorComponent={() => <View className={isSearching ? "h-2" : "h-6"} />}
+        ListHeaderComponent={
+          !isSearching && recent.length > 0 ? (
+            <View className="mb-4 flex-row items-center justify-between">
+              <Text className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">
+                Recent searches ({recent.length})
+              </Text>
+              <Pressable onPress={handleClearRecent} hitSlop={8}>
+                <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Edit</Text>
+              </Pressable>
+            </View>
+          ) : null
+        }
+        ListEmptyComponent={
+          isSearching ? (
             <EmptyState
               icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
               title="No components found"
               description={`Nothing matches "${query}".`}
             />
-          }
-          renderItem={({ item: entry }) => (
-            <Link href={`/search/${entry.slug}`} asChild>
+          ) : (
+            <EmptyState
+              className="pt-12"
+              icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
+              title="Search components"
+              description="Find any component by name or description."
+            />
+          )
+        }
+        renderItem={({ item: row }) =>
+          row.kind === "result" ? (
+            <Link href={`/search/${row.entry.slug}`} asChild>
               <Pressable
                 onPress={() => recordSearch(query)}
                 className="flex-row items-center justify-between rounded-lg border border-border bg-surface p-3.5 dark:border-border-dark dark:bg-surface-dark active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
               >
                 <View className="flex-1 gap-0.5 pr-2">
                   <View className="flex-row items-center gap-2">
-                    <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{entry.title}</Text>
-                    {entry.native ? (
+                    <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{row.entry.title}</Text>
+                    {row.entry.native ? (
                       <View className="rounded-full bg-info-bg px-1.5 py-0.5 dark:bg-info-bg-dark">
                         <Text className="text-[10px] font-medium text-info dark:text-info-dark">Native</Text>
                       </View>
                     ) : null}
                   </View>
-                  <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{entry.description}</Text>
+                  <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{row.entry.description}</Text>
                 </View>
                 <ChevronRight size={18} color={colors.onSurfaceMuted} />
               </Pressable>
             </Link>
-          )}
-        />
-      ) : recent.length > 0 ? (
-        <View className="flex-1 px-4 pt-4">
-          <View className="mb-2 flex-row items-center justify-between">
-            <Text className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
-              Recent Searches
-            </Text>
-            <Pressable onPress={handleClearRecent} hitSlop={8}>
-              <Text className="text-[13px] font-medium text-primary dark:text-primary-dark">Clear</Text>
+          ) : (
+            <Pressable onPress={() => setQuery(row.query)}>
+              <Text className="text-[17px] font-semibold text-on-surface dark:text-on-surface-dark">{row.query}</Text>
             </Pressable>
-          </View>
-          {recent.map((entryQuery) => (
-            <Pressable
-              key={entryQuery}
-              onPress={() => setQuery(entryQuery)}
-              className="flex-row items-center gap-3 border-b border-border py-3 dark:border-border-dark active:bg-surface-sunken active:dark:bg-surface-sunken-dark"
-            >
-              <ClockIcon size={16} color={colors.onSurfaceMuted} />
-              <Text className="flex-1 text-[15px] text-on-surface dark:text-on-surface-dark">{entryQuery}</Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : (
-        <EmptyState
-          className="flex-1 justify-center"
-          icon={<SearchIcon size={24} color={colors.onSurfaceMuted} />}
-          title="Search components"
-          description="Find any component by name or description."
-        />
-      )}
+          )
+        }
+      />
     </View>
   );
 }
