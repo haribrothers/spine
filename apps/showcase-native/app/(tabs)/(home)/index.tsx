@@ -304,90 +304,57 @@ function GaugeIndicator({
 /**
  * The welcome/hero card — a wide, short, rounded rectangle at a real
  * `CARD_ASPECT_RATIO` of `1.5` (3:2 width:height, per explicit user
- * request — landscape-photo proportions, noticeably wider/shorter than
- * the earlier ~1.586:1 credit-card ratio). `aspectRatio` alone, NOT
+ * request — landscape-photo proportions). `aspectRatio` alone, NOT
  * combined with `minHeight` — a real, previously-fixed bug from an
  * earlier version: `aspectRatio` + `minHeight` together on a `View` with
  * no explicit `width` let React Native derive WIDTH from `minHeight`
- * instead of deriving height from the (already width-constrained-by-its-
- * flex-parent) width, and the card rendered wider than the screen. Using
- * `aspectRatio` alone here is safe specifically BECAUSE nothing else on
- * this card requires more vertical room than 3:2 at full screen width
- * actually gives (~239pt at a ~358pt-wide screen) — the gauge below grew
- * larger specifically to use that space well, not to fight it.
+ * instead of the other way around, and the card rendered wider than the
+ * screen. Using `aspectRatio` alone here is safe specifically BECAUSE
+ * nothing else on this card requires more vertical room than 3:2 at full
+ * screen width actually gives.
  *
- * **Background is `WELCOME_GRADIENT`** (see that constant's own doc
- * comment for the full rationale) — a simple diagonal 2-stop
- * `LinearGradient`, primary blue → a darker shade of the same hue,
- * reusing `KPI_GRADIENTS.primary` directly. This is the THIRD background
- * treatment this card has had (a linear orange→yellow→green sweep, then
- * a 3-color radial blue/yellow/red gradient, both explicitly rejected by
- * the user as too busy) — back to fully opaque solid-color stops, so (
- * unlike the radial version) no separate backdrop `Rect` is needed
- * underneath.
+ * **Background is now a plain, flat `bg-surface-sunken` (light gray/
+ * off-white) — no gradient, no `Svg` at all** — the FOURTH background
+ * treatment this card has had, and a real, explicit user rejection of
+ * every prior gradient attempt (linear orange→yellow→green, a 3-color
+ * radial blue/yellow/red, then a simple 2-stop primary-blue gradient —
+ * each one individually addressed real feedback from the attempt before
+ * it, but the user still didn't like the result). This time the request
+ * itself is a flat neutral background, not another gradient to tune —
+ * `colors.surfaceSunken` (the same light-gray token `QUICK_ACTIONS`
+ * tiles and the very first gauge-track color already used elsewhere on
+ * this screen) is the plain, literal answer to "light gray or off-white,"
+ * not a new invented tone.
  *
- * Text is back to plain white/white-translucent (was swapped to
- * theme-aware `on-surface` tokens for the second, much-lighter-background
- * attempt) since this gradient is a real, solid, moderately-dark blue
- * again — the same contrast situation the very first version had.
+ * Text switched from white/white-translucent back to `on-surface`-toned
+ * values (as it was for the second, also-light-background attempt) —
+ * white has no contrast against a light gray card.
  *
- * Stacked layout, largest-to-smallest visual weight top-to-bottom:
- * greeting (`text-[26px]`) → the gauge, centered, now larger/thinner
- * (`GAUGE_SIZE`/`GAUGE_STROKE`, see that component's own doc comment) →
- * the revenue-goal numbers, centered below it.
+ * The gauge's own colors are explicitly RETAINED as a distinct element,
+ * not flattened to match the new neutral card — per explicit instruction
+ * ("retain the color of the gauge"). Its previous fill was a near-white
+ * gradient that only worked against a dark/saturated card and would be
+ * invisible here, so it's repointed to the app's real primary-blue
+ * gradient (`GAUGE_FILL_GRADIENT`, sourced from `KPI_GRADIENTS.primary`
+ * — the same pair the Outstanding KPI card and the earlier solid-blue
+ * welcome-card attempt both already used) — keeping the app's actual
+ * brand color as the gauge's "color," the intent behind "retain," rather
+ * than literally keeping now-invisible white values.
+ *
+ * Stacked layout unchanged: greeting (`text-[26px]`) → the gauge,
+ * centered → the revenue-goal numbers, centered below it.
  */
 const CARD_ASPECT_RATIO = 1.5;
 
-/**
- * A simple diagonal 2-stop `LinearGradient` — primary blue → a darker
- * shade of the SAME hue — replacing two earlier, explicitly-rejected
- * attempts (a hand-picked linear orange→yellow→green sweep, then a
- * user-supplied 3-color radial blue/yellow/red gradient rebalanced to
- * make blue dominant). Both were rejected as too busy/not liked, even
- * after the second one technically satisfied its own stated brief (blue
- * dominant, yellow/red as accents) — the real problem was the premise
- * itself: multi-hue gradients at real saturation, not the balance between
- * them. Researched via Mobbin before this attempt (Chime, Starling, Fuse,
- * Quicken — real finance/business-app hero/balance cards) rather than
- * guessing a third time: every clean, professional-reading example uses a
- * SAME-HUE, different-lightness gradient (e.g. Chime's bright-to-forest
- * green, Starling's teal-to-near-black-teal) — none pair blue with an
- * unrelated saturated accent hue; the one two-hue example found (Klarna)
- * only works because both colors are heavily desaturated pastels, which
- * reads as "soft/playful," not this app's professional-business tone.
- *
- * Reuses `KPI_GRADIENTS.primary` directly (`#2954E5`→`#2144BB` light,
- * `#6B8AFF`→`#5067BF` dark) rather than inventing new hex values — that
- * pair is this screen's own already-validated "primary, one shade
- * darker" gradient (used by the Outstanding KPI card), so the welcome
- * card now visually matches an already-correct part of the same screen
- * instead of introducing a fourth new gradient concept. `x1/y1` to
- * `x2/y2` of `0,0` to `1,1` gives a top-left-to-bottom-right diagonal,
- * the direction most of the researched reference cards use.
- */
-const WELCOME_GRADIENT = KPI_GRADIENTS;
-
-/**
- * White-ish, not the earlier orange→green — that pairing made sense
- * against the second (light pastel) background attempt specifically, but
- * reads oddly against this solid blue card. A near-white gradient track
- * a real, low-opacity white matches the very first version's approach
- * (also a solid blue card) and gives the gauge's fill a clean, high-
- * contrast presence without introducing a third unrelated hue onto a
- * card that just got simplified back down to two.
- */
-const GAUGE_TRACK_COLOR = { light: "rgba(255,255,255,0.25)", dark: "rgba(255,255,255,0.2)" };
-const GAUGE_FILL_GRADIENT = {
-  light: { from: "#FFFFFF", to: "#D6E0FF" },
-  dark: { from: "#FFFFFF", to: "#C9D6FF" },
-} as const;
+const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
+const GAUGE_FILL_GRADIENT = { light: KPI_GRADIENTS.light.primary, dark: KPI_GRADIENTS.dark.primary };
 
 function WelcomeCard({
-  gradient,
+  cardBackgroundClassName,
   gaugeTrackColor,
   gaugeFillGradient,
 }: {
-  gradient: { from: string; to: string };
+  cardBackgroundClassName: string;
   gaugeTrackColor: string;
   gaugeFillGradient: { from: string; to: string };
 }) {
@@ -396,25 +363,24 @@ function WelcomeCard({
   const progress = current / goal;
 
   return (
-    <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
-      <Svg width="100%" height="100%" style={{ position: "absolute" }}>
-        <Defs>
-          <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={gradient.from} />
-            <Stop offset="1" stopColor={gradient.to} />
-          </SvgLinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill="url(#welcome-gradient)" />
-      </Svg>
+    <View
+      className={cardBackgroundClassName}
+      style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}
+    >
       <View className="flex-1 items-center gap-2 p-5">
         <View className="w-full">
-          <Text className="text-[26px] font-semibold text-white">Good morning, Sam</Text>
-          <Text className="text-[13px] text-white/75">Spine Showcase Co.</Text>
+          <Text className="text-[26px] font-semibold text-on-surface dark:text-on-surface-dark">Good morning, Sam</Text>
+          <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Spine Showcase Co.</Text>
         </View>
-        <GaugeIndicator progress={progress} trackColor={gaugeTrackColor} fillGradient={gaugeFillGradient} textColorClass="text-white" />
+        <GaugeIndicator
+          progress={progress}
+          trackColor={gaugeTrackColor}
+          fillGradient={gaugeFillGradient}
+          textColorClass="text-on-surface dark:text-on-surface-dark"
+        />
         <View className="items-center gap-0.5">
-          <Text className="text-[12px] text-white/75">Revenue goal</Text>
-          <Text className="text-[15px] font-medium text-white">
+          <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">Revenue goal</Text>
+          <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">
             ${current.toLocaleString()} / ${goal.toLocaleString()}
           </Text>
         </View>
@@ -470,14 +436,17 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
-  const welcomeGradient = isDark ? WELCOME_GRADIENT.dark.primary : WELCOME_GRADIENT.light.primary;
   const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
   const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
   const [period, setPeriod] = useState(1);
 
   return (
     <>
-      <WelcomeCard gradient={welcomeGradient} gaugeTrackColor={gaugeTrackColor} gaugeFillGradient={gaugeFillGradient} />
+      <WelcomeCard
+        cardBackgroundClassName="bg-surface-sunken dark:bg-surface-sunken-dark"
+        gaugeTrackColor={gaugeTrackColor}
+        gaugeFillGradient={gaugeFillGradient}
+      />
 
       <SegmentedControl
         values={["This week", "This month", "This year"]}
