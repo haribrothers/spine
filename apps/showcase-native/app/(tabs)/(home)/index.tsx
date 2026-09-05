@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
 import { SegmentedControl } from "@expo/ui/community/segmented-control";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
 import { Card, CardContent, CardDescription, CardTitle, StatusChip, ScrollEdgeMask, useNativeColors, type StatusChipProps } from "@spine/ui-native";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
@@ -316,16 +316,16 @@ function GaugeIndicator({
  * actually gives (~239pt at a ~358pt-wide screen) — the gauge below grew
  * larger specifically to use that space well, not to fight it.
  *
- * **Background is now a light, airy orange → yellow → green gradient**
- * (`WARM_WELCOME_GRADIENT`) — a real, explicit user request replacing the
- * previous blue-toned, lower-contrast version, which was ITSELF a fix for
- * an even-earlier bold/saturated blue. All three stops are pastel/light
- * (not saturated, per "should look more lighter"), sweeping corner-to-
- * corner diagonally — this is now a distinct, non-brand hero treatment
- * (no `colors.primary`/`primaryHover` derivation at all, unlike the KPI
- * cards), a deliberate choice since a 3-color warm sweep has no natural
- * single "semantic base color" to derive from the way the KPI cards'
- * single-hue gradients do.
+ * **Background is a real, user-supplied CSS radial gradient**
+ * (`WELCOME_RADIAL_GRADIENT_STOPS`, see that constant's own doc comment
+ * for the full CSS-to-`react-native-svg` conversion detail — a genuine
+ * `RadialGradient` element, not a linear approximation), replacing the
+ * previous hand-picked linear orange→yellow→green sweep. A solid
+ * `baseColor` `Rect` sits underneath it since every stop in the source
+ * CSS is semi-transparent (`rgba(...)` with alpha < 1) — without an
+ * opaque backdrop the card would show whatever's behind it through the
+ * gaps rather than compositing over its own background the way the CSS
+ * gradient does on a real page.
  *
  * Stacked layout, largest-to-smallest visual weight top-to-bottom:
  * greeting (`text-[26px]`) → the gauge, centered, now larger/thinner
@@ -338,10 +338,30 @@ function GaugeIndicator({
  */
 const CARD_ASPECT_RATIO = 1.5;
 
-const WARM_WELCOME_GRADIENT = {
-  light: { from: "#FFE9C7", via: "#FFF3B0", to: "#D8F3D2" },
-  dark: { from: "#4A3826", via: "#4A4626", to: "#2C4A30" },
-} as const;
+/**
+ * A real user-supplied CSS radial gradient, converted to
+ * `react-native-svg`'s `RadialGradient` element — a genuine radial
+ * (circle-from-center) gradient, NOT a linear approximation, since
+ * `react-native-svg` has a real `RadialGradient` component with `cx`/`cy`/
+ * `r` props that map directly onto CSS's `radial-gradient(circle, ...)`
+ * semantics (both default to a centered circle). Original CSS:
+ * `radial-gradient(circle, rgba(41,84,229,0.41) 0%, rgba(230,92,92,0.4)
+ * 74%, rgba(255,241,115,0.29) 100%)`. `react-native-svg`'s `Stop` takes
+ * `stopColor` and `stopOpacity` as SEPARATE props, not a combined `rgba()`
+ * string, so each CSS `rgba(r,g,b,a)` stop is split into its opaque hex
+ * equivalent (`stopColor`) plus its own alpha (`stopOpacity`) — done here
+ * by hand since there are only 3 fixed stops, not a runtime rgba parser.
+ * Applied identically in both light and dark mode (unlike
+ * `GAUGE_FILL_GRADIENT`/`GAUGE_TRACK_COLOR`, which do vary by theme) since
+ * the user supplied one fixed gradient, not a light/dark pair — if this
+ * reads poorly in dark mode in practice, that's the next thing to revisit
+ * with the user, not something to silently invent a dark variant for now.
+ */
+const WELCOME_RADIAL_GRADIENT_STOPS = [
+  { offset: "0%", stopColor: "#2954E5", stopOpacity: 0.41 },
+  { offset: "74%", stopColor: "#E65C5C", stopOpacity: 0.4 },
+  { offset: "100%", stopColor: "#FFF173", stopOpacity: 0.29 },
+] as const;
 
 const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
 const GAUGE_FILL_GRADIENT = {
@@ -350,13 +370,13 @@ const GAUGE_FILL_GRADIENT = {
 } as const;
 
 function WelcomeCard({
-  gradient,
+  baseColor,
   gaugeTrackColor,
   gaugeFillGradient,
   textColorClass,
   mutedTextColorClass,
 }: {
-  gradient: { from: string; via: string; to: string };
+  baseColor: string;
   gaugeTrackColor: string;
   gaugeFillGradient: { from: string; to: string };
   textColorClass: string;
@@ -370,12 +390,19 @@ function WelcomeCard({
     <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
       <Svg width="100%" height="100%" style={{ position: "absolute" }}>
         <Defs>
-          <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={gradient.from} />
-            <Stop offset="0.5" stopColor={gradient.via} />
-            <Stop offset="1" stopColor={gradient.to} />
-          </SvgLinearGradient>
+          <RadialGradient id="welcome-gradient" cx="50%" cy="50%" r="75%">
+            {WELCOME_RADIAL_GRADIENT_STOPS.map((stop) => (
+              <Stop key={stop.offset} offset={stop.offset} stopColor={stop.stopColor} stopOpacity={stop.stopOpacity} />
+            ))}
+          </RadialGradient>
         </Defs>
+        {/* Solid backdrop underneath — every gradient stop above is
+            semi-transparent (per the source CSS's own rgba alpha values),
+            so without an opaque base fill the card would show whatever's
+            behind it (the screen's own background) through the gaps,
+            rather than compositing the way the CSS gradient does over its
+            own page background. */}
+        <Rect x="0" y="0" width="100%" height="100%" fill={baseColor} />
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#welcome-gradient)" />
       </Svg>
       <View className="flex-1 items-center gap-2 p-5">
@@ -442,7 +469,6 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
-  const welcomeGradient = isDark ? WARM_WELCOME_GRADIENT.dark : WARM_WELCOME_GRADIENT.light;
   const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
   const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
   const [period, setPeriod] = useState(1);
@@ -450,7 +476,7 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   return (
     <>
       <WelcomeCard
-        gradient={welcomeGradient}
+        baseColor={colors.surface}
         gaugeTrackColor={gaugeTrackColor}
         gaugeFillGradient={gaugeFillGradient}
         textColorClass="text-on-surface dark:text-on-surface-dark"
