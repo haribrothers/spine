@@ -1,4 +1,4 @@
-import { Alert, Platform, Pressable, View } from "react-native";
+import { Alert, Platform, Pressable, View, type ImageSourcePropType } from "react-native";
 import BellIcon from "lucide-react-native/icons/bell";
 import { Avatar } from "@spine/ui-native";
 import { useProfileSheet } from "./profile-sheet-context";
@@ -47,13 +47,33 @@ import { ProfileHeaderButton } from "../components/profile-header-button";
  * directly. Since the initials bubble is this app's actual brand/identity
  * element (kept over swapping to a generic `person.crop.circle.fill` SF
  * Symbol, a real alternative that was explicitly considered and rejected),
- * it's wrapped in an explicit `surfaceSunken` circular background here to
- * visually approximate the native glass-pill chrome the bell now gets for
- * free — not pixel-identical to real `UIBarButtonItem` glass material
- * (custom items don't get the system's automatic background/blur), but
- * much closer than the previous bare, chrome-less `Pressable`.
+ * its own `className` carries the `surfaceSunken` background directly —
+ * NOT a separate padded wrapper `View` around a smaller Avatar, which is
+ * what the first version of this fix did and which was itself a real,
+ * user-reported bug: a `size="sm"` (24pt) `Avatar` inside a `h-9 w-9`
+ * (36pt) background `View` left a visible ring of empty padding around the
+ * avatar circle, and that 36pt outer box didn't actually match the real
+ * native bell button's own rendered circle size either, so the two header
+ * items visibly differed in size. Fixed by applying `surfaceSunken`
+ * straight onto `size="md"` (32pt) Avatar's own `className` — no wrapper,
+ * no gap between the colored circle and its content, and 32pt reads as
+ * the same visual weight as the native bell button beside it.
+ *
+ * `profileImageSource` (optional) is threaded through to `Avatar`'s own
+ * `source` prop — `Avatar` already supports a real photo via `source:
+ * ImageSourcePropType` (falls back to initials automatically on a missing
+ * source or a load error), this just wires that existing capability up to
+ * the header button specifically. No real user-profile-photo backend
+ * exists in this showcase app yet (there's no auth/user-photo concept at
+ * all here), so this is currently always called with no source and shows
+ * the "SP" initials fallback — but the prop is real and ready for when a
+ * caller has an actual photo URI/require(...) to pass.
  */
-export function useProfileHeaderOptions(colors: { onSurface: string; surfaceSunken: string }, includeBell: boolean) {
+export function useProfileHeaderOptions(
+  colors: { onSurface: string; surfaceSunken: string },
+  includeBell: boolean,
+  profileImageSource?: ImageSourcePropType,
+) {
   const { open } = useProfileSheet();
 
   if (Platform.OS === "ios") {
@@ -74,14 +94,13 @@ export function useProfileHeaderOptions(colors: { onSurface: string; surfaceSunk
           type: "custom" as const,
           hidesSharedBackground: true,
           element: (
-            <Pressable
-              onPress={open}
-              hitSlop={8}
-              accessibilityLabel="Profile"
-              className="h-9 w-9 items-center justify-center rounded-full"
-              style={{ backgroundColor: colors.surfaceSunken }}
-            >
-              <Avatar fallback="SP" size="sm" />
+            <Pressable onPress={open} hitSlop={8} accessibilityLabel="Profile">
+              <Avatar
+                fallback="SP"
+                size="md"
+                source={profileImageSource}
+                style={{ backgroundColor: colors.surfaceSunken }}
+              />
             </Pressable>
           ),
         },
