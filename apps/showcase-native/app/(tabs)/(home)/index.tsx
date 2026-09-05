@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Animated, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
 import { SegmentedControl } from "@expo/ui/community/segmented-control";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
 import { Card, CardContent, CardDescription, CardTitle, StatusChip, ScrollEdgeMask, useNativeColors, type StatusChipProps } from "@spine/ui-native";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
@@ -316,92 +316,80 @@ function GaugeIndicator({
  * actually gives (~239pt at a ~358pt-wide screen) — the gauge below grew
  * larger specifically to use that space well, not to fight it.
  *
- * **Background is a real, user-supplied CSS radial gradient**
- * (`WELCOME_RADIAL_GRADIENT_STOPS`, see that constant's own doc comment
- * for the full CSS-to-`react-native-svg` conversion detail — a genuine
- * `RadialGradient` element, not a linear approximation), replacing the
- * previous hand-picked linear orange→yellow→green sweep. A solid
- * `baseColor` `Rect` sits underneath it since every stop in the source
- * CSS is semi-transparent (`rgba(...)` with alpha < 1) — without an
- * opaque backdrop the card would show whatever's behind it through the
- * gaps rather than compositing over its own background the way the CSS
- * gradient does on a real page.
+ * **Background is `WELCOME_GRADIENT`** (see that constant's own doc
+ * comment for the full rationale) — a simple diagonal 2-stop
+ * `LinearGradient`, primary blue → a darker shade of the same hue,
+ * reusing `KPI_GRADIENTS.primary` directly. This is the THIRD background
+ * treatment this card has had (a linear orange→yellow→green sweep, then
+ * a 3-color radial blue/yellow/red gradient, both explicitly rejected by
+ * the user as too busy) — back to fully opaque solid-color stops, so (
+ * unlike the radial version) no separate backdrop `Rect` is needed
+ * underneath.
+ *
+ * Text is back to plain white/white-translucent (was swapped to
+ * theme-aware `on-surface` tokens for the second, much-lighter-background
+ * attempt) since this gradient is a real, solid, moderately-dark blue
+ * again — the same contrast situation the very first version had.
  *
  * Stacked layout, largest-to-smallest visual weight top-to-bottom:
  * greeting (`text-[26px]`) → the gauge, centered, now larger/thinner
  * (`GAUGE_SIZE`/`GAUGE_STROKE`, see that component's own doc comment) →
- * the revenue-goal numbers, centered below it. Text/gauge-track colors
- * switched from white/white-translucent to dark `on-surface`-toned values
- * specifically because the new light background no longer has enough
- * contrast for white text — a real, necessary consequence of "lighter
- * background," not an unrelated change.
+ * the revenue-goal numbers, centered below it.
  */
 const CARD_ASPECT_RATIO = 1.5;
 
 /**
- * A radial (circle-from-center) gradient via `react-native-svg`'s real
- * `RadialGradient` element (`cx`/`cy`/`r` map directly onto CSS's
- * `radial-gradient(circle, ...)` semantics) — NOT a linear approximation.
+ * A simple diagonal 2-stop `LinearGradient` — primary blue → a darker
+ * shade of the SAME hue — replacing two earlier, explicitly-rejected
+ * attempts (a hand-picked linear orange→yellow→green sweep, then a
+ * user-supplied 3-color radial blue/yellow/red gradient rebalanced to
+ * make blue dominant). Both were rejected as too busy/not liked, even
+ * after the second one technically satisfied its own stated brief (blue
+ * dominant, yellow/red as accents) — the real problem was the premise
+ * itself: multi-hue gradients at real saturation, not the balance between
+ * them. Researched via Mobbin before this attempt (Chime, Starling, Fuse,
+ * Quicken — real finance/business-app hero/balance cards) rather than
+ * guessing a third time: every clean, professional-reading example uses a
+ * SAME-HUE, different-lightness gradient (e.g. Chime's bright-to-forest
+ * green, Starling's teal-to-near-black-teal) — none pair blue with an
+ * unrelated saturated accent hue; the one two-hue example found (Klarna)
+ * only works because both colors are heavily desaturated pastels, which
+ * reads as "soft/playful," not this app's professional-business tone.
  *
- * Started from a real user-supplied CSS gradient (`radial-gradient(circle,
- * rgba(41,84,229,0.41) 0%, rgba(230,92,92,0.4) 74%, rgba(255,241,115,0.29)
- * 100%)`), but that version's actual rendered result — confirmed via
- * screenshot — read as roughly equal thirds of blue/pink/peach with no
- * single dominant hue, which the user explicitly rejected: "blue shade
- * should be prominent and then yellow and red." Two real changes make
- * that true this time, not just a color swap:
- *
- * 1. STOP POSITIONS, not just colors, control which hue dominates a
- *    radial gradient's visual weight — a stop's OWN offset marks where
- *    it reaches full strength, and the color BEFORE that offset already
- *    occupies that entire inner area. Blue now holds solid from 0% to
- *    55% (over half the circle's radius, i.e. the visual majority of its
- *    AREA, which scales with radius squared) before yellow takes over as
- *    a narrow transition band (55-80%), with red confined to a thin outer
- *    ring (80-100%) — a real "blue dominant, yellow secondary, red
- *    accent" hierarchy, not the earlier version's near-even 0/74/100
- *    thirds.
- * 2. Blue's own `stopOpacity` raised from 0.41 to 0.62 so it reads as a
- *    genuinely present color against the card's light backdrop, not a
- *    faint tint competing evenly with the other two.
- *
- * The user's requested order (blue → yellow → red) also reorders the
- * original CSS's own stops, which went blue → RED → yellow — a real,
- * deliberate reordering, not an oversight carried over from the source
- * gradient.
- *
- * `react-native-svg`'s `Stop` takes `stopColor`/`stopOpacity` as SEPARATE
- * props, not a combined `rgba()` string — each stop's alpha is set that
- * way here rather than folded into an rgba color literal, following the
- * same conversion pattern the original CSS import already established.
- * Applied identically in both light and dark mode (no separate dark
- * variant exists yet) — revisit with the user if it reads poorly there.
+ * Reuses `KPI_GRADIENTS.primary` directly (`#2954E5`→`#2144BB` light,
+ * `#6B8AFF`→`#5067BF` dark) rather than inventing new hex values — that
+ * pair is this screen's own already-validated "primary, one shade
+ * darker" gradient (used by the Outstanding KPI card), so the welcome
+ * card now visually matches an already-correct part of the same screen
+ * instead of introducing a fourth new gradient concept. `x1/y1` to
+ * `x2/y2` of `0,0` to `1,1` gives a top-left-to-bottom-right diagonal,
+ * the direction most of the researched reference cards use.
  */
-const WELCOME_RADIAL_GRADIENT_STOPS = [
-  { offset: "0%", stopColor: "#2954E5", stopOpacity: 0.62 },
-  { offset: "55%", stopColor: "#2954E5", stopOpacity: 0.55 },
-  { offset: "80%", stopColor: "#FFF173", stopOpacity: 0.4 },
-  { offset: "100%", stopColor: "#E65C5C", stopOpacity: 0.35 },
-] as const;
+const WELCOME_GRADIENT = KPI_GRADIENTS;
 
-const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
+/**
+ * White-ish, not the earlier orange→green — that pairing made sense
+ * against the second (light pastel) background attempt specifically, but
+ * reads oddly against this solid blue card. A near-white gradient track
+ * a real, low-opacity white matches the very first version's approach
+ * (also a solid blue card) and gives the gauge's fill a clean, high-
+ * contrast presence without introducing a third unrelated hue onto a
+ * card that just got simplified back down to two.
+ */
+const GAUGE_TRACK_COLOR = { light: "rgba(255,255,255,0.25)", dark: "rgba(255,255,255,0.2)" };
 const GAUGE_FILL_GRADIENT = {
-  light: { from: "#F2994A", to: "#27AE60" },
-  dark: { from: "#F2B23D", to: "#4ADE94" },
+  light: { from: "#FFFFFF", to: "#D6E0FF" },
+  dark: { from: "#FFFFFF", to: "#C9D6FF" },
 } as const;
 
 function WelcomeCard({
-  baseColor,
+  gradient,
   gaugeTrackColor,
   gaugeFillGradient,
-  textColorClass,
-  mutedTextColorClass,
 }: {
-  baseColor: string;
+  gradient: { from: string; to: string };
   gaugeTrackColor: string;
   gaugeFillGradient: { from: string; to: string };
-  textColorClass: string;
-  mutedTextColorClass: string;
 }) {
   const goal = 25000;
   const current = 18900;
@@ -411,30 +399,22 @@ function WelcomeCard({
     <View style={{ aspectRatio: CARD_ASPECT_RATIO, borderRadius: 20, overflow: "hidden" }}>
       <Svg width="100%" height="100%" style={{ position: "absolute" }}>
         <Defs>
-          <RadialGradient id="welcome-gradient" cx="50%" cy="50%" r="75%">
-            {WELCOME_RADIAL_GRADIENT_STOPS.map((stop) => (
-              <Stop key={stop.offset} offset={stop.offset} stopColor={stop.stopColor} stopOpacity={stop.stopOpacity} />
-            ))}
-          </RadialGradient>
+          <SvgLinearGradient id="welcome-gradient" x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={gradient.from} />
+            <Stop offset="1" stopColor={gradient.to} />
+          </SvgLinearGradient>
         </Defs>
-        {/* Solid backdrop underneath — every gradient stop above is
-            semi-transparent (per the source CSS's own rgba alpha values),
-            so without an opaque base fill the card would show whatever's
-            behind it (the screen's own background) through the gaps,
-            rather than compositing the way the CSS gradient does over its
-            own page background. */}
-        <Rect x="0" y="0" width="100%" height="100%" fill={baseColor} />
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#welcome-gradient)" />
       </Svg>
       <View className="flex-1 items-center gap-2 p-5">
         <View className="w-full">
-          <Text className={`text-[26px] font-semibold ${textColorClass}`}>Good morning, Sam</Text>
-          <Text className={`text-[13px] ${mutedTextColorClass}`}>Spine Showcase Co.</Text>
+          <Text className="text-[26px] font-semibold text-white">Good morning, Sam</Text>
+          <Text className="text-[13px] text-white/75">Spine Showcase Co.</Text>
         </View>
-        <GaugeIndicator progress={progress} trackColor={gaugeTrackColor} fillGradient={gaugeFillGradient} textColorClass={textColorClass} />
+        <GaugeIndicator progress={progress} trackColor={gaugeTrackColor} fillGradient={gaugeFillGradient} textColorClass="text-white" />
         <View className="items-center gap-0.5">
-          <Text className={`text-[12px] ${mutedTextColorClass}`}>Revenue goal</Text>
-          <Text className={`text-[15px] font-medium ${textColorClass}`}>
+          <Text className="text-[12px] text-white/75">Revenue goal</Text>
+          <Text className="text-[15px] font-medium text-white">
             ${current.toLocaleString()} / ${goal.toLocaleString()}
           </Text>
         </View>
@@ -490,19 +470,14 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const { colorScheme } = useColorScheme();
   const isDark = colorScheme === "dark";
   const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
+  const welcomeGradient = isDark ? WELCOME_GRADIENT.dark.primary : WELCOME_GRADIENT.light.primary;
   const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
   const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
   const [period, setPeriod] = useState(1);
 
   return (
     <>
-      <WelcomeCard
-        baseColor={colors.surface}
-        gaugeTrackColor={gaugeTrackColor}
-        gaugeFillGradient={gaugeFillGradient}
-        textColorClass="text-on-surface dark:text-on-surface-dark"
-        mutedTextColorClass="text-on-surface-muted dark:text-on-surface-muted-dark"
-      />
+      <WelcomeCard gradient={welcomeGradient} gaugeTrackColor={gaugeTrackColor} gaugeFillGradient={gaugeFillGradient} />
 
       <SegmentedControl
         values={["This week", "This month", "This year"]}
