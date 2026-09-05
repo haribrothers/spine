@@ -67,6 +67,18 @@ import { useNativeColors } from "@spine/ui-native";
  * explicit user decision it gets an ordinary 4th tab there instead — same
  * destination screen (`/search`), no special chrome to mimic since none
  * exists on Android to begin with.
+ *
+ * `labelVisibilityMode="labeled"` (`@platform android`-only, per
+ * `expo-router`'s own bundled types — a no-op on iOS's `UITabBar`, which
+ * always shows every tab's label anyway) — a real, user-reported bug fix:
+ * Android's Material bottom nav defaulted to `"auto"` (its own upstream
+ * default), which only shows a label for the currently-SELECTED tab and
+ * hides the rest, confirmed live via screenshot (only "Home" had visible
+ * text, the other three tabs showed icon-only). Set once here on the
+ * top-level `NativeTabs`, applying to every tab — per-`Trigger` overrides
+ * exist too ("takes precedence over the value set on `NativeTabs`," per
+ * its own doc comment) but aren't needed here since every tab wants the
+ * same always-labeled behavior.
  */
 export default function TabsLayout() {
   const colors = useNativeColors();
@@ -76,6 +88,7 @@ export default function TabsLayout() {
       tintColor={colors.primary}
       iconColor={{ default: colors.onSurfaceMuted, selected: colors.primary }}
       backgroundColor={colors.surface}
+      labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="(home)">
         <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="home" />
