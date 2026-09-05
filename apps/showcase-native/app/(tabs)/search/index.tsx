@@ -54,28 +54,50 @@ import { addRecentSearch, clearRecentSearches, getRecentSearches } from "../../.
  * space between rows. `ItemSeparatorComponent` is RN's own supported
  * mechanism for inter-item spacing and isn't subject to this gap.
  *
- * **iOS results list uses an explicit `insets.top` padding INSTEAD of
- * `contentInsetAdjustmentBehavior="automatic"`, not alongside it — a real,
- * user-reported bug, found in two stages.** `headerSearchBarOptions`'s
- * activated/typing state is a genuine native `UISearchController`
- * interaction (confirmed: Apple's own apps, e.g. Podcasts/Music, hide the
- * nav title the same way while a search bar is focused — not a bug on its
- * own), but this screen has no large title and lives inside a `NativeTabs`
- * host with very little header chrome to begin with. First attempt: kept
- * `"automatic"` and added a manual `paddingTop: insets.top` alongside it,
- * assuming automatic adjustment had nothing to compute from — this
- * undercorrected the actual bug into an OVER-correction instead: iOS's
- * `UIScrollView` still applied its own automatic top content inset (using
- * the tab/nav chrome's last-known height, not zero) AND my manual padding
- * stacked on top of it, producing a much larger dead-space gap above the
- * first row than intended (confirmed live via screenshot — a real
- * regression, not the original bug recurring). Fixed by setting
- * `contentInsetAdjustmentBehavior="never"` on iOS specifically so only the
- * explicit `insets.top + 16` padding applies, with nothing automatic
- * stacking on top of it. Android is untouched (`"automatic"`, no manual
- * padding) — its hand-built pill already reserves its own top spacing via
- * the `View` above the list and never loses its header/title the way iOS's
- * native search-activation does, so it never had either bug.
+ * **`hideNavigationBar: false` on `headerSearchBarOptions` — the "Search"
+ * title disappearing while the search bar is active was NOT actually
+ * correct/expected behavior after all, a real reversal from an earlier
+ * assumption in this same file.** An earlier version of this comment
+ * argued the title-hiding was intentional native `UISearchController`
+ * behavior (citing Podcasts/Music hiding their nav title the same way) and
+ * left it unfixed. The user re-reported it as a real problem — with no
+ * large title on this screen, losing the title entirely during search left
+ * the header area completely blank, not a deliberate collapse-to-nothing
+ * like a large title would do. `SearchBarProps.hideNavigationBar` (real,
+ * documented prop: "If value is `undefined`, uses native behavior... on
+ * iOS 26, value is determined by context") was defaulting to hidden in
+ * this screen's context; setting it explicitly to `false` keeps the
+ * "Search" title visible throughout the active/typing search state.
+ * Confirmed live: title now stays visible with the field focused and
+ * results showing.
+ *
+ * **Results list padding: plain numeric `contentContainerStyle`, NOT
+ * `contentContainerClassName` — a real, user-reported bug.** `px-4`/`pb-4`
+ * on `contentContainerClassName` were silently not applying on this
+ * `FlatList` (same underlying gap as the `gap-2` bug above — `FlatList`'s
+ * `VirtualizedList`-rendered content container doesn't reliably resolve
+ * NativeWind classNames the way a plain `View`/`ScrollView` does),
+ * producing edge-to-edge result cards with no left/right margin, visibly
+ * inconsistent with the Components tab's own padded list. Fixed by moving
+ * ALL content-container spacing (`paddingHorizontal`, `paddingBottom`, and
+ * the iOS-only `paddingTop: insets.top + 16` from the fix below) into one
+ * plain `contentContainerStyle` object instead of splitting it across
+ * `contentContainerClassName` + `contentContainerStyle` — a single style
+ * source that unambiguously applies, rather than two mechanisms where one
+ * silently no-ops on this particular component.
+ *
+ * `contentInsetAdjustmentBehavior="never"` (iOS only) + explicit
+ * `paddingTop: insets.top + 16`: without a large title, once search
+ * activates iOS's `UIScrollView` still applies its own automatic top
+ * content inset from the tab/nav chrome's last-known height — stacking
+ * with a naively-added manual `paddingTop: insets.top` produced a much
+ * larger dead-space gap above the first row than intended (confirmed live
+ * via screenshot, a real regression from an earlier fix attempt). Setting
+ * `"never"` stops the automatic inset so only the explicit padding
+ * applies. Android is untouched (`"automatic"`, `paddingTop: 16` fixed) —
+ * its hand-built pill already reserves its own top spacing and never loses
+ * its header/title the way iOS's native search-activation did before the
+ * `hideNavigationBar` fix above.
  */
 export default function SearchScreen() {
   const colors = useNativeColors();
@@ -116,6 +138,7 @@ export default function SearchScreen() {
               placeholder: "Search components",
               autoCapitalize: "none",
               hideWhenScrolling: false,
+              hideNavigationBar: false,
               onChangeText: (e) => setQuery(e.nativeEvent.text),
               onSearchButtonPress: (e) => {
                 if (e.nativeEvent.text.trim()) recordSearch(e.nativeEvent.text);
@@ -155,8 +178,11 @@ export default function SearchScreen() {
           keyboardShouldPersistTaps="handled"
           data={results}
           keyExtractor={(entry) => entry.slug}
-          contentContainerClassName="px-4 pb-4 pt-4"
-          contentContainerStyle={Platform.OS === "ios" ? { paddingTop: insets.top + 16 } : undefined}
+          contentContainerStyle={{
+            paddingHorizontal: 16,
+            paddingBottom: 16,
+            paddingTop: Platform.OS === "ios" ? insets.top + 16 : 16,
+          }}
           ItemSeparatorComponent={() => <View className="h-2" />}
           ListEmptyComponent={
             <EmptyState
