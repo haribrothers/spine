@@ -1,4 +1,5 @@
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { Text, View, type LayoutChangeEvent } from "react-native";
 import ChevronDown from "lucide-react-native/icons/chevron-down";
 import { MenuView } from "@expo/ui/community/menu";
 import { useNativeColors } from "../theme/use-native-colors";
@@ -44,11 +45,7 @@ export interface SelectFieldProps<T extends string> {
  * the RN-subtree-reports-its-own-size-to-native direction, the same
  * mechanism `BottomSheet`'s own doc comment documents fixing for its
  * `children`, and already proven working via `ContextMenu`'s existing
- * trigger usage. This is a DIFFERENT direction/mechanism than the one that
- * broke `DateTimePicker`'s Android inline grid (a native Compose child
- * reporting ITS OWN intrinsic size back to Yoga via `matchContentsVertical`
- * on `HostView.kt`) — this component's trigger is a plain RN `View`, not a
- * native-bridge child, so that bug class doesn't apply here.
+ * trigger usage.
  *
  * `MenuComponentProps` has no whole-menu `disabled`/`enabled` prop at all
  * (confirmed against its real TS type — only a PER-ACTION
@@ -56,6 +53,45 @@ export interface SelectFieldProps<T extends string> {
  * `MenuView` at all when true, falling back to the same trigger markup as a
  * plain static `View` with no press handling, rather than rendering a
  * `MenuView` that LOOKS disabled (dimmed) but would still open on tap.
+ *
+ * **Android-only width bug — TWO failed fix attempts before this one, do
+ * not repeat either.** `MenuView.android.tsx` wraps its trigger in `Host
+ * matchContents` (both axes). `Host`'s own `RNHostView` content-sizing
+ * bridge measures its child via a real Yoga-driven layout listener — so
+ * this ISN'T "Host always ignores real width," which is what the first two
+ * attempts assumed:
+ *
+ * 1. `style={{ width: "100%" }}` on `MenuView` itself — a percentage on
+ *    `MenuView`'s own OUTER wrapper `View`. Failed because that `View`
+ *    sits ABOVE `Host` in the tree, on the side `Host`'s own `onMeasure`
+ *    (traced in `HostView.kt`) forces to `MeasureSpec.UNSPECIFIED`
+ *    regardless of what its parent offers — a percentage can only resolve
+ *    against a real constraint, and this side of the tree never has one.
+ * 2. `style={{ width: measuredPx }}` (a concrete number from `onLayout`)
+ *    on `MenuView` — same failure, for the same reason: still applied to
+ *    `MenuView`'s OUTER wrapper, still on the wrong side of `Host`'s
+ *    forced-unspecified measurement. A concrete number doesn't help if
+ *    it's discarded at the exact same point a percentage was.
+ *
+ * **The actual fix: give the concrete measured pixel width to the TRIGGER
+ * `View` itself — the child INSIDE `Host`, not `MenuView`'s wrapper
+ * outside it.** `RNHostView` (per `@expo/ui`'s own `RNHostView.kt`,
+ * confirmed already working for `ContextMenu`'s existing trigger usage)
+ * measures ITS child via a real `View.OnLayoutChangeListener` and reports
+ * that size into Compose — that's a genuine Yoga measurement of whatever
+ * the trigger `View` itself resolves to, entirely independent of what
+ * `Host`'s own outer `onMeasure` does. A `w-full`/`"100%"` trigger still
+ * fails here (it has no real ancestor width to resolve against on this
+ * side either, since `Host`'s content area itself starts unconstrained).
+ * A concrete pixel width DOES resolve, because a fixed number needs no
+ * ancestor constraint at all. That pixel number comes from `onLayout` on
+ * an outer measuring `View` that lives OUTSIDE `MenuView`/`Host` entirely
+ * (a plain sibling of the whole `MenuView` subtree, sized normally by
+ * ordinary Yoga rules against its real real-world parent, `SelectField`'s
+ * own caller) — then applied as an explicit `style={{ width }}` on the
+ * trigger `View` itself (not `className="w-full"`, which is now dead
+ * weight once a real pixel number is present, but left as the pre-layout
+ * fallback for the one frame before `onLayout` first fires).
  */
 export function SelectField<T extends string>({
   options,
@@ -68,9 +104,15 @@ export function SelectField<T extends string>({
 }: SelectFieldProps<T>) {
   const colors = useNativeColors();
   const selected = options.find((option) => option.value === value);
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
+
+  const handleLayout = (event: LayoutChangeEvent) => {
+    setMeasuredWidth(event.nativeEvent.layout.width);
+  };
 
   const trigger = (
     <View
+      style={measuredWidth != null ? { width: measuredWidth } : undefined}
       className={cn(
         "h-11 w-full flex-row items-center justify-between rounded-lg border bg-surface px-2.5 dark:bg-surface-dark",
         "border-border-strong dark:border-border-strong-dark",
@@ -92,17 +134,23 @@ export function SelectField<T extends string>({
   );
 
   if (disabled) {
-    return trigger;
+    return (
+      <View onLayout={handleLayout} className="w-full">
+        {trigger}
+      </View>
+    );
   }
 
   return (
-    <MenuView
-      actions={options.map((option) => ({ id: option.value, title: option.label, state: option.value === value ? "on" : "off" }))}
-      onPressAction={(event) => onValueChange(event.nativeEvent.event as T)}
-      shouldOpenOnLongPress={false}
-      testID={testID}
-    >
-      {trigger}
-    </MenuView>
+    <View onLayout={handleLayout} className="w-full">
+      <MenuView
+        actions={options.map((option) => ({ id: option.value, title: option.label, state: option.value === value ? "on" : "off" }))}
+        onPressAction={(event) => onValueChange(event.nativeEvent.event as T)}
+        shouldOpenOnLongPress={false}
+        testID={testID}
+      >
+        {trigger}
+      </MenuView>
+    </View>
   );
 }
