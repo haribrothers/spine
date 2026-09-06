@@ -1,7 +1,7 @@
 /** @type {import('jest').Config} */
 module.exports = {
   preset: "jest-expo",
-  setupFilesAfterEnv: ["@testing-library/jest-native/extend-expect", "<rootDir>/jest.setup.ts"],
+  setupFilesAfterEnv: ["@testing-library/jest-native/extend-expect"],
   // `@react-native/jest-preset`'s test environment sets
   // customExportConditions = ['require', 'react-native'] — both conditions
   // match lucide-react-native's package.json `exports` map, and its

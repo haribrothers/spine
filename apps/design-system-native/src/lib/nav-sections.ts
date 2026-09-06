@@ -74,7 +74,6 @@ export const NAV_SECTIONS: DocSection[] = [
     items: [
       { slug: "button", name: "Button", description: "Primary, secondary, danger, and ghost variants with loading/disabled states." },
       { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
-      { slug: "native-text-field", name: "Native Text Field", description: "Real SwiftUI/Material text field, colored with this design system's own tokens." },
       { slug: "select", name: "Select", description: "Single-choice picker using the OS's native picker chrome." },
       { slug: "select-field", name: "Select Field", description: "TextField-styled select opening a native menu — matches surrounding form fields." },
       { slug: "date-time-picker", name: "Date & Time Picker", description: "TextField-styled trigger with a calendar/clock icon, opening a native date/time popup." },

@@ -1,6 +1,5 @@
 export { Button, type ButtonProps, type ButtonVariant } from "./components/button";
 export { TextField, type TextFieldProps } from "./components/text-field";
-export { NativeTextField, type NativeTextFieldProps } from "./components/native-text-field";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/card";
 export { Badge } from "./components/badge";
 export { StatusChip, statusChipVariants, type StatusChipProps } from "./components/status-chip";

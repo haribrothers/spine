@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
-import { Button, DateTimePicker, NativeTextField, SelectField, Spinner, Switch, TextField, Toast, useNativeColors, useToast } from "@spine/ui-native";
+import { Button, DateTimePicker, SelectField, Spinner, Switch, TextField, Toast, useNativeColors, useToast } from "@spine/ui-native";
 
 const JOB_STATUS_OPTIONS = [
   { label: "Not started", value: "not_started" },
@@ -124,23 +124,6 @@ function FormSection({ title, description, children }: { title: string; descript
  * is a plain function re-invoked on every render, so a new array
  * reflecting current `saving` state is exactly what re-renders it.
  *
- * **Title uses `NativeTextField`, the other text fields (Client/Job value/
- * Notes) still use `TextField` — a deliberate, scoped PILOT, not a partial
- * migration left unfinished.** `NativeTextField` (`packages/ui-native`,
- * net-new) is a genuinely native field — real SwiftUI `TextField`/
- * Material3 `OutlinedTextField`, colored with this design system's own
- * tokens — being piloted on exactly one field before any decision to
- * convert the rest of this form or any other screen. It has no forwarded
- * `TextInput` ref (it's a native-bridge view, not an RN `TextInput`), so it
- * deliberately isn't wired into this screen's `focusedInputRef`/
- * `scrollFocusedFieldIntoView` keyboard-scroll mechanism — Title sitting
- * near the top of the form is never actually covered by the keyboard in
- * practice, which is why it was chosen for this pilot specifically. Do not
- * convert Client/Job value/Notes to `NativeTextField` without first
- * resolving how keyboard-scroll-into-view should work for a native-bridge
- * field with no measurable RN ref — that's an open problem this pilot
- * intentionally deferred, not one it solved.
- *
  * **Status uses `SelectField`, not `Select`** — `Select` (`@expo/ui`'s
  * universal `Picker`) has no border/background style props at all, so it
  * rendered as bare native picker-button chrome, visually inconsistent with
@@ -254,6 +237,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
     return () => subscription.remove();
   }, []);
 
+  const titleInputRef = useRef<TextInput>(null);
   const clientInputRef = useRef<TextInput>(null);
   const valueInputRef = useRef<TextInput>(null);
   const notesInputRef = useRef<TextInput>(null);
@@ -374,7 +358,14 @@ export function JobEditForm({ jobId }: { jobId: string }) {
           <FormSection title="Details">
             <View className="gap-1.5">
               <FieldLabel required>Title</FieldLabel>
-              <NativeTextField value={values.title} onChangeText={(text) => update("title", text)} error={!!errors.title} testID="title-field" />
+              <TextField
+                ref={titleInputRef}
+                value={values.title}
+                onChangeText={(text) => update("title", text)}
+                onFocus={() => handleFieldFocus(titleInputRef.current)}
+                error={!!errors.title}
+                accessibilityLabel="Title"
+              />
               <FieldError message={errors.title} />
             </View>
 
