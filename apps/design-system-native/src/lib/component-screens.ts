@@ -1,5 +1,6 @@
 import { ButtonScreen } from "../../app/components/button";
 import { TextFieldScreen } from "../../app/components/text-field";
+import { NativeTextFieldScreen } from "../../app/components/native-text-field";
 import { SelectScreen } from "../../app/components/select";
 import { SelectFieldScreen } from "../../app/components/select-field";
 import { DateTimePickerScreen } from "../../app/components/date-time-picker";
@@ -50,6 +51,7 @@ export const DOC_SCREENS: DocScreenMap = {
   components: {
     button: ButtonScreen,
     "text-field": TextFieldScreen,
+    "native-text-field": NativeTextFieldScreen,
     select: SelectScreen,
     "select-field": SelectFieldScreen,
     "date-time-picker": DateTimePickerScreen,
