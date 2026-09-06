@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View, type FocusEvent } from "react-native";
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
 import { Button, DateTimePicker, SelectField, Spinner, Switch, TextField, Toast, useNativeColors, useToast } from "@spine/ui-native";
 
@@ -159,24 +159,48 @@ function FormSection({ title, description, children }: { title: string; descript
  * `router.back()`), not just one of those paths.
  *
  * **Focusing a field near the bottom of the form (Notes especially) hid it
- * behind the keyboard on iOS — a real, reported bug, and a well-known RN
- * gap, not a regression in this screen's own layout.**
+ * behind the keyboard on iOS — a real, reported bug, confirmed still
+ * broken after a first fix attempt. Read this before touching the
+ * keyboard-scroll logic again.**
+ *
  * `KeyboardAvoidingView behavior="padding"` only pads/resizes the view for
  * the keyboard's height; it does NOT auto-scroll a focused `TextInput`
  * into view inside a nested `ScrollView` — that's a separate concern RN
- * leaves to the app. Fixed with `ScrollView`'s own built-in
- * `scrollResponderScrollNativeHandleToKeyboard` (documented on the RN
- * source itself as "should be used as the callback to onFocus in a
- * TextInput's parent view") — `scrollFocusedFieldIntoView`, wired as every
- * `TextField`'s `onFocus` in this form, calls it with the focused input's
- * native node handle (`event.target`, a `number`), which RN measures
- * against the `ScrollView` (via `scrollViewRef`) and scrolls itself; no
- * manual layout math needed on this end. Deliberately NOT a new dependency
- * (e.g. `react-native-keyboard-controller`) — no keyboard-handling library
- * exists anywhere in this monorepo yet, and this RN-builtin API covers the
- * need without one. Any future `TextField` added to this form (or a
- * similar scrollable form elsewhere) needs the same `onFocus` wiring — it
- * is NOT automatic just from being inside a `ScrollView`.
+ * leaves to the app.
+ *
+ * **First attempt (confirmed NOT sufficient, do not revert to it)**: called
+ * `ScrollView`'s own `scrollResponderScrollNativeHandleToKeyboard` directly
+ * from each field's `onFocus`. This is a real, documented RN API, but RN's
+ * OWN source (`ScrollView.js`, `_inputMeasureAndScrollToKeyboard`) admits
+ * it races the keyboard's `keyboardWillShow`/`keyboardDidShow` event:
+ * `_keyboardMetrics` (the keyboard's height/position, set by that event)
+ * "is not guaranteed to be called before" the scroll calculation runs, and
+ * RN's own fallback is a same-tick `setTimeout(0)` retry — which can still
+ * lose the race on a real device, exactly as reported here.
+ *
+ * **Current fix**: a `Keyboard.addListener("keyboardWillShow"` (iOS) /
+ * `"keyboardDidShow"` (Android)`, ...)` subscription that only runs AFTER
+ * the keyboard event has actually fired, guaranteeing real geometry rather
+ * than racing for it. On fire, it measures the currently-focused input via
+ * `measureInWindow` (tracked in `focusedInputRef`, set by each field's own
+ * `onFocus`; each field also gets its own `useRef<TextInput>` since
+ * `measureInWindow` needs a real host-component instance, not just the
+ * focus event's opaque node-handle number) against the keyboard's own
+ * `event.endCoordinates.screenY` (both in the same absolute screen-Y
+ * coordinate space) to compute exactly how many pixels of the input are
+ * newly hidden — then adds that overlap to the `ScrollView`'s current
+ * offset (tracked via its own `onScroll`, since `scrollTo`'s `y` is an
+ * ABSOLUTE offset, not a relative scroll-by amount — passing just the
+ * overlap directly would scroll to the wrong position for any field below
+ * the very top of the form) and scrolls there.
+ *
+ * Deliberately NOT a new dependency (e.g. `react-native-keyboard-
+ * controller`) — no keyboard-handling library exists anywhere in this
+ * monorepo yet, and this is achievable with RN's own built-in `Keyboard`/
+ * `ScrollView` APIs. Any future `TextField` added to this form (or a
+ * similar scrollable form elsewhere) needs its own ref + `onFocus` wiring
+ * into this same mechanism — it is NOT automatic just from being inside a
+ * `ScrollView`.
  */
 export function JobEditForm({ jobId }: { jobId: string }) {
   const router = useRouter();
@@ -184,6 +208,8 @@ export function JobEditForm({ jobId }: { jobId: string }) {
   const colors = useNativeColors();
   const { message, show, dismiss } = useToast();
   const scrollViewRef = useRef<ScrollView>(null);
+  const focusedInputRef = useRef<TextInput | null>(null);
+  const scrollOffsetRef = useRef(0);
 
   const initialValues = useMemo(() => loadJob(jobId), [jobId]);
   const [values, setValues] = useState<JobFormValues>(initialValues);
@@ -191,9 +217,34 @@ export function JobEditForm({ jobId }: { jobId: string }) {
   const [saving, setSaving] = useState(false);
   const isDirty = useRef(false);
 
-  const scrollFocusedFieldIntoView = useCallback((event: FocusEvent) => {
-    scrollViewRef.current?.scrollResponderScrollNativeHandleToKeyboard(event.target, 32, true);
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const subscription = Keyboard.addListener(showEvent, (event) => {
+      const input = focusedInputRef.current;
+      const scrollView = scrollViewRef.current;
+      if (!input || !scrollView) return;
+
+      input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
+        const keyboardTop = event.endCoordinates.screenY;
+        const inputBottom = inputY + inputHeight;
+        const overlap = inputBottom - keyboardTop;
+        if (overlap <= 0) return;
+
+        scrollView.scrollTo({ y: scrollOffsetRef.current + overlap + 16, animated: true });
+      });
+    });
+
+    return () => subscription.remove();
   }, []);
+
+  const titleInputRef = useRef<TextInput>(null);
+  const clientInputRef = useRef<TextInput>(null);
+  const valueInputRef = useRef<TextInput>(null);
+  const notesInputRef = useRef<TextInput>(null);
+
+  function handleFieldFocus(input: TextInput | null) {
+    focusedInputRef.current = input;
+  }
 
   function update<K extends keyof JobFormValues>(key: K, value: JobFormValues[K]) {
     isDirty.current = true;
@@ -299,14 +350,19 @@ export function JobEditForm({ jobId }: { jobId: string }) {
           className="flex-1"
           contentContainerClassName="gap-6 p-4 pb-8"
           keyboardShouldPersistTaps="handled"
+          onScroll={(event) => {
+            scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+          }}
+          scrollEventThrottle={16}
         >
           <FormSection title="Details">
             <View className="gap-1.5">
               <FieldLabel required>Title</FieldLabel>
               <TextField
+                ref={titleInputRef}
                 value={values.title}
                 onChangeText={(text) => update("title", text)}
-                onFocus={scrollFocusedFieldIntoView}
+                onFocus={() => handleFieldFocus(titleInputRef.current)}
                 error={!!errors.title}
                 accessibilityLabel="Title"
               />
@@ -316,9 +372,10 @@ export function JobEditForm({ jobId }: { jobId: string }) {
             <View className="gap-1.5">
               <FieldLabel required>Client</FieldLabel>
               <TextField
+                ref={clientInputRef}
                 value={values.client}
                 onChangeText={(text) => update("client", text)}
-                onFocus={scrollFocusedFieldIntoView}
+                onFocus={() => handleFieldFocus(clientInputRef.current)}
                 error={!!errors.client}
                 accessibilityLabel="Client"
               />
@@ -333,9 +390,10 @@ export function JobEditForm({ jobId }: { jobId: string }) {
             <View className="gap-1.5">
               <FieldLabel required>Job value</FieldLabel>
               <TextField
+                ref={valueInputRef}
                 value={values.value}
                 onChangeText={(text) => update("value", text)}
-                onFocus={scrollFocusedFieldIntoView}
+                onFocus={() => handleFieldFocus(valueInputRef.current)}
                 error={!!errors.value}
                 keyboardType="decimal-pad"
                 accessibilityLabel="Job value"
@@ -365,9 +423,10 @@ export function JobEditForm({ jobId }: { jobId: string }) {
 
           <FormSection title="Notes">
             <TextField
+              ref={notesInputRef}
               value={values.notes}
               onChangeText={(text) => update("notes", text)}
-              onFocus={scrollFocusedFieldIntoView}
+              onFocus={() => handleFieldFocus(notesInputRef.current)}
               placeholder="Internal notes about this job…"
               multiline
               numberOfLines={4}
