@@ -16,6 +16,20 @@ export interface SelectFieldProps<T extends string> {
   onValueChange: (value: T) => void;
   disabled?: boolean;
   placeholder?: string;
+  variant?: "bordered" | "row";
+  /**
+   * A floating-style label, matching `FloatingLabelField`'s text-field
+   * treatment (see that component's doc comment for the full rationale):
+   * when no option is selected, this text renders centered in the row as
+   * the placeholder itself (`placeholder` is ignored in that state);
+   * once a value is selected, it becomes a small caption above the
+   * selected option's label. `SelectField` has no "focus" state to
+   * animate through — tapping opens the menu immediately — so this is a
+   * static two-state layout, not an animated transition.
+   */
+  floatingLabel?: string;
+  required?: boolean;
+  error?: boolean;
   className?: string;
   testID?: string;
 }
@@ -26,6 +40,19 @@ export interface SelectFieldProps<T extends string> {
  * the same primitive `ContextMenu` wraps: SwiftUI `Menu` on iOS, Compose
  * `DropdownMenu` on Android) on tap, rather than the existing `Select`
  * component's own native dropdown-button chrome.
+ *
+ * **`variant="row"`** — same additive treatment as `TextField`'s own
+ * `variant` prop (see its doc comment), added for the borderless-row form
+ * redesign: drops the trigger's own border/background/radius entirely, for
+ * use inside a grouped form card whose shared surface + `Divider` rows
+ * provide the boundary instead. This was a real, reported gap in the first
+ * pass of that redesign — the spec called for `SelectField` to "match the
+ * row style once borderless," but only `TextField`/`NativeTextField`
+ * actually got a `variant` prop; `SelectField` kept its bordered pill
+ * unconditionally, which then visibly clashed against the now-borderless
+ * Title/Client/Job value rows around it in the same card (confirmed via a
+ * real device screenshot). `variant="bordered"` (the default) is
+ * unchanged for every other existing consumer.
  *
  * Added because `Select` (`@expo/ui`'s universal `Picker`) has NO border/
  * background style props at all — confirmed against its real TS type, see
@@ -99,6 +126,10 @@ export function SelectField<T extends string>({
   onValueChange,
   disabled = false,
   placeholder = "Select…",
+  variant = "bordered",
+  floatingLabel,
+  required = false,
+  error = false,
   className,
   testID,
 }: SelectFieldProps<T>) {
@@ -110,25 +141,40 @@ export function SelectField<T extends string>({
     setMeasuredWidth(event.nativeEvent.layout.width);
   };
 
+  const labelText = floatingLabel ? (required ? `${floatingLabel} *` : floatingLabel) : undefined;
+
   const trigger = (
     <View
       style={measuredWidth != null ? { width: measuredWidth } : undefined}
       className={cn(
-        "h-11 w-full flex-row items-center justify-between rounded-lg border bg-surface px-2.5 dark:bg-surface-dark",
-        "border-border-strong dark:border-border-strong-dark",
+        "w-full flex-row items-center justify-between px-0",
+        variant === "row" ? "h-full" : "h-11 rounded-lg border bg-surface px-2.5 dark:bg-surface-dark border-border-strong dark:border-border-strong-dark",
         disabled ? "opacity-50" : "",
         className,
       )}
     >
-      <Text
-        numberOfLines={1}
-        className={cn(
-          "flex-1 text-[14px]",
-          selected ? "text-on-surface dark:text-on-surface-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark",
-        )}
-      >
-        {selected?.label ?? placeholder}
-      </Text>
+      {labelText ? (
+        <View className="flex-1 justify-center gap-1.5">
+          {selected ? (
+            <Text className={cn("text-[11px]", error ? "text-overdue dark:text-overdue-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark")}>
+              {labelText}
+            </Text>
+          ) : null}
+          <Text numberOfLines={1} className={cn("text-[14px]", selected ? "text-on-surface dark:text-on-surface-dark" : error ? "text-overdue dark:text-overdue-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark")}>
+            {selected?.label ?? labelText}
+          </Text>
+        </View>
+      ) : (
+        <Text
+          numberOfLines={1}
+          className={cn(
+            "flex-1 text-[14px]",
+            selected ? "text-on-surface dark:text-on-surface-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark",
+          )}
+        >
+          {selected?.label ?? placeholder}
+        </Text>
+      )}
       <ChevronDown size={16} color={colors.onSurfaceMuted} />
     </View>
   );

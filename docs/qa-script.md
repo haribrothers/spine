@@ -1400,6 +1400,86 @@ Not a full audit — just confirm nothing obviously broke:
    gray, not white-on-transparent) in both light and dark mode; this
    was a second, related shipped bug (invisible loading spinner) fixed
    the same day.
+4. **`apps/showcase-native`** (native-only, `expo-router` — run via its
+   own dev script, real device/simulator required, no web/Expo Go
+   fallback): open the **Templates → Edit** entry (the Job Edit form,
+   `job-edit-form.tsx`) on both iOS and Android. Confirm the redesigned
+   form layout: each section (Details/Schedule/Billing/Notes) shows an
+   uppercase caption above ONE card with no border of its own, and
+   fields inside a card are separated by thin full-bleed dividers
+   rather than each field having its own bordered box.
+   **Floating labels** (Title, Client, Status, Job value, Notes):
+   confirm each shows its label CENTERED in the row acting as the
+   placeholder when empty, and — for Title/Job value/Notes — that
+   focusing the field animates the label up to a small caption above
+   the value (Client/Status have no focus state, so their label
+   snaps to the floated position immediately once a value is picked,
+   with no animation). Confirm the required asterisk appears inside
+   the label text itself ("Title *", "Client *", "Job value *"), and
+   that clearing Title or leaving Client unset and tapping Save still
+   shows the inline error text below the row with the label/value
+   tinted red (there's no border to recolor in this borderless
+   layout). **Client field**: confirm it shows the current client's
+   name with a chevron, tapping it opens a full sheet with a search
+   box and a scrollable list of ~10 demo clients; type a partial name
+   and confirm the list filters live; tap a result and confirm the
+   sheet closes and the row now shows the picked name; confirm the
+   previously-selected client shows a checkmark when reopening the
+   sheet. **Status field**: confirm it opens a native menu popup with
+   4 options (not the searchable sheet — Status is a short fixed
+   list, only Client uses the searchable-popup pattern).
+   **Cross-field consistency checks (four real, reported/fixed visual
+   bugs — verify each explicitly, not just "does it look fine"):**
+   (1) every row in a card (Title/Client/Status/Job value, and
+   separately Start date/Due date/Retention held) should be the SAME
+   height — no row should look taller or shorter than its neighbors;
+   (2) the value text size in Title/Client/Job value/Notes should
+   visually match Status's value text size exactly — a real shipped
+   bug had `NativeTextField`'s value rendering noticeably larger
+   (SwiftUI's system-default size) than `SelectField`'s explicit 14px;
+   (3) there should be clear, comfortable vertical spacing between a
+   floated label and its value below it, not a cramped near-overlap;
+   (4) Start date/Due date's pills should sit flush with the row's
+   right edge, aligned with where Retention held's switch sits — a
+   real shipped bug had the date pills sitting noticeably short of
+   the right edge (SwiftUI's `.compact` date-picker style bakes in
+   its own internal trailing padding) compared to the switch. All
+   four were fixed 2026-09-13 (`ROW_HEIGHT` in `FormRow`, a new
+   `font`/`floatingAbove` treatment on `NativeTextField`, loosened
+   label-position constants in `FloatingLabelField`, and a measured
+   `marginRight` on `DateTimePicker`'s iOS wrapper). This is a new
+   component pilot (`Divider`, `SelectListField`, `FloatingLabelField`,
+   and `TextField`/`NativeTextField`/`SelectField`'s `variant="row"`/
+   `floatingLabel` props, all in `packages/ui-native`, added
+   2026-09-13) — check both light and dark mode, since it's new
+   NativeWind `dark:`-paired styling. **Test on a real Android
+   emulator/device, not iOS only** — three real bugs shipped through
+   iOS-only testing and were only caught once this screen was actually
+   run on Android: (a) Title/Job value's value text rendering BESIDE
+   the floated label instead of below it (Android defaults an unset
+   `textAlignVertical` to center; fixed by setting it to `"top"`
+   unconditionally); (b) once (a) was fixed, Title/Job value's
+   label-to-value spacing was still visibly tighter than Client/
+   Status's — confirm all four Details rows now show matching spacing
+   (pixel-measured at 33-35px across all four after the fix); (c)
+   **light mode showed no visible card/group boundaries at all, on
+   BOTH iOS and Android** — confirm the page background reads as a
+   distinct light gray behind crisp WHITE cards (not white-on-white)
+   in light mode, on both platforms; dark mode was never affected by
+   this bug (it already had visible contrast) but should still be
+   checked for the same gray-background/lighter-card relationship.
+   **Notes field (the form's one multiline/textarea field)**: tap into
+   it and confirm the keyboard actually opens and typing works — a
+   real shipped bug had this field completely untappable (its wrapper
+   collapsed to a near-zero hit-test area against an unconstrained
+   parent, even though it still LOOKED like a normal box in a
+   screenshot) on both platforms. Once confirmed tappable, also check
+   it reads as a proper multi-line textarea, not a single input row:
+   the placeholder/label should sit anchored at the TOP-LEFT of a
+   real multi-line-tall box (not vertically centered like the other
+   fields), and the box itself should have a real minimum height
+   roughly matching the other cards' content, not collapse to one
+   line when empty.
 
 ---
 

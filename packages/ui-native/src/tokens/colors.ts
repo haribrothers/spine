@@ -30,7 +30,7 @@ export const lightColors = {
 
   background: "#FFFFFF",
   surface: "#FFFFFF",
-  surfaceSunken: "#FAFAF9",
+  surfaceSunken: "#F9F9F9",
   onSurface: "#211F1A",
   onSurfaceMuted: "#726C5A",
   border: "#E7E5E0",

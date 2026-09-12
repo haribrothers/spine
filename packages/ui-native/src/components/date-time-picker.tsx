@@ -1,4 +1,4 @@
-import { Platform, Pressable, Text } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { useState } from "react";
 import CalendarIcon from "lucide-react-native/icons/calendar";
 import ClockIcon from "lucide-react-native/icons/clock";
@@ -87,6 +87,26 @@ import { useNativeColors } from "../theme/use-native-colors";
  * fourth design, dropped when the fifth design shrank the trigger to
  * content width) — the icon and the width change are independent; the
  * icon was never the problem, only forgotten during the row-layout pass.
+ *
+ * **Right-alignment offset (iOS only) — a real, reported visual
+ * inconsistency, not a layout bug in a form's own row usage.** SwiftUI's
+ * `.compact` `DatePicker` style bakes its own internal trailing padding
+ * into the native pill's rendered bounds (confirmed by comparing it
+ * against `Switch`'s own `Host matchContents` pill, which hugs its real
+ * toggle geometry tightly with no equivalent trailing gap) — so at the
+ * SAME `width: 140/90` this component already uses (kept unchanged, since
+ * that width prevents the earlier-documented overflow-clipping regression;
+ * shrinking it is not the fix), the pill's visible content sits noticeably
+ * short of the box's true right edge, reading as extra right-side padding
+ * compared to a `Switch` in the same row shape (confirmed on a real
+ * device, then pixel-measured against a real screenshot: the pill's right
+ * edge sat ~26px short of `Switch`'s at 3x device scale, ~9pt — an earlier
+ * `-8` attempt closed only part of that gap). Fixed with a measured
+ * `marginRight: -16` on an OUTER wrapper `View` (not on
+ * `ExpoDateTimePicker`'s own `style`, which is the width/height the
+ * native pill measures itself against and must stay
+ * untouched) — pulling the whole pill visually flush with `Switch`'s
+ * right edge without touching the pill's own internal layout at all.
  */
 
 export interface DateTimePickerProps {
@@ -129,18 +149,20 @@ export function DateTimePicker({ value, onChange, mode = "date", minimumDate, ma
   }
 
   return (
-    <ExpoDateTimePicker
-      value={value}
-      onValueChange={(_event, date) => onChange(date)}
-      mode={mode}
-      display="compact"
-      minimumDate={minimumDate}
-      maximumDate={maximumDate}
-      disabled={disabled}
-      accentColor={colors.primary}
-      style={{ width: mode === "time" ? 90 : 140, height: 32 }}
-      testID={testID}
-    />
+    <View style={{ marginRight: -16 }}>
+      <ExpoDateTimePicker
+        value={value}
+        onValueChange={(_event, date) => onChange(date)}
+        mode={mode}
+        display="compact"
+        minimumDate={minimumDate}
+        maximumDate={maximumDate}
+        disabled={disabled}
+        accentColor={colors.primary}
+        style={{ width: mode === "time" ? 90 : 140, height: 32 }}
+        testID={testID}
+      />
+    </View>
   );
 }
 

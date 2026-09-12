@@ -57,4 +57,16 @@ describe("SelectField a11y", () => {
     const root = render(<SelectField options={OPTIONS} value="not_started" onValueChange={() => {}} disabled />);
     expect(findActionNodes(root)).toHaveLength(0);
   });
+
+  it("floatingLabel: renders as the placeholder text when nothing is selected", () => {
+    render(<SelectField options={OPTIONS} value="" onValueChange={() => {}} floatingLabel="Status" />);
+    expect(screen.getByText("Status")).toBeTruthy();
+    expect(screen.queryByText("Not started")).toBeNull();
+  });
+
+  it("floatingLabel: floats above the selected option's label once a value is selected, with the asterisk when required", () => {
+    render(<SelectField options={OPTIONS} value="in_progress" onValueChange={() => {}} floatingLabel="Status" required />);
+    expect(screen.getByText("Status *")).toBeTruthy();
+    expect(screen.getByText("In progress")).toBeTruthy();
+  });
 });

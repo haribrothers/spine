@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { TextField as SwiftUITextField, Host, useNativeState } from "@expo/ui/swift-ui";
-import { background, disabled as iosDisabled, keyboardType as iosKeyboardType, padding, strokeBorder, textFieldStyle } from "@expo/ui/swift-ui/modifiers";
+import { background, disabled as iosDisabled, font, frame, keyboardType as iosKeyboardType, padding, strokeBorder, textFieldStyle } from "@expo/ui/swift-ui/modifiers";
 import { useNativeColors } from "../theme/use-native-colors";
 
 /**
@@ -69,6 +69,66 @@ import { useNativeColors } from "../theme/use-native-colors";
  * intrinsic content size inside a shrink-to-content parent. Do not drop
  * either half of this pairing.
  */
+/**
+ * `variant="row"` — same additive treatment as `TextField`'s own `variant`
+ * prop, added together with `Divider` for the borderless-row form
+ * redesign: no `background`/`strokeBorder` modifiers at all, so the field
+ * draws no chrome of its own and relies on its surrounding form card's
+ * shared surface + `Divider` rows for the visual boundary. `variant=
+ * "bordered"` (the default) is unchanged — this pilot's only existing call
+ * site (Title, in `job-edit-form.tsx`) opts into `"row"`.
+ *
+ * **`floatingAbove`** — set by `FloatingLabelField` when it renders this
+ * component in row mode: applies asymmetric top/bottom padding (more top,
+ * to clear the floated label caption sitting above the value) instead of
+ * `variant="row"`'s plain symmetric `padding({ vertical: 10 })`. Two real,
+ * reported gaps this fixes: (1) with no top clearance at all, the value
+ * text rendered visually cramped right up against the floated label above
+ * it, since this component's own `padding` modifier had no way to know a
+ * label was floating over it — `variant="row"` alone was never enough for
+ * a `FloatingLabelField` consumer specifically. (2) this component had NO
+ * `font` modifier at all, so it rendered SwiftUI's system-default text
+ * size (visibly larger, ~17pt) instead of matching `SelectField`'s
+ * explicit `text-[14px]` — confirmed on a real device as a value-text
+ * size mismatch between `NativeTextField`/`TextField` rows and
+ * `SelectField`/`SelectListField` rows in the same card. `font({ size:
+ * FLOATING_LABEL_VALUE_FONT_SIZE })` now applies unconditionally
+ * (independent of `floatingAbove`), matching `SelectField`'s value text
+ * size everywhere, not only in `FloatingLabelField`'s own row.
+ */
+/**
+ * **`floatingAbove`'s top padding took THREE measured iterations to
+ * actually match `SelectField`'s label-to-value gap — read this before
+ * changing the number again without re-measuring.** First attempt
+ * (`top: 26`, picked by eye) measured on a real screenshot at a 48-49px
+ * label-to-value gap in `NativeTextField` rows (Title/Job value) vs. only
+ * 32-33px in `SelectField`/`SelectListField` rows (Status/Client) in the
+ * SAME card — a visible ~16px inconsistency. A first correction (`top:
+ * 21`, solving linearly for the pixel delta at the screenshot's 3x scale)
+ * only closed part of the gap (measured 41-42px afterward) — the
+ * pixel-to-padding relationship isn't a clean 3x ratio, likely because
+ * SwiftUI's system-font line-height/leading adds its own space beyond the
+ * raw `padding` value. **Final value, `top: 14`**, found by iterating
+ * again from the observed ratio between the first two data points and
+ * re-measuring — confirmed at 30-31px vs. Select's 32-33px, effectively
+ * matching (≤3px residual, imperceptible). Any future change to this
+ * value MUST be verified the same way: render a real screenshot, scan the
+ * label/value text-row pixel bands (brightness thresholding along a
+ * fixed x-range) for both a `NativeTextField` row and a `SelectField` row
+ * in the same card, and compare the two gaps directly — do not pick a
+ * number by eye, which is exactly what produced this bug twice already.
+ *
+ * **`multiline` + `floatingAbove` (Notes) needs its OWN padding and a real
+ * minimum height — a real, reported gap: this component reused the
+ * single-line `top: 14` tuning and had no minimum height at all for
+ * `multiline`** (`Host matchContents={{ vertical: true }}` + `axis:
+ * "vertical"` auto-grows purely to content, so an empty/short value
+ * collapsed to roughly one line tall — nothing about it read as a
+ * multi-line textarea). Fixed with `MULTILINE_MIN_HEIGHT` (a real `frame`
+ * minimum, not a guess at padding alone) plus its own, slightly larger
+ * top padding tuned for the label sitting above a textarea rather than a
+ * single input line.
+ */
 export interface NativeTextFieldProps {
   value: string;
   onChangeText: (text: string) => void;
@@ -77,8 +137,18 @@ export interface NativeTextFieldProps {
   disabled?: boolean;
   multiline?: boolean;
   keyboardType?: "default" | "decimal" | "email" | "numeric" | "phone";
+  variant?: "bordered" | "row";
+  floatingAbove?: boolean;
+  /** Wires `@expo/ui`'s real `onFocusChange` — added for `FloatingLabelField`, which needs focus state to animate its label. */
+  onFocus?: () => void;
+  onBlur?: () => void;
   testID?: string;
 }
+
+/** Matches `SelectField`'s explicit `text-[14px]` value-text size — see this file's own doc comment on the font-size mismatch this fixes. */
+const VALUE_FONT_SIZE = 14;
+/** Matches Android's `TextField`-branch `h-24` (96pt) for the same `multiline` field — see `floating-label-field.tsx`'s own `h-24`. */
+const MULTILINE_MIN_HEIGHT = 96;
 
 const KEYBOARD_TYPE_TO_IOS: Record<
   NonNullable<NativeTextFieldProps["keyboardType"]>,
@@ -99,6 +169,10 @@ export function NativeTextField({
   disabled = false,
   multiline = false,
   keyboardType = "default",
+  variant = "bordered",
+  floatingAbove = false,
+  onFocus,
+  onBlur,
   testID,
 }: NativeTextFieldProps) {
   const colors = useNativeColors();
@@ -114,14 +188,27 @@ export function NativeTextField({
       <SwiftUITextField
         text={state}
         onTextChange={onChangeText}
+        onFocusChange={(focused) => (focused ? onFocus?.() : onBlur?.())}
         placeholder={placeholder}
         axis={multiline ? "vertical" : "horizontal"}
         modifiers={[
           textFieldStyle("plain"),
+          font({ size: VALUE_FONT_SIZE }),
           iosKeyboardType(KEYBOARD_TYPE_TO_IOS[keyboardType]),
-          padding({ horizontal: 12, vertical: 10 }),
-          background(colors.surface),
-          strokeBorder({ color: borderColor, shape: "roundedRectangle", cornerRadius: 10 }),
+          ...(variant === "row"
+            ? [
+                floatingAbove
+                  ? multiline
+                    ? padding({ top: 22, bottom: 6 })
+                    : padding({ top: 14, bottom: 6 })
+                  : padding({ vertical: 10 }),
+                ...(multiline ? [frame({ minHeight: MULTILINE_MIN_HEIGHT, alignment: "top" as const })] : []),
+              ]
+            : [
+                padding({ horizontal: 12, vertical: 10 }),
+                background(colors.surface),
+                strokeBorder({ color: borderColor, shape: "roundedRectangle", cornerRadius: 10 }),
+              ]),
           iosDisabled(disabled),
         ]}
         testID={testID}
