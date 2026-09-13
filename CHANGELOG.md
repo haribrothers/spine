@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-09-14 — Job Edit (iOS): fixed the back-button discard-confirmation showing AFTER the screen closed, plus a follow-up double-alert bug found while fixing it
+
+- **User report**: tapping the header back chevron with unsaved changes showed the discard-confirmation alert only AFTER the screen had already visibly closed, not before.
+- **Root cause**: native-stack's default back button is a genuine `UIKit` control that starts its pop animation optimistically, before JS's `beforeRemove` listener gets a chance to call `event.preventDefault()`. The listener still correctly blocked the actual navigation-state change (the screen then slides back once the alert resolves), but that whole slide-away-then-back motion is exactly what was reported.
+- **Fix**: the back chevron is now a custom `headerLeft` (a `Pressable` + `ChevronLeftIcon`, styled to match the native chevron via the render prop's own `tintColor`) that runs the SAME discard-check (`handleCancel`) synchronously, BEFORE any navigation starts — there's no native pop animation left to race against.
+- **A second real bug surfaced immediately while testing the fix**: confirming "Discard" showed the SAME alert a second time right after. Cause: `handleCancel`'s `router.back()` call still triggers the still-armed `beforeRemove` listener, which re-checks `isDirty.current` — never cleared before the first `router.back()` call — and re-prompts for the exact same discard. Fixed by setting `isDirty.current = false` inside the discard callback, before calling `router.back()`, so the listener sees a clean form and lets the navigation through.
+- Typecheck clean. Verified interactively by the user on a real iOS simulator (both the single-alert-before-close fix and the no-longer-doubled alert).
+
 ### 2026-09-13 — `FullWidthButton` moved off `@expo/ui`'s `Host`/`swift-ui Button` on iOS entirely: a real "no top spacing until first tap" bug, root-caused and fixed at the source, not worked around
 
 - **User report**: on iOS, the Save button had no visible top spacing on first render — it sat flush against the card above it — but the correct gap appeared the instant the button was tapped, a visible "jump down."

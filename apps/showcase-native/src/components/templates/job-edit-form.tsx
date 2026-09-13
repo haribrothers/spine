@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
+import { Stack, useNavigation, useRouter, type NativeStackHeaderBackProps, type NativeStackHeaderItem } from "expo-router";
 import { useColorScheme } from "nativewind";
 import CheckIcon from "lucide-react-native/icons/check";
+import ChevronLeftIcon from "lucide-react-native/icons/chevron-left";
 import EllipsisVerticalIcon from "lucide-react-native/icons/ellipsis-vertical";
 import {
   ContextMenu,
@@ -271,9 +272,41 @@ function FormSection({ title, description, children }: { title: string; descript
  *   job" button render on iOS at all — this was an explicit, requested
  *   redesign (real native header actions instead of a sticky footer,
  *   matching standard iOS form-screen conventions), not a bug fix. Cancel
- *   has NO separate header item on iOS by explicit request — the existing
- *   back chevron (and its already-wired unsaved-changes guard, unchanged)
- *   is the only way back.
+ *   has NO separate header item on iOS by explicit request — the back
+ *   chevron is the only way back.
+ *
+ *   **The back chevron is now a CUSTOM `headerLeft`, not native-stack's
+ *   default back button — a real, user-reported bug fix, not a stylistic
+ *   choice.** With the default native back button, the unsaved-changes
+ *   `beforeRemove` guard (`useNavigation().addListener("beforeRemove", ...)`,
+ *   below) technically still intercepted the navigation state change, but
+ *   VISUALLY the discard-confirmation `Alert` appeared AFTER the screen had
+ *   already slid away — because a native-stack back button is a genuine
+ *   `UIKit` control that starts its pop animation optimistically, before JS
+ *   gets a chance to call `event.preventDefault()`; `beforeRemove` still
+ *   correctly blocks the actual navigation-state change, so the screen then
+ *   slides back into place once the alert resolves, but that whole
+ *   slide-away-then-back motion is exactly the "confirms after the screen
+ *   closes" bug that was reported. A custom `headerLeft` sidesteps this
+ *   entirely by running the SAME discard-check `handleCancel` already used
+ *   for the (Android-only) footer Cancel button synchronously, BEFORE any
+ *   pop starts — there's no native animation to race against, since nothing
+ *   navigates until the check has already resolved. Styled to visually
+ *   match the native chevron it replaces (`ChevronLeftIcon`, `tintColor`
+ *   forwarded from `headerLeft`'s own render props so it follows the same
+ *   color native-stack would have used).
+ *
+ *   **This surfaced a SECOND real bug, also fixed here: the discard alert
+ *   appeared TWICE in a row after confirming once.** `handleCancel`'s own
+ *   `confirmDiscard` call shows the first alert; confirming it called
+ *   `router.back()`, which — since `isDirty.current` was never cleared —
+ *   the still-armed `beforeRemove` listener (below) intercepted AGAIN and
+ *   showed a second alert for the exact same discard. Fixed by clearing
+ *   `isDirty.current = false` inside `handleCancel`'s own discard callback,
+ *   before calling `router.back()` — the listener then sees a clean form
+ *   and lets the navigation through without re-prompting. This bug existed
+ *   whether or not the custom `headerLeft` above was in play; it was only
+ *   surfaced by testing this exact path more.
  * - **Android**: UNCHANGED — the sticky bottom Cancel/Save footer and the
  *   standalone danger-variant "Delete job" button both still render
  *   exactly as before. Android has no equivalent of iOS's `variant:
@@ -525,7 +558,15 @@ export function JobEditForm({ jobId }: { jobId: string }) {
 
   function handleCancel() {
     if (isDirty.current) {
-      confirmDiscard(() => router.back());
+      // Clear the dirty flag BEFORE navigating — a real, reported bug: the
+      // `beforeRemove` listener below is still armed for the `router.back()`
+      // this triggers, and without clearing `isDirty.current` first it sees
+      // the screen is still dirty and shows a SECOND discard alert right
+      // after the user already confirmed the first one.
+      confirmDiscard(() => {
+        isDirty.current = false;
+        router.back();
+      });
     } else {
       router.back();
     }
@@ -627,7 +668,23 @@ export function JobEditForm({ jobId }: { jobId: string }) {
            * native-default, unthemed.
            */
           ...(Platform.OS === "ios"
-            ? { headerTransparent: true, unstable_headerRightItems: () => iosHeaderRightItems }
+            ? {
+                headerTransparent: true,
+                unstable_headerRightItems: () => iosHeaderRightItems,
+                // Custom back button — see this component's own doc comment
+                // ("The back chevron is now a CUSTOM `headerLeft`...") for
+                // why: native-stack's default back button starts its pop
+                // animation before `beforeRemove` can intercept it, so the
+                // discard-confirmation alert visibly appeared AFTER the
+                // screen had already slid away. Running the same
+                // `handleCancel` discard-check synchronously here, before
+                // any navigation starts, fixes that race entirely.
+                headerLeft: ({ tintColor }: NativeStackHeaderBackProps) => (
+                  <Pressable onPress={handleCancel} hitSlop={8} accessibilityLabel="Back" accessibilityRole="button">
+                    <ChevronLeftIcon size={26} color={(tintColor as string | undefined) ?? colors.onSurface} />
+                  </Pressable>
+                ),
+              }
             : {
                 headerStyle: { backgroundColor: colors.surface },
                 /**

@@ -1493,6 +1493,19 @@ Not a full audit — just confirm nothing obviously broke:
    than whichever mode happened to be open in the simulator. On
    Android, the header keeps its solid themed background (no blur
    equivalent there) — that's expected, not a gap.
+   **Back chevron discard-confirmation timing, iOS (fixed 2026-09-14)**:
+   make an edit (e.g. change Title), then tap the header back chevron.
+   Confirm the "Discard changes?" alert appears IMMEDIATELY, before the
+   screen has moved at all — not after the screen has already visibly
+   slid away and back. Confirm tapping "Discard" navigates back and
+   shows the alert exactly ONCE — not a second time right after (a
+   real, reported bug: the back button's native pop animation used to
+   start before the JS discard-check could run, and a separate bug
+   meant confirming discard once could immediately re-trigger the same
+   alert a second time). Confirm "Keep editing" dismisses the alert and
+   leaves the form exactly as it was, still on the Edit screen. With NO
+   unsaved changes, confirm the back chevron navigates back immediately
+   with no alert at all.
    **Header Save/Delete actions, same shape on both platforms (added
    2026-09-13)**: on iOS, confirm the header shows a checkmark "Save"
    button plus a "•••" button that opens a native menu with a single
