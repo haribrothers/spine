@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-09-14 — New `Stepper` component, added to Job Edit as a "Crew size" field
+
+- **New `packages/ui-native` component**: a numeric +/- stepper, with `value`/`onValueChange`/`min`/`max`/`step`/`disabled`/`testID` props (integers throughout, defaults `min=0`/`max=100`/`step=1`).
+- **First tried `@expo/ui/swift-ui`'s real native SwiftUI `Stepper` on iOS** (with a custom `-`/value/`+` row on Android, since Jetpack Compose has no built-in stepper control at all) — reverted per explicit request: the two platforms visually diverged (SwiftUI's own pill-shaped control vs. a custom circular icon-button pair), and real Material Symbol icons to match iOS's real SF Symbols on Android were considered but declined (would require bundling `.xml` vector-drawable ASSET FILES plus a `metro.config.js` change registering `.xml` in `assetExts`, since `@expo/ui/jetpack-compose`'s `Icon` has no "pass a symbol name string" API the way iOS's SF Symbols do — disproportionate infra for two icons).
+- **Final design**: the SAME custom `-`/value/`+` row on BOTH platforms, using `lucide-react-native`'s `Minus`/`Plus` icons (already a dependency, already used everywhere else in this app) — no `@expo/ui` involvement at all, real RN `Pressable`s with `accessibilityRole="button"`/`accessibilityLabel`/`accessibilityState.disabled`, min/max clamping, and a disabled prop that disables both buttons regardless of value.
+- **Wired into Job Edit** as a new "Crew size" field (`JobFormValues.crewSize`, range 1–20) in the Details section, using `FormRow`'s existing plain-label row layout (same shape as Start date/Due date).
+- **New test coverage**: `stepper.a11y.test.tsx` — 6 tests (value display, both buttons' accessible role/label, increment/decrement with a custom `step`, min/max clamping with `onValueChange` not called past the boundary, `disabled` disabling both buttons, default min/max/step). No platform split needed in the tests, since the implementation itself has none anymore. 130/130 `packages/ui-native` tests pass, 24/24 a11y coverage. Typecheck clean on both packages.
+
 ### 2026-09-14 — `BottomSheet`: fixed content not filling a fixed-height (`snapPoints`) sheet's real width, root-caused to `matchContents` needing to be conditional; plus `SelectListField`'s Job Edit demo grown to 120 real options
 
 - **User report**: `SelectListField`'s bottom sheet (search box + list) wasn't full-width — narrower than the sheet itself — and asked to test with a longer (100+ item) list.

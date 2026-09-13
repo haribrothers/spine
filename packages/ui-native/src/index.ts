@@ -16,6 +16,7 @@ export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./co
 export { SelectListField, type SelectListFieldProps, type SelectListFieldOption } from "./components/select-list-field";
 export { Divider } from "./components/divider";
 export { Switch, type SwitchProps } from "./components/switch";
+export { Stepper, type StepperProps } from "./components/stepper";
 export { Slider, type SliderProps } from "./components/slider";
 export { ContextMenu, type ContextMenuProps, type ContextMenuAction } from "./components/context-menu";
 export { DateTimePicker, type DateTimePickerProps } from "./components/date-time-picker";

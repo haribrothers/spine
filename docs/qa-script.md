@@ -1509,6 +1509,14 @@ Not a full audit — just confirm nothing obviously broke:
    ALREADY SCROLLED to that same option — visible near the top of the
    visible area — not reset back to the very top of all 120 requiring
    a fresh scroll-down to find the current selection again.
+   **Crew size — a new `Stepper` field (added 2026-09-14)**: below Job
+   value in the Details section, confirm a "Crew size" row with a `-`
+   button, a number, and a `+` button — identical in appearance on
+   BOTH iOS and Android (deliberately the SAME custom design on both
+   platforms, not a native-vs-custom split). Tap `+`/`-` and confirm
+   the number updates immediately; confirm `-` disables/stops
+   responding at 1 and `+` disables/stops responding at 20 (visibly
+   dimmed at both limits, tapping past either limit does nothing).
    **Header (fixed 2026-09-13)**: reach this screen via a real in-app
    push — Templates tab → a job's detail screen → Edit. Confirm the
    header looks like `(tabs)/components/[slug]`'s own detail header:

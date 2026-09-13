@@ -13,6 +13,7 @@ import {
   FullWidthButton,
   SelectField,
   SelectListField,
+  Stepper,
   Switch,
   Toast,
   useNativeColors,
@@ -92,6 +93,15 @@ interface JobFormValues {
   client: ClientId | null;
   status: JobStatus;
   value: string;
+  /**
+   * `Stepper` example field — a real, genuinely stepper-shaped value for a
+   * job (a small integer count with a natural min/max, not free text or a
+   * boolean). See `packages/ui-native`'s `stepper.tsx` for why this is the
+   * SAME custom `-`/value/`+` row on both platforms (a real native SwiftUI
+   * `Stepper` was tried on iOS first and reverted, per explicit request, so
+   * both platforms match exactly).
+   */
+  crewSize: number;
   startDate: Date;
   dueDate: Date;
   /**
@@ -119,6 +129,7 @@ function loadJob(_jobId: string): JobFormValues {
     client: "client-0-0",
     status: "in_progress",
     value: "18400.00",
+    crewSize: 4,
     startDate: new Date("2026-08-01T00:00:00"),
     dueDate: new Date("2026-09-30T00:00:00"),
     siteVisitAt: new Date("2026-08-05T09:30:00"),
@@ -855,7 +866,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
               />
             </FormRow>
 
-            <FormRow last error={errors.value}>
+            <FormRow error={errors.value}>
               <FloatingLabelField
                 label="Job value"
                 required
@@ -867,6 +878,18 @@ export function JobEditForm({ jobId }: { jobId: string }) {
                 inputRef={valueInputRef}
                 testID="value-field"
               />
+            </FormRow>
+
+            {/*
+              `Stepper` example field — see `JobFormValues.crewSize`'s own
+              doc comment. Uses `FormRow`'s plain-`label` shape (label left,
+              control right — same as Start date/Due date below), NOT
+              `floatingLabel`, since a stepper's own value is never "empty"
+              (unlike a text field or select, it always shows a real
+              number) — there's no floating-vs-placeholder state to model.
+            */}
+            <FormRow label="Crew size" last>
+              <Stepper value={values.crewSize} onValueChange={(v) => update("crewSize", v)} min={1} max={20} testID="crew-size-stepper" />
             </FormRow>
           </FormSection>
 
