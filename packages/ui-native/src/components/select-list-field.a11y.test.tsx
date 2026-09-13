@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, type RenderAPI } from "@testing-library/react-native";
+import { FlatList } from "react-native";
 import { SelectListField } from "./select-list-field";
 
 /**
@@ -100,5 +101,27 @@ describe("SelectListField a11y", () => {
     render(<SelectListField options={OPTIONS} value="bright" onValueChange={() => {}} floatingLabel="Client" required testID="client-select" />);
     expect(screen.getByText("Client *")).toBeTruthy();
     expect(screen.getAllByText("Bright Homes").length).toBeGreaterThan(0);
+  });
+
+  // A real, reported bug: reopening the sheet after picking a far-down
+  // option (e.g. the 50th of 120) showed the list scrolled back to the
+  // top, with no indication of where the current selection was without
+  // scrolling down again. Fixed via `initialScrollIndex`, set to the
+  // selected option's index in the (unfiltered) `options` list at the
+  // moment the sheet opens.
+  function findList(root: RenderAPI) {
+    return root.UNSAFE_root.findByType(FlatList);
+  }
+
+  it("opens scrolled to the selected option's index, not always the top", () => {
+    const root = render(<SelectListField options={OPTIONS} value="coastal" onValueChange={() => {}} testID="client-select" />);
+    fireEvent.press(screen.getByTestId("client-select"));
+    expect(findList(root).props.initialScrollIndex).toBe(OPTIONS.findIndex((o) => o.value === "coastal"));
+  });
+
+  it("opens with no initialScrollIndex when nothing is selected yet", () => {
+    const root = render(<SelectListField options={OPTIONS} value={null} onValueChange={() => {}} testID="client-select" />);
+    fireEvent.press(screen.getByTestId("client-select"));
+    expect(findList(root).props.initialScrollIndex).toBeUndefined();
   });
 });

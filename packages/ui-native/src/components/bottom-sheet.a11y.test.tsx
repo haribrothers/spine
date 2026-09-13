@@ -59,4 +59,26 @@ describe("BottomSheet a11y", () => {
     const modifiers = findContentModifiers(root);
     expect(modifiers).toContainEqual({ $type: "presentationDragIndicator", visibility: "visible" });
   });
+
+  // See this file's own doc comment: `matchContents` must track whether
+  // `snapPoints` is set, or a fixed-height sheet's content (e.g.
+  // `SelectListField`'s search box + list) collapses to its own intrinsic
+  // width instead of filling the sheet — a real, reported bug.
+  function findRNHostViewNode(root: ReturnType<typeof render>) {
+    const nodes = root.UNSAFE_root.findAll((n) => "matchContents" in n.props);
+    if (nodes.length === 0) {
+      throw new Error('No instance found with prop "matchContents"');
+    }
+    return nodes[0]!;
+  }
+
+  it("matchContents is true (size-to-content) when no snapPoints are given — the genuine dynamic-sizing case", () => {
+    const root = render(<BottomSheet isPresented onDismiss={() => {}} />);
+    expect(findRNHostViewNode(root).props.matchContents).toBe(true);
+  });
+
+  it("matchContents is false (fill the sheet) when real snapPoints are given — a fixed-height sheet like SelectListField's", () => {
+    const root = render(<BottomSheet isPresented onDismiss={() => {}} snapPoints={[{ fraction: 0.75 }]} />);
+    expect(findRNHostViewNode(root).props.matchContents).toBe(false);
+  });
 });

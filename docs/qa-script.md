@@ -1480,6 +1480,35 @@ Not a full audit — just confirm nothing obviously broke:
    fields), and the box itself should have a real minimum height
    roughly matching the other cards' content, not collapse to one
    line when empty.
+   **Client select — full-width sheet content + a 120-option stress test
+   (fixed/added 2026-09-14)**: tap the "Client" row to open its bottom
+   sheet. Confirm the search box and the option list BOTH span the
+   FULL width of the sheet, edge to edge (matching the sheet's own
+   width) — a real, reported bug had both rendering visibly narrower
+   than the sheet, floating in the middle of it. `CLIENT_OPTIONS` is
+   now 120 generated, realistic company-name-shaped entries (not the
+   original 10) — a deliberate stress test. Confirm: the list scrolls
+   smoothly through all 120 without jank; typing in search (e.g.
+   "stone" or "build") filters down to a genuinely smaller, correct
+   subset live as you type; clearing the search shows all 120 again;
+   selecting an option closes the sheet and shows that option's label
+   in the Client row. This same `matchContents`/`snapPoints` fix
+   applies to every `BottomSheet` caller with explicit `snapPoints`
+   (not just this one) — if a FUTURE fixed-height sheet anywhere in
+   `packages/ui-native` ever renders its content narrower than the
+   sheet again, check `BottomSheet`'s own `matchContents`/
+   `fitToContents` wiring first before assuming it's a new bug.
+   **Option row height + reopen-scroll-position (fixed 2026-09-14,
+   found immediately while testing the above)**: each row should feel
+   like a comfortable, real tap target (52px min height) — not
+   cramped/thin (a real regression from the full-width fix above,
+   since rows were previously laid out against an accidentally
+   oversized container). Separately: pick an option far down the list
+   (e.g. the ~50th), close the sheet (select it, or dismiss without
+   selecting), then reopen the Client row. Confirm the sheet opens
+   ALREADY SCROLLED to that same option — visible near the top of the
+   visible area — not reset back to the very top of all 120 requiring
+   a fresh scroll-down to find the current selection again.
    **Header (fixed 2026-09-13)**: reach this screen via a real in-app
    push — Templates tab → a job's detail screen → Edit. Confirm the
    header looks like `(tabs)/components/[slug]`'s own detail header:

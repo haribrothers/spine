@@ -53,9 +53,31 @@ import { useNativeColors } from "../theme/use-native-colors";
  * fix, `RNHostView` (also universal — real `.ios.tsx`/`.android.tsx`
  * variants, exported from the same `@expo/ui` top-level barrel) is applied
  * here directly, the same bridge the community implementation and
- * `ListItem.ios.tsx` both use. `matchContents` is unconditional (not tied to
- * `snapPoints`, unlike the community version's `fitToContents`) since this
- * wrapper has no distinct "fill the snap-point height" mode to opt out of.
+ * `ListItem.ios.tsx` both use.
+ *
+ * **`matchContents` must be tied to whether `snapPoints` is set, NOT
+ * unconditional — a real, reported bug.** `matchContents` doesn't just fix
+ * "blank content" (the gap above); per `RNHostView.swift`'s own source, it
+ * sizes the hosted SwiftUI wrapper to the RN child's Yoga-measured
+ * INTRINSIC size — the same "size to content, not to the available
+ * container" mechanism documented at length in `full-width-button.tsx`'s
+ * own history. With a caller that sets real `snapPoints` (a genuinely
+ * fixed-height sheet, e.g. `SelectListField`'s search box + `FlatList`),
+ * there's no available width for the content's own `100%`/`flex: 1` to
+ * resolve against at that boundary, so it collapses to its narrowest
+ * intrinsic content (e.g. a line of text) instead of stretching to the
+ * sheet's real presented width — confirmed live: the search box and list
+ * rendered visibly narrower than the sheet itself. `@expo/ui`'s OWN
+ * community bottom-sheet implementation already establishes the correct
+ * rule for this exact fork (`BottomSheet.ios.tsx`'s `fitToContents =
+ * enableDynamicSizing && (!snapPointsProp || snapPointsProp.length ===
+ * 0)`) — `matchContents` here now follows the same rule: `true` only when
+ * `snapPoints` is NOT set (the genuine "size the sheet to its content"
+ * case, e.g. `BottomSheetDemo`'s plain `<BottomSheet>` with no
+ * `snapPoints`), `false` whenever `snapPoints` IS set (a real, explicit
+ * fixed-height sheet), letting the content genuinely fill that height via
+ * `RNHostView`'s own fill-branch (`.frame(maxWidth: .infinity, maxHeight:
+ * .infinity)`, see `RNHostView.swift`) instead of shrinking to content.
  */
 export interface BottomSheetProps {
   isPresented: boolean;
@@ -68,6 +90,12 @@ export interface BottomSheetProps {
 
 export function BottomSheet({ isPresented, onDismiss, children, showDragIndicator = true, snapPoints, testID }: BottomSheetProps) {
   const colors = useNativeColors();
+  // See this file's own doc comment: only a sheet with NO explicit
+  // `snapPoints` wants to size itself to its content's intrinsic size —
+  // one WITH real `snapPoints` (a fixed-height sheet) needs its content to
+  // fill that height/width instead, which `RNHostView`'s non-`matchContents`
+  // fill branch provides.
+  const fitToContents = !snapPoints || snapPoints.length === 0;
 
   return (
     <ExpoBottomSheet
@@ -79,8 +107,8 @@ export function BottomSheet({ isPresented, onDismiss, children, showDragIndicato
       scrimColor={`${colors.onSurface}80`}
       testID={testID}
     >
-      <RNHostView matchContents>
-        <View>{children}</View>
+      <RNHostView matchContents={fitToContents}>
+        <View style={fitToContents ? undefined : { flex: 1, width: "100%" }}>{children}</View>
       </RNHostView>
     </ExpoBottomSheet>
   );

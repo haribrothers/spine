@@ -28,21 +28,64 @@ const JOB_STATUS_OPTIONS = [
 
 type JobStatus = (typeof JOB_STATUS_OPTIONS)[number]["value"];
 
-/** Stand-in "the org's contacts" for the template — a real screen would fetch this list. */
-const CLIENT_OPTIONS = [
-  { label: "Acme Contracting Ltd.", value: "acme" },
-  { label: "Bright Homes", value: "bright" },
-  { label: "Coastal Renovations", value: "coastal" },
-  { label: "Dunmore & Sons", value: "dunmore" },
-  { label: "Elmfield Developments", value: "elmfield" },
-  { label: "Foster Build Group", value: "foster" },
-  { label: "Granite Peak Construction", value: "granite" },
-  { label: "Harborview Fit-Out", value: "harborview" },
-  { label: "Ironclad Contractors", value: "ironclad" },
-  { label: "Juniper Design Studio", value: "juniper" },
+/**
+ * Stand-in "the org's contacts" for the template — a real screen would
+ * fetch this list. 120 GENERATED entries (not the original hand-written 10)
+ * — a deliberate, requested stress test for `SelectListField`'s `FlatList`
+ * + search at a realistic "org with a real contacts list" scale, not just
+ * enough options to prove the picker opens. Built from two name-part word
+ * lists combined pairwise (`CLIENT_NAME_PREFIXES` × `CLIENT_NAME_SUFFIXES`,
+ * truncated to 120) rather than lorem-ipsum/numbered placeholders — real
+ * company-name-shaped strings exercise the search filter meaningfully
+ * (typing "stone" or "build" matches multiple real entries), which "Client
+ * 1"..."Client 120" wouldn't.
+ */
+const CLIENT_NAME_PREFIXES = [
+  "Acme",
+  "Bright",
+  "Coastal",
+  "Dunmore",
+  "Elmfield",
+  "Foster",
+  "Granite Peak",
+  "Harborview",
+  "Ironclad",
+  "Juniper",
+  "Kestrel",
+  "Lakeside",
+  "Meridian",
+  "Northgate",
+  "Oakhurst",
+  "Pinnacle",
+  "Quarrystone",
+  "Ridgeline",
+  "Summit",
+  "Timberline",
 ] as const;
 
-type ClientId = (typeof CLIENT_OPTIONS)[number]["value"];
+const CLIENT_NAME_SUFFIXES = [
+  "Contracting Ltd.",
+  "Homes",
+  "Renovations",
+  "& Sons",
+  "Developments",
+  "Build Group",
+  "Construction",
+  "Fit-Out",
+  "Contractors",
+  "Design Studio",
+  "Property Group",
+  "Builders",
+] as const;
+
+const CLIENT_OPTIONS: { label: string; value: string }[] = CLIENT_NAME_PREFIXES.flatMap((prefix, prefixIndex) =>
+  CLIENT_NAME_SUFFIXES.map((suffix, suffixIndex) => ({
+    label: `${prefix} ${suffix}`,
+    value: `client-${prefixIndex}-${suffixIndex}`,
+  })),
+).slice(0, 120);
+
+type ClientId = string;
 
 interface JobFormValues {
   title: string;
@@ -68,7 +111,12 @@ interface JobFormValues {
 function loadJob(_jobId: string): JobFormValues {
   return {
     title: "Kitchen extension",
-    client: "acme",
+    // "Acme Contracting Ltd." — the first generated CLIENT_OPTIONS entry
+    // (prefix index 0, suffix index 0). Not a literal-typed value anymore
+    // (see ClientId's own comment) since CLIENT_OPTIONS is generated, so
+    // this can't be typo-checked by TypeScript the way the old hand-written
+    // "acme" could — kept in sync by construction, not by the type system.
+    client: "client-0-0",
     status: "in_progress",
     value: "18400.00",
     startDate: new Date("2026-08-01T00:00:00"),
@@ -784,7 +832,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
 
             <FormRow error={errors.client}>
               <SelectListField
-                options={[...CLIENT_OPTIONS]}
+                options={CLIENT_OPTIONS}
                 value={values.client}
                 onValueChange={(v) => update("client", v)}
                 floatingLabel="Client"

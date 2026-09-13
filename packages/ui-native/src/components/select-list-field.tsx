@@ -1,5 +1,5 @@
-import { useMemo, useState, type Context } from "react";
-import { FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useMemo, useRef, useState, type Context } from "react";
+import { FlatList, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import CheckIcon from "lucide-react-native/icons/check";
 import { useNativeColors } from "../theme/use-native-colors";
@@ -18,6 +18,45 @@ import { cn } from "../lib/cn";
  * rather than casting the whole render to `any`.
  */
 const ScrollViewContext = (ScrollView as unknown as { Context: Context<"HORIZONTAL" | "VERTICAL" | null> }).Context;
+
+/**
+ * Fixed per-row height — a real, reported regression fix. `BottomSheet`'s
+ * `matchContents`/`snapPoints` fix (see that file's own doc comment)
+ * changed this list from an intrinsic-sized layout to a real fixed-height
+ * fill, and this row's OWN `py-3` padding (12px, unchanged) suddenly read
+ * as visibly cramped once every row was laid out against that real,
+ * constrained height rather than the previous (accidentally oversized)
+ * intrinsic one.
+ *
+ * **A real `height` (not `minHeight`), plus `numberOfLines={1}` on the
+ * label, on the row itself — not just vertical padding — a SECOND real bug,
+ * found right after the first fix shipped: the list stopped scrolling
+ * entirely.** `getItemLayout` below promises `FlatList` a fixed per-row
+ * length up front (required for `initialScrollIndex` to jump to a
+ * not-yet-rendered row without measuring it live first) — but a row with
+ * `minHeight` (not a real fixed `height`) can grow taller than that promise
+ * if its label wraps to a second line, and once ANY row's real height
+ * disagrees with `getItemLayout`'s claimed offsets, `VirtualizedList`'s
+ * internal scroll-position math goes wrong, which manifested as the whole
+ * list appearing frozen/non-scrollable rather than just a minor visual
+ * misalignment. A real fixed `height` plus `numberOfLines={1}` (truncating
+ * a long label instead of letting it wrap and grow) makes `getItemLayout`'s
+ * promise always true.
+ */
+const OPTION_ROW_HEIGHT = 52;
+
+// Must match the `fraction` passed to `BottomSheet`'s own `snapPoints` prop
+// below — kept as one named constant so the two can't drift apart.
+const SHEET_HEIGHT_FRACTION = 0.75;
+
+// A rough estimate of the sheet's own chrome (drag indicator + top inset)
+// plus this content's own title/search-box/padding, subtracted from the
+// snap-point height to get the FlatList's real available height. Doesn't
+// need to be pixel-exact — it only has to be close enough that the list
+// visibly fits within the sheet without the last row being clipped by the
+// sheet's own bottom edge; a few pixels of slack either way isn't
+// noticeable in a scrollable list.
+const SHEET_CHROME_HEIGHT = 140;
 
 export interface SelectListFieldOption<T extends string> {
   label: string;
@@ -83,8 +122,39 @@ export function SelectListField<T extends string>({
   testID,
 }: SelectListFieldProps<T>) {
   const colors = useNativeColors();
+  const { height: windowHeight } = useWindowDimensions();
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const listRef = useRef<FlatList<SelectListFieldOption<T>>>(null);
+  // A real, computed pixel height for the FlatList — NOT `flex: 1` inside
+  // the sheet's content `View`. `flex: 1` was tried first here and the list
+  // stopped scrolling entirely: `BottomSheet`'s content sits inside
+  // `RNHostView`'s non-`matchContents` fill branch (a SwiftUI `.frame(
+  // maxWidth: .infinity, maxHeight: .infinity)`, see that file's own doc
+  // comment), and the actual RN-side height for that subtree arrives via a
+  // report-back through `ReportSizeToYogaNodeModifier`, not a normal Yoga
+  // layout pass a plain `flex: 1` child can resolve against reliably —
+  // the same class of "no available dimension for a relative size to
+  // resolve against" issue documented at length in `full-width-button.tsx`
+  // and `bottom-sheet.tsx`'s own history. A real, pre-computed number
+  // sidesteps that resolution question entirely.
+  const listHeight = Math.max(windowHeight * SHEET_HEIGHT_FRACTION - SHEET_CHROME_HEIGHT, OPTION_ROW_HEIGHT * 3);
+  // Set only at the moment the sheet opens (in `handleOpen`, before `query`
+  // resets to "" and `filtered` becomes the full `options` list again) — a
+  // real, reported bug: reopening the sheet after picking e.g. the 50th of
+  // 120 options showed the list scrolled back to the top, with no
+  // indication where the current selection was without scrolling down
+  // again. `FlatList`'s `initialScrollIndex` only applies on mount, not on
+  // every render, so this is read once per open via a ref rather than a
+  // plain derived value recomputed on every keystroke while typing.
+  const initialScrollIndexRef = useRef<number | undefined>(undefined);
+  // Bumped on every open — `FlatList` is keyed on this below so it fully
+  // REMOUNTS each time the sheet opens, since `initialScrollIndex` only
+  // ever applies at mount, not on every prop change (`BottomSheet` keeps
+  // its content mounted across `isPresented` toggles, so without this the
+  // list would only ever honor `initialScrollIndex` on the very first
+  // open).
+  const [openSessionId, setOpenSessionId] = useState(0);
 
   const selected = options.find((option) => option.value === value);
   const labelText = floatingLabel ? (required ? `${floatingLabel} *` : floatingLabel) : undefined;
@@ -98,6 +168,9 @@ export function SelectListField<T extends string>({
   function handleOpen() {
     if (disabled) return;
     setQuery("");
+    const selectedIndex = value ? options.findIndex((option) => option.value === value) : -1;
+    initialScrollIndexRef.current = selectedIndex >= 0 ? selectedIndex : undefined;
+    setOpenSessionId((n) => n + 1);
     setIsOpen(true);
   }
 
@@ -157,8 +230,8 @@ export function SelectListField<T extends string>({
         <ChevronRight size={16} color={colors.onSurfaceMuted} />
       </Pressable>
 
-      <BottomSheet isPresented={isOpen} onDismiss={() => setIsOpen(false)} snapPoints={[{ fraction: 0.75 }]}>
-        <View className="gap-3 px-4 pb-4 pt-2" style={{ height: "100%" }}>
+      <BottomSheet isPresented={isOpen} onDismiss={() => setIsOpen(false)} snapPoints={[{ fraction: SHEET_HEIGHT_FRACTION }]}>
+        <View className="gap-3 px-4 pb-4 pt-2">
           {sheetTitle ? (
             <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{sheetTitle}</Text>
           ) : null}
@@ -189,6 +262,8 @@ export function SelectListField<T extends string>({
           */}
           <ScrollViewContext.Provider value={null}>
             <FlatList
+              key={openSessionId}
+              style={{ height: listHeight }}
               data={filtered}
               keyExtractor={(item) => item.value}
               keyboardShouldPersistTaps="handled"
@@ -206,13 +281,28 @@ export function SelectListField<T extends string>({
                     accessibilityRole="menuitem"
                     accessibilityState={{ selected: isSelected }}
                     testID={testID ? `${testID}-option-${item.value}` : undefined}
-                    className="flex-row items-center justify-between py-3"
+                    className="flex-row items-center justify-between px-1"
+                    style={{ height: OPTION_ROW_HEIGHT }}
                   >
-                    <Text className="flex-1 text-[14px] text-on-surface dark:text-on-surface-dark">{item.label}</Text>
+                    <Text numberOfLines={1} className="flex-1 text-[14px] text-on-surface dark:text-on-surface-dark">
+                      {item.label}
+                    </Text>
                     {isSelected ? <CheckIcon size={18} color={colors.primary} /> : null}
                   </Pressable>
                 );
               }}
+              getItemLayout={(_, index) => ({ length: OPTION_ROW_HEIGHT + 1, offset: (OPTION_ROW_HEIGHT + 1) * index, index })}
+              initialScrollIndex={initialScrollIndexRef.current}
+              onScrollToIndexFailed={({ index, averageItemLength }) => {
+                // A real, documented FlatList footgun, not a bug in this
+                // component: `scrollToIndex`/`initialScrollIndex` can fail
+                // if the target index hasn't been measured yet (e.g. a very
+                // long list not yet laid out this far) — RN's own docs
+                // recommend retrying via `scrollToOffset` using the
+                // reported `averageItemLength` as a fallback estimate.
+                listRef.current?.scrollToOffset({ offset: averageItemLength * index, animated: false });
+              }}
+              ref={listRef}
             />
           </ScrollViewContext.Provider>
         </View>
