@@ -3,6 +3,8 @@ import { useState } from "react";
 import CalendarIcon from "lucide-react-native/icons/calendar";
 import ClockIcon from "lucide-react-native/icons/clock";
 import ExpoDateTimePicker, { type DateTimePickerProps as ExpoDateTimePickerProps } from "@expo/ui/community/datetime-picker";
+import { DatePicker, Host } from "@expo/ui/swift-ui";
+import { disabled as disabledMod } from "@expo/ui/swift-ui/modifiers";
 import { useNativeColors } from "../theme/use-native-colors";
 
 /**
@@ -99,14 +101,57 @@ import { useNativeColors } from "../theme/use-native-colors";
  * shrinking it is not the fix), the pill's visible content sits noticeably
  * short of the box's true right edge, reading as extra right-side padding
  * compared to a `Switch` in the same row shape (confirmed on a real
- * device, then pixel-measured against a real screenshot: the pill's right
- * edge sat ~26px short of `Switch`'s at 3x device scale, ~9pt — an earlier
- * `-8` attempt closed only part of that gap). Fixed with a measured
- * `marginRight: -16` on an OUTER wrapper `View` (not on
- * `ExpoDateTimePicker`'s own `style`, which is the width/height the
- * native pill measures itself against and must stay
+ * device). Fixed with a small, measured `marginRight: -8` on an OUTER
+ * wrapper `View` (not on `ExpoDateTimePicker`'s own `style`, which is the
+ * width/height the native pill measures itself against and must stay
  * untouched) — pulling the whole pill visually flush with `Switch`'s
  * right edge without touching the pill's own internal layout at all.
+ *
+ * **SIXTH design, iOS only — switched from the community `ExpoDateTimePicker`
+ * wrapper to `@expo/ui/swift-ui`'s own `DatePicker` + `Host` directly.**
+ * Two real, confirmed reasons, not a preference:
+ * 1. Theming: the community wrapper's `accentColor` prop produced a
+ *    per-component `tint` modifier; `swift-ui`'s `Host.seedColor` instead
+ *    applies `.tint(seedColor)` to the whole SwiftUI subtree (traced into
+ *    `@expo/ui`'s own `HostView.swift`: `SeedColorModifier` does exactly
+ *    this) — a real, equivalent mechanism, just applied at the `Host`
+ *    level instead of per-component, and confirmed on a real iOS
+ *    simulator to render the same primary-color tint as before.
+ * 2. **`mode="datetime"` was a real, silent gap in the intermediate
+ *    version of this file — confirmed by a passing typecheck and test
+ *    suite that never exercised it, since no call site used that mode at
+ *    the time.** An in-between version of this component's iOS branch had
+ *    `displayedComponents={mode === "time" ? ["hourAndMinute"] : ["date"]}`
+ *    — only two branches, so `"datetime"` fell into the `else` and
+ *    silently showed date-only, dropping the time component entirely with
+ *    no error, warning, or visual indication anything was wrong. Fixed by
+ *    giving `displayedComponents` all three real branches — `"datetime"`
+ *    now passes `["date", "hourAndMinute"]` (a real, valid array per
+ *    `DatePickerComponent[]`'s own type — SwiftUI's `DatePicker` supports
+ *    showing both components in one control), so a `datetime`-mode picker
+ *    on iOS looks and behaves like a genuine single combined
+ *    date-and-time picker on one line, not two separate controls.
+ *
+ * **Android's `mode="datetime"` needed a different fix — there is no
+ * native combined date+time dialog to reach for.** `@expo/ui`'s own
+ * community `DateTimePicker.android.tsx` documents this directly
+ * (`modeToDisplayedComponents`: "Android has no inline datetime picker —
+ * fall back to date only") — passing `mode="datetime"` straight through to
+ * `ExpoDateTimePicker presentation="dialog"` on Android silently loses the
+ * time component the exact same way the iOS gap did, and this wrapper
+ * previously did exactly that (forwarding `mode` verbatim). Fixed by
+ * handling `datetime` explicitly in `AndroidDateTimePickerField`: tapping
+ * the trigger opens the DATE dialog first; on confirm, it immediately
+ * opens the TIME dialog (pre-filled with the previous time-of-day, not
+ * midnight); on that second confirm, the two are merged into one `Date`
+ * (the newly-picked date's y/m/d combined with the newly-picked time's
+ * h/m) before calling `onChange` once. Cancelling either step cancels the
+ * whole flow without calling `onChange` at all — matching the existing
+ * single-dialog `onDismiss` behavior for `date`/`time` mode, just spanning
+ * two dialogs instead of one. This is a real, deliberate two-step native
+ * flow (the standard Android pattern for datetime entry, e.g. how the
+ * Android Calendar app collects an event's start time), not a workaround
+ * to avoid — Android genuinely has no single native widget for this.
  */
 
 export interface DateTimePickerProps {
@@ -129,40 +174,68 @@ function formatValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
   return value.toLocaleDateString();
 }
 
+/**
+ * All three real branches — see this file's own doc comment (SIXTH
+ * design) for why `"datetime"` falling through to a two-branch `? :`
+ * silently dropped the time component, undetected, until a real
+ * `mode="datetime"` call site was added.
+ */
+function displayedComponentsForMode(mode: ExpoDateTimePickerProps["mode"]): ("date" | "hourAndMinute")[] {
+  switch (mode) {
+    case "time":
+      return ["hourAndMinute"];
+    case "datetime":
+      return ["date", "hourAndMinute"];
+    case "date":
+    default:
+      return ["date"];
+  }
+}
+
+/** Merges a newly-picked date's year/month/day with a newly-picked time's hour/minute — see this file's own doc comment (Android's two-step `datetime` flow) for why this exists. */
+function mergeDateAndTime(date: Date, time: Date): Date {
+  const merged = new Date(date);
+  merged.setHours(time.getHours(), time.getMinutes(), 0, 0);
+  return merged;
+}
+
 export function DateTimePicker({ value, onChange, mode = "date", minimumDate, maximumDate, disabled = false, testID }: DateTimePickerProps) {
   const colors = useNativeColors();
 
   if (Platform.OS === "android") {
     return (
-      <AndroidDateTimePickerField
-        value={value}
-        onChange={onChange}
-        mode={mode}
-        minimumDate={minimumDate}
-        maximumDate={maximumDate}
-        disabled={disabled}
-        testID={testID}
-        accentColor={colors.primary}
-        iconColor={colors.onSurfaceMuted}
-      />
+      <View>
+        <AndroidDateTimePickerField
+          value={value}
+          onChange={onChange}
+          mode={mode}
+          minimumDate={minimumDate}
+          maximumDate={maximumDate}
+          disabled={disabled}
+          testID={testID}
+          accentColor={colors.primary}
+          iconColor={colors.onSurfaceMuted}
+        />
+      </View>
     );
   }
 
   return (
-    <View style={{ marginRight: -16 }}>
-      <ExpoDateTimePicker
-        value={value}
-        onValueChange={(_event, date) => onChange(date)}
-        mode={mode}
-        display="compact"
-        minimumDate={minimumDate}
-        maximumDate={maximumDate}
-        disabled={disabled}
-        accentColor={colors.primary}
-        style={{ width: mode === "time" ? 90 : 140, height: 32 }}
+    <Host
+      style={{ flex: 1, minWidth: mode === "datetime" ? 240 : 140, height: 32 }}
+      seedColor={colors.primary}
+      matchContents={{ vertical: true }}
+    >
+      <DatePicker
+        selection={value}
+        title=""
+        onDateChange={(date: Date) => onChange(date)}
+        displayedComponents={displayedComponentsForMode(mode)}
+        range={{ start: minimumDate, end: maximumDate }}
+        modifiers={disabled ? [disabledMod()] : undefined}
         testID={testID}
       />
-    </View>
+    </Host>
   );
 }
 
@@ -178,16 +251,46 @@ function AndroidDateTimePickerField({
   iconColor,
 }: Required<Pick<DateTimePickerProps, "value" | "onChange" | "mode" | "disabled">> &
   Pick<DateTimePickerProps, "minimumDate" | "maximumDate" | "testID"> & { accentColor: string; iconColor: string }) {
-  const [open, setOpen] = useState(false);
+  // `false` = closed. For `date`/`time` mode, `"date"`/`"time"` is the one
+  // dialog step. For `datetime` mode (no native combined dialog on Android
+  // — see this file's own doc comment), this is a real two-step state
+  // machine: `"date"` first, then `"time"` (carrying the just-picked date
+  // forward in `pendingDate`, not the original `value`, so the date the
+  // user just chose is what the time gets merged onto).
+  const [step, setStep] = useState<"date" | "time" | false>(false);
+  const [pendingDate, setPendingDate] = useState(value);
+
+  function handlePress() {
+    setPendingDate(value);
+    setStep(mode === "time" ? "time" : "date");
+  }
+
+  function handleDateConfirmed(date: Date) {
+    if (mode === "datetime") {
+      // First step done — carry the picked date forward and open the time
+      // dialog next, rather than calling `onChange` yet.
+      setPendingDate(date);
+      setStep("time");
+      return;
+    }
+    onChange(date);
+    setStep(false);
+  }
+
+  function handleTimeConfirmed(time: Date) {
+    onChange(mode === "datetime" ? mergeDateAndTime(pendingDate, time) : time);
+    setStep(false);
+  }
 
   return (
     <>
       <Pressable
         disabled={disabled}
-        onPress={() => setOpen(true)}
+        onPress={handlePress}
         accessibilityRole="button"
         accessibilityState={{ disabled }}
         testID={testID}
+        style={{ height: 36 }}
         className={[
           "h-9 flex-row items-center justify-center gap-1.5 self-start rounded-lg border bg-surface px-3 dark:bg-surface-dark",
           "border-border-strong dark:border-border-strong-dark",
@@ -197,15 +300,25 @@ function AndroidDateTimePickerField({
         <Text className="text-[14px] text-on-surface dark:text-on-surface-dark">{formatValue(value, mode)}</Text>
         {mode === "time" ? <ClockIcon size={16} color={iconColor} /> : <CalendarIcon size={16} color={iconColor} />}
       </Pressable>
-      {open ? (
+      {step === "date" ? (
         <ExpoDateTimePicker
           value={value}
-          onValueChange={(_event, date) => onChange(date)}
-          onDismiss={() => setOpen(false)}
-          mode={mode}
+          onValueChange={(_event, date) => handleDateConfirmed(date)}
+          onDismiss={() => setStep(false)}
+          mode="date"
           presentation="dialog"
           minimumDate={minimumDate}
           maximumDate={maximumDate}
+          accentColor={accentColor}
+        />
+      ) : null}
+      {step === "time" ? (
+        <ExpoDateTimePicker
+          value={mode === "datetime" ? pendingDate : value}
+          onValueChange={(_event, date) => handleTimeConfirmed(date)}
+          onDismiss={() => setStep(false)}
+          mode="time"
+          presentation="dialog"
           accentColor={accentColor}
         />
       ) : null}

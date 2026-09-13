@@ -1553,6 +1553,25 @@ Not a full audit — just confirm nothing obviously broke:
    single pixel column) and check both rounded corners specifically —
    see the CHANGELOG entry for the full account of how the previous
    attempt's narrow single-column measurement missed a real overlap.
+   **"Site visit" — a `mode="datetime"` field (added 2026-09-13)**: in
+   the Schedule section, confirm a "Site visit" row exists below Due
+   date, showing a real combined date+time value (e.g. "5 Aug 2026,
+   9:30 AM"). On iOS, confirm it renders as TWO pills side by side (a
+   date pill and a time pill) with NEITHER pill clipped or cut off at
+   the card's right edge — this exercises a real, previously-shipped
+   layout bug (the two-pill layout overflowed the card at the
+   date-only control's original width) fixed alongside the underlying
+   `datetime` support itself. On Android, confirm tapping the trigger
+   opens the DATE dialog first; confirming it opens the TIME dialog
+   next (not a combined dialog — Android has no native widget for
+   that); confirming the time dialog updates the field to show BOTH
+   the newly-picked date and time merged together, not just one or
+   the other. Cancelling either dialog should leave the field
+   unchanged. If either platform ever shows only a date with no time
+   for this field, suspect `displayedComponentsForMode`/
+   `AndroidDateTimePickerField`'s two-step flow in
+   `date-time-picker.tsx` — this exact silent gap (dropping the time
+   component) is what prompted this fix in the first place.
 
 ---
 

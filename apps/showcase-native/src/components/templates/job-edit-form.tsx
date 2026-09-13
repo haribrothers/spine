@@ -50,6 +50,15 @@ interface JobFormValues {
   value: string;
   startDate: Date;
   dueDate: Date;
+  /**
+   * `mode="datetime"` example field — Start/Due date above are genuinely
+   * date-only (a job doesn't start or finish at a specific minute), but a
+   * site visit needs both: a real, common form-field shape this template
+   * previously had no example of. See `DateTimePicker`'s own doc comment
+   * (SIXTH design) for why `datetime` mode needed real fixes on both
+   * platforms before this was safe to add here.
+   */
+  siteVisitAt: Date;
   retentionHeld: boolean;
   notes: string;
 }
@@ -63,6 +72,7 @@ function loadJob(_jobId: string): JobFormValues {
     value: "18400.00",
     startDate: new Date("2026-08-01T00:00:00"),
     dueDate: new Date("2026-09-30T00:00:00"),
+    siteVisitAt: new Date("2026-08-05T09:30:00"),
     retentionHeld: true,
     notes: "",
   };
@@ -105,11 +115,6 @@ function FieldLabel({ children, required }: { children: string; required?: boole
   );
 }
 
-function FieldError({ message }: { message?: string }) {
-  if (!message) return null;
-  return <Text className="px-4 pb-2 text-[12px] text-overdue dark:text-overdue-dark">{message}</Text>;
-}
-
 /**
  * A fixed row height, applied identically to every row in a `FormSection`
  * card (text field, select, date picker, switch alike) — a real, reported
@@ -124,7 +129,9 @@ function FieldError({ message }: { message?: string }) {
  * and the value text stacked vertically, not just one line — every row
  * (including the plain-label DateTimePicker/Switch ones) now uses this
  * same value so nothing in the card reads as taller or shorter than its
- * neighbors.
+ * neighbors. Only the row's OWN control slot is fixed at this height — an
+ * error message (see `error` below) is allowed to add real height below
+ * it, on top of `ROW_HEIGHT`, rather than being squeezed inside it.
  */
 const ROW_HEIGHT = 56;
 
@@ -140,20 +147,57 @@ const ROW_HEIGHT = 56;
  *   (see `FloatingLabelField`'s doc comment), so this row is just a
  *   full-width slot with no separate label element — a side-by-side label
  *   here would visually double up with the field's own floating one.
+ *
+ * **`error`, a real fix for a reported bug — this message is now part of
+ * the row itself, not a separate sibling element the caller has to
+ * remember to place correctly.** The previous shape had a standalone
+ * `FieldError` component called AFTER a `FormRow`, as an unrelated sibling
+ * in `FormSection`'s children list. That broke in a few concrete,
+ * user-reported ways: (1) `FormRow` always draws its own trailing
+ * `Divider` immediately after itself, so the divider landed BETWEEN the
+ * row and its error message instead of below the error — visually, the
+ * error text read as belonging to the NEXT field, not the one that
+ * actually failed; (2) the error text had no relationship to `ROW_HEIGHT`
+ * at all, so it broke the card's carefully-unified row-height rhythm the
+ * moment any field errored; (3) two independent call sites
+ * (`error={!!errors.x}` on the field itself, `<FieldError
+ * message={errors.x} />` as a sibling) had to be kept in sync by hand for
+ * every single validated field, with no structural link between them.
+ * Fixed by making the row own its error entirely: rendered AFTER
+ * `children` but BEFORE this row's own trailing `Divider`, so the divider
+ * is always genuinely below the full row+error unit. Deliberately NOT
+ * given a fixed height (unlike the row's own control slot) — the answer,
+ * per explicit design decision, is that a validation error should only
+ * ever affect the layout of the ONE row it belongs to, not reserve
+ * permanent empty space in every row up front or shift unrelated rows
+ * (this is why there's no fixed-height "error slot" here, on purpose).
  */
-function FormRow({ label, required, children, last }: { label?: string; required?: boolean; children: React.ReactNode; last?: boolean }) {
+function FormRow({
+  label,
+  required,
+  children,
+  last,
+  error,
+}: {
+  label?: string;
+  required?: boolean;
+  children: React.ReactNode;
+  last?: boolean;
+  error?: string;
+}) {
   return (
     <View>
       {label ? (
         <View style={{ height: ROW_HEIGHT }} className="flex-row items-center justify-between gap-3 px-4">
           <FieldLabel required={required}>{label}</FieldLabel>
-          <View className="max-w-[62%] flex-1 items-end">{children}</View>
+          <View className="flex-1 items-end">{children}</View>
         </View>
       ) : (
         <View style={{ height: ROW_HEIGHT }} className="justify-center px-4">
           {children}
         </View>
       )}
+      {error ? <Text className="px-4 pb-2 text-[12px] text-overdue dark:text-overdue-dark">{error}</Text> : null}
       {last ? null : <Divider />}
     </View>
   );
@@ -668,7 +712,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
           scrollEventThrottle={16}
         >
           <FormSection title="Details">
-            <FormRow>
+            <FormRow error={errors.title}>
               <FloatingLabelField
                 label="Title"
                 required
@@ -680,9 +724,8 @@ export function JobEditForm({ jobId }: { jobId: string }) {
                 testID="title-field"
               />
             </FormRow>
-            <FieldError message={errors.title} />
 
-            <FormRow>
+            <FormRow error={errors.client}>
               <SelectListField
                 options={[...CLIENT_OPTIONS]}
                 value={values.client}
@@ -696,7 +739,6 @@ export function JobEditForm({ jobId }: { jobId: string }) {
                 testID="client-select"
               />
             </FormRow>
-            <FieldError message={errors.client} />
 
             <FormRow>
               <SelectField
@@ -708,7 +750,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
               />
             </FormRow>
 
-            <FormRow last>
+            <FormRow last error={errors.value}>
               <FloatingLabelField
                 label="Job value"
                 required
@@ -721,16 +763,30 @@ export function JobEditForm({ jobId }: { jobId: string }) {
                 testID="value-field"
               />
             </FormRow>
-            <FieldError message={errors.value} />
           </FormSection>
 
           <FormSection title="Schedule">
-            <FormRow label="Start date">
-              <DateTimePicker value={values.startDate} onChange={(date) => update("startDate", date)} mode="date" />
+            <FormRow label="Start date" >
+              <DateTimePicker value={values.startDate}  onChange={(date) => update("startDate", date)} mode="date" />
             </FormRow>
 
-            <FormRow label="Due date" last>
-              <DateTimePicker value={values.dueDate} onChange={(date) => update("dueDate", date)} mode="date" minimumDate={values.startDate} />
+            <FormRow label="Due date">
+              <DateTimePicker disabled={true} value={values.dueDate} onChange={(date) => update("dueDate", date)} mode="date" minimumDate={values.startDate} />
+            </FormRow>
+
+            {/*
+              `mode="datetime"` example — a real field genuinely needing
+              both a date AND a time (unlike Start/Due date above, which
+              are date-only on purpose). Confirms the SIXTH design's
+              both-platforms `datetime` fix on a real screen, not just in
+              `DateTimePicker`'s own a11y tests: on iOS this renders as one
+              combined SwiftUI picker; on Android, tapping opens the date
+              dialog first, then the time dialog, merging both into one
+              `Date` — see `DateTimePicker`'s own doc comment for the full
+              mechanism.
+            */}
+            <FormRow label="Site visit" last>
+              <DateTimePicker value={values.siteVisitAt} onChange={(date) => update("siteVisitAt", date)} mode="datetime" minimumDate={values.startDate} />
             </FormRow>
           </FormSection>
 
@@ -795,8 +851,8 @@ export function JobEditForm({ jobId }: { jobId: string }) {
               uneven between platforms purely as a side effect of the shape
               mismatch, not the gap value itself.
             */}
-            <FullWidthButton label={saving ? "Saving…" : "Save"} onPress={handleSave} disabled={saving} shape="rounded" />
-            <FullWidthButton label="Cancel" variant="secondary" onPress={handleCancel} disabled={saving} shape="rounded" />
+            <FullWidthButton label={saving ? "Saving…" : "Save"} controlSize="large" onPress={handleSave} disabled={saving} shape="rounded" />
+            <FullWidthButton label="Cancel" variant="secondary" controlSize="large" onPress={handleCancel} disabled={saving} shape="rounded" />
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
