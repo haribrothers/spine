@@ -1531,28 +1531,39 @@ Not a full audit — just confirm nothing obviously broke:
    and Cancel show a real rounded-RECTANGLE corner, not a full pill/
    capsule shape — the corner should be a modest, visible curve (not
    a half-circle end-cap). This exercises `FullWidthButton`'s `shape`
-   prop, and on Android specifically this is the surface that caught a
-   real bug: an earlier attempt silently broke BOTH buttons entirely
-   (they didn't render at all, with no error shown anywhere) — if
-   Save/Cancel are ever missing entirely on Android after a change
-   near this code, suspect the `shape`/`Shape.*` wiring first (see the
-   CHANGELOG entry for the exact root cause: `Shape.RoundedCorner(...)`
-   must be called as a plain function, never rendered as JSX).
-   **Save/Cancel spacing on iOS (investigated, not "fixed" — 2026-09-13)**:
-   confirm Save and Cancel do NOT visually overlap — their rounded
-   corners must be fully separate, with no clipping into each other.
-   A real attempted fix for a related complaint (the gap looking
-   smaller on iOS than Android, due to ~13pt of invisible padding
-   SwiftUI adds below `.borderedProminent` buttons for Apple's 44pt
-   minimum tap-target height) was tried, shipped a real OVERLAP bug on
-   a real device, and was reverted — `FullWidthButton` currently
-   applies NO compensation on either platform, which is the confirmed
-   safe/correct state. If a future change reintroduces a negative
-   margin here, verify it across the FULL width of the button in a
-   real, complete on-device screenshot (not a cropped one, not a
-   single pixel column) and check both rounded corners specifically —
-   see the CHANGELOG entry for the full account of how the previous
-   attempt's narrow single-column measurement missed a real overlap.
+   prop; on Android specifically this is the surface that once caught
+   a real bug (an earlier attempt silently broke BOTH buttons entirely,
+   no error shown anywhere) — if Save/Cancel are ever missing entirely
+   on Android after a change near this code, suspect the `shape`/
+   `Shape.*` wiring first (see the CHANGELOG entry for the exact root
+   cause: `Shape.RoundedCorner(...)` must be called as a plain
+   function, never rendered as JSX). On iOS, `shape` is now a plain RN
+   `borderRadius` (see the note below on iOS's implementation change).
+   **iOS top spacing on first render (fixed — 2026-09-13, real bug,
+   not "investigated, not fixed" anymore)**: cold-launch the app
+   straight to Job Edit (kill the app fully first, not just a Fast
+   Refresh reload) and confirm the gap above Save is visible
+   IMMEDIATELY on first render — matching the spacing between every
+   other section on the screen. The original bug: Save had NO visible
+   top spacing at all on first render, then visibly jumped down into
+   the correct position the first time either button was tapped. Root
+   cause was `@expo/ui`'s `Host`/`matchContents` reporting its true
+   native content size back to RN asynchronously, one tick after the
+   first layout pass — fixed by moving `FullWidthButton` off
+   `@expo/ui`'s `Host`/`swift-ui Button` on iOS ENTIRELY (now a plain
+   RN `Pressable` styled to approximate the native look; Android is
+   unchanged, still real `@expo/ui/jetpack-compose`). See the CHANGELOG
+   entry for the full investigation, including a wrong intermediate
+   diagnosis (a `ScrollView` `gap-6` className) that was drafted and
+   reverted before this fix. Also confirm Save/Cancel still show real
+   button styling (filled blue Save, outlined Cancel) — a related bug
+   during this fix (`Pressable`'s function-style `style` prop silently
+   applying NO styling at all on a real device, suspected NativeWind
+   babel-interop interaction) was caught and fixed by computing the
+   style as a plain object from local pressed state instead; if a
+   future edit to `IOSFullWidthButton` reintroduces a function-style
+   `style` prop, verify on a REAL device that styling still applies,
+   not just that typecheck/tests pass.
    **"Site visit" — a `mode="datetime"` field (added 2026-09-13)**: in
    the Schedule section, confirm a "Site visit" row exists below Due
    date, showing a real combined date+time value (e.g. "5 Aug 2026,

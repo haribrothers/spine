@@ -1,7 +1,5 @@
-import { Platform } from "react-native";
-import { Button as SwiftUIButton } from "@expo/ui/swift-ui";
-import { buttonBorderShape, buttonStyle, controlSize as iosControlSize, disabled as iosDisabled, frame } from "@expo/ui/swift-ui/modifiers";
-import { Text as SwiftUIText } from "@expo/ui/swift-ui";
+import { useState } from "react";
+import { Platform, Pressable, Text } from "react-native";
 import { Button as ComposeButton, OutlinedButton, Shape, Text as ComposeText, type ShapeJSXElement } from "@expo/ui/jetpack-compose";
 import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
 import { Host } from "@expo/ui";
@@ -91,6 +89,60 @@ import type { ButtonControlSize, ButtonVariant } from "./button";
  * component applies NO compensation — the raw `Host` box (including its
  * invisible tap-target slack) is what callers space against, matching the
  * platform's own accessibility-mandated sizing rather than fighting it.
+ *
+ * **A second, separate real bug eventually retired the `@expo/ui`
+ * `Host`/`swift-ui Button` approach on iOS entirely: on first render, the
+ * space ABOVE this button was completely missing, then snapped into place
+ * — the button visibly "jumped down" — the first time it was pressed.**
+ * Root-caused by reading `@expo/ui`'s own native source (`RNHostView.swift`):
+ * `Host`'s `matchContents` reports the true SwiftUI content size back to the
+ * RN shadow tree ASYNCHRONOUSLY, via `ReportSizeToYogaNodeModifier`'s
+ * `.onGeometryChange`/`.onChange(of: geometry.size)`, which only fires AFTER
+ * the first native layout pass — so on mount, Yoga briefly lays out this
+ * `Host` (and its RN siblings, including the gap above it) using a
+ * stale/undersized height, which only visibly corrects once something
+ * forces an RN-side re-layout (exactly what a tap's state update does,
+ * hence "fixes itself on the first press"). A `setTimeout`-driven forced
+ * re-render shortly after mount was tried as a workaround and did NOT
+ * reliably fix it in practice (the native geometry callback's actual
+ * arrival time isn't bounded by a fixed JS timer) — see this file's git
+ * history for that attempt and why it was abandoned rather than the real
+ * fix.
+ *
+ * **The actual fix, on iOS only: this component no longer uses `@expo/ui`'s
+ * `Host`/`swift-ui Button` at all — it's a plain RN `Pressable` (see
+ * `IOSFullWidthButton` below) styled to visually approximate SwiftUI's
+ * `.borderedProminent`/`.bordered` look (solid/outlined pill, dimmed
+ * opacity while pressed).** This trades genuine native button
+ * material/press animation for fully synchronous RN/Yoga layout with no
+ * native-geometry round-trip to race against — the root cause above simply
+ * doesn't exist for a plain `Pressable`. Colors come from `useNativeColors()`
+ * (the same plain hex-token hook `Button`/other `@expo/ui`-backed components
+ * already use for their `Host.seedColor`), applied via inline `style` since
+ * there's no `Host` theming bridge to lean on here. Android is UNCHANGED —
+ * still the real `@expo/ui/jetpack-compose` `Button`/`OutlinedButton` with
+ * `fillMaxWidth()`, which was never affected by this bug (Android's `Host`
+ * box hugs its visible content tightly with no equivalent async
+ * geometry-report timing gap, per the investigation above). `controlSize`
+ * is now applied as a plain padding/height/font-size scale (see
+ * `IOS_CONTROL_SIZE_STYLE` below) rather than SwiftUI's real `controlSize`
+ * modifier, since there's no native control to forward it to anymore.
+ *
+ * **`IOSFullWidthButton` tracks its own pressed state with `useState` and
+ * computes a plain (non-function) `style` object, rather than `Pressable`'s
+ * own `style={({ pressed }) => ({...})}` callback form.** The callback form
+ * was tried first and rendered with NO styling applied at all on a real
+ * device — no background, no padding, no alignment, just bare text —
+ * confirmed via an actual on-device screenshot, not just a code-read, even
+ * though that's standard, documented RN usage. Not fully root-caused, but
+ * the leading suspect is this app's `babel.config.js` running every JSX
+ * element (including a bare `Pressable` with no `className` at all)
+ * through NativeWind's `nativewind/babel` interop wrapper — every other
+ * native-styling mechanism already used elsewhere in this file (`@expo/ui`'s
+ * own `modifiers` arrays) sits outside that interop path entirely, and this
+ * was the first plain-RN-primitive `style` callback added to this
+ * package's `@expo/ui`-backed component set. See `IOSFullWidthButton`'s own
+ * comment for the same note, kept next to the actual code.
  */
 export interface FullWidthButtonProps {
   variant?: Exclude<ButtonVariant, "ghost">;
@@ -99,26 +151,26 @@ export interface FullWidthButtonProps {
   label: string;
   testID?: string;
   /**
-   * SwiftUI's real `controlSize` modifier — see `Button`'s own doc comment
-   * for the full rationale. **iOS-only, a genuine no-op on Android**:
-   * Jetpack Compose has no equivalent named-size concept here either.
-   * Defaults to `"regular"` (omitted = `@expo/ui`'s own default, unchanged).
+   * On Android, still forwarded to `@expo/ui/jetpack-compose`'s real Button
+   * — see `Button`'s own doc comment for the full rationale on that native
+   * mechanism. **On iOS, this is now a plain RN padding/height/font-size
+   * scale** (`IOS_CONTROL_SIZE_STYLE` below), not SwiftUI's real
+   * `controlSize` modifier — see this file's own doc comment for why iOS
+   * moved off `@expo/ui`'s `Host`/`swift-ui Button` entirely. Visually
+   * approximates the same relative sizing, not a pixel-identical match to
+   * SwiftUI's own metrics. Defaults to `"regular"`.
    */
   controlSize?: ButtonControlSize;
   /**
-   * `"pill"` (default, unchanged) is `@expo/ui`'s real native Button shape
-   * on both platforms. Unlike `Button` (whose `shape` prop is iOS-only —
-   * see that component's own doc comment for why), `FullWidthButton`
-   * supports `"rounded"`/`"sharp"` on BOTH platforms with a real, confirmed
-   * mechanism per platform: iOS uses SwiftUI's `buttonBorderShape` modifier
-   * (which changes what `.buttonStyle` actually PAINTS — a genuinely
-   * different, working mechanism from `clipShape`, which was tried
-   * elsewhere in this codebase's history and only crops after-the-fact
-   * without changing the painted shape); Android uses
+   * `"pill"` (default, unchanged) on both platforms. On Android, still
    * `@expo/ui/jetpack-compose`'s own `Button`/`OutlinedButton` `shape` prop
    * (a real `Shape.RoundedCorner`/`Shape.Rectangle` value, since this
    * component already uses the direct Compose `Button` rather than the
-   * universal wrapper `Button` is limited to).
+   * universal wrapper `Button` is limited to). **On iOS, this is now a
+   * plain RN `borderRadius` on the `Pressable` itself** — see this file's
+   * own doc comment for why iOS moved off `@expo/ui`'s `Host`/`swift-ui
+   * Button` entirely; there's no `buttonBorderShape` modifier to forward to
+   * anymore, just a real style property.
    *
    * **`Shape.RoundedCorner`/`Shape.Rectangle`/`Shape.Pill` must be CALLED
    * as plain functions (`Shape.RoundedCorner({...})`), never rendered as
@@ -141,18 +193,19 @@ const VARIANT_TO_EXPO_UI_VARIANT: Record<Exclude<ButtonVariant, "ghost">, "fille
   danger: "filled",
 };
 
-const IOS_BUTTON_STYLE: Record<"filled" | "outlined", "borderedProminent" | "bordered"> = {
-  filled: "borderedProminent",
-  outlined: "bordered",
-};
-
-// A real, finite stand-in for `Infinity`, which does not survive the
-// `@expo/ui` prop bridge (see this file's own doc comment, investigation
-// step 2) — functionally identical to infinite `maxWidth` on any real
-// device screen size.
-const MAX_FLEXIBLE_WIDTH = Number.MAX_VALUE;
-
 const ROUNDED_CORNER_RADIUS = 10;
+
+// Plain RN sizing scale approximating SwiftUI's real `controlSize` metrics
+// closely enough for this button's own use — see this file's own doc
+// comment for why iOS no longer forwards a real native `controlSize`
+// modifier. Not a pixel-identical match to SwiftUI's own values.
+const IOS_CONTROL_SIZE_STYLE: Record<ButtonControlSize, { paddingVertical: number; fontSize: number }> = {
+  mini: { paddingVertical: 4, fontSize: 13 },
+  small: { paddingVertical: 6, fontSize: 14 },
+  regular: { paddingVertical: 11, fontSize: 17 },
+  large: { paddingVertical: 14, fontSize: 19 },
+  extraLarge: { paddingVertical: 18, fontSize: 22 },
+};
 
 // Per Expo's own docs (docs.expo.dev/versions/latest/sdk/ui/jetpack-compose/button),
 // `shape` is constructed by CALLING `Shape.RoundedCorner({...})` as a plain
@@ -179,6 +232,83 @@ function androidShapeElement(shape: "pill" | "rounded" | "sharp"): ShapeJSXEleme
   }
 }
 
+// A separate component (not inlined in `FullWidthButton`'s iOS branch) so
+// the pressed-state visual can be tracked with plain local state and
+// applied via a normal, non-function `style` object — `Pressable`'s own
+// function-style `style={({ pressed }) => ({...})}` prop was tried first
+// here and rendered with NO styling applied at all on a real device (no
+// background, no padding, no alignment — confirmed via a real screenshot,
+// not just a code-read), even though the exact same pattern is standard,
+// documented RN usage. Root cause not fully isolated, but this app's
+// `babel.config.js` runs every JSX element (including bare `Pressable`,
+// with no `className` at all) through NativeWind's `nativewind/babel`
+// interop wrapper — the leading suspect, given every other native-styling
+// mechanism already used elsewhere in this file (`@expo/ui`'s own
+// `modifiers` arrays) sits outside that interop path entirely, and this is
+// the first plain-RN-primitive `style` callback added to this package's
+// `@expo/ui`-backed component set. Computing the style as a plain object
+// from local `pressed` state sidesteps whatever the actual interaction is,
+// without needing to fully diagnose NativeWind's interop internals.
+function IOSFullWidthButton({
+  onPress,
+  disabled,
+  testID,
+  label,
+  fillColor,
+  filled,
+  controlSize,
+  shape,
+}: {
+  onPress?: () => void;
+  disabled: boolean;
+  testID?: string;
+  label: string;
+  fillColor: string;
+  filled: boolean;
+  controlSize: ButtonControlSize;
+  shape: "pill" | "rounded" | "sharp";
+}) {
+  const [pressed, setPressed] = useState(false);
+  const sizeStyle = IOS_CONTROL_SIZE_STYLE[controlSize];
+  const borderRadius = shape === "sharp" ? 0 : shape === "rounded" ? ROUNDED_CORNER_RADIUS : 9999;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      disabled={disabled}
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityState={{ disabled }}
+      style={{
+        borderRadius,
+        paddingVertical: sizeStyle.paddingVertical,
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
+        ...(filled ? { backgroundColor: fillColor } : { backgroundColor: "transparent", borderWidth: 1, borderColor: fillColor }),
+      }}
+    >
+      <Text
+        style={{
+          fontSize: sizeStyle.fontSize,
+          fontWeight: "600",
+          // SwiftUI's real `.borderedProminent` always uses white label
+          // text regardless of light/dark mode or the seeded tint color
+          // (the fill is always saturated enough to need it) — there's no
+          // dedicated "on-primary" token in this package's color set to
+          // reach for instead, so this matches that real native convention
+          // directly rather than misusing an unrelated token.
+          color: filled ? "#FFFFFF" : fillColor,
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 export function FullWidthButton({
   variant = "primary",
   disabled = false,
@@ -194,28 +324,17 @@ export function FullWidthButton({
   const expoUiVariant = VARIANT_TO_EXPO_UI_VARIANT[variant];
 
   if (Platform.OS === "ios") {
-    const shapeModifier =
-      shape === "rounded"
-        ? buttonBorderShape("roundedRectangle", ROUNDED_CORNER_RADIUS)
-        : shape === "sharp"
-          ? buttonBorderShape("roundedRectangle", 0)
-          : undefined;
-
     return (
-      <Host matchContents={{ vertical: true, horizontal: false }} colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
-        <SwiftUIButton
-          onPress={onPress}
-          modifiers={[
-            buttonStyle(IOS_BUTTON_STYLE[expoUiVariant]),
-            iosDisabled(disabled),
-            ...(controlSize ? [iosControlSize(controlSize)] : []),
-            ...(shapeModifier ? [shapeModifier] : []),
-          ]}
-          testID={testID}
-        >
-          <SwiftUIText modifiers={[frame({ maxWidth: MAX_FLEXIBLE_WIDTH, alignment: "center" })]}>{label}</SwiftUIText>
-        </SwiftUIButton>
-      </Host>
+      <IOSFullWidthButton
+        onPress={onPress}
+        disabled={disabled}
+        testID={testID}
+        label={label}
+        fillColor={seedColor ?? colors.primary}
+        filled={expoUiVariant === "filled"}
+        controlSize={controlSize ?? "regular"}
+        shape={shape}
+      />
     );
   }
 

@@ -1,70 +1,147 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Platform } from "react-native";
 import { FullWidthButton } from "./full-width-button";
+import { expectAccessibilityState, expectAccessibleRole } from "../test/a11y";
 
 /**
- * Same native-bridge testing adaptation as `button.a11y.test.tsx` — see
- * that file's own doc comment for the full rationale (`@expo/ui` renders
- * as an opaque native-bridge mock under jest-expo with no real
- * accessibility tree, so assertions target the props actually passed into
- * the native component instead).
- *
- * `jest-expo` mocks `Platform.OS` as `"ios"`, so these tests exercise the
- * `swift-ui/Button` + `swift-ui/Text` branch — the actual fix this
- * component exists for (see its own doc comment for why `Button` itself
- * can't do this). The Android branch (`fillMaxWidth()` applied directly to
- * a Jetpack Compose `Button`) has no equivalent content-vs-background
- * sizing problem to test for; it's verified by reading Compose's own
- * modifier-driven sizing model plus on-device confirmation, same as this
- * package's other Android-specific `@expo/ui` branches.
+ * `jest-expo` mocks `Platform.OS` as `"ios"` by default, so the top-level
+ * describe block below exercises the iOS branch — a plain RN `Pressable` +
+ * `Text` (see this component's own doc comment for why iOS moved off
+ * `@expo/ui`'s `Host`/`swift-ui Button`: a real "no top spacing until first
+ * tap" bug rooted in `Host`'s `matchContents` async native-geometry
+ * reporting). Being real RN primitives now, this uses the package's normal
+ * `expectAccessibleRole`/`expectAccessibilityState` helpers instead of the
+ * native-bridge-mock-prop-inspection pattern other `@expo/ui`-backed
+ * components need — see `button.a11y.test.tsx` for that pattern, still used
+ * below in the "on Android" describe block, since Android's branch is
+ * unchanged (still real `@expo/ui/jetpack-compose`).
  */
-function findByPropName(root: ReturnType<typeof render>, propName: string) {
-  const node = root.UNSAFE_root.findAll((n) => propName in n.props);
-  if (node.length === 0) {
-    throw new Error(`No instance found with prop "${propName}"`);
-  }
-  return node[0]!;
-}
+describe("FullWidthButton a11y — on iOS (plain RN Pressable, not @expo/ui)", () => {
+  it("exposes a real button role with the label as its accessible name", () => {
+    render(<FullWidthButton label="Save" onPress={() => {}} />);
+    const button = screen.getByRole("button");
+    expectAccessibleRole(button, "button");
+    expect(screen.getByText("Save")).toBeTruthy();
+  });
 
-// `onPress` alone matches this component's own outer composite JSX element
-// (which just forwards `label`/`disabled` as authored, with no `modifiers`
-// array at all) before it reaches the actual native-bridge mock node —
-// this finds the one that also carries a real `modifiers` array.
-function findNativeButtonNode(root: ReturnType<typeof render>) {
-  const nodes = root.UNSAFE_root.findAll((n) => "onPress" in n.props && Array.isArray(n.props.modifiers));
-  if (nodes.length === 0) {
-    throw new Error('No native button node found with both "onPress" and "modifiers"');
-  }
-  return nodes[0]!;
-}
+  it("wires onPress through to a real press", () => {
+    const onPress = jest.fn();
+    render(<FullWidthButton label="Save" onPress={onPress} />);
+    fireEvent.press(screen.getByRole("button"));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
 
-describe("FullWidthButton a11y", () => {
-  it("wires onPress through to the native button-press handler", () => {
+  it("reports disabled via accessibilityState and does not fire onPress when pressed", () => {
+    const onPress = jest.fn();
+    render(<FullWidthButton label="Save" onPress={onPress} disabled />);
+    const button = screen.getByRole("button");
+    expectAccessibilityState(button, { disabled: true });
+    fireEvent.press(button);
+    expect(onPress).not.toHaveBeenCalled();
+  });
+
+  // RNTL resolves `Pressable`'s function-style `style` prop (`({ pressed }) => ({...})`)
+  // into a plain object before it lands in the rendered tree, so `props.style` below is
+  // already the resolved style object for the `{ pressed: false }` case — not the callback
+  // itself.
+  it("primary/danger variants fill the button with a solid color and white label text; secondary is outlined with tinted text", () => {
+    const primary = render(<FullWidthButton label="Save" onPress={() => {}} variant="primary" />);
+    const primaryStyle = primary.getByRole("button").props.style;
+    expect(primaryStyle.backgroundColor).toBe("#2954E5");
+    expect(primary.getByText("Save").props.style.color).toBe("#FFFFFF");
+    primary.unmount();
+
+    const danger = render(<FullWidthButton label="Delete" onPress={() => {}} variant="danger" />);
+    const dangerStyle = danger.getByRole("button").props.style;
+    expect(dangerStyle.backgroundColor).toBe("#B3261E");
+    expect(danger.getByText("Delete").props.style.color).toBe("#FFFFFF");
+    danger.unmount();
+
+    const secondary = render(<FullWidthButton label="Cancel" onPress={() => {}} variant="secondary" />);
+    const secondaryStyle = secondary.getByRole("button").props.style;
+    expect(secondaryStyle.backgroundColor).toBe("transparent");
+    expect(secondaryStyle.borderColor).toBe("#2954E5");
+    expect(secondary.getByText("Cancel").props.style.color).toBe("#2954E5");
+  });
+
+  it("controlSize scales the button's padding and label font size", () => {
+    const regular = render(<FullWidthButton label="Save" onPress={() => {}} />);
+    const regularStyle = regular.getByRole("button").props.style;
+    const regularFontSize = regular.getByText("Save").props.style.fontSize;
+    regular.unmount();
+
+    const large = render(<FullWidthButton label="Save" onPress={() => {}} controlSize="large" />);
+    const largeStyle = large.getByRole("button").props.style;
+    const largeFontSize = large.getByText("Save").props.style.fontSize;
+
+    expect(largeStyle.paddingVertical).toBeGreaterThan(regularStyle.paddingVertical);
+    expect(largeFontSize).toBeGreaterThan(regularFontSize);
+  });
+
+  it('shape="rounded"/"sharp" set a real borderRadius; default "pill" is a fully rounded capsule', () => {
+    const pill = render(<FullWidthButton label="Save" onPress={() => {}} />);
+    expect(pill.getByRole("button").props.style.borderRadius).toBe(9999);
+    pill.unmount();
+
+    const rounded = render(<FullWidthButton label="Save" onPress={() => {}} shape="rounded" />);
+    expect(rounded.getByRole("button").props.style.borderRadius).toBe(10);
+    rounded.unmount();
+
+    const sharp = render(<FullWidthButton label="Save" onPress={() => {}} shape="sharp" />);
+    expect(sharp.getByRole("button").props.style.borderRadius).toBe(0);
+  });
+
+  it("applies no negative-margin compensation around the button (a real, reverted regression from when this used @expo/ui's Host — see this file's own doc comment)", () => {
+    render(<FullWidthButton label="Save" onPress={() => {}} />);
+    const style = screen.getByRole("button").props.style;
+    expect((style as { marginBottom?: number }).marginBottom ?? 0).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("FullWidthButton a11y — on Android (unchanged: real @expo/ui/jetpack-compose)", () => {
+  const originalOS = Platform.OS;
+
+  beforeEach(() => {
+    Platform.OS = "android";
+  });
+
+  afterEach(() => {
+    Platform.OS = originalOS;
+  });
+
+  function findByPropName(root: ReturnType<typeof render>, propName: string) {
+    const node = root.UNSAFE_root.findAll((n) => propName in n.props);
+    if (node.length === 0) {
+      throw new Error(`No instance found with prop "${propName}"`);
+    }
+    return node[0]!;
+  }
+
+  function findNativeButtonNode(root: ReturnType<typeof render>) {
+    const nodes = root.UNSAFE_root.findAll((n) => "onClick" in n.props && Array.isArray(n.props.modifiers));
+    if (nodes.length === 0) {
+      throw new Error('No native button node found with both "onClick" and "modifiers"');
+    }
+    return nodes[0]!;
+  }
+
+  it("wires onPress through to the native onClick handler", () => {
     const onPress = jest.fn();
     const root = render(<FullWidthButton label="Save" onPress={onPress} />);
-    const node = findByPropName(root, "onPress");
-    expect(typeof node.props.onPress).toBe("function");
+    const node = findNativeButtonNode(root);
+    expect(typeof node.props.onClick).toBe("function");
   });
 
-  it("reports disabled via a modifier on the Button itself, not just visually", () => {
+  it("disables via enabled={false} rather than omitting onClick alone", () => {
     const root = render(<FullWidthButton label="Save" onPress={() => {}} disabled />);
     const node = findNativeButtonNode(root);
-    const modifiers = node.props.modifiers as Array<Record<string, unknown>>;
-    expect(modifiers).toContainEqual({ $type: "disabled", disabled: true });
+    expect(node.props.enabled).toBe(false);
   });
 
-  it("every variant maps to a real @expo/ui buttonStyle modifier on the Button itself", () => {
-    const expected: Record<string, string> = {
-      primary: "borderedProminent",
-      secondary: "bordered",
-      danger: "borderedProminent",
-    };
-    for (const [variant, style] of Object.entries(expected)) {
-      const root = render(<FullWidthButton label="Action" onPress={() => {}} variant={variant as "primary" | "secondary" | "danger"} />);
-      const node = findNativeButtonNode(root);
-      const modifiers = node.props.modifiers as Array<Record<string, unknown>>;
-      expect(modifiers).toContainEqual({ $type: "buttonStyle", style });
-      root.unmount();
-    }
+  it("applies fillMaxWidth() so the Compose Button stretches to the full width", () => {
+    const root = render(<FullWidthButton label="Save" onPress={() => {}} />);
+    const modifiers = findNativeButtonNode(root).props.modifiers as Array<Record<string, unknown>>;
+    expect(modifiers.some((m) => m.$type === "fillMaxWidth")).toBe(true);
   });
 
   it("danger variant seeds its Host with the overdue color, not the default primary tint", () => {
@@ -73,56 +150,12 @@ describe("FullWidthButton a11y", () => {
     expect(host.props.seedColor).not.toBe("#2954E5");
   });
 
-  it("puts the full-width frame modifier on the LABEL content, not on the Button itself (the actual fix this component exists for)", () => {
-    // Button.tsx's own doc comment: an outer frame on the Button view constrains
-    // only the invisible layout box, not the visually-painted pill — the fix is
-    // sizing the label content itself, which SwiftUI's buttonStyle then wraps.
-    const root = render(<FullWidthButton label="Save" onPress={() => {}} />);
-    const buttonNode = findNativeButtonNode(root);
-    const buttonModifiers = buttonNode.props.modifiers as Array<Record<string, unknown>>;
-    expect(buttonModifiers.find((m) => m.$type === "frame")).toBeUndefined();
-
-    const textNode = root.UNSAFE_root.findAll((n) => Array.isArray(n.props.modifiers) && n.props.children === "Save")[0];
-    const textModifiers = textNode!.props.modifiers as Array<Record<string, unknown>>;
-    const frameModifier = textModifiers.find((m) => m.$type === "frame");
-    expect(frameModifier).toBeDefined();
-    expect(typeof frameModifier!.maxWidth).toBe("number");
-    expect(Number.isFinite(frameModifier!.maxWidth)).toBe(true);
-  });
-
-  it("controlSize adds a real SwiftUI controlSize modifier on the Button itself", () => {
-    const root = render(<FullWidthButton label="Save" onPress={() => {}} controlSize="large" />);
-    const modifiers = findNativeButtonNode(root).props.modifiers as Array<Record<string, unknown>>;
-    expect(modifiers).toContainEqual({ $type: "controlSize", size: "large" });
-  });
-
-  it("omits the controlSize modifier entirely when not set (default)", () => {
-    const root = render(<FullWidthButton label="Save" onPress={() => {}} />);
-    const modifiers = findNativeButtonNode(root).props.modifiers as Array<Record<string, unknown>>;
-    expect(modifiers.find((m) => m.$type === "controlSize")).toBeUndefined();
-  });
-
-  it('shape="rounded"/"sharp" add a real buttonBorderShape modifier on iOS — this is the SAME real mechanism as Button\'s own shape prop, confirmed working (distinct from the earlier, failed clipShape attempt)', () => {
+  it('shape="rounded"/"sharp" pass a real Shape.RoundedCorner/Shape.Rectangle value (called as a function, not JSX — see androidShapeElement\'s own comment)', () => {
     const rounded = render(<FullWidthButton label="Save" onPress={() => {}} shape="rounded" />);
-    const roundedModifiers = findNativeButtonNode(rounded).props.modifiers as Array<Record<string, unknown>>;
-    expect(roundedModifiers).toContainEqual({ $type: "buttonBorderShape", shape: "roundedRectangle", cornerRadius: 10 });
+    expect(findNativeButtonNode(rounded).props.shape).toBeDefined();
+    rounded.unmount();
 
-    const sharp = render(<FullWidthButton label="Save" onPress={() => {}} shape="sharp" />);
-    const sharpModifiers = findNativeButtonNode(sharp).props.modifiers as Array<Record<string, unknown>>;
-    expect(sharpModifiers).toContainEqual({ $type: "buttonBorderShape", shape: "roundedRectangle", cornerRadius: 0 });
-  });
-
-  it('shape defaults to "pill" (no buttonBorderShape modifier at all)', () => {
-    const root = render(<FullWidthButton label="Save" onPress={() => {}} />);
-    const modifiers = findNativeButtonNode(root).props.modifiers as Array<Record<string, unknown>>;
-    expect(modifiers.find((m) => m.$type === "buttonBorderShape")).toBeUndefined();
-  });
-
-  it("applies no negative-margin compensation around the Host (a real, reverted regression — see this file's own doc comment: an earlier fixed-margin attempt overlapped adjacent buttons on a real device)", () => {
-    const root = render(<FullWidthButton label="Save" onPress={() => {}} />);
-    const negativeMarginNode = root.UNSAFE_root.findAll(
-      (n) => n.props.style && typeof n.props.style === "object" && (n.props.style as { marginBottom?: number }).marginBottom! < 0,
-    );
-    expect(negativeMarginNode).toHaveLength(0);
+    const pill = render(<FullWidthButton label="Save" onPress={() => {}} />);
+    expect(findNativeButtonNode(pill).props.shape).toBeUndefined();
   });
 });
