@@ -7,7 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./tokens": "./src/tokens/index.ts",
-    "./navigation": "./src/navigation/index.ts"
+    "./navigation": "./src/navigation/index.ts",
+    "./tailwind-preset": "./tailwind-preset.js"
   },
   "scripts": {
     "lint": "eslint .",

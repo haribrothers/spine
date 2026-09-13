@@ -1402,7 +1402,15 @@ Not a full audit — just confirm nothing obviously broke:
    the same day.
 4. **`apps/showcase-native`** (native-only, `expo-router` — run via its
    own dev script, real device/simulator required, no web/Expo Go
-   fallback): open the **Templates → Edit** entry (the Job Edit form,
+   fallback). **Components tab (2026-09-14)**: browse to each of the 9
+   components added/caught up this session — Full Width Button, Select
+   Field, Select List Field, Segmented Control, Floating Label Field,
+   Native Text Field (iOS-only; confirm it shows a plain notice instead
+   of crashing on Android), Form Row / Form Section, Divider, Stepper —
+   confirm each has a real demo screen that renders without error (not
+   the "Component not found" fallback, which is what a missing
+   `component-demos.ts`/`component-catalog.ts` entry looks like). Then
+   open the **Templates → Edit** entry (the Job Edit form,
    `job-edit-form.tsx`) on both iOS and Android. Confirm the redesigned
    form layout: each section (Details/Schedule/Billing/Notes) shows an
    uppercase caption above ONE card with no border of its own, and
@@ -1517,6 +1525,20 @@ Not a full audit — just confirm nothing obviously broke:
    the number updates immediately; confirm `-` disables/stops
    responding at 1 and `+` disables/stops responding at 20 (visibly
    dimmed at both limits, tapping past either limit does nothing).
+   **Refactor: `FormRow`/`FormSection`/the unsaved-changes guard/the
+   keyboard-scroll mechanism all moved to `packages/ui-native` (2026-09-14)
+   — a pure extraction, no intended behavior change.** Re-run every check
+   in this whole section (form layout, floating labels, validation errors,
+   the back-button discard alert, focusing Notes near the bottom of the
+   form) end to end — this refactor touched the exact code paths those
+   checks exercise, so it's the one most likely to have silently changed
+   something even though none was intended.
+   **Home screen's period `SegmentedControl` (2026-09-14)**: on the Home
+   tab, confirm the This week/This month/This year control above the KPI
+   carousel still looks and behaves exactly as before (now backed by
+   `@spine/ui-native`'s own `SegmentedControl` wrapper instead of a direct
+   `@expo/ui` import) — tapping a segment still switches the selection
+   with no visible change in behavior.
    **Header (fixed 2026-09-13)**: reach this screen via a real in-app
    push — Templates tab → a job's detail screen → Edit. Confirm the
    header looks like `(tabs)/components/[slug]`'s own detail header:

@@ -1,9 +1,18 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
-import { SegmentedControl } from "@expo/ui/community/segmented-control";
 import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
-import { Card, CardContent, CardDescription, CardTitle, StatusChip, ScrollEdgeMask, useNativeColors, type StatusChipProps } from "@spine/ui-native";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardTitle,
+  SegmentedControl,
+  StatusChip,
+  ScrollEdgeMask,
+  useNativeColors,
+  type StatusChipProps,
+} from "@spine/ui-native";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
 import Wallet from "lucide-react-native/icons/wallet";
@@ -413,15 +422,19 @@ function WelcomeCard({
  * this outer rule at all (only the screen's own top-level scroll view must
  * avoid an extra wrapper).
  *
- * **The period `SegmentedControl` above the KPI carousel is `@expo/ui`'s
- * real, genuinely native component** (`@expo/ui/community/segmented-
- * control` — a real SwiftUI `Picker` in `.segmented` style on iOS, a real
- * Jetpack Compose `SingleChoiceSegmentedButtonRow` on Android, confirmed by
- * reading both platform implementation files directly), not a hand-rolled
- * NativeWind row of `Pressable`s — matching this codebase's established
- * native-first rule for any control with a real native equivalent (see
- * `packages/ui-native/src/components/select.tsx`'s own precedent for the
- * same `@expo/ui` consumption pattern). Placed directly below the "Home"
+ * **The period `SegmentedControl` above the KPI carousel is
+ * `@spine/ui-native`'s real, genuinely native component** (a thin wrapper
+ * around `@expo/ui/community/segmented-control` — a real SwiftUI `Picker`
+ * in `.segmented` style on iOS, a real Jetpack Compose
+ * `SingleChoiceSegmentedButtonRow` on Android, confirmed by reading both
+ * platform implementation files directly), not a hand-rolled NativeWind
+ * row of `Pressable`s. Previously imported straight from `@expo/ui` here;
+ * moved into `packages/ui-native` (`value`/`onValueChange` by string,
+ * matching `Select`/`SelectField`'s own convention, rather than
+ * `@expo/ui`'s index-based `selectedIndex`/`onChange`) so this app has no
+ * direct `@expo/ui` import left anywhere — `packages/ui-native` is now the
+ * sole `@expo/ui`/styling touchpoint apps consume. Placed directly below
+ * the "Home"
  * large title and above the KPI carousel it conceptually filters,
  * mirroring where real reference apps (TIDE/Me+/timespent, via Mobbin
  * research) place a Week/Month/Year control relative to the stat card it
@@ -438,7 +451,8 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
   const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
   const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
-  const [period, setPeriod] = useState(1);
+  const PERIOD_OPTIONS = ["This week", "This month", "This year"];
+  const [period, setPeriod] = useState(PERIOD_OPTIONS[1]!);
 
   return (
     <>
@@ -448,12 +462,7 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
         gaugeFillGradient={gaugeFillGradient}
       />
 
-      <SegmentedControl
-        values={["This week", "This month", "This year"]}
-        selectedIndex={period}
-        onChange={(event) => setPeriod(event.nativeEvent.selectedSegmentIndex)}
-        style={{ height: 36 }}
-      />
+      <SegmentedControl values={PERIOD_OPTIONS} value={period} onValueChange={setPeriod} style={{ height: 36 }} />
 
       <RNScrollView
         horizontal

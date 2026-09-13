@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useMemo, useRef, useState } from "react";
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from "react-native";
 import { Stack, useNavigation, useRouter, type NativeStackHeaderBackProps, type NativeStackHeaderItem } from "expo-router";
 import { useColorScheme } from "nativewind";
 import CheckIcon from "lucide-react-native/icons/check";
@@ -8,8 +8,9 @@ import EllipsisVerticalIcon from "lucide-react-native/icons/ellipsis-vertical";
 import {
   ContextMenu,
   DateTimePicker,
-  Divider,
   FloatingLabelField,
+  FormRow,
+  FormSection,
   FullWidthButton,
   SelectField,
   SelectListField,
@@ -17,7 +18,9 @@ import {
   Switch,
   Toast,
   useNativeColors,
+  useScrollToFocusedInput,
   useToast,
+  useUnsavedChangesGuard,
 } from "@spine/ui-native";
 
 const JOB_STATUS_OPTIONS = [
@@ -157,157 +160,14 @@ function validate(values: JobFormValues): FormErrors {
 }
 
 /**
- * Row-based form redesign (see `Divider`'s own doc comment): a section is
- * now an uppercase caption ABOVE one borderless card, with each field
- * rendered as a `FormRow` and separated by full-bleed `Divider`s inside the
- * card — the card's shared surface is the only chrome; individual fields
- * (`TextField variant="row"`, `NativeTextField variant="row"`,
- * `SelectField`, `SelectListField`) draw no border/background of their
- * own. This replaces the previous layout, where each field was its own
- * bordered box floating in a `gap-4` stack inside one bordered card.
- */
-function FieldLabel({ children, required }: { children: string; required?: boolean }) {
-  return (
-    <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
-      {children}
-      {required ? <Text className="text-overdue dark:text-overdue-dark"> *</Text> : null}
-    </Text>
-  );
-}
-
-/**
- * A fixed row height, applied identically to every row in a `FormSection`
- * card (text field, select, date picker, switch alike) — a real, reported
- * gap in the first pass of this layout: `FormRow`'s labeled branch used
- * `min-h-11` while the label-omitted branch had no explicit height at all,
- * so each row's actual height came out however tall its own control
- * happened to render (`DateTimePicker`'s compact pill, `NativeTextField`'s
- * system-default text, etc.), producing a visibly uneven row-height rhythm
- * down the card (confirmed on a real device). `ROW_HEIGHT` is deliberately
- * taller than the pre-existing `h-11` (44px) single-line row, since a
- * `FloatingLabelField` row needs room for BOTH the floated label caption
- * and the value text stacked vertically, not just one line — every row
- * (including the plain-label DateTimePicker/Switch ones) now uses this
- * same value so nothing in the card reads as taller or shorter than its
- * neighbors. Only the row's OWN control slot is fixed at this height — an
- * error message (see `error` below) is allowed to add real height below
- * it, on top of `ROW_HEIGHT`, rather than being squeezed inside it.
- */
-const ROW_HEIGHT = 56;
-
-/**
- * One row inside a `FormSection` card, full-bleed `Divider` below (omit on
- * the last row via `last`). Two shapes, both fixed at `ROW_HEIGHT`:
+ * `FormRow`/`FormSection` moved to `packages/ui-native` (see that module's
+ * own doc comment for the full history: the fixed row height, the
+ * error-as-part-of-the-row fix, the card/page-background contrast note) —
+ * extracted from this file so any future form screen can reuse the exact
+ * same grouped-card layout instead of re-deriving it. This screen now only
+ * supplies its own field CONTENT/order/validation; the row/section chrome
+ * itself is the shared component's responsibility.
  *
- * - `label` given (DateTimePicker/Switch rows, which are unchanged per
- *   explicit instruction — no floating-label treatment for those two
- *   controls): plain label left, control right, exactly as before.
- * - `label` omitted (every `FloatingLabelField`/floating-`SelectField`/
- *   `SelectListField` row): the field renders its OWN label internally
- *   (see `FloatingLabelField`'s doc comment), so this row is just a
- *   full-width slot with no separate label element — a side-by-side label
- *   here would visually double up with the field's own floating one.
- *
- * **`error`, a real fix for a reported bug — this message is now part of
- * the row itself, not a separate sibling element the caller has to
- * remember to place correctly.** The previous shape had a standalone
- * `FieldError` component called AFTER a `FormRow`, as an unrelated sibling
- * in `FormSection`'s children list. That broke in a few concrete,
- * user-reported ways: (1) `FormRow` always draws its own trailing
- * `Divider` immediately after itself, so the divider landed BETWEEN the
- * row and its error message instead of below the error — visually, the
- * error text read as belonging to the NEXT field, not the one that
- * actually failed; (2) the error text had no relationship to `ROW_HEIGHT`
- * at all, so it broke the card's carefully-unified row-height rhythm the
- * moment any field errored; (3) two independent call sites
- * (`error={!!errors.x}` on the field itself, `<FieldError
- * message={errors.x} />` as a sibling) had to be kept in sync by hand for
- * every single validated field, with no structural link between them.
- * Fixed by making the row own its error entirely: rendered AFTER
- * `children` but BEFORE this row's own trailing `Divider`, so the divider
- * is always genuinely below the full row+error unit. Deliberately NOT
- * given a fixed height (unlike the row's own control slot) — the answer,
- * per explicit design decision, is that a validation error should only
- * ever affect the layout of the ONE row it belongs to, not reserve
- * permanent empty space in every row up front or shift unrelated rows
- * (this is why there's no fixed-height "error slot" here, on purpose).
- */
-function FormRow({
-  label,
-  required,
-  children,
-  last,
-  error,
-}: {
-  label?: string;
-  required?: boolean;
-  children: React.ReactNode;
-  last?: boolean;
-  error?: string;
-}) {
-  return (
-    <View>
-      {label ? (
-        <View style={{ height: ROW_HEIGHT }} className="flex-row items-center justify-between gap-3 px-4">
-          <FieldLabel required={required}>{label}</FieldLabel>
-          <View className="flex-1 items-end">{children}</View>
-        </View>
-      ) : (
-        <View style={{ height: ROW_HEIGHT }} className="justify-center px-4">
-          {children}
-        </View>
-      )}
-      {error ? <Text className="px-4 pb-2 text-[12px] text-overdue dark:text-overdue-dark">{error}</Text> : null}
-      {last ? null : <Divider />}
-    </View>
-  );
-}
-
-function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
-  return (
-    <View className="gap-2">
-      <View className="gap-0.5 px-1">
-        <Text className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
-          {title}
-        </Text>
-        {description ? <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{description}</Text> : null}
-      </View>
-      {/*
-        Card uses `surface` (the lighter/whiter token in both modes) —
-        this fixes a real, reported bug, and went through two iterations:
-        this screen's own page background is `colors.background` (set via
-        inline `style` on `KeyboardAvoidingView` below, resolved from
-        `useNativeColors()`), and in LIGHT mode `background` and `surface`
-        were BOTH `#FFFFFF` — identical values, so the card was completely
-        invisible against the page (no border of its own by design, per
-        the borderless-row redesign), leaving the whole form looking
-        flat/groupless in light mode on both iOS and Android. Dark mode
-        was never affected (`background-dark` #121110 vs `surface-dark`
-        #191815 already differ) — this is exactly why the bug went
-        unnoticed through this feature's whole development, which was
-        tested almost entirely in dark mode. **First fix attempt** swapped
-        the CARD to `surface-sunken` (a slightly darker off-white,
-        `#FAFAF9`), which technically restored contrast but read as
-        "gray card floating on a white page" — backwards from the
-        standard iOS/Material grouped-list convention (a gray/sunken PAGE
-        behind WHITE cards) and an explicit follow-up request to flip it.
-        **Final fix**: the PAGE background (`colors.background`, passed to
-        `KeyboardAvoidingView`'s style below) now resolves `surfaceSunken`
-        instead of `background` — see that prop's own comment — while the
-        card here stays on the normal `surface` token, giving the
-        conventional gray-page/white-card look in light mode and matching
-        dark mode's own already-correct direction (`background-dark`
-        darker than `surface-dark`). Any future card/panel in this app
-        should verify its fill is visually distinct from its actual
-        parent background in BOTH modes before assuming a token pair like
-        `surface`/`background` provides contrast on its own.
-      */}
-      <View className="rounded-lg bg-surface dark:bg-surface-dark">{children}</View>
-    </View>
-  );
-}
-
-/**
  * Edit template — the "form" screen shape complementing List + Detail and
  * Settings: grouped sections, inline validation, an unsaved-changes guard
  * on back navigation, and a destructive action, all built from real
@@ -485,56 +345,19 @@ function FormSection({ title, description, children }: { title: string; descript
  * Fixed by resolving `colors.background` via `useNativeColors()` and
  * setting it as an explicit `style.backgroundColor` alongside `flex: 1`.
  *
- * The unsaved-changes guard uses `useNavigation().addListener("beforeRemove", ...)`
- * (React Navigation's own event, re-exported through `expo-router`'s
- * `useNavigation`) rather than a custom back-button override — this is the
- * standard mechanism for intercepting ANY removal of the screen (hardware
- * back, swipe-back gesture, header back button, or a programmatic
- * `router.back()`), not just one of those paths.
+ * The unsaved-changes guard is `packages/ui-native`'s `useUnsavedChangesGuard`
+ * hook (extracted from this file — see its own doc comment for the full
+ * history: why `beforeRemove` alone isn't enough for a custom back button,
+ * and the double-alert bug that surfaced fixing that). This screen supplies
+ * `isDirty`/`navigation` and calls the hook's `confirmAndRun` from its own
+ * custom `headerLeft` below.
  *
- * **Focusing a field near the bottom of the form (Notes especially) hid it
- * behind the keyboard on iOS — a real, reported bug, confirmed still
- * broken after a first fix attempt. Read this before touching the
- * keyboard-scroll logic again.**
- *
- * `KeyboardAvoidingView behavior="padding"` only pads/resizes the view for
- * the keyboard's height; it does NOT auto-scroll a focused `TextInput`
- * into view inside a nested `ScrollView` — that's a separate concern RN
- * leaves to the app.
- *
- * **First attempt (confirmed NOT sufficient, do not revert to it)**: called
- * `ScrollView`'s own `scrollResponderScrollNativeHandleToKeyboard` directly
- * from each field's `onFocus`. This is a real, documented RN API, but RN's
- * OWN source (`ScrollView.js`, `_inputMeasureAndScrollToKeyboard`) admits
- * it races the keyboard's `keyboardWillShow`/`keyboardDidShow` event:
- * `_keyboardMetrics` (the keyboard's height/position, set by that event)
- * "is not guaranteed to be called before" the scroll calculation runs, and
- * RN's own fallback is a same-tick `setTimeout(0)` retry — which can still
- * lose the race on a real device, exactly as reported here.
- *
- * **Current fix**: a `Keyboard.addListener("keyboardWillShow"` (iOS) /
- * `"keyboardDidShow"` (Android)`, ...)` subscription that only runs AFTER
- * the keyboard event has actually fired, guaranteeing real geometry rather
- * than racing for it. On fire, it measures the currently-focused input via
- * `measureInWindow` (tracked in `focusedInputRef`, set by each field's own
- * `onFocus`; each field also gets its own `useRef<TextInput>` since
- * `measureInWindow` needs a real host-component instance, not just the
- * focus event's opaque node-handle number) against the keyboard's own
- * `event.endCoordinates.screenY` (both in the same absolute screen-Y
- * coordinate space) to compute exactly how many pixels of the input are
- * newly hidden — then adds that overlap to the `ScrollView`'s current
- * offset (tracked via its own `onScroll`, since `scrollTo`'s `y` is an
- * ABSOLUTE offset, not a relative scroll-by amount — passing just the
- * overlap directly would scroll to the wrong position for any field below
- * the very top of the form) and scrolls there.
- *
- * Deliberately NOT a new dependency (e.g. `react-native-keyboard-
- * controller`) — no keyboard-handling library exists anywhere in this
- * monorepo yet, and this is achievable with RN's own built-in `Keyboard`/
- * `ScrollView` APIs. Any future `TextField` added to this form (or a
- * similar scrollable form elsewhere) needs its own ref + `onFocus` wiring
- * into this same mechanism — it is NOT automatic just from being inside a
- * `ScrollView`.
+ * The keyboard-avoiding scroll-to-focused-input mechanism (focusing a field
+ * near the bottom of the form, e.g. Notes, used to hide it behind the
+ * keyboard on iOS) is `packages/ui-native`'s `useScrollToFocusedInput` hook
+ * — see its own doc comment for the full mechanism and the two prior
+ * attempts that didn't work. This screen just wires each field's own
+ * `onFocus`/ref into the hook's `onFocus`/`scrollViewRef`.
  */
 export function JobEditForm({ jobId }: { jobId: string }) {
   const router = useRouter();
@@ -557,9 +380,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
    */
   const pageBackground = colorScheme === "dark" ? colors.surfaceSunken : colors.neutral100;
   const { message, show, dismiss } = useToast();
-  const scrollViewRef = useRef<ScrollView>(null);
-  const focusedInputRef = useRef<TextInput | null>(null);
-  const scrollOffsetRef = useRef(0);
+  const { scrollViewRef, onFocus: handleFieldFocus, scrollViewProps: keyboardScrollProps } = useScrollToFocusedInput();
 
   const initialValues = useMemo(() => loadJob(jobId), [jobId]);
   const [values, setValues] = useState<JobFormValues>(initialValues);
@@ -567,68 +388,32 @@ export function JobEditForm({ jobId }: { jobId: string }) {
   const [saving, setSaving] = useState(false);
   const isDirty = useRef(false);
 
-  useEffect(() => {
-    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const subscription = Keyboard.addListener(showEvent, (event) => {
-      const input = focusedInputRef.current;
-      const scrollView = scrollViewRef.current;
-      if (!input || !scrollView) return;
-
-      input.measureInWindow((_inputX, inputY, _inputWidth, inputHeight) => {
-        const keyboardTop = event.endCoordinates.screenY;
-        const inputBottom = inputY + inputHeight;
-        const overlap = inputBottom - keyboardTop;
-        if (overlap <= 0) return;
-
-        scrollView.scrollTo({ y: scrollOffsetRef.current + overlap + 16, animated: true });
-      });
-    });
-
-    return () => subscription.remove();
-  }, []);
-
   const titleInputRef = useRef<TextInput>(null);
   const valueInputRef = useRef<TextInput>(null);
   const notesInputRef = useRef<TextInput>(null);
-
-  function handleFieldFocus(input: TextInput | null) {
-    focusedInputRef.current = input;
-  }
 
   function update<K extends keyof JobFormValues>(key: K, value: JobFormValues[K]) {
     isDirty.current = true;
     setValues((prev) => ({ ...prev, [key]: value }));
   }
 
-  const confirmDiscard = useCallback((onDiscard: () => void) => {
-    Alert.alert("Discard changes?", "You have unsaved changes to this job. Discard them?", [
-      { text: "Keep editing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: onDiscard },
-    ]);
-  }, []);
-
-  useEffect(() => {
-    return navigation.addListener("beforeRemove", (event) => {
-      if (!isDirty.current || saving) return;
-      event.preventDefault();
-      confirmDiscard(() => navigation.dispatch(event.data.action));
-    });
-  }, [navigation, saving, confirmDiscard]);
+  // See this component's own doc comment — `useUnsavedChangesGuard` both
+  // wires the `beforeRemove` listener (for swipe-back/hardware-back/a
+  // programmatic navigation) AND supplies `confirmAndRun`, which the
+  // custom `headerLeft`/Cancel button below call directly to avoid the
+  // native-back-button pop-animation race documented on that hook.
+  const { confirmAndRun } = useUnsavedChangesGuard(navigation, { isDirty: () => isDirty.current, bypass: saving });
 
   function handleCancel() {
-    if (isDirty.current) {
+    confirmAndRun(() => {
       // Clear the dirty flag BEFORE navigating — a real, reported bug: the
-      // `beforeRemove` listener below is still armed for the `router.back()`
-      // this triggers, and without clearing `isDirty.current` first it sees
-      // the screen is still dirty and shows a SECOND discard alert right
-      // after the user already confirmed the first one.
-      confirmDiscard(() => {
-        isDirty.current = false;
-        router.back();
-      });
-    } else {
+      // `beforeRemove` listener above is still armed for this `router.back()`
+      // call, and without clearing `isDirty.current` first it would see the
+      // screen as still dirty and show a SECOND discard alert right after
+      // the user already confirmed the first one.
+      isDirty.current = false;
       router.back();
-    }
+    });
   }
 
   async function handleSave() {
@@ -822,10 +607,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
           className="flex-1"
           contentContainerClassName="gap-6 p-4 pb-8"
           keyboardShouldPersistTaps="handled"
-          onScroll={(event) => {
-            scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-          }}
-          scrollEventThrottle={16}
+          {...keyboardScrollProps}
         >
           <FormSection title="Details">
             <FormRow error={errors.title}>

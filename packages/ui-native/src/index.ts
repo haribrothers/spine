@@ -15,7 +15,9 @@ export { Select, type SelectProps, type SelectOption } from "./components/select
 export { SelectField, type SelectFieldProps, type SelectFieldOption } from "./components/select-field";
 export { SelectListField, type SelectListFieldProps, type SelectListFieldOption } from "./components/select-list-field";
 export { Divider } from "./components/divider";
+export { FormRow, FormSection, FORM_ROW_HEIGHT } from "./components/form-row";
 export { Switch, type SwitchProps } from "./components/switch";
+export { SegmentedControl, type SegmentedControlProps } from "./components/segmented-control";
 export { Stepper, type StepperProps } from "./components/stepper";
 export { Slider, type SliderProps } from "./components/slider";
 export { ContextMenu, type ContextMenuProps, type ContextMenuAction } from "./components/context-menu";
@@ -24,3 +26,5 @@ export { BottomSheet, type BottomSheetProps } from "./components/bottom-sheet";
 export { ScrollEdgeMask, type ScrollEdgeMaskProps } from "./components/scroll-edge-mask";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";
+export { useUnsavedChangesGuard, type UnsavedChangesNavigation, type UnsavedChangesGuardOptions } from "./hooks/use-unsaved-changes-guard";
+export { useScrollToFocusedInput } from "./hooks/use-scroll-to-focused-input";
