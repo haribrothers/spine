@@ -54,6 +54,7 @@ function RootStack() {
           headerTintColor: colors.onSurface,
           headerTitleStyle: { color: colors.onSurface },
           headerBackButtonDisplayMode: "minimal",
+          headerLargeTitleEnabled: false,
         }}
       />
     </Stack>

@@ -550,8 +550,39 @@ export function JobEditForm({ jobId }: { jobId: string }) {
       <Stack.Screen
         options={{
           title: `Edit job #${jobId}`,
-          headerStyle: { backgroundColor: colors.surface },
-          ...(Platform.OS === "ios" ? { unstable_headerRightItems: () => iosHeaderRightItems } : undefined),
+          /**
+           * `headerTransparent: true` on iOS — deliberately, so the header
+           * gets the same free `scrollEdgeEffects` blur-over-scrolled-
+           * content Home/Components get on their own (large-title) screens,
+           * per explicit request to match that look here too even without a
+           * large title.
+           *
+           * **Just omitting `headerStyle.backgroundColor` (the first thing
+           * tried) does NOT make a header translucent on its own — a real
+           * finding from reading `expo-router`'s own
+           * `useHeaderConfigProps.js`**: its `translucent` value is only
+           * ever true when `headerBackground` is set, `headerTransparent`
+           * is explicitly true, OR (`hasHeaderSearchBar ||
+           * headerLargeTitleEnabled)` — omitting a background color alone
+           * changes nothing about translucency. Home/Components' headers
+           * only look translucent+blurred because THEY set
+           * `headerLargeTitleEnabled: true`, which is what actually flips
+           * `translucent` on for them; `scrollEdgeEffects` (separately,
+           * `"automatic"` by default) is what then paints the blur once the
+           * header is translucent. This screen has no large title (by
+           * explicit request — see the `headerLargeTitleEnabled: false`
+           * story in `app/_layout.tsx`), so it needs `headerTransparent:
+           * true` set explicitly to get the same translucency Home/
+           * Components get for free from their large title.
+           *
+           * Android keeps the explicit `colors.surface` background —
+           * Android has no equivalent automatic blur to fall back on, and a
+           * transparent/unset header there would just render flat white/
+           * native-default, unthemed.
+           */
+          ...(Platform.OS === "ios"
+            ? { headerTransparent: true, unstable_headerRightItems: () => iosHeaderRightItems }
+            : { headerStyle: { backgroundColor: colors.surface } }),
         }}
       />
       {/*
@@ -576,6 +607,7 @@ export function JobEditForm({ jobId }: { jobId: string }) {
         <ScrollView
           ref={scrollViewRef}
           contentInsetAdjustmentBehavior="automatic"
+          style={{ backgroundColor: pageBackground }}
           className="flex-1"
           contentContainerClassName="gap-6 p-4 pb-8"
           keyboardShouldPersistTaps="handled"

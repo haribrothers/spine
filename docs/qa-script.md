@@ -1480,6 +1480,19 @@ Not a full audit — just confirm nothing obviously broke:
    fields), and the box itself should have a real minimum height
    roughly matching the other cards' content, not collapse to one
    line when empty.
+   **Header (fixed 2026-09-13)**: reach this screen via a real in-app
+   push — Templates tab → a job's detail screen → Edit. Confirm the
+   header looks like `(tabs)/components/[slug]`'s own detail header:
+   a small bold centered title (NOT an iOS large/oversized title), a
+   visible back chevron, and — on iOS — a TRANSPARENT header with no
+   bottom border, blurring the scrolled content behind it as you
+   scroll the form (not a solid opaque bar). Check this explicitly in
+   BOTH light and dark mode — a real, shipped bug had the header stay
+   solid white in dark mode specifically while the rest of the screen
+   was correctly dark, caught only once verified in both modes rather
+   than whichever mode happened to be open in the simulator. On
+   Android, the header keeps its solid themed background (no blur
+   equivalent there) — that's expected, not a gap.
 
 ---
 
