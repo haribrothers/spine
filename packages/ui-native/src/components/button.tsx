@@ -1,4 +1,6 @@
+import { Platform } from "react-native";
 import { Button as ExpoButton, Host } from "@expo/ui";
+import { buttonBorderShape, controlSize as iosControlSize } from "@expo/ui/swift-ui/modifiers";
 import { useNativeHostTheme, useNativeColors } from "../theme/use-native-colors";
 
 /**
@@ -41,6 +43,8 @@ const VARIANT_TO_EXPO_UI_VARIANT: Record<ButtonVariant, "filled" | "outlined" | 
   ghost: "text",
 };
 
+export type ButtonControlSize = "mini" | "small" | "regular" | "large" | "extraLarge";
+
 export interface ButtonProps {
   variant?: ButtonVariant;
   disabled?: boolean;
@@ -48,9 +52,47 @@ export interface ButtonProps {
   children?: React.ReactNode;
   label?: string;
   testID?: string;
+  /**
+   * SwiftUI's real `controlSize` modifier (`mini`/`small`/`regular`/
+   * `large`/`extraLarge`) — adjusts the native control's own built-in
+   * height/padding. **iOS-only, a genuine no-op on Android**: Jetpack
+   * Compose has no equivalent named-size concept for `@expo/ui`'s Button
+   * (only a raw `contentPadding` prop taking exact dp values, a
+   * fundamentally different API shape) — same "real prop, iOS-only
+   * effect" pattern as other SwiftUI-specific escape hatches already in
+   * this codebase (e.g. `NativeTextField`'s `frame`-based sizing).
+   * Defaults to `"regular"` — omitting this prop entirely (every existing
+   * call site) keeps `@expo/ui`'s own default control size, unchanged.
+   */
+  controlSize?: ButtonControlSize;
+  /**
+   * `"pill"` (default, unchanged) is `@expo/ui`'s real native Button shape
+   * on both platforms. `"rounded"`/`"sharp"` use SwiftUI's real
+   * `buttonBorderShape` modifier on iOS (`roundedRectangle` with a fixed
+   * corner radius, or `0` for true square corners) — this actually changes
+   * the PAINTED shape of `.buttonStyle`'s background (confirmed distinct
+   * from the earlier, failed `clipShape` attempt documented in
+   * `full-width-button.tsx`'s own doc comment: `clipShape` crops
+   * after-the-fact, `buttonBorderShape` changes what SwiftUI paints in the
+   * first place).
+   *
+   * **iOS-only, a genuine no-op on Android for THIS component** — the
+   * universal cross-platform `Button`/`ExpoButton` this file wraps has no
+   * `shape` prop reachable through it on Android at all (confirmed against
+   * `@expo/ui`'s own `universal/Button/index.android.tsx` and its
+   * `ButtonProps` type — neither mentions `shape`). Jetpack Compose's
+   * `Button` DOES support a real `shape` prop, but only via
+   * `@expo/ui/jetpack-compose`'s OWN direct `Button` component, which is
+   * what `FullWidthButton` uses directly (see that component for the real,
+   * both-platforms-working version of this prop) — `Button` stays on the
+   * simpler universal wrapper, so this is intentionally narrower here.
+   */
+  shape?: "pill" | "rounded" | "sharp";
 }
 
-export function Button({ variant = "primary", disabled = false, onPress, children, label, testID }: ButtonProps) {
+const ROUNDED_CORNER_RADIUS = 10;
+
+export function Button({ variant = "primary", disabled = false, onPress, children, label, testID, controlSize, shape = "pill" }: ButtonProps) {
   const colors = useNativeColors();
   const seedColor = variant === "danger" ? colors.overdue : undefined;
   const hostTheme = useNativeHostTheme(seedColor);
@@ -67,6 +109,19 @@ export function Button({ variant = "primary", disabled = false, onPress, childre
   // this, since it doesn't perform real native-view reconciliation.
   const isPlainString = typeof children === "string";
 
+  const iosModifiers =
+    Platform.OS === "ios"
+      ? [
+          ...(controlSize ? [iosControlSize(controlSize)] : []),
+          ...(shape === "rounded"
+            ? [buttonBorderShape("roundedRectangle", ROUNDED_CORNER_RADIUS)]
+            : shape === "sharp"
+              ? [buttonBorderShape("roundedRectangle", 0)]
+              : []),
+        ]
+      : undefined;
+  const modifiers = iosModifiers?.length ? iosModifiers : undefined;
+
   return (
     <Host matchContents colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
       <ExpoButton
@@ -75,6 +130,7 @@ export function Button({ variant = "primary", disabled = false, onPress, childre
         onPress={onPress}
         testID={testID}
         label={isPlainString ? (children as string) : label}
+        modifiers={modifiers}
       >
         {isPlainString ? undefined : children}
       </ExpoButton>

@@ -1493,6 +1493,66 @@ Not a full audit — just confirm nothing obviously broke:
    than whichever mode happened to be open in the simulator. On
    Android, the header keeps its solid themed background (no blur
    equivalent there) — that's expected, not a gap.
+   **Header Save/Delete actions, same shape on both platforms (added
+   2026-09-13)**: on iOS, confirm the header shows a checkmark "Save"
+   button plus a "•••" button that opens a native menu with a single
+   destructive "Delete job" action. On ANDROID, confirm the header now
+   shows the equivalent pair as plain icons — a check icon (Save) and
+   a "⋮" icon that opens a real native dropdown menu with "Delete job"
+   in red/destructive styling; tap "⋮" and confirm the menu actually
+   opens (a real bug here made it silently do nothing) and dismisses
+   cleanly on an outside tap/back press. There is no sticky bottom
+   Cancel/Save bar and no standalone "Delete job" button anywhere in
+   the form on either platform anymore — both were removed.
+   **In-content Save/Cancel (added 2026-09-13)**: scroll to the bottom
+   of the form, past Notes, on BOTH platforms. Confirm a GENUINELY
+   full-width "Save" button (filled) followed by a full-width "Cancel"
+   button (outlined) underneath it — both buttons' pill backgrounds
+   should span the same width as the cards above them, not sit
+   centered/content-sized in the middle of the row. This uses a new
+   `FullWidthButton` component, not the regular `Button` — a plain
+   `fullWidth` prop on `Button` was tried and reverted after it turned
+   out full-width filled buttons aren't achievable that way on iOS (a
+   real, confirmed `@expo/ui`/SwiftUI limitation, not a bug to
+   "eventually fix" the same way — see the CHANGELOG entry for the
+   full investigation if this ever needs revisiting). Save here should
+   behave identically to the header Save (same "Job updated"
+   confirmation); Cancel should behave identically to the existing
+   Cancel behavior — if there are unsaved changes, a discard
+   confirmation appears before navigating back; with no changes, it
+   navigates back immediately. Also confirm the spacing between the
+   Notes box and the Save button reads the same as the spacing between
+   every other section on the screen (Details/Schedule/Billing/Notes)
+   — it should NOT look like an oversized gap; if it does, re-check
+   that both buttons are actually rendering full-width first, since an
+   undersized centered pill button was what made this look wrong
+   originally.
+   **Button shape (added 2026-09-13)**: on BOTH platforms, confirm Save
+   and Cancel show a real rounded-RECTANGLE corner, not a full pill/
+   capsule shape — the corner should be a modest, visible curve (not
+   a half-circle end-cap). This exercises `FullWidthButton`'s `shape`
+   prop, and on Android specifically this is the surface that caught a
+   real bug: an earlier attempt silently broke BOTH buttons entirely
+   (they didn't render at all, with no error shown anywhere) — if
+   Save/Cancel are ever missing entirely on Android after a change
+   near this code, suspect the `shape`/`Shape.*` wiring first (see the
+   CHANGELOG entry for the exact root cause: `Shape.RoundedCorner(...)`
+   must be called as a plain function, never rendered as JSX).
+   **Save/Cancel spacing on iOS (investigated, not "fixed" — 2026-09-13)**:
+   confirm Save and Cancel do NOT visually overlap — their rounded
+   corners must be fully separate, with no clipping into each other.
+   A real attempted fix for a related complaint (the gap looking
+   smaller on iOS than Android, due to ~13pt of invisible padding
+   SwiftUI adds below `.borderedProminent` buttons for Apple's 44pt
+   minimum tap-target height) was tried, shipped a real OVERLAP bug on
+   a real device, and was reverted — `FullWidthButton` currently
+   applies NO compensation on either platform, which is the confirmed
+   safe/correct state. If a future change reintroduces a negative
+   margin here, verify it across the FULL width of the button in a
+   real, complete on-device screenshot (not a cropped one, not a
+   single pixel column) and check both rounded corners specifically —
+   see the CHANGELOG entry for the full account of how the previous
+   attempt's narrow single-column measurement missed a real overlap.
 
 ---
 

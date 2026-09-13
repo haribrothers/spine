@@ -110,4 +110,42 @@ describe("Button a11y", () => {
     expect(node.props.label).toBeUndefined();
     expect(node.props.children).toBeDefined();
   });
+
+  it("controlSize adds a real SwiftUI controlSize modifier (jest-expo mocks Platform.OS as ios)", () => {
+    const root = render(
+      <Button onPress={() => {}} controlSize="large">
+        Save
+      </Button>,
+    );
+    const modifiers = getButtonModifiers(root);
+    expect(modifiers).toContainEqual({ $type: "controlSize", size: "large" });
+  });
+
+  it("omits the controlSize modifier entirely when not set (default, every existing call site)", () => {
+    const root = render(<Button onPress={() => {}}>Save</Button>);
+    const modifiers = getButtonModifiers(root);
+    expect(modifiers.find((m) => m.$type === "controlSize")).toBeUndefined();
+  });
+
+  it('shape="rounded"/"sharp" add a real buttonBorderShape modifier — distinct from the earlier, failed clipShape approach (see full-width-button.tsx\'s own doc comment)', () => {
+    const rounded = render(
+      <Button onPress={() => {}} shape="rounded">
+        Save
+      </Button>,
+    );
+    expect(getButtonModifiers(rounded)).toContainEqual({ $type: "buttonBorderShape", shape: "roundedRectangle", cornerRadius: 10 });
+
+    const sharp = render(
+      <Button onPress={() => {}} shape="sharp">
+        Save
+      </Button>,
+    );
+    expect(getButtonModifiers(sharp)).toContainEqual({ $type: "buttonBorderShape", shape: "roundedRectangle", cornerRadius: 0 });
+  });
+
+  it('shape defaults to "pill" (no buttonBorderShape modifier at all) for every existing call site', () => {
+    const root = render(<Button onPress={() => {}}>Save</Button>);
+    const modifiers = getButtonModifiers(root);
+    expect(modifiers.find((m) => m.$type === "buttonBorderShape")).toBeUndefined();
+  });
 });

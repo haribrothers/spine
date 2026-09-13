@@ -1,4 +1,5 @@
 export { Button, type ButtonProps, type ButtonVariant } from "./components/button";
+export { FullWidthButton, type FullWidthButtonProps } from "./components/full-width-button";
 export { TextField, type TextFieldProps } from "./components/text-field";
 export { NativeTextField, type NativeTextFieldProps } from "./components/native-text-field";
 export { FloatingLabelField, type FloatingLabelFieldProps } from "./components/floating-label-field";

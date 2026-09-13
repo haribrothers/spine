@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Stack, useNavigation, useRouter, type NativeStackHeaderItem } from "expo-router";
 import { useColorScheme } from "nativewind";
+import CheckIcon from "lucide-react-native/icons/check";
+import EllipsisVerticalIcon from "lucide-react-native/icons/ellipsis-vertical";
 import {
-  Button,
+  ContextMenu,
   DateTimePicker,
   Divider,
   FloatingLabelField,
+  FullWidthButton,
   SelectField,
   SelectListField,
-  Spinner,
   Switch,
   Toast,
   useNativeColors,
@@ -582,7 +584,56 @@ export function JobEditForm({ jobId }: { jobId: string }) {
            */
           ...(Platform.OS === "ios"
             ? { headerTransparent: true, unstable_headerRightItems: () => iosHeaderRightItems }
-            : { headerStyle: { backgroundColor: colors.surface } }),
+            : {
+                headerStyle: { backgroundColor: colors.surface },
+                /**
+                 * Android has no equivalent of iOS's `unstable_headerRightItems`
+                 * — that API is explicitly `@platform ios`-only per
+                 * `expo-router`'s own type declarations (its `icon` prop only
+                 * accepts an SF Symbol or static image, nothing Android has a
+                 * concept of). So Android's Save + "More → Delete job" header
+                 * actions are built from the older, genuinely cross-platform
+                 * `headerRight` render-function API instead — a plain check
+                 * icon `Pressable` for Save, then `ContextMenu`
+                 * (`packages/ui-native`'s existing `@expo/ui/community/menu`
+                 * wrapper, a real Jetpack Compose `DropdownMenu` on this
+                 * platform) around a "⋮" icon `Pressable` for the overflow,
+                 * matching `profile-header-items.tsx`'s own established
+                 * Android-`headerRight` icon-button pattern (plain Lucide
+                 * icon, `colors.onSurface` tint, 22px, 16px gap, 8px hitSlop)
+                 * rather than inventing a new one.
+                 */
+                headerRight: () => (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+                    <ContextMenu
+                      actions={[{ id: "delete", title: "Delete job", destructive: true, disabled: saving }]}
+                      onPressAction={(id) => {
+                        if (id === "delete") handleDelete();
+                      }}
+                      shouldOpenOnLongPress={false}
+                    >
+                      {/*
+                        A plain `View`, NOT a `Pressable`, as `ContextMenu`'s
+                        child — a real bug found on-device: `MenuView`
+                        (`@expo/ui/community/menu`) already wraps its
+                        `children` in its OWN internal `Pressable` (whose
+                        `onPress` is what opens the menu, since
+                        `shouldOpenOnLongPress={false}` routes it there
+                        rather than `onLongPress`); nesting a second,
+                        handler-less `Pressable` inside that swallowed the
+                        touch as its own responder before it could reach the
+                        outer one, so tapping the icon did nothing at all.
+                      */}
+                      <View accessibilityLabel="More" hitSlop={8}>
+                        <EllipsisVerticalIcon size={22} color={colors.onSurface} />
+                      </View>
+                    </ContextMenu>
+                    <Pressable onPress={handleSave} disabled={saving} accessibilityLabel="Save" hitSlop={8}>
+                      <CheckIcon size={22} color={colors.onSurface} />
+                    </Pressable>
+                  </View>
+                ),
+              }),
         }}
       />
       {/*
@@ -703,31 +754,62 @@ export function JobEditForm({ jobId }: { jobId: string }) {
             </View>
           </FormSection>
 
-          {Platform.OS === "android" ? (
-            <Button variant="danger" onPress={handleDelete} disabled={saving}>
-              Delete job
-            </Button>
-          ) : null}
-        </ScrollView>
+          {/*
+            In-content Save/Cancel, below Notes, on BOTH platforms — per
+            explicit request, in addition to (not instead of) the header
+            Save action above. Both Saves call the same `handleSave`; this
+            is just a second, always-visible affordance for the same action,
+            a common iOS form-sheet pattern (header checkmark + a visible
+            primary button) now also requested for Android. Cancel calls the
+            existing `handleCancel`, which already runs the unsaved-changes
+            discard guard before navigating back — relocated here unchanged,
+            not reimplemented. This REPLACES the old sticky bottom
+            Cancel/Save footer and the standalone "Delete job" button
+            (Android only, previously rendered here and in a footer below
+            the `ScrollView`) — Delete now lives in the header's "More" menu
+            on both platforms, matching iOS's existing shape.
+          */}
+          <View className="gap-3">
+            {/*
+              `FullWidthButton`, not `Button` — `Button`'s `fullWidth` was
+              tried first and reverted: it's a real, confirmed `@expo/ui`
+              upstream limitation (an outer `.frame(width:)` on a
+              `.buttonStyle(.borderedProminent)` Button constrains only the
+              invisible layout box, never the visually-painted pill — see
+              `full-width-button.tsx`'s own doc comment for the full
+              investigation trail). `FullWidthButton` is `label`-only (no
+              custom `children`), so the Saving state swaps the label text
+              instead of swapping in a `Spinner` element.
 
-        {Platform.OS === "android" ? (
-          <View className="flex-row gap-3 border-t border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
-            <View className="flex-1">
-              <Button variant="secondary" onPress={handleCancel} disabled={saving}>
-                Cancel
-              </Button>
-            </View>
-            <View className="flex-1">
-              <Button onPress={handleSave} disabled={saving}>
-                {saving ? <Spinner size="sm" label="Saving" /> : "Save"}
-              </Button>
-            </View>
+              `shape="rounded"` (added per explicit request) — matches the
+              design intent from the very first attempt at this (a
+              `Button`-level `shape="rounded"` prop that turned out not to
+              render at all, since `clipShape` was the wrong mechanism —
+              see `full-width-button.tsx`'s doc comment for the working
+              `buttonBorderShape`/Compose-`shape` mechanism this actually
+              uses). Also incidentally fixed a follow-up report that the
+              `gap-3` spacing between Save/Cancel looked different on iOS
+              vs. Android: the previous full-pill shape's visible edge sat
+              further inward from its own layout bounds than the
+              rounded-rect shape does, so the identical numeric gap looked
+              uneven between platforms purely as a side effect of the shape
+              mismatch, not the gap value itself.
+            */}
+            <FullWidthButton label={saving ? "Saving…" : "Save"} onPress={handleSave} disabled={saving} shape="rounded" />
+            <FullWidthButton label="Cancel" variant="secondary" onPress={handleCancel} disabled={saving} shape="rounded" />
           </View>
-        ) : null}
+        </ScrollView>
       </KeyboardAvoidingView>
 
+      {/*
+        `bottom-8` on BOTH platforms now — previously Android needed
+        `bottom-24` specifically to clear the sticky Cancel/Save footer that
+        used to render below the ScrollView; that footer is gone (Save/
+        Cancel moved in-content, below Notes), so there's no longer a
+        platform-specific bar to clear here.
+      */}
       {message ? (
-        <View className={["absolute left-4 right-4", Platform.OS === "android" ? "bottom-24" : "bottom-8"].join(" ")}>
+        <View className="absolute bottom-8 left-4 right-4">
           <Toast title={message.title} description={message.description} onDismiss={dismiss} />
         </View>
       ) : null}
