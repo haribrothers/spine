@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Alert, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
-import { useColorScheme } from "nativewind";
 import {
   ActionTile,
   Card,
@@ -15,6 +14,7 @@ import {
   useNativeColors,
   type StatusChipProps,
 } from "@spine/ui-native";
+import type { GradientTone } from "@spine/ui-native/tokens";
 import ArrowUpRight from "lucide-react-native/icons/arrow-up-right";
 import Clock from "lucide-react-native/icons/clock";
 import Wallet from "lucide-react-native/icons/wallet";
@@ -33,34 +33,15 @@ import FileText from "lucide-react-native/icons/file-text";
 import Camera from "lucide-react-native/icons/camera";
 
 /**
- * Each KPI card's gradient is a same-hue 2-stop pair derived from that
- * card's OWN semantic base color (`colors.primary`/`paid`/`dueSoon`/
- * `overdue`, the exact same tokens `StatusChip` already uses elsewhere in
- * this screen) — never a new invented brand color. Per real-app research
- * (bunq/Grab/Cleo, via Mobbin), a bold single-hue gradient per card is the
- * common pattern, not a busy multi-color blend, so `to` is just a
- * ~15-18%-darker (light mode) / ~25%-darker (dark mode, since dark-mode
- * base tones are already light/vivid and need a stronger pull toward
- * saturation rather than lightening) shade of `from` — precomputed here as
- * plain hex literals per theme rather than a runtime color-math helper,
- * since exactly 4 cards × 2 themes is a fixed, small, unchanging set.
+ * Each KPI card's gradient comes from `colors.gradients` (`packages/ui-native`'s
+ * shared token set — see its own doc comment) rather than a screen-local
+ * light/dark map — a same-hue 2-stop pair derived from that card's OWN
+ * semantic base color (`colors.primary`/`paid`/`dueSoon`/`overdue`, the
+ * exact same tokens `StatusChip` already uses elsewhere in this screen),
+ * never a new invented brand color, and never chosen by hand-threading an
+ * `isDark` flag — `useNativeColors()` already resolves the theme once.
  */
-const KPI_GRADIENTS = {
-  light: {
-    primary: { from: "#2954E5", to: "#2144BB" },
-    paid: { from: "#177044", to: "#125B37" },
-    dueSoon: { from: "#9A6300", to: "#7E5100" },
-    overdue: { from: "#B3261E", to: "#921F18" },
-  },
-  dark: {
-    primary: { from: "#6B8AFF", to: "#5067BF" },
-    paid: { from: "#4ADE94", to: "#37A66F" },
-    dueSoon: { from: "#F2B23D", to: "#B5852D" },
-    overdue: { from: "#F17B72", to: "#B45C55" },
-  },
-} as const;
-
-type KpiTone = keyof typeof KPI_GRADIENTS.light;
+type KpiTone = GradientTone;
 
 const KPIS: { label: string; value: string; icon: typeof Wallet; trend: string; tone: KpiTone }[] = [
   { label: "Outstanding", value: "$42,300", icon: Wallet, trend: "+8% this month", tone: "primary" },
@@ -128,19 +109,16 @@ const KPI_CARD_GAP = 12;
  * ("retain the color of the gauge"). Its previous fill was a near-white
  * gradient that only worked against a dark/saturated card and would be
  * invisible here, so it's repointed to the app's real primary-blue
- * gradient (`GAUGE_FILL_GRADIENT`, sourced from `KPI_GRADIENTS.primary`
- * — the same pair the Outstanding KPI card and the earlier solid-blue
- * welcome-card attempt both already used) — keeping the app's actual
- * brand color as the gauge's "color," the intent behind "retain," rather
- * than literally keeping now-invisible white values.
+ * gradient (`colors.gradients.primary` — the same pair the Outstanding
+ * KPI card and the earlier solid-blue welcome-card attempt both already
+ * used) — keeping the app's actual brand color as the gauge's "color,"
+ * the intent behind "retain," rather than literally keeping now-invisible
+ * white values.
  *
  * Stacked layout unchanged: greeting (`text-[26px]`) → the gauge,
  * centered → the revenue-goal numbers, centered below it.
  */
 const CARD_ASPECT_RATIO = 1.5;
-
-const GAUGE_TRACK_COLOR = { light: "rgba(33,31,26,0.12)", dark: "rgba(243,242,238,0.16)" };
-const GAUGE_FILL_GRADIENT = { light: KPI_GRADIENTS.light.primary, dark: KPI_GRADIENTS.dark.primary };
 
 function WelcomeCard({
   cardBackgroundClassName,
@@ -230,11 +208,9 @@ function WelcomeCard({
  * follow-up once/if this screen gets real mocked per-period data.
  */
 function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> }) {
-  const { colorScheme } = useColorScheme();
-  const isDark = colorScheme === "dark";
-  const gradients = isDark ? KPI_GRADIENTS.dark : KPI_GRADIENTS.light;
-  const gaugeTrackColor = isDark ? GAUGE_TRACK_COLOR.dark : GAUGE_TRACK_COLOR.light;
-  const gaugeFillGradient = isDark ? GAUGE_FILL_GRADIENT.dark : GAUGE_FILL_GRADIENT.light;
+  const gradients: Record<GradientTone, { from: string; to: string }> = colors.gradients;
+  const gaugeTrackColor = colors.overlaySubtle;
+  const gaugeFillGradient = colors.gradients.primary;
   const PERIOD_OPTIONS = ["This week", "This month", "This year"];
   const [period, setPeriod] = useState(PERIOD_OPTIONS[1]!);
 

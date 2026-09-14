@@ -47,6 +47,24 @@ export const lightColors = {
 
   info: "#2954E5",
   infoBg: "#EAEFFD",
+
+  /**
+   * A same-hue 2-stop gradient per semantic tone, `to` a ~15-18%-darker
+   * shade of `from` — for a bold single-hue gradient fill (a KPI card, a
+   * gauge fill, etc.), never a new invented brand color. One entry per
+   * tone this package already has a flat token for (`primary`/`paid`/
+   * `dueSoon`/`overdue`) — extend this set only alongside its flat
+   * `ColorToken` counterpart, never with a tone that has no flat token.
+   */
+  gradients: {
+    primary: { from: "#2954E5", to: "#2144BB" },
+    paid: { from: "#177044", to: "#125B37" },
+    dueSoon: { from: "#9A6300", to: "#7E5100" },
+    overdue: { from: "#B3261E", to: "#921F18" },
+  },
+
+  /** A subtle translucent scrim over `surface` — e.g. a gauge/progress track. */
+  overlaySubtle: "rgba(33,31,26,0.12)",
 } as const;
 
 export const darkColors = {
@@ -80,6 +98,20 @@ export const darkColors = {
 
   info: "#6B8AFF",
   infoBg: "#181F35",
+
+  /** See `lightColors.gradients`'s own doc comment — the dark-mode pull is
+   * a stronger ~25%-darker shade, since dark-mode base tones are already
+   * light/vivid and need a stronger pull toward saturation rather than
+   * lightening. */
+  gradients: {
+    primary: { from: "#6B8AFF", to: "#5067BF" },
+    paid: { from: "#4ADE94", to: "#37A66F" },
+    dueSoon: { from: "#F2B23D", to: "#B5852D" },
+    overdue: { from: "#F17B72", to: "#B45C55" },
+  },
+
+  overlaySubtle: "rgba(243,242,238,0.16)",
 } as const;
 
 export type ColorToken = keyof typeof lightColors;
+export type GradientTone = keyof typeof lightColors.gradients;
