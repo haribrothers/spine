@@ -1,8 +1,6 @@
 import "../global.css";
 import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider, useNativeColors } from "@spine/ui-native";
+import { SpineUIProvider, useNativeColors } from "@spine/ui-native";
 import { persistentThemeStorage } from "../src/lib/theme-storage";
 import { ProfileSheetProvider } from "../src/lib/profile-sheet-context";
 import { ProfileSheet } from "../src/components/profile-sheet";
@@ -63,14 +61,11 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider storage={persistentThemeStorage}>
-      <SafeAreaProvider>
-        <ProfileSheetProvider>
-          <RootStack />
-          <ProfileSheet />
-        </ProfileSheetProvider>
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <SpineUIProvider storage={persistentThemeStorage}>
+      <ProfileSheetProvider>
+        <RootStack />
+        <ProfileSheet />
+      </ProfileSheetProvider>
+    </SpineUIProvider>
   );
 }

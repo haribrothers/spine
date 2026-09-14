@@ -28,6 +28,7 @@ export { GaugeIndicator, type GaugeIndicatorProps } from "./components/gauge-ind
 export { KpiCard, type KpiCardProps } from "./components/kpi-card";
 export { ActionTile, type ActionTileProps } from "./components/action-tile";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
+export { SpineUIProvider } from "./theme/spine-ui-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";
 export { useUnsavedChangesGuard, type UnsavedChangesNavigation, type UnsavedChangesGuardOptions } from "./hooks/use-unsaved-changes-guard";
 export { useScrollToFocusedInput } from "./hooks/use-scroll-to-focused-input";

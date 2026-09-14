@@ -1,7 +1,5 @@
 import "./global.css";
-import { StatusBar } from "expo-status-bar";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "@spine/ui-native";
+import { SpineUIProvider } from "@spine/ui-native";
 import { RootNavigator } from "./src/navigation/root-navigator";
 import { DesktopShell } from "./src/components/desktop-shell";
 import { persistentThemeStorage } from "./src/lib/theme-storage";
@@ -14,11 +12,8 @@ function Root() {
 
 export default function App() {
   return (
-    <ThemeProvider storage={persistentThemeStorage}>
-      <SafeAreaProvider>
-        <Root />
-        <StatusBar style="auto" />
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <SpineUIProvider storage={persistentThemeStorage}>
+      <Root />
+    </SpineUIProvider>
   );
 }
