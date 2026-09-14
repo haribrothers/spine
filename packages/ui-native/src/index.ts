@@ -24,6 +24,9 @@ export { ContextMenu, type ContextMenuProps, type ContextMenuAction } from "./co
 export { DateTimePicker, type DateTimePickerProps } from "./components/date-time-picker";
 export { BottomSheet, type BottomSheetProps } from "./components/bottom-sheet";
 export { ScrollEdgeMask, type ScrollEdgeMaskProps } from "./components/scroll-edge-mask";
+export { GaugeIndicator, type GaugeIndicatorProps } from "./components/gauge-indicator";
+export { KpiCard, type KpiCardProps } from "./components/kpi-card";
+export { ActionTile, type ActionTileProps } from "./components/action-tile";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";
 export { useUnsavedChangesGuard, type UnsavedChangesNavigation, type UnsavedChangesGuardOptions } from "./hooks/use-unsaved-changes-guard";

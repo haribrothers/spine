@@ -1,3 +1,4 @@
+import { ActionTileDemo } from "../components/demos/action-tile-demo";
 import { AvatarDemo } from "../components/demos/avatar-demo";
 import { BadgeDemo } from "../components/demos/badge-demo";
 import { BottomSheetDemo } from "../components/demos/bottom-sheet-demo";
@@ -10,6 +11,8 @@ import { EmptyStateDemo } from "../components/demos/empty-state-demo";
 import { FloatingLabelFieldDemo } from "../components/demos/floating-label-field-demo";
 import { FormRowDemo } from "../components/demos/form-row-demo";
 import { FullWidthButtonDemo } from "../components/demos/full-width-button-demo";
+import { GaugeIndicatorDemo } from "../components/demos/gauge-indicator-demo";
+import { KpiCardDemo } from "../components/demos/kpi-card-demo";
 import { NativeTextFieldDemo } from "../components/demos/native-text-field-demo";
 import { SegmentedControlDemo } from "../components/demos/segmented-control-demo";
 import { SelectDemo } from "../components/demos/select-demo";
@@ -51,4 +54,7 @@ export const COMPONENT_DEMOS: Record<string, React.ComponentType> = {
   spinner: SpinnerDemo,
   skeleton: SkeletonDemo,
   toast: ToastDemo,
+  "gauge-indicator": GaugeIndicatorDemo,
+  "kpi-card": KpiCardDemo,
+  "action-tile": ActionTileDemo,
 };

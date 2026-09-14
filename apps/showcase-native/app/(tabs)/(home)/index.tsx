@@ -1,12 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { Animated, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Alert, ScrollView as RNScrollView, Platform, ScrollView, Text, View } from "react-native";
 import { useColorScheme } from "nativewind";
-import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from "react-native-svg";
 import {
+  ActionTile,
   Card,
   CardContent,
   CardDescription,
   CardTitle,
+  GaugeIndicator,
+  KpiCard,
   SegmentedControl,
   StatusChip,
   ScrollEdgeMask,
@@ -84,233 +86,15 @@ const KPI_CARD_WIDTH = 168;
 const KPI_CARD_GAP = 12;
 
 /**
- * One gradient-filled KPI card, built on `react-native-svg`'s
- * `LinearGradient` (already this package's established pattern for
- * gradients — see `ScrollEdgeMask` — rather than adding
- * `expo-linear-gradient` as a second, redundant gradient dependency).
- * Fixed `KPI_CARD_WIDTH`, not `flex-1`, is deliberate: a horizontally
- * scrolling row needs a known per-card width so the FINAL card can be
- * DELIBERATELY clipped by the screen edge (the "next card peeks" scroll
- * affordance every real reference app in this pattern uses — bunq, Grab,
- * Cleo, confirmed via Mobbin research) rather than every card fitting
- * exactly on screen with nothing signaling there's more to scroll.
- */
-function KpiCard({ label, value, trend, icon: Icon, tone, gradient }: (typeof KPIS)[number] & { gradient: { from: string; to: string } }) {
-  return (
-    <View style={{ width: KPI_CARD_WIDTH, borderRadius: 16, overflow: "hidden" }}>
-      <Svg width="100%" height="100%" style={{ position: "absolute" }}>
-        <Defs>
-          <SvgLinearGradient id={`kpi-${tone}`} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={gradient.from} />
-            <Stop offset="1" stopColor={gradient.to} />
-          </SvgLinearGradient>
-        </Defs>
-        <Rect x="0" y="0" width="100%" height="100%" fill={`url(#kpi-${tone})`} />
-      </Svg>
-      <View className="gap-3 p-4">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[13px] text-white/80">{label}</Text>
-          <Icon size={16} color="#FFFFFF" opacity={0.8} />
-        </View>
-        <Text className="text-[22px] font-semibold text-white">{value}</Text>
-        <Text className="text-[12px] text-white/80">{trend}</Text>
-      </View>
-    </View>
-  );
-}
-
-const GAUGE_SIZE = 200;
-const GAUGE_STROKE = 8;
-
-/**
- * A semi-circular (180°) gauge, arc + filled progress + a centered value —
- * NOT a full 360° ring. Per Mobbin research (Cleo's credit-score gauge,
- * TradingView's buy/sell needle gauge, Acorns' Weak/Fair/Strong gauge,
- * Binance's Fear & Greed gauge): every real "speedometer-style" dashboard
- * indicator found was consistently a semi-circle with the value centered
- * inside the arc, never a full ring (full rings — Apple Fitness/WHOOP-style
- * — are a different, more common pattern reserved for a different framing
- * this component deliberately does NOT use here).
+ * `KpiCard`/`GaugeIndicator` moved to `packages/ui-native` (see those
+ * modules' own doc comments for the full history — the gradient/arc-path
+ * mechanism, the spring-overshoot animation, the comet-head glow dot) —
+ * extracted from this file since both are genuinely general-purpose with
+ * no dashboard-specific logic. `KPI_CARD_WIDTH`/`KPI_CARD_GAP` and the
+ * horizontal-scroll carousel wrapper around `KpiCard` stay screen-local,
+ * since sizing a card for THIS carousel's own "next card peeks" scroll
+ * affordance is this screen's own layout decision, not the card's.
  *
- * Built as a plain `react-native-svg` arc path (already this package's
- * established gradient/shape mechanism — see `KpiCard`/`ScrollEdgeMask` —
- * no new charting dependency). The arc is drawn as two stacked `Path`s: a
- * full semi-circle track at low opacity, and a progress arc on top whose
- * end angle is `progress`-driven — simpler and more predictable at this
- * small size than a `strokeDasharray`/`strokeDashoffset` approach on a
- * `Circle`, since a true circle's dash-offset math has to be adjusted for
- * exactly half a circumference here, whereas an explicit arc path takes
- * the end angle directly.
- */
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-
-/**
- * Animates a genuine sweep-in from 0% on mount, not an instant jump to the
- * final value — a real, explicit user request. `react-native`'s built-in
- * `Animated` API (already a transitive dependency of `react-native` itself,
- * no new package) drives a plain JS-side numeric value from 0 to `progress`
- * with `Animated.spring` (a slight overshoot-then-settle at the end, per
- * Mobbin research inferring this "snap into place" feel from Oura/CRED's
- * high-polish score reveals) rather than a linear `Animated.timing`;
- * `useNativeDriver: false` is required here (not a shortcut) since the
- * animated output feeds a `Path`'s own `d` STRING prop (recomputed every
- * frame from the current angle), and only transform/opacity style props
- * are eligible for the native driver — this is the same documented
- * tradeoff `FloatingTabBar`'s own tab-highlight animation in
- * `packages/ui-native` already accepts for an analogous non-transform
- * animated value, not a new pattern. A `Circle`'s `strokeDashoffset` COULD
- * run on the native driver instead, but this component already committed
- * to an explicit arc-path approach (see the doc comment above `arcPath`)
- * for its simpler, more predictable geometry at this small size —
- * switching just the animated portion to a dash-offset circle would
- * reintroduce exactly the half-circumference math this file deliberately
- * avoided, for a driver benefit that doesn't matter at one single small
- * animation running once per screen mount.
- *
- * A small glow-ringed dot rides the fill's leading tip (Experian/CRED's
- * and Oura's own "comet head"/slider-thumb detail, per Mobbin research) —
- * a second, smaller circle drawn at the same animated angle as the arc's
- * own end point, with a soft blurred halo behind it (a larger,
- * low-opacity circle at the same position, the cheapest fake-glow
- * technique available without a real blur filter). Tick marks at 0/25/
- * 50/75/100% are the other real stylistic detail this research surfaced
- * (small decorative reference points around the track, not functional
- * labels) — Mobbin's zone-gauge/dashed-arc references (Monzo, Rocket
- * Money) were considered too but not used: those imply a discrete
- * zone/segment framing this single continuous revenue-goal percentage
- * doesn't actually have.
- */
-function GaugeIndicator({
-  progress,
-  trackColor,
-  fillGradient,
-  textColorClass,
-}: {
-  progress: number;
-  trackColor: string;
-  fillGradient: { from: string; to: string };
-  textColorClass: string;
-}) {
-  const clamped = Math.max(0, Math.min(1, progress));
-  const animatedProgress = useRef(new Animated.Value(0)).current;
-  const [renderedProgress, setRenderedProgress] = useState(0);
-
-  useEffect(() => {
-    // Deliberately NOT clamped to [0,1] here — `Animated.spring`'s own
-    // slight overshoot past `clamped` before settling back IS the "snap
-    // into place" polish this animation is going for (per Mobbin research
-    // on Oura/CRED's score reveals); clamping the raw value here would
-    // silently flatten the spring into a plain ease-out and defeat the
-    // whole point. The arc angle and glow-dot position below both clamp
-    // their OWN derived values instead, so the overshoot bounces the fill
-    // slightly past its final angle and back, while the displayed
-    // percentage text still clamps to a sane 0-100 range.
-    const id = animatedProgress.addListener(({ value }) => setRenderedProgress(value));
-    Animated.spring(animatedProgress, {
-      toValue: clamped,
-      useNativeDriver: false,
-      friction: 7,
-      tension: 40,
-    }).start();
-    return () => animatedProgress.removeListener(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- animate once per mount to `clamped`'s value at that time, matching a one-shot load-in sweep, not re-triggering on every re-render.
-  }, []);
-
-  const r = GAUGE_SIZE / 2 - GAUGE_STROKE / 2;
-  // The SVG canvas is only half-height (a semi-circle, open side up) plus
-  // room for the stroke's own rounded caps — `cy` must sit at that canvas's
-  // OWN bottom edge (canvasHeight), not at `GAUGE_SIZE / 2` (half of the
-  // full, never-rendered circle) — that mismatch was a real bug: the arc's
-  // true center point sat below the visible canvas, so only its very top
-  // sliver was visible and the "76%" label (positioned assuming a centered
-  // arc) rendered too high, overlapping the arc's own opening instead of
-  // sitting inside it.
-  const canvasHeight = GAUGE_SIZE / 2 + GAUGE_STROKE;
-  const cx = GAUGE_SIZE / 2;
-  const cy = canvasHeight;
-
-  const arcPath = (fromDeg: number, toDeg: number) => {
-    const toRad = (deg: number) => (deg * Math.PI) / 180;
-    const start = { x: cx + r * Math.cos(toRad(fromDeg)), y: cy + r * Math.sin(toRad(fromDeg)) };
-    const end = { x: cx + r * Math.cos(toRad(toDeg)), y: cy + r * Math.sin(toRad(toDeg)) };
-    const largeArc = toDeg - fromDeg > 180 ? 1 : 0;
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`;
-  };
-
-  // 180deg (left) through 270deg (top, since SVG's y-axis grows downward so
-  // negative-y is "up") to 360deg (right) — a dome bulging upward, flat
-  // side down, the correct speedometer/rainbow shape. Verified by direct
-  // trig (not assumed): cos/sin at 180/270/360 place the arc's top point
-  // at negative y, confirming the bulge is genuinely upward, not downward.
-  // The arc's own SWEEP clamps to [0,1] (an SVG arc path can't visually
-  // extend past the semicircle's own endpoints anyway, and letting it try
-  // during a spring overshoot risks `largeArc` flipping unpredictably) —
-  // only the glow dot below rides the raw, unclamped animated value for a
-  // touch of extra life at the bounce.
-  const sweepProgress = Math.max(0, Math.min(1, renderedProgress));
-  const trackD = arcPath(180, 360);
-  const progressD = arcPath(180, 180 + sweepProgress * 180);
-
-  // The glow-ringed dot at the fill's leading tip (Experian/CRED's/Oura's
-  // "comet head" detail, per Mobbin research) — allowed to ride slightly
-  // PAST the arc's own endpoint during the spring's overshoot (clamped
-  // only to a small overrun margin, not hard-clamped to 1), so the dot
-  // visibly bounces a little beyond 100% before settling back, echoing the
-  // spring's own motion rather than freezing at the arc's fixed end.
-  const dotProgress = Math.max(0, Math.min(1.04, renderedProgress));
-  const dotDeg = 180 + dotProgress * 180;
-  const dotRad = (dotDeg * Math.PI) / 180;
-  const dotX = cx + r * Math.cos(dotRad);
-  const dotY = cy + r * Math.sin(dotRad);
-
-  // Tick marks at 0/25/50/75/100% — small, decorative, stylish reference
-  // points around the arc's own track (a real detail found in Mobbin's
-  // credit-score/readiness-gauge references), NOT functional labels.
-  const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => {
-    const deg = 180 + t * 180;
-    const rad = (deg * Math.PI) / 180;
-    const outer = r + GAUGE_STROKE / 2 + 4;
-    const inner = r + GAUGE_STROKE / 2 + 1;
-    return {
-      x1: cx + inner * Math.cos(rad),
-      y1: cy + inner * Math.sin(rad),
-      x2: cx + outer * Math.cos(rad),
-      y2: cy + outer * Math.sin(rad),
-    };
-  });
-
-  return (
-    <View style={{ width: GAUGE_SIZE, height: canvasHeight + 8 }}>
-      <Svg width={GAUGE_SIZE} height={canvasHeight + 8}>
-        <Defs>
-          <SvgLinearGradient id="gauge-fill" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={fillGradient.from} />
-            <Stop offset="1" stopColor={fillGradient.to} />
-          </SvgLinearGradient>
-        </Defs>
-        <Path d={trackD} stroke={trackColor} strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
-        {ticks.map((t, i) => (
-          <Path key={i} d={`M ${t.x1} ${t.y1} L ${t.x2} ${t.y2}`} stroke={trackColor} strokeWidth={1.5} strokeLinecap="round" />
-        ))}
-        {sweepProgress > 0 ? (
-          <AnimatedPath d={progressD} stroke="url(#gauge-fill)" strokeWidth={GAUGE_STROKE} strokeLinecap="round" fill="none" />
-        ) : null}
-        {sweepProgress > 0.02 ? (
-          <>
-            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 7} fill={fillGradient.to} opacity={0.3} />
-            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 + 1} fill="#FFFFFF" />
-            <Circle cx={dotX} cy={dotY} r={GAUGE_STROKE / 2 - 2} fill={fillGradient.to} />
-          </>
-        ) : null}
-      </Svg>
-      <View style={{ position: "absolute", bottom: 8, left: 0, right: 0, alignItems: "center" }}>
-        <Text className={`text-[32px] font-bold ${textColorClass}`}>{Math.round(sweepProgress * 100)}%</Text>
-      </View>
-    </View>
-  );
-}
-
-/**
  * The welcome/hero card — a wide, short, rounded rectangle at a real
  * `CARD_ASPECT_RATIO` of `1.5` (3:2 width:height, per explicit user
  * request — landscape-photo proportions). `aspectRatio` alone, NOT
@@ -454,6 +238,16 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
   const PERIOD_OPTIONS = ["This week", "This month", "This year"];
   const [period, setPeriod] = useState(PERIOD_OPTIONS[1]!);
 
+  // `ActionTile` (see its own doc comment) added a real `onPress` this
+  // screen's own Quick Actions tiles never had before — this showcase app
+  // has no real quote/expense/photo/job creation flow to route to, so each
+  // tile's own honest placeholder is a plain alert naming the action,
+  // matching the same "display-only, no fake backing behavior" pattern
+  // already used for the period `SegmentedControl` above.
+  function handleQuickAction(label: string) {
+    Alert.alert(label, "This showcase app has no real flow for this action yet.");
+  }
+
   return (
     <>
       <WelcomeCard
@@ -474,7 +268,16 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
         contentContainerClassName="px-4"
       >
         {KPIS.map((kpi) => (
-          <KpiCard key={kpi.label} {...kpi} gradient={gradients[kpi.tone]} />
+          <KpiCard
+            key={kpi.label}
+            label={kpi.label}
+            value={kpi.value}
+            trend={kpi.trend}
+            icon={kpi.icon}
+            gradient={gradients[kpi.tone]}
+            gradientId={kpi.tone}
+            width={KPI_CARD_WIDTH}
+          />
         ))}
       </RNScrollView>
 
@@ -483,15 +286,8 @@ function HomeContent({ colors }: { colors: ReturnType<typeof useNativeColors> })
           Quick actions
         </Text>
         <View className="flex-row flex-wrap gap-3">
-          {QUICK_ACTIONS.map(({ label, icon: Icon }) => (
-            <View
-              key={label}
-              className="items-center justify-center gap-2 rounded-xl bg-info-bg py-4 dark:bg-info-bg-dark"
-              style={{ width: "22%", flexGrow: 1 }}
-            >
-              <Icon size={20} color={colors.primary} />
-              <Text className="text-[12px] font-medium text-on-surface dark:text-on-surface-dark">{label}</Text>
-            </View>
+          {QUICK_ACTIONS.map(({ label, icon }) => (
+            <ActionTile key={label} label={label} icon={icon} iconColor={colors.primary} onPress={() => handleQuickAction(label)} />
           ))}
         </View>
       </View>

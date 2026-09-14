@@ -47,4 +47,7 @@ export const COMPONENT_CATALOG: ComponentCatalogEntry[] = [
   { slug: "spinner", title: "Spinner", description: "An indeterminate loading indicator.", native: false },
   { slug: "skeleton", title: "Skeleton", description: "A pulsing placeholder block.", native: false },
   { slug: "toast", title: "Toast", description: "An auto-dismissing confirmation message.", native: false },
+  { slug: "gauge-indicator", title: "Gauge Indicator", description: "A semi-circular animated progress gauge.", native: false },
+  { slug: "kpi-card", title: "KPI Card", description: "A gradient-filled stat card with label, value, trend, and icon.", native: false },
+  { slug: "action-tile", title: "Action Tile", description: "An icon + label tile for a wrapping quick-actions grid.", native: false },
 ];

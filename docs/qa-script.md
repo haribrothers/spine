@@ -1539,6 +1539,18 @@ Not a full audit — just confirm nothing obviously broke:
    `@spine/ui-native`'s own `SegmentedControl` wrapper instead of a direct
    `@expo/ui` import) — tapping a segment still switches the selection
    with no visible change in behavior.
+   **Home screen refactor: `GaugeIndicator`/`KpiCard`/`ActionTile` moved to
+   `packages/ui-native` (2026-09-14) — re-run the whole Home screen after
+   this.** Confirm the revenue-goal gauge on the welcome card still sweeps
+   in from 0% on load with the same spring "snap into place" bounce (not
+   an instant jump), the KPI carousel's gradient cards look and scroll
+   exactly as before, and Quick Actions' 4 tiles still show their
+   icon+label in a tinted rounded box, unchanged visually. **Also confirm
+   the real, previously-missing behavior this fixed**: tapping any Quick
+   Actions tile (New quote/Log expense/Add photo/New job) now shows an
+   alert naming the action — the tiles were completely untappable before
+   this change (a plain `View` with no `onPress` at all), so this is a new,
+   correct behavior, not a regression if it wasn't there before.
    **Header (fixed 2026-09-13)**: reach this screen via a real in-app
    push — Templates tab → a job's detail screen → Edit. Confirm the
    header looks like `(tabs)/components/[slug]`'s own detail header:
