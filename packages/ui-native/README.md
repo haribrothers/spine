@@ -18,7 +18,7 @@ Workspace-internal only (`"@spine/ui-native": "workspace:*"`). Peer dependencies
 
 ## Creating a new app
 
-Run the scaffold script from the repo root instead of doing the steps below by hand or copying another app's files:
+**Always use the scaffold script to create a new app — never hand-write these files or copy another app's.**
 
 ```
 node scripts/create-native-app.mjs <name> [--router=react-navigation|expo-router] [--web]
@@ -28,9 +28,11 @@ node scripts/create-native-app.mjs <name> [--router=react-navigation|expo-router
 - `--router` (default `react-navigation`) picks the generated root layout: `react-navigation` (like `apps/mobile`) writes `App.tsx` + a `RootNavigator`; `expo-router` (like `apps/showcase-native`) writes a file-based `app/_layout.tsx` and sets `"main": "expo-router/entry"`.
 - `--web` includes a `localStorage` fallback branch in the generated theme-storage util (like `apps/design-system-native`) — omit it for a native-only app, since `expo-secure-store` alone has no web implementation.
 
-It generates every file described in "Getting a new app running" below (`tailwind.config.js`, root layout, `theme-storage.ts`, `jest.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, `eslint.config.js`, `tsconfig.json`, `nativewind-env.d.ts`, `package.json`, `app.json`) with dependency versions read from this package's own `peerDependencies`, so they can't silently drift from what `packages/ui-native` actually expects. It does not scaffold binary assets (icons/splash) or merge into an existing app — it only writes into a fresh, empty `apps/<name>` directory. Follow the printed next-steps (copy assets, `pnpm install`, optionally add a `dev:<name>` root script) to finish.
+It generates every file in the setup surface (`tailwind.config.js`, root layout, `theme-storage.ts`, `jest.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, `eslint.config.js`, `tsconfig.json`, `nativewind-env.d.ts`, `package.json`, `app.json`) with dependency versions read from this package's own `peerDependencies`, so they can't silently drift from what `packages/ui-native` actually expects. It does not scaffold binary assets (icons/splash) or merge into an existing app — it only writes into a fresh, empty `apps/<name>` directory. Follow the printed next-steps (copy assets, `pnpm install`, optionally add a `dev:<name>` root script) to finish.
 
-## Getting a new app running (manual / reference)
+The "Getting a new app running" steps below are **reference only** — they explain what the script generates and why, for when you need to understand or debug the wiring (e.g. adding this pattern to an app that predates the script, or tracing why a generated file looks the way it does). Do not follow them to set up a new app by hand.
+
+## Getting a new app running (reference — the script above does this for you)
 
 1. **Tailwind.** Your `tailwind.config.js` only needs `content`/`darkMode`/`presets` — colors, radius, and spacing come from the preset:
    ```js
