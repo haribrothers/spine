@@ -16,7 +16,21 @@ Workspace-internal only (`"@spine/ui-native": "workspace:*"`). Peer dependencies
 | `@spine/ui-native/navigation` | React Navigation theme/tab-bar helpers (`spineLightNavigationTheme`/`spineDarkNavigationTheme`, `spineTabBarScreenOptions`, `TabBarIcon`, `FloatingTabBar`) |
 | `@spine/ui-native/jest-config-base` | Shared Jest config fixing the Lucide ESM/CJS resolution issue — extend it if your app adds tests |
 
-## Getting a new app running
+## Creating a new app
+
+Run the scaffold script from the repo root instead of doing the steps below by hand or copying another app's files:
+
+```
+node scripts/create-native-app.mjs <name> [--router=react-navigation|expo-router] [--web]
+```
+
+- `<name>` becomes `apps/<name>` and the package `@spine/<name>`.
+- `--router` (default `react-navigation`) picks the generated root layout: `react-navigation` (like `apps/mobile`) writes `App.tsx` + a `RootNavigator`; `expo-router` (like `apps/showcase-native`) writes a file-based `app/_layout.tsx` and sets `"main": "expo-router/entry"`.
+- `--web` includes a `localStorage` fallback branch in the generated theme-storage util (like `apps/design-system-native`) — omit it for a native-only app, since `expo-secure-store` alone has no web implementation.
+
+It generates every file described in "Getting a new app running" below (`tailwind.config.js`, root layout, `theme-storage.ts`, `jest.config.js`, `global.css`, `babel.config.js`, `metro.config.js`, `eslint.config.js`, `tsconfig.json`, `nativewind-env.d.ts`, `package.json`, `app.json`) with dependency versions read from this package's own `peerDependencies`, so they can't silently drift from what `packages/ui-native` actually expects. It does not scaffold binary assets (icons/splash) or merge into an existing app — it only writes into a fresh, empty `apps/<name>` directory. Follow the printed next-steps (copy assets, `pnpm install`, optionally add a `dev:<name>` root script) to finish.
+
+## Getting a new app running (manual / reference)
 
 1. **Tailwind.** Your `tailwind.config.js` only needs `content`/`darkMode`/`presets` — colors, radius, and spacing come from the preset:
    ```js

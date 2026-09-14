@@ -18,6 +18,7 @@
     "dev:showcase-native": "pnpm --filter @spine/showcase-native start",
     "dev:showcase-native:ios": "pnpm --filter @spine/showcase-native ios",
     "dev:showcase-native:android": "pnpm --filter @spine/showcase-native android",
+    "create:native-app": "node scripts/create-native-app.mjs",
     "dev:infra:up": "docker compose -f docker-compose.dev.yml up -d",
     "dev:infra:down": "docker compose -f docker-compose.dev.yml down",
     "dev:infra:reset": "docker compose -f docker-compose.dev.yml down -v && pnpm dev:infra:up",
