@@ -39,7 +39,7 @@ test.describe("US-AUTH-10", () => {
 
     // The session from before the reset is gone.
     await page.goto("/dashboard");
-    await page.waitForURL("**/login");
+    await page.waitForURL(/\/login\?next=%2Fdashboard$/);
 
     // The old password no longer works; the new one does.
     await page.getByLabel("Email").fill(email);

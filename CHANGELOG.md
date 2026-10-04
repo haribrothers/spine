@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-AUTH-12: keep my unsaved work when my session expires (Phase 6)
+
+- **The dialog.** If the session has ended, a save (any create, change, delete or upload through the API client) opens "You've been signed out" with "Your session ended, so this change wasn't saved yet. Log in again to save it — the draft stays open in this tab." and "Log in again". Logging in happens inside the dialog ("Log in as <email>." and "Password"), so the page and everything typed on it stay as they were. The save isn't retried; you press it again.
+- **Reading only.** If a background request gets 401 and nothing has been typed on the page, you're sent to `/login?next=<this page>`. If something has been typed, it waits for the save to show the dialog instead of losing the draft.
+- **Server fix.** On capability-gated routes, a request with no session got 403 "No active organisation on session" instead of 401, because `CapabilityGuard` can run before Better Auth's guard. It now answers 401, so "signed out" and "not allowed" (US-OPS-12) can be told apart.
+- **Sign-up status follow-up (US-AUTH-08).** `GET /public/signup-status` had its own limit of 60 a minute per IP. Every `/login` and `/signup` load asks it, so an office behind one address could hit the limit, and the page then wrongly said "This Spine is invite-only" on a fresh install. It now uses the global limit (300 a minute). If the check fails, the page shows the form and lets the server decide.
+- **Safer `?next=`.** `/login?next=` now follows only paths on this site; `//other-host` and full URLs go to the dashboard. Visiting a protected page signed out now adds `?next=` too.
+
+Tests:
+- `us-auth-12.http.integration.test.ts` (5): no session → 401 on capability-gated and plain routes, reads and writes; an unknown session cookie → 401.
+- `apps/e2e/tests/us-auth-12.spec.ts` (3): a save after the session ends opens the dialog; logging in from it keeps the page and the typed name, without repeating the save; a background 401 while reading goes to `/login?next=%2Fcontacts`; `?next=` ignores another host.
+
 ### 2026-10-04 — US-AUTH-11: see why an invitation can't be used (Phase 6)
 
 - **The page.** An invitation link whose id doesn't exist, or that has expired, been cancelled, accepted or declined, now shows "This invitation can't be used" and "It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one." with "Log in instead" (to `/login`). This applies signed in or out. Before, a signed-out visitor got the sign-up prompt with an empty email, and a signed-in one got "This invitation could not be found or has expired.".

@@ -20,6 +20,7 @@ import {
 import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { useSignupStatus } from "../../lib/signup-status";
+import { safeNextPath } from "../../lib/safe-next";
 
 export default function LoginPage() {
   return (
@@ -64,7 +65,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(next && next.startsWith("/") ? next : "/dashboard");
+    router.push(safeNextPath(next) ?? "/dashboard");
   }
 
   return (

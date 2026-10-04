@@ -16,6 +16,7 @@ import { pageAccessFor } from "../lib/page-access";
 import { RoleProvider } from "../lib/role-context";
 import { NoAccess } from "./no-access";
 import { PermissionToast } from "./permission-toast";
+import { SessionExpiredDialog } from "./session-expired-dialog";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -73,6 +74,7 @@ export function AppLayout(props: AppLayoutProps) {
       <CapabilitiesProvider>
         <AppLayoutShell {...props} />
         <PermissionToast />
+        <SessionExpiredDialog email={props.userEmail} />
       </CapabilitiesProvider>
     </RoleProvider>
   );

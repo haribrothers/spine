@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from "@nestjs/common";
+import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable, UnauthorizedException } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { and, eq } from "drizzle-orm";
 import { fromNodeHeaders } from "better-auth/node";
@@ -58,7 +58,11 @@ export class CapabilityGuard implements CanActivate {
     const session = request.session ?? (await auth.api.getSession({ headers: request.headers ? fromNodeHeaders(request.headers) : new Headers() }));
     const orgId: string | undefined = session?.session?.activeOrganizationId;
     const userId: string | undefined = session?.user?.id;
-    if (!orgId || !userId) {
+    // No session at all is 401, as AuthGuard would answer: this guard can
+    // run first, and the web app tells "signed out" (US-AUTH-12) apart from
+    // "not allowed" (US-OPS-12) by the status.
+    if (!userId) throw new UnauthorizedException();
+    if (!orgId) {
       // Should be unreachable — @OrgRoles already requires an active org —
       // but fail closed rather than assume.
       throw new ForbiddenException("No active organisation on session");

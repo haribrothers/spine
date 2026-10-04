@@ -15,7 +15,9 @@ export function useSignupStatus(): SignupStatus | null {
     apiClient
       .get<SignupStatus>("/public/signup-status")
       .then(setStatus)
-      .catch(() => setStatus({ open: false, businessName: null }));
+      // Unknown isn't "closed": show the form and let the server decide
+      // (it refuses a sign-up without an invitation with its own message).
+      .catch(() => setStatus({ open: true, businessName: null }));
   }, []);
   return status;
 }

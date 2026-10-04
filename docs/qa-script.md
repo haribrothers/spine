@@ -2167,6 +2167,16 @@ Regression: `/login` still signs in, and shows "Sign up" only on a fresh install
 
 Regression: the invitation sign-up link (`/signup?inviteId=…&email=…`) still shows the form (§31); accepting an invitation still joins the organisation.
 
+## 34. Signed out mid-task (US-AUTH-12, Phase 6)
+
+1. Open Contacts › "Add contact" and type a name. In another tab, log out (or delete the `better-auth.session_token` cookie in dev tools).
+2. Back in the first tab, press "Save contact": "You've been signed out" with "Your session ended, so this change wasn't saved yet. Log in again to save it — the draft stays open in this tab." and "Log in again".
+3. "Log in again" → "Log in as <your email>." and "Password". Log in: the dialog closes, the drawer and the typed name are still there, and nothing was saved yet. Press "Save contact" again: it saves.
+4. Open Contacts, don't type anything, and sign out in another tab. Within 20 seconds (the notification bell's refresh) the page goes to `/login?next=%2Fcontacts`; logging in returns to Contacts.
+5. Signed out, open `/login?next=//example.com` and log in: you land on the dashboard, not another site.
+
+Regression: a Staff user without a capability still gets the "You don't have permission to do that" toast (US-OPS-12), not the signed-out dialog.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
