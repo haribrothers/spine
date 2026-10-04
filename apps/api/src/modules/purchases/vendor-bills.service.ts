@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createVendorBillSchema, updateVendorBillSchema } from "@spine/shared";
-import { computeLineTax, money, roundHalfUp } from "@spine/shared";
+import { computeDocumentLine } from "@spine/shared";
 import { and, eq, desc } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -82,18 +82,23 @@ async function computeBillTotals(
         };
       }
 
-      const netAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
-
       const resolved = line.taxRateId || line.taxGroupId
         ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
         : {
-            rates: line.taxRatePercentage > 0
-              ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
-              : [],
+            rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: line.taxRatePercentage,
           };
 
-      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, line.isTaxInclusive);
+      // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+      const computed = computeDocumentLine({
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        currency,
+        rates: resolved.rates,
+        inclusive: line.isTaxInclusive,
+      });
+      const netAmount = computed.netAmount;
+      const taxResult = computed.tax;
 
       subtotalAmount += netAmount;
       taxAmount += taxResult.taxAmount.amount;

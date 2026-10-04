@@ -3,7 +3,7 @@ import { money } from "../money/money";
 import { computeLineTax, type TaxRate } from "./tax";
 
 describe("computeLineTax", () => {
-  const gst: TaxRate = { id: "1", name: "GST", rate: 0.1, isCompound: false };
+  const gst: TaxRate = { id: "1", name: "GST", percent: 10, isCompound: false };
 
   it("computes exclusive tax", () => {
     const result = computeLineTax(money(10000n, "AUD"), [gst], false);
@@ -18,7 +18,7 @@ describe("computeLineTax", () => {
   });
 
   it("compounds a second tax rate on top of the first", () => {
-    const pst: TaxRate = { id: "2", name: "PST", rate: 0.07, isCompound: true };
+    const pst: TaxRate = { id: "2", name: "PST", percent: 7, isCompound: true };
     const result = computeLineTax(money(10000n, "CAD"), [gst, pst], false);
     // GST = 1000, PST = 7% of (10000 + 1000) = 770
     expect(result.taxAmount).toEqual(money(1770n, "CAD"));

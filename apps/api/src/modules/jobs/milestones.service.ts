@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
-import { roundHalfUp } from "@spine/shared";
+import { ZERO, decimal, multiplyMinor, percentOfMinor, plus } from "@spine/shared";
 import { and, eq, inArray, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -155,9 +155,10 @@ export class MilestonesService {
       }
     }
 
-    const percentTotal = input.milestones.filter((m) => m.amountType === "percent").reduce((sum, m) => sum + m.amount, 0);
-    if (input.milestones.some((m) => m.amountType === "percent") && Math.round(percentTotal * 100) !== 10000) {
-      throw new BadRequestException(`Milestone percentages must total 100% (currently ${percentTotal}%)`);
+    // Summed exactly (US-TAX-07): 33.3333 + 33.3333 + 33.3334 is 100, not 99.99999999999999.
+    const percentTotal = input.milestones.filter((m) => m.amountType === "percent").reduce((sum, m) => plus(sum, decimal(m.amount)), ZERO);
+    if (input.milestones.some((m) => m.amountType === "percent") && !(percentTotal.n === 100n && percentTotal.d === 1n)) {
+      throw new BadRequestException(`Milestone percentages must total 100% (currently ${Number(percentTotal.n) / Number(percentTotal.d)}%)`);
     }
 
     const resolved: ResolvedMilestone[] = input.milestones.map((m) => ({
@@ -167,7 +168,7 @@ export class MilestonesService {
       amountType: m.amountType,
       amount: m.amount,
       resolvedAmount:
-        m.amountType === "percent" ? roundHalfUp((Number(job.contractValueAmount) * m.amount) / 100) : roundHalfUp(m.amount),
+        m.amountType === "percent" ? percentOfMinor(job.contractValueAmount, m.amount) : multiplyMinor(1n, m.amount),
       dueDate: m.dueDate ?? null,
     }));
 
@@ -323,7 +324,7 @@ export class MilestonesService {
       throw new BadRequestException("Only a completed milestone can be invoiced");
     }
 
-    const retentionAmount = job.retentionPct > 0 ? roundHalfUp((Number(milestone.resolvedAmount) * job.retentionPct) / 100) : 0n;
+    const retentionAmount = job.retentionPct > 0 ? percentOfMinor(milestone.resolvedAmount, job.retentionPct) : 0n;
 
     const invoice = await this.invoices.createFromMilestone(orgId, actorUserId, {
       jobId,
@@ -368,7 +369,7 @@ export class MilestonesService {
     const rows = await tx.select().from(milestones).where(and(eq(milestones.jobId, jobId), eq(milestones.orgId, orgId)));
     for (const m of rows) {
       if (m.status === "invoiced" || m.amountType !== "percent") continue;
-      const resolvedAmount = roundHalfUp((Number(newContractValueAmount) * m.amount) / 100);
+      const resolvedAmount = percentOfMinor(newContractValueAmount, m.amount);
       await tx.update(milestones).set({ resolvedAmount, updatedAt: new Date() }).where(eq(milestones.id, m.id));
     }
   }

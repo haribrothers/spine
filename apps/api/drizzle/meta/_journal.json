@@ -393,6 +393,13 @@
       "when": 1791130731781,
       "tag": "0055_idempotency_user_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791131161107,
+      "tag": "0056_exact_decimals",
+      "breakpoints": true
     }
   ]
 }

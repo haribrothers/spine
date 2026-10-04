@@ -1,5 +1,5 @@
 import { files } from "./files";
-import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -99,10 +99,10 @@ export const creditNoteLines = pgTable(
     catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     description: text("description"),
-    quantity: real("quantity").notNull().default(0),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
-    taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),

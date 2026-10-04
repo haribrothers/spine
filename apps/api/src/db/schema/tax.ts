@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, real, boolean, timestamp, index, unique } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, timestamp, index, unique, numeric } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 
 /**
@@ -27,7 +27,7 @@ export const taxRates = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     /** e.g. 15 for 15%. */
-    rate: real("rate").notNull(),
+    rate: numeric("rate", { precision: 18, scale: 4, mode: "number" }).notNull(),
     isCompound: boolean("is_compound").notNull().default(false),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -176,12 +176,12 @@ export const invoiceLines = pgTable(
     catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     description: text("description"),
-    quantity: real("quantity").notNull().default(0),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
-    discountPercentage: real("discount_percentage").notNull().default(0),
+    discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** Blended effective tax percentage — see quote_lines.taxRatePercentage's identical comment. */
-    taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

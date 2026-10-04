@@ -38,7 +38,7 @@ export class TaxResolverService {
         throw new BadRequestException("Tax rate not found");
       }
       return {
-        rates: [{ id: rate.id, name: rate.name, rate: rate.rate / 100, isCompound: rate.isCompound }],
+        rates: [{ id: rate.id, name: rate.name, percent: rate.rate, isCompound: rate.isCompound }],
         blendedPercentage: rate.rate,
       };
     }
@@ -53,9 +53,10 @@ export class TaxResolverService {
       if (rows.length !== ids.length) {
         throw new BadRequestException("Tax group not found");
       }
-      const blendedPercentage = rows.reduce((sum, r) => sum + r.rate, 0);
+      // Stored at 4 decimal places, like every rate (US-TAX-07).
+      const blendedPercentage = Number(rows.reduce((sum, r) => sum + r.rate, 0).toFixed(4));
       return {
-        rates: rows.map((r) => ({ id: r.id, name: r.name, rate: r.rate / 100, isCompound: r.isCompound })),
+        rates: rows.map((r) => ({ id: r.id, name: r.name, percent: r.rate, isCompound: r.isCompound })),
         blendedPercentage,
       };
     }

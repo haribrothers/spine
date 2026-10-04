@@ -2043,6 +2043,20 @@ and milestone amounts everywhere (§5).
    three steps ticked.
 3. Dismiss it as one Owner: another Owner no longer sees it either.
 
+## 24. Exact decimals (US-TAX-07, Phase 6)
+
+1. Settings → Tax: add "New York" at 8.875%. Reopen it: 8.875.
+2. On a quote, a line of quantity 0.3 at 33.33 shows 10.00 in the editor
+   and, after saving, on the quote and its PDF.
+3. A line of quantity 1.005 at 1.00 totals 1.01 (not 1.00).
+4. A 12.5% discount on 3 × 33.33 (99.99) is 12.50; 20% VAT on the rest
+   (87.49) is 17.50; the line total 104.99. Editor and saved figures match.
+5. Job milestones: 33.3333 / 33.3333 / 33.3334 % saves; 33.333 × 3 is
+   refused with "Milestone percentages must total 100%".
+
+Regression checks: existing quotes, invoices, credit notes, vendor bills and
+job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

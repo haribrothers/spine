@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-TAX-07: store rates, quantities and percentages exactly (Phase 6)
+
+- **Exact storage.** Migration `0056` turns the 14 floating-point (`real`) columns into `numeric(18,4)`: tax rates; quantity, discount % and tax % on every document line; the catalogue default tax %; job retention %; and milestone amounts. The cast keeps each value's decimal form (8.875, 7.3, 33.3333), and issued totals (bigint) are untouched. Drizzle reads the columns as numbers, so API and web types are unchanged.
+- **Exact maths.** New in `@spine/shared` (`money/decimal.ts`): exact fractions read from the decimal string, `multiplyMinor`, `percentOfMinor`, and `roundFraction`, which rounds half-up once. `computeLineTax` now works in exact fractions and takes rates as percentages (`TaxRate.percent`, formerly `rate`). That ends the float division by 100: `1.1 / 100` was `0.011000000000000001`. New `computeDocumentLine` does quantity × price, discount and tax, each rounded once.
+- **One place for line maths.** Quotes, invoices, credit notes and vendor bills used to repeat the line maths in floating point; now they all call `computeDocumentLine`. So do the four web line editors, which had used `Math.round` and could show a different cent from what the server stored. Milestone resolution and retention use `percentOfMinor`.
+- **Milestone percentages.** They must now total exactly 100%. Three thirds entered as 33.333 (99.999) used to pass by rounding; enter 33.3333, 33.3333 and 33.3334 instead. Recorded as D-118.
+
+Tests:
+- `packages/shared` `us-tax-07.test.ts` (6): 8.875% is exact; 0.3 × 33.33 = 10.00; 1.005 × 1.00 rounds to 101, where floats give 100.49999999999999; 1.1% is exact; discount then tax; tax-inclusive backs out exactly.
+- `apps/api` `us-tax-07.test.ts` (2): fails if any column is `real` or double precision; checks the 14 columns are `numeric(18,4)`.
+- `us-tax-07.integration.test.ts` (2): 8.875% through `POST /tax-rates` reads back as 8.875 and is stored as `8.8750`; converting real values to `numeric(18,4)` keeps them.
+
+Integration 37 files pass; E2E 44/44; the compound-tax and job tests are unchanged.
+
 ### 2026-10-04 — US-OPS-08: make every mutating request safe to repeat (Phase 6)
 
 - **All mutating routes covered.** The 14 routes that changed data without `IdempotencyInterceptor` now use it: fiscal periods create, close and reopen; the five `PUT /users/me…` routes; deleting a team; and on jobs, edit, unassign, set milestones and add a note. Push unsubscribe is covered too.

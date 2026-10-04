@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeLineTax, money, roundHalfUp } from "@spine/shared";
+import { computeDocumentLine } from "@spine/shared";
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -113,20 +113,18 @@ async function computeInvoiceTotals(
       const taxRatePercentage = line.taxRatePercentage ?? 0;
       const isTaxInclusive = line.isTaxInclusive ?? false;
 
-      const grossAmount = roundHalfUp(quantity * Number(unitPriceAmount));
-      const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (discountPercentage / 100));
-      const netAmount = grossAmount - lineDiscountAmount;
-
       const resolved = line.taxRateId || line.taxGroupId
         ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
         : {
-            rates: taxRatePercentage > 0
-              ? [{ id: "line", name: "Tax", rate: taxRatePercentage / 100, isCompound: false }]
-              : [],
+            rates: taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: taxRatePercentage,
           };
 
-      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, isTaxInclusive);
+      // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+      const computed = computeDocumentLine({ quantity, unitPriceAmount, discountPercentage, currency, rates: resolved.rates, inclusive: isTaxInclusive });
+      const { grossAmount, netAmount } = computed;
+      const lineDiscountAmount = computed.discountAmount;
+      const taxResult = computed.tax;
 
       subtotalAmount += grossAmount;
       discountAmount += lineDiscountAmount;

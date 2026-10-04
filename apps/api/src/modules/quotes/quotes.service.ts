@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
-import { computeLineTax, money, roundHalfUp } from "@spine/shared";
+import { computeDocumentLine } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -117,20 +117,25 @@ async function computeQuoteTotals(
         };
       }
 
-      const grossAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
-      const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (line.discountPercentage / 100));
-      const netAmount = grossAmount - lineDiscountAmount;
-
       const resolved = line.taxRateId || line.taxGroupId
         ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
         : {
-            rates: line.taxRatePercentage > 0
-              ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }]
-              : [],
+            rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: line.taxRatePercentage,
           };
 
-      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, line.isTaxInclusive);
+      // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+      const computed = computeDocumentLine({
+        quantity: line.quantity,
+        unitPriceAmount: line.unitPriceAmount,
+        discountPercentage: line.discountPercentage,
+        currency,
+        rates: resolved.rates,
+        inclusive: line.isTaxInclusive,
+      });
+      const { grossAmount, netAmount } = computed;
+      const lineDiscountAmount = computed.discountAmount;
+      const taxResult = computed.tax;
 
       subtotalAmount += grossAmount;
       discountAmount += lineDiscountAmount;
