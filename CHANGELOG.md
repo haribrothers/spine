@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-14: show "Save" on setup steps reused in Settings (Phase 6)
+
+- **Industry template.** Settings › Industry template's button reads "Save", not "Continue".
+- **Chart of accounts.** Settings › Chart of accounts reads "Save". Renames still save as they're made, so "Save" confirms with the "Saved" toast; before, the button did nothing. `ChartOfAccountsStep` gains `saveLabel`, like the other wizard steps.
+- **Guard.** A test opens every Settings section and fails if any pane shows a "Continue" button. The Settings dialog's section list and pane carry `data-testid`s for it.
+
+Tests:
+- `apps/e2e/tests/us-set-14.spec.ts` (1): walks every Settings section with no "Continue" anywhere; Industry template and Chart of accounts show "Save". Checked that it fails when the template pane's label is removed.
+
 ### 2026-10-05 — US-SET-13: open contact history the same way as everywhere else (Phase 6)
 
 - **Same as everywhere.** A contact no longer has a "History" tab. The History button (clock icon, "View history") beside Edit opens the same History dialog as invoices, quotes, jobs and the rest.

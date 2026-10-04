@@ -140,7 +140,7 @@ export function SettingsDialog({
                 className="h-8 pl-8 text-[13px]"
               />
             </div>
-            <div className="flex flex-col gap-0.5 overflow-y-auto">
+            <div className="flex flex-col gap-0.5 overflow-y-auto" data-testid="settings-sections">
               <span className="px-2 py-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">
                 Organisation
               </span>
@@ -165,7 +165,7 @@ export function SettingsDialog({
               )}
             </div>
           </div>
-          <div className="min-w-0 flex-1 overflow-y-auto p-6">
+          <div className="min-w-0 flex-1 overflow-y-auto p-6" data-testid="settings-pane">
             <div className="mx-auto w-full max-w-xl">{active.render()}</div>
           </div>
         </div>

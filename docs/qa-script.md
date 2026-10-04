@@ -2296,6 +2296,14 @@ Regression: submitting and approving expenses still works (§11); the expense fo
 
 Regression: the History dialog still loads only when opened.
 
+## 48. "Save" in Settings (US-SET-14, Phase 6)
+
+1. Open Settings and visit every section: no button reads "Continue".
+2. Industry template: pick a template and press "Save" — "Saved".
+3. Chart of accounts: rename an account (it saves straight away), then press "Save" — "Saved".
+
+Regression: onboarding still shows "Continue" on each step.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
