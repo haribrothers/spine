@@ -9,7 +9,7 @@ The design system is already built and is reused, not redesigned ([D-037](12-dec
 | [README.md](../design/README.md) | Brand book: voice, surfaces, colour + contrast, type, spacing, radius, shadow, blur, layout, platforms, logo, icons, motion, documents and email, accessibility, rules from findings, component index |
 | [tokens.json](../design/tokens.json) | Generated tokens (colour light/dark/inverse/gradients/Android roles, type, radius, spacing, breakpoints, motion, z-index, icons, focus ring, component recipes, the CSS variables) |
 | [motion.md](../design/motion.md) | Durations, easing, per-pattern motion, reduced motion |
-| [components/](../design/components/) | One page per component: 78 web (`@spine/ui`), 31 native (`@spine/ui-native`) |
+| [components/](../design/components/) | One page per component: 79 web (`@spine/ui`), 31 native (`@spine/ui-native`) |
 | [index.d.ts](../design/index.d.ts) | Points to the packages' real type entry points |
 | [logo/](../design/logo/) | Horizontal (light and dark) and square marks |
 | [native-notes.md](../design/native-notes.md) | Native implementation rules (moved from CLAUDE.md) |

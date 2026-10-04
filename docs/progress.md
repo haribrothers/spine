@@ -281,7 +281,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-OPS-28 · Prove stored files are intact
 - [x] US-OPS-29 · Accept only safe uploads
 - [x] US-OPS-30 · Move existing files off MinIO
-- [ ] US-OPS-31 · Warn before the disk fills up
+- [x] US-OPS-31 · Warn before the disk fills up
 
 ## Phase 7 · Product upgrades
 

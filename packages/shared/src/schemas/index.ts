@@ -14,3 +14,4 @@ export * from "./tax.ts";
 export * from "./purchases.ts";
 export * from "./reports.ts";
 export * from "./dashboard-widgets.ts";
+export * from "./storage.ts";

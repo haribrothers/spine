@@ -146,13 +146,16 @@ export interface AppShellContentProps extends React.HTMLAttributes<HTMLDivElemen
    * it doesn't guarantee everything fits without scrolling.
    */
   fullWidth?: boolean;
+  /** App-wide notices (`Banner`) shown full-width above the page, outside the width cap. */
+  banner?: React.ReactNode;
 }
 
 /** The scrollable main content region, capped to the design system's 1200px max-width container by default — see `fullWidth` to opt out. */
-export function AppShellContent({ className, fullWidth = false, ...props }: AppShellContentProps) {
+export function AppShellContent({ className, fullWidth = false, banner, children, ...props }: AppShellContentProps) {
   return (
     <main className={cn("min-h-0 flex-1 overflow-y-auto", className)} {...props}>
-      <div className={cn("mx-auto w-full p-6 lg:p-8", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{props.children}</div>
+      {banner}
+      <div className={cn("mx-auto w-full p-6 lg:p-8", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{children}</div>
     </main>
   );
 }

@@ -182,6 +182,7 @@ export default () => (
             { prop: "AppShellHeader.description", type: "string" },
             { prop: "AppShellHeader.action", type: "ReactNode" },
             { prop: "AppShellContent.fullWidth", type: "boolean", defaultValue: "false", description: "Opts out of the default 1200px max-width cap." },
+            { prop: "AppShellContent.banner", type: "ReactNode", defaultValue: "—", description: "App-wide Banners shown full-width above the page, outside the width cap." },
           ]}
         />
       </DocSection>

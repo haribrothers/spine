@@ -26,7 +26,7 @@ spine/
 │  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 8)
 ├─ packages/
 │  ├─ shared/                 money + tax engine, Zod schemas, capability list, shared types
-│  ├─ ui/                     @spine/ui (78 web components)
+│  ├─ ui/                     @spine/ui (79 web components)
 │  ├─ ui-native/              @spine/ui-native (native components, tokens, tailwind preset, navigation, jest base)
 │  ├─ sdk/                    API client generated from OpenAPI
 │  └─ config/                 eslint, tsconfig, tailwind preset (CSS tokens)

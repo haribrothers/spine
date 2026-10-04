@@ -9,6 +9,7 @@ import { AppShell, AppShellContent, AppShellSidebar, type AppShellNavSection } f
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { NotificationBell } from "./notification-bell";
+import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider } from "../lib/capabilities-context";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
@@ -109,7 +110,9 @@ export function AppLayout({ sections, userName, userEmail, isOwner, children }: 
             )
           }
         />
-        <AppShellContent fullWidth={fullWidth}>{children}</AppShellContent>
+        <AppShellContent fullWidth={fullWidth} banner={isOwner ? <StorageBanner /> : null}>
+          {children}
+        </AppShellContent>
       </AppShell>
     </CapabilitiesProvider>
   );

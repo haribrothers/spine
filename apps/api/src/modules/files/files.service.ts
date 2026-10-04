@@ -1,5 +1,7 @@
 import {
   ConflictException,
+  HttpException,
+  HttpStatus,
   Inject,
   Injectable,
   Logger,
@@ -9,13 +11,15 @@ import {
 } from "@nestjs/common";
 import { and, asc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
+import { statfs } from "node:fs/promises";
+import { STORAGE_FULL_MESSAGE, type StorageStatus } from "@spine/shared";
 import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { contactPersons, contacts, expenses, files, invoices, jobPhotos, jobs, quotes, settings } from "../../db/schema";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
-import { createStorageDrivers, type StorageDrivers } from "./storage/storage-config";
+import { createStorageDrivers, resolveFilesDir, type StorageDrivers } from "./storage/storage-config";
 import { type ByteRange, type StorageDriver, StoredObjectMissingError, fileKey } from "./storage/storage-driver";
 
 export interface UploadFileInput {
@@ -56,6 +60,9 @@ export type FileDownload =
   | { kind: "stream"; file: FileRow; stream: Readable }
   | { kind: "redirect"; file: FileRow; url: string };
 
+/** US-OPS-31 — how often the files volume is measured. */
+const USAGE_CACHE_MS = 15 * 60 * 1000;
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
@@ -77,6 +84,33 @@ export class FilesService {
     return this.drivers.primary !== null;
   }
 
+  private usage: StorageStatus | null = null;
+  private usageCheckedAt = 0;
+
+  /**
+   * US-OPS-31 — how full the files volume is, for `/health/ready` and the
+   * Owners' banner. Measured with `statfs` at most every 15 minutes (or
+   * straight after a full-disk upload). `usedPercent` is null for the `s3`
+   * driver, or when the volume can't be measured.
+   */
+  async storageStatus(now = Date.now()): Promise<StorageStatus> {
+    const driver = this.drivers.primary ?? this.drivers.readers.local!;
+    if (driver.name === "s3") return { driver: "s3", usedPercent: null };
+    if (this.usage && now - this.usageCheckedAt < USAGE_CACHE_MS) return this.usage;
+    let usedPercent: number | null = null;
+    try {
+      const stats = await statfs(resolveFilesDir());
+      const used = stats.blocks - stats.bfree;
+      const usable = used + stats.bavail;
+      usedPercent = usable > 0 ? Math.round((used / usable) * 1000) / 10 : null;
+    } catch (err) {
+      this.logger.warn(`Could not measure the files volume: ${(err as Error).message}`);
+    }
+    this.usage = { driver: "local", usedPercent };
+    this.usageCheckedAt = now;
+    return this.usage;
+  }
+
   async upload(orgId: string, input: UploadFileInput): Promise<FileRow> {
     const driver = this.drivers.primary;
     if (!driver) {
@@ -96,6 +130,12 @@ export class FilesService {
     try {
       await driver.save(key, bytes, mimeType);
     } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === "ENOSPC" || code === "EDQUOT") {
+        this.logger.error(`Could not save file ${id}: the files volume is full`);
+        this.usageCheckedAt = 0; // re-measure so the Owners' banner shows straight away
+        throw new HttpException(STORAGE_FULL_MESSAGE, HttpStatus.INSUFFICIENT_STORAGE);
+      }
       this.logger.error(`Could not save file ${id} with the ${driver.name} driver: ${(err as Error).message}`);
       throw new ServiceUnavailableException("The file couldn't be saved. Try again; if it keeps failing, ask the owner to check the server's storage.");
     }

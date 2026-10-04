@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-31: warn before the disk fills up (Phase 6)
+
+- **Usage check.** `FilesService.storageStatus()` measures the files volume with `statfs`, at most every 15 minutes and again straight after a full-disk upload.
+- **`GET /health/ready`** (public, new) returns `storage: { driver, usedPercent }`. `usedPercent` is null for the `s3` driver. The database and queue checks, and the 503 naming what's down, are still US-OPS-05 in Phase 8; this story adds only the storage field.
+- **Owner banner.** Above 85%, Owners see "Storage is <n>% full. Free up space or add disk before uploads stop working." on every page. Staff and Field never see it.
+- **Full disk.** An upload that hits a full disk (`ENOSPC`/`EDQUOT`) fails with 507 "There's no space left to store this file. Ask an owner to free up space." The partial temp file is removed and nothing else is affected.
+- **New `Banner` component in `@spine/ui`** (79 components). It's a full-width notice above the page header in the drawn `UpgradeNotice` style, with info, warning and critical variants, an optional title, actions and dismiss button. It renders through the new `AppShellContent` `banner` slot and comes with a design-system page, an a11y test and `docs/design/components/Banner.md`; US-OPS-06's update notice can reuse it.
+- **Shared helpers.** `STORAGE_WARNING_PERCENT`, `storageWarningMessage()` and `STORAGE_FULL_MESSAGE` are in `@spine/shared`.
+
+Tests:
+- `packages/shared` `us-ops-31.test.ts`: wording and threshold.
+- `apps/api` `us-ops-31.test.ts`: a 507 when the disk fills part-way through a write, with no partial file left; real `statfs` reading; 15-minute cache; S3 reports null.
+- `us-ops-31.http.integration.test.ts`: `/health/ready` without signing in.
+- `apps/e2e` `us-ops-31.spec.ts`: Owner sees the banner on two pages at 91%, none at 85%, and never for Field. `/health/ready` is intercepted because the disk can't be filled in a test.
+
+Integration 29 files pass; UI 181 tests pass; E2E 33/33.
+
 ### 2026-10-04 — Docker images no longer contain `.env` or local files
 
 The repo had no `.dockerignore`, so `docker build` copied the host's `.env` (with `AUTH_SECRET` and the VAPID private key), `.env.*` files, uploaded files in `.data/`, `.git` and host `node_modules` into the images. A new `.dockerignore` keeps all of these out; only `.env.example` is kept. Both images rebuild, and the API image passed the storage smoke test again (non-root, upload, serve with `nosniff`, survives a restart).

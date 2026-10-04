@@ -1908,9 +1908,21 @@ Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
     it as "missing from s3", exits with an error, and that file's record
     still points at S3.
 
+15. Disk space (US-OPS-31): `curl localhost:4000/health/ready` shows
+    `"storage":{"driver":"local","usedPercent":<n>}`. To see the banner,
+    run the API with `FILES_DIR` on a small, nearly full volume (e.g. a
+    50 MB disk image filled to 90%): Owners see "Storage is <n>% full. Free
+    up space or add disk before uploads stop working." on every page
+    within 15 minutes of a restart; Staff and Field don't.
+16. Fill that volume completely and upload a photo: the uploader shows
+    "There's no space left to store this file. Ask an owner to free up
+    space." and the rest of the app keeps working.
+
 Regression checks:
 - Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
 - **Load demo data** still seeds the logo and job photos (§1.7).
+- Every page still lays out normally for Owners, Staff and Field (the new
+  banner slot is empty when there's nothing to show).
 - Contact logos, profile avatars and expense receipt links still open, and
   uploading each still works (logo crop, avatar, receipt, job and milestone
   photos).

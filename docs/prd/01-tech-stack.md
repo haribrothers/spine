@@ -35,7 +35,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 |---|---|---|
 | Framework | Next.js 15 (App Router), React 19 | Server components; modest hardware |
 | Styling | Tailwind CSS 4 with CSS-variable tokens (`packages/config/tailwind-preset.css`) | Re-skin by overriding tokens |
-| Components | `@spine/ui` (Radix primitives + `cva` + `tailwind-merge`), 78 components | Own the library ([D-008](12-decisions.md)) |
+| Components | `@spine/ui` (Radix primitives + `cva` + `tailwind-merge`), 79 components | Own the library ([D-008](12-decisions.md)) |
 | Theme | `next-themes` (`data-theme`, light/dark/system) | |
 | Charts | Recharts 3 via `@spine/ui` chart components | |
 | Command palette | cmdk | |
