@@ -142,6 +142,26 @@ export class ReportsController {
     sendCsv(res, `profit-and-loss-${from}-to-${to}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
+  /** US-RPT-13 — Owner-only, like the other financial statements. */
+  @Get("trial-balance")
+  @OrgRoles(["owner"])
+  async trialBalance(@Session() session: UserSession, @Query("asOf") asOf: string, @Query("includeZero") includeZero?: string) {
+    return this.reportsService.trialBalance(requireOrgId(session), asOf, includeZero === "true");
+  }
+
+  @Get("trial-balance/export.csv")
+  @OrgRoles(["owner"])
+  async exportTrialBalance(
+    @Session() session: UserSession,
+    @Query("asOf") asOf: string,
+    @Query("includeZero") includeZero: string | undefined,
+    @Res() res: Response,
+  ) {
+    const report = await this.reportsService.trialBalance(requireOrgId(session), asOf, includeZero === "true");
+    const rows = [...report.lines.map((l) => [l.code, l.name, l.debit, l.credit]), ["", "Total", report.totalDebit, report.totalCredit]];
+    sendCsv(res, `trial-balance-${asOf}.csv`, toCsv(["Code", "Account", "Debit", "Credit"], rows));
+  }
+
   @Get("balance-sheet/export.csv")
   @OrgRoles(["owner"])
   async exportBalanceSheet(@Session() session: UserSession, @Query("asOf") asOf: string, @Res() res: Response) {

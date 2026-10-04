@@ -2103,6 +2103,17 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
    Undo it and run the check again: the warning goes.
 3. As Staff, `GET /reports/ledger-integrity` → 403.
 
+## 29. Trial Balance (US-RPT-13, Phase 6)
+
+1. As Owner, Reports › "Trial Balance": choose "As of", "Refresh". Each
+   account with a balance shows on its Debit or Credit side; the "Total"
+   row's debit and credit match; the status reads "Balanced — total
+   debits equal total credits."
+2. Untick "Hide accounts with no balance": zero-balance accounts appear.
+3. Click an account: its journal entries open.
+4. "Export CSV" downloads Code, Account, Debit, Credit and a Total row.
+5. As Staff, the tab shows "Trial Balance is only available to owners."
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

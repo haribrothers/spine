@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
@@ -423,6 +423,42 @@ export class ReportsService {
    * balances (assets == liabilities + equity) without inventing a posting
    * this codebase doesn't otherwise make.
    */
+  /**
+   * US-RPT-13 (D-065) — every account's balance as of a date, read from
+   * journal lines: a net debit shows in Debit, a net credit in Credit.
+   * Zero-balance accounts are left out unless `includeZero`. The totals
+   * match whenever the ledger balances, which the database guarantees.
+   */
+  async trialBalance(orgId: string, asOf: string, includeZero = false): Promise<TrialBalanceReport> {
+    const balances = await this.db
+      .select({
+        accountId: accounts.id,
+        code: accounts.code,
+        name: accounts.name,
+        balance: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}) filter (where ${journalEntries.date} <= ${asOf}), 0)`,
+      })
+      .from(accounts)
+      .leftJoin(journalLines, eq(journalLines.accountId, accounts.id))
+      .leftJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .where(eq(accounts.orgId, orgId))
+      .groupBy(accounts.id, accounts.code, accounts.name)
+      .orderBy(accounts.code);
+
+    let totalDebit = 0n;
+    let totalCredit = 0n;
+    const lines: TrialBalanceLine[] = [];
+    for (const row of balances) {
+      const balance = BigInt(row.balance);
+      if (balance === 0n && !includeZero) continue;
+      const debit = balance > 0n ? balance : 0n;
+      const credit = balance < 0n ? -balance : 0n;
+      totalDebit += debit;
+      totalCredit += credit;
+      lines.push({ accountId: row.accountId, code: row.code, name: row.name, debit: debit.toString(), credit: credit.toString() });
+    }
+    return { asOf, lines, totalDebit: totalDebit.toString(), totalCredit: totalCredit.toString(), balanced: totalDebit === totalCredit };
+  }
+
   async balanceSheet(orgId: string, asOf: string): Promise<BalanceSheetReport> {
     const rows = await this.db
       .select({ accountId: journalLines.accountId, debit: journalLines.debit, credit: journalLines.credit, account: accounts })
@@ -785,6 +821,23 @@ export interface ProfitAndLossReport {
   totalIncome: string;
   totalExpenses: string;
   netProfit: string;
+}
+
+/** US-RPT-13 — one account's balance as of a date, on its debit or credit side. */
+export interface TrialBalanceLine {
+  accountId: string;
+  code: string;
+  name: string;
+  debit: string;
+  credit: string;
+}
+
+export interface TrialBalanceReport {
+  asOf: string;
+  lines: TrialBalanceLine[];
+  totalDebit: string;
+  totalCredit: string;
+  balanced: boolean;
 }
 
 export interface BalanceSheetReport {

@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-RPT-13: see a Trial Balance (Phase 6)
+
+- **The report.** Reports › "Trial Balance" (Owner-only, D-065) lists every account's balance as of a date, read from journal lines, with Code, Account, Debit and Credit. A net debit shows in Debit and a net credit in Credit. A "Total" row closes the table, and the status line reads "Balanced — total debits equal total credits." (or the difference if they don't match).
+- **Zero balances.** "Hide accounts with no balance" is ticked by default; untick it to list zero-balance accounts too.
+- **Drill-down and export.** Clicking an account opens the existing drill-down of its journal entries. "Export CSV" downloads the report.
+- **API.** `GET /reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv`, both Owner-only.
+- **Tabs.** The Reports tabs are now P&L, Balance Sheet, Trial Balance and Job Profitability. Non-owners see the Owner-only message on the Trial Balance tab.
+
+Tests:
+- `us-rpt-13.http.integration.test.ts` (4), on a demo-seeded org: each account on one side, totals that sum and match, sorted by code; zero-balance accounts listed on request; CSV header and total; Staff get 403.
+- `apps/e2e/tests/us-rpt-13.spec.ts`: the status line, headers and Total row; unticking shows more rows; the Export CSV link; clicking Accounts Receivable opens its drill-down.
+
+E2E 47/47.
+
 ### 2026-10-04 — US-RPT-12: warn me if the books ever stop balancing (Phase 6)
 
 - **Daily check.** A daily `ledger-integrity-check` job (pg-boss, 02:00) sums every organisation's journal lines (debits − credits) and stores the result in the new `ledger_integrity_checks` table (migration `0058`, one row per organisation). The table is kept out of `settings` because every member can read settings.

@@ -7,6 +7,7 @@ import {
   Alert,
   AlertDescription,
   Button,
+  Checkbox,
   DatePicker,
   Dialog,
   DialogBody,
@@ -30,6 +31,7 @@ import {
   type JobProfitabilityReport,
   type ProfitAndLossReport,
   type ReportAccountLine,
+  type TrialBalanceReport,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -74,6 +76,7 @@ export function ReportsExplorer() {
       <TabsList>
         <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
         <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
+        <TabsTrigger value="tb">Trial Balance</TabsTrigger>
         <TabsTrigger value="jobs">Job Profitability</TabsTrigger>
       </TabsList>
       <TabsContent value="pl">
@@ -81,6 +84,9 @@ export function ReportsExplorer() {
       </TabsContent>
       <TabsContent value="bs">
         {isOwner ? <BalanceSheetTab /> : <NoAccess pageName="Balance Sheet" ownerOnly />}
+      </TabsContent>
+      <TabsContent value="tb">
+        {isOwner ? <TrialBalanceTab /> : <NoAccess pageName="Trial Balance" ownerOnly />}
       </TabsContent>
       <TabsContent value="jobs">
         <JobProfitabilityTab />
@@ -507,5 +513,152 @@ function DrilldownDialog({
         </DialogBody>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * US-RPT-13 — every account's balance as of a date, on its debit or credit
+ * side, with matching totals. Click an account for its journal entries.
+ */
+function TrialBalanceTab() {
+  const [asOf, setAsOf] = useState<Date>(endOfToday());
+  const [hideZero, setHideZero] = useState(true);
+  const [currency, setCurrency] = useState("USD");
+  const [report, setReport] = useState<TrialBalanceReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [drilldown, setDrilldown] = useState<{ accountId: string; code: string; name: string } | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => {
+        if (res.value?.code) setCurrency(res.value.code);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function load(includeZero = !hideZero) {
+    setLoading(true);
+    setError(null);
+    try {
+      setReport(await apiClient.get<TrialBalanceReport>(`/reports/trial-balance?asOf=${toDateParam(asOf)}&includeZero=${includeZero}`));
+    } catch (err) {
+      setError(ownerOnlyMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // Loads once on open; "Refresh" and the checkbox reload after that.
+  }, []);
+
+  const money = (value: string) => (BigInt(value) === 0n ? "—" : toDecimalString({ amount: BigInt(value), currency }));
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1.5">
+            <Label>As of</Label>
+            <DatePicker value={asOf} onChange={setAsOf} />
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
+            {loading ? <Spinner size="sm" /> : "Refresh"}
+          </Button>
+          {!error && (
+            <a
+              href={`${API_URL}/reports/trial-balance/export.csv?asOf=${toDateParam(asOf)}&includeZero=${!hideZero}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[13px] font-medium text-primary hover:underline"
+            >
+              Export CSV
+            </a>
+          )}
+        </div>
+        <label className="flex items-center gap-2 text-[13px] text-on-surface">
+          <Checkbox
+            checked={hideZero}
+            onCheckedChange={(checked) => {
+              setHideZero(checked === true);
+              void load(checked !== true);
+            }}
+          />
+          Hide accounts with no balance
+        </label>
+      </div>
+
+      {error && (
+        <Alert variant="critical">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {report && !error && (
+        <>
+          {report.balanced ? (
+            <Alert variant="success" data-testid="trial-balance-status">
+              <AlertDescription>Balanced — total debits equal total credits.</AlertDescription>
+            </Alert>
+          ) : (
+            <Alert variant="critical" data-testid="trial-balance-status">
+              <AlertDescription>
+                Out of balance by {toDecimalString({ amount: BigInt(report.totalDebit) - BigInt(report.totalCredit), currency })} {currency}.
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="overflow-x-auto rounded-md border border-border-strong">
+            <table className="w-full text-[13px]" data-testid="trial-balance-table">
+              <thead>
+                <tr className="border-b border-border text-left text-on-surface-muted">
+                  <th className="px-4 py-2 font-medium">Code</th>
+                  <th className="px-4 py-2 font-medium">Account</th>
+                  <th className="px-4 py-2 text-right font-medium">Debit</th>
+                  <th className="px-4 py-2 text-right font-medium">Credit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.lines.map((line) => (
+                  <tr key={line.accountId} className="border-b border-border last:border-0">
+                    <td className="px-4 py-2 font-mono text-on-surface-muted">{line.code}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        type="button"
+                        className="text-left text-primary hover:underline"
+                        onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}
+                      >
+                        {line.name}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(line.debit)}</td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(line.credit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border-strong font-semibold">
+                  <td className="px-4 py-2" />
+                  <td className="px-4 py-2">Total</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">
+                    {toDecimalString({ amount: BigInt(report.totalDebit), currency })} {currency}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">
+                    {toDecimalString({ amount: BigInt(report.totalCredit), currency })} {currency}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="text-[12px] text-on-surface-muted">Click an account to see every journal entry behind its balance.</p>
+        </>
+      )}
+
+      {drilldown && (
+        <DrilldownDialog accountId={drilldown.accountId} accountLabel={`${drilldown.code} — ${drilldown.name}`} from="2000-01-01" to={toDateParam(asOf)} currency={currency} onClose={() => setDrilldown(null)} />
+      )}
+    </div>
   );
 }

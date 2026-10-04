@@ -423,7 +423,7 @@ Routes the stories add. Each is created by the story named.
 | AUTH | GET | `/public/signup-status` → `{ open: boolean, businessName? }` | Public | US-AUTH-08 |
 | CRM | GET/PUT | `/org/lead-stages` (list, replace ordered set; deleting a stage with leads needs `moves`) | GET any member; PUT Owner | US-CRM-19, US-CRM-20 |
 | QUO | — | `POST /quotes/:id/accept-in-person` gains `signerName` (required) and stores `signatureFileId` | `quotes.accept_in_person` | US-QUO-19 |
-| RPT | GET | `/reports/trial-balance?asOf=` and `/reports/trial-balance/export.csv` | roles: owner | US-RPT-13 |
+| RPT | GET | `/reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv` (lines: accountId, code, name, debit, credit; totalDebit, totalCredit, balanced) | roles: owner | US-RPT-13 |
 | RPT | — | Existing `GET /org/tax/summary` (roles: owner) is now shown on Reports instead of Settings; no route change | roles: owner | US-RPT-14 |
 | SET | GET/PUT | `/org/settings/branding` (generic settings route, new key) | GET any member; PUT Owner | US-SET-09, US-SET-10 |
 | SET | GET | `/org/audit-log?from=&to=&userId=&entityType=&action=&cursor=` and `/org/audit-log.csv` | roles: owner | US-SET-11, US-SET-12 |

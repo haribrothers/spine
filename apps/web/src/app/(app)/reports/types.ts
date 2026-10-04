@@ -85,3 +85,12 @@ export const SOURCE_TYPE_ROUTES: Record<string, (sourceId: string) => string> = 
   // triggered only, per CHANGELOG's own known-gap note), so this falls
   // back to the entry's narration text rather than linking to a 404.
 };
+
+/** US-RPT-13 — `GET /reports/trial-balance`. */
+export interface TrialBalanceReport {
+  asOf: string;
+  lines: { accountId: string; code: string; name: string; debit: string; credit: string }[];
+  totalDebit: string;
+  totalCredit: string;
+  balanced: boolean;
+}
