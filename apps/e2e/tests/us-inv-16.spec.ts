@@ -28,7 +28,7 @@ test.describe("US-INV-16", () => {
     const instructions = "Bank transfer to Riverstone Builders LLC\nPlease use the invoice number as the reference.";
     await field.fill(instructions);
     await dialog.getByRole("button", { name: "Save" }).click();
-    await expect(page.getByText("Your changes have been saved.")).toBeVisible();
+    await expect(page.getByText("Your changes have been saved.").first()).toBeVisible();
 
     await page.keyboard.press("Escape");
     await page.reload();
