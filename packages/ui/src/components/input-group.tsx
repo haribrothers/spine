@@ -5,7 +5,7 @@ export function InputGroup({ className, ...props }: React.HTMLAttributes<HTMLDiv
   return (
     <div
       className={cn(
-        "flex h-10 items-center gap-2 rounded-sm border border-border-strong bg-surface px-2.5 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background",
+        "flex h-10 items-center gap-2 rounded-sm border border-border-strong bg-surface px-2.5 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-surface",
         className,
       )}
       {...props}

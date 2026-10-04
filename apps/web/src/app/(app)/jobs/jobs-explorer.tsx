@@ -97,7 +97,7 @@ export function JobsExplorer() {
       {!filteredJobs ? (
         <JobsSkeleton />
       ) : filteredJobs.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {statusFilter.length || contactFilter !== ALL_CONTACTS ? (
             <EmptyState
               icon={<HardHat />}

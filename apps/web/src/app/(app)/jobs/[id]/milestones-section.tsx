@@ -204,7 +204,7 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
           {rows.map((row) => {
             const locked = row.status === "invoiced";
             return (
-              <div key={row.key} className="flex flex-wrap items-end gap-2 rounded-md border border-border p-3">
+              <div key={row.key} className="flex flex-wrap items-end gap-2 rounded-md border border-border bg-surface p-3">
                 <FormField label="Name" required className="min-w-[10rem] flex-1">
                   {(field) => (
                     <Input

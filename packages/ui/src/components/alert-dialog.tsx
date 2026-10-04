@@ -76,7 +76,7 @@ export const AlertDialogCancel = forwardRef<
   <AlertDialogPrimitive.Cancel
     ref={ref}
     className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md border border-border-strong bg-transparent px-4 text-[13px] font-semibold text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "inline-flex h-10 items-center justify-center rounded-md border border-border-strong bg-transparent px-4 text-[13px] font-semibold text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
       className,
     )}
     {...props}
@@ -98,7 +98,7 @@ export const AlertDialogAction = forwardRef<React.ElementRef<typeof AlertDialogP
       ref={ref}
       data-variant={variant}
       className={cn(
-        "inline-flex h-10 items-center justify-center rounded-md px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+        "inline-flex h-10 items-center justify-center rounded-md px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50",
         variant === "danger" ? "bg-overdue text-on-danger hover:opacity-90" : "bg-primary text-on-primary hover:bg-primary-hover",
         className,
       )}

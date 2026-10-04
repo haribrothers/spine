@@ -94,7 +94,7 @@ export function TaxPane() {
         </p>
       </div>
 
-      <div className="flex items-center justify-between rounded-md border border-border-strong p-3">
+      <div className="flex items-center justify-between rounded-md border border-border-strong bg-surface p-3">
         <div>
           <p className="text-[14px] font-medium text-on-surface">Prices include tax by default</p>
           <p className="text-[13px] text-on-surface-muted">
@@ -142,7 +142,7 @@ function TaxRatesSection({
 
       {rates.length === 0 && <p className="text-[13px] text-on-surface-muted">No tax rates yet.</p>}
 
-      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong">
+      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong bg-surface">
         {rates.map((rate) => (
           <TaxRateRow
             key={rate.id}
@@ -326,7 +326,7 @@ function TaxGroupsSection({
       )}
       {rates.length > 0 && groups.length === 0 && <p className="text-[13px] text-on-surface-muted">No tax groups yet.</p>}
 
-      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong">
+      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong bg-surface">
         {groups.map((group) => (
           <TaxGroupRow
             key={group.id}

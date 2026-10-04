@@ -17,7 +17,7 @@ Calm, understated, quietly competent. Spine is money software for people who did
 
 ## Surfaces and layers
 
-- `background` is the page canvas; `surface` is cards and panels. Split in both themes so raised content reads as a step up: light `#F7F6F3` vs `#FFFFFF`, dark `#121110` vs `#191815` ([D-131](../prd/12-decisions.md)). Until US-OPS-32 ships, the built app and `tokens.json` still use `#FFFFFF` for the light background; drawn screens from Phase 7 already show `#F7F6F3`.
+- `background` is the page canvas; `surface` is cards and panels. Split in both themes so raised content reads as a step up: light `#F7F6F3` vs `#FFFFFF`, dark `#121110` vs `#191815` ([D-131](../prd/12-decisions.md)).
 - The sidebar, dialogs, drawers, menus and inputs are `surface` in both themes; only the page behind the content is `background`.
 - Depth comes from borders and one tonal step, not shadows. A card is a 1px-bordered surface.
 - Shadows are reserved for temporary, layered UI: dialogs, drawers, popovers, toasts.

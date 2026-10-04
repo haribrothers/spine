@@ -223,7 +223,7 @@ export function VendorBillLineEditor({
           }
 
           return (
-            <div key={line.key} className="rounded-lg border border-border p-3">
+            <div key={line.key} className="rounded-lg border border-border bg-surface p-3">
               <div className="flex items-start gap-2">
                 <div className="flex flex-col gap-1 pt-1">
                   <button

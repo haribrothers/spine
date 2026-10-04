@@ -258,7 +258,7 @@ export function NewVendorPaymentDialog({
                   <Spinner size="sm" />
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
                   {allocations.length === 0 && (
                     <p className="text-[13px] text-on-surface-muted">
                       No bill allocated yet — allocate the full payment amount before saving.

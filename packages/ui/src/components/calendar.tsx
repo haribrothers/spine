@@ -621,7 +621,7 @@ function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNex
         value={view}
         onValueChange={(value) => value && onViewChange(value as CalendarView)}
         aria-label="Calendar view"
-        className="rounded-md border border-border p-0.5"
+        className="rounded-md border border-border bg-surface p-0.5"
       >
         <ToggleGroupItem value="day" aria-label="Day view" className="h-8 px-3 text-[12.5px]">
           Day
@@ -1738,7 +1738,7 @@ function CalendarEventEditor({
         </Field>
       )}
 
-      <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+      <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
         <Label htmlFor="calendar-event-allday" className="font-medium">
           All day
         </Label>
@@ -1820,7 +1820,7 @@ function CalendarEventEditor({
 
       {!isOccurrenceScoped && (
         <>
-          <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+          <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
             <Label htmlFor="calendar-event-recurs" className="flex items-center gap-1.5 font-medium">
               <Repeat size={12} />
               Repeats

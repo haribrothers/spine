@@ -48,7 +48,7 @@ export function NumberingStep({ initialValue, onSave, onSkip, saveLabel = "Conti
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="overflow-x-auto rounded-md border border-border-strong">
+      <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
         <table className="w-full min-w-[480px] text-[13px]">
           <thead>
             <tr className="border-b border-border-strong bg-surface-muted text-left text-on-surface-muted">

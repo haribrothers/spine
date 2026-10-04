@@ -18,7 +18,7 @@ export const OTPFieldInput = forwardRef<
   <OTPFieldPrimitive.Input
     ref={ref}
     className={cn(
-      "h-12 w-10 rounded-sm border border-border-strong bg-surface text-center font-mono text-[18px] text-on-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "h-12 w-10 rounded-sm border border-border-strong bg-surface text-center font-mono text-[18px] text-on-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
       className,
     )}
     {...props}

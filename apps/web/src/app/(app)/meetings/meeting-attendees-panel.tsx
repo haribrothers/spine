@@ -117,7 +117,7 @@ export function MeetingAttendeesPanel({
           )}
 
           {!isOrganizer && myAttendeeRow && (
-            <div className="flex flex-col gap-2 rounded-md border border-border-strong p-3">
+            <div className="flex flex-col gap-2 rounded-md border border-border-strong bg-surface p-3">
               <p className="text-[13px] font-medium text-on-surface">Your response</p>
               <div className="flex gap-2">
                 {(["accepted", "tentative", "declined"] as const).map((status) => (

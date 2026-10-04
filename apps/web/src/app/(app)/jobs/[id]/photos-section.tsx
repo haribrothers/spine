@@ -95,7 +95,7 @@ export function PhotosSection({ job }: { job: Job }) {
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
           {photos.map((photo) => (
-            <div key={photo.id} className="group flex flex-col gap-1 overflow-hidden rounded-md border border-border">
+            <div key={photo.id} className="group flex flex-col gap-1 overflow-hidden rounded-md border border-border bg-surface">
               <a href={fileUrl(photo.fileId)} target="_blank" rel="noreferrer" className="aspect-square overflow-hidden bg-surface-sunken">
                 {/* Remote file served by our own API, not a Next-optimizable local asset. */}
                 <img

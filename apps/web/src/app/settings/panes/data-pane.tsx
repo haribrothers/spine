@@ -83,7 +83,7 @@ export function DataPane() {
       </div>
 
       {status.hasDemoData ? (
-        <div className="flex items-center justify-between rounded-md border border-border p-4">
+        <div className="flex items-center justify-between rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-medium text-on-surface">Demo data is loaded</span>
             <span className="text-[13px] text-on-surface-muted">Removing it only deletes demo records — your real data is never touched.</span>
@@ -93,7 +93,7 @@ export function DataPane() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-md border border-border p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <span className="text-[13px] text-on-surface-muted">No demo data is currently loaded.</span>
         </div>
       )}

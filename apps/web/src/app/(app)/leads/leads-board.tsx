@@ -270,7 +270,7 @@ export function LeadsBoard() {
       </div>
 
       {filteredLeads && filteredLeads.length === 0 && leads.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
             title="No leads yet"
@@ -279,7 +279,7 @@ export function LeadsBoard() {
           />
         </div>
       ) : filteredLeads && filteredLeads.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
             title="No leads match these filters"

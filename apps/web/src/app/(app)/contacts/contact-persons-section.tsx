@@ -147,7 +147,7 @@ export function ContactPersonsSection({
       {people.length > 0 && (
         <ul className="flex flex-col gap-2">
           {people.map((person) => (
-            <li key={person.id} className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
+            <li key={person.id} className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
               <div className="flex items-center gap-2">
                 <Avatar size="sm" className="h-7 w-7 shrink-0">
                   {person.logoFileId && <AvatarImage src={`${API_URL}/files/${person.logoFileId}`} alt={person.name} />}

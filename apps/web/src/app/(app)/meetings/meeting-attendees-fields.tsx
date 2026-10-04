@@ -101,7 +101,7 @@ export function MeetingAttendeesFields({
   const organizerId = organizerUserId ?? currentUserId;
 
   return (
-    <div className="rounded-md border border-border p-3">
+    <div className="rounded-md border border-border bg-surface p-3">
       <MeetingVisibilityAndInviteesEditor
         visibility={visibility}
         onVisibilityChange={setVisibility}

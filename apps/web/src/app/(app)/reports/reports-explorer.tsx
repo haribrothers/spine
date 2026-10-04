@@ -197,7 +197,7 @@ function ProfitAndLossTab() {
       )}
 
       {report && !error && (
-        <div className="flex flex-col gap-4 rounded-md border border-border-strong p-4">
+        <div className="flex flex-col gap-4 rounded-md border border-border-strong bg-surface p-4">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Income</p>
             {report.income.length === 0 ? (
@@ -307,7 +307,7 @@ function BalanceSheetTab() {
       )}
 
       {report && !error && (
-        <div className="flex flex-col gap-4 rounded-md border border-border-strong p-4">
+        <div className="flex flex-col gap-4 rounded-md border border-border-strong bg-surface p-4">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Assets</p>
             {report.assets.map((line) => (
@@ -402,7 +402,7 @@ function JobProfitabilityTab() {
       {report.jobs.length === 0 ? (
         <p className="text-[13px] text-on-surface-muted">No jobs yet.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-border-strong">
+        <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
           <table className="w-full text-[13px]">
             <thead>
               <tr className="border-b border-border bg-surface-secondary text-left text-on-surface-muted">
@@ -615,7 +615,7 @@ function TrialBalanceTab() {
               </AlertDescription>
             </Alert>
           )}
-          <div className="overflow-x-auto rounded-md border border-border-strong">
+          <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
             <table className="w-full text-[13px]" data-testid="trial-balance-table">
               <thead>
                 <tr className="border-b border-border text-left text-on-surface-muted">
@@ -749,7 +749,7 @@ function TaxSummaryTab() {
               { label: "Tax paid", value: report.taxPaid, note: "On recorded vendor bills and approved expenses" },
               { label: "Net payable", value: report.netTaxPayable, note: "Collected minus paid" },
             ].map((card) => (
-              <div key={card.label} className="rounded-md border border-border-strong p-4">
+              <div key={card.label} className="rounded-md border border-border-strong bg-surface p-4">
                 <p className="text-[13px] text-on-surface-muted">{card.label}</p>
                 <p className="mt-1 text-[22px] font-semibold tabular-nums text-on-surface">
                   {money(card.value)}
@@ -759,7 +759,7 @@ function TaxSummaryTab() {
             ))}
           </div>
 
-          <div className="overflow-x-auto rounded-md border border-border-strong">
+          <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
             <table className="w-full text-[13px]" data-testid="tax-summary-table">
               <thead>
                 <tr className="border-b border-border text-left text-on-surface-muted">

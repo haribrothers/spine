@@ -39,7 +39,7 @@ export default async function PublicQuotePage({ params }: { params: Promise<{ to
     // page, scoped to this route only via `fixed inset-0` + its own
     // `overflow-y-auto`, rather than touching the global rule the rest of
     // the app depends on.
-    <div className="fixed inset-0 overflow-y-auto bg-background">
+    <div className="fixed inset-0 overflow-y-auto bg-surface">
       <PublicQuoteView token={token} />
     </div>
   );

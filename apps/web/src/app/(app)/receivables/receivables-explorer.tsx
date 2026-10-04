@@ -69,7 +69,7 @@ export function ReceivablesExplorer() {
       />
 
       {report.invoices.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState icon={<Inbox />} title="Nothing outstanding" description="Every issued invoice has been paid in full." />
         </div>
       ) : (

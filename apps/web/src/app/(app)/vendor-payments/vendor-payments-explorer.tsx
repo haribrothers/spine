@@ -109,7 +109,7 @@ export function VendorPaymentsExplorer() {
       {!payments ? (
         <VendorPaymentsSkeleton />
       ) : payments.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {contactFilter !== ALL_CONTACTS ? (
             <EmptyState
               icon={<HandCoins />}

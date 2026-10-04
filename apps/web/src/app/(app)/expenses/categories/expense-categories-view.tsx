@@ -131,7 +131,7 @@ function CategoriesSection({
 
       {categories.length === 0 && <p className="text-[13px] text-on-surface-muted">No expense categories yet.</p>}
 
-      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong">
+      <div className="flex flex-col divide-y divide-border rounded-md border border-border-strong bg-surface">
         {categories.map((category) => (
           <CategoryRow
             key={category.id}

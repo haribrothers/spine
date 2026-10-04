@@ -26,7 +26,7 @@ export interface TableSkeletonProps {
 export function TableSkeleton({ columns, rows = 8, className }: TableSkeletonProps) {
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full border-collapse text-[13px]">
           <thead className="border-b border-border bg-surface-sunken">
             <tr>

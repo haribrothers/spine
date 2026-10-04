@@ -28,7 +28,9 @@
   --color-neutral-700: #4b473e;
   --color-neutral-900: #211f1a;
 
-  --color-background: #ffffff;
+  /* US-OPS-32 (D-131): a warm page so white surfaces (cards, tables,
+     dialogs, sidebar, inputs) lift off it, as they already do in dark mode. */
+  --color-background: #f7f6f3;
   --color-surface: #ffffff;
   --color-surface-sunken: var(--color-neutral-50);
   --color-on-surface: var(--color-neutral-900);

@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 .next/
+.next-e2e/
 .turbo/
 storybook-static/
 *.tsbuildinfo

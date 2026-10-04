@@ -30,7 +30,7 @@ export function ContactsSkeleton({ view }: { view: ContactView }) {
 
   if (view === "list") {
     return (
-      <div className="flex flex-col divide-y divide-border rounded-lg border border-border">
+      <div className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-2.5">
             <Skeleton className="h-10 w-10 rounded-full" />

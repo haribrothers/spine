@@ -73,7 +73,7 @@ export function HistorySection({
           ) : entries.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {entries.map((entry) => (
-                <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
+                <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
                   <span className="text-on-surface">{describeHistoryEntry(entry, subjectLabel, ownEntityType)}</span>
                   <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
                     {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}

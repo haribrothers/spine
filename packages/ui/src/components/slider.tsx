@@ -31,7 +31,7 @@ export const Slider = forwardRef<
           key={i}
           aria-label={ariaLabel}
           aria-labelledby={ariaLabelledBy}
-          className="block h-4 w-4 rounded-full border-2 border-primary bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50"
+          className="block h-4 w-4 rounded-full border-2 border-primary bg-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

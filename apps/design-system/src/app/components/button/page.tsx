@@ -25,7 +25,7 @@ export default function ButtonPage() {
         <FeatureList
           items={[
             "Renders a native <button> or, via asChild, forwards its props onto a single child element (e.g. a Link).",
-            "Four visual variants: primary, secondary, danger, ghost.",
+            "Four visual variants: primary, secondary, danger, ghost. Secondary has a white surface fill, so it reads the same on the page and inside a card; ghost stays transparent.",
             "Four sizes, including a 44px touch size for the mobile field-companion app.",
             "Full keyboard and focus-visible support inherited from the native element.",
           ]}

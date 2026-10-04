@@ -196,7 +196,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
       {!contacts ? (
         <ContactsSkeleton view={hydrated ? view : "table"} />
       ) : contacts.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {typeFilter.length > 0 || statusFilter.length !== 1 || !statusFilter.includes("active") ? (
             <EmptyState
               icon={<Users />}

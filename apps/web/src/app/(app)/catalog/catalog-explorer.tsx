@@ -204,7 +204,7 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
       {!filteredItems ? (
         <CatalogSkeleton />
       ) : filteredItems.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {statusFilter.length !== 1 ||
           !statusFilter.includes("active") ||
           categoryFilter.length > 0 ||

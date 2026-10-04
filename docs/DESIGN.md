@@ -12,7 +12,7 @@ colors:
   neutral-500: "#726C5A" # WCAG AA pass (2026-08-06): darkened from #8A8578, which was 3.68:1 on surface / 3.26:1 on draft-bg — both fail 4.5:1 body text
   neutral-700: "#4B473E"
   neutral-900: "#211F1A"
-  background: "#FFFFFF"
+  background: "#F7F6F3" # D-131 (US-OPS-32): warm page so white cards lift off it
   surface: "#FFFFFF"
   surface-sunken: "{colors.neutral-50}"
   on-surface: "{colors.neutral-900}"

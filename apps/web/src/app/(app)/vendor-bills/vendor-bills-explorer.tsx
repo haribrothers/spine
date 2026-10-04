@@ -144,7 +144,7 @@ export function VendorBillsExplorer() {
       {!filteredBills ? (
         <VendorBillsSkeleton />
       ) : filteredBills.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {statusFilter.length || contactFilter !== ALL_CONTACTS ? (
             <EmptyState
               icon={<ClipboardList />}

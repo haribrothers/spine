@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-32: lift cards off the page in light mode (Phase 7)
+
+- **Tokens (D-131).** Light `background` is `#F7F6F3` in `docs/design/tokens.json`, `docs/DESIGN.md`, `packages/config/tailwind-preset.css` and the native `lightColors`; `surface` stays `#FFFFFF`. Dark mode is unchanged.
+- **Raised things stay white.** Secondary buttons now have a `surface` fill instead of transparent; the data-table container, 50 bordered panels and lists across the web app (explorer tables, line editors, settings lists, report tables, contact sub-lists) gained `bg-surface`; the public quote page uses `surface`. Focus rings leave a `surface` gap (`ring-offset-surface`) instead of the page colour.
+- **Docs.** The design-system Color page explains page vs surface; the Button page notes the secondary fill; the brand book's "Surfaces and layers" rule is rewritten.
+- **E2E tooling.** The E2E web build now writes to `apps/web/.next-e2e` (`NEXT_DIST_DIR`) so it can run while `pnpm dev` owns `.next`, as the Playwright config already promised.
+
+Tests:
+- `packages/ui/src/test/us-ops-32.test.tsx` (10): light background and surface in tokens, web CSS and native; dark unchanged; on-surface, muted, primary, paid, due-soon and overdue pass 4.5:1 on both background and surface; AppShell paints `background` while Card, Table and secondary Button paint `surface`; focus-ring gap is `surface`.
+- `apps/e2e/tests/us-ops-32.spec.ts` (3): on a demo org the body is `rgb(247, 246, 243)` with a white sidebar, table container and "Edit layout" button; dark mode keeps `#121110`/`#191815`; the public quote page is white.
+
 ### 2026-10-05 — Spec: construction job costing and light-mode surfaces (Phase 7 planning, docs only)
 
 Ideas reviewed from a client's AI-generated prototype ("BuildLedger.Pro", a single HTML file) and specced as Phase 7 stories. Nothing is built yet; every story is unticked in `docs/progress.md`.

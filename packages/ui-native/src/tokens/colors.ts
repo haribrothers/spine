@@ -28,7 +28,8 @@ export const lightColors = {
   neutral700: "#4B473E",
   neutral900: "#211F1A",
 
-  background: "#FFFFFF",
+  /** US-OPS-32 (D-131) — warm page behind white surfaces. */
+  background: "#F7F6F3",
   surface: "#FFFFFF",
   surfaceSunken: "#F9F9F9",
   onSurface: "#211F1A",

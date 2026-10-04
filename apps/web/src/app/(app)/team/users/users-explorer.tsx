@@ -66,7 +66,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
             <Spinner />
           </div>
         ) : (
-          <div className="rounded-md border border-border-strong">
+          <div className="rounded-md border border-border-strong bg-surface">
             {members.map((member) => (
               <UserRow
                 key={member.id}
@@ -91,7 +91,7 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
             <h2 className="text-[15px] font-semibold text-on-surface">Pending invites</h2>
             <p className="text-[13px] text-on-surface-muted">Invited but haven&apos;t joined yet.</p>
           </div>
-          <div className="rounded-md border border-border-strong">
+          <div className="rounded-md border border-border-strong bg-surface">
             {invitations.map((invitation) => (
               <InvitationRow
                 key={invitation.id}

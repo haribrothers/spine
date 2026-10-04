@@ -57,7 +57,7 @@ export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, sa
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="max-h-96 overflow-y-auto rounded-md border border-border-strong">
+      <div className="max-h-96 overflow-y-auto rounded-md border border-border-strong bg-surface">
         {TYPE_ORDER.map((type) => {
           const rows = accounts[type] ?? [];
           if (rows.length === 0) return null;

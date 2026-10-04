@@ -178,7 +178,7 @@ function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void })
   const canEdit = useCanEditOwnership(lead.createdByUserId, { own: "leads.edit_own", others: "leads.edit_others" });
 
   return (
-    <li className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
+    <li className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
       <div>
         <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
         <span className="text-on-surface-muted">

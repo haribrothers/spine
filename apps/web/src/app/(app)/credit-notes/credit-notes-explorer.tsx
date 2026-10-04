@@ -119,7 +119,7 @@ export function CreditNotesExplorer() {
       {!filteredCreditNotes ? (
         <CreditNotesSkeleton />
       ) : filteredCreditNotes.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Undo2 />}
             title={statusFilter.length || contactFilter !== ALL_CONTACTS ? "No credit notes match these filters" : "No credit notes yet"}

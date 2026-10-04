@@ -57,7 +57,7 @@ export function MeetingVisibilityAndInviteesEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+      <div className="flex items-center justify-between rounded-md border border-border bg-surface px-3 py-2">
         <div>
           <Label htmlFor="meeting-visibility-org" className="font-medium">
             Visible to everyone in the org
@@ -95,7 +95,7 @@ export function MeetingVisibilityAndInviteesEditor({
           {attendeeUserIds.map((userId) => {
             const member = membersById.get(userId);
             return (
-              <li key={userId} className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5 text-[13px]">
+              <li key={userId} className="flex items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px]">
                 <Avatar size="sm">
                   <AvatarFallback>{(member?.name ?? "?").slice(0, 1).toUpperCase()}</AvatarFallback>
                 </Avatar>

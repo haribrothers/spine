@@ -331,7 +331,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-OPS-22 · Search everything from anywhere
 - [ ] US-OPS-23 · Use search with the keyboard and a screen reader
 - [ ] US-OPS-26 · Use every new screen in dark mode
-- [ ] US-OPS-32 · Lift cards off the page in light mode
+- [x] US-OPS-32 · Lift cards off the page in light mode
 
 ## Phase 8 · Packaging & 1.0
 

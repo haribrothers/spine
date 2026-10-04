@@ -2347,6 +2347,16 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 4. Settings › Business profile: the Industry helper doesn't mention "the next step".
 5. Invoices: a void invoice's Balance due shows "—".
 
+## 54. Light page behind white cards (US-OPS-32, Phase 7)
+
+1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Refresh", "Columns") are white with a thin border.
+2. Open a dialog (Settings, "Record payment") and a drawer: they are white on a dimmed page.
+3. Tab to a button or input on the page and inside a card: the focus ring is blue with a white gap, in both places.
+4. Open a public quote link (or any `/quote/...` link): the page is white, not grey. Download a quote or invoice PDF and open a customer email: both stay white.
+5. Switch to dark mode: nothing changes from before (near-black page, slightly lighter cards).
+
+Regression: muted grey text, amber "due soon" and red "overdue" text are still easy to read on the grey page (§51); Pipeline columns, the Settings dialog and onboarding look as before apart from the page colour.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

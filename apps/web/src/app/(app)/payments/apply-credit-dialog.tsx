@@ -162,7 +162,7 @@ export function ApplyCreditDialog({
           ) : outstanding.length === 0 ? (
             <p className="text-[13px] text-on-surface-muted">This contact has no outstanding issued invoices to apply credit to.</p>
           ) : (
-            <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
               {allocations.length === 0 && <p className="text-[13px] text-on-surface-muted">No invoice selected yet.</p>}
               {allocations.map((row) => (
                 <div key={row.invoiceId} className="flex items-center gap-2">
