@@ -231,7 +231,7 @@ Gap: G5 (PRD F5 "SHOULD show a payment link/instructions block")
 
 **Acceptance criteria**
 - **Given** payment instructions are set, **when** an invoice PDF renders, **then** a "How to pay" block shows them under the totals.
-- **Given** the invoice email, **when** it's sent, **then** the same instructions appear above the "View invoice" button.
+- **Given** the invoice email, **when** it's sent, **then** the same instructions appear in a "How to pay" box above the closing note (invoice emails have no button, [D-121](../prd/12-decisions.md)).
 - **Given** no instructions are set, **when** an invoice renders, **then** no empty block appears.
 
 **Implementation notes**

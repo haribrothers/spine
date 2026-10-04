@@ -166,7 +166,7 @@ Findings: C2, C9 · Decision: D-067
 Findings: C22
 
 **Acceptance criteria**
-- **Given** invitation, password reset, quote, invoice, reminder, receipt, payment notice, meeting invite, meeting reminder, milestone and expense emails, **when** each is sent, **then** it uses the shared layout with a heading and a button to the record.
+- **Given** invitation, password reset, quote, invoice, reminder, receipt, payment notice, meeting invite, meeting reminder, milestone and expense emails, **when** each is sent, **then** it uses the shared layout with a heading and a button to the record (invoice, reminder, receipt and payment notice emails have no button: customers have no page to open them on, so the attached PDF is the record, [D-121](../prd/12-decisions.md)).
 - **Given** the invitation email, **when** it's sent, **then** it names the business from the business profile, not "<Owner>'s Organisation" (US-TEAM-15).
 - **Given** a notification email, **when** I read its footer, **then** it says "You're getting this because you're a member of <Business>." (email preferences are not in v1).
 

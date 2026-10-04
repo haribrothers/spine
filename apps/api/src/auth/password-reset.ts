@@ -1,5 +1,9 @@
 import { Logger } from "@nestjs/common";
 import { EmailService } from "../modules/email/email.service";
+import { EMAIL_COLORS, renderEmail, type EmailBrand } from "../modules/email/email-layout";
+import { passwordResetEmail } from "../modules/email/email-templates";
+
+const SPINE_BRAND: EmailBrand = { name: "Spine", color: EMAIL_COLORS.primary, footer: "Spine" };
 
 /** US-AUTH-09 — how long a reset link works (seconds). The copy says "expires in 1 hour". */
 export const RESET_TOKEN_TTL_SECONDS = 60 * 60;
@@ -56,11 +60,11 @@ export function resetPasswordUrl(token: string, env: NodeJS.ProcessEnv = process
  * `/reset-password` page, not Better Auth's own redirecting route. Without
  * SMTP nothing is sent and the page still says "Check your email" (D-084):
  * the answer never reveals whether an account or a mail server exists.
- * The token is never logged.
+ * The token is never logged. The email carries the brand of the person's
+ * organisation (US-NTF-11), or plain Spine when there isn't one.
  */
-export async function sendResetPasswordEmail(data: { user: { email: string; name: string }; token: string }): Promise<void> {
-  const email = data.user.email.toLowerCase();
-  if (!resetEmailLimiter.hit(email)) {
+export async function sendResetPasswordEmail(data: { user: { email: string; name: string }; token: string }, brand?: EmailBrand): Promise<void> {
+  if (!resetEmailLimiter.hit(data.user.email.toLowerCase())) {
     logger.warn("Password reset email skipped: this address reached its hourly limit");
     return;
   }
@@ -70,19 +74,19 @@ export async function sendResetPasswordEmail(data: { user: { email: string; name
     return;
   }
   const url = resetPasswordUrl(data.token);
+  const template = passwordResetEmail({ name: data.user.name, url });
+  const email = renderEmail(brand ?? SPINE_BRAND, template.content);
   try {
     await emailService.send({
       to: data.user.email,
-      subject: "Reset your Spine password",
-      text: `Hi ${data.user.name},\n\nSomeone asked to reset the password for this Spine account. Choose a new password here:\n\n${url}\n\nThe link works once and expires in 1 hour. Choosing a new password signs you out on your other devices.\n\nIf you didn't ask for this, you can ignore this email. Your password stays the same.`,
-      html: `<p>Hi ${escapeHtml(data.user.name)},</p><p>Someone asked to reset the password for this Spine account.</p><p><a href="${url}">Choose a new password</a></p><p>The link works once and expires in 1 hour. Choosing a new password signs you out on your other devices.</p><p>If you didn't ask for this, you can ignore this email. Your password stays the same.</p>`,
+      fromName: brand?.name,
+      subject: template.subject,
+      text: email.text,
+      html: email.html,
+      attachments: email.attachments,
     });
   } catch (err) {
     // An SMTP outage must not turn into a different answer on the page.
     logger.error("Password reset email failed to send", err instanceof Error ? err.message : String(err));
   }
-}
-
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }

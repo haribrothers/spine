@@ -7,14 +7,12 @@ import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
-import type { InvoicePdfBusinessProfile } from "../pdf/invoice-pdf.template";
-import { percentageOf, toDecimalString } from "@spine/shared";
+import { loadEmailBrand } from "../email/email-brand";
+import { renderEmail } from "../email/email-layout";
+import { invoiceEmail } from "../email/email-templates";
 
 export const INVOICE_SEND_EMAIL_QUEUE = "invoice-send-email";
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 export interface InvoiceSendEmailJobData {
   orgId: string;
@@ -97,58 +95,35 @@ export class InvoiceEmailWorker implements OnModuleInit {
       throw new Error("SMTP is not configured — cannot send invoice email");
     }
 
-    const business = await this.settings.get<InvoicePdfBusinessProfile>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
-    const invoiceNumber = row.invoice.number ?? "your invoice";
-    const currency = row.invoice.currency;
+    const brand = await loadEmailBrand(this.db, orgId);
+    const invoice = row.invoice;
     // US-JOB-21: retention held back isn't due now.
-    const balanceDue = row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
-    const fmt = (amount: bigint) => `${toDecimalString({ amount, currency })} ${currency}`;
-    const retentionLine =
-      row.invoice.retentionAmount > 0n
-        ? `Total ${fmt(row.invoice.totalAmount)}; retention held (${percentageOf(row.invoice.retentionAmount, row.invoice.subtotalAmount - row.invoice.discountAmount)}%) -${fmt(row.invoice.retentionAmount)}; amount due ${fmt(row.invoice.totalAmount - row.invoice.retentionAmount)}.`
-        : null;
-    const dueDateText = row.invoice.dueDate ? new Date(row.invoice.dueDate).toLocaleDateString() : null;
-
-    const balanceLine =
-      balanceDue > 0n
-        ? `${retentionLine ? `${retentionLine} ` : ""}The balance due is ${toDecimalString({ amount: balanceDue, currency })} ${currency}${dueDateText ? `, due ${dueDateText}` : ""}.`
-        : "This invoice is already paid in full — no balance is owing.";
-
-    // S-05.10 — same PDF, same attachment, only the subject/opening line
-    // change: a reminder says "this is now overdue" instead of "here's your
-    // invoice", using days-overdue rather than the due date itself (a
-    // reminder is inherently sent because the due date has already passed,
-    // so restating it plainly is more useful than repeating the date).
-    const daysOverdueText = row.invoice.dueDate
-      ? Math.max(0, Math.floor((Date.now() - new Date(row.invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
+    const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+    // S-05.10 — a reminder says how many days overdue rather than restating the date.
+    const daysOverdue = invoice.dueDate
+      ? Math.max(0, Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
       : null;
-    const subject = isReminder
-      ? `Reminder: ${invoiceNumber} is now ${daysOverdueText !== null ? `${daysOverdueText} day${daysOverdueText === 1 ? "" : "s"} ` : ""}overdue`
-      : `${businessName} sent you an invoice (${invoiceNumber})`;
-    const openingLine = isReminder
-      ? `This is a friendly reminder that invoice ${invoiceNumber} from ${businessName} is now overdue.`
-      : `${businessName} has sent you an invoice (${invoiceNumber}), attached as a PDF.`;
+
+    const template = invoiceEmail({
+      businessName: brand.name,
+      contactName: row.contactName,
+      number: invoice.number ?? "your invoice",
+      currency: invoice.currency,
+      total: invoice.totalAmount,
+      retention: invoice.retentionAmount,
+      balanceDue,
+      dueDate: invoice.dueDate,
+      reminder: isReminder ? { daysOverdue } : undefined,
+    });
+    const email = renderEmail(brand, template.content);
 
     await this.email.send({
       to: row.contactEmail,
-      subject,
-      text: [
-        `Hi ${row.contactName ?? "there"},`,
-        "",
-        openingLine,
-        "",
-        balanceLine,
-        "",
-        "This is an automated email — please reply directly with any payment questions.",
-      ].join("\n"),
-      html: [
-        `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-        `<p>${escapeHtml(openingLine)}</p>`,
-        `<p>${escapeHtml(balanceLine)}</p>`,
-        `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly with any payment questions.</p>`,
-      ].join("\n"),
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+      fromName: brand.name,
+      subject: template.subject,
+      text: email.text,
+      html: email.html,
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
     });
   }
 }

@@ -1,3 +1,6 @@
+import { loadEmailBrand } from "../email/email-brand";
+import { renderEmail } from "../email/email-layout";
+import { paymentConfirmationEmail, receiptEmail } from "../email/email-templates";
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
 import { toDecimalString } from "@spine/shared";
@@ -17,10 +20,6 @@ import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type ApplyPaymentCreditInput = z.infer<typeof applyPaymentCreditSchema>;
-
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 /**
  * PRD F6 Stage 1 (Phase 2 · Money In) — record a payment against a contact,
@@ -472,39 +471,25 @@ export class PaymentsService {
 
     const currency = payment.currency;
     const amountText = `${toDecimalString({ amount, currency })} ${currency}`;
-    const unallocated = amount - totalAllocated;
-
-    const business = await this.settings.get<{ name?: string }>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
-
     if (contact.email && this.email.isConfigured()) {
       try {
-        const allocationLine =
-          totalAllocated > 0n
-            ? `${toDecimalString({ amount: totalAllocated, currency })} ${currency} was applied to your invoice${totalAllocated === amount ? "" : "s"}.`
-            : null;
-        const creditLine =
-          unallocated > 0n ? `${toDecimalString({ amount: unallocated, currency })} ${currency} is held as credit on your account.` : null;
-
+        const brand = await loadEmailBrand(this.db, orgId);
+        const template = paymentConfirmationEmail({
+          businessName: brand.name,
+          contactName: contact.name,
+          number: payment.number,
+          amount,
+          applied: totalAllocated,
+          currency,
+        });
+        const email = renderEmail(brand, template.content);
         await this.email.send({
           to: contact.email,
-          subject: `${businessName} received your payment (${payment.number ?? ""})`.trim(),
-          text: [
-            `Hi ${contact.name},`,
-            "",
-            `${businessName} has received your payment of ${amountText}${payment.number ? ` (${payment.number})` : ""}.`,
-            ...(allocationLine ? ["", allocationLine] : []),
-            ...(creditLine ? ["", creditLine] : []),
-            "",
-            "This is an automated confirmation — please reply directly with any questions.",
-          ].join("\n"),
-          html: [
-            `<p>Hi ${escapeHtml(contact.name)},</p>`,
-            `<p>${escapeHtml(businessName)} has received your payment of ${escapeHtml(amountText)}${payment.number ? ` (${escapeHtml(payment.number)})` : ""}.</p>`,
-            ...(allocationLine ? [`<p>${escapeHtml(allocationLine)}</p>`] : []),
-            ...(creditLine ? [`<p>${escapeHtml(creditLine)}</p>`] : []),
-            `<p style="color:#888;font-size:12px;">This is an automated confirmation — please reply directly with any questions.</p>`,
-          ].join("\n"),
+          fromName: brand.name,
+          subject: template.subject,
+          text: email.text,
+          html: email.html,
+          attachments: email.attachments,
         });
       } catch (err) {
         this.logger.warn(`Could not send payment confirmation email for payment ${paymentId}: ${(err as Error).message}`);
@@ -551,27 +536,22 @@ export class PaymentsService {
 
     // US-INV-17: the receipt PDF stored when the payment was recorded.
     const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "payment", paymentId);
-    const business = await this.settings.get<{ name?: string }>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
-    const amountText = `${toDecimalString({ amount: row.payment.amount, currency: row.payment.currency })} ${row.payment.currency}`;
-    const receiptNumber = row.payment.number ?? "your receipt";
-
+    const brand = await loadEmailBrand(this.db, orgId);
+    const template = receiptEmail({
+      businessName: brand.name,
+      contactName: row.contactName,
+      number: row.payment.number ?? "your receipt",
+      amount: row.payment.amount,
+      currency: row.payment.currency,
+    });
+    const email = renderEmail(brand, template.content);
     await this.email.send({
       to: row.contactEmail,
-      subject: `${businessName} sent you a receipt (${receiptNumber})`,
-      text: [
-        `Hi ${row.contactName ?? "there"},`,
-        "",
-        `Attached is your receipt (${receiptNumber}) for a payment of ${amountText}.`,
-        "",
-        "This is an automated email — please reply directly with any questions.",
-      ].join("\n"),
-      html: [
-        `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-        `<p>Attached is your receipt (${escapeHtml(receiptNumber)}) for a payment of ${escapeHtml(amountText)}.</p>`,
-        `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly with any questions.</p>`,
-      ].join("\n"),
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+      fromName: brand.name,
+      subject: template.subject,
+      text: email.text,
+      html: email.html,
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
     });
 
     return { sent: true };

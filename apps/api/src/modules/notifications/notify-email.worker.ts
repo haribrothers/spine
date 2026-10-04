@@ -1,5 +1,10 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { DATABASE } from "../../db/db.module";
+import type { Database } from "../../db/client";
 import { QueueService } from "../queue/queue.service";
+import { loadEmailBrand } from "../email/email-brand";
+import { renderEmail } from "../email/email-layout";
+import { notificationEmail } from "../email/email-templates";
 import { EmailService } from "../email/email.service";
 import { NOTIFY_EMAIL_QUEUE, type NotifyEmailJobData } from "./notifications.service";
 
@@ -19,6 +24,7 @@ export class NotifyEmailWorker implements OnModuleInit {
   private readonly logger = new Logger(NotifyEmailWorker.name);
 
   constructor(
+    @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
   ) {}
@@ -33,12 +39,22 @@ export class NotifyEmailWorker implements OnModuleInit {
     if (!this.email.isConfigured()) {
       throw new Error("SMTP is not configured — cannot send owner notification email");
     }
-    await this.email.send({
-      to: data.to,
-      subject: data.subject,
-      text: data.text,
-      html: data.html,
-    });
+    if (!data.orgId) {
+      // Queued before the branded layout (US-NTF-11); sent as it was written.
+      await this.email.send({ to: data.to, subject: data.subject, text: data.text, html: data.html });
+    } else {
+      const brand = await loadEmailBrand(this.db, data.orgId);
+      const template = notificationEmail({ businessName: brand.name, subject: data.subject, text: data.text, link: data.link });
+      const email = renderEmail(brand, template.content);
+      await this.email.send({
+        to: data.to,
+        fromName: brand.name,
+        subject: template.subject,
+        text: email.text,
+        html: email.html,
+        attachments: email.attachments,
+      });
+    }
     this.logger.log(`Owner notification sent to ${data.to}: ${data.subject}`);
   }
 }

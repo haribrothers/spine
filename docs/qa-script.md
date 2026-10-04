@@ -2187,6 +2187,17 @@ Regression: a Staff user without a capability still gets the "You don't have per
 
 Regression: the quote PDF is still attached; the quote's email status still turns "sent" (§3).
 
+## 36. Every email in the branded layout (US-NTF-11, Phase 6)
+
+Send each of these and check each one has the coloured bar, your logo and name, a heading, and your footer:
+1. Invite someone: "<You> invited you to join <Business> on Spine", naming the business from Settings › Business (not "<Name>'s Organisation"), with an "Accept invitation" button that opens the invitation.
+2. "Forgot password?" for your own address: "Reset your password" with a "Choose a new password" button.
+3. Email an invoice, then send a reminder on an overdue one: the facts box shows the invoice, total, balance due and due date; no button; the PDF is attached. The reminder's subject reads "Reminder: INV-… is now N days overdue".
+4. Record a payment from a contact with an email: "Thanks — we've received your payment" with the amount and how much was applied. Send its receipt: "Your receipt" with the PDF.
+5. As a member, get a notification email (invite someone to a meeting, approve an expense, complete a milestone): one button to the record, and the footer says "You're getting this because you're a member of <Business>."
+
+Regression: quote emails still match §35; notification bells and push still arrive as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

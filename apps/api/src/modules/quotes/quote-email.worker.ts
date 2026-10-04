@@ -8,7 +8,8 @@ import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
 import { loadEmailBrand } from "../email/email-brand";
-import { appUrl, emailDate, emailMoney, firstName, renderEmail } from "../email/email-layout";
+import { appUrl, renderEmail } from "../email/email-layout";
+import { quoteEmail } from "../email/email-templates";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
@@ -143,29 +144,22 @@ export class QuoteEmailWorker implements OnModuleInit {
     // without the button.
     const quoteLink = publicToken ? appUrl(`/quote/${publicToken}`) : null;
 
-    // US-NTF-10 — the shared branded layout.
-    const email = renderEmail(brand, {
-      preheader: `${brand.name} sent you a quote (${quoteNumber}).`,
-      heading: "Your quote is ready",
-      greeting: `Hi ${firstName(row.contactName)},`,
-      paragraphs: [
-        quoteLink
-          ? "Here's our quote. You can read it, accept it or decline it online — no account needed."
-          : "Here's our quote, attached as a PDF.",
-      ],
-      facts: [
-        { label: "Quote", value: quoteNumber },
-        { label: "Total", value: emailMoney(row.quote.totalAmount, row.quote.currency) },
-        ...(row.quote.validUntil ? [{ label: "Valid until", value: emailDate(row.quote.validUntil) }] : []),
-      ],
-      button: quoteLink ? { label: "View quote", url: quoteLink } : undefined,
-      note: "The quote is also attached as a PDF. Questions? Reply to this email.",
+    // US-NTF-10/11 — the shared branded layout.
+    const template = quoteEmail({
+      businessName: brand.name,
+      contactName: row.contactName,
+      number: quoteNumber,
+      total: row.quote.totalAmount,
+      currency: row.quote.currency,
+      validUntil: row.quote.validUntil,
+      link: quoteLink,
     });
+    const email = renderEmail(brand, template.content);
 
     await this.email.send({
       to: row.contactEmail,
       fromName: brand.name,
-      subject: `${brand.name} sent you a quote (${quoteNumber})`,
+      subject: template.subject,
       text: email.text,
       html: email.html,
       attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],

@@ -125,7 +125,7 @@ export class MeetingReminderWorker implements OnModuleInit {
 
         void this.notifications.notify(meeting.orgId, {
           subject: `Starting soon: ${meeting.title}`,
-          text: `"${meeting.title}" starts at ${occurrenceStart.toISOString()}.`,
+          text: `"${meeting.title}" starts at ${occurrenceStart.toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" })} UTC.`,
           recipientUserIds: [attendee.userId],
           inApp: {
             type: "meeting_starting_soon",

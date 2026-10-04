@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-NTF-11: use the branded layout for every email type (Phase 6)
+
+- **Every email** now goes through the US-NTF-10 layout: invitation, password reset, quote, invoice, reminder, receipt, payment confirmation, and every member notification (payment received, meeting invite, cancellation, response and reminder, milestone and job completed, expense approved, quote viewed or accepted, storage and ledger alerts). Their wording lives in one file, `apps/api/src/modules/email/email-templates.ts`.
+- **Buttons.** Notifications get one button to the record ("View job", "View expense", "View meeting", "View payment", "View quote"…). Invoice, reminder, receipt and payment-confirmation emails have no button. Customers have no page to open them on, so the attached PDF is the record and the facts box shows the invoice, total, retention held, balance due and due date (D-121, Owner's call).
+- **Invitation.** "<Inviter> invited you to join <Business> on Spine", with the business name from the business profile instead of "<Owner>'s Organisation", and an "Accept invitation" button.
+- **Password reset.** It carries the brand of the person's organisation, or plain Spine when there isn't one.
+- **Notification footer.** "You're getting this because you're a member of <Business>."
+- **Meeting reminders** now give the time as "17 Oct 2026, 09:00 UTC" instead of an ISO timestamp.
+- **Queue.** Notification jobs now carry `orgId` and the record link, and the worker renders them. Jobs queued before this change still send as they were written.
+
+Tests:
+- `us-ntf-11.test.ts` (27): a snapshot of the subject, text and HTML for each of the 12 email types; each has the layout and a heading, with exactly one button except the four customer documents; the invitation's wording; the notification footer; notification buttons link to the record.
+- `apps/e2e/tests/us-ntf-11.spec.ts` (1): a real invitation email names the business from the profile, with the layout and "Accept invitation".
+
 ### 2026-10-04 — US-NTF-10: send every email in one branded layout (Phase 6)
 
 - **The layout.** `renderEmail()` in `apps/api/src/modules/email/email-layout.ts` is used for every email from now on. It has a 6px bar in the document colour, the logo and business name, a heading, a short body, an optional key-facts box, at most one button, small print, and the business footer (name · address · branding footer). Colours are the light token values, inlined; emails stay light.
