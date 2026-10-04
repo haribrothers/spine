@@ -3,14 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, Spinner } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
-import { CheckCircle2, XCircle } from "lucide-react";
-import type { PublicQuoteView as PublicQuoteViewData } from "./types";
+import { CheckCircle2, Clock, LinkIcon, XCircle } from "lucide-react";
+import type { PublicQuoteUnavailableBusiness, PublicQuoteView as PublicQuoteViewData } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 type LoadState =
   | { kind: "loading" }
   | { kind: "invalid" }
+  | { kind: "expired"; business: PublicQuoteUnavailableBusiness }
   | { kind: "error"; message: string }
   | { kind: "ready"; quote: PublicQuoteViewData };
 
@@ -38,7 +39,14 @@ export function PublicQuoteView({ token }: { token: string }) {
     setState({ kind: "loading" });
     try {
       const res = await fetch(`${API_URL}/public/quotes/${encodeURIComponent(token)}`, { cache: "no-store" });
-      if (res.status === 404 || res.status === 410) {
+      // US-QUO-21: 410 is a link we sent that no longer works (with who to
+      // contact); 404 matches nothing.
+      if (res.status === 410) {
+        const body = (await res.json().catch(() => null)) as { business?: PublicQuoteUnavailableBusiness } | null;
+        setState(body?.business ? { kind: "expired", business: body.business } : { kind: "invalid" });
+        return;
+      }
+      if (res.status === 404) {
         setState({ kind: "invalid" });
         return;
       }
@@ -98,14 +106,18 @@ export function PublicQuoteView({ token }: { token: string }) {
     );
   }
 
+  if (state.kind === "expired") return <QuoteLinkExpired business={state.business} />;
+
   if (state.kind === "invalid") {
     return (
       <PageShell>
-        <Alert variant="critical">
-          <AlertDescription>
-            This quote link is invalid or has expired. Please contact the sender for an up-to-date link.
-          </AlertDescription>
-        </Alert>
+        <Card className="flex flex-col gap-3" data-testid="quote-link-invalid">
+          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-draft-bg text-draft" aria-hidden="true">
+            <LinkIcon size={20} />
+          </span>
+          <h1 className="text-[20px] font-semibold text-on-surface">This quote link isn&apos;t valid</h1>
+          <p className="text-[14px] text-on-surface-muted">Check that you opened the whole link from the email, or ask the business that sent it for a new one.</p>
+        </Card>
       </PageShell>
     );
   }
@@ -226,6 +238,43 @@ export function PublicQuoteView({ token }: { token: string }) {
           </div>
         </Card>
       )}
+    </PageShell>
+  );
+}
+
+/** US-QUO-21 — whose quote it was and how to reach them, from the business profile. */
+function QuoteLinkExpired({ business }: { business: PublicQuoteUnavailableBusiness }) {
+  return (
+    <PageShell>
+      <div className="flex flex-col gap-1">
+        {business.logoDataUri && <img src={business.logoDataUri} alt="" className="h-10 w-10 rounded object-contain" />}
+        <p className="text-[16px] font-semibold text-on-surface">{business.name}</p>
+      </div>
+      <Card className="flex flex-col gap-3" data-testid="quote-link-expired">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-due-soon-bg text-due-soon" aria-hidden="true">
+          <Clock size={20} />
+        </span>
+        <h1 className="text-[20px] font-semibold text-on-surface">This quote link has expired</h1>
+        <p className="text-[14px] text-on-surface">
+          The link you opened is no longer active — the quote may have been updated or replaced. Contact {business.name} and they&apos;ll send
+          you the latest version.
+        </p>
+        <address className="flex flex-col gap-0.5 rounded-md bg-surface-sunken p-4 text-[14px] not-italic text-on-surface">
+          <span className="font-semibold">{business.name}</span>
+          {business.address && <span className="whitespace-pre-line">{business.address}</span>}
+          {business.email && (
+            <a href={`mailto:${business.email}`} className="text-primary hover:underline">
+              {business.email}
+            </a>
+          )}
+          {business.phone && (
+            <a href={`tel:${business.phone.replace(/[^\d+]/g, "")}`} className="text-primary hover:underline">
+              {business.phone}
+            </a>
+          )}
+        </address>
+      </Card>
+      <p className="text-center text-[12px] text-on-surface-muted">Sent with Spine</p>
     </PageShell>
   );
 }

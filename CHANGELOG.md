@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-QUO-21: show a branded page for an expired or invalid link (Phase 6)
+
+- **Expired or replaced.** A quote link we issued that has run out (30 days), been revoked or replaced by a revision now shows the business logo and name, "This quote link has expired" and "The link you opened is no longer active — the quote may have been updated or replaced. Contact <Business> and they'll send you the latest version.". A box follows with the business's address, email (mailto) and phone (tel), and "Sent with Spine".
+- **Invalid.** A token that matches nothing (not ours, bad signature, unknown) shows a generic "This quote link isn't valid" with no business details.
+- **API.** `GET /public/quotes/:token` now answers 410 `{ status: "expired", business }` or 404 `{ status: "invalid" }` instead of one generic 404. `QuotePublicTokenService.inspect()` tells the two apart: an expired token's payload is trusted only after its signature checks out and its nonce exists. The logo comes inline as a data URI, because anonymous visitors can't load `/files/:id`.
+- **Business profile.** Gains "Business email" and "Business phone" (Settings › Business profile and onboarding). Saving the profile now keeps fields set elsewhere, such as payment instructions.
+
+Tests:
+- `us-quo-21.http.integration.test.ts` (5): a current link loads; a revoked link and a link past 30 days answer 410 with name, address, email and phone; tokens that match nothing, and a token signed with another key, answer 404 with no business details.
+- `apps/e2e/tests/us-quo-21.spec.ts` (2): a revised quote's old link shows the branded page with mailto and tel links; a made-up token shows "This quote link isn't valid". `public-quote-page.spec.ts` updated for the new wording.
+
 ### 2026-10-04 — US-NTF-12: turn on push from my own profile (Phase 6)
 
 - **Where.** Profile & Preferences now has a "Notifications" section with "Browser notifications" (the same US-NTF-04 states and "Turn on" / "Turn off" for this device), followed by "Meeting reminders". Every member sees it, Field and Staff included.

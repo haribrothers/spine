@@ -53,6 +53,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `idempotency_keys` | `user_id text → user`; unique index becomes (`org_id`, `user_id`, `endpoint`, `key`) | US-OPS-08 |
 | `quotes`, `invoices`, `credit_notes`, `payments` | `issued_pdf_file_id uuid → files` (the PDF stored at send/issue; on quotes and invoices it replaces the old `pdf_file_id`, whose values migration `0053` copied over before `0054` dropped it) | US-INV-17 |
 | `settings` key `business_profile` | gains `paymentInstructions` (text) | US-INV-15 |
+| `settings` key `business_profile` | gains `email` and `phone` (text), shown on the expired-quote-link page | US-QUO-21 |
 | `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
 | `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
 | `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |

@@ -2207,6 +2207,15 @@ Regression: quote emails still match §35; notification bells and push still arr
 
 Regression: Meeting reminders on the profile still save; the notification bell still works (§12).
 
+## 38. Expired quote links (US-QUO-21, Phase 6)
+
+1. In Settings › Business profile, fill in "Business email" and "Business phone", and save. Reopen it: both are kept.
+2. Send a quote and copy its link from the email. Revise the quote, then open the old link signed out: your logo and name, "This quote link has expired", the explanation naming your business, and a box with your address, email (opens mail) and phone (opens the dialler).
+3. Open `/quote/anything-made-up`: "This quote link isn't valid", with no business name or details.
+4. Open a current quote link: the quote loads as before.
+
+Regression: accepting and declining a quote on its public page still work (§3); onboarding's business step still saves.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

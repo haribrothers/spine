@@ -313,7 +313,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/public/invitations/:id` → 404 for an unknown id; `{ status: "pending", email, role, organizationName }` while usable; `{ status }` only (`expired`, `canceled`, `accepted`, `rejected`) otherwise (US-AUTH-11) | Public | — |
-| GET | `/public/quotes/:token` | Public | — |
+| GET | `/public/quotes/:token` → the quote; 410 `{ status: "expired", message, business: { name, address, email, phone, logoDataUri } }` for a link we issued that has expired, been revoked or replaced; 404 `{ status: "invalid" }` for a token that matches nothing (US-QUO-21) | Public | — |
 | POST | `/public/quotes/:token/accept` | Public | No |
 | POST | `/public/quotes/:token/reject` | Public | No |
 

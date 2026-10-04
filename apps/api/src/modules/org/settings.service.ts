@@ -11,7 +11,7 @@ import { settings } from "../../db/schema";
  * the onboarding wizard, documented here as the single source of truth for
  * their shape since nothing else defines a schema for them:
  *
- * - `business_profile`   → { name: string; logoUrl?: string; address?: string; industry?: string }
+ * - `business_profile`   → { name: string; logoUrl?: string; address?: string; email?: string; phone?: string; industry?: string; paymentInstructions?: string }
  * - `industry_template`  → { template: "construction" | "general_services" | "generic" }
  * - `currency`           → { code: string; locale: string }
  * - `financial_year_start` → { month: number (1-12); day: number (1-31) }

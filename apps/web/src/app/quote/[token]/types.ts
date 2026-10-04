@@ -48,3 +48,12 @@ export interface PublicQuoteView {
   business: PublicQuoteBusinessProfile | null;
   lines: PublicQuoteLine[];
 }
+
+/** US-QUO-21 — the 410 body's `business` for a link that has expired or been replaced. */
+export interface PublicQuoteUnavailableBusiness {
+  name: string;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  logoDataUri: string | null;
+}
