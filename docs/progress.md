@@ -244,7 +244,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-QUO-21 · Show a branded page for an expired or invalid link
 - [ ] US-QUO-22 · Keep emailed links working until the quote is replaced
 - [ ] US-QUO-23 · Explain a repeat conversion clearly
-- [ ] US-JOB-19 · Keep money and unassigned jobs away from field crew
+- [x] US-JOB-19 · Keep money and unassigned jobs away from field crew
 - [ ] US-JOB-20 · Own a job's milestones through the job
 - [ ] US-JOB-21 · Show retention on a progress invoice
 - [ ] US-JOB-22 · Number every job

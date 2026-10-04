@@ -116,6 +116,8 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
 
   const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
   const canReleaseRetention = useCapability("jobs.release_retention");
+  // US-JOB-19: job costing is financial reporting; Field never has this grant.
+  const canViewCosting = useCapability("reports.view_job_profitability");
 
   async function handleReleaseRetention() {
     if (!job) return;
@@ -186,7 +188,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
                 Edit job
               </Button>
             )}
-            {canReleaseRetention && job.retentionPct > 0 && (
+            {canReleaseRetention && (job.retentionPct ?? 0) > 0 && (
               <Button variant="secondary" onClick={() => setReleaseOpen(true)} disabled={busy}>
                 Release retention
               </Button>
@@ -196,11 +198,11 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
 
         <DataList
           items={[
-            {
-              label: "Contract value",
-              value: `${toDecimalString({ amount: BigInt(job.contractValueAmount), currency: job.currency })} ${job.currency}`,
-            },
-            { label: "Retention", value: job.retentionPct > 0 ? `${job.retentionPct}%` : "None" },
+            // Field users get no money fields (US-JOB-19), so these are left out for them.
+            ...(job.contractValueAmount !== undefined
+              ? [{ label: "Contract value", value: `${toDecimalString({ amount: BigInt(job.contractValueAmount), currency: job.currency })} ${job.currency}` }]
+              : []),
+            ...(job.retentionPct !== undefined ? [{ label: "Retention", value: job.retentionPct > 0 ? `${job.retentionPct}%` : "None" }] : []),
             { label: "Start date", value: job.startDate ? new Date(job.startDate).toLocaleDateString() : "—" },
             { label: "End date", value: job.endDate ? new Date(job.endDate).toLocaleDateString() : "—" },
             ...(job.sourceQuoteId
@@ -217,14 +219,14 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         )}
       </Card>
 
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as JobTab)}>
+      <Tabs value={activeTab === "costing" && !canViewCosting ? "milestones" : activeTab} onValueChange={(value) => setActiveTab(value as JobTab)}>
         <TabsList>
           <TabsTrigger value="milestones">Milestones</TabsTrigger>
           <TabsTrigger value="variations">Variation orders</TabsTrigger>
           <TabsTrigger value="photos">Photos</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
           <TabsTrigger value="crew">Crew</TabsTrigger>
-          <TabsTrigger value="costing">Costing</TabsTrigger>
+          {canViewCosting && <TabsTrigger value="costing">Costing</TabsTrigger>}
         </TabsList>
         <TabsContent value="milestones">
           <MilestonesSection job={job} onJobChanged={load} />
@@ -241,9 +243,11 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         <TabsContent value="crew">
           <CrewSection job={job} />
         </TabsContent>
-        <TabsContent value="costing">
-          <CostingSection job={job} />
-        </TabsContent>
+        {canViewCosting && (
+          <TabsContent value="costing">
+            <CostingSection job={job} />
+          </TabsContent>
+        )}
       </Tabs>
 
       <EditJobDialog
@@ -310,9 +314,9 @@ function EditJobDialog({
   const [status, setStatus] = useState<JobStatus>(job.status);
   const [startDate, setStartDate] = useState<Date | undefined>(job.startDate ? new Date(job.startDate) : undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(job.endDate ? new Date(job.endDate) : undefined);
-  const [retentionPct, setRetentionPct] = useState(job.retentionPct);
+  const [retentionPct, setRetentionPct] = useState(job.retentionPct ?? 0);
   const [notes, setNotes] = useState(job.notes ?? "");
-  const [advancedOpen, setAdvancedOpen] = useState(job.retentionPct > 0 || defaultShowRetention);
+  const [advancedOpen, setAdvancedOpen] = useState((job.retentionPct ?? 0) > 0 || defaultShowRetention);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -323,9 +327,9 @@ function EditJobDialog({
     setStatus(job.status);
     setStartDate(job.startDate ? new Date(job.startDate) : undefined);
     setEndDate(job.endDate ? new Date(job.endDate) : undefined);
-    setRetentionPct(job.retentionPct);
+    setRetentionPct(job.retentionPct ?? 0);
     setNotes(job.notes ?? "");
-    setAdvancedOpen(job.retentionPct > 0 || defaultShowRetention);
+    setAdvancedOpen((job.retentionPct ?? 0) > 0 || defaultShowRetention);
     setError(null);
   }, [open, job, defaultShowRetention]);
 

@@ -1,3 +1,4 @@
+import { JobAccessService, historyWithoutMoney, withoutMoney } from "./job-access.service";
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
@@ -48,6 +49,7 @@ export class JobsController {
     private readonly invoicesService: InvoicesService,
     private readonly variationOrdersService: VariationOrdersService,
     private readonly jobCostingService: JobCostingService,
+    private readonly jobAccess: JobAccessService,
   ) {}
 
   /** `assignedToMe` (Phase 5 mobile home screen, S-11.2) mirrors `GET /expenses?mine=true`'s own precedent — narrows to jobs the requesting user is assigned to via `job_assignments`. */
@@ -59,7 +61,14 @@ export class JobsController {
     @Query("assignedToMe") assignedToMe?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.jobsService.list(orgId, { status, contactId, assignedToUserId: assignedToMe === "true" ? session.user.id : undefined });
+    const { field } = await this.jobAccess.check(orgId, session.user.id);
+    // US-JOB-19: Field always gets only their assigned jobs, without money.
+    const rows = await this.jobsService.list(orgId, {
+      status,
+      contactId,
+      assignedToUserId: field || assignedToMe === "true" ? session.user.id : undefined,
+    });
+    return field ? rows.map(withoutMoney) : rows;
   }
 
   /**
@@ -72,20 +81,28 @@ export class JobsController {
   @OrgRoles(["owner", "staff", "field"])
   async milestonesDue(@Session() session: UserSession, @Query("withinDays") withinDays?: string) {
     const orgId = requireOrgId(session);
-    return this.milestonesService.dueAcrossJobs(orgId, { withinDays: withinDays ? Number(withinDays) : undefined });
+    const { field } = await this.jobAccess.check(orgId, session.user.id);
+    return this.milestonesService.dueAcrossJobs(orgId, {
+      withinDays: withinDays ? Number(withinDays) : undefined,
+      assignedToUserId: field ? session.user.id : undefined,
+    });
   }
 
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.jobsService.getOne(orgId, id);
+    const { field } = await this.jobAccess.check(orgId, session.user.id, id);
+    const job = await this.jobsService.getOne(orgId, id);
+    return field ? withoutMoney(job) : job;
   }
 
   /** `GET /jobs/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "job"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
   @Get(":id/history")
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.jobsService.getHistory(orgId, id);
+    const { field } = await this.jobAccess.check(orgId, session.user.id, id);
+    const history = await this.jobsService.getHistory(orgId, id);
+    return field ? historyWithoutMoney(history) : history;
   }
 
   @Post()
@@ -129,6 +146,7 @@ export class JobsController {
   @Get(":id/assignees")
   async listAssignees(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.jobsService.listAssignees(orgId, id);
   }
 
@@ -153,7 +171,9 @@ export class JobsController {
   @Get(":id/milestones")
   async listMilestones(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.milestonesService.list(orgId, id);
+    const { field } = await this.jobAccess.check(orgId, session.user.id, id);
+    const rows = await this.milestonesService.list(orgId, id);
+    return field ? rows.map(withoutMoney) : rows;
   }
 
   /** S-04.2/S-04.3 — replaces the job's entire milestone set with server-side percentage-total validation. Ownership check happens in the service, since "own" here means whoever last replaced the set (see MilestonesService.setAll's own doc comment). */
@@ -176,7 +196,9 @@ export class JobsController {
   @Get(":id/milestones/:milestoneId/history")
   async getMilestoneHistory(@Session() session: UserSession, @Param("id") id: string, @Param("milestoneId") milestoneId: string) {
     const orgId = requireOrgId(session);
-    return this.milestonesService.getHistory(orgId, id, milestoneId);
+    const { field } = await this.jobAccess.check(orgId, session.user.id, id);
+    const history = await this.milestonesService.getHistory(orgId, id, milestoneId);
+    return field ? historyWithoutMoney(history) : history;
   }
 
   @Post(":id/milestones/:milestoneId/complete")
@@ -190,8 +212,10 @@ export class JobsController {
     @Body() body: unknown,
   ) {
     const orgId = requireOrgId(session);
+    const { field } = await this.jobAccess.check(orgId, session.user.id, id);
     const input = completeMilestoneSchema.parse(body);
-    return this.milestonesService.completeMilestone(orgId, id, milestoneId, session.user.id, input);
+    const completed = await this.milestonesService.completeMilestone(orgId, id, milestoneId, session.user.id, input);
+    return field ? withoutMoney(completed) : completed;
   }
 
   /** S-04.5 / S-05.1's milestone path — raises a progress invoice directly from a completed milestone. Dedicated workflow-action capability, not an edit. */
@@ -214,8 +238,12 @@ export class JobsController {
     return this.invoicesService.releaseRetention(orgId, session.user.id, id);
   }
 
-  /** S-04.8 (revenue side) — cost/revenue/margin for a job, read live off journal_lines. Any authenticated org member can view (field crews included — this is job progress, not a financial report gated by §S-11.8's "mobile hides all financial reports" rule, which targets P&L/balance sheet, not a single job's own numbers a field lead may need). */
+  /** S-04.8 (revenue side) — cost/revenue/margin for a job, read live off journal_lines. Job profitability is financial reporting: it needs `reports.view_job_profitability`, which Field never has (US-JOB-19, D-072). */
   @Get(":id/costing")
+  // CapabilityGuard lets Field through by design (it relies on @OrgRoles to
+  // exclude them), so Field is excluded here explicitly.
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_job_profitability")
   async costing(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.jobCostingService.report(orgId, id);
@@ -224,6 +252,7 @@ export class JobsController {
   @Get(":id/photos")
   async listPhotos(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.jobsService.listPhotos(orgId, id);
   }
 
@@ -235,6 +264,7 @@ export class JobsController {
   @ApiBody({ type: AddJobPhotoDto })
   async addPhoto(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     const input = addJobPhotoSchema.parse(body);
     return this.jobsService.addPhoto(orgId, id, session.user.id, input);
   }
@@ -243,12 +273,14 @@ export class JobsController {
   @Get(":id/photos/:photoId/history")
   async getPhotoHistory(@Session() session: UserSession, @Param("id") id: string, @Param("photoId") photoId: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.jobsService.getPhotoHistory(orgId, id, photoId);
   }
 
   @Get(":id/notes")
   async listNotes(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.jobsService.listNotes(orgId, id);
   }
 
@@ -259,6 +291,7 @@ export class JobsController {
   @ApiBody({ type: AddJobNoteDto })
   async addNote(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     const input = addJobNoteSchema.parse(body);
     return this.jobsService.addNote(orgId, id, session.user.id, input);
   }
@@ -267,6 +300,7 @@ export class JobsController {
   @Get(":id/notes/:noteId/history")
   async getNoteHistory(@Session() session: UserSession, @Param("id") id: string, @Param("noteId") noteId: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.jobsService.getNoteHistory(orgId, id, noteId);
   }
 
@@ -274,6 +308,7 @@ export class JobsController {
   @Get(":id/variation-orders")
   async listVariationOrders(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
     return this.variationOrdersService.list(orgId, id);
   }
 

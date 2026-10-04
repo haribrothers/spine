@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-JOB-19: keep money and unassigned jobs away from field crew (Phase 6)
+
+- **Assigned jobs only.** `JobAccessService` (`apps/api/src/modules/jobs`) scopes every job read for Field users. `GET /jobs` returns only their assigned jobs, with or without `assignedToMe`. A job they aren't assigned to is a 404, as are its milestones, photos, notes, history, variation orders and crew. The same applies to the Field write routes: adding a note or photo, or completing a milestone.
+- **No money.** Field responses never include `contractValueAmount`, `retentionPct` or a milestone's `amount`/`resolvedAmount`, and money changes are removed from the job and milestone history Field sees.
+- **Milestones due.** `GET /jobs/milestones/due` gives Field only milestones on their assigned jobs.
+- **Job costing** needs `reports.view_job_profitability`, and its route is now Owner/Staff only. `CapabilityGuard` lets Field through by design and relies on `@OrgRoles` to keep them out, and the costing route had none. All 50 capability-gated routes were scanned: every one now has a role restriction, and the only ones open to Field are the four meant for them (job photos, job notes, own expenses, accept in person).
+- **Web.** The Costing tab shows only with that grant. Job list columns and job and milestone money show only when the API sends them, so Field sees jobs without a contract value, retention or milestone amounts.
+- **Still open.** Accepting a quote in person isn't yet limited to quotes on the Field user's assigned jobs. That's recorded on R-12 for US-MOB-17.
+
+Tests: `us-job-19.http.integration.test.ts` (7):
+- Assigned-only lists.
+- 404s across the sub-routes.
+- No money fields in jobs, milestones or history, while Staff still get them.
+- Costing: Field and Staff without the grant get 403; the Owner and Staff with the grant get 200.
+- Milestones due are scoped to assigned jobs.
+- No notes or photos on unassigned jobs.
+
+Integration 32 files pass; E2E 33/33.
+
 ### 2026-10-04 — US-OPS-20: close the read-access gaps found in review (Phase 6)
 
 - **Owner-only:** `GET /org/invitations` and `POST /demo-data/seed` (removing demo data already was). Staff and Field now get 403.

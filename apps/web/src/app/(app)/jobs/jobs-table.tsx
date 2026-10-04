@@ -36,23 +36,28 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       header: "Status",
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{JOB_STATUS_LABELS[row.status]}</Badge>,
     },
-    {
-      key: "contractValue",
-      header: "Contract value",
-      render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.contractValueAmount), currency: row.currency })} {row.currency}
-        </span>
-      ),
-      sortValue: (row) => Number(row.contractValueAmount),
-    },
-    {
-      key: "retentionPct",
-      header: "Retention",
-      render: (row) => (row.retentionPct > 0 ? `${row.retentionPct}%` : "—"),
-      sortValue: (row) => row.retentionPct,
-    },
   ];
+  // Field users get no money fields (US-JOB-19): leave the money columns out for them.
+  if (jobs.some((job) => job.contractValueAmount !== undefined)) {
+    columns.push(
+      {
+        key: "contractValue",
+        header: "Contract value",
+        render: (row) => (
+          <span className="font-mono tabular-nums">
+            {toDecimalString({ amount: BigInt(row.contractValueAmount ?? 0), currency: row.currency })} {row.currency}
+          </span>
+        ),
+        sortValue: (row) => Number(row.contractValueAmount ?? 0),
+      },
+      {
+        key: "retentionPct",
+        header: "Retention",
+        render: (row) => ((row.retentionPct ?? 0) > 0 ? `${row.retentionPct}%` : "—"),
+        sortValue: (row) => row.retentionPct ?? 0,
+      },
+    );
+  }
 
   return (
     <DataTable

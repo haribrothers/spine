@@ -187,32 +187,32 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/jobs` | Any member | — |
+| GET | `/jobs` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs` | roles: owner, staff; `jobs.edit_own` | Yes |
-| GET | `/jobs/:id` | Any member | — |
+| GET | `/jobs/:id` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | PUT | `/jobs/:id` | roles: owner, staff | No |
-| GET | `/jobs/:id/assignees` | Any member | — |
+| GET | `/jobs/:id/assignees` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/assignees` | roles: owner, staff | Yes |
 | DELETE | `/jobs/:id/assignees/:userId` | roles: owner, staff | No |
-| GET | `/jobs/:id/costing` | Any member | — |
-| GET | `/jobs/:id/history` | Any member | — |
-| GET | `/jobs/:id/milestones` | Any member | — |
+| GET | `/jobs/:id/costing` | roles: owner, staff; `reports.view_job_profitability` (US-JOB-19) | — |
+| GET | `/jobs/:id/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
+| GET | `/jobs/:id/milestones` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | PUT | `/jobs/:id/milestones` | roles: owner, staff | No |
 | POST | `/jobs/:id/milestones/:milestoneId/complete` | roles: owner, staff, field | Yes |
-| GET | `/jobs/:id/milestones/:milestoneId/history` | Any member | — |
+| GET | `/jobs/:id/milestones/:milestoneId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/milestones/:milestoneId/invoice` | roles: owner, staff; `milestones.invoice` | Yes |
-| GET | `/jobs/:id/notes` | Any member | — |
+| GET | `/jobs/:id/notes` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/notes` | roles: owner, staff, field; `job_notes.edit_own` | No |
-| GET | `/jobs/:id/notes/:noteId/history` | Any member | — |
-| GET | `/jobs/:id/photos` | Any member | — |
+| GET | `/jobs/:id/notes/:noteId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
+| GET | `/jobs/:id/photos` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/photos` | roles: owner, staff, field; `job_photos.edit_own` | Yes |
-| GET | `/jobs/:id/photos/:photoId/history` | Any member | — |
+| GET | `/jobs/:id/photos/:photoId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/release-retention` | roles: owner, staff; `jobs.release_retention` | Yes |
-| GET | `/jobs/:id/variation-orders` | Any member | — |
+| GET | `/jobs/:id/variation-orders` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/variation-orders` | roles: owner, staff; `variation_orders.edit_own` | Yes |
 | POST | `/jobs/:id/variation-orders/:variationOrderId/apply` | roles: owner, staff; `variation_orders.apply` | Yes |
 | POST | `/jobs/from-quote/:quoteId` | roles: owner, staff; `jobs.edit_own` | Yes |
-| GET | `/jobs/milestones/due` | roles: owner, staff, field | — |
+| GET | `/jobs/milestones/due` | roles: owner, staff, field — Field only milestones on assigned jobs (US-JOB-19) | — |
 
 ### Leads — `/leads`
 

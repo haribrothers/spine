@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
 import { roundHalfUp } from "@spine/shared";
-import { and, eq, lte } from "drizzle-orm";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { jobs, milestones, jobPhotos } from "../../db/schema";
+import { jobAssignments, jobPhotos, jobs, milestones } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -68,7 +68,7 @@ export class MilestonesService {
    * overdue first, so the dashboard widget doesn't need a second query for
    * the overdue case.
    */
-  async dueAcrossJobs(orgId: string, options: { withinDays?: number } = {}) {
+  async dueAcrossJobs(orgId: string, options: { withinDays?: number; assignedToUserId?: string } = {}) {
     const withinDays = options.withinDays ?? 14;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -79,7 +79,17 @@ export class MilestonesService {
       .select({ milestone: milestones, jobName: jobs.name, jobContactId: jobs.contactId, jobCurrency: jobs.currency })
       .from(milestones)
       .innerJoin(jobs, eq(milestones.jobId, jobs.id))
-      .where(and(eq(milestones.orgId, orgId), eq(milestones.status, "pending"), lte(milestones.dueDate, horizon)))
+      .where(
+        and(
+          eq(milestones.orgId, orgId),
+          eq(milestones.status, "pending"),
+          lte(milestones.dueDate, horizon),
+          // US-JOB-19: Field sees only milestones on jobs they're assigned to.
+          options.assignedToUserId
+            ? inArray(milestones.jobId, this.db.select({ id: jobAssignments.jobId }).from(jobAssignments).where(eq(jobAssignments.userId, options.assignedToUserId)))
+            : undefined,
+        ),
+      )
       .orderBy(milestones.dueDate);
 
     return rows

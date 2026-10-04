@@ -1972,6 +1972,23 @@ Regression checks: contact logos, avatars, the business logo, job photos
 and receipts still show for everyone who should see them (§2, §5, §11,
 §13).
 
+## 18. Field and job money (US-JOB-19, Phase 6)
+
+With a Field user assigned to one job (Jobs → Crew):
+
+1. As Field, Jobs lists only that job, with no "Contract value" or
+   "Retention" columns.
+2. Open it: no contract value or retention in the header, milestones show
+   no amounts, and there's no Costing tab. Notes, Photos and Milestones
+   still work, including "Mark complete".
+3. Open another job's URL directly (`/jobs/<id>`): "Job not found".
+4. The dashboard's "Job milestones due" lists only that job's milestones.
+5. As Staff without "View job profitability", the Costing tab is hidden;
+   grant it to their Team and it appears. Owners always see it.
+
+Regression checks: Owners and Staff still see contract value, retention
+and milestone amounts everywhere (§5).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

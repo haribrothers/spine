@@ -15,8 +15,9 @@ export interface Job {
   startDate: string | null;
   endDate: string | null;
   currency: string;
-  contractValueAmount: string;
-  retentionPct: number;
+  /** Absent for Field users: the API never sends them a job's money (US-JOB-19). */
+  contractValueAmount?: string;
+  retentionPct?: number;
   notes: string | null;
   createdByUserId: string | null;
   isDemo: boolean;
@@ -31,8 +32,9 @@ export interface Milestone {
   name: string;
   sequence: number;
   amountType: MilestoneAmountType;
-  amount: number;
-  resolvedAmount: string;
+  /** Absent for Field users (US-JOB-19). */
+  amount?: number;
+  resolvedAmount?: string;
   status: MilestoneStatus;
   dueDate: string | null;
   createdByUserId: string | null;
