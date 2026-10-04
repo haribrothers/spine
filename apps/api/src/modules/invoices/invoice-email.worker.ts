@@ -8,7 +8,7 @@ import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
 import type { InvoicePdfBusinessProfile } from "../pdf/invoice-pdf.template";
-import { toDecimalString } from "@spine/shared";
+import { percentageOf, toDecimalString } from "@spine/shared";
 
 export const INVOICE_SEND_EMAIL_QUEUE = "invoice-send-email";
 
@@ -101,12 +101,18 @@ export class InvoiceEmailWorker implements OnModuleInit {
     const businessName = business?.name || "Spine";
     const invoiceNumber = row.invoice.number ?? "your invoice";
     const currency = row.invoice.currency;
-    const balanceDue = row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
+    // US-JOB-21: retention held back isn't due now.
+    const balanceDue = row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
+    const fmt = (amount: bigint) => `${toDecimalString({ amount, currency })} ${currency}`;
+    const retentionLine =
+      row.invoice.retentionAmount > 0n
+        ? `Total ${fmt(row.invoice.totalAmount)}; retention held (${percentageOf(row.invoice.retentionAmount, row.invoice.subtotalAmount - row.invoice.discountAmount)}%) -${fmt(row.invoice.retentionAmount)}; amount due ${fmt(row.invoice.totalAmount - row.invoice.retentionAmount)}.`
+        : null;
     const dueDateText = row.invoice.dueDate ? new Date(row.invoice.dueDate).toLocaleDateString() : null;
 
     const balanceLine =
       balanceDue > 0n
-        ? `The balance due is ${toDecimalString({ amount: balanceDue, currency })} ${currency}${dueDateText ? `, due ${dueDateText}` : ""}.`
+        ? `${retentionLine ? `${retentionLine} ` : ""}The balance due is ${toDecimalString({ amount: balanceDue, currency })} ${currency}${dueDateText ? `, due ${dueDateText}` : ""}.`
         : "This invoice is already paid in full — no balance is owing.";
 
     // S-05.10 — same PDF, same attachment, only the subject/opening line

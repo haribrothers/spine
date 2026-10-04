@@ -86,3 +86,10 @@ export function multiplyMinor(amountMinor: bigint, factor: number | string): big
 export function percentOfMinor(amountMinor: bigint, percentage: number | string): bigint {
   return roundFraction(times({ n: amountMinor, d: 1n }, percent(percentage)));
 }
+
+/** `part` as a percentage of `base`, rounded to two decimals, without trailing zeros ("10", "7.5", "33.33"). */
+export function percentageOf(part: bigint, base: bigint): string {
+  if (base === 0n) return "0";
+  const hundredths = roundFraction({ n: part * 10000n, d: base });
+  return (Number(hundredths) / 100).toString();
+}

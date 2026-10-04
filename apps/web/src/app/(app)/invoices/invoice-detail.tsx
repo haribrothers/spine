@@ -212,6 +212,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const canSendReminder = invoice.isOverdue && hasSendReminderCapability;
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
+  const retentionAmount = BigInt(invoice.retentionAmount);
   // S-05.4 — an advance invoice never posts to AR on issue (see
   // InvoicesService.issue's own doc comment), so it has no real ledger
   // balance to record a payment or credit note against — that money
@@ -342,6 +343,27 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         )}
       </Card>
 
+      {/* US-JOB-21: which job and milestone this invoice bills. */}
+      {invoice.job && (
+        <Card className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]" data-testid="invoice-job-card">
+          <span className="text-on-surface-muted">
+            Job{" "}
+            <Link href={`/jobs/${invoice.job.id}`} className="text-primary hover:underline">
+              {invoice.job.name}
+            </Link>
+          </span>
+          {invoice.milestone && (
+            <span className="text-on-surface-muted">
+              Milestone{" "}
+              <Link href={`/jobs/${invoice.job.id}`} className="text-primary hover:underline">
+                {invoice.milestone.name}
+                {invoice.milestone.percent !== null && ` (${invoice.milestone.percent}%)`}
+              </Link>
+            </span>
+          )}
+        </Card>
+      )}
+
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
         <div className="flex flex-col divide-y divide-border">
@@ -383,6 +405,19 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         <div className="border-t border-border pt-2">
           <TotalRow label="Total" value={invoice.totalAmount} currency={invoice.currency} emphasize />
         </div>
+        {retentionAmount > 0n && (
+          <>
+            <TotalRow
+              label={`Retention held (${invoice.retention?.percent ?? "0"}%)`}
+              value={`-${toDecimalString({ amount: retentionAmount, currency: invoice.currency })}`}
+              currency=""
+              raw
+            />
+            <div className="border-t border-border pt-2">
+              <TotalRow label="Amount due" value={(BigInt(invoice.totalAmount) - retentionAmount).toString()} currency={invoice.currency} emphasize />
+            </div>
+          </>
+        )}
         {amountPaid > 0n && (
           <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: invoice.currency })}`} currency="" raw />
         )}
@@ -395,6 +430,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </div>
         )}
       </Card>
+
+      {retentionAmount > 0n && invoice.retention && (
+        <p className="text-[12px] text-on-surface-muted" data-testid="retention-note">
+          Retention is held in Retention Receivable until you release it from the job. Held on this job so far:{" "}
+          {toDecimalString({ amount: BigInt(invoice.retention.heldOnJob), currency: invoice.currency })} {invoice.currency}.
+        </p>
+      )}
 
       {(invoice.notes || invoice.termsAndConditions) && (
         <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">

@@ -2078,6 +2078,20 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
    milestones. The job's creator can still edit them afterwards; the
    first Staff member still can't.
 
+## 27. Retention on progress invoices (US-JOB-21, Phase 6)
+
+1. Open a progress invoice raised from a milestone on a job with retention
+   (demo: the job with retention accumulating, §5). Under the header:
+   "Job <name>" and "Milestone <name> (<pct>%)", both linking to the job.
+2. Totals: Subtotal, Tax, Total, "Retention held (<pct>%)" (negative),
+   "Amount due" = Total − retention. Below: "Retention is held in
+   Retention Receivable until you release it from the job. Held on this
+   job so far: <amount>."
+3. Issue a new progress invoice and download its PDF: it has the same
+   retention and amount-due rows. Email it: the email states the
+   retention held and the amount due.
+4. A progress invoice on a job with 0% retention shows no retention row.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

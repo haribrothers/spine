@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine } from "@spine/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { computeDocumentLine, percentageOf } from "@spine/shared";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -236,7 +236,44 @@ export class InvoicesService {
       isOverdue: isOverdue(row.invoice),
       paymentStatus: paymentStatus(row.invoice),
       balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
+      ...(await this.jobDetails(orgId, row.invoice)),
       lines,
+    };
+  }
+
+  /**
+   * US-JOB-21 — for an invoice raised from a job: the job and milestone it
+   * bills, the retention held on it (as a percentage of the net amount,
+   * from the invoice's own figures so it never drifts if the job's rate
+   * changes) and the retention held on the whole job so far, read from the
+   * ledger (1150 Retention Receivable lines for the job, D-011).
+   */
+  private async jobDetails(orgId: string, invoice: typeof invoices.$inferSelect) {
+    if (!invoice.jobId) return { job: null, milestone: null, retention: null };
+    const [job] = await this.db.select({ id: jobs.id, name: jobs.name }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, invoice.jobId)));
+    const [milestone] = invoice.milestoneId
+      ? await this.db
+          .select({ id: milestones.id, name: milestones.name, amountType: milestones.amountType, amount: milestones.amount })
+          .from(milestones)
+          .where(eq(milestones.id, invoice.milestoneId))
+      : [];
+
+    let retention: { percent: string; heldOnJob: bigint } | null = null;
+    if (invoice.retentionAmount > 0n) {
+      const retentionAccountId = await this.ledger.resolveSystemAccount(this.db, orgId, "retentionReceivable");
+      const [held] = await this.db
+        .select({ balance: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+        .from(journalLines)
+        .where(and(eq(journalLines.accountId, retentionAccountId), eq(journalLines.jobId, invoice.jobId)));
+      retention = { percent: percentageOf(invoice.retentionAmount, invoice.subtotalAmount - invoice.discountAmount), heldOnJob: BigInt(held?.balance ?? "0") };
+    }
+
+    return {
+      job: job ? { id: job.id, name: job.name } : null,
+      milestone: milestone
+        ? { id: milestone.id, name: milestone.name, percent: milestone.amountType === "percent" ? milestone.amount : null }
+        : null,
+      retention,
     };
   }
 

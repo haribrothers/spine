@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { toDecimalString } from "@spine/shared";
+import { percentageOf, toDecimalString } from "@spine/shared";
 import type { invoices, invoiceLines } from "../../db/schema";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 
@@ -112,7 +112,9 @@ function formatDate(value: Date | string | null): string {
 export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri }: InvoicePdfData) {
   const currency = invoice.currency;
   const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
-  const balanceDue = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
+  // US-JOB-21: retention held back is not part of what's due now.
+  const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+  const amountDue = invoice.totalAmount - invoice.retentionAmount;
 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
@@ -201,6 +203,20 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             <Text style={styles.grandTotalLabel}>Total</Text>
             <Text style={styles.grandTotalValue}>{fmt(invoice.totalAmount)}</Text>
           </View>
+          {invoice.retentionAmount > 0n && (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>
+                  Retention held ({percentageOf(invoice.retentionAmount, invoice.subtotalAmount - invoice.discountAmount)}%)
+                </Text>
+                <Text style={styles.totalsValue}>-{fmt(invoice.retentionAmount)}</Text>
+              </View>
+              <View style={styles.grandTotalRow}>
+                <Text style={styles.grandTotalLabel}>Amount due</Text>
+                <Text style={styles.grandTotalValue}>{fmt(amountDue)}</Text>
+              </View>
+            </>
+          )}
           {invoice.amountPaid > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Paid</Text>

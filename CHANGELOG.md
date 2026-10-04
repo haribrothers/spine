@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-JOB-21: show retention on a progress invoice (Phase 6)
+
+- **Invoice detail.** A progress invoice now shows:
+  - a "Job" and "Milestone (<pct>%)" header, both linking to the job;
+  - totals of Subtotal, Tax, Total, "Retention held (<pct>%)" as a negative amount, and "Amount due";
+  - the note "Retention is held in Retention Receivable until you release it from the job. Held on this job so far: <amount>.".
+- **Where the figures come from.** `GET /invoices/:id` returns `job`, `milestone` and `retention`. The percentage is computed from the invoice's own figures, so it never drifts if the job's rate changes. "Held on this job so far" is read from the ledger: the job's lines on 1150 Retention Receivable (D-011). Invoices without retention return nothing extra and show no retention row.
+- **PDF and email.** The invoice PDF shows the same retention and amount-due rows. The email states total, retention held and amount due. Both used to give a balance due that included retention, which was wrong for progress invoices.
+- **Shared helper.** `percentageOf(part, base)` in `@spine/shared`.
+- **Job number later.** The header shows the job's name; its number arrives with US-JOB-22 (Group 6).
+
+Tests:
+- `us-job-21.http.integration.test.ts` (3), on a demo-seeded org: job, milestone, retention % and held-on-job match the ledger; the amount due excludes retention; a plain invoice has no retention details; percentage formatting.
+- `apps/e2e/tests/us-job-21.spec.ts`: the job card, retention row, "Amount due" and note.
+
+Integration 40 files pass; E2E 45/45.
+
 ### 2026-10-04 — US-JOB-20: own a job's milestones through the job (Phase 6)
 
 - **Ownership follows the job.** `PUT /jobs/:id/milestones` checks `milestones.edit_own`/`edit_others` against the job's creator (`jobs.created_by_user_id`). It used to check whoever last replaced the milestone set, so "own" changed hands every time a colleague edited it (D-079). A job with no recorded creator is nobody's own.

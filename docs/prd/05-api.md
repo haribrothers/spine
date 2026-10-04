@@ -173,7 +173,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/invoices` | roles: owner, staff | — |
 | POST | `/invoices` | roles: owner, staff; `invoices.edit_own` | Yes |
 | DELETE | `/invoices/:id` | roles: owner, staff | Yes |
-| GET | `/invoices/:id` | roles: owner, staff | — |
+| GET | `/invoices/:id` | roles: owner, staff — also returns `paymentStatus`, and `job`, `milestone`, `retention { percent, heldOnJob }` for an invoice raised from a job (US-PAY-13, US-JOB-21) | — |
 | PUT | `/invoices/:id` | roles: owner, staff | Yes |
 | GET | `/invoices/:id/history` | roles: owner, staff | — |
 | POST | `/invoices/:id/issue` | roles: owner, staff; `invoices.issue` | Yes |
