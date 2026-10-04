@@ -16,10 +16,10 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "bg-primary text-white hover:bg-primary-hover",
+        primary: "bg-primary text-on-primary hover:bg-primary-hover",
         secondary:
           "border border-border-strong bg-transparent text-on-surface hover:bg-surface-sunken",
-        danger: "bg-overdue text-white hover:opacity-90",
+        danger: "bg-overdue text-on-danger hover:opacity-90",
         ghost: "bg-transparent text-on-surface hover:bg-surface-sunken",
       },
       size: {

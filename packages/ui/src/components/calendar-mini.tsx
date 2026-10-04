@@ -99,7 +99,7 @@ export function MiniCalendar({ selected, onSelect, className, headerAction }: Mi
                   className={cn(
                     "flex h-7 w-7 items-center justify-center rounded-md text-[13px] text-on-surface transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     isToday && !isSelected && "font-semibold text-primary",
-                    isSelected && "bg-primary text-white hover:bg-primary-hover",
+                    isSelected && "bg-primary text-on-primary hover:bg-primary-hover",
                   )}
                 >
                   {date.getDate()}

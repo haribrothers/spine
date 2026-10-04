@@ -56,6 +56,9 @@
   --color-due-soon-bg: #fcf0d4;
   --color-overdue: #b3261e;
   --color-overdue-bg: #fbe6e4;
+  /* US-OPS-25 (D-099): text on filled primary/danger controls. */
+  --color-on-primary: #ffffff;
+  --color-on-danger: #ffffff;
   --color-draft: var(--color-neutral-500);
   --color-draft-bg: var(--color-neutral-100);
 
@@ -147,6 +150,8 @@
   --color-due-soon-bg: #332506;
   --color-overdue: #f17b72;
   --color-overdue-bg: #3a1512;
+  --color-on-primary: #121110;
+  --color-on-danger: #121110;
   --color-draft: var(--color-neutral-500);
   --color-draft-bg: var(--color-neutral-100);
 
@@ -198,6 +203,8 @@
     --color-due-soon-bg: #332506;
     --color-overdue: #f17b72;
     --color-overdue-bg: #3a1512;
+    --color-on-primary: #121110;
+    --color-on-danger: #121110;
     --color-draft: var(--color-neutral-500);
     --color-draft-bg: var(--color-neutral-100);
 
@@ -252,6 +259,8 @@
   --color-due-soon-bg: var(--color-due-soon-bg);
   --color-overdue: var(--color-overdue);
   --color-overdue-bg: var(--color-overdue-bg);
+  --color-on-primary: var(--color-on-primary);
+  --color-on-danger: var(--color-on-danger);
   --color-draft: var(--color-draft);
   --color-draft-bg: var(--color-draft-bg);
 

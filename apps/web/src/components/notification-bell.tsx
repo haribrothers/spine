@@ -61,7 +61,7 @@ export function NotificationBell({ collapsed }: { collapsed: boolean }) {
             // repurpose... for a generic badge or tag") — this uses
             // --color-primary instead, the one accent color the design
             // system allots to "the one primary action/signal per screen."
-            <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-inverse-on-surface">
+            <span className="absolute -right-1 -top-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-primary px-0.5 text-[9px] font-semibold leading-none text-on-primary">
               {unreadCount! > 9 ? "9+" : unreadCount}
             </span>
           )}

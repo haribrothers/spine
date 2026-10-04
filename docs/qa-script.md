@@ -2324,6 +2324,14 @@ Regression: the sign-up page's "invite-only" message still names the business (�
 
 Regression: CSV exports still have plain decimals ("1234.50") with a currency column (§45).
 
+## 51. Dark-mode text on filled controls (US-OPS-25, Phase 6)
+
+1. Switch to dark mode. Primary buttons ("+ New", "Send", "Record payment", "Log in"), danger buttons, avatars and the notification count have dark text on the coloured fill, easy to read.
+2. Switch to light mode: the same controls have white text, as before.
+3. On the phone app in dark mode, an empty text field's placeholder is a light grey, readable on the dark background.
+
+Regression: disabled buttons, secondary and ghost buttons look as before in both modes.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

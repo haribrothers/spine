@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-25: keep text readable on coloured controls in dark mode (Phase 6)
+
+- **Tokens.** `on-primary` and `on-danger` (white in light mode, `#121110` in dark, D-099) are now defined everywhere colours are: `docs/DESIGN.md`'s front matter, `packages/config/tailwind-preset.css` (light, dark and system-dark blocks plus the Tailwind theme) and `packages/ui-native`'s colour maps.
+- **Web.** Primary and danger buttons, `AlertDialogAction`, avatars, the checked checkbox, the current page in pagination, completed stepper steps, selected or today days in both calendars, and the notification count badge now use them instead of `text-white`. In dark mode a primary label is near-black on `#6B8AFF` (5.9:1) instead of white (3.1:1). Light mode looks the same as before.
+- **Native.** `TextField`'s placeholder takes the mode's `onSurfaceMuted` from `useNativeColors()` (`#93907F` in dark, was a fixed `#726C5A`). Avatar initials and the iOS full-width button label use `onPrimary` / `onDanger`. The gap noted in `native-notes.md` is closed.
+- **Tests.** A contrast test fails if any on-*/fill pair is under 4.5:1 in either mode, in the tokens, the web CSS or the native map. Every `@spine/ui` axe test now runs in both `data-theme="light"` and `"dark"`.
+
+Tests:
+- `packages/ui/src/components/us-ops-25.contrast.test.ts` (7): on-primary/primary and on-danger/overdue at ≥ 4.5:1 in both modes in all three sources; light stays white; the old white-on-dark-primary was below AA; the native dark placeholder is readable.
+- All 79 `@spine/ui` a11y tests now run in both themes.
+- `apps/e2e/tests/us-ops-25.spec.ts` (2): the "Log in" button's computed text and fill colours in dark and light mode.
+
 ### 2026-10-05 — US-OPS-24: show money the same way everywhere (Phase 6)
 
 - **One formatter.** `formatMoney(minor, currency, locale)` in `@spine/shared`, built on `Intl.NumberFormat`. It gives the currency symbol, the locale's grouping and decimal marks, the currency's own decimals and a true minus sign: "$12,024.75", "−$4,335.00", "₹1,20,247.50", "12.024,75 €". Amounts stay exact (decimal strings, never floats).

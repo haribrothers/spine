@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { TextInput, type TextInputProps } from "react-native";
 import { cn } from "../lib/cn";
+import { useNativeColors } from "../theme/use-native-colors";
 
 /**
  * Ports `packages/ui`'s Input to RN's `TextInput` — see button.tsx's own
@@ -54,26 +55,30 @@ export interface TextFieldProps extends TextInputProps {
 }
 
 export const TextField = forwardRef<TextInput, TextFieldProps>(
-  ({ className, error = false, editable = true, variant = "bordered", ...props }, ref) => (
-    <TextInput
-      ref={ref}
-      editable={editable}
-      accessibilityState={{ disabled: !editable }}
-      placeholderTextColor="#726C5A"
-      className={cn(
-        "w-full text-[14px] text-on-surface dark:text-on-surface-dark",
-        variant === "row"
-          ? cn("h-11 px-0", error ? "text-overdue dark:text-overdue-dark" : "")
-          : cn(
-              "h-11 rounded-lg border bg-surface px-2.5 dark:bg-surface-dark",
-              error ? "border-overdue dark:border-overdue-dark" : "border-border-strong dark:border-border-strong-dark",
-            ),
-        editable ? "" : "opacity-50",
-        className,
-      )}
-      {...props}
-    />
-  ),
+  ({ className, error = false, editable = true, variant = "bordered", ...props }, ref) => {
+    // US-OPS-25: a native prop, so it can't take a dark: class — resolved per mode instead.
+    const colors = useNativeColors();
+    return (
+      <TextInput
+        ref={ref}
+        editable={editable}
+        accessibilityState={{ disabled: !editable }}
+        placeholderTextColor={colors.onSurfaceMuted}
+        className={cn(
+          "w-full text-[14px] text-on-surface dark:text-on-surface-dark",
+          variant === "row"
+            ? cn("h-11 px-0", error ? "text-overdue dark:text-overdue-dark" : "")
+            : cn(
+                "h-11 rounded-lg border bg-surface px-2.5 dark:bg-surface-dark",
+                error ? "border-overdue dark:border-overdue-dark" : "border-border-strong dark:border-border-strong-dark",
+              ),
+          editable ? "" : "opacity-50",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
 );
 
 TextField.displayName = "TextField";

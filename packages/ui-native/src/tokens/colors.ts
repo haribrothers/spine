@@ -33,6 +33,9 @@ export const lightColors = {
   surfaceSunken: "#F9F9F9",
   onSurface: "#211F1A",
   onSurfaceMuted: "#726C5A",
+  /** US-OPS-25 (D-099) — text on filled primary / danger controls. */
+  onPrimary: "#FFFFFF",
+  onDanger: "#FFFFFF",
   border: "#E7E5E0",
   borderStrong: "#D3D0C9",
 
@@ -84,6 +87,8 @@ export const darkColors = {
   surfaceSunken: "#2C2B26",
   onSurface: "#F3F2EE",
   onSurfaceMuted: "#93907F",
+  onPrimary: "#121110",
+  onDanger: "#121110",
   border: "#2C2B26",
   borderStrong: "#3B392F",
 
