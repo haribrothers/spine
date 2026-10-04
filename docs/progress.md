@@ -239,7 +239,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-AUTH-08 · See that sign-up is invite-only
 - [x] US-AUTH-09 · Ask for a password reset link
 - [x] US-AUTH-10 · Choose a new password from the reset link
-- [ ] US-AUTH-11 · See why an invitation can't be used
+- [x] US-AUTH-11 · See why an invitation can't be used
 - [ ] US-AUTH-12 · Keep my unsaved work when my session expires
 - [ ] US-QUO-21 · Show a branded page for an expired or invalid link
 - [ ] US-QUO-22 · Keep emailed links working until the quote is replaced

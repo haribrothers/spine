@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-AUTH-11: see why an invitation can't be used (Phase 6)
+
+- **The page.** An invitation link whose id doesn't exist, or that has expired, been cancelled, accepted or declined, now shows "This invitation can't be used" and "It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one." with "Log in instead" (to `/login`). This applies signed in or out. Before, a signed-out visitor got the sign-up prompt with an empty email, and a signed-in one got "This invitation could not be found or has expired.".
+- **A valid pending invitation** still shows the normal invitation page (US-AUTH-04/05).
+- **API.** `GET /public/invitations/:id` returns 404 for an unknown id (was 400). Otherwise it returns `{ status }`: `pending` (with `email`, `role`, `organizationName`), or `expired`, `canceled`, `accepted` or `rejected` with nothing else. An old link no longer reveals the business name or the invited email.
+
+Tests:
+- `us-auth-11.http.integration.test.ts` (6): 404 for an unknown id with no business name; a pending invitation's details; expired, cancelled, accepted and declined return only their status.
+- `apps/e2e/tests/us-auth-11.spec.ts` (2): signed out, an unknown id and "Log in instead"; signed in, a cancelled invitation shows the page and a pending one shows the normal page.
+
 ### 2026-10-04 — US-AUTH-09, US-AUTH-10: reset a forgotten password (Phase 6)
 
 - **Ask for a link.** "Forgot password?" on `/login` opens `/forgot-password`: "Reset your password", "Enter the email you sign in with and we'll send you a link to choose a new password.", "Email", "Send reset link", "The link works once and expires in 1 hour." and "Back to log in". The same page shows whether or not email (SMTP) is set up (D-084).

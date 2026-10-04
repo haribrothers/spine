@@ -312,7 +312,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/public/invitations/:id` | Public | — |
+| GET | `/public/invitations/:id` → 404 for an unknown id; `{ status: "pending", email, role, organizationName }` while usable; `{ status }` only (`expired`, `canceled`, `accepted`, `rejected`) otherwise (US-AUTH-11) | Public | — |
 | GET | `/public/quotes/:token` | Public | — |
 | POST | `/public/quotes/:token/accept` | Public | No |
 | POST | `/public/quotes/:token/reject` | Public | No |

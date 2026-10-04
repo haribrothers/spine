@@ -2158,6 +2158,15 @@ Settings › Tax.
 
 Regression: `/login` still signs in, and shows "Sign up" only on a fresh install (§31).
 
+## 33. Invitation can't be used (US-AUTH-11, Phase 6)
+
+1. Signed out, open `/accept-invite/<made-up id>`: "This invitation can't be used", "It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one." and "Log in instead", which goes to `/login`. No business name appears.
+2. As an Owner, invite someone, then cancel the invitation from Team › Users. Open its link signed in and signed out: the same page.
+3. Open an accepted invitation's link, and one past its expiry: the same page.
+4. A fresh pending invitation still shows "You've been invited" with sign-up/log-in (signed out) or Accept/Decline (signed in as the invitee).
+
+Regression: the invitation sign-up link (`/signup?inviteId=…&email=…`) still shows the form (§31); accepting an invitation still joins the organisation.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
