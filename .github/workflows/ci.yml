@@ -84,8 +84,9 @@ jobs:
       - name: Typecheck
         run: pnpm turbo run typecheck --cache-dir=.turbo
 
+      # @spine/e2e's "test" is the Playwright suite; it runs in the E2E job, not here.
       - name: Unit tests
-        run: pnpm turbo run test --cache-dir=.turbo
+        run: pnpm turbo run test --cache-dir=.turbo --filter=!@spine/e2e
 
       - name: Run DB migrations
         run: pnpm --filter @spine/api db:migrate
