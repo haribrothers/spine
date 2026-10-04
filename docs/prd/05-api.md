@@ -147,11 +147,11 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | DELETE | `/expenses/:id` | roles: owner, staff, field | Yes |
 | GET | `/expenses/:id` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | PUT | `/expenses/:id` | roles: owner, staff, field | Yes |
-| POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve` | Yes |
+| POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve`; never your own unless Owner (US-PUR-20) | Yes |
 | POST | `/expenses/:id/bill-to-customer` | roles: owner, staff; `expenses.bill_to_customer` | Yes |
 | GET | `/expenses/:id/history` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | POST | `/expenses/:id/mark-billed` | roles: owner, staff; `expenses.mark_billed` | Yes |
-| POST | `/expenses/:id/reject` | roles: owner, staff; `expenses.reject` | Yes |
+| POST | `/expenses/:id/reject` | roles: owner, staff; `expenses.reject`; never your own unless Owner (US-PUR-20) | Yes |
 
 ### Files — `/files`
 

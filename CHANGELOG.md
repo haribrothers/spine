@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-PUR-20: stop staff approving their own expenses (Phase 6)
+
+- **API.** `POST /expenses/:id/approve` and `/reject` refuse a Staff member reviewing their own expense with 403 "Someone else needs to approve your own expense.". The check runs before the status check, and Owners can still review their own (D-085).
+- **Expense drawer.** For your own submitted expense, Approve and Reject are hidden and the drawer says "Someone else needs to approve your own expense.". Edit (row actions) and "Delete expense" stay available; that button was relabelled from "Delete" to the story's wording.
+
+Tests:
+- `us-pur-20.http.integration.test.ts` (4): Staff approving or rejecting their own expense gets 403 and the expense stays submitted; Staff approves a colleague's; the Owner approves their own.
+- `apps/e2e/tests/us-pur-20.spec.ts`: the demo Staff approver opens their own expense and sees the note, no Approve or Reject, and "Delete expense".
+
+Integration 33 files pass; E2E 41/41.
+
 ### 2026-10-04 — US-OPS-12: explain why I can't open a page (Phase 6)
 
 - **No-access page.** A page someone can't open is replaced, before it mounts, by "You don't have access to <page>". Nothing from the refused page is requested. The rules are in `apps/web/src/lib/page-access.ts`; `AppLayout` checks them and shows `NoAccess`.

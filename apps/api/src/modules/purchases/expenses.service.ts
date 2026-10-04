@@ -1,5 +1,5 @@
 import { getMemberRole } from "../../auth/capability.util";
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
@@ -29,6 +29,9 @@ export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
  * exact transaction-boundary discipline (row-lock, status re-check,
  * numbering, posting, audit log, all atomic).
  */
+/** US-PUR-20 — why a Staff member can't review their own expense. */
+export const SELF_REVIEW_MESSAGE = "Someone else needs to approve your own expense.";
+
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -212,11 +215,22 @@ export class ExpensesService {
    * can configure later if they need to track a lag between submission
    * and reimbursement — not invented here without a PRD story asking for it.
    */
+  /**
+   * US-PUR-20 (D-085) — nobody but an Owner reviews (approves or rejects)
+   * their own expense. Runs before any status check.
+   */
+  private async refuseSelfReview(orgId: string, actorUserId: string, submittedByUserId: string | null): Promise<void> {
+    if (submittedByUserId !== actorUserId) return;
+    if ((await getMemberRole(this.db, orgId, actorUserId)) === "owner") return;
+    throw new ForbiddenException(SELF_REVIEW_MESSAGE);
+  }
+
   async approve(orgId: string, id: string, actorUserId: string, comment: string | null, bankAccountId?: string) {
     const [preCheck] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Expense not found");
     }
+    await this.refuseSelfReview(orgId, actorUserId, preCheck.submittedByUserId);
 
     const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, preCheck.categoryId));
     const resolvedExpenseAccountId = category?.accountId ?? (await this.resolveDefaultExpenseAccount(orgId));
@@ -305,6 +319,7 @@ export class ExpensesService {
     if (!existing) {
       throw new NotFoundException("Expense not found");
     }
+    await this.refuseSelfReview(orgId, actorUserId, existing.submittedByUserId);
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be rejected");
     }

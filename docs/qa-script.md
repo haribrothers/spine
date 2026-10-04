@@ -2016,6 +2016,15 @@ and milestone amounts everywhere (§5).
    Team while they have the page open, then use that button): a toast
    reads "You don't have permission to do that", not a raw error.
 
+## 21. Self-approval (US-PUR-20, Phase 6)
+
+1. As a Staff member whose Team can approve expenses, submit an expense and
+   open it: no Approve/Reject; the drawer reads "Someone else needs to
+   approve your own expense."; "Delete expense" is there; Edit is in the
+   row's actions.
+2. Open a colleague's submitted expense: Approve and Reject work.
+3. As Owner, open your own submitted expense: Approve works.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

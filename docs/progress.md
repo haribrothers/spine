@@ -256,7 +256,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-PAY-13 · Allocate a deposit payment to its advance invoice
 - [ ] US-PUR-14 · Export payables to CSV
 - [ ] US-PUR-19 · Manage expense categories from Expenses
-- [ ] US-PUR-20 · Stop staff approving their own expenses
+- [x] US-PUR-20 · Stop staff approving their own expenses
 - [ ] US-TAX-07 · Store rates, quantities and percentages exactly
 - [ ] US-RPT-12 · Warn me if the books ever stop balancing
 - [ ] US-RPT-13 · See a Trial Balance
