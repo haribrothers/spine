@@ -124,6 +124,15 @@ jobs:
         ports:
           - 1080:1080
           - 1025:1025
+      # .env.e2e points S3_ENDPOINT at :9000 (the demo seed uploads job photos).
+      # minio/minio is no longer pullable from Docker Hub; S3Mock is a
+      # test-only S3-compatible store that accepts any credentials.
+      s3:
+        image: adobe/s3mock:5
+        env:
+          COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: spine
+        ports:
+          - 9000:9090
 
     steps:
       - name: Checkout
@@ -169,19 +178,6 @@ jobs:
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @spine/e2e exec playwright install-deps chromium
-
-      # .env.e2e points S3_ENDPOINT at MinIO on :9000 (demo seed uploads job photos).
-      # Service containers can't pass MinIO's `server` command, so start it here.
-      - name: Start MinIO
-        run: |
-          docker run -d --name minio -p 9000:9000 \
-            -e MINIO_ROOT_USER=spine -e MINIO_ROOT_PASSWORD=spinespine \
-            minio/minio server /data
-          for i in $(seq 1 30); do
-            curl -sf http://localhost:9000/minio/health/live && exit 0
-            sleep 2
-          done
-          echo "MinIO did not become healthy" && docker logs minio && exit 1
 
       - name: Run E2E suite
         run: pnpm --filter @spine/e2e test

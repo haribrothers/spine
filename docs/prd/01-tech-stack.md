@@ -22,7 +22,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | ORM / migrations | Drizzle ORM 0.45 + drizzle-kit 0.31, SQL migrations in `apps/api/drizzle/` | Readable SQL migrations |
 | Auth | Better Auth 1.6: email/password, `organization` plugin, `bearer()` plugin for mobile | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
 | Background jobs | pg-boss 12 (queues in Postgres) | No Redis container |
-| Files | S3 API (`@aws-sdk/client-s3`); MinIO by default | Self-host MinIO or point at S3/R2 |
+| Files | S3 API (`@aws-sdk/client-s3`); MinIO by default — its Docker Hub image is no longer available, replacement open ([Q-14](13-risks-open-questions.md)) | Self-host an S3-compatible store or point at S3/R2 |
 | Email | Nodemailer 9 over SMTP | No SaaS needed; queued with retry |
 | PDF | `@react-pdf/renderer` 4 | Same output on every install |
 | Browser push | `web-push` 3 (VAPID) | Optional; disabled without keys |
