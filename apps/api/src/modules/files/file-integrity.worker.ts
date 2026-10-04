@@ -36,8 +36,13 @@ export class FileIntegrityWorker implements OnModuleInit {
     await this.queue.work(FILE_INTEGRITY_QUEUE, async () => {
       await this.run();
     });
-    if (await this.filesService.hasFilesWithoutChecksum()) {
-      await this.queue.send(FILE_INTEGRITY_QUEUE, { reason: "backfill" });
+    // Never stops the API from starting: the weekly run catches up instead.
+    try {
+      if (await this.filesService.hasFilesWithoutChecksum()) {
+        await this.queue.send(FILE_INTEGRITY_QUEUE, { reason: "backfill" });
+      }
+    } catch (err) {
+      this.logger.warn(`Could not queue the checksum backfill at start-up: ${(err as Error).message}`);
     }
   }
 

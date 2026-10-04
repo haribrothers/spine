@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — The API no longer fails to start when the checksum backfill check fails
+
+When the database hadn't had migration `0052` applied, the start-up check for files without a checksum (US-OPS-28) threw an error and stopped the API, so sign-in failed with "Failed to fetch". That check now logs a warning instead, and the weekly integrity run catches up. Covered by a new case in `us-ops-28.test.ts`. After pulling, run `pnpm db:migrate:dev`.
+
 ### 2026-10-04 — US-INV-17: keep the exact PDF that was issued (Phase 6)
 
 A sent quote, or an issued invoice, credit note or payment receipt, now keeps the PDF rendered the moment it was issued. Every later download or email serves those exact bytes, even after the customer's address, the logo, branding or the templates change. Drafts still render live and store nothing.
