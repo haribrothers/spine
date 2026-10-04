@@ -464,7 +464,7 @@ Decision: D-104
 - **Given** an uploaded file name like `../../etc/passwd.pdf`, **when** it's stored, **then** it's kept only as a display label and never used in a path.
 
 **Implementation notes**
-- Type sniffing with `file-type`; EXIF stripping with `sharp` for images; limits stay at 10 MB (D-053).
+- Type sniffing from the first bytes and GPS removal in place in the EXIF block, with no new dependency (D-115); limits stay at 10 MB (D-053).
 
 ### US-OPS-30 · Move existing files off MinIO
 **Feature:** F-OPS-09 · **Priority:** P2 · **Phase:** 6 · **Screens:** —

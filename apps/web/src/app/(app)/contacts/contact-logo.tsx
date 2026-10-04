@@ -6,6 +6,7 @@ import { Camera } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
 import type { SpineFile } from "./types";
+import { PHOTO_ACCEPT } from "../../../lib/upload-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -111,7 +112,7 @@ export function ContactLogo({
         <input
           ref={inputRef}
           type="file"
-          accept="image/*"
+          accept={PHOTO_ACCEPT}
           className="hidden"
           onChange={handleFileSelected}
         />

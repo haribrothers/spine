@@ -18,6 +18,7 @@ import {
 import { AlarmClock, Camera, Laptop, Moon, Sun } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
+import { PHOTO_ACCEPT } from "../../../lib/upload-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -226,7 +227,7 @@ export function ProfileView() {
             {uploadingAvatar ? <Spinner size="sm" /> : <Camera size={16} className="text-white" />}
           </span>
         </button>
-        <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+        <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleFileSelected} />
         <LogoCropDialog open={pickedImageSrc !== null} imageSrc={pickedImageSrc} cropShape="round" onCancel={closeCropDialog} onConfirm={handleAvatarCropConfirm} />
       </div>
 

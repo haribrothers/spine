@@ -20,7 +20,7 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { filesDamagedMessage } from "./file-integrity.worker";
 import { verifyFileLink } from "./file-link";
-import { FilesService } from "./files.service";
+import { FilesService, contentDisposition } from "./files.service";
 import type { ByteRange } from "./storage/storage-driver";
 
 /** Matches CLAUDE.md's field-role-read-only precedent, same as Contacts. */
@@ -146,6 +146,8 @@ export class FilesController {
       throw new UnauthorizedException();
     }
 
+    // US-OPS-29: browsers must never guess a different type from the bytes.
+    res.setHeader("X-Content-Type-Options", "nosniff");
     const etag = `"${file.id}"`;
     res.setHeader("ETag", etag);
     res.setHeader("Cache-Control", "private, no-cache");
@@ -168,6 +170,7 @@ export class FilesController {
     }
 
     res.setHeader("Content-Type", file.mimeType);
+    res.setHeader("Content-Disposition", contentDisposition(file));
     res.setHeader("Accept-Ranges", "bytes");
     if (range) {
       res.status(206);

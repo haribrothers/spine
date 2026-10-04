@@ -96,10 +96,18 @@ export class S3StorageDriver implements StorageDriver {
     }
   }
 
-  presignedUrl(key: string, expiresInSeconds: number): Promise<string> {
-    return getSignedUrl(this.client, new GetObjectCommand({ Bucket: this.config.bucket, Key: key }), {
-      expiresIn: expiresInSeconds,
+  presignedUrl(
+    key: string,
+    expiresInSeconds: number,
+    response?: { contentType?: string; contentDisposition?: string },
+  ): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: this.config.bucket,
+      Key: key,
+      ResponseContentType: response?.contentType,
+      ResponseContentDisposition: response?.contentDisposition,
     });
+    return getSignedUrl(this.client, command, { expiresIn: expiresInSeconds });
   }
 
   /** Self-hosted stores start with no buckets; the first save creates it instead of needing a manual step. */

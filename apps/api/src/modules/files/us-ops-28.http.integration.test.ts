@@ -10,6 +10,8 @@ import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { FileIntegrityWorker } from "./file-integrity.worker";
 import { DAMAGED_FILE_MESSAGE, sha256 } from "./files.service";
 
+const pdf = (content: string) => Buffer.from(`%PDF-1.7\n${content}`);
+
 interface FileResponse {
   id: string;
   key: string;
@@ -31,9 +33,10 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
   let ownerCookie: string;
   let staffCookie: string;
 
+  /** Uploads a PDF whose body is `content` (uploads are type-checked from their bytes, US-OPS-29). */
   async function upload(content: string, name = "receipt.pdf"): Promise<FileResponse> {
     const form = new FormData();
-    form.append("file", new Blob([content], { type: "application/pdf" }), name);
+    form.append("file", new Blob([pdf(content)], { type: "application/pdf" }), name);
     const res = await fetch(`${testApp.baseUrl}/files`, {
       method: "POST",
       headers: { cookie: ownerCookie, "Idempotency-Key": randomUUID() },
@@ -84,7 +87,7 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
   it("stores each upload's SHA-256 with the file record", async () => {
     const content = "receipt for fuel, 42.00";
     const uploaded = await upload(content);
-    expect((await row(uploaded.id)).checksumSha256).toBe(sha256(Buffer.from(content)));
+    expect((await row(uploaded.id)).checksumSha256).toBe(sha256(pdf(content)));
   });
 
   it("answers 409 with the restore message when a file's bytes no longer match", async () => {
@@ -129,7 +132,7 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
     await fetch(`${testApp.baseUrl}/files/${repaired.id}`, { headers: { cookie: ownerCookie } });
     expect((await row(repaired.id)).integrityProblem).toBe("damaged");
     // The owner restores the file from a backup.
-    await writeFile(path.join(filesDir, repaired.key), "restored from backup");
+    await writeFile(path.join(filesDir, repaired.key), pdf("restored from backup"));
 
     const problems = await testApp.app.get(FileIntegrityWorker).run();
 
@@ -153,7 +156,7 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
     await testApp.app.get(FileIntegrityWorker).run();
 
     const after = await row(legacy.id);
-    expect(after.checksumSha256).toBe(sha256(Buffer.from("uploaded before US-OPS-28")));
+    expect(after.checksumSha256).toBe(sha256(pdf("uploaded before US-OPS-28")));
     expect(after.integrityProblem).toBeNull();
   });
 
@@ -163,7 +166,7 @@ describe("US-OPS-28 · stored files are proved intact (requires local Postgres)"
     const clean = await signUp(testApp.baseUrl, { email: cleanEmail, password: "testpassword123", name: "Clean Owner" });
     const [membership] = await db.select().from(member).where(eq(member.userId, clean.userId));
     const form = new FormData();
-    form.append("file", new Blob(["intact"], { type: "image/png" }), "logo.png");
+    form.append("file", new Blob([pdf("intact")], { type: "application/pdf" }), "logo.pdf");
     await fetch(`${testApp.baseUrl}/files`, {
       method: "POST",
       headers: { cookie: clean.cookie, "Idempotency-Key": randomUUID() },

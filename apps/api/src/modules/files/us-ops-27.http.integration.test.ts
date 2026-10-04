@@ -34,7 +34,8 @@ describe("US-OPS-27 · files over HTTP with the local driver (requires local Pos
   let otherOrgCookie: string;
   let orgId: string;
   let uploaded: FileResponse;
-  const content = Buffer.from("0123456789-site-photo-bytes");
+  // A real PDF header: uploads are type-checked from their bytes (US-OPS-29).
+  const content = Buffer.from("%PDF-1.7 0123456789 site-plan");
 
   beforeAll(async () => {
     filesDir = await mkdtemp(path.join(tmpdir(), "spine-files-http-"));
@@ -55,7 +56,7 @@ describe("US-OPS-27 · files over HTTP with the local driver (requires local Pos
     otherOrgCookie = (await signUp(testApp.baseUrl, { email: otherEmail, password: "testpassword123", name: "Other Org" })).cookie;
 
     const form = new FormData();
-    form.append("file", new Blob([content], { type: "image/png" }), "../../etc/site photo.png");
+    form.append("file", new Blob([content], { type: "application/pdf" }), "../../etc/site plan.pdf");
     const res = await fetch(`${testApp.baseUrl}/files`, {
       method: "POST",
       headers: { cookie: ownerCookie, "Idempotency-Key": randomUUID() },
@@ -89,7 +90,7 @@ describe("US-OPS-27 · files over HTTP with the local driver (requires local Pos
   it("streams the file back with its type, size, ETag and range support", async () => {
     const res = await fetch(`${testApp.baseUrl}/files/${uploaded.id}`, { headers: { cookie: ownerCookie } });
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-type")).toBe("image/png");
+    expect(res.headers.get("content-type")).toBe("application/pdf");
     expect(res.headers.get("content-length")).toBe(String(content.length));
     expect(res.headers.get("etag")).toBe(`"${uploaded.id}"`);
     expect(res.headers.get("accept-ranges")).toBe("bytes");
@@ -98,10 +99,10 @@ describe("US-OPS-27 · files over HTTP with the local driver (requires local Pos
 
   it("answers a range request with 206 and just those bytes", async () => {
     const res = await fetch(`${testApp.baseUrl}/files/${uploaded.id}`, {
-      headers: { cookie: ownerCookie, range: "bytes=2-5" },
+      headers: { cookie: ownerCookie, range: "bytes=11-14" },
     });
     expect(res.status).toBe(206);
-    expect(res.headers.get("content-range")).toBe(`bytes 2-5/${content.length}`);
+    expect(res.headers.get("content-range")).toBe(`bytes 11-14/${content.length}`);
     expect(await res.text()).toBe("2345");
   });
 

@@ -42,7 +42,11 @@ export interface StorageDriver {
   delete(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
   /** `s3` only: a presigned GET URL, so the bytes don't stream through the API. */
-  presignedUrl?(key: string, expiresInSeconds: number): Promise<string>;
+  presignedUrl?(
+    key: string,
+    expiresInSeconds: number,
+    response?: { contentType?: string; contentDisposition?: string },
+  ): Promise<string>;
 }
 
 /**

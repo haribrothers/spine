@@ -1,4 +1,12 @@
-import { ConflictException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+  UnsupportedMediaTypeException,
+} from "@nestjs/common";
 import { and, asc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
 import type { Readable } from "node:stream";
@@ -6,6 +14,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { contactPersons, contacts, expenses, files, invoices, jobPhotos, jobs, quotes, settings } from "../../db/schema";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
+import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
 import { createStorageDrivers, type StorageDrivers } from "./storage/storage-config";
 import { type ByteRange, type StorageDriver, StoredObjectMissingError, fileKey } from "./storage/storage-driver";
 
@@ -21,7 +30,22 @@ export type FileRow = typeof files.$inferSelect;
 export type IntegrityProblem = "damaged" | "missing";
 
 /** US-OPS-28 — the 409 every damaged or missing file returns. */
+const INLINE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
+
 export const DAMAGED_FILE_MESSAGE = "This file is damaged. Restore it from your latest backup.";
+
+/**
+ * US-OPS-29 — the allowed photo types and PDFs open in the browser;
+ * anything else (only files stored before type checks existed, such as an
+ * SVG that could carry script) downloads instead of rendering.
+ */
+export function contentDisposition(file: Pick<FileRow, "mimeType" | "originalFilename">): string {
+  const inline = INLINE_TYPES.has(file.mimeType);
+  const name = file.originalFilename.replace(/[\r\n"\\]/g, "_");
+  const ascii = name.replace(/[^\x20-\x7e]/g, "_");
+  const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return `${inline ? "inline" : "attachment"}; filename="${ascii}"; filename*=UTF-8''${encoded}`;
+}
 
 export function sha256(bytes: Buffer): string {
   return createHash("sha256").update(bytes).digest("hex");
@@ -61,10 +85,16 @@ export class FilesService {
       );
     }
 
+    // US-OPS-29: the type comes from the bytes, never the name or the
+    // browser's claim, and photos lose their GPS location before storage.
+    const mimeType = sniffMimeType(input.buffer);
+    if (!mimeType) throw new UnsupportedMediaTypeException(UNSUPPORTED_TYPE_MESSAGE);
+    const bytes = stripGpsLocation(input.buffer, mimeType);
+
     const id = randomUUID();
     const key = fileKey(orgId, id);
     try {
-      await driver.save(key, input.buffer, input.mimeType);
+      await driver.save(key, bytes, mimeType);
     } catch (err) {
       this.logger.error(`Could not save file ${id} with the ${driver.name} driver: ${(err as Error).message}`);
       throw new ServiceUnavailableException("The file couldn't be saved. Try again; if it keeps failing, ask the owner to check the server's storage.");
@@ -78,10 +108,11 @@ export class FilesService {
           orgId,
           key,
           storageDriver: driver.name,
-          checksumSha256: sha256(input.buffer),
+          checksumSha256: sha256(bytes),
+          // A display label only — never part of a path (D-104).
           originalFilename: input.originalFilename,
-          mimeType: input.mimeType,
-          sizeBytes: input.buffer.byteLength,
+          mimeType,
+          sizeBytes: bytes.byteLength,
           uploadedByUserId: input.uploadedByUserId,
         })
         .returning();
@@ -124,7 +155,11 @@ export class FilesService {
     const driver = this.readerFor(file);
     if (driver.presignedUrl) {
       if (file.integrityProblem) throw new ConflictException(DAMAGED_FILE_MESSAGE);
-      return { kind: "redirect", file, url: await driver.presignedUrl(file.key, MAX_FILE_LINK_SECONDS) };
+      const url = await driver.presignedUrl(file.key, MAX_FILE_LINK_SECONDS, {
+        contentType: file.mimeType,
+        contentDisposition: contentDisposition(file),
+      });
+      return { kind: "redirect", file, url };
     }
     const problem = await this.verify(file);
     if (problem) throw new ConflictException(DAMAGED_FILE_MESSAGE);

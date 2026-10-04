@@ -27,6 +27,7 @@ import {
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
+import { PHOTO_OR_PDF_ACCEPT } from "../../../lib/upload-types";
 
 const NO_JOB = "__none__";
 const NO_TAX = "";
@@ -261,7 +262,7 @@ export function ExpenseForm({
                   {receiptFilename ?? "View current receipt"}
                 </a>
               )}
-              <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
+              <input ref={fileInputRef} type="file" accept={PHOTO_OR_PDF_ACCEPT} className="hidden" onChange={handleFileChange} />
             </div>
           </div>
 

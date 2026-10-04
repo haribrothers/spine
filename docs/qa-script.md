@@ -1886,17 +1886,29 @@ Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
    the API with a file that has no checksum, or call
    `FileIntegrityWorker.run()` from a script.
 
+10. Safe uploads (US-OPS-29): rename a `.txt` file to `receipt.pdf` and
+    attach it to an expense — the form shows "This file type isn't
+    supported. Upload a photo or a PDF." An SVG or GIF logo is refused the
+    same way. The file pickers only offer JPEG, PNG, WebP, HEIC and PDF.
+11. Upload a phone photo that has location data (check with an EXIF viewer
+    first) as a job photo. Download it again from the job: the location is
+    gone and the photo still shows the right way up.
+12. In DevTools, any `/files/<id>` response has `X-Content-Type-Options:
+    nosniff` and `Content-Disposition: inline; filename="…"` for photos
+    and PDFs.
+
 Regression checks:
 - Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
 - **Load demo data** still seeds the logo and job photos (§1.7).
-- Contact logos, profile avatars and expense receipt links still open.
+- Contact logos, profile avatars and expense receipt links still open, and
+  uploading each still works (logo crop, avatar, receipt, job and milestone
+  photos).
 
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - `GET /files/:id` still checks only the organisation, not the record the
-  file belongs to (US-OPS-20). Type checks and moving files off MinIO are
-  US-OPS-29 and US-OPS-30.
+  file belongs to (US-OPS-20). Moving files off MinIO is US-OPS-30.
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/

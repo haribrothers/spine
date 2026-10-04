@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-29: accept only safe uploads (Phase 6)
+
+- **Type from the bytes.** `POST /files` reads a file's type from its first bytes, ignoring its name and the browser's claim. Anything other than JPEG, PNG, WebP, HEIC or PDF is refused with 415 "This file type isn't supported. Upload a photo or a PDF.", including SVG, HTML, GIF and AVIF. The stored `mime_type` is the detected type.
+- **Location removed from photos.** GPS EXIF data is stripped from photos before they're stored. The GPS directory is emptied in place, so the photo isn't re-encoded and its Orientation tag is kept. This works for JPEG, PNG (the chunk CRC is recomputed), WebP and HEIC (D-115). The checksum covers the stripped bytes.
+- **Safe serving.** Every file response carries `X-Content-Type-Options: nosniff` and the stored `Content-Type`. Allowed photos and PDFs are served `inline`; anything else, which can only be a file stored before this change such as an old SVG logo, is served as `attachment`. The file name appears only in the `Content-Disposition` label, sanitised. Presigned S3 links set the same type and disposition.
+- **File names.** Names stay labels only and storage paths come from ids. The multipart parser already reduces a name like `../../etc/passwd.pdf` to `passwd.pdf`.
+- **Web.** File pickers offer only the accepted types (`PHOTO_ACCEPT`, `PHOTO_OR_PDF_ACCEPT` in `apps/web/src/lib/upload-types.ts`) instead of `image/*`, and the 415 message shows in each uploader's existing error line.
+
+Tests: `us-ops-29.test.ts` (23: type detection, GPS stripping per format with orientation kept, PNG CRCs, Content-Disposition) and `us-ops-29.http.integration.test.ts` (8, through the real routes). The test photos are hand-built with real EXIF blocks (`test-photos.ts`) because adding `sharp`/`exifr` as dev dependencies re-resolved the mobile app's peer versions. The earlier storage tests now upload real PDF bytes. Integration 27 files pass; E2E 30/30.
+
 ### 2026-10-04 — US-OPS-28: prove stored files are intact (Phase 6)
 
 Each stored file now has a SHA-256 checksum, so Spine can tell when a file is damaged or missing.

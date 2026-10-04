@@ -19,7 +19,7 @@ test.describe("US-OPS-28", () => {
 
     const upload = await page.request.post(`${API_URL}/files`, {
       headers: { "Idempotency-Key": randomUUID() },
-      multipart: { file: { name: "signed-quote.pdf", mimeType: "application/pdf", buffer: Buffer.from("signed quote") } },
+      multipart: { file: { name: "signed-quote.pdf", mimeType: "application/pdf", buffer: Buffer.from("%PDF-1.7\nsigned quote") } },
     });
     expect(upload.status()).toBe(201);
     const { id, key } = (await upload.json()) as { id: string; key: string };

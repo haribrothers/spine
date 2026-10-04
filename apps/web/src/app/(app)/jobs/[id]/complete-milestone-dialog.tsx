@@ -19,6 +19,7 @@ import {
 import { Camera, X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import type { Job, Milestone, UploadedFile } from "../types";
+import { PHOTO_ACCEPT } from "../../../../lib/upload-types";
 
 /**
  * S-04.4 — "mark a milestone as complete with photos, so office staff can
@@ -150,7 +151,7 @@ export function CompleteMilestoneDialog({
                     <span className="text-[10px]">Add</span>
                   </button>
                 </div>
-                <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFilesSelected} />
+                <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} multiple className="hidden" onChange={handleFilesSelected} />
               </div>
             )}
           </FormField>
