@@ -1,0 +1,316 @@
+# 10 · Purchases & expenses
+
+Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post, billable expenses passed on to customers, and a payables view of what's due.
+
+**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1)
+**Depends on:** 03 Contacts (vendors), 07 Jobs (costing), 11 Tax, 08 Invoicing (billing expenses on), 17 Mobile (field submission).
+
+## Features
+
+| ID | Feature | Priority | Phase | Screens |
+|---|---|---|---|---|
+| F-PUR-01 | Vendor bills | P1 | 4 | `VendorBillBuilder`, `VendorBillDetailDraft`, `VendorBillDetail`, `VendorBillsList`, `VendorBillsEmpty`, `VendorBillVoidDialog` |
+| F-PUR-02 | Vendor payments | P1 | 4 | `NewVendorPaymentDialog`, `VendorPaymentsList`, `VendorPaymentsEmpty`, `VendorPaymentDrawer` |
+| F-PUR-03 | Expenses with approval | P1 | 4 | `ExpenseDialog`, `ExpensesList`, `ExpensesEmpty`, `ExpenseDrawerSubmitted`, `ExpenseApproveConfirm`, `ExpenseRejectDialog`, `EmailExpenseApproved` |
+| F-PUR-04 | Billable expenses | P2 | 4 | `ExpenseDrawerApproved`, `ExpenseBillToCustomer` |
+| F-PUR-05 | Payables and AP aging | P1 | 4 | `Payables`, `PayablesEmpty` |
+| F-PUR-06 | Expense categories | P2 | 4 | `SettingsPurchases`, `ExpenseCategoryDialog` |
+| F-PUR-07 | Own/others and workflow rights | P1 | 4 | `ExpensesList`, `VendorBillsList` |
+
+## User stories
+
+### US-PUR-01 · Enter a bill from a vendor
+**Feature:** F-PUR-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `VendorBillBuilder`, `VendorBillDetailDraft`
+**As** office staff, **I want** to enter a vendor's bill with lines, tax and due date, **so that** what we owe is visible.
+
+Legacy: S-07.1, S-07.5
+
+**Acceptance criteria**
+- **Given** I press "New vendor bill", **when** the builder opens, **then** I see "Vendor", "Bill number" (helper "The vendor's own number — not system-generated.", placeholder "e.g. INV-1042"), "Job" (helper "Optional — flows into job costing once recorded."), "Currency", "Date", "Due date", lines and "Notes".
+- **Given** no vendor, **when** I press "Save as draft", **then** I see "Select a vendor before saving.".
+- **Given** no bill number, **when** I save, **then** I see "Enter the vendor's bill number before saving.".
+- **Given** valid input, **when** I save, **then** a draft bill is created that posts nothing to the ledger.
+
+**Implementation notes**
+- API: `POST /vendor-bills` (`vendor_bills.edit_own`), `PUT /vendor-bills/:id` (draft only).
+- UI: a new builder's button reads "Save as draft"; editing an existing draft reads "Save draft".
+- Data: `vendor_bills` (`bill_number` is vendor text), `vendor_bill_lines` (expense account per line).
+
+### US-PUR-02 · Record a bill so it posts to the books
+**Feature:** F-PUR-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `VendorBillDetail`
+**As** office staff, **I want** recording a bill to lock it and post it, **so that** payables and costs are right.
+
+**Acceptance criteria**
+- **Given** a draft bill, **when** I press "Record", **then** it becomes "Recorded", shows a "Vendor bill recorded" toast and can't be edited.
+- **Given** it's recorded, **when** I check its journal entries (Reports › account drill-down), **then** expense lines and input tax are debited and Accounts Payable credited.
+- **Given** a bill tagged to a job, **when** it's recorded, **then** the job's costing includes its net amount.
+- **Given** recording fails, **when** the error returns, **then** I see "Could not record this vendor bill.".
+
+**Implementation notes**
+- API: `POST /vendor-bills/:id/record` (`vendor_bills.record`); posting P11.
+
+### US-PUR-03 · Find vendor bills and see what's overdue
+**Feature:** F-PUR-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `VendorBillsList`, `VendorBillsEmpty`
+**As** office staff, **I want** a list of bills with status and due dates, **so that** nothing is paid late.
+
+**Acceptance criteria**
+- **Given** bills exist, **when** I open Vendor Bills, **then** I see "Total bills", "Draft", "Recorded" and "Overdue" and a table of bill number, vendor, status, due date, total and balance.
+- **Given** a recorded bill past due with a balance, **when** it's listed, **then** it shows "Overdue".
+- **Given** I filter by status or vendor ("All vendors"), **when** it applies, **then** only matching bills show.
+- **Given** none exist, **when** I open the page, **then** I see "No vendor bills yet" and "Record a bill from a vendor — save it as a draft, then record it when it's ready to post to the ledger.".
+
+**Implementation notes**
+- API: `GET /vendor-bills?status=&contactId=`.
+
+### US-PUR-04 · Void a recorded bill with a reason
+**Feature:** F-PUR-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `VendorBillVoidDialog`
+**As** office staff, **I want** to void a bill entered in error, **so that** payables are corrected with a trail.
+
+**Acceptance criteria**
+- **Given** a recorded bill with no payments, **when** I press "Void", **then** "Void this vendor bill?" asks for a required "Reason".
+- **Given** no reason, **when** I confirm, **then** I see "A reason is required to void a vendor bill.".
+- **Given** a reason, **when** I confirm, **then** the bill shows "Void", a reversing entry posts, and a "Vendor bill voided" toast shows.
+- **Given** a bill with payments, **when** I try to void it, **then** it's refused.
+
+**Implementation notes**
+- API: `POST /vendor-bills/:id/void` (`vendor_bills.void`); posting P12.
+
+### US-PUR-05 · Pay a vendor across several bills
+**Feature:** F-PUR-02 · **Priority:** P1 · **Phase:** 4 · **Screens:** `NewVendorPaymentDialog`
+**As** office staff, **I want** to record a payment to a vendor allocated across bills, **so that** payables clear correctly.
+
+Legacy: S-07.8
+
+**Acceptance criteria**
+- **Given** Vendor Payments, **when** I press "Record payment", **then** "Record a vendor payment" asks for "Vendor", "Date", "Method", "Reference", "Amount" and an allocation suggested oldest-first.
+- **Given** allocations that don't equal the amount, **when** I confirm, **then** I see "Allocations must sum to exactly the payment amount." with "Remaining to allocate".
+- **Given** the vendor has no recorded bills, **when** I open the allocation, **then** I see "This vendor has no outstanding recorded bills.".
+- **Given** a valid payment, **when** it saves, **then** each bill's balance drops and AP is debited, Bank credited.
+
+**Implementation notes**
+- API: `GET /vendor-payments/suggest-allocation`, `POST /vendor-payments` (`vendor_payments.edit_own`); posting P13; trigger I5.
+
+### US-PUR-06 · See and delete vendor payments
+**Feature:** F-PUR-02 · **Priority:** P2 · **Phase:** 4 · **Screens:** `VendorPaymentsList`, `VendorPaymentsEmpty`, `VendorPaymentDrawer`
+**As** office staff, **I want** a list of vendor payments and to delete a wrong one, **so that** money out is accurate.
+
+**Acceptance criteria**
+- **Given** payments exist, **when** I open Vendor Payments, **then** I see "Total payments" and "Total paid" and a table of number, date, vendor, method and amount.
+- **Given** I click a payment, **when** the drawer opens, **then** it shows its details and the bills it paid.
+- **Given** I delete a payment, **when** I confirm, **then** a reversing entry posts and the bills' balances return.
+- **Given** none exist, **when** I open the page, **then** I see "No vendor payments recorded yet".
+
+**Implementation notes**
+- API: `GET /vendor-payments`, `DELETE /vendor-payments/:id` (`vendor_payments.delete_*`); posting P14.
+- Unlike customer payments (US-PAY-06), an allocated vendor payment can be deleted: nothing was sent to a third party ([D-080](../prd/12-decisions.md)).
+
+### US-PUR-07 · Submit an expense with a receipt
+**Feature:** F-PUR-03 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpenseDialog`, `ExpensesList`, `ExpensesEmpty`
+**As** any member, **I want** to submit an expense with a receipt photo, **so that** I'm reimbursed and the cost is tracked.
+
+Legacy: S-07.2 (web)
+
+**Acceptance criteria**
+- **Given** Expenses, **when** I press "Submit expense", **then** "Submit an expense" says "A submitted expense doesn't post to the ledger until an owner or staff member approves it." and asks for "Category", "Job" (optional), "Date", "Currency", "Amount", "Tax rate", "Tax amount" (helper "Included in the amount above, not added on top."), "Paid by", "Description", "Billable to a customer" and a receipt. "Currency" is read-only and set to the organisation's currency (single-currency, non-goal).
+- **Given** no category, **when** I save, **then** I see "Select a category before saving.".
+- **Given** a zero amount, **when** I save, **then** I see "Enter an amount greater than zero.".
+- **Given** I attach a receipt photo up to 10 MB, **when** it uploads, **then** it's linked; if it fails I see "Could not upload the receipt.".
+- **Given** I save, **when** it succeeds, **then** "Expense submitted" shows and it's listed as "Submitted".
+
+**Implementation notes**
+- API: `POST /files`, `POST /expenses` (`expenses.edit_own`; Field always for own).
+- Data: `expenses` (`submitted_by_user_id`, `receipt_file_id`, `paid_by`, `is_billable`).
+
+### US-PUR-08 · Approve a submitted expense
+**Feature:** F-PUR-03 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpenseDrawerSubmitted`, `ExpenseApproveConfirm`, `EmailExpenseApproved`
+**As** office staff, **I want** to approve expenses, **so that** there's a control before they count.
+
+Legacy: S-07.4
+
+**Acceptance criteria**
+- **Given** a submitted expense, **when** I open it and press "Approve", **then** "Approve this expense?" offers an "Optional comment" field.
+- **Given** I confirm, **when** it succeeds, **then** I see "Expense approved" / "It has been posted to the ledger." and it shows "Approved".
+- **Given** it's approved, **when** I check its journal entry (Reports › account drill-down), **then** the category's expense account and input tax are debited and Bank credited.
+- **Given** it's approved, **when** the submitter checks, **then** they're notified (in-app; email "Expense approved — <category>").
+
+**Implementation notes**
+- API: `POST /expenses/:id/approve` (`expenses.approve`); posting P15.
+
+### US-PUR-09 · Reject a submitted expense with a comment
+**Feature:** F-PUR-03 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpenseRejectDialog`
+**As** office staff, **I want** to reject an expense with a reason, **so that** the submitter knows what to fix.
+
+**Acceptance criteria**
+- **Given** a submitted expense, **when** I press "Reject", **then** "Reject this expense?" requires "Rejection reason" (placeholder "Why is this being rejected?").
+- **Given** no reason, **when** I confirm, **then** the reason field shows an error.
+- **Given** a reason, **when** I confirm, **then** I see "Expense rejected" / "It has not been posted to the ledger." and the submitter sees the reason on their expense.
+
+**Implementation notes**
+- API: `POST /expenses/:id/reject` (`expenses.reject`); no posting.
+
+### US-PUR-10 · Edit or delete my submitted expense
+**Feature:** F-PUR-03 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpenseDrawerSubmitted`
+**As** a member, **I want** to fix or withdraw an expense before it's reviewed, **so that** mistakes don't reach the books.
+
+**Acceptance criteria**
+- **Given** my submitted expense, **when** I edit and save it, **then** it updates and stays "Submitted".
+- **Given** an approved or rejected expense, **when** I try to edit it, **then** I see "Only a submitted expense can be edited — an approved expense has already posted to the ledger.".
+- **Given** my submitted expense, **when** I delete it and confirm "Delete this expense?", **then** it's removed.
+
+**Implementation notes**
+- API: `PUT/DELETE /expenses/:id` (submitted only).
+
+### US-PUR-11 · Bill an approved expense to the customer
+**Feature:** F-PUR-04 · **Priority:** P2 · **Phase:** 4 · **Screens:** `ExpenseDrawerApproved`, `ExpenseBillToCustomer`
+**As** office staff, **I want** to pass a billable expense on to the job's customer, **so that** reimbursable costs are recovered.
+
+Legacy: S-07.6
+
+**Acceptance criteria**
+- **Given** an approved, billable expense tagged to a job, **when** I press "Bill to customer", **then** "Bill this expense to the customer?" says it creates a draft invoice for the job's customer for the full amount and marks it billed.
+- **Given** I press "Create invoice", **when** it succeeds, **then** a draft invoice exists with the expense as a line and I'm taken to it; the expense shows "Billable: Yes — billed".
+- **Given** an expense already billed, **when** I open it, **then** "Bill to customer" isn't offered.
+
+**Implementation notes**
+- API: `POST /expenses/:id/bill-to-customer` (`expenses.bill_to_customer`).
+- Data: `expenses.billed_on_invoice_line_id`.
+- The confirm button's colour (primary, not danger) is fixed by US-OPS-10.
+
+### US-PUR-12 · Mark an expense billed without a new invoice
+**Feature:** F-PUR-04 · **Priority:** P2 · **Phase:** 4 · **Screens:** `ExpenseDrawerApproved`
+**As** office staff, **I want** to mark an expense billed when I added it to an invoice by hand, **so that** it isn't billed twice.
+
+**Acceptance criteria**
+- **Given** an approved billable expense, **when** I choose "Mark billed", **then** it shows billed without creating an invoice.
+- **Given** a non-billable expense, **when** I open it, **then** neither billing action is offered.
+- **Given** I lack `expenses.mark_billed`, **when** I open it, **then** "Mark billed" is hidden.
+
+**Implementation notes**
+- API: `POST /expenses/:id/mark-billed` (`expenses.mark_billed`).
+
+### US-PUR-13 · See what we owe vendors and when
+**Feature:** F-PUR-05 · **Priority:** P1 · **Phase:** 4 · **Screens:** `Payables`, `PayablesEmpty`
+**As** an owner, **I want** payables with due dates in age buckets, **so that** I pay on time.
+
+Legacy: S-07.7, S-09.5 (AP half)
+
+**Acceptance criteria**
+- **Given** recorded unpaid bills, **when** I open Payables, **then** I see Current, 1–30, 31–60, 61–90 and 90+ day buckets, "Total outstanding", and a table of bill, vendor, due date, aging and balance.
+- **Given** nothing is owed, **when** I open it, **then** I see "Nothing outstanding" / "Every recorded vendor bill has been paid in full.".
+- **Given** a Staff user without `reports.view_payables`, **when** they open it, **then** they see the no-access page.
+
+**Implementation notes**
+- API: `GET /reports/payables` (from `journal_lines` on AP).
+
+### US-PUR-14 · Export payables to CSV
+**Feature:** F-PUR-05 · **Priority:** P2 · **Phase:** 6 · **Screens:** `Payables`
+**As** an owner, **I want** payables as CSV, **so that** I can plan payments in a spreadsheet.
+
+**Acceptance criteria**
+- **Given** Payables, **when** I choose "Export CSV", **then** a CSV downloads with one row per open bill and its bucket.
+- **Given** the CSV, **when** it opens, **then** amounts are plain decimals with currency in its own column.
+- **Given** no open bills, **when** I export, **then** the file has only the header row.
+
+**Implementation notes**
+- API: `GET /reports/payables/export.csv` (built). The page button isn't, so this story moved to Phase 6.
+
+### US-PUR-15 · Manage expense categories
+**Feature:** F-PUR-06 · **Priority:** P2 · **Phase:** 4 · **Screens:** `SettingsPurchases`, `ExpenseCategoryDialog`
+**As** an owner or office staff, **I want** my own expense categories mapped to accounts, **so that** expenses post where I expect.
+
+**Acceptance criteria**
+- **Given** Settings › Purchases, **when** it opens, **then** it lists "Expense categories" with name and posting account and "+ Add category".
+- **Given** "Add category", **when** I enter "Name" and choose "Default posting account" and press "Save", **then** it appears in the expense form's category list.
+- **Given** a category used by expenses, **when** I archive it, **then** it disappears from the form but old expenses keep it.
+
+**Implementation notes**
+- API: `POST/PUT /expense-categories`, `/archive`, `/restore`, `DELETE`.
+- Staff access to categories moves to Expenses › Categories in US-PUR-19 (Phase 6, [D-078](../prd/12-decisions.md)); today the pane lives in Owner-only Settings.
+
+### US-PUR-16 · Delete an unused expense category
+**Feature:** F-PUR-06 · **Priority:** P3 · **Phase:** 4 · **Screens:** `SettingsPurchases`
+**As** an owner, **I want** to delete a category created by mistake, **so that** the list stays short.
+
+**Acceptance criteria**
+- **Given** a category no expense uses, **when** I delete it and confirm, **then** it's removed.
+- **Given** a category in use, **when** I try to delete it, **then** I'm told to archive it instead.
+- **Given** I lack the delete right for it, **when** I open its menu, **then** delete isn't offered.
+
+**Implementation notes**
+- API: `DELETE /expense-categories/:id` (`expense_categories.delete_*`).
+
+### US-PUR-17 · Let a Team edit only its own purchases records
+**Feature:** F-PUR-07 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpensesList`, `VendorBillsList`
+**As** an owner, **I want** own/others rights per purchases resource, **so that** juniors self-manage without touching colleagues' submissions.
+
+Legacy: S-07.9
+
+**Acceptance criteria**
+- **Given** a member with `expenses.edit_own` only, **when** they open a colleague's submitted expense, **then** edit is hidden and the API returns 403.
+- **Given** a field user, **when** they edit or delete their own submitted expense, **then** it works; on anyone else's it's refused.
+- **Given** a member with `vendor_bills.edit_own` only, **when** they open a colleague's draft bill, **then** they can't edit it.
+- **Given** expense categories, vendor bills and vendor payments, **when** rights are set, **then** each group is enforced independently.
+
+**Implementation notes**
+- Ownership: `expenses.submitted_by_user_id`; `created_by_user_id` for the others.
+
+### US-PUR-18 · Grant approving, rejecting, recording and voiding separately
+**Feature:** F-PUR-07 · **Priority:** P1 · **Phase:** 4 · **Screens:** `ExpensesList`, `VendorBillsList`
+**As** an owner, **I want** review actions as their own rights, **so that** I choose who has authority over others' submissions.
+
+**Acceptance criteria**
+- **Given** a member without `expenses.approve`, **when** they open a submitted expense, **then** "Approve" is hidden and the API returns 403.
+- **Given** a member with `expenses.approve`, **when** they approve a colleague's expense, **then** it works even without `expenses.edit_others`.
+- **Given** a member without `vendor_bills.void`, **when** they open a recorded bill, **then** "Void" is hidden.
+
+**Implementation notes**
+- API: `@RequireCapability` on approve, reject, record, void, mark-billed, bill-to-customer.
+
+### US-PUR-19 · Manage expense categories from Expenses
+**Feature:** F-PUR-06 · **Priority:** P2 · **Phase:** 6 · **Screens:** `ExpenseCategories`, `ExpenseCategoryDialog`, `ExpenseDialog`
+**As** office staff with category rights, **I want** to manage expense categories without Settings, **so that** I'm not blocked by the Owner-only Settings dialog.
+
+Decision: D-078 · Review finding: Stage 5 #19–#20
+
+**Acceptance criteria**
+- **Given** a member with `expense_categories.edit_own` or `edit_others` (or an Owner), **when** they open Expenses, **then** a "Categories" tab at `/expenses/categories` lists categories with name, posting account and "+ Add category".
+- **Given** a member with neither capability, **when** they open Expenses, **then** the "Categories" tab is hidden and `/expenses/categories` shows the no-access page.
+- **Given** Settings, **when** an Owner opens it, **then** "Purchases" is no longer a section.
+- **Given** the expense form and Expenses page subtitle, **when** they render, **then** they read "Submit an expense for approval. Categories are managed from Expenses › Categories." for members who can manage categories, and "Submit an expense for approval." for everyone else.
+
+**Implementation notes**
+- API: unchanged (`/expense-categories` routes and their capabilities).
+- UI: the new tab reuses the existing `SettingsPurchases` pane layout (no separate screen drawn); move it from `settings-dialog.tsx` to `apps/web/src/app/(app)/expenses/categories/page.tsx`; reuse `ExpenseCategoryDialog`.
+- Security: remove "purchases" from the Owner-only Settings list in 07.
+
+### US-PUR-20 · Stop staff approving their own expenses
+**Feature:** F-PUR-07 · **Priority:** P1 · **Phase:** 6 · **Screens:** `ExpenseDrawerOwn`, `ExpenseApproveConfirm`
+**As** an owner, **I want** a second person to approve every staff expense, **so that** nobody signs off their own spending.
+
+Decision: D-085
+
+**Acceptance criteria**
+- **Given** a Staff member with `expenses.approve` opens their own submitted expense, **when** the drawer renders, **then** "Approve" is hidden and the drawer shows "Someone else needs to approve your own expense."; "Edit" and "Delete expense" stay available while it is "Submitted".
+- **Given** the same member calls `POST /expenses/:id/approve` on their own expense, **when** it's sent, **then** the API returns 403.
+- **Given** an Owner opens their own submitted expense, **when** they press "Approve", **then** it's approved as normal.
+- **Given** a Staff member with `expenses.approve` opens a colleague's expense, **when** they approve it, **then** it works as in US-PUR-08.
+- **Given** a Staff member, **when** they reject their own expense, **then** it's refused the same way (reject is a review action too).
+
+**Implementation notes**
+- API: `ExpensesService.approve/reject` compare `submitted_by_user_id` with the caller; Owners bypass.
+
+### US-PUR-21 · Approve several expenses at once
+**Feature:** F-PUR-07 · **Priority:** P2 · **Phase:** 7 · **Screens:** `ExpensesBulkSelect`
+**As** office staff with approval rights, **I want** to approve a batch of expenses together, **so that** weekly approvals are quick.
+
+Decision: D-097
+
+**Acceptance criteria**
+- **Given** the Expenses list, **when** I tick submitted expenses, **then** a bar shows "<n> selected · <amount>" with "Approve (<n>)", "Reject…" and "Clear".
+- **Given** my own expense, **when** I try to tick it, **then** its checkbox is disabled and the page notes "Your own expenses can't be selected for approval — someone else approves them." (Staff; Owners may select their own, D-085).
+- **Given** I press "Approve (2)", **when** it finishes, **then** each is approved and posted exactly as a single approval would be, and a toast reads "2 expenses approved".
+- **Given** "Reject…", **when** I press it, **then** one dialog asks for a comment applied to every selected expense.
+- **Given** I lack `expenses.approve`, **when** the list renders, **then** row checkboxes are hidden.
+
+**Implementation notes**
+- API: `POST /expenses/bulk/approve { ids }`, `POST /expenses/bulk/reject { ids, comment }` (contract additions, `expenses.approve`/`expenses.reject`, idempotent, max 100); each item posts its own journal entry (P15).

@@ -11,7 +11,7 @@ interface SeedAccount {
 }
 
 /**
- * Default chart of accounts per docs/spine-prd.md §14.2. System accounts
+ * Default chart of accounts per docs/archive/spine-prd.md §14.2. System accounts
  * (AR, AP, tax, retention, advances, retained earnings) back the posting
  * rules in §7.2 and cannot be deleted by the user — everything else can be
  * renamed or extended.

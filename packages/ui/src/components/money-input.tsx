@@ -6,7 +6,7 @@ import { cn } from "../lib/cn";
 
 export interface MoneyInputProps
   extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type"> {
-  /** Minor units — never a float, per docs/spine-prd.md §6.4. */
+  /** Minor units — never a float, per docs/archive/spine-prd.md §6.4. */
   value: bigint;
   onValueChange: (amount: bigint) => void;
   currency: string;

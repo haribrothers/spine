@@ -4,7 +4,7 @@ import { defaultStatements, ownerAc } from "better-auth/plugins/organization/acc
 /**
  * These roles govern *organization membership* — who can invite/remove
  * members, rename the org, etc. (Better Auth's own domain). They are not
- * the business-permission matrix from docs/spine-prd.md §2.1 (who can
+ * the business-permission matrix from docs/archive/spine-prd.md §2.1 (who can
  * create quotes, view the ledger, approve expenses) — that's enforced by
  * each feature module's own authorization checks against `@OrgRoles()` /
  * the member role on the session, not by this access-control statement.

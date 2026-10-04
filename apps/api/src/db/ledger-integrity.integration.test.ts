@@ -5,7 +5,7 @@ import { createDb, type Database } from "./client";
 import { accounts, journalEntries, journalLines, organization } from "./schema";
 
 /**
- * Exercises the DB-level invariants from docs/spine-prd.md §6.3 directly —
+ * Exercises the DB-level invariants from docs/archive/spine-prd.md §6.3 directly —
  * these are enforced by triggers/constraints in drizzle/0001_ledger_integrity_triggers.sql,
  * not application code, so the only way to trust them is to hit real Postgres.
  * Requires the `db` service from docker-compose.yml running locally.

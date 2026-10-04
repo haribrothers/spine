@@ -1,7 +1,7 @@
 import { hash, verify } from "@node-rs/argon2";
 
 /**
- * Argon2id per docs/spine-prd.md §10.3 — Better Auth defaults to scrypt
+ * Argon2id per docs/archive/spine-prd.md §10.3 — Better Auth defaults to scrypt
  * otherwise. `algorithm: 2` is Argon2id (see @node-rs/argon2's `Algorithm`
  * const enum); using the literal instead of the enum import avoids a
  * `const enum` cross-module access error under isolatedModules.

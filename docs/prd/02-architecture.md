@@ -1,0 +1,170 @@
+# 02 · Architecture
+
+## Context
+
+```
+                         ┌──────────────────────────────── one host (Docker Compose) ───────────────────────────────┐
+  Owner / Staff ─ browser ─┐                                                                                          │
+  Customer ── quote link ──┼──▶ Caddy (TLS) ──▶ web  (Next.js :3000) ──server-side fetch──▶ api (NestJS :4000) ──▶ PostgreSQL 16
+  Field crew ── iOS/Android┘            └──────────────────────────────────────────────▶ api        │   (data + pg-boss jobs)
+                                                                                                    ├──▶ MinIO / S3 (files)
+                                                                                                    ├──▶ SMTP (email, optional)
+                                                                                                    └──▶ Web Push (optional)
+  Optional: Cloudflare Tunnel sidecar gives a NAT'd install a public URL for quote links.
+```
+
+## Components
+
+| Component | Responsibility | Talks to |
+|---|---|---|
+| `apps/web` | Office app (Owner/Staff/Field), public quote page `/quote/[token]`, onboarding, sign-in | `apps/api` over HTTP with the session cookie |
+| `apps/api` | All business rules, authorisation, ledger postings, PDFs, email, files, notifications, jobs | PostgreSQL, S3, SMTP, Web Push |
+| `apps/mobile` | Field app: today's jobs, photos, expenses, milestones, on-site acceptance, offline outbox | `apps/api` with `Authorization: Bearer <session token>` |
+| PostgreSQL | System of record, ledger constraints, pg-boss queues | — |
+| MinIO / S3 | Logos, receipts, job photos, generated PDFs, signatures | — |
+| Caddy | TLS termination, routing `/` → web and `/api` → api | — |
+
+**Dependency rule:** all business logic and every authorisation decision lives in `apps/api` services. `apps/web` and `apps/mobile` hide what a user can't do (UI convenience), but the API re-checks every request ([07-security](07-security.md)).
+
+## Process model
+
+| Process | Started by | Notes |
+|---|---|---|
+| `api` | `node dist/main.js` | One process. Runs HTTP and the pg-boss workers. Migrations run before start (forward-only) |
+| `web` | `next start` | Stateless |
+| Workers (inside `api`) | pg-boss | `quote-send-email`, `invoice-send-email`, `notify-email`, `meeting-starting-soon-poll` (every few minutes) |
+| `db` | Postgres container | Volume `pgdata` |
+
+## Request flow
+
+1. **Web:** server components call the API server-side, forwarding the Better Auth session cookie; client components call it from the browser with credentials.
+2. **Mobile:** the app stores the session token in secure storage and sends it as a Bearer header ([D-016](12-decisions.md)).
+3. **Public quote page:** `GET/POST /public/quotes/:token` — no session; the token is unguessable, scoped to one quote and rate-limited ([D-032](12-decisions.md)).
+4. Every request resolves the active organisation from the session, then: role guard (`@OrgRoles`) → capability guard (`@RequireCapability`) → service-layer ownership check (`requireOwnershipCapability`) → business rule → transaction.
+
+## The ledger
+
+```
+Business event  ─▶  Domain service  ─▶  Posting rule  ─▶  Journal entry (balanced)  ─▶  journal_lines (+ contact_id, job_id)
+(invoice issued)   (InvoicesService)    (LedgerService)    debits = credits (DB trigger)
+```
+
+- Journal entries are written **in the same transaction** as the document; either both land or neither does ([D-005](12-decisions.md)).
+- An entry is immutable; corrections post a reversing entry (`reversed_by_id`).
+- Every entry records `source_type` + `source_id` (`invoice`, `invoice_void`, `payment`, `payment_delete`, `payment_credit_applied`, `credit_note`, `expense`, `vendor_bill`, `vendor_bill_void`, `vendor_payment`, `vendor_payment_delete`) so every report figure drills down to a document.
+- A database trigger rejects an entry whose debits ≠ credits; a scheduled integrity check asserts the trial balance.
+- Postings are dated at the moment of the business action (issue/record/approve time). A closed fiscal period rejects postings dated inside it ([D-030](12-decisions.md)).
+- The full posting table is [06-ledger-posting-rules](06-ledger-posting-rules.md).
+
+## Document numbering
+
+`number_sequences` holds one row per organisation and document type (quote, invoice, credit note, receipt, expense, vendor payment, job — jobs get their number with US-JOB-22). Issuing locks the row (`SELECT … FOR UPDATE`), takes the next value and writes the document in the same transaction, so numbers are gapless and never reused. Drafts have no number. Prefix and padding are configurable (Settings › Numbering). Vendor bills keep the vendor's own number.
+
+## State machines
+
+### Quote
+
+```
+draft ──send (quotes.send)──▶ sent ──customer accepts (link) / field accepts in person──▶ accepted (read-only)
+  │                            ├──customer declines──▶ rejected
+  │                            ├──revise (quotes.revise)──▶ new draft version (parent_quote_id); old one superseded
+  └─delete (draft only)        └──validUntil passes──▶ shown as expired (informational)
+discount ≥ threshold (default 20%) → sending is blocked until an Owner (or quotes.approve_discount) approves
+accepted ──convert──▶ job and/or invoice (repeat conversion guarded, D-026)
+```
+
+### Invoice
+
+```
+draft ──issue (invoices.issue): number allocated, lines snapshotted, journal posted──▶ issued
+issued ──payments allocated──▶ (balance → 0 = paid; computed, not a status)
+issued ──void with reason (invoices.void): reversing entry──▶ void
+issued ──credit note issued──▶ balance reduced
+types: standard · advance (credit held as Customer Advances) · progress (from a milestone) · retention_release
+```
+
+### Payment
+
+Record against a contact → allocate across open invoices (oldest-first suggestion) → any remainder is unallocated customer credit → later "Apply credit" allocates it. A DB trigger stops allocations exceeding either the payment or the invoice balance. Deleting is allowed only while unallocated and posts a reversing entry.
+
+### Job and milestones
+
+```
+quote accepted ──convert──▶ job (active) ── on_hold / completed / cancelled
+milestones (fixed or % of contract, % must total 100) : pending ──mark complete (office or field)──▶ completed ──raise invoice──▶ invoiced
+retention % held on each progress invoice → Retention Receivable; "Release retention" raises a retention_release invoice
+variation order = a linked quote; when accepted, "Apply to job" adds its total to the contract value
+```
+
+### Expense
+
+`submitted` (by anyone, including Field, offline-capable) → `approved` (posts Dr Expense / Cr Bank — P15; an employee-reimbursements account is open question Q-05; can then be billed to the customer as a draft invoice) or `rejected` (comment required; no posting).
+
+### Vendor bill
+
+`draft` → `recorded` (posts Dr Expense/COGS + Input Tax / Cr AP) → paid via vendor payments (allocated across bills) · `recorded` → `void` (reversing entry).
+
+### Meeting
+
+Visibility `private` (organiser + invitees) or `org` (everyone). Invitees respond invited → accepted / declined / tentative. Recurring meetings store a rule; single-occurrence edits/cancellations are `meeting_occurrence_exceptions`. A poll job sends "starting soon" reminders to the organiser and accepted/tentative attendees at each person's lead time ([D-024](12-decisions.md)).
+
+## Authentication summary
+
+| Client | Mechanism |
+|---|---|
+| Web | Better Auth email/password; HTTP-only session cookie |
+| Mobile | Same sign-in; session token kept in secure storage and sent as `Authorization: Bearer` |
+| Customer | Public quote token in the URL; no session |
+| Sign-up | Open only until the first user exists (that user becomes Primary Owner); afterwards accounts come only from invitations |
+| Password reset | Email link, single-use, 1 hour ([D-056](12-decisions.md)) — Phase 6 |
+
+Details and the capability matrix: [07-security](07-security.md).
+
+## Background jobs and events
+
+| Queue / event | Trigger | Effect |
+|---|---|---|
+| `quote-send-email` | Quote sent | Render PDF, email the customer with the public link; retried on SMTP failure; visible in the Email queue |
+| `invoice-send-email` | Invoice emailed / reminder | Render PDF, email with balance due |
+| `notify-email` | Any notification with an email channel | Email to the targeted users |
+| `meeting-starting-soon-poll` | Every few minutes | Sends `meeting_starting_soon` to each attendee once per occurrence |
+| Notification types | `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon` | In-app notification row + optional email + optional browser push |
+
+## Offline sync (mobile)
+
+- **Read cache:** the app stores the last-fetched assigned jobs, their milestones, contacts and the user's expenses in a local SQLite database and shows them when offline, labelled with the time they were fetched.
+- **Outbox:** photo uploads, expense submissions and milestone completions are written to a local outbox with a client-generated UUID used as the `Idempotency-Key`. Items replay in order when the device reconnects; replays are safe ([D-009](12-decisions.md)).
+- **Files:** photos and receipts are compressed on the phone, uploaded with `POST /files`, then referenced by id ([D-053](12-decisions.md)).
+- **Conflicts:** appends (photos, expenses, notes) never conflict. Milestone completion is first-write-wins: a later completion of an already-completed milestone returns 200 with `alreadyCompleted: true`, changes nothing and is recorded in history (US-MOB-15). Accept/decline of a quote needs connectivity and is refused once the quote isn't `sent` ([D-050](12-decisions.md)).
+- **Not offline:** quote acceptance, anything that issues a financial document, and sign-in ([D-050](12-decisions.md)).
+
+## Updates
+
+Migrations run automatically on boot, forward-only and idempotent, after an automatic pre-migration database snapshot. Semantic versioning; every release notes breaking changes. Once a day the server checks the latest public release and shows Owners an update banner unless disabled ([D-055](12-decisions.md)). Mobile builds ship through the stores; JavaScript-only fixes may ship over the air ([15-mobile-release](15-mobile-release.md)).
+
+## Appendix — rules moved verbatim from CLAUDE.md
+
+These were the original CLAUDE.md's architecture rules and design decisions (D-039). The decisions table ([12-decisions](12-decisions.md)) is the authority; this text keeps the reasoning.
+
+## Core architectural rules (non-negotiable per PRD §6, §10.4)
+
+These constraints protect financial correctness and should govern any implementation work in this repo:
+
+- **Ledger is derived, never authored.** Every business event (invoice issued, payment received, etc.) flows through a domain service → a posting rule → a balanced journal entry. Users never type a journal entry. Posting rules live in one module (see §7.2 for the full debit/credit table).
+- **Journal entries are immutable.** Corrections are reversing entries, never edits. A DB constraint enforces debits == credits per entry, in the same transaction as the business document it originates from.
+- **Money is integer minor units (`bigint`) + currency code.** No floats. Rounding happens once, at line level, half-up. Tax is computed per line, not per document.
+- **Documents snapshot their data.** Catalogue price/tax changes must never alter existing quotes/invoices — issued documents store a snapshot at time of issue.
+- **Document numbers are gapless and permanent.** Allocated inside the issuing transaction via a row lock on a sequence table; drafts have no number; numbers never change once assigned.
+- **Issued financial documents are never edited or deleted.** Only voided (with reversing entry) or credited.
+- **Server-side authorization on every endpoint** — never trust a client-supplied role.
+- **Idempotency keys on all mutating endpoints** (critical for the mobile offline outbox pattern, §6.6).
+## Key design decisions to preserve when implementing
+
+- **Job costing without a parallel subsystem**: journal lines carry optional `contact_id` and `job_id`. AR aging and job profitability come from filtering the ledger, not from separate calculations — don't build a shadow costing system.
+- **Retention** posts to a dedicated `Retention Receivable` account, distinct from AR, so aging reports aren't distorted by held retention.
+- **Quote versioning** uses `parent_quote_id`; revising a sent quote creates a new version and supersedes the old one rather than mutating it.
+- **Mobile offline model is intentionally partial** (§6.6): read-only cache (SQLite) for lists, write via an outbox queue with idempotency keys for photos/expenses/milestone updates. No offline creation of financial documents (quotes/invoices) — those require connectivity.
+- **First-run onboarding is not a gate.** The app must be fully usable if the wizard is skipped; onboarding settings (industry template, tax, numbering, etc.) must remain editable later from Settings.
+- **Onboarding never includes database/infra setup.** Provisioning Postgres and its credentials happens before the app ever serves a page — via `scripts/install.sh` and `.env` (`DATABASE_URL`), not an in-app step. The wizard begins only after sign-up (first user on a fresh instance becomes the **Primary Owner** automatically — see the permission model section below), and its step order is fixed: business profile → industry template → currency/locale/financial year → tax rates → numbering prefixes → chart-of-accounts confirmation → team invite. "Load demo data" is an alternative/supplement offered at step 1, not a separate flow. Every step must remain skippable and re-editable from Settings (§S-12.10), per the rule above.
+- **Profile & Preferences is not the same surface as org Settings.** Every user, regardless of role, gets a personal page (name, email, password, avatar, preferences) reachable from the user menu — separate from the Owner-only organisation Settings dialog and separate from the Users/Teams/Permissions area. Don't fold personal account editing into either of those.
+- **Graceful degradation**: if SMTP is down, documents still issue and email queues for retry; if object storage is down, the app runs read-only for attachments rather than failing globally. The app must boot with only 3 required env vars (`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`).

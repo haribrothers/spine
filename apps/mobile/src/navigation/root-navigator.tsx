@@ -36,7 +36,7 @@ const Tab = createBottomTabNavigator<RootTabParamList>();
  * from Home/Jobs rather than its own tab until volume justifies one).
  * Native tab bar + native stack transitions (React Navigation, not a
  * custom router) so this reads as a real native app, per the explicit
- * "not a responsive web view" requirement — see docs/spine-prd.md §F11
+ * "not a responsive web view" requirement — see docs/archive/spine-prd.md §F11
  * and the approved Phase 5 plan.
  *
  * S-11.1 — branches on session state, not a route: `useSession` (Better

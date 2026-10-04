@@ -5,7 +5,7 @@ import type { Database, Transaction } from "../../db/client";
 import { numberSequences } from "../../db/schema";
 
 /**
- * Canonical document types per docs/spine-prd.md §14.3 — everything with a
+ * Canonical document types per docs/archive/spine-prd.md §14.3 — everything with a
  * system-generated sequence. Vendor Bill is deliberately excluded: its
  * number is user-entered (the vendor's own number), so it never gets a row
  * here. `vendor_payment` (FEAT-07/S-07.8) is the vendor-side mirror of the
