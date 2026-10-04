@@ -11,7 +11,7 @@ export function SegmentedControlDemo() {
     <>
       <DemoLead>
         A real, genuinely native segmented control — a SwiftUI `Picker` in `.segmented` style on iOS, a real Jetpack
-        Compose `SingleChoiceSegmentedButtonRow` on Android. See Home's period control for this in real use.
+        Compose `SingleChoiceSegmentedButtonRow` on Android. See Home’s period control for this in real use.
       </DemoLead>
       <DemoSection title="Default">
         <DemoPreview>

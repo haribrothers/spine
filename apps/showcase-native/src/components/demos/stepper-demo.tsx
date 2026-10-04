@@ -10,7 +10,7 @@ export function StepperDemo() {
       <DemoLead>
         A numeric +/- stepper — the SAME custom `-`/value/`+` row on both platforms (Jetpack Compose has no native
         stepper control, so a real native SwiftUI Stepper on iOS was tried and reverted to keep both platforms
-        matching visually — see this component's own doc comment).
+        matching visually — see this component’s own doc comment).
       </DemoLead>
       <DemoSection title="Default (1–20)">
         <DemoPreview>

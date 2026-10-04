@@ -9,8 +9,8 @@ export function SliderDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s universal Slider — a real native slider. Single-thumb only, a deliberate narrowing from web's
-        multi-thumb Slider (neither SwiftUI's nor Jetpack Compose's native Slider supports multiple thumbs).
+        `@expo/ui`’s universal Slider — a real native slider. Single-thumb only, a deliberate narrowing from web’s
+        multi-thumb Slider (neither SwiftUI’s nor Jetpack Compose’s native Slider supports multiple thumbs).
       </DemoLead>
       <DemoSection title="Default">
         <DemoPreview>

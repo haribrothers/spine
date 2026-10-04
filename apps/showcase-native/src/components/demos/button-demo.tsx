@@ -6,7 +6,7 @@ export function ButtonDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s universal Button — real SwiftUI `Button` on iOS, Jetpack Compose `Button` on Android. One
+        `@expo/ui`’s universal Button — real SwiftUI `Button` on iOS, Jetpack Compose `Button` on Android. One
         primary (filled) action per screen; everything else is secondary (outlined) or ghost (text).
       </DemoLead>
       <DemoSection title="Variants">

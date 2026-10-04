@@ -9,9 +9,9 @@ export function ContextMenuDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s community MenuView — a real native long-press/tap menu (SwiftUI `Menu`/`ContextMenu` on iOS,
+        `@expo/ui`’s community MenuView — a real native long-press/tap menu (SwiftUI `Menu`/`ContextMenu` on iOS,
         Jetpack Compose `DropdownMenu` on Android). A flat `actions` array, not a compound-component tree — see
-        `context-menu.tsx`'s own doc comment for why.
+        `context-menu.tsx`’s own doc comment for why.
       </DemoLead>
       <DemoSection title="Default">
         <DemoPreview>

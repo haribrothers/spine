@@ -6,8 +6,8 @@ export function FullWidthButtonDemo() {
   return (
     <>
       <DemoLead>
-        A genuinely full-width native button — see this component's own doc comment for why `Button`'s own `fullWidth`
-        prop doesn't work and this exists instead.
+        A genuinely full-width native button — see this component’s own doc comment for why `Button`’s own `fullWidth`
+        prop doesn’t work and this exists instead.
       </DemoLead>
       <DemoSection title="Variants">
         <DemoPreview>

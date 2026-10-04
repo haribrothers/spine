@@ -12,7 +12,7 @@ export function ActionTileDemo() {
     <>
       <DemoLead>
         An icon + label tile, tinted rounded box — for a wrapping grid of equal-width quick actions/shortcuts. See
-        Home's Quick Actions grid for this in real use.
+        Home’s Quick Actions grid for this in real use.
       </DemoLead>
       <DemoSection title="Default">
         <DemoPreview>
