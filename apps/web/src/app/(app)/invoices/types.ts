@@ -69,7 +69,7 @@ export interface Invoice {
   /** Computed server-side — totalAmount - retentionAmount - amountPaid - creditedAmount. */
   balanceDue: string;
   /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
-  job?: { id: string; name: string } | null;
+  job?: { id: string; name: string; number?: string | null } | null;
   milestone?: { id: string; name: string; percent: number | null } | null;
   /** Retention as a percentage of the net amount ("10"), and retention held on the whole job so far. */
   retention?: { percent: string; heldOnJob: string } | null;

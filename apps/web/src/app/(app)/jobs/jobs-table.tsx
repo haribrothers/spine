@@ -26,6 +26,12 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       sortValue: (row) => row.name,
     },
     {
+      key: "number",
+      header: "Number",
+      render: (row) => <span className="tabular-nums text-on-surface-muted">{row.number ?? "—"}</span>,
+      sortValue: (row) => row.number ?? "",
+    },
+    {
       key: "contact",
       header: "Contact",
       render: (row) => row.contactName ?? "—",
@@ -65,7 +71,7 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       data={jobs}
       rowKey={(row) => row.id}
       searchPlaceholder="Search jobs"
-      searchKey={(row) => `${row.name} ${row.contactName ?? ""}`}
+      searchKey={(row) => `${row.number ?? ""} ${row.name} ${row.contactName ?? ""}`}
       configurablePageSize
     />
   );

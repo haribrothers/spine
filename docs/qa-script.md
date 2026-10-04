@@ -2259,6 +2259,16 @@ Regression: with Settings › "Repeat quote conversion" set to "Block", the seco
 
 Regression: the Jobs list, job detail and the phone's job screen show the new names; editing a job's name still works (§5).
 
+## 44. Job numbers (US-JOB-22, Phase 6)
+
+1. Create a job (or convert a quote): it gets "JOB-001", then "JOB-002". The Jobs list shows a "Number" column beside "Contact", and searching "JOB-002" finds it.
+2. Job detail's subtitle reads "JOB-001 · <customer>".
+3. Settings › Numbering: change Job's prefix to "WRK" and its starting number to 50, then save. The next job is "WRK-050".
+4. A progress invoice's job card reads "JOB-… · <job name>".
+5. After `pnpm db:migrate:dev` on a database with older jobs, each has a number in the order they were created, and new jobs continue from there.
+
+Regression: converting a quote twice still warns (§42), now listing "JOB-… · <name>".
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

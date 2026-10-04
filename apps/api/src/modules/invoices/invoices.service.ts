@@ -250,7 +250,7 @@ export class InvoicesService {
    */
   private async jobDetails(orgId: string, invoice: typeof invoices.$inferSelect) {
     if (!invoice.jobId) return { job: null, milestone: null, retention: null };
-    const [job] = await this.db.select({ id: jobs.id, name: jobs.name }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, invoice.jobId)));
+    const [job] = await this.db.select({ id: jobs.id, name: jobs.name, number: jobs.number }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, invoice.jobId)));
     const [milestone] = invoice.milestoneId
       ? await this.db
           .select({ id: milestones.id, name: milestones.name, amountType: milestones.amountType, amount: milestones.amount })
@@ -269,7 +269,7 @@ export class InvoicesService {
     }
 
     return {
-      job: job ? { id: job.id, name: job.name } : null,
+      job: job ? { id: job.id, name: job.name, number: job.number } : null,
       milestone: milestone
         ? { id: milestone.id, name: milestone.name, percent: milestone.amountType === "percent" ? milestone.amount : null }
         : null,

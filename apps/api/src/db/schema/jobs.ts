@@ -44,6 +44,14 @@ export const jobs = pgTable(
       .references(() => contacts.id, { onDelete: "restrict" }),
     /** Provenance only, per this table's own doc comment — never re-read for pricing. Null for a job created without a quote (not a path any story asks for yet, but the column doesn't force one to exist). */
     sourceQuoteId: uuid("source_quote_id").references(() => quotes.id, { onDelete: "set null" }),
+    /**
+     * US-JOB-22 — "JOB-007", from the org's Job sequence, given in the
+     * creating transaction under the sequence row lock (D-007) and never
+     * changed. Unique per org; nullable only for rows written outside
+     * `JobsService.create` (tests), since migration 0061 numbered every
+     * existing job.
+     */
+    number: text("number"),
     name: text("name").notNull(),
     siteAddress: text("site_address"),
     status: jobStatusEnum("status").notNull().default("active"),
@@ -67,6 +75,7 @@ export const jobs = pgTable(
     index("jobs_org_demo_idx").on(table.orgId, table.isDemo),
     index("jobs_contact_idx").on(table.contactId),
     index("jobs_source_quote_idx").on(table.sourceQuoteId),
+    uniqueIndex("jobs_org_number_unique").on(table.orgId, table.number),
   ],
 );
 

@@ -62,7 +62,7 @@ describe("Variation order tax (requires local Postgres)", () => {
     const ledger = new LedgerService(db, new PeriodsService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
     const quotesService = new QuotesService(db, auditLog, numbering, settings, queue, publicTokens, taxResolver, notifications);
-    const jobsService = new JobsService(db, auditLog, conversionGuard, notifications);
+    const jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     const milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
     variationOrdersService = new VariationOrdersService(db, auditLog, quotesService, jobsService, milestonesService);
 

@@ -12,7 +12,7 @@ export type QuoteConversionGuardMode = "off" | "warn" | "block";
 const DEFAULT_MODE: QuoteConversionGuardMode = "warn";
 
 interface ExistingConversions {
-  jobs: { id: string; name: string }[];
+  jobs: { id: string; name: string; number: string | null }[];
   invoices: { id: string; number: string | null }[];
 }
 
@@ -81,7 +81,7 @@ export class QuoteConversionGuardService {
   private async findExisting(orgId: string, quoteId: string): Promise<ExistingConversions> {
     const [existingJobs, existingInvoices] = await Promise.all([
       this.db
-        .select({ id: jobs.id, name: jobs.name })
+        .select({ id: jobs.id, name: jobs.name, number: jobs.number })
         .from(jobs)
         .where(and(eq(jobs.orgId, orgId), eq(jobs.sourceQuoteId, quoteId))),
       this.db

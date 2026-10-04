@@ -58,7 +58,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
 | `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
 | `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
-| `jobs` | `number text` (unique per org), allocated from the `job` number sequence | US-JOB-22 |
+| `jobs` | `number text` (unique per org, index `jobs_org_number_unique`), allocated from the `job` number sequence in the creating transaction; migration `0061` numbered existing jobs in creation order. Nullable only for rows written outside `JobsService` | US-JOB-22 |
 | `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `created_by_user_id`, `archived_at`, timestamps | US-QUO-25 |
 | `catalog_bundle_lines` (new) | `bundle_id`, `sort_order`, `catalog_item_id?`, `name`, `description`, `quantity numeric`, `unit_price_amount bigint`, `tax_rate_id?`, `tax_group_id?` | US-QUO-25 |
 | `settings` key `invoice_reminders` | `{ enabled, offsets: int[], repeatEvery?, repeatMax?, sendAt }` | US-INV-18 |

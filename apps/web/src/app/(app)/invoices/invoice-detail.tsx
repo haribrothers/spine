@@ -349,7 +349,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           <span className="text-on-surface-muted">
             Job{" "}
             <Link href={`/jobs/${invoice.job.id}`} className="text-primary hover:underline">
-              {invoice.job.name}
+              {invoice.job.number ? `${invoice.job.number} · ${invoice.job.name}` : invoice.job.name}
             </Link>
           </span>
           {invoice.milestone && (

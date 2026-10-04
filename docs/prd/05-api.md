@@ -422,6 +422,7 @@ Routes the stories add. Each is created by the story named.
 | AUTH | POST | `/api/auth/request-password-reset` (Better Auth) | Public | US-AUTH-09 |
 | AUTH | POST | `/api/auth/reset-password` (Better Auth) | Public (token) | US-AUTH-10 |
 | SET | PUT | `/org/settings/business_profile` validates the profile with `businessProfileSchema` (`@spine/shared`): `paymentInstructions` over 600 characters → 400 "Keep this under 600 characters."; other fields are kept as sent | roles: owner | US-INV-16 |
+| JOB | — | Job responses (`GET /jobs`, `GET /jobs/:id`, `POST /jobs`, `POST /jobs/from-quote/:quoteId`) gain `number`; an invoice's `job` gains `number`; the repeat-conversion 409's `existing.jobs[]` gains `number` | as the route | US-JOB-22 |
 | AUTH | GET | `/public/signup-status` → `{ open: boolean, businessName? }` | Public | US-AUTH-08 |
 | AUTH | GET | `/public/password-reset/:token` → `{ email }`; 404 when the link is unknown, used or expired. Doesn't consume the token | Public (token) | US-AUTH-10 |
 | AUTH | GET | `/public/forgot-password` → 302 to `APP_URL/forgot-password` (the phone app's "Forgot password?") | Public | US-AUTH-09 |

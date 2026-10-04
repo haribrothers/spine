@@ -9,6 +9,8 @@ export interface Job {
   contactId: string;
   contactName: string | null;
   sourceQuoteId: string | null;
+  /** US-JOB-22 — "JOB-007"; null only for rows created outside the app. */
+  number: string | null;
   name: string;
   siteAddress: string | null;
   status: JobStatus;

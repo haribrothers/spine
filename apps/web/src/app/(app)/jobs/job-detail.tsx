@@ -175,7 +175,8 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
               <h2 className="text-[18px] font-semibold text-on-surface">{job.name}</h2>
               <Badge className={STATUS_BADGE_CLASS[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
             </div>
-            <p className="mt-1 text-[13px] text-on-surface-muted">
+            <p className="mt-1 text-[13px] text-on-surface-muted" data-testid="job-subtitle">
+              {job.number && <>{job.number} · </>}
               {job.contactName ?? "Unknown contact"}
               {job.siteAddress && <> · {job.siteAddress}</>}
             </p>

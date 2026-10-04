@@ -69,7 +69,7 @@ describe("Jobs history (requires local Postgres)", () => {
     const conversionGuard = new QuoteConversionGuardService(db, new SettingsService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
 
-    jobsService = new JobsService(db, auditLog, conversionGuard, notifications);
+    jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
 
     const ownerEmail = `jobs-history-owner-${randomUUID()}@example.com`;

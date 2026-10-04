@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-22: number every job (Phase 6)
+
+- **Numbers.** Every new job, whether created directly or from a quote, gets the next number from the org's Job sequence (default "JOB", padding 3: "JOB-001"). It's given in the creating transaction under the `number_sequences` row lock (D-007) and never changes. Settings › Numbering's existing "Job" row sets the prefix, padding and starting number.
+- **Where it shows.**
+  - The Jobs list has a "Number" column beside "Contact", and search matches it.
+  - Job detail reads "JOB-001 · <customer>".
+  - An invoice's job card reads "JOB-001 · <job name>", which closes the US-JOB-21 note.
+  - The repeat-conversion warning lists "JOB-001 · <name>".
+- **Phone.** The API returns `number`, and US-MOB-05's job detail shows it next to the customer when that screen is built in Phase 5. The phone app has no job screen yet.
+- **Existing jobs.** Migration `0061_job_numbers` numbers them in creation order from each org's sequence and moves the sequence past them. A unique index stops duplicates within an org.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-job-22.http.integration.test.ts` (5): JOB-001 then JOB-002; a changed prefix and start ("WRK-0050"); the number on the job and in the list; no duplicates within an org; the migration numbers existing jobs in creation order and the next job continues the sequence.
+- `apps/e2e/tests/us-job-22.spec.ts` (1): the number in the Jobs list and on job detail. `us-job-21.spec.ts` now also checks the invoice's job card shows the number.
+
 ### 2026-10-05 — US-JOB-23: name new jobs after their quote (Phase 6)
 
 - **New jobs.** Converting a quote names the job after its first item line and the customer, e.g. "Project management — Sunstone Retail Fitouts", instead of "Job for QUO-0002". Headings are skipped; with no item line it's "Work for <customer>". Converting the same quote again adds " (2)", " (3)"…

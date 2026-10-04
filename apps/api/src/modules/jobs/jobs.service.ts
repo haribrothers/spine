@@ -9,6 +9,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
+import { NumberingService } from "../numbering/numbering.service";
 import { jobNameFromQuote } from "./job-name";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
@@ -33,6 +34,7 @@ export class JobsService {
     private readonly auditLog: AuditLogService,
     private readonly conversionGuard: QuoteConversionGuardService,
     private readonly notifications: NotificationsService,
+    private readonly numbering: NumberingService,
   ) {}
 
   /**
@@ -97,10 +99,13 @@ export class JobsService {
     }
 
     const created = await this.db.transaction(async (tx) => {
+      // US-JOB-22: the next Job number, under the sequence row lock.
+      const number = await this.numbering.allocateNumber(tx, orgId, "job");
       const [job] = await tx
         .insert(jobs)
         .values({
           orgId,
+          number,
           contactId: input.contactId,
           sourceQuoteId: sourceQuoteId ?? null,
           name: input.name,
