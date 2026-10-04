@@ -15,6 +15,14 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   const [invitations, setInvitations] = useState<InvitationRowData[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);
+  const [businessName, setBusinessName] = useState("your business");
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: { name?: string } | null }>("/org/settings/business_profile")
+      .then((res) => res.value?.name && setBusinessName(res.value.name))
+      .catch(() => undefined);
+  }, []);
 
   const reload = useCallback(async () => {
     try {
@@ -48,10 +56,6 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1">
-          <h2 className="text-[15px] font-semibold text-on-surface">Users</h2>
-          <p className="text-[13px] text-on-surface-muted">Everyone with access to this organisation.</p>
-        </div>
         {error && (
           <Alert variant="critical">
             <AlertDescription>{error}</AlertDescription>
@@ -72,7 +76,9 @@ export function UsersExplorer({ currentMemberId }: { currentMemberId: string }) 
                 onReactivate={(id) => run(() => apiClient.put(`/org/members/${id}/reactivate`), "Could not reactivate user.")}
                 onPromote={(id) => run(() => apiClient.put(`/org/members/${id}/promote`), "Could not promote user.")}
                 onDemote={(id) => run(() => apiClient.put(`/org/members/${id}/demote`), "Could not demote user.")}
-                onTransferPrimaryOwner={member.isPrimaryOwner ? () => setTransferOpen(true) : undefined}
+                // Only the Primary Owner can hand over primary ownership (US-TEAM-17).
+                onTransferPrimaryOwner={member.isPrimaryOwner && member.id === currentMemberId ? () => setTransferOpen(true) : undefined}
+                businessName={businessName}
               />
             ))}
           </div>

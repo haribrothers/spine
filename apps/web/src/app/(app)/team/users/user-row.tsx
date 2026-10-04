@@ -15,6 +15,7 @@ import {
   AvatarFallback,
   Badge,
   Button,
+  buttonVariants,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -46,8 +47,11 @@ export function UserRow({
   onPromote,
   onDemote,
   onTransferPrimaryOwner,
+  businessName,
 }: {
   member: MemberRowData;
+  /** For the promote confirmation ("Owners have full access to everything in <Business>"). */
+  businessName: string;
   isCurrentUser: boolean;
   onDeactivate: (memberId: string) => Promise<void>;
   onReactivate: (memberId: string) => Promise<void>;
@@ -58,6 +62,10 @@ export function UserRow({
 }) {
   const [busy, setBusy] = useState(false);
   const [confirmDemote, setConfirmDemote] = useState(false);
+  const [confirmPromote, setConfirmPromote] = useState(false);
+  const canPromote = member.role === "staff";
+  const canDemote = member.role === "owner" && !member.isPrimaryOwner && !isCurrentUser;
+  const hasMenu = canPromote || canDemote || Boolean(onTransferPrimaryOwner);
 
   async function guarded(action: () => Promise<void>) {
     setBusy(true);
@@ -69,7 +77,7 @@ export function UserRow({
   }
 
   return (
-    <div className="flex items-center gap-3 border-b border-border px-3 py-3 text-[13px] last:border-0">
+    <div data-testid="user-row" className="flex items-center gap-3 border-b border-border px-3 py-3 text-[13px] last:border-0">
       <Avatar className="shrink-0">
         <AvatarFallback>{initials(member.name)}</AvatarFallback>
       </Avatar>
@@ -83,7 +91,7 @@ export function UserRow({
       </div>
       <span className="shrink-0 text-on-surface-muted">{ROLE_LABELS[member.role] ?? member.role}</span>
 
-      {member.isActive ? (
+      {member.isPrimaryOwner ? null : member.isActive ? (
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button size="sm" variant="ghost" disabled={busy}>
@@ -113,24 +121,49 @@ export function UserRow({
         </Button>
       )}
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button size="sm" variant="ghost" disabled={busy} aria-label="More actions">
-            <MoreHorizontal size={16} />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {member.role === "staff" && (
-            <DropdownMenuItem onSelect={() => guarded(() => onPromote(member.id))}>Promote to Owner</DropdownMenuItem>
-          )}
-          {member.role === "owner" && !member.isPrimaryOwner && !isCurrentUser && (
-            <DropdownMenuItem onSelect={() => setConfirmDemote(true)}>Demote to Staff</DropdownMenuItem>
-          )}
-          {onTransferPrimaryOwner && (
-            <DropdownMenuItem onSelect={onTransferPrimaryOwner}>Transfer primary ownership…</DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {/* US-TEAM-17: the Primary Owner's row has no remove or demote controls; its menu
+          offers only the transfer (to the Primary Owner), or nothing at all. */}
+      {hasMenu && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button size="sm" variant="ghost" disabled={busy} aria-label="More actions">
+              <MoreHorizontal size={16} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {canPromote && <DropdownMenuItem onSelect={() => setConfirmPromote(true)}>Promote to Owner</DropdownMenuItem>}
+            {canDemote && <DropdownMenuItem onSelect={() => setConfirmDemote(true)}>Demote to Staff</DropdownMenuItem>}
+            {onTransferPrimaryOwner && (
+              <DropdownMenuItem onSelect={onTransferPrimaryOwner}>Transfer primary ownership…</DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+
+      {/* US-TEAM-16 (D-059): granting full access is confirmed first; a primary, not danger, action (D-058). */}
+      <AlertDialog open={confirmPromote} onOpenChange={setConfirmPromote}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Make {member.name} an owner?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Owners have full access to everything in {businessName} — every record and report, plus Users, Teams and
+              Settings. Team permissions no longer apply to {member.name}. Any owner can change them back to Staff later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "primary" })}
+              onClick={async () => {
+                await guarded(() => onPromote(member.id));
+                setConfirmPromote(false);
+              }}
+            >
+              {busy ? <Spinner size="sm" /> : "Make owner"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmDemote} onOpenChange={setConfirmDemote}>
         <AlertDialogContent>

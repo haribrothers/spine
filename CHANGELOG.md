@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-TEAM-16 and US-TEAM-17: confirm before making an owner; protect the Primary Owner's row (Phase 6)
+
+- **Confirm before promoting (US-TEAM-16).** "Promote to Owner" now opens "Make <name> an owner?" with "Owners have full access to everything in <Business> — every record and report, plus Users, Teams and Settings. Team permissions no longer apply to <name>. Any owner can change them back to Staff later.", plus "Cancel" and "Make owner". "Make owner" is a primary button, not danger (D-058). The business name comes from the business profile.
+- **Primary Owner's row (US-TEAM-17).**
+  - It has no "Deactivate" button.
+  - Its menu offers only "Transfer primary ownership…", and only to the Primary Owner. Other Owners see no menu on that row; before this, every Owner was offered the transfer.
+  - The API already refused to deactivate the Primary Owner with a 400; that now has a story-named test.
+- **Users heading.** "Users" and "Everyone with access to this organisation." appear once, as the page heading; the duplicate section heading is gone.
+
+Tests:
+- `us-team-17.http.integration.test.ts`: deactivating the Primary Owner returns 400, whether another Owner or the Primary Owner asks.
+- `apps/e2e/tests/us-team-16.spec.ts` (2): the promote dialog's copy, Cancel changes nothing, "Make owner" is primary and promotes, and the Owner demotes back. The Primary Owner row has no Deactivate, its menu has only the transfer, and the heading appears once.
+
+E2E 43/43.
+
 ### 2026-10-04 — US-PUR-20: stop staff approving their own expenses (Phase 6)
 
 - **API.** `POST /expenses/:id/approve` and `/reject` refuse a Staff member reviewing their own expense with 403 "Someone else needs to approve your own expense.". The check runs before the status check, and Owners can still review their own (D-085).

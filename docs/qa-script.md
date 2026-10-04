@@ -2025,6 +2025,17 @@ and milestone amounts everywhere (§5).
 2. Open a colleague's submitted expense: Approve and Reject work.
 3. As Owner, open your own submitted expense: Approve works.
 
+## 22. Owners on the Users page (US-TEAM-16, US-TEAM-17, Phase 6)
+
+1. Team → Users: "Users" / "Everyone with access to this organisation."
+   appear once, at the top.
+2. On a Staff member's row: ⋯ → "Promote to Owner" opens "Make <name> an
+   owner?" naming your business. "Cancel" changes nothing; "Make owner"
+   (blue, not red) makes them Owner.
+3. The Primary Owner's row has no "Deactivate". As the Primary Owner, its ⋯
+   menu shows only "Transfer primary ownership…"; as another Owner, the
+   row has no ⋯ menu at all.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

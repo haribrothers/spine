@@ -265,8 +265,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-NTF-11 · Use the branded layout for every email type
 - [ ] US-NTF-12 · Turn on push from my own profile
 - [ ] US-TEAM-15 · Use the business name everywhere the organisation is named
-- [ ] US-TEAM-16 · Confirm before making someone an owner
-- [ ] US-TEAM-17 · Protect the Primary Owner's row
+- [x] US-TEAM-16 · Confirm before making someone an owner
+- [x] US-TEAM-17 · Protect the Primary Owner's row
 - [x] US-TEAM-18 · Show each person only the sections they can open
 - [ ] US-SET-13 · Open contact history the same way as everywhere else
 - [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
