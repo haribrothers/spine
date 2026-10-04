@@ -16,7 +16,7 @@ import { STORAGE_FULL_MESSAGE, type StorageStatus } from "@spine/shared";
 import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contactPersons, contacts, expenses, files, invoices, jobPhotos, jobs, quotes, settings } from "../../db/schema";
+import { contactPersons, contacts, creditNotes, expenses, files, invoices, jobPhotos, jobs, payments, quotes, settings } from "../../db/schema";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
 import { createStorageDrivers, resolveFilesDir, type StorageDrivers } from "./storage/storage-config";
@@ -164,6 +164,13 @@ export class FilesService {
     }
   }
 
+  /** Removes a file nothing points at yet (a duplicate made by a lost race). */
+  async removeUnreferenced(orgId: string, id: string): Promise<void> {
+    const file = await this.getMetadata(orgId, id);
+    await this.db.delete(files).where(eq(files.id, id));
+    await this.readerFor(file).delete(file.key).catch(() => undefined);
+  }
+
   async getMetadata(orgId: string, id: string): Promise<FileRow> {
     if (!UUID.test(id)) throw new NotFoundException("File not found");
     const [row] = await this.db
@@ -281,9 +288,11 @@ export class FilesService {
     const set = (id: string | null, label: string) => {
       if (id && labels.has(id)) labels.set(id, label);
     };
-    const [invoiceRows, quoteRows, expenseRows, photoRows, contactRows, personRows] = await Promise.all([
-      this.db.select({ id: invoices.pdfFileId, number: invoices.number }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.pdfFileId, ids))),
-      this.db.select({ id: quotes.pdfFileId, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.pdfFileId, ids))),
+    const [invoiceRows, quoteRows, creditNoteRows, paymentRows, expenseRows, photoRows, contactRows, personRows] = await Promise.all([
+      this.db.select({ id: invoices.issuedPdfFileId, number: invoices.number }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
+      this.db.select({ id: quotes.issuedPdfFileId, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.issuedPdfFileId, ids))),
+      this.db.select({ id: creditNotes.issuedPdfFileId, number: creditNotes.number }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
+      this.db.select({ id: payments.issuedPdfFileId, number: payments.number }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
       this.db.select({ id: expenses.receiptFileId, number: expenses.number, description: expenses.description }).from(expenses).where(and(eq(expenses.orgId, orgId), inArray(expenses.receiptFileId, ids))),
       this.db.select({ id: jobPhotos.fileId, name: jobs.name }).from(jobPhotos).innerJoin(jobs, eq(jobPhotos.jobId, jobs.id)).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
       this.db.select({ id: contacts.logoFileId, name: contacts.name }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
@@ -291,6 +300,8 @@ export class FilesService {
     ]);
     for (const r of invoiceRows) set(r.id, `PDF of invoice ${r.number ?? "(draft)"}`);
     for (const r of quoteRows) set(r.id, `PDF of quote ${r.number ?? "(draft)"}`);
+    for (const r of creditNoteRows) set(r.id, `PDF of credit note ${r.number ?? "(draft)"}`);
+    for (const r of paymentRows) set(r.id, `Receipt PDF ${r.number ?? ""}`.trim());
     for (const r of expenseRows) set(r.id, `Receipt for expense ${[r.number, r.description].filter(Boolean).join(": ") || "(no description)"}`);
     for (const r of photoRows) set(r.id, `Photo on job: ${r.name}`);
     for (const r of contactRows) set(r.id, `Logo of ${r.name}`);

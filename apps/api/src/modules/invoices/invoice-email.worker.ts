@@ -5,8 +5,7 @@ import type { Database } from "../../db/client";
 import { invoices, contacts } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
-import { FilesService } from "../files/files.service";
-import { InvoicePdfService } from "../pdf/invoice-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
 import type { InvoicePdfBusinessProfile } from "../pdf/invoice-pdf.template";
 import { toDecimalString } from "@spine/shared";
@@ -46,8 +45,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
-    private readonly files: FilesService,
-    private readonly pdf: InvoicePdfService,
+    private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
   ) {}
 
@@ -89,25 +87,8 @@ export class InvoiceEmailWorker implements OnModuleInit {
     row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
     isReminder: boolean,
   ): Promise<void> {
-    const { buffer, filename } = await this.pdf.render(orgId, invoiceId);
-
-    if (this.files.isStorageConfigured()) {
-      try {
-        const uploaded = await this.files.upload(orgId, {
-          originalFilename: filename,
-          mimeType: "application/pdf",
-          buffer,
-          uploadedByUserId: null,
-        });
-        if (uploaded) {
-          await this.db.update(invoices).set({ pdfFileId: uploaded.id }).where(eq(invoices.id, invoiceId));
-        }
-      } catch (err) {
-        this.logger.warn(`Could not persist PDF for invoice ${invoiceId}: ${(err as Error).message}`);
-      }
-    } else {
-      this.logger.warn(`File storage not configured — PDF for invoice ${invoiceId} was not persisted (email attempt continues if possible)`);
-    }
+    // US-INV-17: attach the PDF stored when the invoice was issued (stored now if it isn't yet).
+    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
 
     if (!row.contactEmail) {
       throw new Error(`Invoice ${invoiceId}'s contact has no email address on file — cannot send`);

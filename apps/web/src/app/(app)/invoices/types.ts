@@ -56,7 +56,7 @@ export interface Invoice {
   voidReason: string | null;
   journalEntryId: string | null;
   voidJournalEntryId: string | null;
-  pdfFileId: string | null;
+  issuedPdfFileId: string | null;
   emailStatus: InvoiceEmailStatus | null;
   emailError: string | null;
   emailSentAt: string | null;

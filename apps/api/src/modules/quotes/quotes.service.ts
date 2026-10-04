@@ -11,6 +11,7 @@ import { hasCapability, requireOwnershipCapability } from "../../auth/capability
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
+import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
@@ -536,6 +537,7 @@ export class QuotesService {
       // see this method's own doc comment above.
       this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
     }
+    await queueIssuedPdf(this.queue, orgId, "quote", id);
 
     return this.getOne(orgId, id);
   }

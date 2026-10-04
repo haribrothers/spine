@@ -12,7 +12,7 @@ import { LedgerService } from "../ledger/ledger.service";
 import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
-import { PaymentPdfService } from "../pdf/payment-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
@@ -27,8 +27,9 @@ function escapeHtml(value: string): string {
  * allocate it across one or more invoices in the same call (S-06.1, S-06.2,
  * S-06.5), or leave it fully/partially unallocated as customer credit
  * (S-06.4). S-06.3 (oldest-first suggestion) is `suggestAllocation` below.
- * S-06.6 (receipt PDF, `PaymentPdfService`) is rendered on demand via
- * `GET /payments/:id/pdf` and can be (re-)emailed via `sendReceiptEmail`.
+ * S-06.6 (receipt PDF): stored when the payment is recorded (US-INV-17,
+ * `IssuedPdfService`), served by `GET /payments/:id/pdf` and (re-)emailed
+ * via `sendReceiptEmail`.
  * The receivables/AR-aging view (S-06.7) is a later stage (see CHANGELOG).
  * `create()` also sends a payment-confirmation email to the paying contact
  * and an in-app + email notification to the org, see its own doc comment.
@@ -45,7 +46,7 @@ export class PaymentsService {
     private readonly email: EmailService,
     private readonly notifications: NotificationsService,
     private readonly settings: SettingsService,
-    private readonly pdf: PaymentPdfService,
+    private readonly issuedPdf: IssuedPdfService,
   ) {}
 
   async list(orgId: string, options: { contactId?: string }) {
@@ -326,6 +327,7 @@ export class PaymentsService {
 
     await this.sendConfirmation(orgId, created!.id, contact, input.amount, totalAllocated);
 
+    await this.issuedPdf.queueStore(orgId, "payment", created!.id);
     return this.getOne(orgId, created!.id);
   }
 
@@ -542,7 +544,8 @@ export class PaymentsService {
       throw new BadRequestException("SMTP is not configured — cannot send a receipt");
     }
 
-    const { buffer, filename } = await this.pdf.render(orgId, paymentId);
+    // US-INV-17: the receipt PDF stored when the payment was recorded.
+    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "payment", paymentId);
     const business = await this.settings.get<{ name?: string }>(orgId, "business_profile");
     const businessName = business?.name || "Spine";
     const amountText = `${toDecimalString({ amount: row.payment.amount, currency: row.payment.currency })} ${row.payment.currency}`;

@@ -5,8 +5,7 @@ import type { Database } from "../../db/client";
 import { quotes, contacts } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
-import { FilesService } from "../files/files.service";
-import { QuotePdfService } from "../pdf/quote-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 
@@ -77,8 +76,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
-    private readonly files: FilesService,
-    private readonly pdf: QuotePdfService,
+    private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
   ) {}
 
@@ -130,28 +128,8 @@ export class QuoteEmailWorker implements OnModuleInit {
     row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
     publicToken: string | undefined,
   ): Promise<void> {
-    const { buffer, filename } = await this.pdf.render(orgId, quoteId);
-
-    // Persist the PDF (best-effort — logged, not fatal, matching
-    // pdfFileId's own doc comment: a persistence failure here must not
-    // stop the email attempt below, and vice versa).
-    if (this.files.isStorageConfigured()) {
-      try {
-        const uploaded = await this.files.upload(orgId, {
-          originalFilename: filename,
-          mimeType: "application/pdf",
-          buffer,
-          uploadedByUserId: null,
-        });
-        if (uploaded) {
-          await this.db.update(quotes).set({ pdfFileId: uploaded.id }).where(eq(quotes.id, quoteId));
-        }
-      } catch (err) {
-        this.logger.warn(`Could not persist PDF for quote ${quoteId}: ${(err as Error).message}`);
-      }
-    } else {
-      this.logger.warn(`File storage not configured — PDF for quote ${quoteId} was not persisted (email attempt continues if possible)`);
-    }
+    // US-INV-17: attach the PDF stored when the quote was sent (stored now if it isn't yet).
+    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "quote", quoteId);
 
     if (!row.contactEmail) {
       throw new Error(`Quote ${quoteId}'s contact has no email address on file — cannot send`);

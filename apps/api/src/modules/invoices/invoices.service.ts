@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { QueueService } from "../queue/queue.service";
+import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
@@ -553,6 +554,7 @@ export class InvoicesService {
       return invoice;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
     return this.getOne(orgId, result!.id);
   }
 
@@ -793,6 +795,7 @@ export class InvoicesService {
       return row;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
     return this.getOne(orgId, result!.id);
   }
 

@@ -40,7 +40,7 @@ const VIEW_NOTIFICATION_THROTTLE_MS = 60 * 60 * 1000;
 /**
  * The deliberately reduced, public-safe projection of a quote — everything
  * `apps/web/src/app/quote/[token]/page.tsx` needs to render, and nothing
- * more. No `orgId`, no `createdByUserId`, no `isDemo`, no `pdfFileId`, no
+ * more. No `orgId`, no `createdByUserId`, no `isDemo`, no `issuedPdfFileId`, no
  * email-delivery bookkeeping (`emailStatus`/`emailError`) — none of that is
  * this customer's business, and none of it is reachable through this
  * projection even by accident (contrast with the authenticated

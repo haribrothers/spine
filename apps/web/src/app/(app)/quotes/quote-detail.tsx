@@ -330,7 +330,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
           <div className="flex flex-wrap items-center gap-2">
             <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
-            {/* PRD S-03.3 — live preview/download, rendered on demand from the quote's current snapshot (see quotes.controller.ts's GET /:id/pdf comment for why this is always a live render, even for a sent quote). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
+            {/* PRD S-03.3 / US-INV-17 — a draft previews live; a sent quote downloads the PDF stored when it was sent (see quotes.controller.ts's GET /:id/pdf). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
             <Button variant="secondary" asChild>
               <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
                 {quote.status === "draft" ? "Preview PDF" : "Download PDF"}

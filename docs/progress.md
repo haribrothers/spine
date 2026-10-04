@@ -251,7 +251,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-JOB-23 · Name new jobs after their quote
 - [ ] US-INV-15 · Print payment instructions on invoices
 - [ ] US-INV-16 · Set payment instructions in Settings
-- [ ] US-INV-17 · Keep the exact PDF that was issued
+- [x] US-INV-17 · Keep the exact PDF that was issued
 - [ ] US-PAY-10 · Export receivables to CSV
 - [ ] US-PAY-13 · Allocate a deposit payment to its advance invoice
 - [ ] US-PUR-14 · Export payables to CSV

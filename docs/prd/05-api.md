@@ -106,6 +106,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/credit-notes/:id` | roles: owner, staff | — |
 | PUT | `/credit-notes/:id` | roles: owner, staff | Yes |
 | GET | `/credit-notes/:id/history` | roles: owner, staff | — |
+| GET | `/credit-notes/:id/pdf` | roles: owner, staff — live for a draft, the stored PDF once issued (US-INV-17, D-116) | — |
 | POST | `/credit-notes/:id/issue` | roles: owner, staff; `credit_notes.issue` | Yes |
 
 ### Dashboard — `/dashboard`
@@ -478,3 +479,5 @@ Routes the stories add. Each is created by the story named.
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |
 
 Queues added: `file-integrity-check` (weekly), `invoice-reminder-run` (daily), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.
+
+`GET /quotes/:id/pdf`, `/invoices/:id/pdf`, `/credit-notes/:id/pdf` and `/payments/:id/pdf` render live for a draft and, once the document is sent or issued, always serve the PDF stored at that moment (stored by `store-issued-pdf`, or on the first download for documents issued before US-INV-17). Email jobs attach the same stored file.

@@ -48,7 +48,7 @@ export interface Quote {
   createdByUserId: string | null;
   sentAt: string | null;
   /** Set once the PDF generated at send time is persisted (Stage 2, S-03.3/S-03.4) — null on a draft, and possibly still null on a sent quote if persistence itself failed (logged server-side, not fatal). The "Download PDF" affordance doesn't need this directly — `GET /quotes/:id/pdf` renders live regardless — but it's useful to know a durable copy exists. */
-  pdfFileId: string | null;
+  issuedPdfFileId: string | null;
   /** null until QuotesService.send() sets it to "pending" right before enqueuing the email job; the worker (quote-email.worker.ts) owns every transition after that. See quotes.ts's schema comment for why "failed" can appear mid-retry, not only after retries are exhausted. */
   emailStatus: QuoteEmailStatus | null;
   /** Set only when emailStatus is "failed" — the most recent attempt's error message. */

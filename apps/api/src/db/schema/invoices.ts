@@ -132,8 +132,8 @@ export const invoices = pgTable(
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     /** S-05.8 — the reversing entry posted by void(), separate from journalEntryId (the original issue posting), so both remain independently visible in the ledger per CLAUDE.md's "corrections are reversing entries, never edits." */
     voidJournalEntryId: uuid("void_journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
-    /** Same send-time PDF snapshot convention as quotes.pdfFileId — see quotes.ts's own doc comment. */
-    pdfFileId: uuid("pdf_file_id").references(() => files.id, { onDelete: "set null" }),
+    /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
+    issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     emailStatus: invoiceEmailStatusEnum("email_status"),
     emailError: text("email_error"),
     emailSentAt: timestamp("email_sent_at", { withTimezone: true }),

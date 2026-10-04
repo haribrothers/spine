@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import type { Response } from "express";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { CreditNotesService } from "./credit-notes.service";
 
 /**
@@ -19,7 +21,10 @@ import { CreditNotesService } from "./credit-notes.service";
 @Controller("credit-notes")
 @OrgRoles(["owner", "staff"])
 export class CreditNotesController {
-  constructor(private readonly creditNotesService: CreditNotesService) {}
+  constructor(
+    private readonly creditNotesService: CreditNotesService,
+    private readonly issuedPdf: IssuedPdfService,
+  ) {}
 
   @Get()
   async list(@Session() session: UserSession, @Query("invoiceId") invoiceId?: string, @Query("contactId") contactId?: string) {
@@ -31,6 +36,16 @@ export class CreditNotesController {
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.creditNotesService.getOne(orgId, id);
+  }
+
+  /** US-INV-17 (D-116) — live for a draft; the PDF stored at issue for an issued credit note. */
+  @Get(":id/pdf")
+  async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
+    const orgId = requireOrgId(session);
+    const { buffer, filename } = await this.issuedPdf.forDownload(orgId, "credit_note", id);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
+    res.send(buffer);
   }
 
   /** `GET /credit-notes/:id/history` — same pattern as InvoicesController.getHistory. */

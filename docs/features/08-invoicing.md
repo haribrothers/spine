@@ -268,6 +268,7 @@ Decision: D-083 · Review finding: Stage 5 #32
 - Data: `issued_pdf_file_id uuid → files` on `quotes`, `invoices`, `credit_notes`, `payments` (04 "Columns added").
 - Queue: `store-issued-pdf` (pg-boss) renders and stores after commit; the email jobs attach the stored file.
 - Supersedes the per-field snapshot idea for addresses and branding; line prices and tax are still snapshotted on the lines (D-006).
+- Credit notes had no PDF before this story; one is added in the invoice PDF's layout (D-116).
 
 ### US-INV-18 · Turn on automatic payment reminders
 **Feature:** F-INV-07 · **Priority:** P1 · **Phase:** 7 · **Screens:** `SettingsReminders`

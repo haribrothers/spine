@@ -1,3 +1,5 @@
+import { QueueService } from "../queue/queue.service";
+import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
 import { computeLineTax, money, roundHalfUp } from "@spine/shared";
@@ -113,6 +115,7 @@ export class CreditNotesService {
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
+    private readonly queue: QueueService,
   ) {}
 
   async list(orgId: string, options: { invoiceId?: string; contactId?: string }) {
@@ -361,6 +364,7 @@ export class CreditNotesService {
       return row;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "credit_note", result!.id);
     return this.getOne(orgId, result!.id);
   }
 

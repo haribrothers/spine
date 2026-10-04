@@ -20,6 +20,9 @@ import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
 
+/** US-INV-17 — opened in a new tab: the route streams a PDF, not JSON. */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+
 const STATUS_BADGE_CLASS: Record<CreditNote["status"], string> = {
   draft: "bg-draft-bg text-draft",
   issued: "bg-due-soon-bg text-due-soon",
@@ -123,6 +126,13 @@ export function CreditNoteDetailDrawer({
         </DrawerBody>
         <DrawerFooter>
           {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
+          {creditNote && (
+            <Button variant="secondary" asChild>
+              <a href={`${API_URL}/credit-notes/${creditNote.id}/pdf`} target="_blank" rel="noreferrer">
+                {creditNote.status === "draft" ? "Preview PDF" : "Download PDF"}
+              </a>
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>

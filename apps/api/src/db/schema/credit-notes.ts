@@ -1,3 +1,4 @@
+import { files } from "./files";
 import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
@@ -64,6 +65,8 @@ export const creditNotes = pgTable(
     issuedAt: timestamp("issued_at", { withTimezone: true }),
     /** The journal_entries row this credit note's issuance posted (§7.2 "Credit note issued": debit Revenue + Tax Payable, credit AR). Nullable: null on every draft. */
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
+    /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
+    issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

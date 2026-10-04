@@ -7,7 +7,7 @@ import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { PaymentsService } from "./payments.service";
-import { PaymentPdfService } from "../pdf/payment-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 
 /**
  * PRD §2.1/§9 — Payments use the own/others capability split:
@@ -27,7 +27,7 @@ import { PaymentPdfService } from "../pdf/payment-pdf.service";
 export class PaymentsController {
   constructor(
     private readonly paymentsService: PaymentsService,
-    private readonly paymentPdfService: PaymentPdfService,
+    private readonly issuedPdf: IssuedPdfService,
   ) {}
 
   /** `invoiceId` dispatches to `listForInvoice` (a real join through payment_allocations, not a contactId filter) — backs the invoice detail page's own "Payments" section. Mutually exclusive with `contactId` in practice, but not enforced — `invoiceId` simply takes precedence when both are given, since no caller has a reason to pass both. */
@@ -61,11 +61,11 @@ export class PaymentsController {
     return this.paymentsService.getHistory(orgId, id);
   }
 
-  /** S-06.6 — live-rendered branded receipt PDF, same convention as InvoicesController.getPdf. */
+  /** S-06.6 / US-INV-17 — the receipt PDF stored when the payment was recorded, same as InvoicesController.getPdf. */
   @Get(":id/pdf")
   async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
     const orgId = requireOrgId(session);
-    const { buffer, filename } = await this.paymentPdfService.render(orgId, id);
+    const { buffer, filename } = await this.issuedPdf.forDownload(orgId, "payment", id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.send(buffer);

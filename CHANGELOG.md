@@ -80,6 +80,31 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-INV-17: keep the exact PDF that was issued (Phase 6)
+
+A sent quote, or an issued invoice, credit note or payment receipt, now keeps the PDF rendered the moment it was issued. Every later download or email serves those exact bytes, even after the customer's address, the logo, branding or the templates change. Drafts still render live and store nothing.
+- **Storage column.** New column `issued_pdf_file_id` on `quotes`, `invoices`, `credit_notes` and `payments`. Migration `0053` adds it and copies the old `quotes`/`invoices.pdf_file_id` values across, then `0054` drops `pdf_file_id`.
+- **Storing at issue.** `IssuedPdfService` (`apps/api/src/modules/pdf`) does the work.
+  - After their transaction commits, `QuotesService.send`, `InvoicesService.issue`/`releaseRetention`, `CreditNotesService.issue` and `PaymentsService.create` queue `store-issued-pdf`.
+  - The job renders once and stores the file through `FilesService`, so it's checksummed and write-once. It retries with backoff for about a day while storage is down; issuing never waits for it or fails because of it.
+  - A document issued before this change, or whose job hasn't run yet, is stored on its first download.
+  - Two first downloads at once still leave a single file.
+- **PDF routes.** `GET /quotes|invoices|payments/:id/pdf` serve the stored file once the document is issued.
+- **Emails.** The quote and invoice email jobs and the receipt email attach the stored file instead of rendering again; invoice reminders previously re-rendered and overwrote it. If storage is down when an email goes, the email still carries a fresh render and the store job is queued.
+- **Credit-note PDF (new, D-116).** A credit note had no PDF before. It now has one in the invoice PDF's layout: "CREDIT NOTE", its number, credited to, against invoice, reason, lines and total credited. There's a new route, `GET /credit-notes/:id/pdf`, and a "Download PDF" (or "Preview PDF" for a draft) button in the credit note drawer.
+- **Test and queue fixes.** The integration-test SWC config now uses the automatic JSX runtime, as the Nest build does; it was the first test to render a PDF. `QueueService.send` accepts per-queue retry options.
+
+Tests: `us-inv-17.http.integration.test.ts` (7), against a demo-seeded org through the real routes:
+- A draft renders live and stores nothing.
+- An issued invoice serves identical bytes after the business profile and contact change.
+- A document issued earlier is stored on its first download.
+- A sent quote, an issued credit note and a receipt are each stored and served unchanged.
+- The credit-note PDF's file name is its number.
+- Racing first downloads store one file.
+- Storage down: issuing still succeeds, the job's work fails so it's retried, and the email still gets a PDF.
+
+Integration 30 files pass; E2E 33/33.
+
 ### 2026-10-04 — US-OPS-31: warn before the disk fills up (Phase 6)
 
 - **Usage check.** `FilesService.storageStatus()` measures the files volume with `statfs`, at most every 15 minutes and again straight after a full-disk upload.

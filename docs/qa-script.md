@@ -1850,6 +1850,25 @@ revenue.
 
 ---
 
+### Issued PDFs are kept (US-INV-17)
+
+1. Open a draft invoice and click "Preview PDF". Change the business name
+   in Settings → Business and preview again: the PDF shows the new name.
+2. Issue the invoice and click "Download PDF". Now change the business
+   name, logo or the contact's address and download again: the PDF is
+   unchanged.
+3. Email the invoice, then send a reminder (§7): both attachments are the
+   same PDF as the download.
+4. Do the same for a sent quote (§4) and a payment receipt (§8).
+5. Credit notes: open a credit note from Billing → Credit Notes or the
+   invoice's Credit notes section. A draft shows "Preview PDF"; an issued
+   one shows "Download PDF". The PDF reads "CREDIT NOTE", its number,
+   "Credited to", "Against invoice <number>", the reason, lines and "Total
+   credited", and stays unchanged after the business details change.
+6. With the API's files folder made read-only, issue an invoice: issuing
+   still succeeds. Make it writable again: the PDF is stored by the retried
+   job (or on the first download).
+
 ## 16. File storage (US-OPS-27, Phase 6)
 
 Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.

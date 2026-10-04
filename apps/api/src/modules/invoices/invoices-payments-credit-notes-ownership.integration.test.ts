@@ -20,6 +20,10 @@ import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PushService } from "../notifications/push.service";
 import { PaymentPdfService } from "../pdf/payment-pdf.service";
+import { CreditNotePdfService } from "../pdf/credit-note-pdf.service";
+import { InvoicePdfService } from "../pdf/invoice-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
+import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { FilesService } from "../files/files.service";
 
 /**
@@ -79,11 +83,20 @@ describe("Invoices/Payments/Credit Notes ownership split (requires local Postgre
     const conversionGuard = new QuoteConversionGuardService(db, settings);
     const notifications = new NotificationsService(db, queue, new PushService(db));
     const email = new EmailService();
-    const paymentPdf = new PaymentPdfService(db, settings, new FilesService(db));
+    const files = new FilesService(db);
+    const issuedPdf = new IssuedPdfService(
+      db,
+      queue,
+      files,
+      new QuotePdfService(db, settings, files),
+      new InvoicePdfService(db, settings, files),
+      new CreditNotePdfService(db, settings, files),
+      new PaymentPdfService(db, settings, files),
+    );
 
     invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
-    paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, paymentPdf);
-    creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger);
+    paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf);
+    creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger, queue);
 
     const ownerEmail = `ipc-owner-${randomUUID()}@example.com`;
     const creatorEmail = `ipc-creator-${randomUUID()}@example.com`;

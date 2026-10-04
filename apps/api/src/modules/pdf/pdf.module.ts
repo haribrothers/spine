@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { FilesModule } from "../files/files.module";
 import { OrgModule } from "../org/org.module";
 import { QuotePdfService } from "./quote-pdf.service";
+import { CreditNotePdfService } from "./credit-note-pdf.service";
+import { IssuedPdfService } from "./issued-pdf.service";
 import { InvoicePdfService } from "./invoice-pdf.service";
 import { PaymentPdfService } from "./payment-pdf.service";
 
@@ -17,7 +19,7 @@ import { PaymentPdfService } from "./payment-pdf.service";
  */
 @Module({
   imports: [OrgModule, FilesModule],
-  providers: [QuotePdfService, InvoicePdfService, PaymentPdfService],
-  exports: [QuotePdfService, InvoicePdfService, PaymentPdfService],
+  providers: [QuotePdfService, InvoicePdfService, PaymentPdfService, CreditNotePdfService, IssuedPdfService],
+  exports: [QuotePdfService, InvoicePdfService, PaymentPdfService, CreditNotePdfService, IssuedPdfService],
 })
 export class PdfModule {}

@@ -7,7 +7,7 @@ import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
-import { QuotePdfService } from "../pdf/quote-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QueueService } from "../queue/queue.service";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { AcceptQuoteInPersonDto } from "./quotes.dto";
@@ -36,7 +36,7 @@ import { AcceptQuoteInPersonDto } from "./quotes.dto";
 export class QuotesController {
   constructor(
     private readonly quotesService: QuotesService,
-    private readonly quotePdfService: QuotePdfService,
+    private readonly issuedPdf: IssuedPdfService,
     private readonly queue: QueueService,
   ) {}
 
@@ -75,20 +75,15 @@ export class QuotesController {
   }
 
   /**
-   * PRD S-03.3 — streams a branded PDF of the quote, rendered live from its
-   * stored line/total snapshot on every call (not served from
-   * `pdfFileId`'s persisted copy, even after send — a live render and the
-   * persisted send-time copy are byte-identical for a `sent` quote, since
-   * its snapshot is immutable, so there's no correctness reason to prefer
-   * one over the other; rendering live keeps this one code path correct
-   * for both drafts, which have no persisted PDF yet, without a branch).
-   * `@OrgRoles(["owner","staff"])` inherited from the controller — quotes
+   * PRD S-03.3 / US-INV-17 — a draft's PDF renders live from current data;
+   * a sent quote's PDF is the file stored when it was sent, byte for byte,
+   * whatever changed since (logo, address, templates). `@OrgRoles(["owner","staff"])` inherited from the controller — quotes
    * have no Field access at all per §2.1.
    */
   @Get(":id/pdf")
   async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
     const orgId = requireOrgId(session);
-    const { buffer, filename } = await this.quotePdfService.render(orgId, id);
+    const { buffer, filename } = await this.issuedPdf.forDownload(orgId, "quote", id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.send(buffer);
