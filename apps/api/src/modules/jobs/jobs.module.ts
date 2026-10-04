@@ -1,3 +1,5 @@
+import { NumberingModule } from "../numbering/numbering.module";
+import { JobAccessService } from "./job-access.service";
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { InvoicesModule } from "../invoices/invoices.module";
@@ -33,9 +35,9 @@ import { JobCostingService } from "./job-costing.service";
  * throughout this codebase.
  */
 @Module({
-  imports: [AuditModule, InvoicesModule, QuotesModule, OrgModule, NotificationsModule],
+  imports: [AuditModule, InvoicesModule, QuotesModule, OrgModule, NotificationsModule, NumberingModule],
   controllers: [JobsController],
-  providers: [JobsService, MilestonesService, VariationOrdersService, JobCostingService],
+  providers: [JobsService, MilestonesService, VariationOrdersService, JobCostingService, JobAccessService],
   exports: [JobsService, MilestonesService, VariationOrdersService],
 })
 export class JobsModule {}

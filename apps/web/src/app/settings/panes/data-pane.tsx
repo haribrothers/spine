@@ -109,7 +109,7 @@ export function DataPane() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={deleting} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? "Deleting…" : "Delete demo data"}
             </AlertDialogAction>
           </AlertDialogFooter>

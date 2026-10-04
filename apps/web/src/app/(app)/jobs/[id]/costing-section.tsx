@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Card, DataList, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../../lib/api-client";
 import type { Job, JobCostingReport } from "../types";
+import { formatMoney } from "../../../../lib/money";
 
 /**
  * S-04.8 — revenue/cost/margin for a job, read live off journal lines
@@ -42,7 +42,7 @@ export function CostingSection({ job }: { job: Job }) {
     );
   }
 
-  const fmt = (amount: string) => `${toDecimalString({ amount: BigInt(amount), currency: report.currency })} ${report.currency}`;
+  const fmt = (amount: string) => formatMoney(BigInt(amount), report.currency);
 
   return (
     <Card className="flex flex-col gap-3">

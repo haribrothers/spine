@@ -1,6 +1,6 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { toDecimalString } from "@spine/shared";
 import type { quotes, quoteLines } from "../../db/schema";
+import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 
 export interface QuotePdfBusinessProfile {
@@ -11,6 +11,8 @@ export interface QuotePdfBusinessProfile {
 }
 
 export interface QuotePdfData {
+  /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
+  locale?: string;
   quote: typeof quotes.$inferSelect;
   lines: (typeof quoteLines.$inferSelect)[];
   contactName: string | null;
@@ -93,13 +95,13 @@ function formatDate(value: Date | string | null): string {
  * Renders a quote purely from its own stored snapshot (`quotes`/
  * `quote_lines` rows) — never re-reads `catalog_items`, per CLAUDE.md's
  * "documents snapshot their data" rule. Every money value is formatted via
- * `toDecimalString` from the shared money module (same formatter the web
- * app uses), never a hand-rolled division, so this template can never
+ * `formatMoneyForPdf` (the shared `formatMoney`, made PDF-safe, D-123; the web
+ * app uses the same formatter), never a hand-rolled division, so this template can never
  * silently misplace a decimal point.
  */
-export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri }: QuotePdfData) {
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale }: QuotePdfData) {
   const currency = quote.currency;
-  const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
 
   return (
     <Document title={quote.number ?? "Quote"} author={business?.name ?? "Spine"}>
@@ -177,7 +179,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           {quote.discountAmount > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Discount</Text>
-              <Text style={styles.totalsValue}>-{fmt(quote.discountAmount)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(quote.discountAmount))}</Text>
             </View>
           )}
           <View style={styles.totalsRow}>

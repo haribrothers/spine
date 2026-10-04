@@ -1,15 +1,16 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeLineTax, money, roundHalfUp } from "@spine/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { computeDocumentLine, percentageOf } from "@spine/shared";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { QueueService } from "../queue/queue.service";
+import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
@@ -72,6 +73,15 @@ interface InvoiceLineTotalInput {
  * change to one document type's tax behaviour must not silently alter the
  * other.
  */
+/**
+ * US-PAY-13 (D-075) — a deposit request carries no tax: tax is charged on
+ * the final invoice's own lines, which carry the full tax.
+ */
+function withoutTaxIfAdvance<T extends InvoiceLineTotalInput>(lines: readonly T[], type: string | undefined): T[] {
+  if (type !== "advance") return [...lines];
+  return lines.map((line) => ({ ...line, taxRatePercentage: 0, taxRateId: null, taxGroupId: null, isTaxInclusive: false }));
+}
+
 async function computeInvoiceTotals(
   orgId: string,
   currency: string,
@@ -112,20 +122,18 @@ async function computeInvoiceTotals(
       const taxRatePercentage = line.taxRatePercentage ?? 0;
       const isTaxInclusive = line.isTaxInclusive ?? false;
 
-      const grossAmount = roundHalfUp(quantity * Number(unitPriceAmount));
-      const lineDiscountAmount = roundHalfUp(Number(grossAmount) * (discountPercentage / 100));
-      const netAmount = grossAmount - lineDiscountAmount;
-
       const resolved = line.taxRateId || line.taxGroupId
         ? await taxResolver.resolve(orgId, { taxRateId: line.taxRateId, taxGroupId: line.taxGroupId })
         : {
-            rates: taxRatePercentage > 0
-              ? [{ id: "line", name: "Tax", rate: taxRatePercentage / 100, isCompound: false }]
-              : [],
+            rates: taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: taxRatePercentage,
           };
 
-      const taxResult = computeLineTax(money(netAmount, currency), resolved.rates, isTaxInclusive);
+      // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+      const computed = computeDocumentLine({ quantity, unitPriceAmount, discountPercentage, currency, rates: resolved.rates, inclusive: isTaxInclusive });
+      const { grossAmount, netAmount } = computed;
+      const lineDiscountAmount = computed.discountAmount;
+      const taxResult = computed.tax;
 
       subtotalAmount += grossAmount;
       discountAmount += lineDiscountAmount;
@@ -195,6 +203,7 @@ export class InvoicesService {
       ...r.invoice,
       contactName: r.contactName,
       isOverdue: isOverdue(r.invoice),
+      paymentStatus: paymentStatus(r.invoice),
       balanceDue: r.invoice.totalAmount - r.invoice.retentionAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
     }));
 
@@ -225,8 +234,46 @@ export class InvoicesService {
       ...row.invoice,
       contactName: row.contactName,
       isOverdue: isOverdue(row.invoice),
+      paymentStatus: paymentStatus(row.invoice),
       balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
+      ...(await this.jobDetails(orgId, row.invoice)),
       lines,
+    };
+  }
+
+  /**
+   * US-JOB-21 — for an invoice raised from a job: the job and milestone it
+   * bills, the retention held on it (as a percentage of the net amount,
+   * from the invoice's own figures so it never drifts if the job's rate
+   * changes) and the retention held on the whole job so far, read from the
+   * ledger (1150 Retention Receivable lines for the job, D-011).
+   */
+  private async jobDetails(orgId: string, invoice: typeof invoices.$inferSelect) {
+    if (!invoice.jobId) return { job: null, milestone: null, retention: null };
+    const [job] = await this.db.select({ id: jobs.id, name: jobs.name, number: jobs.number }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.id, invoice.jobId)));
+    const [milestone] = invoice.milestoneId
+      ? await this.db
+          .select({ id: milestones.id, name: milestones.name, amountType: milestones.amountType, amount: milestones.amount })
+          .from(milestones)
+          .where(eq(milestones.id, invoice.milestoneId))
+      : [];
+
+    let retention: { percent: string; heldOnJob: bigint } | null = null;
+    if (invoice.retentionAmount > 0n) {
+      const retentionAccountId = await this.ledger.resolveSystemAccount(this.db, orgId, "retentionReceivable");
+      const [held] = await this.db
+        .select({ balance: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+        .from(journalLines)
+        .where(and(eq(journalLines.accountId, retentionAccountId), eq(journalLines.jobId, invoice.jobId)));
+      retention = { percent: percentageOf(invoice.retentionAmount, invoice.subtotalAmount - invoice.discountAmount), heldOnJob: BigInt(held?.balance ?? "0") };
+    }
+
+    return {
+      job: job ? { id: job.id, name: job.name, number: job.number } : null,
+      milestone: milestone
+        ? { id: milestone.id, name: milestone.name, percent: milestone.amountType === "percent" ? milestone.amount : null }
+        : null,
+      retention,
     };
   }
 
@@ -248,7 +295,7 @@ export class InvoicesService {
       throw new BadRequestException("Contact not found");
     }
 
-    const totals = await computeInvoiceTotals(orgId, input.currency, input.lines, this.taxResolver);
+    const totals = await computeInvoiceTotals(orgId, input.currency, withoutTaxIfAdvance(input.lines, input.type), this.taxResolver);
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -553,6 +600,7 @@ export class InvoicesService {
       return invoice;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
     return this.getOne(orgId, result!.id);
   }
 
@@ -575,7 +623,14 @@ export class InvoicesService {
     }
 
     const currency = input.currency ?? existing.currency;
-    const totals = input.lines !== undefined ? await computeInvoiceTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    const type = input.type ?? existing.type;
+    // Turning an invoice into an advance (deposit) one recomputes its lines without tax.
+    const lines =
+      input.lines ??
+      (type === "advance" && existing.type !== "advance"
+        ? (await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, id)).orderBy(invoiceLines.sortOrder)).map((l) => ({ ...l, type: l.type }))
+        : undefined);
+    const totals = lines !== undefined ? await computeInvoiceTotals(orgId, currency, withoutTaxIfAdvance(lines, type), this.taxResolver) : null;
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -601,7 +656,7 @@ export class InvoicesService {
         .where(eq(invoices.id, id))
         .returning();
 
-      if (input.lines !== undefined && totals) {
+      if (totals) {
         await tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
         await insertLines(tx, id, totals.lines);
       }
@@ -767,6 +822,13 @@ export class InvoicesService {
         });
       }
 
+      // US-INV-15: the payment instructions as they are now, kept with the invoice.
+      const [profile] = await tx
+        .select({ value: settings.value })
+        .from(settings)
+        .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
+      const paymentInstructions = (profile?.value as { paymentInstructions?: string } | undefined)?.paymentInstructions?.trim() || null;
+
       const [row] = await tx
         .update(invoices)
         .set({
@@ -775,6 +837,7 @@ export class InvoicesService {
           issuedAt,
           issueDate: existing.issueDate ?? issuedAt,
           journalEntryId,
+          paymentInstructions,
           updatedAt: issuedAt,
         })
         .where(eq(invoices.id, id))
@@ -793,6 +856,7 @@ export class InvoicesService {
       return row;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
     return this.getOne(orgId, result!.id);
   }
 
@@ -1089,6 +1153,18 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
 }
 
 /** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. Balance accounts for payments, credit notes (S-05.6), and retention (S-04.6) — a fully credited invoice, or one whose only remaining balance is held-back retention not yet due for release, is no more overdue than a fully paid one. */
+/**
+ * US-PAY-13 — how much of an issued invoice has been paid: "paid" once
+ * nothing is left to collect, "partially_paid" once something has been
+ * paid. Works the same for advance (deposit) invoices.
+ */
+function paymentStatus(invoice: typeof invoices.$inferSelect): "unpaid" | "partially_paid" | "paid" {
+  if (invoice.status !== "issued") return "unpaid";
+  const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+  if (invoice.amountPaid > 0n && balance <= 0n) return "paid";
+  return invoice.amountPaid > 0n ? "partially_paid" : "unpaid";
+}
+
 function isOverdue(invoice: typeof invoices.$inferSelect): boolean {
   if (invoice.status !== "issued" || !invoice.dueDate) return false;
   if (invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount <= 0n) return false;

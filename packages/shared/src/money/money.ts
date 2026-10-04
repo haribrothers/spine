@@ -1,3 +1,5 @@
+import { decimal, roundFraction } from "./decimal.ts";
+
 /** Integer minor units + currency code. Never a float. */
 export interface Money {
   readonly amount: bigint;
@@ -35,7 +37,11 @@ export function sum(items: readonly Money[], currency: string): Money {
 /**
  * Rounds a fractional minor-unit amount to the nearest integer, half-up.
  * Used once, at line level — never round a sum, sum the rounded lines.
+ *
+ * A float product can already be off (2.675 × 100 is 267.49999999999997),
+ * so line maths uses `multiplyMinor`/`percentOfMinor` or
+ * `computeDocumentLine`, which never form a float at all.
  */
 export function roundHalfUp(amount: number): bigint {
-  return BigInt(Math.floor(amount + 0.5));
+  return roundFraction(decimal(amount));
 }

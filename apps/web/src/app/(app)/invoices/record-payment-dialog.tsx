@@ -23,8 +23,8 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
+import { formatMoney } from "../../../lib/money";
 
 type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
@@ -108,8 +108,8 @@ export function RecordPaymentDialog({
         `/invoices?contactId=${contactId}&status=issued`,
       )
       .then((invoices) => {
-        // S-05.4 — an advance invoice never posts to AR, so it has no real balance a payment can be allocated against (PaymentsService.create rejects it server-side too).
-        const allocatable = invoices.filter((inv) => inv.type !== "advance");
+        // US-PAY-13: advance (deposit) invoices can be paid like any other open invoice.
+        const allocatable = invoices.filter((inv) => BigInt(inv.balanceDue) > 0n);
         setOutstanding(allocatable.map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue })));
         if (allocatable[0]?.currency) setCurrency(allocatable[0].currency);
       })
@@ -234,7 +234,7 @@ export function RecordPaymentDialog({
           <DialogTitle>Record a payment</DialogTitle>
           <DialogDescription>
             {contactName ? `From ${contactName}.` : "From this contact."} Allocate it across outstanding invoices, or leave any part
-            unallocated as customer credit (S-06.4).
+            unallocated as customer credit.
           </DialogDescription>
         </DialogHeader>
 
@@ -277,7 +277,7 @@ export function RecordPaymentDialog({
             <div className="flex items-center justify-between">
               <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
               <span className="text-[12px] text-on-surface-muted">
-                Unallocated: {toDecimalString({ amount: unallocated, currency })} {currency}
+                Unallocated: {formatMoney(unallocated, currency)}
               </span>
             </div>
 
@@ -296,7 +296,7 @@ export function RecordPaymentDialog({
                   <div key={row.invoiceId} className="flex items-center gap-2">
                     <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
                     <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
-                      Balance {toDecimalString({ amount: row.balanceDue, currency })}
+                      Balance {formatMoney(row.balanceDue, currency)}
                     </span>
                     <div className="flex-1">
                       <MoneyInput
@@ -325,7 +325,7 @@ export function RecordPaymentDialog({
                       <SelectContent>
                         {unallocatedInvoices.map((inv) => (
                           <SelectItem key={inv.id} value={inv.id}>
-                            {inv.number ?? "Unnumbered"} — balance {toDecimalString({ amount: BigInt(inv.balanceDue), currency })}
+                            {inv.number ?? "Unnumbered"} — balance {formatMoney(BigInt(inv.balanceDue), currency)}
                           </SelectItem>
                         ))}
                       </SelectContent>

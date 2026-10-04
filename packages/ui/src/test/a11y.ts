@@ -21,6 +21,21 @@ const RUN_OPTIONS: RunOptions = {
  * equally readable failure without depending on it.
  */
 export async function expectNoA11yViolations(container: Element) {
+  // US-OPS-25: every component is checked in both themes.
+  const root = container.ownerDocument.documentElement;
+  const previous = root.getAttribute("data-theme");
+  try {
+    for (const theme of ["light", "dark"]) {
+      root.setAttribute("data-theme", theme);
+      await expectNoViolationsNow(container, theme);
+    }
+  } finally {
+    if (previous === null) root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", previous);
+  }
+}
+
+async function expectNoViolationsNow(container: Element, theme: string) {
   const results = await axe.run(container, RUN_OPTIONS);
   if (results.violations.length > 0) {
     const details = results.violations
@@ -29,6 +44,6 @@ export async function expectNoA11yViolations(container: Element) {
         return `  ${violation.id} (${violation.impact}): ${violation.help}\n${nodes}\n    ${violation.helpUrl}`;
       })
       .join("\n\n");
-    throw new Error(`Expected no accessibility violations, found ${results.violations.length}:\n\n${details}`);
+    throw new Error(`Expected no accessibility violations in ${theme} mode, found ${results.violations.length}:\n\n${details}`);
   }
 }

@@ -18,11 +18,11 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "./invoice-line-editor";
 import type { Invoice, InvoiceType, TaxGroupOption, TaxRateOption } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -197,7 +197,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
           <FormField label="Issue date" helperText="Defaults to today if left blank when issued.">
             {() => <DatePicker value={issueDate} onChange={setIssueDate} />}
           </FormField>
-          <FormField label="Due date" helperText="Drives the overdue flag (S-05.9) once issued.">
+          <FormField label="Due date" helperText="Drives the overdue flag once issued.">
             {() => <DatePicker value={dueDate} onChange={setDueDate} />}
           </FormField>
         </div>
@@ -255,8 +255,8 @@ function TotalRow({
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
-      <span className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
-        {toDecimalString({ amount: value, currency })} {currency}
+      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+        {formatMoney(value, currency)}
       </span>
     </div>
   );

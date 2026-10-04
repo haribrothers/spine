@@ -13,6 +13,10 @@ export interface NotifyEmailJobData {
   subject: string;
   text: string;
   html?: string;
+  /** US-NTF-11 — present on jobs queued since the branded layout; the worker renders the email from these. */
+  orgId?: string;
+  /** The in-app link (e.g. `/jobs/<id>`), used for the email's button. */
+  link?: string;
 }
 
 /**
@@ -112,7 +116,8 @@ export class NotificationsService {
             to: recipient.email,
             subject: params.subject,
             text: params.text,
-            html: params.html,
+            orgId,
+            link: params.inApp?.link,
           } satisfies NotifyEmailJobData),
         ),
       );

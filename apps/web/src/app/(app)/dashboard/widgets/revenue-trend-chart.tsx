@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Spinner, TrendBarChart, ToggleGroup, ToggleGroupItem } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
 
 interface RevenueTrendReport {
   months: { month: string; revenue: string }[];
@@ -59,7 +59,7 @@ export function RevenueTrendChart() {
       key: m.month,
       label: monthLabel(m.month),
       value: Number(amount) / 100,
-      formattedValue: `${toDecimalString({ amount, currency })} ${currency}`,
+      formattedValue: formatMoney(amount, currency),
     };
   });
 

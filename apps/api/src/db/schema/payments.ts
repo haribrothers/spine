@@ -1,3 +1,4 @@
+import { files } from "./files";
 import { pgTable, uuid, text, bigint, timestamp, date, pgEnum, boolean, index, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
@@ -49,6 +50,8 @@ export const payments = pgTable(
       .references(() => contacts.id, { onDelete: "restrict" }),
     /** Gapless, permanent — allocated at creation time (a payment has no draft state, see this table's own doc comment), via NumberingService's "receipt" document type. */
     number: text("number"),
+    /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
+    issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     date: date("date", { mode: "date" }).notNull(),
     method: paymentMethodEnum("method").notNull(),
     reference: text("reference"),

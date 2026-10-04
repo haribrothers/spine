@@ -15,10 +15,13 @@ import {
   DrawerTitle,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
+import { formatMoney } from "../../../lib/money";
+
+/** US-INV-17 — opened in a new tab: the route streams a PDF, not JSON. */
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 const STATUS_BADGE_CLASS: Record<CreditNote["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -98,8 +101,8 @@ export function CreditNoteDetailDrawer({
                   {creditNote.lines.map((line) => (
                     <div key={line.id} className="flex items-center justify-between gap-4 py-2 text-[13px]">
                       <span className="text-on-surface">{line.name}</span>
-                      <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                        {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: creditNote.currency })} {creditNote.currency}
+                      <span className="shrink-0 tabular-nums text-on-surface">
+                        {formatMoney(BigInt(line.lineTotalAmount), creditNote.currency)}
                       </span>
                     </div>
                   ))}
@@ -108,8 +111,8 @@ export function CreditNoteDetailDrawer({
 
               <div className="flex items-center justify-between border-t border-border pt-3 text-[13px] font-semibold">
                 <span className="text-on-surface">Total</span>
-                <span className="font-mono tabular-nums text-overdue">
-                  -{toDecimalString({ amount: BigInt(creditNote.totalAmount), currency: creditNote.currency })} {creditNote.currency}
+                <span className="tabular-nums text-overdue">
+                  {formatMoney(-BigInt(creditNote.totalAmount), creditNote.currency)}
                 </span>
               </div>
 
@@ -123,6 +126,13 @@ export function CreditNoteDetailDrawer({
         </DrawerBody>
         <DrawerFooter>
           {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
+          {creditNote && (
+            <Button variant="secondary" asChild>
+              <a href={`${API_URL}/credit-notes/${creditNote.id}/pdf`} target="_blank" rel="noreferrer">
+                {creditNote.status === "draft" ? "Preview PDF" : "Download PDF"}
+              </a>
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>

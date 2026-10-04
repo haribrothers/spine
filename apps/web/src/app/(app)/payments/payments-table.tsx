@@ -1,8 +1,8 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * The list view for Payments — mirrors invoices-table.tsx's flat, no-
@@ -45,9 +45,10 @@ export function PaymentsTable({ payments, onOpen }: { payments: Payment[]; onOpe
     {
       key: "amount",
       header: "Amount",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.amount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.amount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.amount),
@@ -55,12 +56,13 @@ export function PaymentsTable({ payments, onOpen }: { payments: Payment[]; onOpe
     {
       key: "unallocated",
       header: "Unallocated",
+      align: "right",
       render: (row) =>
         row.unallocatedAmount === "0" ? (
           <Badge className="bg-paid-bg text-paid">Fully allocated</Badge>
         ) : (
-          <span className="font-mono tabular-nums text-due-soon">
-            {toDecimalString({ amount: BigInt(row.unallocatedAmount), currency: row.currency })} {row.currency}
+          <span className="tabular-nums text-due-soon">
+            {formatMoney(BigInt(row.unallocatedAmount), row.currency)}
           </span>
         ),
       sortValue: (row) => Number(row.unallocatedAmount),

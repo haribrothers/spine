@@ -24,12 +24,14 @@ import {
   Input,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { useSession } from "../../../lib/auth-client";
+import { useMyRole } from "../../../lib/role-context";
 import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -78,6 +80,8 @@ export function ExpenseDetailDrawer({
   const [expense, setExpense] = useState<Expense | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { data: session } = useSession();
+  const role = useMyRole();
   const [approveOpen, setApproveOpen] = useState(false);
   const [approveComment, setApproveComment] = useState("");
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -169,8 +173,10 @@ export function ExpenseDetailDrawer({
     }
   }
 
-  const canApproveNow = canApprove && expense?.status === "submitted";
-  const canRejectNow = canReject && expense?.status === "submitted";
+  // US-PUR-20: only an Owner reviews their own expense; everyone else needs a second person.
+  const isOwnReview = expense?.submittedByUserId === session?.user?.id && role !== "owner";
+  const canApproveNow = canApprove && expense?.status === "submitted" && !isOwnReview;
+  const canRejectNow = canReject && expense?.status === "submitted" && !isOwnReview;
   const canDeleteNow = hasDeleteCapability && expense?.status === "submitted";
   const canBillToCustomer =
     hasBillToCustomerCapability &&
@@ -208,11 +214,11 @@ export function ExpenseDetailDrawer({
                   <Field label="Category" value={expense.categoryName ?? "—"} />
                   <Field
                     label="Amount"
-                    value={`${toDecimalString({ amount: BigInt(expense.amount), currency: expense.currency })} ${expense.currency}`}
+                    value={formatMoney(BigInt(expense.amount), expense.currency)}
                   />
                   <Field
                     label="Tax"
-                    value={`${toDecimalString({ amount: BigInt(expense.taxAmount), currency: expense.currency })} ${expense.currency}`}
+                    value={formatMoney(BigInt(expense.taxAmount), expense.currency)}
                   />
                   <Field label="Paid by" value={EXPENSE_PAID_BY_LABELS[expense.paidBy]} />
                   <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />
@@ -262,6 +268,11 @@ export function ExpenseDetailDrawer({
             )}
           </DrawerBody>
           <DrawerFooter>
+            {expense?.status === "submitted" && isOwnReview && (canApprove || canReject) && (
+              <p className="mr-auto text-[13px] text-on-surface-muted" data-testid="self-review-note">
+                Someone else needs to approve your own expense.
+              </p>
+            )}
             {expense && <HistorySection endpoint={`/expenses/${expense.id}/history`} subjectLabel="this expense" />}
             {canRejectNow && (
               <Button variant="secondary" onClick={() => setRejectOpen(true)} disabled={busy}>
@@ -275,7 +286,7 @@ export function ExpenseDetailDrawer({
             )}
             {canDeleteNow && (
               <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={busy}>
-                Delete
+                Delete expense
               </Button>
             )}
             {canBillToCustomer && (
@@ -341,7 +352,7 @@ export function ExpenseDetailDrawer({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               {busy ? <Spinner size="sm" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

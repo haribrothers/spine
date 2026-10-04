@@ -1,6 +1,6 @@
-import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../lib/get-session";
 import { ExpensesExplorer } from "./expenses-explorer";
+import { ExpensesHeader } from "./expenses-header";
 
 /**
  * PRD FEAT-07 (S-07.2/S-07.3 submit, S-07.4 approve/reject). Field-reachable
@@ -16,11 +16,7 @@ export default async function ExpensesPage() {
 
   return (
     <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Purchases" }, { label: "Expenses" }]}
-        title="Expenses"
-        description="Submit an expense for approval. Categories are managed from Settings → Purchases."
-      />
+      <ExpensesHeader active="expenses" />
       <ExpensesExplorer currentUserId={session?.user?.id ?? null} />
     </>
   );

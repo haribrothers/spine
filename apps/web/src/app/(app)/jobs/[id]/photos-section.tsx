@@ -7,6 +7,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { HistorySection } from "../../../../components/history-section";
 import type { Job, JobPhoto, UploadedFile } from "../types";
+import { PHOTO_ACCEPT } from "../../../../lib/upload-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 function fileUrl(fileId: string): string {
@@ -80,7 +81,7 @@ export function PhotosSection({ job }: { job: Job }) {
               {uploading ? <Spinner size="sm" /> : <Camera size={14} />}
               Add photo
             </button>
-            <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleFilesSelected} />
+            <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} multiple className="hidden" onChange={handleFilesSelected} />
           </>
         )}
       </div>

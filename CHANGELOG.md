@@ -80,6 +80,634 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-21: remove developer wording from the interface (Phase 6)
+
+- **Helpers.**
+  - "Quote shows as expired after this date." and "Drives the overdue flag once issued." lose their "(S-03.11)" and "(S-05.9)".
+  - The three payment dialogs and the payment drawer lose "(S-06.4)".
+  - Financial year (onboarding and Settings) now reads "The day your financial year starts, used for reports and closing periods. Document numbers never reset." instead of "Number sequences reset annually…", which was never true (D-077).
+- **Onboarding.** The Team step reads "You can invite people later from Team › Users.". The Business step's "the next step picks a template" helper shows only in the wizard; in Settings it reads "What your business does, in your own words.".
+- **Invoices list.** A void invoice's balance column shows "—" instead of its old total, and sorts as zero.
+- **Privilege matrix.** Twelve capability descriptions are rewritten in plain language. No capability keys ("edit_own"), "Phase 5", "S-11.2", "(mobile)" or file names remain.
+- "Convert to invoice" was already in sentence case. US-QUO-01 and US-INV-01 quote the new helper text.
+
+Tests:
+- `packages/shared/src/us-ops-21.test.ts` (90): no capability label or description has developer wording.
+- `apps/api/src/common/us-ops-21.test.ts` (2): a TypeScript-parser scan of every string and JSX text under `apps/web/src` fails on "(S-NN.N)" (comments are allowed), plus a check that the scan catches one.
+- `apps/e2e/tests/us-ops-21.spec.ts` (2): onboarding's Financial year and Team copy; on a demo org, the void invoice's "—", the quote builder helper, and Settings › Business profile and Financial year.
+
+### 2026-10-05 — US-OPS-10: style confirmations by what they do (Phase 6)
+
+- **Default.** `AlertDialogAction` in `@spine/ui` gains `variant: "primary" | "danger"`, defaulting to primary (D-058). It used to be red everywhere.
+- **Red only for destructive actions.** 18 confirmations pass `variant="danger"`: deleting contacts, quotes, invoices, payments, expenses, leads, catalogue items, meetings, Teams, vendor bills, vendor payments and demo data; voiding a vendor bill; removing an address or contact person; deactivating a user.
+- **Now blue.**
+  - "All events" on "Edit recurring event", which stays red on "Delete recurring event".
+  - "Create invoice" on "Bill this expense to the customer?".
+  - Save, Add account, Approve, Reject, Release retention, Promote and Demote.
+- **Clean-up.** The Promote confirmation's hand-made primary class override is gone. The design-system page documents `variant`, and the a11y test covers both styles.
+
+Tests:
+- `alert-dialog.a11y.test.tsx`: primary by default, danger when asked (in both themes).
+- `apps/api/src/common/us-ops-10.test.ts` (4): reads every `AlertDialogAction` in `apps/web/src` and fails if a delete, void, remove or deactivate confirmation isn't danger, or anything else is. Recurring "All events" is danger only when deleting; "Create invoice" is primary.
+
+### 2026-10-05 — US-OPS-25: keep text readable on coloured controls in dark mode (Phase 6)
+
+- **Tokens.** `on-primary` and `on-danger` (white in light mode, `#121110` in dark, D-099) are now defined everywhere colours are: `docs/DESIGN.md`'s front matter, `packages/config/tailwind-preset.css` (light, dark and system-dark blocks plus the Tailwind theme) and `packages/ui-native`'s colour maps.
+- **Web.** Primary and danger buttons, `AlertDialogAction`, avatars, the checked checkbox, the current page in pagination, completed stepper steps, selected or today days in both calendars, and the notification count badge now use them instead of `text-white`. In dark mode a primary label is near-black on `#6B8AFF` (5.9:1) instead of white (3.1:1). Light mode looks the same as before.
+- **Native.** `TextField`'s placeholder takes the mode's `onSurfaceMuted` from `useNativeColors()` (`#93907F` in dark, was a fixed `#726C5A`). Avatar initials and the iOS full-width button label use `onPrimary` / `onDanger`. The gap noted in `native-notes.md` is closed.
+- **Tests.** A contrast test fails if any on-*/fill pair is under 4.5:1 in either mode, in the tokens, the web CSS or the native map. Every `@spine/ui` axe test now runs in both `data-theme="light"` and `"dark"`.
+
+Tests:
+- `packages/ui/src/components/us-ops-25.contrast.test.ts` (7): on-primary/primary and on-danger/overdue at ≥ 4.5:1 in both modes in all three sources; light stays white; the old white-on-dark-primary was below AA; the native dark placeholder is readable.
+- All 79 `@spine/ui` a11y tests now run in both themes.
+- `apps/e2e/tests/us-ops-25.spec.ts` (2): the "Log in" button's computed text and fill colours in dark and light mode.
+
+### 2026-10-05 — US-OPS-24: show money the same way everywhere (Phase 6)
+
+- **One formatter.** `formatMoney(minor, currency, locale)` in `@spine/shared`, built on `Intl.NumberFormat`. It gives the currency symbol, the locale's grouping and decimal marks, the currency's own decimals and a true minus sign: "$12,024.75", "−$4,335.00", "₹1,20,247.50", "12.024,75 €". Amounts stay exact (decimal strings, never floats).
+- **Web.** About 100 call sites in 55 files now use it: lists, details, builders, dashboard widgets, reports, receivables and payables, the public quote page. They used to show "12024.75 USD" or plain numbers.
+  - **Locale.** Comes from Settings › Currency & locale. The server layout reads it once and `MoneyLocaleProvider` sets it before anything renders. The public quote API returns the business's `locale`.
+  - **Columns.** Money columns are right-aligned, with tabular figures in the normal UI font (no more monospace), in the web app and in `@spine/ui`'s chart, donut and money input.
+  - **Negatives.** Credit notes, discounts, retention, paid and credited amounts show "−$…" instead of a hand-typed "-".
+- **PDFs** (quote, invoice, receipt, credit note) use the same formatter. They have an en dash for the minus, and the currency code when Helvetica has no symbol for it (D-123).
+- **Emails and notifications.** Email facts, payment and expense notifications, the activity feed and the out-of-balance warning use the organisation's locale. CSV exports keep plain decimals on purpose (US-PAY-10).
+- **Lint rule.** `@spine/config/eslint/money`, applied to `apps/web` and the API's PDF and email code, fails on importing `toDecimalString` and on joining an amount with a currency code (`${amount} ${currency}` or `{amount} {currency}`). It caught the catalogue price showing its currency twice.
+- **Found along the way (D-124).** Rate limits counted per IP address, and the web app's server-side calls (session, membership, locale) all come from the web server's one address. So the whole team shared one bucket of 300 requests a minute, and the full E2E run tripped it ("ThrottlerException: Too Many Requests"). `SessionThrottlerGuard` now counts signed-in requests per session and public routes per IP.
+
+Tests:
+- `packages/shared/src/money/us-ops-24.test.ts` (5): the story's examples in en-US, en-IN and de-DE, the true minus, JPY decimals, exactness beyond 2^53, fallbacks.
+- `us-ops-24.test.ts` (API, 3): PDF money (symbol, en dash, code fallback). `us-ops-24-lint.test.ts` (4): the lint rule fails on template strings, JSX and the import, and passes `formatMoney`.
+- `session-throttler.http.integration.test.ts` (2): one user's limit doesn't throttle another on the same address; random cookies don't get around a public route's limit.
+- `apps/e2e/tests/us-ops-24.spec.ts` (1): invoice amounts read "$1,234.50" with no " USD", and switch to "1.234,50 $" after changing the locale to de-DE.
+- Updated for the new format: email snapshots, `us-ntf-10`, `us-rpt-12`, `quote-to-payment` and `us-ntf-10` E2E.
+
+### 2026-10-05 — US-TEAM-15: use the business name everywhere the organisation is named (Phase 6)
+
+- **In sync.** Saving the business profile, from Settings or onboarding, now renames the organisation to the business name in the same transaction. A blank name leaves it alone. Nothing says "<Owner>'s Organisation" once a business name is set.
+- **Invitations.** "Alex Morgan invited you to join Riverstone Builders as staff.", subject "Alex Morgan invited you to join Riverstone Builders on Spine". The email has used the business profile since US-NTF-11; this story keeps the organisation row in step.
+- **Existing installs.** Migration `0062_org_name_from_business` copies each business name into its organisation where they differ.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-team-15.http.integration.test.ts` (4): a new org starts as "<Owner>'s Organisation" and takes the business name on save; a blank name changes nothing; a real invitation's subject and text name the business and the role; the migration copies the name.
+
+### 2026-10-05 — US-SET-14: show "Save" on setup steps reused in Settings (Phase 6)
+
+- **Industry template.** Settings › Industry template's button reads "Save", not "Continue".
+- **Chart of accounts.** Settings › Chart of accounts reads "Save". Renames still save as they're made, so "Save" confirms with the "Saved" toast; before, the button did nothing. `ChartOfAccountsStep` gains `saveLabel`, like the other wizard steps.
+- **Guard.** A test opens every Settings section and fails if any pane shows a "Continue" button. The Settings dialog's section list and pane carry `data-testid`s for it.
+
+Tests:
+- `apps/e2e/tests/us-set-14.spec.ts` (1): walks every Settings section with no "Continue" anywhere; Industry template and Chart of accounts show "Save". Checked that it fails when the template pane's label is removed.
+
+### 2026-10-05 — US-SET-13: open contact history the same way as everywhere else (Phase 6)
+
+- **Same as everywhere.** A contact no longer has a "History" tab. The History button (clock icon, "View history") beside Edit opens the same History dialog as invoices, quotes, jobs and the rest.
+- **Sentences.** Every History dialog now uses one formatter, `describeHistoryEntry` in `@spine/shared`. Entries read like "Sarah Mendes changed the phone from +1-555-0107 to +1-555-0177", "set the email to …" or "cleared the tax id". Field names are written for people ("total amount"), money fields are decimals, and internal ids are left out.
+- **Long entries.** At most three changes are listed, then "and N more".
+- **Related records.** On a contact, entries about its invoices, credit notes, milestones and so on name the record ("Alex Morgan issued an invoice") instead of "issued undefined: status draft → issued". A transition's status change is said by its verb.
+- The old contact-only `history-section.tsx` and its types are removed.
+
+Tests:
+- `packages/shared/src/us-set-13.test.ts` (6): a changed field as a sentence; set and cleared fields; three changes then "and 2 more"; related records named and ids hidden; money and field labels; an unknown actor is "Someone".
+- `apps/e2e/tests/us-set-13.spec.ts` (1): no History tab on a contact; the History button shows "Sarah Mendes changed the phone from +1-555-0107 to +1-555-0177" and "created this contact", with no "undefined".
+
+### 2026-10-05 — US-PUR-19: manage expense categories from Expenses (Phase 6)
+
+- **New tab.** Expenses has "Expenses" and "Categories" tabs. Expenses › Categories (`/expenses/categories`) lists categories with their posting account, "Add category", edit, archive or restore, delete and history. It's the former Settings › Purchases pane with the same layout and API, plus the note "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted.".
+- **Who sees it.** Owners, and members with `expense_categories.edit_own` or `edit_others`. Everyone else gets no tab, and `/expenses/categories` shows "You don't have access to Expense categories". Field is always refused.
+- **Settings.** The Owner-only Settings dialog no longer has "Purchases".
+- **Wording.** The Expenses subtitle, the empty state and the "Submit an expense" form read "Submit an expense for approval. Categories are managed from Expenses › Categories." for members who can manage categories, and "Submit an expense for approval." for everyone else.
+- API unchanged.
+
+Tests:
+- `apps/e2e/tests/us-pur-19.spec.ts` (2): an Owner sees the wording in the page and the form, opens Categories with "Add category" and posting accounts, and Settings has no "Purchases"; the Field user sees the plain wording, no tab, and the no-access page at `/expenses/categories`.
+
+### 2026-10-05 — US-PAY-10, US-PUR-14: export receivables and payables to CSV (Phase 6)
+
+- **Buttons.** Receivables and Payables each have an "Export CSV" button. The file has one row per open invoice or bill: number, contact, currency, due date, total, balance due, days overdue and bucket.
+- **Amounts.** Plain decimals ("1234.50") with the currency in its own column. Until now these exports gave minor units ("123450").
+- **Matches the screen.** Whatever is typed in the table's search box is sent along (`?search=`), and the API keeps the same rows the table shows (number or contact, ignoring case).
+- **Empty.** With nothing open, the file has only the header row.
+- **Design system.** `DataTable` gains `onSearchChange` (documented in apps/design-system) so a page can know what's on screen. Its search box now has an accessible name (its placeholder); it had none.
+
+Tests:
+- `us-pay-10-pur-14.http.integration.test.ts` (4): receivables rows match the report with decimals, a currency column and buckets; search by number and by contact, in any case, and a search with no match; payables rows; an org with no bills gets only the header.
+- `data-table.a11y.test.tsx`: the search box is labelled and reports what's typed.
+- `apps/e2e/tests/us-pay-10.spec.ts` (1): download, then search for one invoice and download just that row. `us-pur-14.spec.ts` (1): header-only download on a new org.
+
+### 2026-10-05 — US-JOB-22: number every job (Phase 6)
+
+- **Numbers.** Every new job, whether created directly or from a quote, gets the next number from the org's Job sequence (default "JOB", padding 3: "JOB-001"). It's given in the creating transaction under the `number_sequences` row lock (D-007) and never changes. Settings › Numbering's existing "Job" row sets the prefix, padding and starting number.
+- **Where it shows.**
+  - The Jobs list has a "Number" column beside "Contact", and search matches it.
+  - Job detail reads "JOB-001 · <customer>".
+  - An invoice's job card reads "JOB-001 · <job name>", which closes the US-JOB-21 note.
+  - The repeat-conversion warning lists "JOB-001 · <name>".
+- **Phone.** The API returns `number`, and US-MOB-05's job detail shows it next to the customer when that screen is built in Phase 5. The phone app has no job screen yet.
+- **Existing jobs.** Migration `0061_job_numbers` numbers them in creation order from each org's sequence and moves the sequence past them. A unique index stops duplicates within an org.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-job-22.http.integration.test.ts` (5): JOB-001 then JOB-002; a changed prefix and start ("WRK-0050"); the number on the job and in the list; no duplicates within an org; the migration numbers existing jobs in creation order and the next job continues the sequence.
+- `apps/e2e/tests/us-job-22.spec.ts` (1): the number in the Jobs list and on job detail. `us-job-21.spec.ts` now also checks the invoice's job card shows the number.
+
+### 2026-10-05 — US-JOB-23: name new jobs after their quote (Phase 6)
+
+- **New jobs.** Converting a quote names the job after its first item line and the customer, e.g. "Project management — Sunstone Retail Fitouts", instead of "Job for QUO-0002". Headings are skipped; with no item line it's "Work for <customer>". Converting the same quote again adds " (2)", " (3)"…
+- **No quote titles.** Quotes have no title field, so the story's "no title" rule applies to every quote (D-122, Owner's call).
+- **Existing jobs.** Migration `0060_job_names_from_quotes` renames jobs still called "Job for <quote number>" by the same rules, numbering repeats in creation order, and adds a history entry for each ("Someone updated this job: name …"). Jobs someone already renamed are left alone.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-job-23.integration.test.ts` (4): "<first item> — <customer>", then " (2)" on a repeat; headings skipped; the fallbacks; the migration renames two old jobs (with " (2)"), leaves a custom name alone, and records the rename in history.
+
+### 2026-10-05 — US-QUO-23: explain a repeat conversion clearly (Phase 6)
+
+- **Wording.** The "This quote has already been converted before" dialog now reads "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once." ("invoice" when converting to an invoice), in sentence case with no shouting.
+- **Layout.** Existing jobs and invoices are listed under "Existing job(s)" / "Existing invoice(s)", each on its own line as a link to the record, instead of being run into the sentence.
+- **Button.** "Convert to job anyway" (or "Convert to invoice anyway") is now a primary button, not red: it creates something, it doesn't delete (D-058). It's a plain `Button`, because `AlertDialogAction` is always styled as danger.
+
+Tests:
+- `apps/e2e/tests/us-quo-23.spec.ts` (1): accept a quote, convert it to a job, convert again: the copy, the existing job as a separate link to the first job, the primary "Convert to job anyway", and confirming creates a second job.
+
+### 2026-10-04 — US-INV-15: print payment instructions on invoices (Phase 6)
+
+- **PDF.** A "How to pay" box under the totals (before notes and terms) prints the instructions from Settings › Payment instructions (US-INV-16). With none set, no block appears.
+- **Email.** The invoice and reminder emails show the same instructions in a "How to pay" box above the closing note (no button, D-121). The box is left out once the invoice is paid.
+- **Snapshot.** Issuing an invoice copies the instructions to the new `invoices.payment_instructions` column (migration `0059_invoice_payment_instructions`). Later edits to the setting never change an issued invoice's PDF or emails. A draft's preview shows the current setting.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-inv-15.integration.test.ts` (5): an issued invoice keeps the instructions it was issued with; the PDF's "How to pay" block sits under the totals with the issued text, not the later one; a draft preview shows the current setting; no block without instructions; the invoice email shows the same text in a "How to pay" box above the closing note, in HTML and plain text.
+
+### 2026-10-04 — US-INV-16: set payment instructions in Settings (Phase 6)
+
+- **The pane.** Settings › "Payment instructions" reads "Printed under the totals on every invoice and in invoice emails, so customers know how to pay.". It has a "How customers can pay" field ("Up to 600 characters. Leave empty to hide the block."), the note "Issued invoices keep the instructions they were issued with — changing this only affects invoices issued from now on." and "Save".
+- **Limit.** More than 600 characters shows "Keep this under 600 characters." in the form, and the API refuses it too (400, same message). The rule is `businessProfileSchema` in `@spine/shared`, used by both.
+- **Storage.** Saved as `business_profile.paymentInstructions`. The pane re-reads the profile before saving, and the Business profile form keeps fields it doesn't show, so neither overwrites the other. Empty removes the block.
+- Printing them on invoices and in invoice emails is US-INV-15.
+
+Tests:
+- `us-inv-16.http.integration.test.ts` (3): saved alongside the rest of the profile; exactly 600 accepted; 601 refused with the message and the saved value kept.
+- `apps/e2e/tests/us-inv-16.spec.ts` (1): the pane's copy, the over-limit error, saving, and the value after a reload.
+
+### 2026-10-04 — US-QUO-22: keep emailed links working until the quote is replaced (Phase 6)
+
+- **Finding C8, explained.** The demo's fourth quote (QUO-0003) is seeded as "revised": it was sent and emailed, then revised. Revising revokes every link for the old version, and that's intended. But the revision was left as a draft, so the quote still read "sent" while its only emailed link was dead.
+- **Fix.** The demo now sends the revision as well. The current version is "sent" with a working emailed link; the replaced version's link shows the branded "This quote link has expired" page (US-QUO-21).
+- **Confirmed unchanged.** A link lasts 30 days. Issuing another link for the same quote never revokes the earlier ones; a queued email retry reuses its own token. Only revising a quote revokes its links. There is no separate "resend" action that could rotate tokens.
+
+Tests:
+- `us-quo-22.http.integration.test.ts` (4): every demo quote that's sent and current has an emailed link that opens; the revised demo quote's old link answers 410 "expired" while its sent revision's link opens; two links for one quote both work; a link lasts 30 days.
+
+### 2026-10-04 — US-QUO-21: show a branded page for an expired or invalid link (Phase 6)
+
+- **Expired or replaced.** A quote link we issued that has run out (30 days), been revoked or replaced by a revision now shows the business logo and name, "This quote link has expired" and "The link you opened is no longer active — the quote may have been updated or replaced. Contact <Business> and they'll send you the latest version.". A box follows with the business's address, email (mailto) and phone (tel), and "Sent with Spine".
+- **Invalid.** A token that matches nothing (not ours, bad signature, unknown) shows a generic "This quote link isn't valid" with no business details.
+- **API.** `GET /public/quotes/:token` now answers 410 `{ status: "expired", business }` or 404 `{ status: "invalid" }` instead of one generic 404. `QuotePublicTokenService.inspect()` tells the two apart: an expired token's payload is trusted only after its signature checks out and its nonce exists. The logo comes inline as a data URI, because anonymous visitors can't load `/files/:id`.
+- **Business profile.** Gains "Business email" and "Business phone" (Settings › Business profile and onboarding). Saving the profile now keeps fields set elsewhere, such as payment instructions.
+
+Tests:
+- `us-quo-21.http.integration.test.ts` (5): a current link loads; a revoked link and a link past 30 days answer 410 with name, address, email and phone; tokens that match nothing, and a token signed with another key, answer 404 with no business details.
+- `apps/e2e/tests/us-quo-21.spec.ts` (2): a revised quote's old link shows the branded page with mailto and tel links; a made-up token shows "This quote link isn't valid". `public-quote-page.spec.ts` updated for the new wording.
+
+### 2026-10-04 — US-NTF-12: turn on push from my own profile (Phase 6)
+
+- **Where.** Profile & Preferences now has a "Notifications" section with "Browser notifications" (the same US-NTF-04 states and "Turn on" / "Turn off" for this device), followed by "Meeting reminders". Every member sees it, Field and Staff included.
+- **Settings.** The Owner-only organisation Settings dialog no longer lists "Browser notifications". The component moved from `app/settings/panes/push-pane.tsx` to `components/browser-notifications-section.tsx`. The push routes were already per-user, so nothing changed in the API.
+- The design's profile tabs and the daily digest arrive with US-NTF-14.
+
+Tests:
+- `us-ntf-12.http.integration.test.ts` (2): a Field member subscribes a device and sees it listed; a notification for them is pushed to their devices.
+- `apps/e2e/tests/us-ntf-12.spec.ts` (2): the seeded Field user finds Notifications › Browser notifications on their profile; the Owner's Settings dialog no longer lists it.
+
+### 2026-10-04 — US-NTF-11: use the branded layout for every email type (Phase 6)
+
+- **Every email** now goes through the US-NTF-10 layout: invitation, password reset, quote, invoice, reminder, receipt, payment confirmation, and every member notification (payment received, meeting invite, cancellation, response and reminder, milestone and job completed, expense approved, quote viewed or accepted, storage and ledger alerts). Their wording lives in one file, `apps/api/src/modules/email/email-templates.ts`.
+- **Buttons.** Notifications get one button to the record ("View job", "View expense", "View meeting", "View payment", "View quote"…). Invoice, reminder, receipt and payment-confirmation emails have no button. Customers have no page to open them on, so the attached PDF is the record and the facts box shows the invoice, total, retention held, balance due and due date (D-121, Owner's call).
+- **Invitation.** "<Inviter> invited you to join <Business> on Spine", with the business name from the business profile instead of "<Owner>'s Organisation", and an "Accept invitation" button.
+- **Password reset.** It carries the brand of the person's organisation, or plain Spine when there isn't one.
+- **Notification footer.** "You're getting this because you're a member of <Business>."
+- **Meeting reminders** now give the time as "17 Oct 2026, 09:00 UTC" instead of an ISO timestamp.
+- **Queue.** Notification jobs now carry `orgId` and the record link, and the worker renders them. Jobs queued before this change still send as they were written.
+
+Tests:
+- `us-ntf-11.test.ts` (27): a snapshot of the subject, text and HTML for each of the 12 email types; each has the layout and a heading, with exactly one button except the four customer documents; the invitation's wording; the notification footer; notification buttons link to the record.
+- `apps/e2e/tests/us-ntf-11.spec.ts` (1): a real invitation email names the business from the profile, with the layout and "Accept invitation".
+
+### 2026-10-04 — US-NTF-10: send every email in one branded layout (Phase 6)
+
+- **The layout.** `renderEmail()` in `apps/api/src/modules/email/email-layout.ts` is used for every email from now on. It has a 6px bar in the document colour, the logo and business name, a heading, a short body, an optional key-facts box, at most one button, small print, and the business footer (name · address · branding footer). Colours are the light token values, inlined; emails stay light.
+- **Brand.** `loadEmailBrand(db, orgId)` reads `business_profile` (name, address, logo) and, once US-SET-10 adds it, `branding.documentColor` and `documentFooter`. A bad colour falls back to the default blue. The logo is attached inline (CID), so no public file link is needed. With images blocked, the business name still shows as text and is the logo's alt text (D-120).
+- **Plain text.** Every email built with the layout carries a plain-text alternative with the same content and the button's link.
+- **The quote email.** It now reads "Your quote is ready", "Hi <first name>,", "Here's our quote. You can read it, accept it or decline it online — no account needed.", then Quote, Total and Valid until, a "View quote" button and "The quote is also attached as a PDF. Questions? Reply to this email.". The From name is the business name; the address is still `SMTP_FROM`.
+- The other emails move to the layout in US-NTF-11.
+
+Tests:
+- `us-ntf-10.test.ts` (7): the bar, logo, name, heading and footer; the facts and exactly one button; images blocked; the plain-text part; the inline logo; colour fallback and escaping; money, date and first-name formatting.
+- `apps/e2e/tests/us-ntf-10.spec.ts` (1): a sent quote's real email (through MailDev) has the layout, "Hi Alan,", the facts, "View quote" and a text part.
+
+### 2026-10-04 — US-AUTH-12: keep my unsaved work when my session expires (Phase 6)
+
+- **The dialog.** If the session has ended, a save (any create, change, delete or upload through the API client) opens "You've been signed out" with "Your session ended, so this change wasn't saved yet. Log in again to save it — the draft stays open in this tab." and "Log in again". Logging in happens inside the dialog ("Log in as <email>." and "Password"), so the page and everything typed on it stay as they were. The save isn't retried; you press it again.
+- **Reading only.** If a background request gets 401 and nothing has been typed on the page, you're sent to `/login?next=<this page>`. If something has been typed, it waits for the save to show the dialog instead of losing the draft.
+- **Server fix.** On capability-gated routes, a request with no session got 403 "No active organisation on session" instead of 401, because `CapabilityGuard` can run before Better Auth's guard. It now answers 401, so "signed out" and "not allowed" (US-OPS-12) can be told apart.
+- **Sign-up status follow-up (US-AUTH-08).** `GET /public/signup-status` had its own limit of 60 a minute per IP. Every `/login` and `/signup` load asks it, so an office behind one address could hit the limit, and the page then wrongly said "This Spine is invite-only" on a fresh install. It now uses the global limit (300 a minute). If the check fails, the page shows the form and lets the server decide.
+- **Safer `?next=`.** `/login?next=` now follows only paths on this site; `//other-host` and full URLs go to the dashboard. Visiting a protected page signed out now adds `?next=` too.
+
+Tests:
+- `us-auth-12.http.integration.test.ts` (5): no session → 401 on capability-gated and plain routes, reads and writes; an unknown session cookie → 401.
+- `apps/e2e/tests/us-auth-12.spec.ts` (3): a save after the session ends opens the dialog; logging in from it keeps the page and the typed name, without repeating the save; a background 401 while reading goes to `/login?next=%2Fcontacts`; `?next=` ignores another host.
+
+### 2026-10-04 — US-AUTH-11: see why an invitation can't be used (Phase 6)
+
+- **The page.** An invitation link whose id doesn't exist, or that has expired, been cancelled, accepted or declined, now shows "This invitation can't be used" and "It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one." with "Log in instead" (to `/login`). This applies signed in or out. Before, a signed-out visitor got the sign-up prompt with an empty email, and a signed-in one got "This invitation could not be found or has expired.".
+- **A valid pending invitation** still shows the normal invitation page (US-AUTH-04/05).
+- **API.** `GET /public/invitations/:id` returns 404 for an unknown id (was 400). Otherwise it returns `{ status }`: `pending` (with `email`, `role`, `organizationName`), or `expired`, `canceled`, `accepted` or `rejected` with nothing else. An old link no longer reveals the business name or the invited email.
+
+Tests:
+- `us-auth-11.http.integration.test.ts` (6): 404 for an unknown id with no business name; a pending invitation's details; expired, cancelled, accepted and declined return only their status.
+- `apps/e2e/tests/us-auth-11.spec.ts` (2): signed out, an unknown id and "Log in instead"; signed in, a cancelled invitation shows the page and a pending one shows the normal page.
+
+### 2026-10-04 — US-AUTH-09, US-AUTH-10: reset a forgotten password (Phase 6)
+
+- **Ask for a link.** "Forgot password?" on `/login` opens `/forgot-password`: "Reset your password", "Enter the email you sign in with and we'll send you a link to choose a new password.", "Email", "Send reset link", "The link works once and expires in 1 hour." and "Back to log in". The same page shows whether or not email (SMTP) is set up (D-084).
+- **Check your email.** `/forgot-password/sent` says "If an account exists for <email>, we've sent a link to reset its password. The link works once and expires in 1 hour." for any address. "Resend link in 0:45" counts down and stays disabled for 60 seconds. The address is kept in the tab's session storage, never in the URL.
+- **Limits.** 10 requests per IP address per 15 minutes, then 429 "Too many reset requests from this network. Wait 15 minutes and try again."; at most 3 emails per address per hour (later requests get the same answer, but nothing is sent). Both are in memory, per API process (D-119).
+- **The email.** "Reset your Spine password", linking to `APP_URL/reset-password?token=…`. Without SMTP nothing is sent and a warning is logged without the token. An SMTP failure is logged and the answer doesn't change. The branded layout comes with US-NTF-11.
+- **Choose a new password.** `/reset-password?token=` shows "Choose a new password", "For <email>. You'll be signed out on your other devices.", "New password" ("At least 8 characters.") and "Confirm new password". Mismatched passwords show "The passwords don't match." and nothing is sent. "Save password" sets the password, ends every session for the account (web and phone), signs this browser in and opens the dashboard.
+- **Used or expired links** show "This link can't be used" with "Request a new one". The token works once and expires after 1 hour.
+- **Phone.** "Forgot password?" on the mobile login opens `/public/forgot-password` on the API in the phone's browser, which redirects to the web page (D-052); the app only knows the API's address.
+- **API.** Better Auth `sendResetPassword`, `resetPasswordTokenExpiresIn: 3600`, `revokeSessionsOnPasswordReset: true` and a `hooks.before` IP limit. New `GET /public/password-reset/:token` → `{ email }` (404 when unknown, used or expired; doesn't consume the token) and `GET /public/forgot-password` (302 to the web page).
+
+Tests:
+- `us-auth-09.test.ts` (6): the email's link and copy; no SMTP sends nothing; an SMTP failure is swallowed; 3 emails per address per hour; the sliding window; token encoding.
+- `us-auth-09.http.integration.test.ts` (5): the same answer for known and unknown emails; a one-hour token; the per-IP 429; the phone redirect; no token for an unknown email.
+- `us-auth-10.http.integration.test.ts` (5): the lookup shows the email; unknown and expired links 404 and can't reset; a short password is refused; a reset ends every session, swaps the password and can't be replayed.
+- `apps/e2e/tests/us-auth-09.spec.ts` (3) and `us-auth-10.spec.ts` (2): the link from login and the copy; the sent page and its 60-second countdown; the whole flow through a real email, including the mismatch error, the other device signed out, the old password refused and the used link.
+
+### 2026-10-04 — US-AUTH-08: see that sign-up is invite-only (Phase 6)
+
+- **The sign-up page.** Once an instance has an account, `/signup` without an invitation shows "This Spine is invite-only" and "<Business name> already has an owner, so new accounts are created by invitation. Ask an owner to invite you — you'll get an email with a link to join.", with "Log in" and no form. The business name comes from the first organisation's business profile, the only detail shown to anonymous visitors (D-084).
+- **Still open for some.** An invitation link still gets the form with its email; a fresh install gets the first-account form. `/login` shows "Don't have an account? Sign up" only while sign-up is open.
+- **Server check.** The server now enforces it too: until now anyone could sign up on an existing install and get a new organisation of their own. A Better Auth `user.create.before` hook refuses any new account unless the instance is empty or a pending invitation exists for that email (403 "This Spine is invite-only…").
+- **API.** New `GET /public/signup-status` → `{ open, businessName }`.
+- **Test switch.** Tests create a fresh organisation per case, so `SPINE_ALLOW_OPEN_SIGNUP=true` keeps sign-up open in `.env.test`, `.env.e2e` and CI. It is ignored when `NODE_ENV=production`. To sign up a second organisation in local dev, set it in `.env`.
+
+Tests:
+- `us-auth-08.http.integration.test.ts` (4), with the switch off: the status reports closed with the business name; a direct sign-up without an invitation gets 403 and creates no user; a sign-up with a pending invitation succeeds; the switch is ignored in production.
+- `apps/e2e/tests/us-auth-08.spec.ts` (4): the closed page and its Log in link; login without "Sign up"; an invitation link keeps the form; a fresh install shows the first-account form.
+
+Integration 44 files pass; E2E 52/52.
+
+### 2026-10-04 — US-RPT-14: see tax collected and paid on Reports (Phase 6)
+
+- **The tab.** Reports › "Tax Summary" (Owner-only, D-057) has "From" and "To", "Refresh" and "Export CSV". Three cards follow:
+  - "Tax collected", on issued invoices after credit notes, from the ledger;
+  - "Tax paid", on recorded vendor bills and approved expenses;
+  - "Net payable".
+- **Breakdown.** A "Collected by rate" table gives the taxable amount and tax for each named rate or group, from issued invoices' lines (D-031). An "Adjustments from credit notes and voided invoices" row appears when there are any, and a "Total collected" row always matches the ledger figure. The footer reads "Spine produces the numbers for your return; it doesn't file it. Only owners can see this report."
+- **API.** `GET /org/tax/summary` now returns each rate's `taxableAmount`, the `adjustments` row and `totalTaxable`. The adjustments row replaces the old "Other / from removed invoices"; its taxable amount comes from credit notes issued in the period and earlier invoices voided in it. New `GET /org/tax/summary/export.csv`, Owner-only. `sendCsv` moved to `common/csv.ts` so both report controllers share it.
+- **Moved.** The tax summary is gone from Settings › Tax, and the Reports description names all five reports.
+
+Tests:
+- `us-rpt-14.http.integration.test.ts` (3), on a demo-seeded org: collected, paid and net, with per-rate taxable amounts and rows that total the ledger; an adjustments row for the credit note; the CSV.
+- `apps/e2e/tests/us-rpt-14.spec.ts`: the cards and their notes, the table headers, the adjustments and total rows, and the footer.
+
+Integration 43 files pass; E2E 48/48.
+
+### 2026-10-04 — US-RPT-13: see a Trial Balance (Phase 6)
+
+- **The report.** Reports › "Trial Balance" (Owner-only, D-065) lists every account's balance as of a date, read from journal lines, with Code, Account, Debit and Credit. A net debit shows in Debit and a net credit in Credit. A "Total" row closes the table, and the status line reads "Balanced — total debits equal total credits." (or the difference if they don't match).
+- **Zero balances.** "Hide accounts with no balance" is ticked by default; untick it to list zero-balance accounts too.
+- **Drill-down and export.** Clicking an account opens the existing drill-down of its journal entries. "Export CSV" downloads the report.
+- **API.** `GET /reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv`, both Owner-only.
+- **Tabs.** The Reports tabs are now P&L, Balance Sheet, Trial Balance and Job Profitability. Non-owners see the Owner-only message on the Trial Balance tab.
+
+Tests:
+- `us-rpt-13.http.integration.test.ts` (4), on a demo-seeded org: each account on one side, totals that sum and match, sorted by code; zero-balance accounts listed on request; CSV header and total; Staff get 403.
+- `apps/e2e/tests/us-rpt-13.spec.ts`: the status line, headers and Total row; unticking shows more rows; the Export CSV link; clicking Accounts Receivable opens its drill-down.
+
+E2E 47/47.
+
+### 2026-10-04 — US-RPT-12: warn me if the books ever stop balancing (Phase 6)
+
+- **Daily check.** A daily `ledger-integrity-check` job (pg-boss, 02:00) sums every organisation's journal lines (debits − credits) and stores the result in the new `ledger_integrity_checks` table (migration `0058`, one row per organisation). The table is kept out of `settings` because every member can read settings.
+- **When the books are out.** Owners get an in-app notification (`ledger_out_of_balance`), and the dashboard shows "Your books are out of balance by <amount>. Contact the person who runs Spine." in the organisation's currency. The log entry names the difference and when the books last balanced. The warning disappears once a later check passes; nothing shows while the books balance.
+- **API.** `GET /reports/ledger-integrity` (Owners only).
+- **Why it matters.** The database trigger already refuses an unbalanced entry, so this guards against data repairs made outside the app.
+
+Tests:
+- `us-rpt-12.integration.test.ts` (2): a balanced ledger shows nothing. Writing a journal line with triggers off (a "repair" mistake) makes the check report 12.34 out, sets the message and notifies Owners; undoing it clears the warning.
+- `apps/e2e/tests/us-rpt-12.spec.ts`: the dashboard shows nothing when balanced, and the warning when the check says otherwise.
+
+E2E 46/46.
+
+### 2026-10-04 — US-JOB-21: show retention on a progress invoice (Phase 6)
+
+- **Invoice detail.** A progress invoice now shows:
+  - a "Job" and "Milestone (<pct>%)" header, both linking to the job;
+  - totals of Subtotal, Tax, Total, "Retention held (<pct>%)" as a negative amount, and "Amount due";
+  - the note "Retention is held in Retention Receivable until you release it from the job. Held on this job so far: <amount>.".
+- **Where the figures come from.** `GET /invoices/:id` returns `job`, `milestone` and `retention`. The percentage is computed from the invoice's own figures, so it never drifts if the job's rate changes. "Held on this job so far" is read from the ledger: the job's lines on 1150 Retention Receivable (D-011). Invoices without retention return nothing extra and show no retention row.
+- **PDF and email.** The invoice PDF shows the same retention and amount-due rows. The email states total, retention held and amount due. Both used to give a balance due that included retention, which was wrong for progress invoices.
+- **Shared helper.** `percentageOf(part, base)` in `@spine/shared`.
+- **Job number later.** The header shows the job's name; its number arrives with US-JOB-22 (Group 6).
+
+Tests:
+- `us-job-21.http.integration.test.ts` (3), on a demo-seeded org: job, milestone, retention % and held-on-job match the ledger; the amount due excludes retention; a plain invoice has no retention details; percentage formatting.
+- `apps/e2e/tests/us-job-21.spec.ts`: the job card, retention row, "Amount due" and note.
+
+Integration 40 files pass; E2E 45/45.
+
+### 2026-10-04 — US-JOB-20: own a job's milestones through the job (Phase 6)
+
+- **Ownership follows the job.** `PUT /jobs/:id/milestones` checks `milestones.edit_own`/`edit_others` against the job's creator (`jobs.created_by_user_id`). It used to check whoever last replaced the milestone set, so "own" changed hands every time a colleague edited it (D-079). A job with no recorded creator is nobody's own.
+- **Editor buttons follow the same rule.** "Define milestones"/"Edit milestones" show on that basis.
+- **Unchanged:** milestone completion (Field rules, US-JOB-18).
+
+Tests: `us-job-20.http.integration.test.ts` (4):
+- A member with `edit_own` defines and edits milestones on their own job, and gets 403 on a colleague's.
+- A member with `edit_others` edits a colleague's job, and afterwards the creator still owns it while the other `edit_own` member still can't.
+- A job with no creator refuses `edit_own`.
+
+### 2026-10-04 — US-PAY-13: allocate a deposit payment to its advance invoice (Phase 6)
+
+- **Paying a deposit request.** `POST /payments` now accepts allocations to advance (deposit) invoices, which it used to refuse. The advance invoice then shows "Paid", or "Partially paid" with its balance.
+- **Posting (P5a, D-075).** Bank is debited; everything not allocated to an ordinary invoice, including the deposit, is credited to 2200 Customer Advances. The advance invoice never posted to AR, so there's no AR line. The money stays available as the customer's credit and is applied to the final invoice as before (P6: 2200 Dr, AR Cr).
+- **Credit stays available.** Migration `0057` changes the allocation trigger: `payments.allocated_amount` (so `unallocatedAmount`, the customer's credit) counts only allocations to ordinary invoices. Allocations to advance invoices are capped separately by the payment amount and by the invoice total.
+- **Deposits carry no tax.** Advance invoices are computed without tax, including when an invoice is turned into one; the final invoice's lines carry the full tax.
+- **Suggestions and deletes.** The oldest-first suggestion includes open advance invoices. A payment with any allocation, advance ones included, can't be deleted. The payment confirmation email counts a deposit as credit held.
+- **Paid badges.** Invoices now return a derived `paymentStatus` (`unpaid`/`partially_paid`/`paid`). The invoices list and detail show "Paid" or "Partially paid" next to the status, and "Record payment" offers advance invoices.
+- **Accountant review.** The P5a posting variant is flagged for it in Q-02.
+
+Tests: `us-pay-13.integration.test.ts` (6):
+- A 5,000.00 deposit marks the advance invoice paid, posts Bank Dr / 2200 Cr with no AR, and leaves 5,000.00 of credit.
+- A 2,000.00 part-payment leaves "partially paid" with 3,000.00 outstanding.
+- Applying the deposit to the final invoice posts 2200 Dr / AR Cr.
+- The deposit is untaxed and the final invoice fully taxed.
+- The suggestion includes the advance invoice.
+- A payment that paid an advance invoice can't be deleted.
+
+Integration 38 files pass; E2E 44/44.
+
+### 2026-10-04 — US-TAX-07: store rates, quantities and percentages exactly (Phase 6)
+
+- **Exact storage.** Migration `0056` turns the 14 floating-point (`real`) columns into `numeric(18,4)`: tax rates; quantity, discount % and tax % on every document line; the catalogue default tax %; job retention %; and milestone amounts. The cast keeps each value's decimal form (8.875, 7.3, 33.3333), and issued totals (bigint) are untouched. Drizzle reads the columns as numbers, so API and web types are unchanged.
+- **Exact maths.** New in `@spine/shared` (`money/decimal.ts`): exact fractions read from the decimal string, `multiplyMinor`, `percentOfMinor`, and `roundFraction`, which rounds half-up once. `computeLineTax` now works in exact fractions and takes rates as percentages (`TaxRate.percent`, formerly `rate`). That ends the float division by 100: `1.1 / 100` was `0.011000000000000001`. New `computeDocumentLine` does quantity × price, discount and tax, each rounded once.
+- **One place for line maths.** Quotes, invoices, credit notes and vendor bills used to repeat the line maths in floating point; now they all call `computeDocumentLine`. So do the four web line editors, which had used `Math.round` and could show a different cent from what the server stored. Milestone resolution and retention use `percentOfMinor`.
+- **Milestone percentages.** They must now total exactly 100%. Three thirds entered as 33.333 (99.999) used to pass by rounding; enter 33.3333, 33.3333 and 33.3334 instead. Recorded as D-118.
+
+Tests:
+- `packages/shared` `us-tax-07.test.ts` (6): 8.875% is exact; 0.3 × 33.33 = 10.00; 1.005 × 1.00 rounds to 101, where floats give 100.49999999999999; 1.1% is exact; discount then tax; tax-inclusive backs out exactly.
+- `apps/api` `us-tax-07.test.ts` (2): fails if any column is `real` or double precision; checks the 14 columns are `numeric(18,4)`.
+- `us-tax-07.integration.test.ts` (2): 8.875% through `POST /tax-rates` reads back as 8.875 and is stored as `8.8750`; converting real values to `numeric(18,4)` keeps them.
+
+Integration 37 files pass; E2E 44/44; the compound-tax and job tests are unchanged.
+
+### 2026-10-04 — US-OPS-08: make every mutating request safe to repeat (Phase 6)
+
+- **All mutating routes covered.** The 14 routes that changed data without `IdempotencyInterceptor` now use it: fiscal periods create, close and reopen; the five `PUT /users/me…` routes; deleting a team; and on jobs, edit, unassign, set milestones and add a note. Push unsubscribe is covered too.
+- **Introspection test.** `us-ops-08.http.integration.test.ts` reads every controller's route metadata and fails if any non-GET route lacks the interceptor. The only exceptions are the two public quote routes, listed with the reason.
+- **Keys scoped per user and per record.** Migration `0055` adds `idempotency_keys.user_id`, and the unique key is now organisation, user, endpoint and key, so two people or devices never collide. The stored endpoint is the method plus the actual path instead of the route pattern. Before, reusing a key on another record (say another invoice's "Issue") replayed the first record's response.
+- **Duplicates while running.** A second request with the same key while the first is still running now gets 409 "This request is already being processed. Wait a moment, then refresh." It used to get an empty response.
+- **Unchanged.** No key still gets 400, and a failed request still frees its key for a retry.
+- **Clients.** The web client already sent a key on every change. The mobile SDK takes a caller-supplied key, kept for the offline outbox.
+
+Tests: `us-ops-08.http.integration.test.ts` (5):
+- Introspection over every route, more than 100.
+- A repeated key returns the first response and adds only one note.
+- No key returns 400.
+- Two users with the same key both get their change.
+- The same key on another job is a new request.
+
+Integration 36 files pass; E2E 44/44.
+
+### 2026-10-04 — US-ONB-12: show the setup checklist to owners only (Phase 6)
+
+- **Owners only.** `GET /dashboard/checklist` returns `{ visible: false }` to Staff and Field, and `{ visible: true, … }` to Owners. Dismissing (`POST /dashboard/checklist/dismiss`) is now Owner-only, because it hides the card for every Owner in the organisation. The web card renders only for Owners and only when `visible`.
+- **Demo data doesn't count.** The demo seed created its variation-order quotes through the normal quote service without marking them as demo. So an Owner with only demo data saw "Send your first quote" already ticked. Those quotes are now marked demo; removing demo data still works (checked).
+- **Later.** The redesigned card copy ("Three steps to your first sent quote. Only owners see this.") stays hidden until Phase 7 (US-DASH-12), as the story says.
+
+Tests:
+- `us-onb-12.http.integration.test.ts` (3): Staff and Field get `{ visible: false }`; the Owner sees it with nothing ticked from demo data; Staff can't dismiss (403); one Owner's dismissal hides it for another.
+- `apps/e2e/tests/us-onb-12.spec.ts`: the demo Staff user's dashboard has no "Get started".
+
+Integration 35 files pass.
+
+### 2026-10-04 — US-TEAM-16 and US-TEAM-17: confirm before making an owner; protect the Primary Owner's row (Phase 6)
+
+- **Confirm before promoting (US-TEAM-16).** "Promote to Owner" now opens "Make <name> an owner?" with "Owners have full access to everything in <Business> — every record and report, plus Users, Teams and Settings. Team permissions no longer apply to <name>. Any owner can change them back to Staff later.", plus "Cancel" and "Make owner". "Make owner" is a primary button, not danger (D-058). The business name comes from the business profile.
+- **Primary Owner's row (US-TEAM-17).**
+  - It has no "Deactivate" button.
+  - Its menu offers only "Transfer primary ownership…", and only to the Primary Owner. Other Owners see no menu on that row; before this, every Owner was offered the transfer.
+  - The API already refused to deactivate the Primary Owner with a 400; that now has a story-named test.
+- **Users heading.** "Users" and "Everyone with access to this organisation." appear once, as the page heading; the duplicate section heading is gone.
+
+Tests:
+- `us-team-17.http.integration.test.ts`: deactivating the Primary Owner returns 400, whether another Owner or the Primary Owner asks.
+- `apps/e2e/tests/us-team-16.spec.ts` (2): the promote dialog's copy, Cancel changes nothing, "Make owner" is primary and promotes, and the Owner demotes back. The Primary Owner row has no Deactivate, its menu has only the transfer, and the heading appears once.
+
+E2E 43/43.
+
+### 2026-10-04 — US-PUR-20: stop staff approving their own expenses (Phase 6)
+
+- **API.** `POST /expenses/:id/approve` and `/reject` refuse a Staff member reviewing their own expense with 403 "Someone else needs to approve your own expense.". The check runs before the status check, and Owners can still review their own (D-085).
+- **Expense drawer.** For your own submitted expense, Approve and Reject are hidden and the drawer says "Someone else needs to approve your own expense.". Edit (row actions) and "Delete expense" stay available; that button was relabelled from "Delete" to the story's wording.
+
+Tests:
+- `us-pur-20.http.integration.test.ts` (4): Staff approving or rejecting their own expense gets 403 and the expense stays submitted; Staff approves a colleague's; the Owner approves their own.
+- `apps/e2e/tests/us-pur-20.spec.ts`: the demo Staff approver opens their own expense and sees the note, no Approve or Reject, and "Delete expense".
+
+Integration 33 files pass; E2E 41/41.
+
+### 2026-10-04 — US-OPS-12: explain why I can't open a page (Phase 6)
+
+- **No-access page.** A page someone can't open is replaced, before it mounts, by "You don't have access to <page>". Nothing from the refused page is requested. The rules are in `apps/web/src/lib/page-access.ts`; `AppLayout` checks them and shows `NoAccess`.
+  - Field can open Dashboard, Jobs, Meetings, Expenses and Profile.
+  - Staff need the matching grant for Receivables and Payables, and any report grant for Reports.
+  - Team is Owner-only.
+- **What it says.**
+  - Normally: "Your account can't open this page. If you need it for your work, ask an owner — <owner names> — to change your team's permissions." with "Go to dashboard". Owner names come from the members list.
+  - Owner-only pages: "<page> is only available to owners." with no suggestion to change Teams.
+  - Field roles are fixed, so the Team clause is left out for them.
+- **Owner-only report tabs.** The Profit & Loss and Balance Sheet tabs on Reports show the Owner-only message for everyone else, without fetching. Non-owners open on Job Profitability.
+- **Refused actions.** `apiClient` turns any 403 into "You don't have permission to do that. If you need to, ask an owner.". A refused create, change, delete or upload also shows a "You don't have permission to do that" toast (`PermissionToast`) instead of a raw error.
+- **Role in the client.** The role is now available to client components through `RoleProvider`/`useMyRole()`.
+
+Tests: `apps/e2e/tests/us-ops-12.spec.ts` (4):
+- Staff without report grants see the message with the owner's name on Reports and Receivables, and no report data is requested.
+- The Owner-only text shows on Team and the Profit & Loss tab.
+- Field gets the fixed-role text on Invoices.
+- A refused action (an intercepted 403) shows the toast and no raw error.
+
+E2E 40/40.
+
+### 2026-10-04 — Team grants never cross organisations (security fix)
+
+Found while testing US-OPS-12. A Staff member's capabilities were the union of every Team their membership row belonged to, without checking that those Teams belonged to the member's own organisation.
+- **How it leaked.** The demo seed moves its demo users' membership rows between organisations, and their old Team memberships moved with them. The demo Staff user had collected 12 "General Staff" Teams from 12 organisations, so turning a grant off in one organisation had no effect.
+- **The fix.** `hasCapability`, `getEffectiveCapabilities` and `CapabilityGuard` now count only Teams in the member's organisation, and the guard now calls `hasCapability` instead of keeping its own copy of the query. The demo seed also clears a moved member's old Team memberships.
+- **Test.** A case in `us-ops-20.http.integration.test.ts` puts a Staff member into another organisation's Team that grants receivables and checks they're still refused. It fails without the fix.
+
+### 2026-10-04 — US-TEAM-18: show each person only the sections they can open (Phase 6)
+
+The sidebar now lists only what each person can open. `navSectionsFor(role, capabilities)` in `apps/web/src/lib/nav-sections.tsx` builds it, and `AppLayout` gets the role from the server and the capabilities from `CapabilitiesProvider`.
+- **Owners** see everything plus Team.
+- **Field** see "Overview" › Dashboard and "Work" › Jobs, Meetings and Expenses.
+- **Staff** see the full sidebar without Team. Receivables needs `reports.view_receivables`, Payables needs `reports.view_payables`, and Reports needs at least one report capability. These items stay hidden until capabilities load, so nothing shows and then disappears.
+
+The server checks are unchanged and still authoritative. A typed URL for a hidden page showing the no-access page is US-OPS-12, next.
+
+Tests: `apps/e2e/tests/us-team-18.spec.ts` (3):
+- The Field sidebar is exactly Dashboard, Jobs, Meetings and Expenses.
+- The demo Staff user, after the Owner turns off every report grant on the default Team, has no Receivables, Payables, Reports, Users or Teams links.
+- The Owner sees all of them.
+
+E2E 36/36.
+
+### 2026-10-04 — US-JOB-19: keep money and unassigned jobs away from field crew (Phase 6)
+
+- **Assigned jobs only.** `JobAccessService` (`apps/api/src/modules/jobs`) scopes every job read for Field users. `GET /jobs` returns only their assigned jobs, with or without `assignedToMe`. A job they aren't assigned to is a 404, as are its milestones, photos, notes, history, variation orders and crew. The same applies to the Field write routes: adding a note or photo, or completing a milestone.
+- **No money.** Field responses never include `contractValueAmount`, `retentionPct` or a milestone's `amount`/`resolvedAmount`, and money changes are removed from the job and milestone history Field sees.
+- **Milestones due.** `GET /jobs/milestones/due` gives Field only milestones on their assigned jobs.
+- **Job costing** needs `reports.view_job_profitability`, and its route is now Owner/Staff only. `CapabilityGuard` lets Field through by design and relies on `@OrgRoles` to keep them out, and the costing route had none. All 50 capability-gated routes were scanned: every one now has a role restriction, and the only ones open to Field are the four meant for them (job photos, job notes, own expenses, accept in person).
+- **Web.** The Costing tab shows only with that grant. Job list columns and job and milestone money show only when the API sends them, so Field sees jobs without a contract value, retention or milestone amounts.
+- **Still open.** Accepting a quote in person isn't yet limited to quotes on the Field user's assigned jobs. That's recorded on R-12 for US-MOB-17.
+
+Tests: `us-job-19.http.integration.test.ts` (7):
+- Assigned-only lists.
+- 404s across the sub-routes.
+- No money fields in jobs, milestones or history, while Staff still get them.
+- Costing: Field and Staff without the grant get 403; the Owner and Staff with the grant get 200.
+- Milestones due are scoped to assigned jobs.
+- No notes or photos on unassigned jobs.
+
+Integration 32 files pass; E2E 33/33.
+
+### 2026-10-04 — US-OPS-20: close the read-access gaps found in review (Phase 6)
+
+- **Owner-only:** `GET /org/invitations` and `POST /demo-data/seed` (removing demo data already was). Staff and Field now get 403.
+- **Invoices due this week:** `GET /reports/invoices-due-this-week` needs `reports.view_receivables`, like the rest of receivables. The dashboard widget already hides itself on a 403.
+- **Files are served only to people who can read the record they belong to.** `FilesService.assertReadableBy` finds every record that points at a file and applies that record's rule; anyone else gets 404. The S3 redirect happens only after this check.
+  - Owners: every file.
+  - A file not attached to anything yet: only its uploader (and Owners).
+  - Staff: every attached file.
+  - Field: contact logos and photos, the business logo, avatars, photos on assigned jobs, receipts on their own expenses, and quote PDFs for quotes on assigned jobs. Never invoice, credit-note or receipt PDFs.
+  - D-117: instead of the planned `owner_type`/`owner_id` columns, the owner is found from the references themselves. That means one source of truth and no backfill, and it also covers the logo setting and avatars, which aren't foreign keys. This replaces the interim Field rule from the Group 1 review.
+- **Expenses (found while checking reads against 07-security):** Field could list and open every expense, amounts included. Field now gets only their own from `GET /expenses` (whatever `?mine` says), and a 404 for anyone else's expense or its history.
+- **Shared helper:** `getMemberRole()` in `capability.util.ts`.
+
+Tests: `us-ops-20.http.integration.test.ts` (12). It uses a demo-seeded org with an Owner, a Staff member with no grants, a Staff member granted receivables, a Field user assigned to one job, and an outsider, and covers every rule above. Each case fails if its guard is removed. Integration 31 files pass; E2E 33/33.
+
+### 2026-10-04 — Group 1 access review: Field can't open stored money PDFs
+
+I reviewed every Group 1 change against the permission model.
+- **Unchanged:** the capability list, guards, Team privileges, settings service and settings pages.
+- **Owner-only:** the new owner surfaces (`GET /files/integrity`, the damaged-files and storage banners, `files_damaged` notifications).
+- **Gap fixed:** since US-INV-17, stored invoice, credit-note and receipt PDFs are files. `GET /files/:id` served any file to any member, so a Field user who had a file id could open them. `FilesService.assertReadableBy` now refuses those files to Field with a 404, ahead of the full owning-record check (US-OPS-20). Tested in `us-inv-17.http.integration.test.ts`: Field gets 404, the Owner gets 200, and Field can still open a file they uploaded.
+- **Docs:** `07-security.md` records the interim file-access rules and the Owner-only storage administration.
+
+### 2026-10-04 — The API no longer fails to start when the checksum backfill check fails
+
+When the database hadn't had migration `0052` applied, the start-up check for files without a checksum (US-OPS-28) threw an error and stopped the API, so sign-in failed with "Failed to fetch". That check now logs a warning instead, and the weekly integrity run catches up. Covered by a new case in `us-ops-28.test.ts`. After pulling, run `pnpm db:migrate:dev`.
+
+### 2026-10-04 — US-INV-17: keep the exact PDF that was issued (Phase 6)
+
+A sent quote, or an issued invoice, credit note or payment receipt, now keeps the PDF rendered the moment it was issued. Every later download or email serves those exact bytes, even after the customer's address, the logo, branding or the templates change. Drafts still render live and store nothing.
+- **Storage column.** New column `issued_pdf_file_id` on `quotes`, `invoices`, `credit_notes` and `payments`. Migration `0053` adds it and copies the old `quotes`/`invoices.pdf_file_id` values across, then `0054` drops `pdf_file_id`.
+- **Storing at issue.** `IssuedPdfService` (`apps/api/src/modules/pdf`) does the work.
+  - After their transaction commits, `QuotesService.send`, `InvoicesService.issue`/`releaseRetention`, `CreditNotesService.issue` and `PaymentsService.create` queue `store-issued-pdf`.
+  - The job renders once and stores the file through `FilesService`, so it's checksummed and write-once. It retries with backoff for about a day while storage is down; issuing never waits for it or fails because of it.
+  - A document issued before this change, or whose job hasn't run yet, is stored on its first download.
+  - Two first downloads at once still leave a single file.
+- **PDF routes.** `GET /quotes|invoices|payments/:id/pdf` serve the stored file once the document is issued.
+- **Emails.** The quote and invoice email jobs and the receipt email attach the stored file instead of rendering again; invoice reminders previously re-rendered and overwrote it. If storage is down when an email goes, the email still carries a fresh render and the store job is queued.
+- **Credit-note PDF (new, D-116).** A credit note had no PDF before. It now has one in the invoice PDF's layout: "CREDIT NOTE", its number, credited to, against invoice, reason, lines and total credited. There's a new route, `GET /credit-notes/:id/pdf`, and a "Download PDF" (or "Preview PDF" for a draft) button in the credit note drawer.
+- **Test and queue fixes.** The integration-test SWC config now uses the automatic JSX runtime, as the Nest build does; it was the first test to render a PDF. `QueueService.send` accepts per-queue retry options.
+
+Tests: `us-inv-17.http.integration.test.ts` (7), against a demo-seeded org through the real routes:
+- A draft renders live and stores nothing.
+- An issued invoice serves identical bytes after the business profile and contact change.
+- A document issued earlier is stored on its first download.
+- A sent quote, an issued credit note and a receipt are each stored and served unchanged.
+- The credit-note PDF's file name is its number.
+- Racing first downloads store one file.
+- Storage down: issuing still succeeds, the job's work fails so it's retried, and the email still gets a PDF.
+
+Integration 30 files pass; E2E 33/33.
+
+### 2026-10-04 — US-OPS-31: warn before the disk fills up (Phase 6)
+
+- **Usage check.** `FilesService.storageStatus()` measures the files volume with `statfs`, at most every 15 minutes and again straight after a full-disk upload.
+- **`GET /health/ready`** (public, new) returns `storage: { driver, usedPercent }`. `usedPercent` is null for the `s3` driver. The database and queue checks, and the 503 naming what's down, are still US-OPS-05 in Phase 8; this story adds only the storage field.
+- **Owner banner.** Above 85%, Owners see "Storage is <n>% full. Free up space or add disk before uploads stop working." on every page. Staff and Field never see it.
+- **Full disk.** An upload that hits a full disk (`ENOSPC`/`EDQUOT`) fails with 507 "There's no space left to store this file. Ask an owner to free up space." The partial temp file is removed and nothing else is affected.
+- **New `Banner` component in `@spine/ui`** (79 components). It's a full-width notice above the page header in the drawn `UpgradeNotice` style, with info, warning and critical variants, an optional title, actions and dismiss button. It renders through the new `AppShellContent` `banner` slot and comes with a design-system page, an a11y test and `docs/design/components/Banner.md`; US-OPS-06's update notice can reuse it.
+- **Shared helpers.** `STORAGE_WARNING_PERCENT`, `storageWarningMessage()` and `STORAGE_FULL_MESSAGE` are in `@spine/shared`.
+
+Tests:
+- `packages/shared` `us-ops-31.test.ts`: wording and threshold.
+- `apps/api` `us-ops-31.test.ts`: a 507 when the disk fills part-way through a write, with no partial file left; real `statfs` reading; 15-minute cache; S3 reports null.
+- `us-ops-31.http.integration.test.ts`: `/health/ready` without signing in.
+- `apps/e2e` `us-ops-31.spec.ts`: Owner sees the banner on two pages at 91%, none at 85%, and never for Field. `/health/ready` is intercepted because the disk can't be filled in a test.
+
+Integration 29 files pass; UI 181 tests pass; E2E 33/33.
+
+### 2026-10-04 — Docker images no longer contain `.env` or local files
+
+The repo had no `.dockerignore`, so `docker build` copied the host's `.env` (with `AUTH_SECRET` and the VAPID private key), `.env.*` files, uploaded files in `.data/`, `.git` and host `node_modules` into the images. A new `.dockerignore` keeps all of these out; only `.env.example` is kept. Both images rebuild, and the API image passed the storage smoke test again (non-root, upload, serve with `nosniff`, survives a restart).
+
+### 2026-10-04 — US-OPS-30: move existing files off MinIO (Phase 6)
+
+New command `pnpm --filter @spine/api files:migrate --from s3 --to local`, which works in either direction and takes `--org <id>` to limit it to one organisation.
+- **What it does.** Every file recorded on the source driver is copied to the target. Each copy is checked against the file's checksum, and only then is the record switched to the target's driver with a new id-only key. Old S3 keys contained the uploaded file name.
+- **Summary.** It prints copied, skipped and failed counts. On any failure it lists the files and exits 1.
+- **Safe to re-run.** The source bucket is never changed or deleted. Files already moved are skipped, and a copy left by an interrupted run is reused when its checksum matches.
+- **Refuses bad files.** A file missing from the bucket, damaged (its checksum doesn't match), or blocked by a different file at the target is left on its old record.
+- **Upgrade notes** are in the README ("Upgrading an install that used MinIO"): migrate, or keep MinIO with `STORAGE_DRIVER=s3`.
+
+Logic in `apps/api/src/modules/files/migrate-files.ts`; CLI in `src/scripts/files-migrate.ts`. Tests: `us-ops-30.integration.test.ts` (6). They cover an in-memory stand-in for an old bucket with legacy name-based keys: copy and verify, attachments open afterwards with the local driver, re-run skips, an interrupted run is reused, and failures are listed while the rest still move. A real S3 run is included when `S3_ENDPOINT` is set, as in CI; it passed locally against S3Mock.
+
+### 2026-10-04 — US-OPS-29: accept only safe uploads (Phase 6)
+
+- **Type from the bytes.** `POST /files` reads a file's type from its first bytes, ignoring its name and the browser's claim. Anything other than JPEG, PNG, WebP, HEIC or PDF is refused with 415 "This file type isn't supported. Upload a photo or a PDF.", including SVG, HTML, GIF and AVIF. The stored `mime_type` is the detected type.
+- **Location removed from photos.** GPS EXIF data is stripped from photos before they're stored. The GPS directory is emptied in place, so the photo isn't re-encoded and its Orientation tag is kept. This works for JPEG, PNG (the chunk CRC is recomputed), WebP and HEIC (D-115). The checksum covers the stripped bytes.
+- **Safe serving.** Every file response carries `X-Content-Type-Options: nosniff` and the stored `Content-Type`. Allowed photos and PDFs are served `inline`; anything else, which can only be a file stored before this change such as an old SVG logo, is served as `attachment`. The file name appears only in the `Content-Disposition` label, sanitised. Presigned S3 links set the same type and disposition.
+- **File names.** Names stay labels only and storage paths come from ids. The multipart parser already reduces a name like `../../etc/passwd.pdf` to `passwd.pdf`.
+- **Web.** File pickers offer only the accepted types (`PHOTO_ACCEPT`, `PHOTO_OR_PDF_ACCEPT` in `apps/web/src/lib/upload-types.ts`) instead of `image/*`, and the 415 message shows in each uploader's existing error line.
+
+Tests: `us-ops-29.test.ts` (23: type detection, GPS stripping per format with orientation kept, PNG CRCs, Content-Disposition) and `us-ops-29.http.integration.test.ts` (8, through the real routes). The test photos are hand-built with real EXIF blocks (`test-photos.ts`) because adding `sharp`/`exifr` as dev dependencies re-resolved the mobile app's peer versions. The earlier storage tests now upload real PDF bytes. Integration 27 files pass; E2E 30/30.
+
+### 2026-10-04 — US-OPS-28: prove stored files are intact (Phase 6)
+
+Each stored file now has a SHA-256 checksum, so Spine can tell when a file is damaged or missing.
+- **Checksum on upload.** New column `files.checksum_sha256`. Migration `0052` also adds `integrity_problem` (`damaged`/`missing`) and `integrity_checked_at`.
+- **Checked on read.** `GET /files/:id` (local driver) and the PDF logo reader compare the bytes with the checksum first. A damaged or missing file returns 409 with "This file is damaged. Restore it from your latest backup.", is logged and is flagged on its row. S3 files aren't downloaded on every read; the weekly check verifies them, and one already flagged is refused the same way.
+- **Weekly check.** The `file-integrity-check` job (pg-boss, Sundays 03:00) reads every file and records the outcome, and files that are intact again are cleared. Files stored before checksums existed get one from their current bytes; the job is queued once at start-up while any file still lacks one, which is the one-off backfill. A storage outage isn't counted as damage.
+- **Owner warning.** When the check finds problems, each affected organisation's Owners get an in-app notification (`files_damaged`) naming the records, such as "PDF of invoice <number>" or "Receipt for expense <number>: <description>". The dashboard shows "<n> stored files are damaged or missing — restore from your latest backup." until the files are fixed. For a single file the wording is "1 stored file is damaged or missing — …". The list comes from new Owner-only route `GET /files/integrity`.
+- **Write-once files.** A driver refuses to save to a key that already holds a file. The local driver hard-links the temp file into place instead of renaming it, which fails when the key already exists. So an issued document's bytes can't be replaced.
+- **E2E ports.** The suite moved to ports 3110/4110 because the design-system docs app in `pnpm dev` uses 3100, which made the suite fail whenever `pnpm dev` was running.
+
+Tests: `us-ops-28.test.ts` (write-once, checksum, wording), `us-ops-28.http.integration.test.ts` (8: checksum stored, 409 when damaged or missing, Owner-only summary, the weekly run's notification and clearing, backfill, nothing shown when intact) and `apps/e2e/tests/us-ops-28.spec.ts` (the dashboard warning). Integration suite 26 files pass (the s3 suite skips without `S3_ENDPOINT`); E2E 30/30.
+
+### 2026-10-04 — US-OPS-27: files on local disk by default (Phase 6)
+
+Fresh installs no longer need MinIO, whose free images were withdrawn. Files now go through a `StorageDriver` (`apps/api/src/modules/files/storage/`) with two drivers: `local` (the default) and `s3` (`STORAGE_DRIVER=s3` plus `S3_*`, for AWS S3, R2, B2 or RustFS). The `local` driver writes to `FILES_DIR`: `/data/files` in production, which is the new `spine_files` volume on the API container, and `apps/api/.data/files` in development.
+- **Crash-safe writes.** A save writes a temp file, fsyncs it and renames it into place, so a crash or a failed upload never leaves a partial file that can be served. Temp files left by a crash are removed on the next start.
+- **Paths from ids only.** Files are stored at `<org-id>/<2-char prefix>/<file-id>`; the uploaded name is never used in a path.
+- **Driver recorded per file.** New column `files.storage_driver`. Migration `0051` backfills existing rows to `s3`, so files stored before a switch stay readable while their driver's settings remain.
+- **Serving.** With `local`, `GET /files/:id` streams the file with `Content-Type`, `Content-Length`, an `ETag` (304 on match) and single-range support (206/416). With `s3`, it redirects to a 5-minute presigned URL. A request with no session is allowed only with an API-signed link (`?exp=&sig=`, HMAC with `AUTH_SECRET`, at most 5 minutes; otherwise 403). No screen creates such links yet.
+- **PDF logos.** Quote, invoice and receipt PDFs read the logo through `FilesService.readBytes` instead of three copies of S3 code.
+- **Docker.** `docker-compose.yml` and `docker-compose.dev.yml` no longer reference `minio/minio`. The `rustfs` profile runs `rustfs/rustfs:1.0.1` with a 1 GB memory limit. The API image runs as the non-root `node` user, which owns `/data/files`.
+- **Env.** `.env.example`, `.env.development.example` and `.env.e2e` gain `STORAGE_DRIVER=local`, and `S3_*` are now commented out.
+- **CI.** The E2E job drops its S3 service. The unit/integration job gains S3Mock so the same storage scenarios run against both drivers.
+- **Docker images.** `Dockerfile.api` and `Dockerfile.web` now copy `patches/`. Without it, `pnpm install` stopped on the missing Expo patch, so neither production image had built since that patch was added. Both images also skip building `canvas`, a test-only `packages/ui` dependency that peer dependencies pull into the install and that can't compile on Alpine. The skip applies inside the images only (`neverBuiltDependencies`); dev machines still build it. Both images now build. A smoke test of the API image with no storage settings and a `spine_files` volume passed: it runs as `node`, uploads land at `/data/files/<org>/<prefix>/<id>`, `GET /files/:id` returns 200 with type, length and ETag and identical bytes, and the file is still served after the container restarts.
+- **Tests.** API integration test files now run one at a time (`fileParallelism: false`). They share one database and `ledger-integrity` truncates organisations, which made the suite fail intermittently on `main` too (deadlocks, FK violations, "too many clients").
+
+Tests: `us-ops-27.test.ts` (34: local driver scenarios, failed and interrupted uploads, unsafe keys, driver selection, signed links, range parsing), `us-ops-27.s3.integration.test.ts` (the same 6 scenarios on S3; checked against MinIO and S3Mock) and `us-ops-27.http.integration.test.ts` (10, through the real routes). Full integration suite 26/26 files and E2E 29/29 on the local driver.
+
 ### 2026-10-04 — Website and help planned (spec only)
 
 New module 19 · Website and help (D-108–D-113): a public Astro + Starlight site in `apps/site` with a home page, task-based user guide, self-hosting guide, developer docs and a generated API reference, hosted on GitHub Pages at `docs.[DOMAIN]` (domain open, Q-15). The user guide is bundled into every install at `/help` so the Help menu works offline and matches the installed version; this replaces D-070 (help inside `apps/web`). Docs are versioned per minor release from 1.0; English only for now. 14 Phase 8 stories (US-SITE-01–14) and 9 drawn screens (incl. dark mode). From Phase 8, each user-facing story updates its guide page in the same change.

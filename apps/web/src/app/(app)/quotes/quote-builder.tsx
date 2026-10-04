@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, RichTextEditor, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
 import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 
@@ -159,7 +159,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
           <FormField label="Currency" required>
             {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} />}
           </FormField>
-          <FormField label="Valid until" helperText="Quote shows as expired after this date (S-03.11).">
+          <FormField label="Valid until" helperText="Quote shows as expired after this date.">
             {() => <DatePicker value={validUntil} onChange={setValidUntil} />}
           </FormField>
         </div>
@@ -217,8 +217,8 @@ function TotalRow({
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
-      <span className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
-        {toDecimalString({ amount: value, currency })} {currency}
+      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+        {formatMoney(value, currency)}
       </span>
     </div>
   );

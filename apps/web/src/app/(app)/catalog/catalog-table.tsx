@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { CatalogRowActions } from "./catalog-row-actions";
 import type { CatalogItem } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * The (only) list view for Catalogue — a flat table, no card/list-view
@@ -48,10 +48,10 @@ export function CatalogTable({
     {
       key: "defaultPrice",
       header: "Default price",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.defaultPriceAmount), currency: row.defaultPriceCurrency })}{" "}
-          {row.defaultPriceCurrency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.defaultPriceAmount), row.defaultPriceCurrency)}
         </span>
       ),
       sortValue: (row) => Number(row.defaultPriceAmount),

@@ -25,6 +25,8 @@ colors:
   due-soon-bg: "#FCF0D4"
   overdue: "#B3261E"
   overdue-bg: "#FBE6E4"
+  on-primary: "#FFFFFF" # US-OPS-25 (D-099): text on filled primary controls
+  on-danger: "#FFFFFF" # text on filled danger controls
   draft: "{colors.neutral-500}"
   draft-bg: "{colors.neutral-100}"
   info: "#2954E5"
@@ -68,6 +70,8 @@ colors-dark:
   due-soon-bg: "#332506"
   overdue: "#F17B72"
   overdue-bg: "#3A1512"
+  on-primary: "#121110" # white on #6B8AFF is 3.1:1; this is 5.9:1
+  on-danger: "#121110"
   draft: "{colors.neutral-500}"
   draft-bg: "{colors.neutral-100}"
   info: "#6B8AFF"
@@ -197,7 +201,7 @@ focus-ring:
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
-    textColor: "#FFFFFF"
+    textColor: "{colors.on-primary}"
     rounded: "{rounded.md}"
     padding: 10px 16px
     typography: "{typography.label}"
@@ -217,7 +221,7 @@ components:
     backgroundColor: "{colors.surface-sunken}"
   button-danger:
     backgroundColor: "{colors.overdue}"
-    textColor: "#FFFFFF"
+    textColor: "{colors.on-danger}"
     rounded: "{rounded.md}"
     padding: 10px 16px
   input:

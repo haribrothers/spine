@@ -1,4 +1,5 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { getMemberRole } from "../../auth/capability.util";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
@@ -11,7 +12,8 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { InvoicesService } from "../invoices/invoices.service";
-import { toDecimalString } from "@spine/shared";
+import { orgLocale } from "../../common/money-format";
+import { formatMoney } from "@spine/shared";
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
@@ -28,6 +30,9 @@ export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
  * exact transaction-boundary discipline (row-lock, status re-check,
  * numbering, posting, audit log, all atomic).
  */
+/** US-PUR-20 — why a Staff member can't review their own expense. */
+export const SELF_REVIEW_MESSAGE = "Someone else needs to approve your own expense.";
+
 @Injectable()
 export class ExpensesService {
   constructor(
@@ -54,12 +59,28 @@ export class ExpensesService {
       .then((rows) => rows.map((r) => ({ ...r.expense, categoryName: r.categoryName })));
   }
 
-  async getOne(orgId: string, id: string) {
+  /**
+   * US-OPS-20 — Field users read only the expenses they submitted (07-security:
+   * Field never reaches other people's money). Returns the user id to
+   * restrict reads to, or undefined for Owners and Staff.
+   */
+  async readScope(orgId: string, userId: string): Promise<string | undefined> {
+    return (await getMemberRole(this.db, orgId, userId)) === "field" ? userId : undefined;
+  }
+
+  /** `onlySubmittedBy` (from `readScope`) makes anyone else's expense a 404. */
+  async getOne(orgId: string, id: string, onlySubmittedBy?: string) {
     const [row] = await this.db
       .select({ expense: expenses, categoryName: expenseCategories.name })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
-      .where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+      .where(
+        and(
+          eq(expenses.orgId, orgId),
+          eq(expenses.id, id),
+          onlySubmittedBy ? eq(expenses.submittedByUserId, onlySubmittedBy) : undefined,
+        ),
+      );
     if (!row) {
       throw new NotFoundException("Expense not found");
     }
@@ -67,8 +88,8 @@ export class ExpensesService {
   }
 
   /** `GET /expenses/:id/history` — confirms the expense exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
-  async getHistory(orgId: string, id: string) {
-    await this.getOne(orgId, id);
+  async getHistory(orgId: string, id: string, onlySubmittedBy?: string) {
+    await this.getOne(orgId, id, onlySubmittedBy);
     return this.auditLog.listForEntity(orgId, "expense", id);
   }
 
@@ -195,11 +216,22 @@ export class ExpensesService {
    * can configure later if they need to track a lag between submission
    * and reimbursement — not invented here without a PRD story asking for it.
    */
+  /**
+   * US-PUR-20 (D-085) — nobody but an Owner reviews (approves or rejects)
+   * their own expense. Runs before any status check.
+   */
+  private async refuseSelfReview(orgId: string, actorUserId: string, submittedByUserId: string | null): Promise<void> {
+    if (submittedByUserId !== actorUserId) return;
+    if ((await getMemberRole(this.db, orgId, actorUserId)) === "owner") return;
+    throw new ForbiddenException(SELF_REVIEW_MESSAGE);
+  }
+
   async approve(orgId: string, id: string, actorUserId: string, comment: string | null, bankAccountId?: string) {
     const [preCheck] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Expense not found");
     }
+    await this.refuseSelfReview(orgId, actorUserId, preCheck.submittedByUserId);
 
     const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, preCheck.categoryId));
     const resolvedExpenseAccountId = category?.accountId ?? (await this.resolveDefaultExpenseAccount(orgId));
@@ -267,7 +299,7 @@ export class ExpensesService {
       return row;
     });
 
-    const amountText = `${toDecimalString({ amount: result!.amount, currency: result!.currency })} ${result!.currency}`;
+    const amountText = formatMoney(result!.amount, result!.currency, await orgLocale(this.db, orgId));
     void this.notifications.notify(orgId, {
       subject: `Expense approved — ${category?.name ?? "Uncategorized"}`,
       text: `Expense ${result!.number} (${category?.name ?? "Uncategorized"}, ${amountText}) was approved.`,
@@ -288,6 +320,7 @@ export class ExpensesService {
     if (!existing) {
       throw new NotFoundException("Expense not found");
     }
+    await this.refuseSelfReview(orgId, actorUserId, existing.submittedByUserId);
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be rejected");
     }

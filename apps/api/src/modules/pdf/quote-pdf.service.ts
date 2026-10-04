@@ -3,10 +3,10 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { quotes, quoteLines, contacts, files } from "../../db/schema";
+import { quotes, quoteLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
-import { getS3Client, getS3Config } from "../files/s3-client";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { FilesService } from "../files/files.service";
+import { orgLocale } from "../../common/money-format";
 import { QuotePdfDocument, type QuotePdfBusinessProfile } from "./quote-pdf.template";
 
 /**
@@ -30,6 +30,7 @@ export class QuotePdfService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly settings: SettingsService,
+    private readonly files: FilesService,
   ) {}
 
   async render(orgId: string, quoteId: string): Promise<{ buffer: Buffer; filename: string }> {
@@ -59,6 +60,7 @@ export class QuotePdfService {
         contactEmail: row.contactEmail,
         business,
         logoDataUri,
+        locale: await orgLocale(this.db, orgId),
       }),
     );
 
@@ -68,38 +70,24 @@ export class QuotePdfService {
 
   /**
    * `business_profile.logoUrl` is `${API_URL}/files/:id}` — a route that
-   * 302-redirects to a short-lived S3-signed URL (see FilesController.get).
+   * streams the file or redirects to a presigned URL (see FilesController.get).
    * Rather than following that HTTP redirect chain (fragile inside a
    * server process, and adds a dependency on APP_URL being reachable from
    * itself), this extracts the file id from that URL and reads the object
-   * directly via FilesService's own S3 client — same storage, no network
-   * hop through the API's own HTTP server. Returns `undefined` (never
+   * through FilesService — the same storage driver, no network hop
+   * through the API's own HTTP server. Returns `undefined` (never
    * throws) on any failure — object storage being unavailable must degrade
    * the PDF's header to text-only, not break PDF generation entirely,
    * matching CLAUDE.md's graceful-degradation rule for file storage.
    */
   private async tryFetchLogoAsDataUri(orgId: string, logoUrl: string): Promise<string | undefined> {
     try {
-      const client = getS3Client();
-      const config = getS3Config();
-      if (!client || !config) return undefined;
-
       const match = logoUrl.match(/\/files\/([0-9a-fA-F-]{36})/);
       const fileId = match?.[1];
       if (!fileId) return undefined;
 
-      const [fileRow] = await this.db
-        .select()
-        .from(files)
-        .where(and(eq(files.orgId, orgId), eq(files.id, fileId)));
-      if (!fileRow) return undefined;
-
-      const result = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: fileRow.key }));
-      const bytes = await result.Body?.transformToByteArray();
-      if (!bytes) return undefined;
-
-      const base64 = Buffer.from(bytes).toString("base64");
-      return `data:${fileRow.mimeType};base64,${base64}`;
+      const { bytes, mimeType } = await this.files.readBytes(orgId, fileId);
+      return `data:${mimeType};base64,${bytes.toString("base64")}`;
     } catch (err) {
       this.logger.warn(`Could not fetch org logo for PDF, continuing without it: ${(err as Error).message}`);
       return undefined;

@@ -26,7 +26,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums)
 | I9 | Milestone percentages on a job total 100 before any write | Service layer (tested) |
 | I10 | No journal posting dated inside a closed `fiscal_periods` row | Service layer (tested) |
 | I11 | A quote, invoice or bill line stores its own name, price and tax (snapshot) | Columns on `*_lines` |
-| I12 | An idempotency key is unique per org + endpoint + key today, and per org + user + endpoint + key after US-OPS-08; replays return the stored response | `idempotency_keys` |
+| I12 | An idempotency key is unique per org + user + endpoint + key, where endpoint is the method and actual path (not the route pattern); replays return the stored response (US-OPS-08) | `idempotency_keys` |
 
 ## Relationships worth knowing
 
@@ -48,14 +48,17 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files` and `accepted_signer_name text` (on-site acceptance stores what it captured) | US-QUO-19 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
-| `organization.name` | Kept in sync with `business_profile.name` (bug: invite email shows "<Owner>'s Organisation") | US-TEAM-15 |
+| `organization.name` | Kept in sync with `business_profile.name`: `SettingsService.set` renames the organisation in the same transaction whenever a non-empty business name is saved; migration `0062` copied it for existing installs | US-TEAM-15 |
 | Better Auth `verification` | Used for password-reset tokens (no new table) | US-AUTH-09, US-AUTH-10 |
 | `idempotency_keys` | `user_id text → user`; unique index becomes (`org_id`, `user_id`, `endpoint`, `key`) | US-OPS-08 |
-| `quotes`, `invoices`, `credit_notes`, `payments` | `issued_pdf_file_id uuid → files` (the PDF stored at send/issue) | US-INV-17 |
+| `quotes`, `invoices`, `credit_notes`, `payments` | `issued_pdf_file_id uuid → files` (the PDF stored at send/issue; on quotes and invoices it replaces the old `pdf_file_id`, whose values migration `0053` copied over before `0054` dropped it) | US-INV-17 |
 | `settings` key `business_profile` | gains `paymentInstructions` (text) | US-INV-15 |
+| `invoices.payment_instructions` | text, nullable — the payment instructions copied at issue; the PDF and every later email use this copy. Null on drafts and when none were set (migration `0059`) | US-INV-15 |
+| `settings` key `business_profile` | gains `email` and `phone` (text), shown on the expired-quote-link page | US-QUO-21 |
 | `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
-| `files` | `owner_type text` and `owner_id text` (the record a file belongs to), backfilled from existing references; used for read authorisation | US-OPS-20 |
-| `jobs` | `number text` (unique per org), allocated from the `job` number sequence | US-JOB-22 |
+| `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
+| `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
+| `jobs` | `number text` (unique per org, index `jobs_org_number_unique`), allocated from the `job` number sequence in the creating transaction; migration `0061` numbered existing jobs in creation order. Nullable only for rows written outside `JobsService` | US-JOB-22 |
 | `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `created_by_user_id`, `archived_at`, timestamps | US-QUO-25 |
 | `catalog_bundle_lines` (new) | `bundle_id`, `sort_order`, `catalog_item_id?`, `name`, `description`, `quantity numeric`, `unit_price_amount bigint`, `tax_rate_id?`, `tax_group_id?` | US-QUO-25 |
 | `settings` key `invoice_reminders` | `{ enabled, offsets: int[], repeatEvery?, repeatMax?, sendAt }` | US-INV-18 |
@@ -67,7 +70,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `user` | `digest_enabled boolean`, `digest_time time`, `digest_days text` | US-NTF-13 |
 | `data_exports` (new) | `id`, `org_id`, `requested_by_user_id`, `formats`, `include_files`, `status`, `file_id?`, `size_bytes?`, `expires_at`, timestamps | US-SET-15 |
 | Search indexes | `pg_trgm` GIN indexes on contact names, document numbers and job names | US-OPS-22 |
-| `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by a one-off job) | US-OPS-27, US-OPS-28 |
+| `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by the first `file-integrity-check` run), `integrity_problem text` (`damaged`/`missing`, null when intact), `integrity_checked_at timestamptz`; index `(org_id, integrity_problem)` | US-OPS-27, US-OPS-28 |
 | `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
 | Rate and quantity columns | `tax_rates.rate`, `quote_lines`/`invoice_lines`/`credit_note_lines`/`vendor_bill_lines` `.quantity`, `.discount_percentage`, `.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount`: `real` → `numeric(18,4)` | US-TAX-07 |
 
@@ -157,7 +160,7 @@ Backs the `Idempotency-Key` header required on mutating endpoints per CLAUDE.md/
 
 #### `files`
 
-A generic, org-scoped uploaded-file record — the S3/MinIO object key plus enough metadata to serve and label it. Deliberately NOT a polymorphic `attachableType`/`attachableId` association: nothing in this codebase uses that pattern (checked `journal_lines.contact_id`/`job_id`, both plain nullable FKs to a single…
+A generic, org-scoped uploaded-file record — the storage key (inside the driver named by `storage_driver`, US-OPS-27) plus enough metadata to serve and label it. Deliberately NOT a polymorphic `attachableType`/`attachableId` association: nothing in this codebase uses that pattern (checked `journal_lines.contact_id`/`job_id`, both plain nullable FKs to a single…
 
 `id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `key` text (not null) · `original_filename` text (not null) · `mime_type` text (not null) · `size_bytes` bigint (not null) · `uploaded_by_user_id` text (→ user (set null)) · `created_at` timestamp (not null, default now)
 

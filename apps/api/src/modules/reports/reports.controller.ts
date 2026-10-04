@@ -1,10 +1,12 @@
+import { toDecimalString } from "@spine/shared";
 import { Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
-import { toCsv } from "../../common/csv";
+import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService } from "./reports.service";
+import { LedgerIntegrityService } from "./ledger-integrity.service";
 
 /**
  * `@OrgRoles(["owner", "staff"])` at the class level — Field never reaches
@@ -25,7 +27,10 @@ import { ReportsService } from "./reports.service";
 @Controller("reports")
 @OrgRoles(["owner", "staff"])
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly ledgerIntegrityService: LedgerIntegrityService,
+  ) {}
 
   /** S-09.10 — the real dashboard summary. */
   @Get("dashboard-summary")
@@ -45,11 +50,19 @@ export class ReportsController {
     return this.reportsService.revenueTrend(orgId, safeMonths);
   }
 
-  /** S-09.12 (dashboard v2) — "invoices due this week" widget. Read-only across every invoice, same unconditional-GET convention as every other list/report route in this codebase. */
+  /** S-09.12 (dashboard v2) — "invoices due this week" widget. Receivables data, so it needs the same grant as `GET /reports/receivables` (US-OPS-20). */
   @Get("invoices-due-this-week")
+  @RequireCapability("reports.view_receivables")
   async invoicesDueThisWeek(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.invoicesDueThisWeek(orgId);
+  }
+
+  /** US-RPT-12 — the latest daily check that the books balance; Owners only. */
+  @Get("ledger-integrity")
+  @OrgRoles(["owner"])
+  async ledgerIntegrity(@Session() session: UserSession) {
+    return this.ledgerIntegrityService.status(requireOrgId(session));
   }
 
   @Get("receivables")
@@ -130,6 +143,26 @@ export class ReportsController {
     sendCsv(res, `profit-and-loss-${from}-to-${to}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
+  /** US-RPT-13 — Owner-only, like the other financial statements. */
+  @Get("trial-balance")
+  @OrgRoles(["owner"])
+  async trialBalance(@Session() session: UserSession, @Query("asOf") asOf: string, @Query("includeZero") includeZero?: string) {
+    return this.reportsService.trialBalance(requireOrgId(session), asOf, includeZero === "true");
+  }
+
+  @Get("trial-balance/export.csv")
+  @OrgRoles(["owner"])
+  async exportTrialBalance(
+    @Session() session: UserSession,
+    @Query("asOf") asOf: string,
+    @Query("includeZero") includeZero: string | undefined,
+    @Res() res: Response,
+  ) {
+    const report = await this.reportsService.trialBalance(requireOrgId(session), asOf, includeZero === "true");
+    const rows = [...report.lines.map((l) => [l.code, l.name, l.debit, l.credit]), ["", "Total", report.totalDebit, report.totalCredit]];
+    sendCsv(res, `trial-balance-${asOf}.csv`, toCsv(["Code", "Account", "Debit", "Credit"], rows));
+  }
+
   @Get("balance-sheet/export.csv")
   @OrgRoles(["owner"])
   async exportBalanceSheet(@Session() session: UserSession, @Query("asOf") asOf: string, @Res() res: Response) {
@@ -147,21 +180,32 @@ export class ReportsController {
     sendCsv(res, `balance-sheet-${asOf}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
+  /**
+   * US-PAY-10 — one row per open invoice with its bucket. Amounts are
+   * plain decimals with the currency in its own column. `search` is the
+   * Receivables table's search text, matched the same way (invoice number
+   * and contact, ignoring case), so the file is what's on screen.
+   */
   @Get("receivables/export.csv")
   @RequireCapability("reports.view_receivables")
-  async exportReceivables(@Session() session: UserSession, @Res() res: Response) {
+  async exportReceivables(@Session() session: UserSession, @Query("search") search: string | undefined, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.receivables(orgId);
-    const rows = report.invoices.map((i) => [i.number, i.contactName, i.currency, i.dueDate, i.totalAmount, i.balanceDue, i.daysOverdue, i.bucket]);
+    const rows = report.invoices
+      .filter((i) => matchesSearch(`${i.number ?? ""} ${i.contactName ?? ""}`, search))
+      .map((i) => [i.number, i.contactName, i.currency, i.dueDate, decimal(i.totalAmount, i.currency), decimal(i.balanceDue, i.currency), i.daysOverdue, i.bucket]);
     sendCsv(res, `receivables-${report.asOf}.csv`, toCsv(["Invoice #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
 
+  /** US-PUR-14 — one row per open bill with its bucket; same conventions as receivables. */
   @Get("payables/export.csv")
   @RequireCapability("reports.view_payables")
-  async exportPayables(@Session() session: UserSession, @Res() res: Response) {
+  async exportPayables(@Session() session: UserSession, @Query("search") search: string | undefined, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.payables(orgId);
-    const rows = report.bills.map((b) => [b.billNumber, b.contactName, b.currency, b.dueDate, b.totalAmount, b.balanceDue, b.daysOverdue, b.bucket]);
+    const rows = report.bills
+      .filter((b) => matchesSearch(`${b.billNumber ?? ""} ${b.contactName ?? ""}`, search))
+      .map((b) => [b.billNumber, b.contactName, b.currency, b.dueDate, decimal(b.totalAmount, b.currency), decimal(b.balanceDue, b.currency), b.daysOverdue, b.bucket]);
     sendCsv(res, `payables-${report.asOf}.csv`, toCsv(["Bill #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
 
@@ -175,8 +219,13 @@ export class ReportsController {
   }
 }
 
-function sendCsv(res: Response, filename: string, csv: string): void {
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  res.send(csv);
+/** Minor units → "1234.50", for CSVs a spreadsheet reads as numbers. */
+function decimal(minor: string, currency: string): string {
+  return toDecimalString({ amount: BigInt(minor), currency });
+}
+
+/** The DataTable search rule: case-insensitive substring of the row's search text. */
+function matchesSearch(text: string, search: string | undefined): boolean {
+  const query = search?.trim().toLowerCase();
+  return !query || text.toLowerCase().includes(query);
 }

@@ -26,6 +26,7 @@ import { AppShell, AppShellNavItem, AppShellNavSection, AppShellSidebar, AppShel
 | `AppShellHeader.description` | string | — |
 | `AppShellHeader.action` | ReactNode | — |
 | `AppShellContent.fullWidth` | boolean | false |
+| `AppShellContent.banner` | ReactNode | — (app-wide `Banner`s shown above the page, outside the width cap) |
 
 ## Rules and behaviour
 

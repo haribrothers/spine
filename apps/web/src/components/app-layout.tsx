@@ -5,11 +5,18 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { AppShell, AppShellContent, AppShellSidebar, type AppShellNavSection } from "@spine/ui";
+import { AppShell, AppShellContent, AppShellSidebar } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { NotificationBell } from "./notification-bell";
-import { CapabilitiesProvider } from "../lib/capabilities-context";
+import { StorageBanner } from "./storage-banner";
+import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
+import { navSectionsFor } from "../lib/nav-sections";
+import { pageAccessFor } from "../lib/page-access";
+import { RoleProvider } from "../lib/role-context";
+import { NoAccess } from "./no-access";
+import { PermissionToast } from "./permission-toast";
+import { SessionExpiredDialog } from "./session-expired-dialog";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -34,7 +41,8 @@ function AppLogo({ collapsed }: { collapsed: boolean }) {
 }
 
 export interface AppLayoutProps {
-  sections: AppShellNavSection[];
+  /** The member's role, resolved server-side; the sidebar is filtered from it and their capabilities (US-TEAM-18). */
+  role: string | null;
   userName: string;
   userEmail: string;
   /** CLAUDE.md — "org settings" is Owner-only, never Team-configurable. Sourced server-side (AuthenticatedLayout's getMyMembership) rather than trusting a client-supplied role, same trust boundary the Team nav section already uses. */
@@ -60,8 +68,25 @@ export interface AppLayoutProps {
  * profile row. Collapsed: help, notifications, and the profile avatar stack
  * vertically, help on top.
  */
-export function AppLayout({ sections, userName, userEmail, isOwner, children }: AppLayoutProps) {
+export function AppLayout(props: AppLayoutProps) {
+  return (
+    <RoleProvider value={props.role}>
+      <CapabilitiesProvider>
+        <AppLayoutShell {...props} />
+        <PermissionToast />
+        <SessionExpiredDialog email={props.userEmail} />
+      </CapabilitiesProvider>
+    </RoleProvider>
+  );
+}
+
+function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLayoutProps) {
+  const { capabilities } = useCapabilities();
+  const sections = navSectionsFor(role, capabilities);
   const pathname = usePathname();
+  // US-OPS-12: a page this person can't open is replaced by the no-access
+  // page before it mounts, so none of its data is ever requested.
+  const access = pageAccessFor(pathname ?? "", role, capabilities);
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const fullWidth = FULL_WIDTH_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
@@ -78,39 +103,43 @@ export function AppLayout({ sections, userName, userEmail, isOwner, children }: 
   }
 
   return (
-    <CapabilitiesProvider>
-      <AppShell>
-        <AppShellSidebar
-          logo={<AppLogo collapsed={collapsed} />}
-          collapsed={hydrated ? collapsed : false}
-          onCollapsedChange={handleCollapsedChange}
-          sections={sections}
-          isActive={(href) => pathname === href || pathname?.startsWith(`${href}/`)}
-          renderLink={(item, content) => (
-            <Link href={item.href} aria-label={item.label}>
-              {content}
-            </Link>
-          )}
-          userMenu={
-            (hydrated ? collapsed : false) ? (
-              <div className="flex flex-col items-center gap-1">
-                <HelpButton collapsed />
-                <NotificationBell collapsed />
-                <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
+    <AppShell>
+      <AppShellSidebar
+        logo={<AppLogo collapsed={collapsed} />}
+        collapsed={hydrated ? collapsed : false}
+        onCollapsedChange={handleCollapsedChange}
+        sections={sections}
+        isActive={(href) => pathname === href || pathname?.startsWith(`${href}/`)}
+        renderLink={(item, content) => (
+          <Link href={item.href} aria-label={item.label}>
+            {content}
+          </Link>
+        )}
+        userMenu={
+          (hydrated ? collapsed : false) ? (
+            <div className="flex flex-col items-center gap-1">
+              <HelpButton collapsed />
+              <NotificationBell collapsed />
+              <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
+            </div>
+          ) : (
+            <div className="flex items-center gap-1">
+              <div className="min-w-0 flex-1">
+                <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <div className="min-w-0 flex-1">
-                  <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
-                </div>
-                <HelpButton collapsed={false} />
-                <NotificationBell collapsed={false} />
-              </div>
-            )
-          }
-        />
-        <AppShellContent fullWidth={fullWidth}>{children}</AppShellContent>
-      </AppShell>
-    </CapabilitiesProvider>
+              <HelpButton collapsed={false} />
+              <NotificationBell collapsed={false} />
+            </div>
+          )
+        }
+      />
+      <AppShellContent fullWidth={fullWidth} banner={isOwner ? <StorageBanner /> : null}>
+        {access.state === "allowed" ? (
+          children
+        ) : access.state === "denied" ? (
+          <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
+        ) : null}
+      </AppShellContent>
+    </AppShell>
   );
 }

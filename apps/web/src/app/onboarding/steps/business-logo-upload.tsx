@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage, Spinner } from "@spine/ui";
 import { Camera } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
+import { PHOTO_ACCEPT } from "../../../lib/upload-types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -92,7 +93,7 @@ export function BusinessLogoUpload({
         <span className="text-[12px] text-on-surface-muted">Click the square to upload — shown on quotes and invoices.</span>
         {error && <span className="text-[12px] text-overdue">{error}</span>}
       </div>
-      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFileSelected} />
+      <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleFileSelected} />
       <LogoCropDialog
         open={pickedImageSrc !== null}
         imageSrc={pickedImageSrc}

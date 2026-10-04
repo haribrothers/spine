@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { settings } from "../../db/schema";
+import { organization, settings } from "../../db/schema";
 
 /**
  * Thin key/value read-through over the generic org-scoped `settings` table
@@ -11,7 +11,7 @@ import { settings } from "../../db/schema";
  * the onboarding wizard, documented here as the single source of truth for
  * their shape since nothing else defines a schema for them:
  *
- * - `business_profile`   → { name: string; logoUrl?: string; address?: string; industry?: string }
+ * - `business_profile`   → { name: string; logoUrl?: string; address?: string; email?: string; phone?: string; industry?: string; paymentInstructions?: string }
  * - `industry_template`  → { template: "construction" | "general_services" | "generic" }
  * - `currency`           → { code: string; locale: string }
  * - `financial_year_start` → { month: number (1-12); day: number (1-31) }
@@ -77,12 +77,20 @@ export class SettingsService {
 
   /** Upsert on (orgId, key) — matches the table's unique constraint. */
   async set(orgId: string, key: string, value: unknown): Promise<void> {
-    await this.db
-      .insert(settings)
-      .values({ orgId, key, value: value as object })
-      .onConflictDoUpdate({
-        target: [settings.orgId, settings.key],
-        set: { value: value as object, updatedAt: new Date() },
-      });
+    await this.db.transaction(async (tx) => {
+      await tx
+        .insert(settings)
+        .values({ orgId, key, value: value as object })
+        .onConflictDoUpdate({
+          target: [settings.orgId, settings.key],
+          set: { value: value as object, updatedAt: new Date() },
+        });
+      // US-TEAM-15: the organisation is named after the business, so
+      // invitations and system text never say "<Owner>'s Organisation".
+      const name = key === "business_profile" ? (value as { name?: unknown } | null)?.name : undefined;
+      if (typeof name === "string" && name.trim()) {
+        await tx.update(organization).set({ name: name.trim() }).where(eq(organization.id, orgId));
+      }
+    });
   }
 }

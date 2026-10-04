@@ -120,6 +120,7 @@ export const nav: TopLevelSection[] = [
           { title: "StatusChip", href: "/components/status-chip" },
           { title: "Badge", href: "/components/badge" },
           { title: "Alert", href: "/components/alert" },
+          { title: "Banner", href: "/components/banner" },
           { title: "Toast", href: "/components/toast" },
           { title: "Progress", href: "/components/progress" },
           { title: "Stepper", href: "/components/stepper" },

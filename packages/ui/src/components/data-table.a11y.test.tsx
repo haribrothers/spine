@@ -1,5 +1,5 @@
-import { render } from "@testing-library/react";
-import { describe, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { DataTable } from "./data-table";
 import { StatusChip } from "./status-chip";
@@ -48,5 +48,21 @@ describe("DataTable a11y", () => {
       />,
     );
     await expectNoA11yViolations(container);
+  });
+
+  it("labels the search box and reports what was typed", () => {
+    const onSearchChange = vi.fn();
+    render(
+      <DataTable<InvoiceRow>
+        rowKey={(row) => row.number}
+        searchKey={(row) => row.contact}
+        searchPlaceholder="Search by contact…"
+        onSearchChange={onSearchChange}
+        columns={[{ key: "contact", header: "Contact", render: (row) => row.contact }]}
+        data={rows}
+      />,
+    );
+    fireEvent.change(screen.getByRole("textbox", { name: "Search by contact…" }), { target: { value: "acme" } });
+    expect(onSearchChange).toHaveBeenCalledWith("acme");
   });
 });

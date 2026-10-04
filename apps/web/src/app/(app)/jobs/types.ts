@@ -1,4 +1,4 @@
-/** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+/** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type JobStatus = "active" | "on_hold" | "completed" | "cancelled";
 export type MilestoneAmountType = "fixed" | "percent";
 export type MilestoneStatus = "pending" | "completed" | "invoiced";
@@ -9,14 +9,17 @@ export interface Job {
   contactId: string;
   contactName: string | null;
   sourceQuoteId: string | null;
+  /** US-JOB-22 — "JOB-007"; null only for rows created outside the app. */
+  number: string | null;
   name: string;
   siteAddress: string | null;
   status: JobStatus;
   startDate: string | null;
   endDate: string | null;
   currency: string;
-  contractValueAmount: string;
-  retentionPct: number;
+  /** Absent for Field users: the API never sends them a job's money (US-JOB-19). */
+  contractValueAmount?: string;
+  retentionPct?: number;
   notes: string | null;
   createdByUserId: string | null;
   isDemo: boolean;
@@ -31,8 +34,9 @@ export interface Milestone {
   name: string;
   sequence: number;
   amountType: MilestoneAmountType;
-  amount: number;
-  resolvedAmount: string;
+  /** Absent for Field users (US-JOB-19). */
+  amount?: number;
+  resolvedAmount?: string;
   status: MilestoneStatus;
   dueDate: string | null;
   createdByUserId: string | null;

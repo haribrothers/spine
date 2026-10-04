@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { StatCard } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
+import { formatMoney } from "../../../lib/money";
 
 interface DashboardSummaryReport {
   cashPosition: string;
@@ -45,7 +45,7 @@ export function DashboardSummary() {
     return null;
   }
 
-  const money = (amount: string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const money = (amount: string) => formatMoney(BigInt(amount), currency);
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

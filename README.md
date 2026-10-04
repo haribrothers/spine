@@ -35,7 +35,7 @@ full phase-by-phase breakdown of what's landed vs. planned.
 | Mobile | React Native via Expo |
 | Auth | Better Auth |
 | Jobs | pg-boss (Postgres-backed queue) |
-| Files | S3-compatible (MinIO for self-hosting) |
+| Files | Local disk volume by default; any S3-compatible store optional (AWS S3, R2, B2, RustFS) |
 | Monorepo | Turborepo + pnpm |
 | Container | Docker Compose |
 
@@ -58,7 +58,7 @@ spine/
 ├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
 ├─ scripts/       # seed.ts
 ├─ docker-compose.yml       # production stack (builds api/web, runs behind Caddy)
-├─ docker-compose.dev.yml   # local dev infra only (Postgres, MinIO, MailDev)
+├─ docker-compose.dev.yml   # local dev infra only (Postgres, MailDev; optional RustFS)
 └─ .env.example
 ```
 
@@ -72,7 +72,7 @@ below instead — that path never requires Node or pnpm on the host.)
 
 - Node.js 20+
 - [pnpm](https://pnpm.io/installation) (`corepack enable` is the easiest way to get the pinned version)
-- Docker (for Postgres, MinIO, and MailDev — you do not need any of these installed locally)
+- Docker (for Postgres and MailDev — you do not need either installed locally)
 
 ### 1. Clone and install
 
@@ -82,21 +82,23 @@ cd spine
 pnpm install
 ```
 
-### 2. Start local infrastructure (Postgres + MinIO)
+### 2. Start local infrastructure (Postgres + MailDev)
 
 ```bash
 pnpm dev:infra:up
 ```
 
-This starts three containers via `docker-compose.dev.yml`, separate from the
+This starts two containers via `docker-compose.dev.yml`, separate from the
 production stack in `docker-compose.yml`:
 
 - **Postgres** on `localhost:5432` (user/pass/db: `spine`/`spine`/`spine`)
-- **MinIO** on `localhost:9000` (API) and `localhost:9001` (console; login `spine` / `spinespine`)
 - **MailDev** on `localhost:1025` (SMTP) and `localhost:1080` (web UI — read quote emails here instead of a real inbox; nothing is ever actually delivered). Optional — leave `SMTP_HOST` blank in `.env` and email sending degrades gracefully (the quote still issues, the email queues for retry) if you don't need to see it locally.
 
-Data persists in Docker volumes (`spine-dev_spine_dev_pgdata`,
-`spine-dev_spine_dev_minio`) across restarts. Useful commands:
+The database persists in a Docker volume (`spine-dev_spine_dev_pgdata`)
+across restarts. Uploaded files are stored by the local storage driver in
+`apps/api/.data/files` (gitignored), so no storage container is needed. To
+try the S3 driver, `COMPOSE_PROFILES=rustfs pnpm dev:infra:up` adds RustFS
+on `localhost:9000` — see `.env.development.example`. Useful commands:
 
 ```bash
 pnpm dev:infra:down    # stop containers, keep data
@@ -243,9 +245,33 @@ docker compose exec api pnpm --filter @spine/api db:migrate
 ```
 
 The app boots with only three required environment variables
-(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`) — see PRD §6.8. Use the `full`
-profile instead of `minimal` to also run MinIO and an optional Cloudflare
-Tunnel sidecar.
+(`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`) — see `docs/prd/01-tech-stack.md`.
+Attachments work out of the box: the API stores them on the `spine_files`
+volume (`STORAGE_DRIVER=local`). `docker compose down -v` deletes that
+volume along with the database, so don't use `-v` unless you mean it. To
+keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and the `S3_*`
+values; add `--profile rustfs` to run a self-hosted S3 store. Use the
+`full` profile instead of `minimal` to add the Cloudflare Tunnel sidecar.
+
+### Upgrading an install that used MinIO
+
+Spine now stores files on the API's own volume (`STORAGE_DRIVER=local`,
+the default) instead of MinIO, and `docker-compose.yml` no longer starts
+MinIO. You can either:
+
+- **Move your files to local storage (recommended).** Keep MinIO running
+  and your `S3_*` settings in `.env`, start the new version, then run
+  `docker compose exec api pnpm --filter @spine/api files:migrate --from s3 --to local`.
+  It copies every file into the `spine_files` volume, checks each copy
+  against its checksum, and prints copied, skipped and failed counts.
+  Nothing in the bucket is changed or deleted. If anything fails, it lists
+  those files and exits with an error; fix the cause and run it again, and
+  files already moved are skipped. When it reports no failures, set
+  `STORAGE_DRIVER=local` (or remove it) and restart. You can stop MinIO
+  once you've checked your attachments.
+- **Keep MinIO.** Set `STORAGE_DRIVER=s3`, keep your `S3_*` settings, and
+  run MinIO yourself, for example from your old compose file or as its own
+  service. Spine works unchanged.
 
 The `db:migrate` step is currently manual (run it once after the first
 `up`, and again after pulling any update that adds a migration) — a
@@ -253,7 +279,7 @@ one-command install script (S-10.7) and automatic migrate-on-upgrade
 (S-10.9) are planned for Phase 6, once the rest of the product exists to
 install. `scripts/backup.sh`/`restore.sh` (S-10.8) don't exist yet either;
 until Phase 6, back up by running `pg_dump` against the `db` container and
-copying the MinIO/S3 bucket contents yourself.
+copying the `spine_files` volume (or your S3 bucket) yourself.
 
 ## Architecture notes worth knowing before contributing
 

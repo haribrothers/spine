@@ -48,7 +48,7 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
           onBlur?.(event);
         }}
         className={cn(
-          "h-10 w-full rounded-sm border bg-surface px-2.5 text-right font-mono text-[14px] tabular-nums text-on-surface placeholder:text-on-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+          "h-10 w-full rounded-sm border bg-surface px-2.5 text-right text-[14px] tabular-nums text-on-surface placeholder:text-on-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
           error ? "border-overdue" : "border-border-strong",
           className,
         )}

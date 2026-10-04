@@ -103,7 +103,7 @@ export function ChartTooltipContent({
                 style={{ background: entryConfig?.color ?? "var(--color-primary)" }}
               />
               <span>{entryConfig?.label ?? key}</span>
-              <span className="ml-auto font-mono font-medium text-on-surface">{item.value}</span>
+              <span className="ml-auto font-medium tabular-nums text-on-surface">{item.value}</span>
             </div>
           );
         })}

@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { InvoiceRowActions } from "./invoice-row-actions";
-import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
+import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Invoice["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -54,6 +54,9 @@ export function InvoicesTable({
           <Badge className={STATUS_BADGE_CLASS[row.status]}>{INVOICE_STATUS_LABELS[row.status]}</Badge>
           {row.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
           {row.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
+          {PAYMENT_STATUS_LABELS[row.paymentStatus] && (
+            <Badge className={row.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[row.paymentStatus]}</Badge>
+          )}
         </div>
       ),
     },
@@ -66,9 +69,10 @@ export function InvoicesTable({
     {
       key: "total",
       header: "Total",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.totalAmount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.totalAmount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.totalAmount),
@@ -76,12 +80,15 @@ export function InvoicesTable({
     {
       key: "balanceDue",
       header: "Balance due",
-      render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
-        </span>
-      ),
-      sortValue: (row) => Number(row.balanceDue),
+      align: "right",
+      // US-OPS-21: a void invoice owes nothing, so it shows "—", not its old total.
+      render: (row) =>
+        row.status === "void" ? (
+          <span className="text-on-surface-muted">—</span>
+        ) : (
+          <span className="tabular-nums">{formatMoney(BigInt(row.balanceDue), row.currency)}</span>
+        ),
+      sortValue: (row) => (row.status === "void" ? 0 : Number(row.balanceDue)),
     },
     {
       key: "actions",

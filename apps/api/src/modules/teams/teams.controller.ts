@@ -57,6 +57,7 @@ export class TeamsController {
   }
 
   @Delete(":id")
+  @UseInterceptors(IdempotencyInterceptor)
   async remove(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     await this.teamsService.delete(orgId, id);

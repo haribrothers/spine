@@ -1,4 +1,4 @@
-/** Mirrors apps/api/src/db/schema/purchases.ts's `expenses`/`expenseCategories` row shapes — hand-written to match the API's JSON response, following vendor-bills/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+/** Mirrors apps/api/src/db/schema/purchases.ts's `expenses`/`expenseCategories` row shapes — hand-written to match the API's JSON response, following vendor-bills/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type ExpenseStatus = "submitted" | "approved" | "rejected";
 export type ExpensePaidBy = "company" | "employee";
 

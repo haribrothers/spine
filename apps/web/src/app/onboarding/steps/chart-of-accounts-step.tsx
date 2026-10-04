@@ -29,6 +29,8 @@ export interface ChartOfAccountsStepProps {
   onRename: (accountId: string, name: string) => Promise<void>;
   onContinue: () => void;
   onSkip?: () => void;
+  /** Rendered on the button — defaults to the wizard's "Continue"; Settings passes "Save" (US-SET-14). */
+  saveLabel?: string;
 }
 
 /**
@@ -38,7 +40,7 @@ export interface ChartOfAccountsStepProps {
  * read-only with a "System" badge; non-system accounts get an inline
  * rename. Nothing here can be hidden or deleted in this pass.
  */
-export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip }: ChartOfAccountsStepProps) {
+export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip, saveLabel = "Continue" }: ChartOfAccountsStepProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
@@ -118,7 +120,7 @@ export function ChartOfAccountsStep({ accounts, onRename, onContinue, onSkip }: 
           </Button>
         )}
         <Button onClick={onContinue} className="ml-auto">
-          Continue
+          {saveLabel}
         </Button>
       </div>
     </div>

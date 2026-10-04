@@ -96,7 +96,7 @@ Legacy: S-11.2
 
 **Implementation notes**
 - API: `GET /jobs/:id`, `GET /jobs/:id/milestones`, `GET /jobs/:id/photos`, `GET /jobs/:id/quotes` (contract addition, [D-073](../prd/12-decisions.md)). Field gets assigned jobs only, without money fields (US-JOB-19).
-- The subtitle shows the job number once jobs are numbered (US-JOB-22); until then only the customer.
+- The subtitle shows the job number next to the customer ("JOB-007 · Alan Brooks", US-JOB-22).
 
 ### US-MOB-06 · Keep financial reports off phones
 **Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobProfile`, `MobJobDetail`

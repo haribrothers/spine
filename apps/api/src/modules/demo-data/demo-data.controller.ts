@@ -7,10 +7,10 @@ import { DemoDataService } from "./demo-data.service";
 /**
  * Backs the onboarding "load demo data" option (welcome-step.tsx) and the
  * Settings "delete all demo data" action (settings/panes/data-pane.tsx).
- * `seed` is owner+staff (same bar as creating a contact/catalog item
- * manually); `deleteAll` is owner-only, matching SettingsController's own
- * "only the owner may change org-wide config" rule — bulk-deleting data is
- * at least as consequential as that.
+ * Both `seed` and `deleteAll` are Owner-only (US-OPS-20): loading or
+ * removing a whole demo dataset changes the organisation for everyone,
+ * the same bar as SettingsController's "only the owner may change
+ * org-wide config" rule.
  */
 @Controller("demo-data")
 export class DemoDataController {
@@ -23,7 +23,7 @@ export class DemoDataController {
   }
 
   @Post("seed")
-  @OrgRoles(["owner", "staff"])
+  @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
   async seed(@Session() session: UserSession) {
     const orgId = requireOrgId(session);

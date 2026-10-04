@@ -49,3 +49,51 @@ export function fromDecimalString(input: string, currency: string): bigint | nul
   const paddedFraction = fractionPart.padEnd(exponent, "0");
   return BigInt(wholePart) * 10n ** BigInt(exponent) + BigInt(paddedFraction || "0");
 }
+
+/** The true minus sign (U+2212) money is shown with, never a hyphen (D-089). */
+export const MINUS_SIGN = "−";
+
+/**
+ * US-OPS-24 (D-089) — the one way money is shown: the currency symbol,
+ * the locale's grouping and decimal marks, the currency's own number of
+ * decimals and a true minus sign. "$12,024.75", "−$4,335.00",
+ * "₹1,20,247.50", "12.024,75 €". `amount` is in minor units (a bigint, or
+ * the decimal-digit string the API sends).
+ */
+export function formatMoney(
+  amount: bigint | string | number,
+  currency: string,
+  locale = "en-US",
+  options: { currencyDisplay?: "symbol" | "code" | "narrowSymbol" } = {},
+): string {
+  const code = (currency || "USD").toUpperCase();
+  const minor = typeof amount === "bigint" ? amount : BigInt(typeof amount === "number" ? Math.round(amount) : amount || "0");
+  const decimals = minorUnitExponent(code);
+  const decimal = toDecimalString({ amount: minor, currency: code });
+  let formatter: Intl.NumberFormat;
+  try {
+    const intlOptions: Intl.NumberFormatOptions = {
+      style: "currency",
+      currency: code,
+      currencyDisplay: options.currencyDisplay ?? "symbol",
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    };
+    try {
+      formatter = new Intl.NumberFormat(locale || "en-US", intlOptions);
+    } catch {
+      formatter = new Intl.NumberFormat("en-US", intlOptions);
+    }
+  } catch {
+    formatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
+  }
+  // A decimal string keeps every digit exact; engines without string support get a Number.
+  let parts: Intl.NumberFormatPart[];
+  try {
+    parts = formatter.formatToParts(decimal as unknown as number);
+    if (parts.some((p) => p.type === "nan")) throw new Error("no string support");
+  } catch {
+    parts = formatter.formatToParts(Number(decimal));
+  }
+  return parts.map((p) => (p.type === "minusSign" ? MINUS_SIGN : p.value)).join("");
+}

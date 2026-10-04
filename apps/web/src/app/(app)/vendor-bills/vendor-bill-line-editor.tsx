@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
-import { computeLineTax, money, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Client-side line shape while editing — money fields as `bigint` (never a
@@ -70,13 +70,13 @@ function resolveLineTaxRates(
 ): ComputeTaxRate[] {
   if (line.taxRateId) {
     const rate = taxRates.find((r) => r.id === line.taxRateId);
-    return rate ? [{ id: rate.id, name: rate.name, rate: rate.rate / 100, isCompound: rate.isCompound }] : [];
+    return rate ? [{ id: rate.id, name: rate.name, percent: rate.rate, isCompound: rate.isCompound }] : [];
   }
   if (line.taxGroupId) {
     const group = taxGroups.find((g) => g.id === line.taxGroupId);
-    return group ? group.taxRates.map((r) => ({ id: r.id, name: r.name, rate: r.rate / 100, isCompound: r.isCompound })) : [];
+    return group ? group.taxRates.map((r) => ({ id: r.id, name: r.name, percent: r.rate, isCompound: r.isCompound })) : [];
   }
-  return line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }] : [];
+  return line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [];
 }
 
 /**
@@ -92,9 +92,15 @@ export function computeLinePreview(
   taxRates: TaxRateOption[] = [],
   taxGroups: TaxGroupOption[] = [],
 ) {
-  const gross = BigInt(Math.round(line.quantity * Number(line.unitPriceAmount)));
-  const taxResult = computeLineTax(money(gross, currency), resolveLineTaxRates(line, taxRates, taxGroups), line.isTaxInclusive);
-  return { subtotal: gross, tax: taxResult.taxAmount.amount, total: taxResult.total.amount };
+  // US-TAX-07: the same exact shared line maths the server uses, so the preview matches to the cent.
+  const computed = computeDocumentLine({
+    quantity: line.quantity,
+    unitPriceAmount: BigInt(line.unitPriceAmount),
+    currency,
+    rates: resolveLineTaxRates(line, taxRates, taxGroups),
+    inclusive: line.isTaxInclusive,
+  });
+  return { subtotal: computed.netAmount, tax: computed.tax.taxAmount.amount, total: computed.tax.total.amount };
 }
 
 /**
@@ -273,8 +279,8 @@ export function VendorBillLineEditor({
                         <MoneyInput value={line.unitPriceAmount} onValueChange={(v) => updateLine(index, { unitPriceAmount: v })} currency={currency} />
                       </FieldLabel>
                       <FieldLabel label="Line total">
-                        <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 font-mono text-[14px] tabular-nums">
-                          {toDecimalString({ amount: preview.total, currency })}
+                        <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
+                          {formatMoney(preview.total, currency)}
                         </div>
                       </FieldLabel>
                     </div>

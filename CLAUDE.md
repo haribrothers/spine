@@ -21,7 +21,7 @@ Spine is a self-hosted business management app for small service and project bus
 - Don't build beyond the story. Non-goals in `docs/prd/00-overview.md` are out of scope (no multi-tenant SaaS, multi-org, payroll, inventory valuation, multi-currency, bank feeds, statutory filing).
 
 ## Stack (don't substitute)
-TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@spine/ui` (Radix) · NestJS 11 REST + OpenAPI · PostgreSQL 16 + Drizzle · Better Auth · pg-boss · S3/MinIO · @react-pdf · Expo SDK 57 + expo-router + `@spine/ui-native` (`@expo/ui`, NativeWind) · Vitest, Jest, Playwright, axe-core · Docker Compose + Caddy.
+TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@spine/ui` (Radix) · NestJS 11 REST + OpenAPI · PostgreSQL 16 + Drizzle · Better Auth · pg-boss · files via `StorageDriver` (local volume; S3 optional) · @react-pdf · Expo SDK 57 + expo-router + `@spine/ui-native` (`@expo/ui`, NativeWind) · Vitest, Jest, Playwright, axe-core · Docker Compose + Caddy.
 
 ## Architecture rules
 - The ledger is derived, never authored: domain service → posting rule (one module, `docs/prd/06-ledger-posting-rules.md`) → balanced journal entry, in the same transaction as the business document.

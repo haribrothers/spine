@@ -2,7 +2,7 @@ import { ForbiddenException } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { CAPABILITIES, type Capability } from "@spine/shared";
 import type { Database } from "../db/client";
-import { member, teamMemberships, teamPrivileges } from "../db/schema";
+import { member, teamMemberships, teamPrivileges, teams } from "../db/schema";
 
 /**
  * Single source of truth for which `_own` capabilities Field always passes
@@ -77,6 +77,15 @@ export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set([
  * failing closed for Field, matching Contacts/Catalogue/Leads/Activities/
  * Quotes/Meetings, none of which ever granted Field write access.
  */
+/** The caller's role in the organisation, or null when they aren't a member. */
+export async function getMemberRole(db: Database, orgId: string, userId: string): Promise<string | null> {
+  const [membership] = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+  return membership?.role ?? null;
+}
+
 export async function hasCapability(
   db: Database,
   actor: { orgId: string; userId: string },
@@ -100,7 +109,13 @@ export async function hasCapability(
     return false;
   }
 
-  const teamIds = await db.select({ teamId: teamMemberships.teamId }).from(teamMemberships).where(eq(teamMemberships.memberId, membership.id));
+  // Only Teams in this organisation count: a membership that moved between
+  // organisations must never carry another organisation's grants with it.
+  const teamIds = await db
+    .select({ teamId: teamMemberships.teamId })
+    .from(teamMemberships)
+    .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+    .where(and(eq(teamMemberships.memberId, membership.id), eq(teams.orgId, actor.orgId)));
   if (teamIds.length === 0) return false;
 
   const [grant] = await db
@@ -200,7 +215,13 @@ export async function getEffectiveCapabilities(db: Database, actor: { orgId: str
     return allFalse;
   }
 
-  const teamIds = await db.select({ teamId: teamMemberships.teamId }).from(teamMemberships).where(eq(teamMemberships.memberId, membership.id));
+  // Only Teams in this organisation count: a membership that moved between
+  // organisations must never carry another organisation's grants with it.
+  const teamIds = await db
+    .select({ teamId: teamMemberships.teamId })
+    .from(teamMemberships)
+    .innerJoin(teams, eq(teams.id, teamMemberships.teamId))
+    .where(and(eq(teamMemberships.memberId, membership.id), eq(teams.orgId, actor.orgId)));
   if (teamIds.length === 0) {
     return allFalse;
   }

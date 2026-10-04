@@ -6,7 +6,7 @@ import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
-import { InvoicePdfService } from "../pdf/invoice-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 
 /**
  * PRD §2.1/§9 — Invoices use the own/others capability split:
@@ -28,7 +28,7 @@ import { InvoicePdfService } from "../pdf/invoice-pdf.service";
 export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
-    private readonly invoicePdfService: InvoicePdfService,
+    private readonly issuedPdf: IssuedPdfService,
   ) {}
 
   @Get()
@@ -50,11 +50,11 @@ export class InvoicesController {
     return this.invoicesService.getHistory(orgId, id);
   }
 
-  /** Live-rendered branded PDF, same convention as QuotesController.getPdf. */
+  /** US-INV-17 — live for a draft; the PDF stored at issue for an issued invoice, same as QuotesController.getPdf. */
   @Get(":id/pdf")
   async getPdf(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
     const orgId = requireOrgId(session);
-    const { buffer, filename } = await this.invoicePdfService.render(orgId, id);
+    const { buffer, filename } = await this.issuedPdf.forDownload(orgId, "invoice", id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename="${filename}"`);
     res.send(buffer);

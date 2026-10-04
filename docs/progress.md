@@ -211,7 +211,6 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-QUO-20 · Show how a quote was accepted
 - [x] US-JOB-15 · Assign crew to a job
 - [ ] US-JOB-16 · Show field crew only their assigned jobs
-- [ ] US-JOB-19 · Keep money and unassigned jobs away from field crew
 - [ ] US-MOB-01 · Sign in to my company's Spine on my phone
 - [ ] US-MOB-02 · Stay signed in and sign out safely
 - [ ] US-MOB-03 · See today's jobs with addresses and tap-to-call
@@ -236,52 +235,53 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 6 · Fix and harden
 
-- [ ] US-ONB-12 · Show the setup checklist to owners only
-- [ ] US-AUTH-08 · See that sign-up is invite-only
-- [ ] US-AUTH-09 · Ask for a password reset link
-- [ ] US-AUTH-10 · Choose a new password from the reset link
-- [ ] US-AUTH-11 · See why an invitation can't be used
-- [ ] US-AUTH-12 · Keep my unsaved work when my session expires
-- [ ] US-QUO-21 · Show a branded page for an expired or invalid link
-- [ ] US-QUO-22 · Keep emailed links working until the quote is replaced
-- [ ] US-QUO-23 · Explain a repeat conversion clearly
-- [ ] US-JOB-20 · Own a job's milestones through the job
-- [ ] US-JOB-21 · Show retention on a progress invoice
-- [ ] US-JOB-22 · Number every job
-- [ ] US-JOB-23 · Name new jobs after their quote
-- [ ] US-INV-15 · Print payment instructions on invoices
-- [ ] US-INV-16 · Set payment instructions in Settings
-- [ ] US-INV-17 · Keep the exact PDF that was issued
-- [ ] US-PAY-10 · Export receivables to CSV
-- [ ] US-PAY-13 · Allocate a deposit payment to its advance invoice
-- [ ] US-PUR-14 · Export payables to CSV
-- [ ] US-PUR-19 · Manage expense categories from Expenses
-- [ ] US-PUR-20 · Stop staff approving their own expenses
-- [ ] US-TAX-07 · Store rates, quantities and percentages exactly
-- [ ] US-RPT-12 · Warn me if the books ever stop balancing
-- [ ] US-RPT-13 · See a Trial Balance
-- [ ] US-RPT-14 · See tax collected and paid on Reports
-- [ ] US-NTF-10 · Send every email in one branded layout
-- [ ] US-NTF-11 · Use the branded layout for every email type
-- [ ] US-NTF-12 · Turn on push from my own profile
-- [ ] US-TEAM-15 · Use the business name everywhere the organisation is named
-- [ ] US-TEAM-16 · Confirm before making someone an owner
-- [ ] US-TEAM-17 · Protect the Primary Owner's row
-- [ ] US-TEAM-18 · Show each person only the sections they can open
-- [ ] US-SET-13 · Open contact history the same way as everywhere else
-- [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
-- [ ] US-OPS-08 · Make every mutating request safe to repeat
-- [ ] US-OPS-10 · Style confirmations by what they do
-- [ ] US-OPS-12 · Explain why I can't open a page
-- [ ] US-OPS-20 · Close the read-access gaps found in review
-- [ ] US-OPS-21 · Remove developer wording from the interface
-- [ ] US-OPS-24 · Show money the same way everywhere
-- [ ] US-OPS-25 · Keep text readable on coloured controls in dark mode
-- [ ] US-OPS-27 · Store files on local disk by default
-- [ ] US-OPS-28 · Prove stored files are intact
-- [ ] US-OPS-29 · Accept only safe uploads
-- [ ] US-OPS-30 · Move existing files off MinIO
-- [ ] US-OPS-31 · Warn before the disk fills up
+- [x] US-ONB-12 · Show the setup checklist to owners only
+- [x] US-AUTH-08 · See that sign-up is invite-only
+- [x] US-AUTH-09 · Ask for a password reset link
+- [x] US-AUTH-10 · Choose a new password from the reset link
+- [x] US-AUTH-11 · See why an invitation can't be used
+- [x] US-AUTH-12 · Keep my unsaved work when my session expires
+- [x] US-QUO-21 · Show a branded page for an expired or invalid link
+- [x] US-QUO-22 · Keep emailed links working until the quote is replaced
+- [x] US-QUO-23 · Explain a repeat conversion clearly
+- [x] US-JOB-19 · Keep money and unassigned jobs away from field crew
+- [x] US-JOB-20 · Own a job's milestones through the job
+- [x] US-JOB-21 · Show retention on a progress invoice
+- [x] US-JOB-22 · Number every job
+- [x] US-JOB-23 · Name new jobs after their quote
+- [x] US-INV-15 · Print payment instructions on invoices
+- [x] US-INV-16 · Set payment instructions in Settings
+- [x] US-INV-17 · Keep the exact PDF that was issued
+- [x] US-PAY-10 · Export receivables to CSV
+- [x] US-PAY-13 · Allocate a deposit payment to its advance invoice
+- [x] US-PUR-14 · Export payables to CSV
+- [x] US-PUR-19 · Manage expense categories from Expenses
+- [x] US-PUR-20 · Stop staff approving their own expenses
+- [x] US-TAX-07 · Store rates, quantities and percentages exactly
+- [x] US-RPT-12 · Warn me if the books ever stop balancing
+- [x] US-RPT-13 · See a Trial Balance
+- [x] US-RPT-14 · See tax collected and paid on Reports
+- [x] US-NTF-10 · Send every email in one branded layout
+- [x] US-NTF-11 · Use the branded layout for every email type
+- [x] US-NTF-12 · Turn on push from my own profile
+- [x] US-TEAM-15 · Use the business name everywhere the organisation is named
+- [x] US-TEAM-16 · Confirm before making someone an owner
+- [x] US-TEAM-17 · Protect the Primary Owner's row
+- [x] US-TEAM-18 · Show each person only the sections they can open
+- [x] US-SET-13 · Open contact history the same way as everywhere else
+- [x] US-SET-14 · Show "Save" on setup steps reused in Settings
+- [x] US-OPS-08 · Make every mutating request safe to repeat
+- [x] US-OPS-10 · Style confirmations by what they do
+- [x] US-OPS-12 · Explain why I can't open a page
+- [x] US-OPS-20 · Close the read-access gaps found in review
+- [x] US-OPS-21 · Remove developer wording from the interface
+- [x] US-OPS-24 · Show money the same way everywhere
+- [x] US-OPS-25 · Keep text readable on coloured controls in dark mode
+- [x] US-OPS-27 · Store files on local disk by default
+- [x] US-OPS-28 · Prove stored files are intact
+- [x] US-OPS-29 · Accept only safe uploads
+- [x] US-OPS-30 · Move existing files off MinIO
+- [x] US-OPS-31 · Warn before the disk fills up
 
 ## Phase 7 · Product upgrades
 

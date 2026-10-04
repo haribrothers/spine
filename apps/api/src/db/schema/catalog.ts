@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, boolean, real, timestamp, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, boolean, timestamp, index, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { accounts } from "./ledger";
@@ -70,7 +70,7 @@ export const catalogItems = pgTable(
      * CatalogService keeps this column in sync (mirrors the chosen rate's
      * blended percentage) purely so nothing reading it directly breaks.
      */
-    defaultTaxRatePercentage: real("default_tax_rate_percentage").notNull().default(0),
+    defaultTaxRatePercentage: numeric("default_tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** At most one of these two is set — enforced at the service layer, same convention as quote_lines/invoice_lines. */
     defaultTaxRateId: uuid("default_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     defaultTaxGroupId: uuid("default_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),

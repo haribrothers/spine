@@ -24,6 +24,10 @@ services:
       db:
         condition: service_healthy
     env_file: .env
+    # Attachments, photos, logos and issued PDFs (local storage driver, D-102).
+    # `docker compose down -v` deletes this volume — back it up with the database.
+    volumes:
+      - spine_files:/data/files
     profiles: ["minimal", "full"]
 
   web:
@@ -53,16 +57,21 @@ services:
       - caddy_config:/config
     profiles: ["minimal", "full"]
 
-  minio:
-    image: minio/minio
+  # Optional self-hosted S3 store (D-103) for owners who want STORAGE_DRIVER=s3
+  # without a cloud account: `docker compose --profile minimal --profile rustfs up -d`,
+  # then S3_ENDPOINT=http://rustfs:9000 and your own S3_ACCESS_KEY/S3_SECRET_KEY.
+  # No ports are published: only the API reaches it. Pinned; revisit once its
+  # single-disk issues close.
+  rustfs:
+    image: rustfs/rustfs:1.0.1
     restart: unless-stopped
-    command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-spine}
-      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-spinespine}
+      RUSTFS_ACCESS_KEY: ${S3_ACCESS_KEY:-}
+      RUSTFS_SECRET_KEY: ${S3_SECRET_KEY:-}
     volumes:
-      - minio_data:/data
-    profiles: ["full"]
+      - rustfs_data:/data
+    mem_limit: 1g
+    profiles: ["rustfs"]
 
   tunnel:
     image: cloudflare/cloudflared:latest
@@ -74,6 +83,7 @@ services:
 
 volumes:
   pgdata:
-  minio_data:
+  spine_files:
+  rustfs_data:
   caddy_data:
   caddy_config:

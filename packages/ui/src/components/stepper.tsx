@@ -39,7 +39,7 @@ export function Stepper({ steps, currentIndex, className, ...props }: StepperPro
             <span
               className={cn(
                 "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold",
-                isComplete && "border-primary bg-primary text-white",
+                isComplete && "border-primary bg-primary text-on-primary",
                 isCurrent && !isComplete && "border-primary text-primary",
                 !isComplete && !isCurrent && "border-border-strong text-on-surface-muted",
               )}

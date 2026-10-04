@@ -19,6 +19,8 @@ import {
 } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
+import { useSignupStatus } from "../../lib/signup-status";
+import { safeNextPath } from "../../lib/safe-next";
 
 export default function LoginPage() {
   return (
@@ -33,6 +35,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const signupStatus = useSignupStatus();
   const router = useRouter();
   const searchParams = useSearchParams();
   // Set by accept-invite when an invited person without a session needs to
@@ -62,7 +65,7 @@ function LoginForm() {
       return;
     }
 
-    router.push(next && next.startsWith("/") ? next : "/dashboard");
+    router.push(safeNextPath(next) ?? "/dashboard");
   }
 
   return (
@@ -125,17 +128,25 @@ function LoginForm() {
               )}
             </FormField>
 
+            {/* US-AUTH-09 */}
+            <Link href="/forgot-password" className="-mt-2 self-end text-[13px] text-primary hover:underline">
+              Forgot password?
+            </Link>
+
             <Button type="submit" disabled={loading} className="mt-1">
               {loading ? <Spinner size="sm" /> : "Log in"}
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-[13px] text-on-surface-muted">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
+          {/* US-AUTH-08: only while the instance has no accounts yet. */}
+          {signupStatus?.open && (
+            <p className="mt-4 text-center text-[13px] text-on-surface-muted">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </main>

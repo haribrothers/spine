@@ -90,26 +90,6 @@ export interface Activity {
   updatedAt: string;
 }
 
-/** Mirrors apps/api/src/modules/audit/audit-log.service.ts's `listForContact` row shape. */
-export type AuditEntityType = "contact" | "contact_person" | "address" | "lead" | "activity" | "meeting";
-
-export interface AuditFieldChange {
-  field: string;
-  from: unknown;
-  to: unknown;
-}
-
-export interface AuditEntry {
-  id: string;
-  action: string;
-  entityType: AuditEntityType;
-  entityId: string;
-  changes: AuditFieldChange[] | null;
-  createdAt: string;
-  actorUserId: string | null;
-  actorName: string | null;
-}
-
 export const LEAD_STAGES: LeadStage[] = ["new", "qualified", "proposal", "won", "lost"];
 export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
   new: "New",

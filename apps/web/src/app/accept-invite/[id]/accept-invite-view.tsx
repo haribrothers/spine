@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { XCircle } from "lucide-react";
 import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { authClient } from "../../../lib/auth-client";
@@ -18,11 +19,12 @@ interface InvitationInfo {
   inviterEmail: string;
 }
 
-interface PublicInvitationPreview {
-  email: string;
-  role: string;
-  organizationName: string;
-}
+/** `GET /public/invitations/:id`: details only while the invitation can still be used (US-AUTH-11). */
+type PublicInvitationPreview =
+  | { status: "pending"; email: string; role: string; organizationName: string }
+  | { status: "expired" | "canceled" | "accepted" | "rejected" };
+
+type PreviewState = { kind: "loading" } | { kind: "unusable" } | { kind: "usable"; email: string };
 
 /**
  * PRD S-10.2/§2.1 — the other half of sending an invite. Better Auth's
@@ -49,23 +51,21 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
   // /public/invitations/:id instead, which exposes just the email/role/org
   // name for a still-pending invitation — no session required, same trust
   // model as a public quote-acceptance link.
-  const [preview, setPreview] = useState<PublicInvitationPreview | null>(null);
+  // Fetched signed in or out: an unknown, expired, cancelled or answered
+  // invitation shows "This invitation can't be used" either way (US-AUTH-11).
+  const [preview, setPreview] = useState<PreviewState>({ kind: "loading" });
 
   const sessionEmail = session?.user?.email?.toLowerCase();
 
   useEffect(() => {
-    if (sessionLoading || session) return;
     apiClient
       .get<PublicInvitationPreview>(`/public/invitations/${invitationId}`)
-      .then(setPreview)
-      .catch(() => {
-        // No preview available (expired/invalid) — NeedsAccountPrompt falls
-        // back to an unlocked email field rather than blocking sign up.
-      });
-  }, [invitationId, session, sessionLoading]);
+      .then((data) => setPreview(data.status === "pending" ? { kind: "usable", email: data.email } : { kind: "unusable" }))
+      .catch(() => setPreview({ kind: "unusable" }));
+  }, [invitationId]);
 
   useEffect(() => {
-    if (sessionLoading || !session) return;
+    if (sessionLoading || !session || preview.kind !== "usable") return;
     setLoadingInvitation(true);
     setLoadError(null);
     authClient.organization
@@ -78,7 +78,7 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
         setInvitation(data as InvitationInfo);
       })
       .finally(() => setLoadingInvitation(false));
-  }, [invitationId, session, sessionLoading]);
+  }, [invitationId, session, sessionLoading, preview.kind]);
 
   async function handleAccept() {
     setActing("accept");
@@ -107,6 +107,8 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
 
   const emailMismatch = Boolean(session && invitation && sessionEmail !== invitation.email.toLowerCase());
 
+  if (preview.kind === "unusable") return <InviteUnusable />;
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <div className="flex w-full max-w-sm items-center justify-center">
@@ -127,12 +129,12 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
           <CardDescription>Join an organisation on Spine.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          {sessionLoading ? (
+          {sessionLoading || preview.kind === "loading" ? (
             <div className="flex justify-center py-4">
               <Spinner />
             </div>
           ) : !session ? (
-            <NeedsAccountPrompt invitationId={invitationId} email={preview?.email} />
+            <NeedsAccountPrompt invitationId={invitationId} email={preview.email} />
           ) : loadingInvitation ? (
             <div className="flex justify-center py-4">
               <Spinner />
@@ -180,6 +182,35 @@ export function AcceptInviteView({ invitationId }: { invitationId: string }) {
               </div>
             </>
           ) : null}
+        </CardContent>
+      </Card>
+    </main>
+  );
+}
+
+/** US-AUTH-11 — never names the business, so an unknown id reveals nothing. */
+function InviteUnusable() {
+  return (
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
+      <div className="flex w-full max-w-sm items-center justify-center">
+        <Image src="/spine-logo-horizontal.png" alt="Spine" width={140} height={41} priority className="dark:hidden" />
+        <Image src="/spine-logo-horizontal-light.png" alt="Spine" width={140} height={41} priority className="hidden dark:block" />
+      </div>
+      <ThemeToggle />
+      <Card className="w-full max-w-sm" data-testid="invite-unusable">
+        <CardHeader>
+          <span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-overdue-bg text-overdue" aria-hidden="true">
+            <XCircle size={18} />
+          </span>
+          <CardTitle>This invitation can&apos;t be used</CardTitle>
+          <CardDescription>
+            It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button asChild variant="secondary" className="w-full">
+            <Link href="/login">Log in instead</Link>
+          </Button>
         </CardContent>
       </Card>
     </main>

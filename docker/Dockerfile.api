@@ -10,9 +10,16 @@ RUN corepack enable
 FROM base AS deps
 WORKDIR /repo
 COPY pnpm-workspace.yaml package.json pnpm-lock.yaml* ./
+# pnpm reads patchedDependencies (root package.json) during install.
+COPY patches patches
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/config/package.json packages/config/package.json
+# `canvas` is a test-only dependency (jsdom in packages/ui's tests) that
+# still lands here through peer dependencies; nothing in production loads
+# it, and it can't compile on Alpine without cairo/pango, so skip its build
+# (only in this image — dev machines still build it for the UI tests).
+RUN node -e 'const f="package.json",p=JSON.parse(require("fs").readFileSync(f));p.pnpm.neverBuiltDependencies=["canvas"];require("fs").writeFileSync(f,JSON.stringify(p,null,2))'
 RUN pnpm install --frozen-lockfile --filter @spine/api...
 
 FROM base AS build
@@ -31,5 +38,10 @@ FROM base AS runtime
 WORKDIR /repo
 ENV NODE_ENV=production
 COPY --from=build /repo /repo
+# The local storage driver writes to the spine_files volume mounted here
+# (D-102). A fresh named volume takes this folder's owner, so the API runs
+# as the image's non-root `node` user and still owns its files.
+RUN mkdir -p /data/files && chown node:node /data/files
+USER node
 EXPOSE 4000
 CMD ["node", "apps/api/dist/main.js"]

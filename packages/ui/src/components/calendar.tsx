@@ -1273,7 +1273,7 @@ function CalendarWeekView({
               <div
                 className={cn(
                   "mx-auto mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-[13px] font-semibold",
-                  isToday(day) ? "bg-primary text-white" : "text-on-surface",
+                  isToday(day) ? "bg-primary text-on-primary" : "text-on-surface",
                 )}
               >
                 {format(day, "d")}
@@ -1384,7 +1384,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                     aria-label={`Open ${format(day, "EEEE, MMMM d, yyyy")} in day view`}
                     className={cn(
                       "flex h-6 w-6 items-center justify-center self-start rounded-full text-[12.5px] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                      isToday(day) ? "bg-primary text-white" : inMonth ? "text-on-surface" : "text-on-surface-muted",
+                      isToday(day) ? "bg-primary text-on-primary" : inMonth ? "text-on-surface" : "text-on-surface-muted",
                     )}
                     onClick={(e) => {
                       e.stopPropagation();

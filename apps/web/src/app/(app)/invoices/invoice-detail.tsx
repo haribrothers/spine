@@ -20,7 +20,6 @@ import {
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
@@ -31,7 +30,8 @@ import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
 import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
-import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
+import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
@@ -212,6 +212,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const canSendReminder = invoice.isOverdue && hasSendReminderCapability;
   const balanceDue = BigInt(invoice.balanceDue);
   const amountPaid = BigInt(invoice.amountPaid);
+  const retentionAmount = BigInt(invoice.retentionAmount);
   // S-05.4 — an advance invoice never posts to AR on issue (see
   // InvoicesService.issue's own doc comment), so it has no real ledger
   // balance to record a payment or credit note against — that money
@@ -247,6 +248,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               <Badge className={STATUS_BADGE_CLASS[invoice.status]}>{INVOICE_STATUS_LABELS[invoice.status]}</Badge>
               {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
               {invoice.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
+          {PAYMENT_STATUS_LABELS[invoice.paymentStatus] && (
+            <Badge className={invoice.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[invoice.paymentStatus]}</Badge>
+          )}
             </div>
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {invoice.contactName ?? "Unknown contact"}
@@ -339,6 +343,27 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         )}
       </Card>
 
+      {/* US-JOB-21: which job and milestone this invoice bills. */}
+      {invoice.job && (
+        <Card className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px]" data-testid="invoice-job-card">
+          <span className="text-on-surface-muted">
+            Job{" "}
+            <Link href={`/jobs/${invoice.job.id}`} className="text-primary hover:underline">
+              {invoice.job.number ? `${invoice.job.number} · ${invoice.job.name}` : invoice.job.name}
+            </Link>
+          </span>
+          {invoice.milestone && (
+            <span className="text-on-surface-muted">
+              Milestone{" "}
+              <Link href={`/jobs/${invoice.job.id}`} className="text-primary hover:underline">
+                {invoice.milestone.name}
+                {invoice.milestone.percent !== null && ` (${invoice.milestone.percent}%)`}
+              </Link>
+            </span>
+          )}
+        </Card>
+      )}
+
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
         <div className="flex flex-col divide-y divide-border">
@@ -349,15 +374,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: invoice.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), invoice.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: invoice.currency })}
+                <span className="shrink-0 tabular-nums text-on-surface">
+                  {formatMoney(BigInt(line.lineTotalAmount), invoice.currency)}
                 </span>
               )}
             </div>
@@ -372,7 +397,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
         <TotalRow
           label="Discount"
-          value={`-${toDecimalString({ amount: BigInt(invoice.discountAmount), currency: invoice.currency })}`}
+          value={formatMoney(-(BigInt(invoice.discountAmount)), invoice.currency)}
           currency=""
           raw
         />
@@ -380,11 +405,24 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         <div className="border-t border-border pt-2">
           <TotalRow label="Total" value={invoice.totalAmount} currency={invoice.currency} emphasize />
         </div>
+        {retentionAmount > 0n && (
+          <>
+            <TotalRow
+              label={`Retention held (${invoice.retention?.percent ?? "0"}%)`}
+              value={formatMoney(-(retentionAmount), invoice.currency)}
+              currency=""
+              raw
+            />
+            <div className="border-t border-border pt-2">
+              <TotalRow label="Amount due" value={(BigInt(invoice.totalAmount) - retentionAmount).toString()} currency={invoice.currency} emphasize />
+            </div>
+          </>
+        )}
         {amountPaid > 0n && (
-          <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: invoice.currency })}`} currency="" raw />
+          <TotalRow label="Paid" value={formatMoney(-(amountPaid), invoice.currency)} currency="" raw />
         )}
         {creditedAmount > 0n && (
-          <TotalRow label="Credited" value={`-${toDecimalString({ amount: creditedAmount, currency: invoice.currency })}`} currency="" raw />
+          <TotalRow label="Credited" value={formatMoney(-(creditedAmount), invoice.currency)} currency="" raw />
         )}
         {(amountPaid > 0n || creditedAmount > 0n) && (
           <div className="border-t border-border pt-2">
@@ -392,6 +430,13 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </div>
         )}
       </Card>
+
+      {retentionAmount > 0n && invoice.retention && (
+        <p className="text-[12px] text-on-surface-muted" data-testid="retention-note">
+          Retention is held in Retention Receivable until you release it from the job. Held on this job so far:{" "}
+          {formatMoney(BigInt(invoice.retention.heldOnJob), invoice.currency)}.
+        </p>
+      )}
 
       {(invoice.notes || invoice.termsAndConditions) && (
         <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -494,14 +539,14 @@ function TotalRow({
   raw?: boolean;
   critical?: boolean;
 }) {
-  const display = raw ? value : `${toDecimalString({ amount: BigInt(value), currency })} ${currency}`;
+  const display = raw ? value : formatMoney(BigInt(value), currency);
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
       <span
-        className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
+        className={`tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
       >
         {display}
       </span>

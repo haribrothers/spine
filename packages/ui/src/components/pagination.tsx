@@ -39,7 +39,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
           className={cn(
             "flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             p === page
-              ? "bg-primary text-white"
+              ? "bg-primary text-on-primary"
               : "text-on-surface-muted hover:bg-surface-sunken hover:text-on-surface",
           )}
         >

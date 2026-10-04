@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Button, Dialog, DialogBody, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Spinner } from "@spine/ui";
 import { History } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { describeHistoryEntry } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 
 export interface AuditFieldChange {
@@ -23,45 +24,6 @@ export interface AuditEntry {
   actorName: string | null;
 }
 
-const ACTION_VERBS: Record<string, string> = {
-  created: "created",
-  updated: "updated",
-  issued: "issued",
-  voided: "voided",
-  deleted: "deleted",
-  archived: "archived",
-  restored: "restored",
-  email_queued: "emailed",
-  reminder_queued: "sent a reminder for",
-};
-
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return "empty";
-  if (typeof value === "string" && value.length > 60) return `${value.slice(0, 60)}…`;
-  return String(value);
-}
-
-/**
- * Renders one entry as "{actor} {verb} {subjectLabel}[: field change]" —
- * e.g. "Jane Doe updated this invoice: notes empty → Rush order". `changes`
- * (an array of `{field, from, to}`, per AuditLogService's shallow-diff
- * shape) drives the optional "field a → b" suffix; entries with no changes
- * (issue/void/delete, which are state transitions with nothing to diff)
- * just show the sentence without a suffix.
- */
-function describeEntry(entry: AuditEntry, subjectLabel: string): string {
-  const actor = entry.actorName ?? "Someone";
-  const verb = ACTION_VERBS[entry.action] ?? entry.action;
-  const base = `${actor} ${verb} ${subjectLabel}`;
-
-  if (!entry.changes || entry.changes.length === 0) {
-    return base;
-  }
-
-  const fieldSummary = entry.changes.map((c) => `${c.field} ${formatValue(c.from)} → ${formatValue(c.to)}`).join(", ");
-  return `${base}: ${fieldSummary}`;
-}
-
 /**
  * A subtle "History" trigger button that opens a Dialog on click, rather
  * than rendering the list inline and unconditionally — user feedback was
@@ -72,8 +34,18 @@ function describeEntry(entry: AuditEntry, subjectLabel: string): string {
  * never opened costs nothing extra — same "only poll/fetch while open"
  * convention as EmailQueueDialog. `subjectLabel` is the human phrase
  * substituted into "{actor} {verb} {subjectLabel}" — e.g. "this invoice".
+ * Every entry is worded by `describeHistoryEntry` (US-SET-13).
  */
-export function HistorySection({ endpoint, subjectLabel }: { endpoint: string; subjectLabel: string }) {
+export function HistorySection({
+  endpoint,
+  subjectLabel,
+  ownEntityType,
+}: {
+  endpoint: string;
+  subjectLabel: string;
+  /** For a history that also lists related records (a contact's invoices, say): which entries are this record's own. */
+  ownEntityType?: string;
+}) {
   const [open, setOpen] = useState(false);
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
 
@@ -102,7 +74,7 @@ export function HistorySection({ endpoint, subjectLabel }: { endpoint: string; s
             <ul className="flex flex-col gap-2">
               {entries.map((entry) => (
                 <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
-                  <span className="text-on-surface">{describeEntry(entry, subjectLabel)}</span>
+                  <span className="text-on-surface">{describeHistoryEntry(entry, subjectLabel, ownEntityType)}</span>
                   <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
                     {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
                   </span>

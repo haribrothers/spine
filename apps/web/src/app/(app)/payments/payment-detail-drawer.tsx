@@ -22,7 +22,6 @@ import {
   DrawerTitle,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -30,6 +29,7 @@ import { HistorySection } from "../../../components/history-section";
 import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * `GET /payments/:id/pdf` streams a binary PDF, not JSON — same reasoning
@@ -158,15 +158,15 @@ export function PaymentDetailDrawer({
                   <Field label="Reference" value={payment.reference ?? "—"} />
                   <Field
                     label="Amount"
-                    value={`${toDecimalString({ amount: BigInt(payment.amount), currency: payment.currency })} ${payment.currency}`}
+                    value={formatMoney(BigInt(payment.amount), payment.currency)}
                   />
                   <Field
                     label="Allocated"
-                    value={`${toDecimalString({ amount: BigInt(payment.allocatedAmount), currency: payment.currency })} ${payment.currency}`}
+                    value={formatMoney(BigInt(payment.allocatedAmount), payment.currency)}
                   />
                   <Field
                     label="Unallocated"
-                    value={`${toDecimalString({ amount: BigInt(payment.unallocatedAmount), currency: payment.currency })} ${payment.currency}`}
+                    value={formatMoney(BigInt(payment.unallocatedAmount), payment.currency)}
                   />
                 </div>
 
@@ -174,7 +174,7 @@ export function PaymentDetailDrawer({
                   <h3 className="mb-2 text-[13px] font-semibold text-on-surface-muted">Allocated to</h3>
                   {!payment.allocations?.length ? (
                     <p className="text-[13px] text-on-surface-muted">
-                      Not allocated to any invoice — held entirely as unallocated customer credit (S-06.4).
+                      Not allocated to any invoice — held entirely as unallocated customer credit.
                     </p>
                   ) : (
                     <div className="flex flex-col divide-y divide-border">
@@ -183,8 +183,8 @@ export function PaymentDetailDrawer({
                           <Link href={`/invoices/${a.invoiceId}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
                             {a.invoiceNumber ?? "Invoice"}
                           </Link>
-                          <span className="font-mono text-[13px] tabular-nums text-on-surface">
-                            {toDecimalString({ amount: BigInt(a.amount), currency: payment.currency })} {payment.currency}
+                          <span className="text-[13px] tabular-nums text-on-surface">
+                            {formatMoney(BigInt(a.amount), payment.currency)}
                           </span>
                         </div>
                       ))}
@@ -255,7 +255,7 @@ export function PaymentDetailDrawer({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               {busy ? <Spinner size="sm" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

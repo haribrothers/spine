@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -155,23 +155,8 @@ export const quotes = pgTable(
     /** Phase 5 (Mobile, S-11.7) — see quoteAcceptanceMethodEnum's own doc comment above. Both null unless/until this quote is accepted via POST /quotes/:id/accept-in-person specifically (never set by the public-link accept path). */
     acceptanceMethod: quoteAcceptanceMethodEnum("acceptance_method"),
     acceptedByUserId: text("accepted_by_user_id").references(() => user.id, { onDelete: "set null" }),
-    /**
-     * PRD F3 Stage 2 (S-03.3/S-03.4) — the exact PDF generated at send time,
-     * persisted via `FilesService` (S3/MinIO) rather than regenerated on
-     * every download. Nullable: null on every draft (nothing to show yet —
-     * the web UI instead calls `GET /quotes/:id/pdf` for a live preview,
-     * which renders on demand from the current draft snapshot), and also
-     * null on a sent quote if PDF generation/upload itself failed at send
-     * time (send() must still succeed — number allocation is the
-     * irreversible, must-not-fail step; PDF persistence failing is
-     * logged, not fatal, matching the same graceful-degradation posture as
-     * the email attempt). Once set, this is the permanent "PDF as emailed"
-     * record for that quote version — a later PDF-template code change
-     * must never alter what a `sent` quote's stored PDF looks like, per
-     * CLAUDE.md's "documents snapshot their data" rule extended to
-     * rendered output, not just row data.
-     */
-    pdfFileId: uuid("pdf_file_id").references(() => files.id, { onDelete: "set null" }),
+    /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
+    issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     /**
      * Written by the queue worker (`quote-email.worker.ts`), not by
      * `send()` itself — `send()` only ever sets this to `pending` right
@@ -246,10 +231,10 @@ export const quoteLines = pgTable(
     name: text("name").notNull(),
     description: text("description"),
     /** Zero for heading/text lines. */
-    quantity: real("quantity").notNull().default(0),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
-    discountPercentage: real("discount_percentage").notNull().default(0),
+    discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /**
      * Blended effective tax percentage for this line — always server-
      * computed from `taxRateId`/`taxGroupId` (FEAT-08) and stored so PDF/
@@ -257,7 +242,7 @@ export const quoteLines = pgTable(
      * neither reference set (pre-FEAT-08 data, or "no tax" chosen
      * explicitly) has this at 0.
      */
-    taxRatePercentage: real("tax_rate_percentage").notNull().default(0),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** Provenance only, snapshot semantics — never re-read for totals. At most one of taxRateId/taxGroupId is set; enforced at the service layer. */
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),

@@ -5,17 +5,14 @@ import type { Database } from "../../db/client";
 import { invoices, contacts } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
-import { FilesService } from "../files/files.service";
-import { InvoicePdfService } from "../pdf/invoice-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
-import type { InvoicePdfBusinessProfile } from "../pdf/invoice-pdf.template";
-import { toDecimalString } from "@spine/shared";
+import { loadEmailBrand } from "../email/email-brand";
+import { renderEmail } from "../email/email-layout";
+import { invoiceEmail } from "../email/email-templates";
 
 export const INVOICE_SEND_EMAIL_QUEUE = "invoice-send-email";
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 export interface InvoiceSendEmailJobData {
   orgId: string;
@@ -46,8 +43,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
-    private readonly files: FilesService,
-    private readonly pdf: InvoicePdfService,
+    private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
   ) {}
 
@@ -89,25 +85,8 @@ export class InvoiceEmailWorker implements OnModuleInit {
     row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
     isReminder: boolean,
   ): Promise<void> {
-    const { buffer, filename } = await this.pdf.render(orgId, invoiceId);
-
-    if (this.files.isStorageConfigured()) {
-      try {
-        const uploaded = await this.files.upload(orgId, {
-          originalFilename: filename,
-          mimeType: "application/pdf",
-          buffer,
-          uploadedByUserId: null,
-        });
-        if (uploaded) {
-          await this.db.update(invoices).set({ pdfFileId: uploaded.id }).where(eq(invoices.id, invoiceId));
-        }
-      } catch (err) {
-        this.logger.warn(`Could not persist PDF for invoice ${invoiceId}: ${(err as Error).message}`);
-      }
-    } else {
-      this.logger.warn(`File storage not configured — PDF for invoice ${invoiceId} was not persisted (email attempt continues if possible)`);
-    }
+    // US-INV-17: attach the PDF stored when the invoice was issued (stored now if it isn't yet).
+    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
 
     if (!row.contactEmail) {
       throw new Error(`Invoice ${invoiceId}'s contact has no email address on file — cannot send`);
@@ -116,52 +95,38 @@ export class InvoiceEmailWorker implements OnModuleInit {
       throw new Error("SMTP is not configured — cannot send invoice email");
     }
 
-    const business = await this.settings.get<InvoicePdfBusinessProfile>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
-    const invoiceNumber = row.invoice.number ?? "your invoice";
-    const currency = row.invoice.currency;
-    const balanceDue = row.invoice.totalAmount - row.invoice.amountPaid - row.invoice.creditedAmount;
-    const dueDateText = row.invoice.dueDate ? new Date(row.invoice.dueDate).toLocaleDateString() : null;
-
-    const balanceLine =
-      balanceDue > 0n
-        ? `The balance due is ${toDecimalString({ amount: balanceDue, currency })} ${currency}${dueDateText ? `, due ${dueDateText}` : ""}.`
-        : "This invoice is already paid in full — no balance is owing.";
-
-    // S-05.10 — same PDF, same attachment, only the subject/opening line
-    // change: a reminder says "this is now overdue" instead of "here's your
-    // invoice", using days-overdue rather than the due date itself (a
-    // reminder is inherently sent because the due date has already passed,
-    // so restating it plainly is more useful than repeating the date).
-    const daysOverdueText = row.invoice.dueDate
-      ? Math.max(0, Math.floor((Date.now() - new Date(row.invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
+    const brand = await loadEmailBrand(this.db, orgId);
+    const invoice = row.invoice;
+    // US-JOB-21: retention held back isn't due now.
+    const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+    // S-05.10 — a reminder says how many days overdue rather than restating the date.
+    const daysOverdue = invoice.dueDate
+      ? Math.max(0, Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
       : null;
-    const subject = isReminder
-      ? `Reminder: ${invoiceNumber} is now ${daysOverdueText !== null ? `${daysOverdueText} day${daysOverdueText === 1 ? "" : "s"} ` : ""}overdue`
-      : `${businessName} sent you an invoice (${invoiceNumber})`;
-    const openingLine = isReminder
-      ? `This is a friendly reminder that invoice ${invoiceNumber} from ${businessName} is now overdue.`
-      : `${businessName} has sent you an invoice (${invoiceNumber}), attached as a PDF.`;
+
+    const template = invoiceEmail({
+      businessName: brand.name,
+      locale: brand.locale,
+      contactName: row.contactName,
+      number: invoice.number ?? "your invoice",
+      currency: invoice.currency,
+      total: invoice.totalAmount,
+      retention: invoice.retentionAmount,
+      balanceDue,
+      dueDate: invoice.dueDate,
+      reminder: isReminder ? { daysOverdue } : undefined,
+      // US-INV-15: the instructions kept with the invoice when it was issued.
+      paymentInstructions: invoice.paymentInstructions,
+    });
+    const email = renderEmail(brand, template.content);
 
     await this.email.send({
       to: row.contactEmail,
-      subject,
-      text: [
-        `Hi ${row.contactName ?? "there"},`,
-        "",
-        openingLine,
-        "",
-        balanceLine,
-        "",
-        "This is an automated email — please reply directly with any payment questions.",
-      ].join("\n"),
-      html: [
-        `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-        `<p>${escapeHtml(openingLine)}</p>`,
-        `<p>${escapeHtml(balanceLine)}</p>`,
-        `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly with any payment questions.</p>`,
-      ].join("\n"),
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+      fromName: brand.name,
+      subject: template.subject,
+      text: email.text,
+      html: email.html,
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
     });
   }
 }

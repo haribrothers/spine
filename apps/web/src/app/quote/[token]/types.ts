@@ -35,6 +35,8 @@ export interface PublicQuoteView {
   version: number;
   validUntil: string | null;
   currency: string;
+  /** US-OPS-24 — the business's locale for formatting money. */
+  locale?: string | null;
   subtotalAmount: string;
   discountAmount: string;
   taxAmount: string;
@@ -47,4 +49,13 @@ export interface PublicQuoteView {
   contactName: string | null;
   business: PublicQuoteBusinessProfile | null;
   lines: PublicQuoteLine[];
+}
+
+/** US-QUO-21 — the 410 body's `business` for a link that has expired or been replaced. */
+export interface PublicQuoteUnavailableBusiness {
+  name: string;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  logoDataUri: string | null;
 }

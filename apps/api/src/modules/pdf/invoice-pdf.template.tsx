@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { toDecimalString } from "@spine/shared";
+import { percentageOf } from "@spine/shared";
 import type { invoices, invoiceLines } from "../../db/schema";
+import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 
 export interface InvoicePdfBusinessProfile {
@@ -8,9 +9,21 @@ export interface InvoicePdfBusinessProfile {
   logoUrl?: string;
   address?: string;
   industry?: string;
+  paymentInstructions?: string;
+}
+
+/**
+ * US-INV-15 — what the "How to pay" block prints: the copy kept on an
+ * issued invoice, or the current setting for a draft preview.
+ */
+export function invoicePaymentInstructions(invoice: { status: string; paymentInstructions: string | null }, business: InvoicePdfBusinessProfile | null): string | null {
+  const text = invoice.status === "draft" ? business?.paymentInstructions : invoice.paymentInstructions;
+  return text?.trim() || null;
 }
 
 export interface InvoicePdfData {
+  /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
+  locale?: string;
   invoice: typeof invoices.$inferSelect;
   lines: (typeof invoiceLines.$inferSelect)[];
   contactName: string | null;
@@ -78,6 +91,8 @@ const styles = StyleSheet.create({
   balanceDueLabel: { fontSize: 10, fontWeight: 700, color: "#b91c1c" },
   balanceDueValue: { fontSize: 10, fontWeight: 700, color: "#b91c1c" },
   footer: { marginTop: 28 },
+  howToPay: { marginTop: 20, padding: 10, borderWidth: 1, borderColor: "#E7E5E0", borderRadius: 4, backgroundColor: "#FAFAF9" },
+  howToPayTitle: { fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#211F1A" },
   footerLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
   footerText: { fontSize: 9, color: "#333333", lineHeight: 1.4 },
   footerParagraph: { fontSize: 9, color: "#333333", lineHeight: 1.4, marginBottom: 4 },
@@ -109,10 +124,13 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale }: InvoicePdfData) {
   const currency = invoice.currency;
-  const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
-  const balanceDue = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
+  const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
+  // US-JOB-21: retention held back is not part of what's due now.
+  const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+  const amountDue = invoice.totalAmount - invoice.retentionAmount;
+  const paymentInstructions = invoicePaymentInstructions(invoice, business);
 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
@@ -190,7 +208,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           {invoice.discountAmount > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Discount</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.discountAmount)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.discountAmount))}</Text>
             </View>
           )}
           <View style={styles.totalsRow}>
@@ -201,16 +219,30 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             <Text style={styles.grandTotalLabel}>Total</Text>
             <Text style={styles.grandTotalValue}>{fmt(invoice.totalAmount)}</Text>
           </View>
+          {invoice.retentionAmount > 0n && (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>
+                  Retention held ({percentageOf(invoice.retentionAmount, invoice.subtotalAmount - invoice.discountAmount)}%)
+                </Text>
+                <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.retentionAmount))}</Text>
+              </View>
+              <View style={styles.grandTotalRow}>
+                <Text style={styles.grandTotalLabel}>Amount due</Text>
+                <Text style={styles.grandTotalValue}>{fmt(amountDue)}</Text>
+              </View>
+            </>
+          )}
           {invoice.amountPaid > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Paid</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.amountPaid)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.amountPaid))}</Text>
             </View>
           )}
           {invoice.creditedAmount > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Credited</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.creditedAmount)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.creditedAmount))}</Text>
             </View>
           )}
           {balanceDue > 0n && invoice.status !== "draft" && (
@@ -220,6 +252,13 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             </View>
           )}
         </View>
+
+        {paymentInstructions && (
+          <View style={styles.howToPay} wrap={false}>
+            <Text style={styles.howToPayTitle}>How to pay</Text>
+            <Text style={styles.footerText}>{paymentInstructions}</Text>
+          </View>
+        )}
 
         {invoice.notes && (
           <View style={styles.footer}>

@@ -188,7 +188,7 @@ export function ContactPersonsSection({
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
+                        <AlertDialogAction variant="danger" onClick={() => handleRemove(person.id)}>Remove</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

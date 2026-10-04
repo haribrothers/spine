@@ -1,6 +1,7 @@
 import { Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ThrottlerModule } from "@nestjs/throttler";
+import { SessionThrottlerGuard } from "./common/session-throttler.guard";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
 import { auth } from "./auth/auth";
 import { CapabilityGuard } from "./auth/capability.guard";
@@ -69,7 +70,8 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     DashboardModule,
   ],
   providers: [
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Signed-in requests count per session, public ones per IP.
+    { provide: APP_GUARD, useClass: SessionThrottlerGuard },
     // Must be declared after AuthModule.forRoot(...) above (which
     // self-registers its own AuthGuard as a global APP_GUARD) so AuthGuard
     // runs first and populates request.session before this guard reads it

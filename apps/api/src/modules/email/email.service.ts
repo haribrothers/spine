@@ -6,7 +6,9 @@ export interface SendEmailInput {
   subject: string;
   text: string;
   html?: string;
-  attachments?: { filename: string; content: Buffer; contentType?: string }[];
+  attachments?: { filename: string; content: Buffer; contentType?: string; cid?: string }[];
+  /** Display name for the From header ("Riverstone Builders <quotes@…>"); the address stays SMTP_FROM. */
+  fromName?: string;
 }
 
 /**
@@ -53,7 +55,8 @@ export class EmailService {
 
   async send(input: SendEmailInput): Promise<void> {
     const transporter = this.getTransporter();
-    const from = process.env.SMTP_FROM || process.env.SMTP_USER || "no-reply@localhost";
+    const address = process.env.SMTP_FROM || process.env.SMTP_USER || "no-reply@localhost";
+    const from = input.fromName ? { name: input.fromName, address: address.replace(/^.*<([^>]+)>\s*$/, "$1") } : address;
     await transporter.sendMail({
       from,
       to: input.to,

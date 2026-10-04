@@ -1,4 +1,4 @@
-/** Mirrors apps/api/src/db/schema/invoices.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following quotes/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+/** Mirrors apps/api/src/db/schema/invoices.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following quotes/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type InvoiceStatus = "draft" | "issued" | "void";
 export type InvoiceType = "standard" | "advance" | "progress";
 export type InvoiceLineType = "item" | "heading" | "text";
@@ -56,7 +56,7 @@ export interface Invoice {
   voidReason: string | null;
   journalEntryId: string | null;
   voidJournalEntryId: string | null;
-  pdfFileId: string | null;
+  issuedPdfFileId: string | null;
   emailStatus: InvoiceEmailStatus | null;
   emailError: string | null;
   emailSentAt: string | null;
@@ -64,8 +64,15 @@ export interface Invoice {
   updatedAt: string;
   /** Computed server-side at read time (S-05.9) — only an issued invoice past its due date with a balance still owing. Never stored. */
   isOverdue: boolean;
-  /** Computed server-side — totalAmount - amountPaid - creditedAmount. */
+  /** US-PAY-13 — derived by the API from what's been paid against the balance. */
+  paymentStatus: "unpaid" | "partially_paid" | "paid";
+  /** Computed server-side — totalAmount - retentionAmount - amountPaid - creditedAmount. */
   balanceDue: string;
+  /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
+  job?: { id: string; name: string; number?: string | null } | null;
+  milestone?: { id: string; name: string; percent: number | null } | null;
+  /** Retention as a percentage of the net amount ("10"), and retention held on the whole job so far. */
+  retention?: { percent: string; heldOnJob: string } | null;
   lines?: InvoiceLine[];
 }
 
@@ -182,3 +189,10 @@ export interface CreditNote {
   invoiceNumber: string | null;
   lines: CreditNoteLine[];
 }
+
+/** US-PAY-13 — shown next to the status badge once anything has been paid. */
+export const PAYMENT_STATUS_LABELS: Record<Invoice["paymentStatus"], string | null> = {
+  unpaid: null,
+  partially_paid: "Partially paid",
+  paid: "Paid",
+};

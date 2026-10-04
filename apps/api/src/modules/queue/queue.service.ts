@@ -69,7 +69,7 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
    * SMTP being down for a minute must not lose the email, it should retry
    * automatically without another user action.
    */
-  async send(queueName: string, data: object) {
+  async send(queueName: string, data: object, retry?: { retryLimit: number; retryDelay: number; retryDelayMax?: number }) {
     const boss = this.getBoss();
     await boss.createQueue(queueName).catch(() => {
       // createQueue is idempotent per pg-boss docs but throws if the queue
@@ -77,8 +77,9 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
       // than fail the enqueue over a harmless "already exists".
     });
     await boss.send(queueName, data, {
-      retryLimit: 3,
-      retryDelay: 5,
+      retryLimit: retry?.retryLimit ?? 3,
+      retryDelay: retry?.retryDelay ?? 5,
+      ...(retry?.retryDelayMax !== undefined ? { retryDelayMax: retry.retryDelayMax } : {}),
       retryBackoff: true,
     });
   }

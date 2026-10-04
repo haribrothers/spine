@@ -22,6 +22,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient, ApiError } from "../../../lib/api-client";
+import { SavedToast } from "../saved-toast";
 import { ChartOfAccountsStep, type AccountsByType } from "../../onboarding/steps/chart-of-accounts-step";
 
 const ACCOUNT_TYPES = ["asset", "liability", "equity", "income", "expense"] as const;
@@ -45,6 +46,7 @@ interface FiscalPeriod {
 export function AccountsPane() {
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
   const [addOpen, setAddOpen] = useState(false);
+  const [saved, setSaved] = useState(false);
 
   function loadAccounts() {
     apiClient.get<AccountsByType>("/org/accounts").then(setAccounts);
@@ -87,8 +89,11 @@ export function AccountsPane() {
               return next;
             });
           }}
-          onContinue={() => {}}
+          // Renames save as they're made; "Save" just confirms it (US-SET-14).
+          onContinue={() => setSaved(true)}
+          saveLabel="Save"
         />
+        <SavedToast open={saved} onOpenChange={setSaved} />
       </div>
 
       <PeriodCloseSection />

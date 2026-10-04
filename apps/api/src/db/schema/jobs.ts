@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, real, integer, boolean, timestamp, date, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, uniqueIndex, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -44,6 +44,14 @@ export const jobs = pgTable(
       .references(() => contacts.id, { onDelete: "restrict" }),
     /** Provenance only, per this table's own doc comment — never re-read for pricing. Null for a job created without a quote (not a path any story asks for yet, but the column doesn't force one to exist). */
     sourceQuoteId: uuid("source_quote_id").references(() => quotes.id, { onDelete: "set null" }),
+    /**
+     * US-JOB-22 — "JOB-007", from the org's Job sequence, given in the
+     * creating transaction under the sequence row lock (D-007) and never
+     * changed. Unique per org; nullable only for rows written outside
+     * `JobsService.create` (tests), since migration 0061 numbered every
+     * existing job.
+     */
+    number: text("number"),
     name: text("name").notNull(),
     siteAddress: text("site_address"),
     status: jobStatusEnum("status").notNull().default("active"),
@@ -53,7 +61,7 @@ export const jobs = pgTable(
     /** Snapshot of the accepted quote's total at job-creation time (S-04.1) — never recomputed from the quote afterward. Variation orders (S-04.9) adjust this explicitly when accepted, see VariationOrdersService. */
     contractValueAmount: bigint("contract_value_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** 0-100. See this table's own doc comment for why 0 is a safe default across every industry template. */
-    retentionPct: real("retention_pct").notNull().default(0),
+    retentionPct: numeric("retention_pct", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     notes: text("notes"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Same demo-data marker convention as contacts.isDemo/quotes.isDemo. */
@@ -67,6 +75,7 @@ export const jobs = pgTable(
     index("jobs_org_demo_idx").on(table.orgId, table.isDemo),
     index("jobs_contact_idx").on(table.contactId),
     index("jobs_source_quote_idx").on(table.sourceQuoteId),
+    uniqueIndex("jobs_org_number_unique").on(table.orgId, table.number),
   ],
 );
 
@@ -109,7 +118,7 @@ export const milestones = pgTable(
     sequence: integer("sequence").notNull().default(0),
     amountType: milestoneAmountTypeEnum("amount_type").notNull().default("percent"),
     /** For `amountType: "percent"`, 0-100 stored as a real (matching quote_lines.discountPercentage's own precedent). For `amountType: "fixed"`, the literal minor-units amount — same column reused rather than two nullable columns, since exactly one of amount/resolvedAmount interpretation applies depending on amountType. */
-    amount: real("amount").notNull().default(0),
+    amount: numeric("amount", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** Server-computed minor-units amount this milestone bills for — see this table's own doc comment. Recomputed whenever `amount`/`amountType` change or the job's `contractValueAmount` changes (MilestonesService.recomputeResolvedAmounts). */
     resolvedAmount: bigint("resolved_amount", { mode: "bigint" }).notNull().default(sql`0`),
     status: milestoneStatusEnum("status").notNull().default("pending"),
@@ -135,7 +144,7 @@ export const milestones = pgTable(
 /**
  * S-04.4/S-04.10 — a photo tagged to a job (progress/condition record) or,
  * optionally, to one specific milestone (a completion photo). Reuses
- * `files` for the actual S3/MinIO object per Files' own "plain nullable FK
+ * `files` for the stored bytes per Files' own "plain nullable FK
  * per consumer, not polymorphic" convention (see files.ts's doc comment) —
  * this table is the job-specific association + caption, not a duplicate
  * upload mechanism.

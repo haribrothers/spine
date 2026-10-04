@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Spinner, TrendBarChart } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
 
 interface StageSummaryRow {
   stage: "new" | "qualified" | "proposal" | "won" | "lost";
@@ -55,7 +55,7 @@ export function PipelineByStageChart() {
       key: r.stage,
       label: STAGE_LABELS[r.stage],
       value: Number(amount) / 100,
-      formattedValue: `${toDecimalString({ amount, currency })} ${currency} · ${r.count}`,
+      formattedValue: `${formatMoney(amount, currency)} · ${r.count}`,
     };
   });
 

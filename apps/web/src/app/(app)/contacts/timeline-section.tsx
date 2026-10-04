@@ -7,6 +7,7 @@ import { CalendarDays, CheckSquare, FileText, History, Phone, StickyNote, Users 
 import { apiClient } from "../../../lib/api-client";
 import type { Meeting } from "../meetings/types";
 import type { Activity, ActivityType } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /** Mirrors apps/web/src/app/(app)/quotes/types.ts's Quote shape — a local subset, since this section only needs a handful of fields. */
 interface QuoteSummary {
@@ -27,9 +28,6 @@ const ACTIVITY_ICONS: Record<ActivityType, React.ReactNode> = {
   task: <CheckSquare size={14} />,
 };
 
-function formatMoney(amount: string, currency: string) {
-  return (Number(amount) / 100).toLocaleString(undefined, { style: "currency", currency });
-}
 
 function quoteLabel(quote: QuoteSummary) {
   return quote.number ?? "Draft quote";

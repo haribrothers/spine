@@ -35,7 +35,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 |---|---|---|
 | Framework | Next.js 15 (App Router), React 19 | Server components; modest hardware |
 | Styling | Tailwind CSS 4 with CSS-variable tokens (`packages/config/tailwind-preset.css`) | Re-skin by overriding tokens |
-| Components | `@spine/ui` (Radix primitives + `cva` + `tailwind-merge`), 78 components | Own the library ([D-008](12-decisions.md)) |
+| Components | `@spine/ui` (Radix primitives + `cva` + `tailwind-merge`), 79 components | Own the library ([D-008](12-decisions.md)) |
 | Theme | `next-themes` (`data-theme`, light/dark/system) | |
 | Charts | Recharts 3 via `@spine/ui` chart components | |
 | Command palette | cmdk | |
@@ -78,4 +78,4 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 ## Configuration
 
-One `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Everything else is optional and degrades gracefully: `API_URL`, `NEXT_PUBLIC_API_URL`, `SMTP_*` (email queued, not sent), `S3_*` (attachments read-only), `CURRENCY`, `LOCALE`, `TZ`, `CLOUDFLARE_TUNNEL_TOKEN`, `SEED_DEMO`, `VAPID_*` (browser push hidden), `UPDATE_CHECK` (`off` disables the daily check, [D-055](12-decisions.md)) and `MOBILE_MIN_VERSION` (oldest field app the API accepts, [D-071](12-decisions.md)).
+One `.env`. Required: `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`. Everything else is optional and degrades gracefully: `API_URL`, `NEXT_PUBLIC_API_URL`, `SMTP_*` (email queued, not sent), `STORAGE_DRIVER` (`local` default or `s3`), `FILES_DIR` (default `/data/files`), `S3_*` (only for the `s3` driver; without them a switch to `s3` leaves uploads unavailable), `CURRENCY`, `LOCALE`, `TZ`, `CLOUDFLARE_TUNNEL_TOKEN`, `SEED_DEMO`, `VAPID_*` (browser push hidden), `UPDATE_CHECK` (`off` disables the daily check, [D-055](12-decisions.md)) and `MOBILE_MIN_VERSION` (oldest field app the API accepts, [D-071](12-decisions.md)).

@@ -272,7 +272,7 @@ export function LeadDialog({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={deleting} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={deleting} onClick={handleDelete}>
               {deleting ? <Spinner size="sm" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

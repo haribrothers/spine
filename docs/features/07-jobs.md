@@ -215,7 +215,7 @@ Legacy: S-04.8
 - **Given** a job with no costs yet, **when** I view it, **then** cost is 0.00 and the note explains costs come from vendor bills and expenses tagged to the job.
 
 **Implementation notes**
-- API: `GET /jobs/:id/costing` (from `journal_lines.job_id`, D-011). Gating the tab and route by `reports.view_job_profitability` is US-JOB-19 (Phase 5).
+- API: `GET /jobs/:id/costing` (from `journal_lines.job_id`, D-011). Gating the tab and route by `reports.view_job_profitability` is US-JOB-19 (Phase 6, D-114).
 
 ### US-JOB-14 · Count tagged bills and expenses as job cost
 **Feature:** F-JOB-06 · **Priority:** P1 · **Phase:** 4 · **Screens:** `JobCosting`
@@ -282,7 +282,7 @@ Legacy: S-04.11
 - `FIELD_ALWAYS_CAPABILITIES` includes `milestones.edit_own` and `milestones.edit_others` for completion (D-019).
 
 ### US-JOB-19 · Keep money and unassigned jobs away from field crew
-**Feature:** F-JOB-07 · **Priority:** P1 · **Phase:** 5 · **Screens:** `JobCosting`, `MobJobsList`, `MobJobDetail`
+**Feature:** F-JOB-07 · **Priority:** P1 · **Phase:** 6 · **Screens:** `JobCosting`, `MobJobsList`, `MobJobDetail`
 **As** an owner, **I want** the server to give Field users only their assigned jobs and no money, **so that** a phone can never leak contract values or other crews' work.
 
 Decision: D-072 · Review findings: Stage 5 #3, #13, #65
@@ -363,4 +363,5 @@ Decision: D-090
 - **Given** existing jobs named "Job for QUO-…", **when** the migration runs, **then** they're renamed by the same rules and the change is recorded in each job's history.
 
 **Implementation notes**
+- Quotes have no title field, so the "no title" rule applies to every quote for now ([D-122](../prd/12-decisions.md)).
 - API: `JobsService.createFromQuote` naming; one-off backfill migration.

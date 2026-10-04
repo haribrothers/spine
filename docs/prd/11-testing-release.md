@@ -18,8 +18,8 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 
 | Job | Trigger | Steps | Blocks merge |
 |---|---|---|---|
-| `test` ("Unit and integration") | PR into `main`, manual | install (frozen lockfile) → lint → typecheck → unit → migrate → integration | Yes |
-| `e2e` ("E2E") | after `test` passes; uses the `local` storage driver once US-OPS-27 ships (S3Mock until then) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
+| `test` ("Unit and integration") | PR into `main`, manual | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · install (frozen lockfile) → lint → typecheck → unit → migrate → integration (files run one at a time: they share one database) | Yes |
+| `e2e` ("E2E") | after `test` passes; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
 | `a11y-routes` | PR (Phase 8) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
 | `restore-verify` | nightly and on `v*` tags (Phase 8) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |

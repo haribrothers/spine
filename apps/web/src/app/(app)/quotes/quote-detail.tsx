@@ -6,7 +6,6 @@ import {
   Alert,
   AlertDescription,
   AlertDialog,
-  AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
@@ -19,7 +18,6 @@ import {
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
@@ -28,6 +26,7 @@ import { HistorySection } from "../../../components/history-section";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
@@ -39,7 +38,7 @@ import { useEntityToast } from "./entity-toast";
 interface ConversionGuardBody {
   message: string;
   existing: {
-    jobs: { id: string; name: string }[];
+    jobs: { id: string; name: string; number?: string | null }[];
     invoices: { id: string; number: string | null }[];
   };
 }
@@ -330,7 +329,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
           <div className="flex flex-wrap items-center gap-2">
             <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
-            {/* PRD S-03.3 — live preview/download, rendered on demand from the quote's current snapshot (see quotes.controller.ts's GET /:id/pdf comment for why this is always a live render, even for a sent quote). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
+            {/* PRD S-03.3 / US-INV-17 — a draft previews live; a sent quote downloads the PDF stored when it was sent (see quotes.controller.ts's GET /:id/pdf). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
             <Button variant="secondary" asChild>
               <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
                 {quote.status === "draft" ? "Preview PDF" : "Download PDF"}
@@ -436,15 +435,15 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: quote.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: quote.currency })}
+                <span className="shrink-0 tabular-nums text-on-surface">
+                  {formatMoney(BigInt(line.lineTotalAmount), quote.currency)}
                 </span>
               )}
             </div>
@@ -454,7 +453,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={quote.subtotalAmount} currency={quote.currency} />
-        <TotalRow label="Discount" value={`-${toDecimalString({ amount: BigInt(quote.discountAmount), currency: quote.currency })}`} currency="" raw />
+        <TotalRow label="Discount" value={formatMoney(-(BigInt(quote.discountAmount)), quote.currency)} currency="" raw />
         <TotalRow label="Tax" value={quote.taxAmount} currency={quote.currency} />
         <div className="border-t border-border pt-2">
           <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
@@ -484,36 +483,54 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <AlertDialogHeader>
             <AlertDialogTitle>This quote has already been converted before</AlertDialogTitle>
             <AlertDialogDescription>
-              {conversionConfirm && (
-                <>
-                  {conversionConfirm.body.existing.jobs.length > 0 && (
-                    <>
-                      Existing job{conversionConfirm.body.existing.jobs.length > 1 ? "s" : ""}:{" "}
-                      {conversionConfirm.body.existing.jobs.map((j) => j.name).join(", ")}
-                      {conversionConfirm.body.existing.invoices.length > 0 && ". "}
-                    </>
-                  )}
-                  {conversionConfirm.body.existing.invoices.length > 0 && (
-                    <>
-                      Existing invoice{conversionConfirm.body.existing.invoices.length > 1 ? "s" : ""}:{" "}
-                      {conversionConfirm.body.existing.invoices.map((i) => i.number ?? "draft").join(", ")}.
-                    </>
-                  )}{" "}
-                  Converting again will create a SEPARATE {conversionConfirm.action}, in addition to the one(s) above — the
-                  amount is not split between them. Only do this if you actually mean to bill or track this quote's work
-                  more than once.
-                </>
-              )}
+              Converting again creates a separate {conversionConfirm?.action ?? "job"}. The amount isn&apos;t split between them. Only do this if you
+              mean to bill or track this quote&apos;s work more than once.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* US-QUO-23: each existing job or invoice on its own line, as a link. */}
+          {conversionConfirm && (
+            <div className="mb-4 flex flex-col gap-3 text-[13px]" data-testid="existing-conversions">
+              {conversionConfirm.body.existing.jobs.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold text-on-surface">Existing job{conversionConfirm.body.existing.jobs.length > 1 ? "s" : ""}</span>
+                  <ul className="flex flex-col gap-1">
+                    {conversionConfirm.body.existing.jobs.map((j) => (
+                      <li key={j.id}>
+                        <Link href={`/jobs/${j.id}`} className="text-primary hover:underline">
+                          {j.number ? `${j.number} · ${j.name}` : j.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {conversionConfirm.body.existing.invoices.length > 0 && (
+                <div className="flex flex-col gap-1">
+                  <span className="font-semibold text-on-surface">
+                    Existing invoice{conversionConfirm.body.existing.invoices.length > 1 ? "s" : ""}
+                  </span>
+                  <ul className="flex flex-col gap-1">
+                    {conversionConfirm.body.existing.invoices.map((i) => (
+                      <li key={i.id}>
+                        <Link href={`/invoices/${i.id}`} className="text-primary hover:underline">
+                          {i.number ?? "Draft invoice"}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            {/* Primary, not danger: this creates something, it doesn't delete (D-058). */}
+            <Button
               disabled={busy}
               onClick={() => (conversionConfirm?.action === "invoice" ? handleConvertToInvoice(true) : handleConvertToJob(true))}
             >
               {busy ? <Spinner size="sm" /> : `Convert to ${conversionConfirm?.action} anyway`}
-            </AlertDialogAction>
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -536,13 +553,13 @@ function TotalRow({
   emphasize?: boolean;
   raw?: boolean;
 }) {
-  const display = raw ? value : `${toDecimalString({ amount: BigInt(value), currency })} ${currency}`;
+  const display = raw ? value : formatMoney(BigInt(value), currency);
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
-      <span className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
         {display}
       </span>
     </div>

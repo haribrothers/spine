@@ -8,7 +8,12 @@ export interface BusinessProfileValue {
   name: string;
   logoUrl?: string;
   address?: string;
+  /** US-QUO-21 — shown to customers whose quote link has expired, so they can get in touch. */
+  email?: string;
+  phone?: string;
   industry?: string;
+  /** Kept as-is: set from Settings › Payment instructions (US-INV-16). */
+  paymentInstructions?: string;
 }
 
 export interface BusinessProfileStepProps {
@@ -31,6 +36,8 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
   const [name, setName] = useState(initialValue.name ?? "");
   const [logoUrl, setLogoUrl] = useState(initialValue.logoUrl ?? "");
   const [address, setAddress] = useState(initialValue.address ?? "");
+  const [email, setEmail] = useState(initialValue.email ?? "");
+  const [phone, setPhone] = useState(initialValue.phone ?? "");
   const [industry, setIndustry] = useState(initialValue.industry ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +47,16 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
     setError(null);
     setSaving(true);
     try {
-      await onSave({ name, logoUrl: logoUrl || undefined, address: address || undefined, industry: industry || undefined });
+      // Spread first so fields edited elsewhere (payment instructions) survive.
+      await onSave({
+        ...initialValue,
+        name,
+        logoUrl: logoUrl || undefined,
+        address: address || undefined,
+        email: email.trim() || undefined,
+        phone: phone.trim() || undefined,
+        industry: industry || undefined,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save business profile.");
     } finally {
@@ -70,7 +86,20 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         {(field) => <Textarea {...field} value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />}
       </FormField>
 
-      <FormField label="Industry" helperText="Free text — the next step picks a template that pre-configures the app.">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <FormField label="Business email" helperText="Shown to customers who need to reach you.">
+          {(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />}
+        </FormField>
+        <FormField label="Business phone">
+          {(field) => <Input {...field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" />}
+        </FormField>
+      </div>
+
+      {/* US-OPS-21: "the next step" only means something in the wizard. */}
+      <FormField
+        label="Industry"
+        helperText={onSkip ? "Free text — the next step picks a template that pre-configures the app." : "What your business does, in your own words."}
+      >
         {(field) => (
           <Input {...field} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Electrical contracting" />
         )}

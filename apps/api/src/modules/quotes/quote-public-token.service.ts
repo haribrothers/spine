@@ -123,6 +123,29 @@ export class QuotePublicTokenService {
    * "resend" affordance to void a prior link before minting a new one.
    * Takes the caller's transaction for the same reason `issue()` does.
    */
+  /**
+   * US-QUO-21 — like `verify`, but says why a link doesn't work. "expired"
+   * means the token carries our signature (so its organisation is known)
+   * but has run out, been revoked or replaced; "invalid" means it matches
+   * nothing we issued, and reveals nothing.
+   */
+  async inspect(token: string): Promise<{ state: "valid"; verified: VerifiedQuoteToken } | { state: "expired"; orgId: string } | { state: "invalid" }> {
+    const verified = await this.verify(token);
+    if (verified) return { state: "valid", verified };
+
+    let payload: Record<string, unknown> | undefined;
+    try {
+      payload = (await jwtVerify(token, this.getSecretKey())).payload;
+    } catch (err) {
+      // Expiry is checked after the signature, so its payload is ours.
+      if (err instanceof joseErrors.JWTExpired) payload = err.payload;
+    }
+    if (!payload || typeof payload.orgId !== "string" || typeof payload.nonce !== "string") return { state: "invalid" };
+    const [row] = await this.db.select().from(quotePublicTokens).where(eq(quotePublicTokens.nonce, payload.nonce));
+    if (!row || row.orgId !== payload.orgId) return { state: "invalid" };
+    return { state: "expired", orgId: row.orgId };
+  }
+
   async revokeAllForQuote(tx: Transaction, quoteId: string): Promise<void> {
     await tx
       .update(quotePublicTokens)

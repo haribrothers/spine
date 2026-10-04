@@ -1,4 +1,5 @@
 import { GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { loadEmailBrand } from "../email/email-brand";
 import { and, desc, eq, gt } from "drizzle-orm";
 import { parse } from "node-html-parser";
 import { DATABASE } from "../../db/db.module";
@@ -8,6 +9,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
+import { orgLocale } from "../../common/money-format";
 import { QuotePublicTokenService } from "./quote-public-token.service";
 
 /**
@@ -40,7 +42,7 @@ const VIEW_NOTIFICATION_THROTTLE_MS = 60 * 60 * 1000;
 /**
  * The deliberately reduced, public-safe projection of a quote — everything
  * `apps/web/src/app/quote/[token]/page.tsx` needs to render, and nothing
- * more. No `orgId`, no `createdByUserId`, no `isDemo`, no `pdfFileId`, no
+ * more. No `orgId`, no `createdByUserId`, no `isDemo`, no `issuedPdfFileId`, no
  * email-delivery bookkeeping (`emailStatus`/`emailError`) — none of that is
  * this customer's business, and none of it is reachable through this
  * projection even by accident (contrast with the authenticated
@@ -50,8 +52,20 @@ const VIEW_NOTIFICATION_THROTTLE_MS = 60 * 60 * 1000;
  * it is not a meaningful disclosure (the token, not the id, is what gates
  * every access).
  */
+/** US-QUO-21 — shown on the "This quote link has expired" page. */
+export interface PublicQuoteUnavailableBusiness {
+  name: string;
+  address: string | null;
+  email: string | null;
+  phone: string | null;
+  /** The logo inline: anonymous visitors can't load `/files/:id`. */
+  logoDataUri: string | null;
+}
+
 export interface PublicQuoteView {
   id: string;
+  /** US-OPS-24 — the business's locale for formatting money on the public page. */
+  locale: string;
   number: string | null;
   status: "sent" | "accepted" | "rejected";
   version: number;
@@ -121,15 +135,17 @@ export class PublicQuotesService {
    * response.
    */
   async view(token: string, provenance: RequestProvenance): Promise<PublicQuoteView> {
-    const verified = await this.tokens.verify(token);
-    if (!verified) {
-      throw new NotFoundException("This quote link is invalid or has expired");
+    // US-QUO-21: a link we issued that no longer works names the business
+    // (410); one that matches nothing reveals nothing (404).
+    const inspected = await this.tokens.inspect(token);
+    if (inspected.state === "invalid") {
+      throw new NotFoundException({ status: "invalid", message: "This quote link isn't valid" });
     }
+    if (inspected.state === "expired") throw await this.expired(inspected.orgId);
+    const verified = inspected.verified;
 
     const view = await this.loadProjection(verified.orgId, verified.quoteId);
-    if (!view) {
-      throw new NotFoundException("This quote link is invalid or has expired");
-    }
+    if (!view) throw await this.expired(verified.orgId);
 
     // Checked BEFORE inserting this view's own row, so it reflects only
     // PRIOR views — the throttle window is anchored to the last time the
@@ -322,6 +338,20 @@ export class PublicQuotesService {
     return view;
   }
 
+  /** The 410 body for a link that has expired or been replaced: who to contact, from the business profile. */
+  private async expired(orgId: string): Promise<GoneException> {
+    const brand = await loadEmailBrand(this.db, orgId);
+    const profile = await this.settings.get<{ address?: string; email?: string; phone?: string }>(orgId, "business_profile");
+    const business: PublicQuoteUnavailableBusiness = {
+      name: brand.name,
+      address: profile?.address?.trim() || null,
+      email: profile?.email?.trim() || null,
+      phone: profile?.phone?.trim() || null,
+      logoDataUri: brand.logo ? `data:${brand.logo.contentType};base64,${brand.logo.content.toString("base64")}` : null,
+    };
+    return new GoneException({ status: "expired", message: "This quote link has expired", business });
+  }
+
   /**
    * Shared projection builder for view()/accept()/reject() — always
    * re-reads fresh from the DB rather than trusting any caller's
@@ -358,6 +388,7 @@ export class PublicQuotesService {
       version: row.quote.version,
       validUntil: row.quote.validUntil ? new Date(row.quote.validUntil).toISOString() : null,
       currency: row.quote.currency,
+      locale: await orgLocale(this.db, orgId),
       subtotalAmount: row.quote.subtotalAmount.toString(),
       discountAmount: row.quote.discountAmount.toString(),
       taxAmount: row.quote.taxAmount.toString(),

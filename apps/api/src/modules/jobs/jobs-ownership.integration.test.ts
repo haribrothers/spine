@@ -79,7 +79,7 @@ describe("Jobs & Milestones ownership split (requires local Postgres)", () => {
     const conversionGuard = new QuoteConversionGuardService(db, new SettingsService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
 
-    jobsService = new JobsService(db, auditLog, conversionGuard, notifications);
+    jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
 
     const ownerEmail = `jobs-owner-${randomUUID()}@example.com`;
@@ -154,23 +154,24 @@ describe("Jobs & Milestones ownership split (requires local Postgres)", () => {
       return { milestones: [{ name: "Foundation", sequence: 0, amountType: "percent" as const, amount: 100, dueDate: null }] };
     }
 
-    it("a job with no milestones yet has no owner — only edit_others can define the first set", async () => {
+    // US-JOB-20 (D-079): milestones are owned through the job, by its creator.
+    it("the job's creator can define its first milestone set with edit_own; another user needs edit_others", async () => {
       const job = await jobsService.create(orgId, creatorUserId, jobInput());
 
       await grantTeam(creatorMemberId, { "milestones.edit_own": true });
-      await expect(milestonesService.setAll(orgId, job.id, creatorUserId, milestoneSetInput())).rejects.toThrow(/missing capability/i);
+      await expect(milestonesService.setAll(orgId, job.id, creatorUserId, milestoneSetInput())).resolves.toBeDefined();
 
-      await grantTeam(otherMemberId, { "milestones.edit_others": true });
-      await expect(milestonesService.setAll(orgId, job.id, otherUserId, milestoneSetInput())).resolves.toBeDefined();
+      await grantTeam(otherMemberId, { "milestones.edit_own": true });
+      await expect(milestonesService.setAll(orgId, job.id, otherUserId, milestoneSetInput())).rejects.toThrow(/missing capability/i);
     });
 
-    it("edit_own lets the user who last replaced the milestone set edit it again, but not a different user", async () => {
+    it("edit_own lets the job's creator edit the set again, but not a different user", async () => {
       const job = await jobsService.create(orgId, creatorUserId, jobInput());
 
       await grantTeam(creatorMemberId, { "milestones.edit_own": true, "milestones.edit_others": true });
       await milestonesService.setAll(orgId, job.id, creatorUserId, milestoneSetInput());
 
-      // creator (now the set's owner) can edit again with only edit_own.
+      // The job's creator owns the set and can edit again with only edit_own.
       await expect(milestonesService.setAll(orgId, job.id, creatorUserId, milestoneSetInput())).resolves.toBeDefined();
 
       // A different Staff user with only edit_own cannot touch a set they don't own.

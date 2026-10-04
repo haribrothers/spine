@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesInvoiceRow } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
   current: "bg-paid-bg text-paid",
@@ -14,7 +14,7 @@ const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
 };
 
 /** Every currently-outstanding issued invoice, oldest-overdue first (see ReportsService.receivables' own sort) — clicking a row's number navigates to the invoice, same as invoices-table.tsx's own convention. */
-export function ReceivablesTable({ invoices }: { invoices: ReceivablesInvoiceRow[] }) {
+export function ReceivablesTable({ invoices, onSearchChange }: { invoices: ReceivablesInvoiceRow[]; onSearchChange?: (query: string) => void }) {
   const columns: TableColumn<ReceivablesInvoiceRow>[] = [
     {
       key: "number",
@@ -47,9 +47,10 @@ export function ReceivablesTable({ invoices }: { invoices: ReceivablesInvoiceRow
     {
       key: "balanceDue",
       header: "Balance due",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.balanceDue), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.balanceDue),
@@ -62,6 +63,7 @@ export function ReceivablesTable({ invoices }: { invoices: ReceivablesInvoiceRow
       data={invoices}
       rowKey={(row) => row.id}
       searchPlaceholder="Search receivables"
+      onSearchChange={onSearchChange}
       searchKey={(row) => `${row.number ?? ""} ${row.contactName ?? ""}`}
       configurablePageSize
     />

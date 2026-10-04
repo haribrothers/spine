@@ -73,6 +73,6 @@ test.describe("Public quote page", () => {
 
   test("an invalid token shows a clear error, not a blank page", async ({ page }) => {
     await page.goto("/quote/this-is-not-a-real-token");
-    await expect(page.getByText(/invalid or has expired/i)).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("This quote link isn't valid")).toBeVisible({ timeout: 10_000 });
   });
 });

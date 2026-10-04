@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, DonutChart, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
 
 type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -59,7 +59,7 @@ export function ArAgingDonut() {
     return null;
   }
 
-  const money = (amount: string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const money = (amount: string) => formatMoney(BigInt(amount), currency);
   const segments = BUCKET_ORDER.map((bucket) => ({
     key: bucket,
     label: BUCKET_LABELS[bucket],

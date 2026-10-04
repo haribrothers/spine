@@ -358,6 +358,90 @@
       "when": 1788033000000,
       "tag": "0050_add_quotes_accept_in_person_capability",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791111823026,
+      "tag": "0051_files_storage_driver",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1791117333436,
+      "tag": "0052_files_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1791123335172,
+      "tag": "0053_issued_pdf_file_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1791123344320,
+      "tag": "0054_drop_pdf_file_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1791130731781,
+      "tag": "0055_idempotency_user_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791131161107,
+      "tag": "0056_exact_decimals",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791131655887,
+      "tag": "0057_payment_advance_allocations",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791132772162,
+      "tag": "0058_ledger_integrity_checks",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1791138365308,
+      "tag": "0059_invoice_payment_instructions",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1791139697471,
+      "tag": "0060_job_names_from_quotes",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1791139829120,
+      "tag": "0061_job_numbers",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1791141713398,
+      "tag": "0062_org_name_from_business",
+      "breakpoints": true
     }
   ]
 }

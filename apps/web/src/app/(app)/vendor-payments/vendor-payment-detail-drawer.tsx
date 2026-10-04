@@ -22,12 +22,12 @@ import {
   DrawerTitle,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Read-only detail Drawer — a vendor payment has no draft/edit lifecycle
@@ -117,7 +117,7 @@ export function VendorPaymentDetailDrawer({
                   <Field label="Reference" value={payment.reference ?? "—"} />
                   <Field
                     label="Amount"
-                    value={`${toDecimalString({ amount: BigInt(payment.amount), currency: payment.currency })} ${payment.currency}`}
+                    value={formatMoney(BigInt(payment.amount), payment.currency)}
                   />
                 </div>
 
@@ -132,8 +132,8 @@ export function VendorPaymentDetailDrawer({
                           <Link href={`/vendor-bills/${a.billId}`} className="text-[13px] font-medium text-on-surface hover:text-primary hover:underline">
                             {a.billNumber ?? "Vendor bill"}
                           </Link>
-                          <span className="font-mono text-[13px] tabular-nums text-on-surface">
-                            {toDecimalString({ amount: BigInt(a.amount), currency: payment.currency })} {payment.currency}
+                          <span className="text-[13px] tabular-nums text-on-surface">
+                            {formatMoney(BigInt(a.amount), payment.currency)}
                           </span>
                         </div>
                       ))}
@@ -175,7 +175,7 @@ export function VendorPaymentDetailDrawer({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               {busy ? <Spinner size="sm" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

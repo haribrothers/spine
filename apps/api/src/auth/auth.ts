@@ -1,6 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
+import { assertSignupAllowed } from "./signup-policy";
+import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
@@ -15,6 +18,9 @@ import {
   user as userTable,
 } from "../db/schema";
 import { EmailService } from "../modules/email/email.service";
+import { loadEmailBrand } from "../modules/email/email-brand";
+import { appUrl, renderEmail } from "../modules/email/email-layout";
+import { invitationEmail } from "../modules/email/email-templates";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
@@ -54,6 +60,31 @@ export const auth = betterAuth({
       hash: hashPassword,
       verify: verifyPassword,
     },
+    // US-AUTH-09/10 — reset by emailed link. One use, one hour, and a
+    // successful reset signs the account out everywhere else.
+    sendResetPassword: async ({ user, token }) => {
+      const [membership] = await db
+        .select({ orgId: member.organizationId })
+        .from(member)
+        .where(eq(member.userId, user.id))
+        .orderBy(desc(member.createdAt))
+        .limit(1);
+      await sendResetPasswordEmail({ user, token }, membership ? await loadEmailBrand(db, membership.orgId) : undefined);
+    },
+    resetPasswordTokenExpiresIn: RESET_TOKEN_TTL_SECONDS,
+    revokeSessionsOnPasswordReset: true,
+  },
+  hooks: {
+    /**
+     * US-AUTH-09 — reset requests are limited per IP here (Better Auth's own
+     * rate limiter is off outside production and would also throttle
+     * sign-in); the per-email limit lives in `sendResetPasswordEmail`.
+     */
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/request-password-reset") return;
+      const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
+      if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });
+    }),
   },
   /**
    * Explicit, not Better Auth's undocumented defaults (7-day expiresIn /
@@ -110,13 +141,19 @@ export const auth = betterAuth({
       sendInvitationEmail: async (data) => {
         const emailService = new EmailService();
         if (!emailService.isConfigured()) return;
-        const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-        const acceptUrl = `${appUrl}/accept-invite/${data.id}`;
+        const acceptUrl = appUrl(`/accept-invite/${data.id}`);
+        // US-NTF-11: the business name from the business profile, not the
+        // organisation row ("<Owner>'s Organisation" until US-TEAM-15).
+        const brand = await loadEmailBrand(db, data.organization.id);
+        const template = invitationEmail({ businessName: brand.name, inviterName: data.inviter.user.name, role: data.role, acceptUrl });
+        const email = renderEmail(brand, template.content);
         await emailService.send({
           to: data.email,
-          subject: `${data.inviter.user.name} invited you to join ${data.organization.name} on Spine`,
-          text: `${data.inviter.user.name} invited you to join ${data.organization.name} as ${data.role}.\n\nAccept the invitation: ${acceptUrl}\n\nIf you weren't expecting this, you can ignore this email.`,
-          html: `<p>${data.inviter.user.name} invited you to join <strong>${data.organization.name}</strong> as <strong>${data.role}</strong>.</p><p><a href="${acceptUrl}">Accept the invitation</a></p><p>If you weren't expecting this, you can ignore this email.</p>`,
+          fromName: brand.name,
+          subject: template.subject,
+          text: email.text,
+          html: email.html,
+          attachments: email.attachments,
         });
       },
     }),
@@ -190,6 +227,11 @@ export const auth = betterAuth({
          * free to retry with the same email — rather than a phantom
          * "successful" signup that's broken forever.
          */
+        /** US-AUTH-08 — closed sign-up: only the first account, or an invited email, may be created. */
+        before: async (user) => {
+          await assertSignupAllowed(db, user.email);
+          return { data: user };
+        },
         after: async (user) => {
           const [pendingInvitation] = await db
             .select({ id: invitationTable.id })

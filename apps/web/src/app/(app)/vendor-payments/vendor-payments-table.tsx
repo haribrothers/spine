@@ -1,8 +1,8 @@
 "use client";
 
 import { DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * The list view for Vendor Payments — mirrors payments/payments-table.tsx's
@@ -45,9 +45,10 @@ export function VendorPaymentsTable({ payments, onOpen }: { payments: VendorPaym
     {
       key: "amount",
       header: "Amount",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.amount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.amount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.amount),

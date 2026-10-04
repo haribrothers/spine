@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Button, Spinner } from "@spine/ui";
-import { usePushSubscription } from "../../../lib/use-push-subscription";
-import { SavedToast } from "../saved-toast";
+import { usePushSubscription } from "../lib/use-push-subscription";
+import { SavedToast } from "../app/settings/saved-toast";
 
 /**
  * PRD S-10.12 — the explicit, in-app-action-triggered opt-in required by
@@ -12,8 +12,12 @@ import { SavedToast } from "../saved-toast";
  * pane only ever shows/controls the CURRENT browser's subscription state —
  * a user with several devices subscribes from each one separately, and
  * revoking here never touches subscriptions from other devices (S-10.12).
+ *
+ * US-NTF-12 — lives on every member's Profile & Preferences › Notifications
+ * (the subscription routes were always per-user), not in the Owner-only
+ * organisation Settings.
  */
-export function PushPane() {
+export function BrowserNotificationsSection() {
   const { state, loading, subscribe, unsubscribe } = usePushSubscription();
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
@@ -34,16 +38,18 @@ export function PushPane() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16">
+      <div className="flex items-center justify-center py-6">
         <Spinner />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <section className="flex flex-col gap-3" aria-labelledby="browser-notifications-heading" data-testid="browser-notifications">
       <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Browser notifications</h2>
+        <h3 id="browser-notifications-heading" className="text-[14px] font-semibold text-on-surface">
+          Browser notifications
+        </h3>
         <p className="text-[13px] text-on-surface-muted">
           Get a native notification on this device when something needs your attention — even if Spine isn't the tab you're looking at. Additive to
           the in-app notification panel and email; turning this off doesn't affect either.
@@ -81,6 +87,6 @@ export function PushPane() {
       )}
 
       <SavedToast open={done} onOpenChange={setDone} />
-    </div>
+    </section>
   );
 }

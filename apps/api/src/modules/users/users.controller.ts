@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Put, Req } from "@nestjs/common";
+import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
+import { Body, Controller, Get, Put, Req, UseInterceptors } from "@nestjs/common";
 import {
   changePasswordSchema,
   dashboardLayoutSchema,
@@ -29,6 +30,7 @@ export class UsersController {
   }
 
   @Put("me")
+  @UseInterceptors(IdempotencyInterceptor)
   async updateProfile(
     @Session() session: UserSession,
     @Req() request: Request,
@@ -38,6 +40,7 @@ export class UsersController {
   }
 
   @Put("me/password")
+  @UseInterceptors(IdempotencyInterceptor)
   async changePassword(
     @Req() request: Request,
     @Body(new ZodValidationPipe(changePasswordSchema)) body: z.infer<typeof changePasswordSchema>,
@@ -47,6 +50,7 @@ export class UsersController {
   }
 
   @Put("me/preferences")
+  @UseInterceptors(IdempotencyInterceptor)
   async updatePreferences(
     @Session() session: UserSession,
     @Body(new ZodValidationPipe(updatePreferencesSchema)) body: z.infer<typeof updatePreferencesSchema>,
@@ -61,6 +65,7 @@ export class UsersController {
 
   /** S-09.13 (dashboard v2) — any authenticated user edits their own dashboard widget order/visibility. Not org-scoped, not Owner-gated — same self-service reasoning as every other route in this controller. */
   @Put("me/dashboard-layout")
+  @UseInterceptors(IdempotencyInterceptor)
   async updateDashboardLayout(
     @Session() session: UserSession,
     @Body(new ZodValidationPipe(dashboardLayoutSchema)) body: z.infer<typeof dashboardLayoutSchema>,
@@ -71,6 +76,7 @@ export class UsersController {
 
   /** S-10.22 — personal override of the org's default meeting-reminder lead time; `meetingReminderLeadMinutes: null` clears back to "use org default". */
   @Put("me/meeting-reminder-lead-minutes")
+  @UseInterceptors(IdempotencyInterceptor)
   async updateMeetingReminderLeadMinutes(
     @Session() session: UserSession,
     @Body(new ZodValidationPipe(updateMeetingReminderLeadMinutesSchema))

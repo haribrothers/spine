@@ -16,11 +16,11 @@ import {
   DialogTitle,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
+import { formatMoney } from "../../../../lib/money";
 
 const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -158,8 +158,8 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-mono text-[13px] tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(v.quote.totalAmount), currency: v.quote.currency })} {v.quote.currency}
+                <span className="text-[13px] tabular-nums text-on-surface">
+                  {formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)}
                 </span>
                 {!v.appliedAt && v.quote.status === "accepted" && canApply && (
                   <Button size="sm" onClick={() => handleApply(v.id)} disabled={applyingId === v.id}>

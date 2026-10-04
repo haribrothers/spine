@@ -1,10 +1,13 @@
 "use client";
 
+import { NoAccess } from "../../../components/no-access";
+import { useMyRole } from "../../../lib/role-context";
 import { useEffect, useState } from "react";
 import {
   Alert,
   AlertDescription,
   Button,
+  Checkbox,
   DatePicker,
   Dialog,
   DialogBody,
@@ -18,7 +21,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import {
@@ -28,7 +30,10 @@ import {
   type JobProfitabilityReport,
   type ProfitAndLossReport,
   type ReportAccountLine,
+  type TaxSummaryReport,
+  type TrialBalanceReport,
 } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -65,18 +70,28 @@ function ownerOnlyMessage(err: unknown): string {
  * TaxSummarySection), rather than hiding the tabs entirely.
  */
 export function ReportsExplorer() {
+  // US-OPS-12: P&L and Balance Sheet are Owner-only; others see why, and nothing is fetched.
+  const isOwner = useMyRole() === "owner";
   return (
-    <Tabs defaultValue="pl">
+    <Tabs defaultValue={isOwner ? "pl" : "jobs"}>
       <TabsList>
         <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
         <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
+        <TabsTrigger value="tb">Trial Balance</TabsTrigger>
+        <TabsTrigger value="tax">Tax Summary</TabsTrigger>
         <TabsTrigger value="jobs">Job Profitability</TabsTrigger>
       </TabsList>
       <TabsContent value="pl">
-        <ProfitAndLossTab />
+        {isOwner ? <ProfitAndLossTab /> : <NoAccess pageName="Profit & Loss" ownerOnly />}
       </TabsContent>
       <TabsContent value="bs">
-        <BalanceSheetTab />
+        {isOwner ? <BalanceSheetTab /> : <NoAccess pageName="Balance Sheet" ownerOnly />}
+      </TabsContent>
+      <TabsContent value="tb">
+        {isOwner ? <TrialBalanceTab /> : <NoAccess pageName="Trial Balance" ownerOnly />}
+      </TabsContent>
+      <TabsContent value="tax">
+        {isOwner ? <TaxSummaryTab /> : <NoAccess pageName="Tax Summary" ownerOnly />}
       </TabsContent>
       <TabsContent value="jobs">
         <JobProfitabilityTab />
@@ -107,8 +122,8 @@ function AccountLineRow({
       >
         {line.code ? `${line.code} — ${line.name}` : line.name}
       </button>
-      <span className={`font-mono tabular-nums ${negative ? "text-overdue" : "text-on-surface"}`}>
-        {toDecimalString({ amount, currency })} {currency}
+      <span className={`tabular-nums ${negative ? "text-overdue" : "text-on-surface"}`}>
+        {formatMoney(amount, currency)}
       </span>
     </div>
   );
@@ -192,8 +207,8 @@ function ProfitAndLossTab() {
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total income</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalIncome), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalIncome), currency)}
               </span>
             </div>
           </div>
@@ -207,16 +222,16 @@ function ProfitAndLossTab() {
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total expenses</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalExpenses), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalExpenses), currency)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-border-strong pt-3 text-[15px] font-semibold">
             <span>Net profit</span>
-            <span className="font-mono tabular-nums">
-              {toDecimalString({ amount: BigInt(report.netProfit), currency })} {currency}
+            <span className="tabular-nums">
+              {formatMoney(BigInt(report.netProfit), currency)}
             </span>
           </div>
         </div>
@@ -300,8 +315,8 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total assets</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalAssets), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalAssets), currency)}
               </span>
             </div>
           </div>
@@ -313,8 +328,8 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total liabilities</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalLiabilities), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalLiabilities), currency)}
               </span>
             </div>
           </div>
@@ -326,16 +341,16 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total equity</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalEquity), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalEquity), currency)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-border-strong pt-3 text-[15px] font-semibold">
             <span>Total liabilities + equity</span>
-            <span className="font-mono tabular-nums">
-              {toDecimalString({ amount: BigInt(report.totalLiabilitiesAndEquity), currency })} {currency}
+            <span className="tabular-nums">
+              {formatMoney(BigInt(report.totalLiabilitiesAndEquity), currency)}
             </span>
           </div>
         </div>
@@ -409,13 +424,13 @@ function JobProfitabilityTab() {
                     </Link>
                   </td>
                   <td className="px-3 py-2 text-on-surface-muted">{job.status}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
-                    {toDecimalString({ amount: BigInt(job.contractValueAmount), currency: job.currency })}
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(job.contractValueAmount), job.currency)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.revenue), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.cost), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.margin), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.revenue), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.cost), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.margin), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
                 </tr>
               ))}
             </tbody>
@@ -491,8 +506,8 @@ function DrilldownDialog({
                         )}
                         <span className="text-[11px] text-on-surface-muted">{new Date(entry.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-mono tabular-nums text-on-surface-muted">
-                        {side} {toDecimalString({ amount: BigInt(amount), currency })} {currency}
+                      <span className="tabular-nums text-on-surface-muted">
+                        {side} {formatMoney(BigInt(amount), currency)}
                       </span>
                     </div>
                   );
@@ -503,5 +518,288 @@ function DrilldownDialog({
         </DialogBody>
       </DialogContent>
     </Dialog>
+  );
+}
+
+/**
+ * US-RPT-13 — every account's balance as of a date, on its debit or credit
+ * side, with matching totals. Click an account for its journal entries.
+ */
+function TrialBalanceTab() {
+  const [asOf, setAsOf] = useState<Date>(endOfToday());
+  const [hideZero, setHideZero] = useState(true);
+  const [currency, setCurrency] = useState("USD");
+  const [report, setReport] = useState<TrialBalanceReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [drilldown, setDrilldown] = useState<{ accountId: string; code: string; name: string } | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => {
+        if (res.value?.code) setCurrency(res.value.code);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function load(includeZero = !hideZero) {
+    setLoading(true);
+    setError(null);
+    try {
+      setReport(await apiClient.get<TrialBalanceReport>(`/reports/trial-balance?asOf=${toDateParam(asOf)}&includeZero=${includeZero}`));
+    } catch (err) {
+      setError(ownerOnlyMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // Loads once on open; "Refresh" and the checkbox reload after that.
+  }, []);
+
+  const money = (value: string) => (BigInt(value) === 0n ? "—" : formatMoney(value, currency));
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-col gap-1.5">
+            <Label>As of</Label>
+            <DatePicker value={asOf} onChange={setAsOf} />
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
+            {loading ? <Spinner size="sm" /> : "Refresh"}
+          </Button>
+          {!error && (
+            <a
+              href={`${API_URL}/reports/trial-balance/export.csv?asOf=${toDateParam(asOf)}&includeZero=${!hideZero}`}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[13px] font-medium text-primary hover:underline"
+            >
+              Export CSV
+            </a>
+          )}
+        </div>
+        <label className="flex items-center gap-2 text-[13px] text-on-surface">
+          <Checkbox
+            checked={hideZero}
+            onCheckedChange={(checked) => {
+              setHideZero(checked === true);
+              void load(checked !== true);
+            }}
+          />
+          Hide accounts with no balance
+        </label>
+      </div>
+
+      {error && (
+        <Alert variant="critical">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {report && !error && (
+        <>
+          {report.balanced ? (
+            <Alert variant="success" data-testid="trial-balance-status">
+              <AlertDescription>Balanced — total debits equal total credits.</AlertDescription>
+            </Alert>
+          ) : (
+            <Alert variant="critical" data-testid="trial-balance-status">
+              <AlertDescription>
+                Out of balance by {formatMoney(BigInt(report.totalDebit) - BigInt(report.totalCredit), currency)}.
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="overflow-x-auto rounded-md border border-border-strong">
+            <table className="w-full text-[13px]" data-testid="trial-balance-table">
+              <thead>
+                <tr className="border-b border-border text-left text-on-surface-muted">
+                  <th className="px-4 py-2 font-medium">Code</th>
+                  <th className="px-4 py-2 font-medium">Account</th>
+                  <th className="px-4 py-2 text-right font-medium">Debit</th>
+                  <th className="px-4 py-2 text-right font-medium">Credit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.lines.map((line) => (
+                  <tr key={line.accountId} className="border-b border-border last:border-0">
+                    <td className="px-4 py-2 font-mono text-on-surface-muted">{line.code}</td>
+                    <td className="px-4 py-2">
+                      <button
+                        type="button"
+                        className="text-left text-primary hover:underline"
+                        onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}
+                      >
+                        {line.name}
+                      </button>
+                    </td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(line.debit)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(line.credit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border-strong font-semibold">
+                  <td className="px-4 py-2" />
+                  <td className="px-4 py-2">Total</td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(report.totalDebit), currency)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(report.totalCredit), currency)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="text-[12px] text-on-surface-muted">Click an account to see every journal entry behind its balance.</p>
+        </>
+      )}
+
+      {drilldown && (
+        <DrilldownDialog accountId={drilldown.accountId} accountLabel={`${drilldown.code} — ${drilldown.name}`} from="2000-01-01" to={toDateParam(asOf)} currency={currency} onClose={() => setDrilldown(null)} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * US-RPT-14 (D-057) — tax collected and paid for a period, with a per-rate
+ * breakdown, for filing. Collected is from the ledger (after credit notes
+ * and voids); the per-rate rows come from issued invoices' lines (D-031).
+ */
+function TaxSummaryTab() {
+  const [from, setFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
+  const [to, setTo] = useState<Date>(endOfToday());
+  const [currency, setCurrency] = useState("USD");
+  const [report, setReport] = useState<TaxSummaryReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => {
+        if (res.value?.code) setCurrency(res.value.code);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      setReport(await apiClient.get<TaxSummaryReport>(`/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`));
+    } catch (err) {
+      setError(ownerOnlyMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // Loads once on open; "Refresh" reloads for new dates.
+  }, []);
+
+  const money = (value: string) => formatMoney(value, currency);
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>From</Label>
+          <DatePicker value={from} onChange={setFrom} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>To</Label>
+          <DatePicker value={to} onChange={setTo} />
+        </div>
+        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+          {loading ? <Spinner size="sm" /> : "Refresh"}
+        </Button>
+        {!error && (
+          <a
+            href={`${API_URL}/org/tax/summary/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[13px] font-medium text-primary hover:underline"
+          >
+            Export CSV
+          </a>
+        )}
+      </div>
+
+      {error && (
+        <Alert variant="critical">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {report && !error && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="tax-summary-cards">
+            {[
+              { label: "Tax collected", value: report.taxCollected, note: "On issued invoices, after credit notes" },
+              { label: "Tax paid", value: report.taxPaid, note: "On recorded vendor bills and approved expenses" },
+              { label: "Net payable", value: report.netTaxPayable, note: "Collected minus paid" },
+            ].map((card) => (
+              <div key={card.label} className="rounded-md border border-border-strong p-4">
+                <p className="text-[13px] text-on-surface-muted">{card.label}</p>
+                <p className="mt-1 text-[22px] font-semibold tabular-nums text-on-surface">
+                  {money(card.value)}
+                </p>
+                <p className="mt-1 text-[12px] text-on-surface-muted">{card.note}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto rounded-md border border-border-strong">
+            <table className="w-full text-[13px]" data-testid="tax-summary-table">
+              <thead>
+                <tr className="border-b border-border text-left text-on-surface-muted">
+                  <th className="px-4 py-2 font-medium">Collected by rate</th>
+                  <th className="px-4 py-2 text-right font-medium">Taxable amount</th>
+                  <th className="px-4 py-2 text-right font-medium">Tax</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.collectedByRate.map((row) => (
+                  <tr key={row.name} className="border-b border-border">
+                    <td className="px-4 py-2">{row.name}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(row.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(row.amount)}</td>
+                  </tr>
+                ))}
+                {report.adjustments && (
+                  <tr className="border-b border-border">
+                    <td className="px-4 py-2">Adjustments from credit notes and voided invoices</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(report.adjustments.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(report.adjustments.amount)}</td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border-strong font-semibold">
+                  <td className="px-4 py-2">Total collected</td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {money(report.totalTaxable)}
+                  </td>
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {money(report.taxCollected)}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="text-[12px] text-on-surface-muted">Spine produces the numbers for your return; it doesn&apos;t file it. Only owners can see this report.</p>
+        </>
+      )}
+    </div>
   );
 }

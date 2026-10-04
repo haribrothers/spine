@@ -27,6 +27,8 @@ import {
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
+import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
+import { PHOTO_OR_PDF_ACCEPT } from "../../../lib/upload-types";
 
 const NO_JOB = "__none__";
 const NO_TAX = "";
@@ -73,6 +75,7 @@ export function ExpenseForm({
   const [amount, setAmount] = useState<bigint>(0n);
   const [taxRateSelection, setTaxRateSelection] = useState(NO_TAX);
   const [taxAmount, setTaxAmount] = useState<bigint>(0n);
+  const canManageCategories = useCanManageExpenseCategories();
   const [description, setDescription] = useState("");
   const [paidBy, setPaidBy] = useState<ExpensePaidBy>("company");
   const [receiptFileId, setReceiptFileId] = useState<string | null>(null);
@@ -195,7 +198,7 @@ export function ExpenseForm({
           <DialogDescription>
             {expense
               ? "Only a submitted expense can be edited — an approved expense has already posted to the ledger."
-              : "A submitted expense doesn't post to the ledger until an owner or staff member approves it."}
+              : expensesDescription(canManageCategories)}
           </DialogDescription>
         </DialogHeader>
 
@@ -261,7 +264,7 @@ export function ExpenseForm({
                   {receiptFilename ?? "View current receipt"}
                 </a>
               )}
-              <input ref={fileInputRef} type="file" accept="image/*,application/pdf" className="hidden" onChange={handleFileChange} />
+              <input ref={fileInputRef} type="file" accept={PHOTO_OR_PDF_ACCEPT} className="hidden" onChange={handleFileChange} />
             </div>
           </div>
 

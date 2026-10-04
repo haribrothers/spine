@@ -1,4 +1,5 @@
-import { Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
+import { businessProfileSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
@@ -38,6 +39,11 @@ export class SettingsController {
   @UseInterceptors(IdempotencyInterceptor)
   async setOne(@Session() session: UserSession, @Param("key") key: string, @Body("value") value: unknown) {
     const orgId = requireOrgId(session);
+    if (key === "business_profile") {
+      // US-INV-16: the same rules the Settings form shows.
+      const parsed = businessProfileSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the business profile and try again.");
+    }
     await this.settingsService.set(orgId, key, value);
     return { key, value };
   }

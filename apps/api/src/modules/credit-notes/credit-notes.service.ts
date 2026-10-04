@@ -1,6 +1,8 @@
+import { QueueService } from "../queue/queue.service";
+import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
-import { computeLineTax, money, roundHalfUp } from "@spine/shared";
+import { computeDocumentLine } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -68,12 +70,16 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
       };
     }
 
-    const netAmount = roundHalfUp(line.quantity * Number(line.unitPriceAmount));
-    const taxResult = computeLineTax(
-      money(netAmount, currency),
-      line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", rate: line.taxRatePercentage / 100, isCompound: false }] : [],
-      false,
-    );
+    // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
+    const computed = computeDocumentLine({
+      quantity: line.quantity,
+      unitPriceAmount: line.unitPriceAmount,
+      currency,
+      rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
+      inclusive: false,
+    });
+    const netAmount = computed.netAmount;
+    const taxResult = computed.tax;
 
     subtotalAmount += netAmount;
     taxAmount += taxResult.taxAmount.amount;
@@ -113,6 +119,7 @@ export class CreditNotesService {
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
+    private readonly queue: QueueService,
   ) {}
 
   async list(orgId: string, options: { invoiceId?: string; contactId?: string }) {
@@ -361,6 +368,7 @@ export class CreditNotesService {
       return row;
     });
 
+    await queueIssuedPdf(this.queue, orgId, "credit_note", result!.id);
     return this.getOne(orgId, result!.id);
   }
 

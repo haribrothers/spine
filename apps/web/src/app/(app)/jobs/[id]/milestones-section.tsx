@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { Plus, Trash2 } from "lucide-react";
 import { authClient } from "../../../../lib/auth-client";
 import { apiClient } from "../../../../lib/api-client";
@@ -10,6 +9,7 @@ import { useCanEditOwnership, useCapabilities, useCapability } from "../../../..
 import { HistorySection } from "../../../../components/history-section";
 import { CompleteMilestoneDialog } from "./complete-milestone-dialog";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
+import { formatMoney } from "../../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Milestone["status"], string> = {
   pending: "bg-draft-bg text-draft",
@@ -27,7 +27,7 @@ function toEditable(milestones: Milestone[]): EditableMilestone[] {
       name: m.name,
       sequence: m.sequence,
       amountType: m.amountType,
-      amount: m.amount,
+      amount: m.amount ?? 0,
       dueDate: m.dueDate,
       status: m.status,
     }));
@@ -67,7 +67,8 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
   const [invoicingId, setInvoicingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const canManage = useCanEditOwnership(milestones?.[0]?.createdByUserId ?? null, {
+  // US-JOB-20: milestones are owned through the job, by whoever created it.
+  const canManage = useCanEditOwnership(job.createdByUserId ?? null, {
     own: "milestones.edit_own",
     others: "milestones.edit_others",
   });
@@ -227,6 +228,7 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
                     </NativeSelect>
                   )}
                 </FormField>
+                {/* eslint-disable-next-line no-restricted-syntax -- a field label naming the currency to type in, not an amount */}
                 <FormField label={row.amountType === "percent" ? "Percent" : `Amount (${job.currency})`} className="w-32">
                   {(field) => (
                     <Input
@@ -324,15 +326,17 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
                     <Badge className={STATUS_BADGE_CLASS[m.status]}>{MILESTONE_STATUS_LABELS[m.status]}</Badge>
                   </div>
                   <p className="text-[12px] text-on-surface-muted">
-                    {m.amountType === "percent" ? `${m.amount}% of contract` : "Fixed amount"}
-                    {m.dueDate && <> · Due {new Date(m.dueDate).toLocaleDateString()}</>}
+                    {m.amount === undefined ? null : m.amountType === "percent" ? `${m.amount}% of contract` : "Fixed amount"}
+                    {m.dueDate && <>{m.amount === undefined ? "" : " · "}Due {new Date(m.dueDate).toLocaleDateString()}</>}
                   </p>
                   {m.completionNotes && <p className="mt-1 text-[12px] text-on-surface-muted">"{m.completionNotes}"</p>}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[13px] tabular-nums text-on-surface">
-                    {toDecimalString({ amount: BigInt(m.resolvedAmount), currency: job.currency })} {job.currency}
-                  </span>
+                  {m.resolvedAmount !== undefined && (
+                    <span className="text-[13px] tabular-nums text-on-surface">
+                      {formatMoney(BigInt(m.resolvedAmount), job.currency)}
+                    </span>
+                  )}
                   <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />
                   {m.status === "pending" && canCompleteMilestone(m) && (
                     <Button size="sm" variant="secondary" onClick={() => setCompletingMilestone(m)}>

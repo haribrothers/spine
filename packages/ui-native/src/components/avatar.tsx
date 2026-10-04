@@ -46,7 +46,7 @@ export function Avatar({ size = "md", source, fallback, className, ...props }: A
       {showImage ? (
         <Image source={source} className="h-full w-full" resizeMode="cover" onError={() => setImageFailed(true)} />
       ) : (
-        <Text className={cn("font-semibold text-white", textSizeClasses[size])}>{fallback}</Text>
+        <Text className={cn("font-semibold text-on-primary dark:text-on-primary-dark", textSizeClasses[size])}>{fallback}</Text>
       )}
     </View>
   );

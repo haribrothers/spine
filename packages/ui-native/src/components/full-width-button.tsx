@@ -255,6 +255,7 @@ function IOSFullWidthButton({
   testID,
   label,
   fillColor,
+  labelColor,
   filled,
   controlSize,
   shape,
@@ -264,6 +265,8 @@ function IOSFullWidthButton({
   testID?: string;
   label: string;
   fillColor: string;
+  /** Text on the filled button: `onPrimary` / `onDanger` for this mode (US-OPS-25). */
+  labelColor: string;
   filled: boolean;
   controlSize: ButtonControlSize;
   shape: "pill" | "rounded" | "sharp";
@@ -294,13 +297,9 @@ function IOSFullWidthButton({
         style={{
           fontSize: sizeStyle.fontSize,
           fontWeight: "600",
-          // SwiftUI's real `.borderedProminent` always uses white label
-          // text regardless of light/dark mode or the seeded tint color
-          // (the fill is always saturated enough to need it) — there's no
-          // dedicated "on-primary" token in this package's color set to
-          // reach for instead, so this matches that real native convention
-          // directly rather than misusing an unrelated token.
-          color: filled ? "#FFFFFF" : fillColor,
+          // US-OPS-25 (D-099): white on the light-mode fill, near-black on
+          // the lighter dark-mode fill — white on #6B8AFF is only 3.1:1.
+          color: filled ? labelColor : fillColor,
         }}
       >
         {label}
@@ -330,6 +329,7 @@ export function FullWidthButton({
         disabled={disabled}
         testID={testID}
         label={label}
+        labelColor={variant === "danger" ? colors.onDanger : colors.onPrimary}
         fillColor={seedColor ?? colors.primary}
         filled={expoUiVariant === "filled"}
         controlSize={controlSize ?? "regular"}

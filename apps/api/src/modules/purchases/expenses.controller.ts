@@ -46,14 +46,16 @@ export class ExpensesController {
     @Query("mine") mine?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.expensesService.list(orgId, { status, jobId, submittedByUserId: mine === "true" ? session.user.id : undefined });
+    // Field always sees only their own expenses, whatever `mine` says (US-OPS-20).
+    const scope = await this.expensesService.readScope(orgId, session.user.id);
+    return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
   }
 
   @Get(":id")
   @OrgRoles(["owner", "staff", "field"])
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.expensesService.getOne(orgId, id);
+    return this.expensesService.getOne(orgId, id, await this.expensesService.readScope(orgId, session.user.id));
   }
 
   /** `GET /expenses/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "expense"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
@@ -61,7 +63,7 @@ export class ExpensesController {
   @OrgRoles(["owner", "staff", "field"])
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.expensesService.getHistory(orgId, id);
+    return this.expensesService.getHistory(orgId, id, await this.expensesService.readScope(orgId, session.user.id));
   }
 
   @Post()

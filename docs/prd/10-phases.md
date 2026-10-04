@@ -9,8 +9,8 @@ Phases 0–4 are built; Phase 5 is in progress; Phases 6–8 follow ([D-098](12-
 | 2 | Money in | 22 | Quote → invoice → partial payment with a balanced trial balance |
 | 3 | Jobs & construction billing | 15 | A full contract lifecycle reconciles |
 | 4 | Money out & books | 62 | A simulated quarter produces accountant-acceptable reports |
-| 5 | Mobile field companion | 26 | The app works end-to-end in airplane mode and syncs without duplicates |
-| 6 | Fix and harden | 46 | Everything already built is correct, secure and consistent |
+| 5 | Mobile field companion | 25 | The app works end-to-end in airplane mode and syncs without duplicates |
+| 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
@@ -366,7 +366,6 @@ Total: 327 stories.
 
 - US-JOB-15 · Assign crew to a job (P2)
 - US-JOB-16 · Show field crew only their assigned jobs (P1)
-- US-JOB-19 · Keep money and unassigned jobs away from field crew (P1)
 
 *Mobile field companion*
 
@@ -426,6 +425,7 @@ Total: 327 stories.
 
 *Jobs & milestones*
 
+- US-JOB-19 · Keep money and unassigned jobs away from field crew (P1)
 - US-JOB-20 · Own a job's milestones through the job (P1)
 - US-JOB-21 · Show retention on a progress invoice (P1)
 - US-JOB-22 · Number every job (P3)

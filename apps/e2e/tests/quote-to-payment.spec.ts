@@ -81,7 +81,7 @@ test("quote → send → customer accepts → convert to invoice → issue → r
   // for that to resolve (visible as "Unallocated: 0.00") before submitting,
   // otherwise a click that lands before the fetch resolves silently
   // submits against a still-empty allocation list.
-  await expect(page.getByText(/Unallocated:\s*0\.00/)).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByText(/Unallocated:\s*\$0\.00/)).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Record payment" }).last().click();
 
   // Invoices have no "paid" status of their own (draft/issued/void only —

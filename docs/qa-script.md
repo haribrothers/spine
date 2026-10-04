@@ -16,13 +16,14 @@ before considering that work's QA "done."
 ## Setup (do this once per test pass)
 
 1. Start dev infra: `docker compose -f docker-compose.dev.yml up -d`
-   (Postgres, MailDev, MinIO).
+   (Postgres, MailDev). Uploaded files go to `apps/api/.data/files`
+   (local storage driver) — no storage container.
 2. Start the app: `pnpm dev` — web on http://localhost:3000, API on
    http://localhost:4000.
 3. MailDev inbox (every email the app sends lands here in dev):
    http://localhost:1080
-4. MinIO console (uploaded files/logos): http://localhost:9001
-   (credentials in `.env`).
+4. Uploaded files/logos are on disk under
+   `apps/api/.data/files/<org-id>/<2-char prefix>/<file-id>`.
 5. For a genuinely fresh org, run `pnpm db:reset` (in `apps/api`) — it
    truncates every app table (a hardcoded list kept in sync with the
    schema; see `apps/api/src/db/reset.ts`) but does **not** seed demo
@@ -36,7 +37,10 @@ before considering that work's QA "done."
 
 1. Go to http://localhost:3000/signup and create an account. This first
    signup on a fresh instance should become the **Primary Owner**
-   automatically — no separate "create org" step.
+   automatically — no separate "create org" step. (On an instance that
+   already has an owner, sign-up is invite-only — §31; set
+   `SPINE_ALLOW_OPEN_SIGNUP=true` in `.env` to create another organisation
+   in dev.)
 2. Confirm you land in the onboarding wizard. Step through: business
    profile → industry template → currency/locale/financial year → tax
    rates → numbering prefixes → chart-of-accounts confirmation → team
@@ -67,7 +71,7 @@ before considering that work's QA "done."
      jobs (3, at different stages — see §5 below).
    - A business logo (a real uploaded file, not a URL string — confirm
      it shows in Settings and on quote/invoice PDFs, and that the file
-     exists in the MinIO console).
+     exists under `apps/api/.data/files`).
    - A second tax rate ("State Surcharge", compound) and a tax group
      combining it with the seeded "Sales Tax" rate (§10).
    - A partial credit note against one of the seeded invoices (§7).
@@ -125,8 +129,8 @@ before considering that work's QA "done."
    org's configured currency.
 9. Go to **Contacts** and use **Import from CSV** — upload a small CSV
    with a few rows, confirm contacts are created and mapped correctly.
-10. Open a contact's **History** tab (audit log) — confirm edits you've
-    made show up with before/after values.
+10. On a contact, press the **History** button (clock icon, US-SET-13) —
+    confirm edits you've made read as sentences with before/after values.
 
 ---
 
@@ -732,7 +736,7 @@ than building every case from scratch.
 
 ### 11.1 Expense categories
 
-1. Open **Settings → Purchases**. Confirm a list of expense categories
+1. Open **Expenses › Categories** (US-PUR-19; it used to be Settings → Purchases). Confirm a list of expense categories
    (demo data seeds "Fuel & Vehicle", "Site Meals", "Tools & Small
    Equipment" — "Fuel & Vehicle" has a default posting account set, the
    other two don't).
@@ -882,7 +886,8 @@ than building every case from scratch.
    public link, or a payment is recorded).
 2. Click the notification bell — confirm a right-side panel opens
    listing the event, and it's marked read once opened.
-3. If your browser prompts for notification permission, accept it, then
+3. Open Profile & Preferences › Notifications › Browser notifications and
+   press "Turn on" (US-NTF-12). When the browser asks for permission, accept, then
    trigger another event — confirm a native OS/browser push notification
    appears (this only works over a real trigger, not a manual test
    button, so pick a real action like recording a payment).
@@ -1840,7 +1845,7 @@ revenue.
 21. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
-    immediately, and that a new Settings → Purchases expense category can
+    immediately, and that a new Expenses › Categories category can
     select it as its posting account.
 22. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
@@ -1849,7 +1854,502 @@ revenue.
 
 ---
 
+### Issued PDFs are kept (US-INV-17)
+
+1. Open a draft invoice and click "Preview PDF". Change the business name
+   in Settings → Business and preview again: the PDF shows the new name.
+2. Issue the invoice and click "Download PDF". Now change the business
+   name, logo or the contact's address and download again: the PDF is
+   unchanged.
+3. Email the invoice, then send a reminder (§7): both attachments are the
+   same PDF as the download.
+4. Do the same for a sent quote (§4) and a payment receipt (§8).
+5. Credit notes: open a credit note from Billing → Credit Notes or the
+   invoice's Credit notes section. A draft shows "Preview PDF"; an issued
+   one shows "Download PDF". The PDF reads "CREDIT NOTE", its number,
+   "Credited to", "Against invoice <number>", the reason, lines and "Total
+   credited", and stays unchanged after the business details change.
+6. With the API's files folder made read-only, issue an invoice: issuing
+   still succeeds. Make it writable again: the PDF is stored by the retried
+   job (or on the first download).
+
+## 16. File storage (US-OPS-27, Phase 6)
+
+Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
+
+1. With no `STORAGE_DRIVER` or `S3_*` in `.env`, restart the API. Upload a
+   business logo (Settings), a receipt on an expense (§11.2) and a photo on
+   a job (§5). Reload each page: every file still shows.
+2. Confirm each file exists on disk at
+   `apps/api/.data/files/<org-id>/<2-char prefix>/<file-id>` — the folder
+   names are ids, never the uploaded file name.
+3. Open a job photo in its own tab. In DevTools → Network the
+   `/files/<id>` response is 200 with `Content-Type: image/…`,
+   `Content-Length`, `ETag` and `Accept-Ranges: bytes`. Reload: 304.
+4. Sign out and open the same `/files/<id>` URL: 401. Sign in as a user of
+   another organisation and open it: 404.
+5. Production stack: `docker compose --profile minimal up -d` with no
+   `S3_*` in `.env`. Upload a logo, then `docker compose exec api ls -R
+   /data/files` shows it and `docker compose exec api id -un` prints
+   `node` (not root). `docker compose restart api`: the logo still shows.
+6. S3 driver: `COMPOSE_PROFILES=rustfs pnpm dev:infra:up`, set
+   `STORAGE_DRIVER=s3` and the commented `S3_*` values from
+   `.env.development.example`, restart the API. Upload a photo: opening it
+   redirects (302) to `localhost:9000`. Files uploaded in step 1 still open.
+
+7. Integrity (US-OPS-28): upload a receipt, then overwrite its file on disk
+   (`echo broken > apps/api/.data/files/<org>/<xx>/<id>`). Opening it now
+   shows an error and the API answers 409 "This file is damaged. Restore it
+   from your latest backup." As an Owner, the dashboard shows "1 stored file
+   is damaged or missing — restore from your latest backup." with the file
+   listed; a Staff or Field user sees no warning.
+8. Delete another file from disk: it's reported as "(missing)" the same way.
+9. Put the original bytes back (or restore the folder from a backup). After
+   the weekly check runs, the warning disappears. To run it now, restart
+   the API with a file that has no checksum, or call
+   `FileIntegrityWorker.run()` from a script.
+
+10. Safe uploads (US-OPS-29): rename a `.txt` file to `receipt.pdf` and
+    attach it to an expense — the form shows "This file type isn't
+    supported. Upload a photo or a PDF." An SVG or GIF logo is refused the
+    same way. The file pickers only offer JPEG, PNG, WebP, HEIC and PDF.
+11. Upload a phone photo that has location data (check with an EXIF viewer
+    first) as a job photo. Download it again from the job: the location is
+    gone and the photo still shows the right way up.
+12. In DevTools, any `/files/<id>` response has `X-Content-Type-Options:
+    nosniff` and `Content-Disposition: inline; filename="…"` for photos
+    and PDFs.
+
+13. Moving off MinIO (US-OPS-30): with `COMPOSE_PROFILES=rustfs pnpm
+    dev:infra:up`, set `STORAGE_DRIVER=s3` and the `S3_*` values, restart
+    the API and upload a few files. Then run
+    `pnpm --filter @spine/api files:migrate --from s3 --to local`: it
+    prints "Copied: <n>  Skipped (already in local): <m>  Failed: 0". Set
+    `STORAGE_DRIVER=local`, restart: every file still opens. Run the
+    command again: "Copied: 0". The bucket still holds the originals.
+14. Delete one object from the bucket before migrating: the command lists
+    it as "missing from s3", exits with an error, and that file's record
+    still points at S3.
+
+15. Disk space (US-OPS-31): `curl localhost:4000/health/ready` shows
+    `"storage":{"driver":"local","usedPercent":<n>}`. To see the banner,
+    run the API with `FILES_DIR` on a small, nearly full volume (e.g. a
+    50 MB disk image filled to 90%): Owners see "Storage is <n>% full. Free
+    up space or add disk before uploads stop working." on every page
+    within 15 minutes of a restart; Staff and Field don't.
+16. Fill that volume completely and upload a photo: the uploader shows
+    "There's no space left to store this file. Ask an owner to free up
+    space." and the rest of the app keeps working.
+
+Regression checks:
+- Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
+- **Load demo data** still seeds the logo and job photos (§1.7).
+- Every page still lays out normally for Owners, Staff and Field (the new
+  banner slot is empty when there's nothing to show).
+- Contact logos, profile avatars and expense receipt links still open, and
+  uploading each still works (logo crop, avatar, receipt, job and milestone
+  photos).
+
+## 17. Read access (US-OPS-20, Phase 6)
+
+Set up an Owner, a Staff member in a Team without "View receivables", and
+a Field user assigned to one job (§13).
+
+1. As Staff and as Field: `GET /org/invitations` → 403, and Users →
+   Invitations isn't reachable. As Owner: the invitations list shows.
+2. As Staff: `POST /demo-data/seed` and `DELETE /demo-data` → 403. (Loading
+   demo data is only offered in the Owner's onboarding; deleting it only
+   in the Owner's Settings → Data.)
+3. As the Staff member without "View receivables": the dashboard has no
+   "Invoices due this week" widget, and the route returns 403. Grant it
+   to their Team: the widget appears.
+4. As Field: a photo on the assigned job opens; a photo on another job's
+   `/files/<id>` URL → 404. Your own expense receipt opens; another
+   person's receipt → 404. An invoice PDF's `/files/<id>` → 404.
+5. As Field: Expenses lists only your own expenses; another person's
+   `/expenses/<id>` → 404.
+6. As Staff: everything above opens (except the receivables widget in 3).
+7. Upload a logo in Settings but don't save: the file opens for you; as
+   another Staff member its `/files/<id>` → 404.
+
+Regression checks: contact logos, avatars, the business logo, job photos
+and receipts still show for everyone who should see them (§2, §5, §11,
+§13).
+
+## 18. Field and job money (US-JOB-19, Phase 6)
+
+With a Field user assigned to one job (Jobs → Crew):
+
+1. As Field, Jobs lists only that job, with no "Contract value" or
+   "Retention" columns.
+2. Open it: no contract value or retention in the header, milestones show
+   no amounts, and there's no Costing tab. Notes, Photos and Milestones
+   still work, including "Mark complete".
+3. Open another job's URL directly (`/jobs/<id>`): "Job not found".
+4. The dashboard's "Job milestones due" lists only that job's milestones.
+5. As Staff without "View job profitability", the Costing tab is hidden;
+   grant it to their Team and it appears. Owners always see it.
+
+Regression checks: Owners and Staff still see contract value, retention
+and milestone amounts everywhere (§5).
+
+## 19. Sidebar by role (US-TEAM-18, Phase 6)
+
+1. As Field: the sidebar shows "Overview" › Dashboard and "Work" › Jobs,
+   Meetings, Expenses — nothing else.
+2. As Staff in a Team without "View receivables" / "View payables": no
+   Receivables / Payables. Without any report grant: no Reports. Staff
+   never see Team (Users, Teams).
+3. Grant "View receivables" to their Team and reload: Receivables appears.
+4. As Owner: every section, including Team.
+
+## 20. No-access page (US-OPS-12, Phase 6)
+
+1. As Staff without report grants, open `/reports` and `/receivables`:
+   "You don't have access to Reports" / "…Receivables", naming the
+   owners, with "Go to dashboard". DevTools → Network shows no
+   `/reports/*` request from that page.
+2. As Staff, open `/team/users`: "Team is only available to owners." —
+   no mention of team permissions.
+3. As Staff with "View job profitability", open Reports: it opens on Job
+   Profitability; the Profit & Loss tab shows "Profit & Loss is only
+   available to owners."
+4. As Field, open `/invoices`: the no-access page, without the "change
+   your team's permissions" part.
+5. Trigger a refused action (e.g. remove a grant from a Staff member's
+   Team while they have the page open, then use that button): a toast
+   reads "You don't have permission to do that", not a raw error.
+
+## 21. Self-approval (US-PUR-20, Phase 6)
+
+1. As a Staff member whose Team can approve expenses, submit an expense and
+   open it: no Approve/Reject; the drawer reads "Someone else needs to
+   approve your own expense."; "Delete expense" is there; Edit is in the
+   row's actions.
+2. Open a colleague's submitted expense: Approve and Reject work.
+3. As Owner, open your own submitted expense: Approve works.
+
+## 22. Owners on the Users page (US-TEAM-16, US-TEAM-17, Phase 6)
+
+1. Team → Users: "Users" / "Everyone with access to this organisation."
+   appear once, at the top.
+2. On a Staff member's row: ⋯ → "Promote to Owner" opens "Make <name> an
+   owner?" naming your business. "Cancel" changes nothing; "Make owner"
+   (blue, not red) makes them Owner.
+3. The Primary Owner's row has no "Deactivate". As the Primary Owner, its ⋯
+   menu shows only "Transfer primary ownership…"; as another Owner, the
+   row has no ⋯ menu at all.
+
+## 23. Setup checklist (US-ONB-12, Phase 6)
+
+1. As Staff or Field: the dashboard has no "Get started" card.
+2. As Owner after "Load demo data" only: the card shows with none of the
+   three steps ticked.
+3. Dismiss it as one Owner: another Owner no longer sees it either.
+
+## 24. Exact decimals (US-TAX-07, Phase 6)
+
+1. Settings → Tax: add "New York" at 8.875%. Reopen it: 8.875.
+2. On a quote, a line of quantity 0.3 at 33.33 shows 10.00 in the editor
+   and, after saving, on the quote and its PDF.
+3. A line of quantity 1.005 at 1.00 totals 1.01 (not 1.00).
+4. A 12.5% discount on 3 × 33.33 (99.99) is 12.50; 20% VAT on the rest
+   (87.49) is 17.50; the line total 104.99. Editor and saved figures match.
+5. Job milestones: 33.3333 / 33.3333 / 33.3334 % saves; 33.333 × 3 is
+   refused with "Milestone percentages must total 100%".
+
+Regression checks: existing quotes, invoices, credit notes, vendor bills and
+job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
+
+## 25. Deposits against advance invoices (US-PAY-13, Phase 6)
+
+1. Create an advance (deposit) invoice for 5,000.00 with a tax rate on the
+   line, and issue it: its tax is 0.00.
+2. "Record payment" for 5,000.00 offers the advance invoice; allocate it all.
+   The invoice shows "Paid". The payment's journal entry: Bank 5,000.00 Dr,
+   2200 Customer Advances 5,000.00 Cr, no Accounts Receivable.
+3. The customer's credit shows 5,000.00. Apply it to the final invoice: its
+   balance drops by 5,000.00; the entry is 2200 Dr / Accounts Receivable Cr.
+4. A 2,000.00 payment on a fresh 5,000.00 advance invoice: "Partially paid",
+   3,000.00 outstanding.
+5. Deleting a payment that paid an advance invoice is refused.
+
+## 26. Milestone ownership (US-JOB-20, Phase 6)
+
+1. As Staff with "Edit own milestones" only: on a job you created, "Define
+   milestones" opens and saves; on a colleague's job the button is hidden.
+2. As Staff with "Edit others' milestones": edit a colleague's job's
+   milestones. The job's creator can still edit them afterwards; the
+   first Staff member still can't.
+
+## 27. Retention on progress invoices (US-JOB-21, Phase 6)
+
+1. Open a progress invoice raised from a milestone on a job with retention
+   (demo: the job with retention accumulating, §5). Under the header:
+   "Job <name>" and "Milestone <name> (<pct>%)", both linking to the job.
+2. Totals: Subtotal, Tax, Total, "Retention held (<pct>%)" (negative),
+   "Amount due" = Total − retention. Below: "Retention is held in
+   Retention Receivable until you release it from the job. Held on this
+   job so far: <amount>."
+3. Issue a new progress invoice and download its PDF: it has the same
+   retention and amount-due rows. Email it: the email states the
+   retention held and the amount due.
+4. A progress invoice on a job with 0% retention shows no retention row.
+
+## 28. Ledger balance check (US-RPT-12, Phase 6)
+
+1. As Owner, the dashboard shows no "out of balance" warning.
+2. To see the warning, a developer can unbalance the dev ledger on purpose
+   (insert a stray journal line with `session_replication_role = replica`)
+   and run the check (`LedgerIntegrityService.check(orgId)` or wait for
+   02:00): the dashboard reads "Your books are out of balance by <amount>.
+   Contact the person who runs Spine." and an in-app notification arrives.
+   Undo it and run the check again: the warning goes.
+3. As Staff, `GET /reports/ledger-integrity` → 403.
+
+## 29. Trial Balance (US-RPT-13, Phase 6)
+
+1. As Owner, Reports › "Trial Balance": choose "As of", "Refresh". Each
+   account with a balance shows on its Debit or Credit side; the "Total"
+   row's debit and credit match; the status reads "Balanced — total
+   debits equal total credits."
+2. Untick "Hide accounts with no balance": zero-balance accounts appear.
+3. Click an account: its journal entries open.
+4. "Export CSV" downloads Code, Account, Debit, Credit and a Total row.
+5. As Staff, the tab shows "Trial Balance is only available to owners."
+
+## 30. Tax Summary on Reports (US-RPT-14, Phase 6)
+
+1. As Owner, Reports › "Tax Summary": choose "From"/"To", "Refresh". Cards:
+   "Tax collected" (on issued invoices, after credit notes), "Tax paid" (on
+   recorded vendor bills and approved expenses), "Net payable".
+2. "Collected by rate" lists each named rate or group with taxable amount
+   and tax; after issuing a credit note, an "Adjustments from credit notes
+   and voided invoices" row appears; "Total collected" equals the card.
+3. "Export CSV" downloads the same rows plus tax paid and net payable.
+4. Settings › Tax no longer has a tax summary section.
+5. As Staff, the tab shows "Tax Summary is only available to owners."
+
+Regression checks: §10's tax summary steps now happen on Reports, not in
+Settings › Tax.
+
+## 31. Invite-only sign-up (US-AUTH-08, Phase 6)
+
+1. Signed out, on an instance with an owner, open `/signup`: "This Spine is
+   invite-only" naming your business, a "Log in" button, no form. "Log in"
+   goes to `/login`, which has no "Sign up" link.
+2. Open an invitation's sign-up link (`/signup?inviteId=…&email=…`): the
+   normal form, with the invited email.
+3. `curl -X POST localhost:4000/api/auth/sign-up/email` with a new email and
+   no invitation → 403 "This Spine is invite-only…".
+4. On a fresh install (empty database), `/signup` shows the first-account
+   form.
+
+## 32. Password reset (US-AUTH-09, US-AUTH-10, Phase 6)
+
+1. Signed out, `/login` → "Forgot password?" → `/forgot-password` with "Reset your password", the explanation, "Email", "Send reset link", "The link works once and expires in 1 hour." and "Back to log in".
+2. Enter an address with no account → "Check your email" naming it. The resend button reads "Resend link in 0:59" and counts down; after 60 seconds it reads "Resend link" and works.
+3. Enter your own address. With SMTP set up, an email "Reset your Spine password" arrives. Without SMTP the page looks the same and the API log says no link was sent (and shows no token).
+4. Open the link in another browser while still signed in in the first: "Choose a new password", "For <your email>. You'll be signed out on your other devices."
+5. Type two different passwords → "The passwords don't match." under "Confirm new password". Type a matching pair → the dashboard opens, signed in.
+6. In the first browser, reload: you're sent to `/login`. The old password fails; the new one works. On the phone app, the next request signs you out too.
+7. Open the same link again → "This link can't be used" with "Request a new one".
+8. On the phone app's login, "Forgot password?" opens the web page in the phone's browser.
+9. Send 11 reset requests within 15 minutes from one network → the 11th shows "Too many reset requests from this network. Wait 15 minutes and try again."
+
+Regression: `/login` still signs in, and shows "Sign up" only on a fresh install (§31).
+
+## 33. Invitation can't be used (US-AUTH-11, Phase 6)
+
+1. Signed out, open `/accept-invite/<made-up id>`: "This invitation can't be used", "It may have expired, been cancelled, or already been accepted. Ask whoever invited you to send a new one." and "Log in instead", which goes to `/login`. No business name appears.
+2. As an Owner, invite someone, then cancel the invitation from Team › Users. Open its link signed in and signed out: the same page.
+3. Open an accepted invitation's link, and one past its expiry: the same page.
+4. A fresh pending invitation still shows "You've been invited" with sign-up/log-in (signed out) or Accept/Decline (signed in as the invitee).
+
+Regression: the invitation sign-up link (`/signup?inviteId=…&email=…`) still shows the form (§31); accepting an invitation still joins the organisation.
+
+## 34. Signed out mid-task (US-AUTH-12, Phase 6)
+
+1. Open Contacts › "Add contact" and type a name. In another tab, log out (or delete the `better-auth.session_token` cookie in dev tools).
+2. Back in the first tab, press "Save contact": "You've been signed out" with "Your session ended, so this change wasn't saved yet. Log in again to save it — the draft stays open in this tab." and "Log in again".
+3. "Log in again" → "Log in as <your email>." and "Password". Log in: the dialog closes, the drawer and the typed name are still there, and nothing was saved yet. Press "Save contact" again: it saves.
+4. Open Contacts, don't type anything, and sign out in another tab. Within 20 seconds (the notification bell's refresh) the page goes to `/login?next=%2Fcontacts`; logging in returns to Contacts.
+5. Signed out, open `/login?next=//example.com` and log in: you land on the dashboard, not another site.
+
+Regression: a Staff user without a capability still gets the "You don't have permission to do that" toast (US-OPS-12), not the signed-out dialog.
+
+## 35. Branded emails (US-NTF-10, Phase 6)
+
+1. With a logo and address in Settings › Business, send a quote to a contact with an email. In MailDev (or your inbox): the From name is your business; the subject is "<Business> sent you a quote (QUO-…)".
+2. The email has a coloured bar at the top, your logo and name, "Your quote is ready", "Hi <first name>,", a box with Quote, Total and Valid until, one "View quote" button, the small print, and a footer with your name and address. "View quote" opens the public quote page.
+3. Turn images off in the mail client: your business name still shows, and the email still reads correctly.
+4. View the plain-text version: same content, with the link written out.
+5. Remove the logo and send another quote: no broken image; the name shows alone.
+
+Regression: the quote PDF is still attached; the quote's email status still turns "sent" (§3).
+
+## 36. Every email in the branded layout (US-NTF-11, Phase 6)
+
+Send each of these and check each one has the coloured bar, your logo and name, a heading, and your footer:
+1. Invite someone: "<You> invited you to join <Business> on Spine", naming the business from Settings › Business (not "<Name>'s Organisation"), with an "Accept invitation" button that opens the invitation.
+2. "Forgot password?" for your own address: "Reset your password" with a "Choose a new password" button.
+3. Email an invoice, then send a reminder on an overdue one: the facts box shows the invoice, total, balance due and due date; no button; the PDF is attached. The reminder's subject reads "Reminder: INV-… is now N days overdue".
+4. Record a payment from a contact with an email: "Thanks — we've received your payment" with the amount and how much was applied. Send its receipt: "Your receipt" with the PDF.
+5. As a member, get a notification email (invite someone to a meeting, approve an expense, complete a milestone): one button to the record, and the footer says "You're getting this because you're a member of <Business>."
+
+Regression: quote emails still match §35; notification bells and push still arrive as before.
+
+## 37. Push from your own profile (US-NTF-12, Phase 6)
+
+1. Log in as a Field or Staff user and open Profile & Preferences: a "Notifications" heading, then "Browser notifications" showing this device's state ("Not enabled on this device" and "Turn on"), then "Meeting reminders".
+2. Press "Turn on" and allow notifications: it reads "Enabled on this device". Assign this user to a meeting from another account: a browser notification appears.
+3. As an Owner, open Settings from the user menu: there's no "Browser notifications" section any more.
+
+Regression: Meeting reminders on the profile still save; the notification bell still works (§12).
+
+## 38. Expired quote links (US-QUO-21, Phase 6)
+
+1. In Settings › Business profile, fill in "Business email" and "Business phone", and save. Reopen it: both are kept.
+2. Send a quote and copy its link from the email. Revise the quote, then open the old link signed out: your logo and name, "This quote link has expired", the explanation naming your business, and a box with your address, email (opens mail) and phone (opens the dialler).
+3. Open `/quote/anything-made-up`: "This quote link isn't valid", with no business name or details.
+4. Open a current quote link: the quote loads as before.
+
+Regression: accepting and declining a quote on its public page still work (§3); onboarding's business step still saves.
+
+## 39. Emailed quote links stay live (US-QUO-22, Phase 6)
+
+1. Load demo data. In MailDev, open each demo quote email's "View quote" link: every quote whose current version is "sent" opens.
+2. QUO-0003 was revised by the demo: its first email's link shows "This quote link has expired"; the email for its revision opens the revised quote.
+3. Send a quote, wait a day (or advance the clock), and open the link again: it still loads. It stops only after 30 days or when you revise the quote.
+
+Regression: the quotes list still groups a revised quote under its newest version with "Superseded" on the old one.
+
+## 40. Payment instructions in Settings (US-INV-16, Phase 6)
+
+1. As an Owner, Settings › "Payment instructions": the description, the "How customers can pay" field with "Up to 600 characters. Leave empty to hide the block.", and the note that issued invoices keep their instructions.
+2. Paste more than 600 characters and press "Save": "Keep this under 600 characters." and nothing is saved.
+3. Enter a few lines (bank, account, reference) and save: "Saved". Reopen Settings: the text is still there.
+4. Open Business profile, change the address and save, then come back: the payment instructions are still there.
+
+Regression: Business profile still saves name, logo, address, email and phone (§38).
+
+## 41. Payment instructions on invoices (US-INV-15, Phase 6)
+
+1. Set payment instructions (§40). Issue an invoice and download its PDF: a "How to pay" box under the totals with your text, line breaks kept.
+2. Email that invoice: the email shows the same text in a "How to pay" box above "The invoice is attached as a PDF.".
+3. Change the instructions in Settings. Download the first invoice's PDF again and send it a reminder: both still show the old text. Issue a new invoice: it shows the new text.
+4. Clear the instructions and issue another invoice: no empty "How to pay" box in the PDF or email.
+
+Regression: invoice totals, retention and balance due still print as before (§4); invoice PDFs are still stored at issue (US-INV-17).
+
+## 42. Repeat conversion warning (US-QUO-23, Phase 6)
+
+1. Convert an accepted quote to a job, go back to the quote and press "Convert to job" again.
+2. The dialog reads "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once." Under "Existing job", each job is on its own line and opens the job.
+3. "Convert to job anyway" is blue (primary), not red. Pressing it creates a second job.
+4. Do the same with "Convert to invoice": the text says "invoice" and the existing invoices are listed as links.
+
+Regression: with Settings › "Repeat quote conversion" set to "Block", the second conversion is refused with no dialog; set to "Off", there's no dialog.
+
+## 43. Job names from quotes (US-JOB-23, Phase 6)
+
+1. Convert an accepted quote whose first line is "Project management" for "Sunstone Retail Fitouts": the job is "Project management — Sunstone Retail Fitouts".
+2. Convert it again (confirm the warning): "… (2)".
+3. On a database with older jobs named "Job for QUO-…", run `pnpm db:migrate:dev`. They're renamed the same way, and each job's History shows the rename. Jobs you'd renamed yourself keep their names.
+
+Regression: the Jobs list, job detail and the phone's job screen show the new names; editing a job's name still works (§5).
+
+## 44. Job numbers (US-JOB-22, Phase 6)
+
+1. Create a job (or convert a quote): it gets "JOB-001", then "JOB-002". The Jobs list shows a "Number" column beside "Contact", and searching "JOB-002" finds it.
+2. Job detail's subtitle reads "JOB-001 · <customer>".
+3. Settings › Numbering: change Job's prefix to "WRK" and its starting number to 50, then save. The next job is "WRK-050".
+4. A progress invoice's job card reads "JOB-… · <job name>".
+5. After `pnpm db:migrate:dev` on a database with older jobs, each has a number in the order they were created, and new jobs continue from there.
+
+Regression: converting a quote twice still warns (§42), now listing "JOB-… · <name>".
+
+## 45. Receivables and payables CSV (US-PAY-10, US-PUR-14, Phase 6)
+
+1. Receivables › "Export CSV": a file with a header and one row per open invoice. Amounts look like "1234.50" with the currency in its own column, and each row has its bucket. It opens cleanly in a spreadsheet.
+2. Type an invoice number or contact into the search box, then export again: the file has only the rows on screen.
+3. Payables › "Export CSV": the same, one row per open bill. On an organisation with no open bills, the file has only the header row.
+
+Regression: the Reports page's CSV exports (P&L, Balance Sheet, Trial Balance, Job profitability) still download as before.
+
+## 46. Expense categories from Expenses (US-PUR-19, Phase 6)
+
+1. As an Owner, open Expenses: the subtitle reads "Submit an expense for approval. Categories are managed from Expenses › Categories." and there are "Expenses" and "Categories" tabs.
+2. Categories lists each category with its posting account. "Add category", edit, archive, restore and delete work as they did in Settings.
+3. Settings (user menu) no longer has "Purchases".
+4. As a Staff member whose Team has no category rights, open Expenses: the subtitle reads "Submit an expense for approval.", with no Categories tab; `/expenses/categories` shows the no-access page. Grant the Team "Edit own" expense categories and reload: the tab appears.
+5. As Field: no tab, and the no-access page at `/expenses/categories`.
+
+Regression: submitting and approving expenses still works (§11); the expense form still lists active categories only.
+
+## 47. History reads as sentences (US-SET-13, Phase 6)
+
+1. Open a contact: there's no "History" tab. The clock button beside Edit opens "History".
+2. Change the contact's phone and email in one save: the entry reads "<You> changed the phone from … to … and changed the email from … to …". Change five fields at once: three are listed, then "and 2 more".
+3. On a contact with invoices, credit notes or a job, its history reads "issued an invoice", "created a credit note", "invoiced a milestone" — never "undefined" or long ids.
+4. Open History on an invoice, a quote and a job: the same sentence style.
+
+Regression: the History dialog still loads only when opened.
+
+## 48. "Save" in Settings (US-SET-14, Phase 6)
+
+1. Open Settings and visit every section: no button reads "Continue".
+2. Industry template: pick a template and press "Save" — "Saved".
+3. Chart of accounts: rename an account (it saves straight away), then press "Save" — "Saved".
+
+Regression: onboarding still shows "Continue" on each step.
+
+## 49. Business name everywhere (US-TEAM-15, Phase 6)
+
+1. Sign up a new organisation and set the business name in onboarding (or Settings › Business profile) to "Riverstone Builders".
+2. Invite someone as Staff: the email says "<You> invited you to join Riverstone Builders as staff." — never "<Name>'s Organisation".
+3. Change the business name in Settings and send another invitation: it uses the new name.
+4. On an older database, run `pnpm db:migrate:dev`: organisations whose name was "<Owner>'s Organisation" now carry the business name.
+
+Regression: the sign-up page's "invite-only" message still names the business (§31).
+
+## 50. Money format (US-OPS-24, Phase 6)
+
+1. With Settings › Currency & locale at USD / en-US, check Invoices, Quotes, Payments, Receivables, the dashboard, Reports and an invoice's detail: amounts read like "$12,024.75", right-aligned in tables, in the normal font. No "USD" after numbers.
+2. A credit note, discount or retention shows "−$…" with a proper minus sign.
+3. Change the locale to de-DE and reload: "12.024,75 $". Try en-IN with INR: "₹1,20,247.50".
+4. Download an invoice PDF: the same format. A negative uses a dash, and an INR invoice reads "INR 1,20,247.50".
+5. Send a quote: the email's Total reads "$…". Approve an expense: the notification reads "… $85.00".
+6. Use the app normally with several people from one office for a while: no "Too Many Requests" errors.
+
+Regression: CSV exports still have plain decimals ("1234.50") with a currency column (§45).
+
+## 51. Dark-mode text on filled controls (US-OPS-25, Phase 6)
+
+1. Switch to dark mode. Primary buttons ("+ New", "Send", "Record payment", "Log in"), danger buttons, avatars and the notification count have dark text on the coloured fill, easy to read.
+2. Switch to light mode: the same controls have white text, as before.
+3. On the phone app in dark mode, an empty text field's placeholder is a light grey, readable on the dark background.
+
+Regression: disabled buttons, secondary and ghost buttons look as before in both modes.
+
+## 52. Confirmation colours (US-OPS-10, Phase 6)
+
+1. Edit a recurring meeting: "Edit recurring event" shows a blue "All events". Delete one: "Delete recurring event" shows a red "All events".
+2. On a billable expense, "Bill to customer": "Create invoice" is blue.
+3. Delete a contact, quote, invoice or payment, void a vendor bill, remove an address, deactivate a user: the confirm button is red.
+4. Save a tax rate, approve an expense, release retention, promote someone to Owner: the confirm button is blue.
+
+## 53. Plain wording (US-OPS-21, Phase 6)
+
+1. New quote: "Valid until" says "Quote shows as expired after this date." New invoice: "Due date" says "Drives the overdue flag once issued." Record a payment: no "(S-06.4)".
+2. Team › Teams › a Team › expand a privilege group: every description is plain English — no "edit_own", "Phase", "S-11.2" or "(mobile)".
+3. Onboarding: the Financial year step says document numbers never reset; the Team step says "You can invite people later from Team › Users.".
+4. Settings › Business profile: the Industry helper doesn't mention "the next step".
+5. Invoices: a void invoice's Balance due shows "—".
+
 ## Known gaps — don't file these as bugs
+- Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
+  screen creates one yet; they arrive with the stories that need them.
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/
@@ -1862,9 +2362,8 @@ revenue.
   job (§11.3/§11.4) — Phase 4 Stage 2 (Purchases & Expenses) closed this
   gap. A job with no tagged bills/expenses still correctly shows Cost: 0
   — that's a real zero, not a missing feature.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) still
-  lives in its own "Tax summary" section at the bottom of Settings →
-  Tax, not folded into the new Reports page (§15) — it has its own
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) now
+  lives on Reports › "Tax Summary" (US-RPT-14), not Settings → Tax — it has its own
   working per-rate breakdown UI that Reports deliberately doesn't
   duplicate (see CHANGELOG's own note on this). No CSV export on that
   specific view, unlike every report on the new Reports page. Tax

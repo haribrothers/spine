@@ -19,7 +19,6 @@ import {
   Input,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
@@ -27,6 +26,7 @@ import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -223,14 +223,14 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: bill.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), bill.currency)}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: bill.currency })}
+                <span className="shrink-0 tabular-nums text-on-surface">
+                  {formatMoney(BigInt(line.lineTotalAmount), bill.currency)}
                 </span>
               )}
             </div>
@@ -247,7 +247,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
           <TotalRow label="Total" value={bill.totalAmount} currency={bill.currency} emphasize />
         </div>
         {amountPaid > 0n && (
-          <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: bill.currency })}`} currency="" raw />
+          <TotalRow label="Paid" value={formatMoney(-(amountPaid), bill.currency)} currency="" raw />
         )}
         {amountPaid > 0n && (
           <div className="border-t border-border pt-2">
@@ -320,14 +320,14 @@ function TotalRow({
   raw?: boolean;
   critical?: boolean;
 }) {
-  const display = raw ? value : `${toDecimalString({ amount: BigInt(value), currency })} ${currency}`;
+  const display = raw ? value : formatMoney(BigInt(value), currency);
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
       <span
-        className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
+        className={`tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
       >
         {display}
       </span>

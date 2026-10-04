@@ -809,7 +809,7 @@ export function MeetingsCalendar() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleteBusy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={deleteBusy} onClick={handleConfirmDelete}>
+            <AlertDialogAction variant="danger" disabled={deleteBusy} onClick={handleConfirmDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

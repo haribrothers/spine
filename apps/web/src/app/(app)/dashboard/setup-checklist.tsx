@@ -6,13 +6,15 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Chec
 import { apiClient } from "../../../lib/api-client";
 
 interface ChecklistStatus {
+  /** False for Staff and Field: setup is the Owner's job (US-ONB-12). */
+  visible: boolean;
   hasCustomer: boolean;
   hasItem: boolean;
   hasSentQuote: boolean;
   dismissed: boolean;
 }
 
-const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed">; label: string; href: string }[] = [
+const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed" | "visible">; label: string; href: string }[] = [
   { key: "hasCustomer", label: "Add your first customer", href: "/contacts" },
   { key: "hasItem", label: "Create your first item", href: "/catalog" },
   { key: "hasSentQuote", label: "Send your first quote", href: "/quotes" },
@@ -78,7 +80,7 @@ export function SetupChecklist() {
   }
 
   if (error) return null;
-  if (status?.dismissed) return null;
+  if (status && (!status.visible || status.dismissed)) return null;
 
   return (
     <Card className="w-full max-w-md">

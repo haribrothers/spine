@@ -10,6 +10,7 @@ storybook-static/
 .env.local
 .DS_Store
 coverage/
+.data/
 *.log
 .expo/
 apps/e2e/test-results/

@@ -32,7 +32,7 @@ import { member, organization, teamMemberships, user } from "../../db/schema";
  * all — every quote/invoice PDF's header rendered blank, and Settings'
  * Business/Template panes showed nothing, even though the rest of the org
  * looked fully populated. No logo — seeding a fake one would need a real
- * S3/MinIO upload through `FilesService` from inside a seed script, which
+ * upload through `FilesService` from inside a seed script, which
  * is real scope no story asked for; the PDF header degrades to text-only
  * with no logo exactly as it already does for any real org that hasn't
  * uploaded one, so this isn't a functional gap, just a cosmetic one.
@@ -48,7 +48,7 @@ import { member, organization, teamMemberships, user } from "../../db/schema";
  * real uploaded file (job photos, S-04.4/S-04.10; the business logo,
  * S-12.x's own Settings step) rather than a fake `files` row with no
  * actual object-storage backing. Deliberately tiny (67 bytes decoded): the
- * point is exercising the real `FilesService.upload` → MinIO → signed-URL
+ * point is exercising the real `FilesService.upload` → storage driver → `GET /files/:id`
  * round trip end-to-end, not producing a visually convincing demo photo —
  * this is dev/demo seed data, not marketing material.
  */
@@ -631,7 +631,7 @@ export class DemoDataService {
     // itself unset (matches seedSettingIfUnset's own "never overwrite an
     // org's real configuration" guard) and storage is configured — per
     // CLAUDE.md's graceful-degradation rule, a demo org must still seed
-    // successfully with a logo-less profile if MinIO/S3 isn't reachable.
+    // successfully with a logo-less profile if file storage isn't available.
     const businessProfileAlreadySet = (await this.settingsService.get(orgId, "business_profile")) !== null;
     let demoBusinessProfile: typeof DEMO_BUSINESS_PROFILE & { logoUrl?: string } = DEMO_BUSINESS_PROFILE;
     if (!businessProfileAlreadySet && this.filesService.isStorageConfigured()) {
@@ -1136,8 +1136,13 @@ export class DemoDataService {
         quotesSent++;
       }
       if (seed.outcome === "revised") {
-        await this.quotesService.revise(orgId, quote.id, actorUserId);
+        // US-QUO-22: revising replaces the emailed link, so the revision is
+        // sent too — every current demo quote that reads "sent" has a link
+        // that opens, and only the replaced version shows "expired".
+        const revision = await this.quotesService.revise(orgId, quote.id, actorUserId);
+        await this.quotesService.send(orgId, revision.id, actorUserId);
         quotesRevised++;
+        quotesSent++;
       }
     }
 
@@ -1219,6 +1224,13 @@ export class DemoDataService {
         .where(eq(member.userId, userId))
         .returning();
       usersCreated++;
+
+      // The membership row moved organisations: drop its Team memberships
+      // from wherever it was before, so no other organisation's grants
+      // follow it here.
+      if (movedMember) {
+        await this.db.delete(teamMemberships).where(eq(teamMemberships.memberId, movedMember.id));
+      }
 
       // Deletes the throwaway auto-created org — cascades onto its own
       // chart of accounts and default team (both now orphaned, since the
@@ -1529,6 +1541,9 @@ export class DemoDataService {
       });
       const created = variationOrders[variationOrders.length - 1];
       if (created) {
+        // The variation order's quote is demo data too (so the Owners' setup
+        // checklist doesn't count it as their first sent quote, US-ONB-12).
+        await this.db.update(quotes).set({ isDemo: true }).where(eq(quotes.id, created.quoteId));
         await this.quotesService.send(orgId, created.quoteId, actorUserId);
         variationOrdersCreated++;
       }

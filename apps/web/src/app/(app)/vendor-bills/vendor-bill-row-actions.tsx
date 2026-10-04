@@ -145,7 +145,7 @@ export function VendorBillRowActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -170,7 +170,7 @@ export function VendorBillRowActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setVoidReason("")}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleVoid}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleVoid}>
               Void bill
             </AlertDialogAction>
           </AlertDialogFooter>

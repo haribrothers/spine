@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { JOB_STATUS_LABELS, type Job } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
@@ -26,6 +26,12 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       sortValue: (row) => row.name,
     },
     {
+      key: "number",
+      header: "Number",
+      render: (row) => <span className="tabular-nums text-on-surface-muted">{row.number ?? "—"}</span>,
+      sortValue: (row) => row.number ?? "",
+    },
+    {
       key: "contact",
       header: "Contact",
       render: (row) => row.contactName ?? "—",
@@ -36,23 +42,29 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       header: "Status",
       render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{JOB_STATUS_LABELS[row.status]}</Badge>,
     },
-    {
-      key: "contractValue",
-      header: "Contract value",
-      render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.contractValueAmount), currency: row.currency })} {row.currency}
-        </span>
-      ),
-      sortValue: (row) => Number(row.contractValueAmount),
-    },
-    {
-      key: "retentionPct",
-      header: "Retention",
-      render: (row) => (row.retentionPct > 0 ? `${row.retentionPct}%` : "—"),
-      sortValue: (row) => row.retentionPct,
-    },
   ];
+  // Field users get no money fields (US-JOB-19): leave the money columns out for them.
+  if (jobs.some((job) => job.contractValueAmount !== undefined)) {
+    columns.push(
+      {
+        key: "contractValue",
+        header: "Contract value",
+        align: "right",
+        render: (row) => (
+          <span className="tabular-nums">
+            {formatMoney(BigInt(row.contractValueAmount ?? 0), row.currency)}
+          </span>
+        ),
+        sortValue: (row) => Number(row.contractValueAmount ?? 0),
+      },
+      {
+        key: "retentionPct",
+        header: "Retention",
+        render: (row) => ((row.retentionPct ?? 0) > 0 ? `${row.retentionPct}%` : "—"),
+        sortValue: (row) => row.retentionPct ?? 0,
+      },
+    );
+  }
 
   return (
     <DataTable
@@ -60,7 +72,7 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       data={jobs}
       rowKey={(row) => row.id}
       searchPlaceholder="Search jobs"
-      searchKey={(row) => `${row.name} ${row.contactName ?? ""}`}
+      searchKey={(row) => `${row.number ?? ""} ${row.name} ${row.contactName ?? ""}`}
       configurablePageSize
     />
   );

@@ -72,7 +72,7 @@ export function OverdueFollowups() {
                   <span className="text-on-surface">{a.notes || TYPE_LABELS[a.type]}</span>
                   <span className="text-[11px] text-on-surface-muted">{TYPE_LABELS[a.type]}</span>
                 </div>
-                <span className="shrink-0 font-mono text-[11px] tabular-nums text-overdue">
+                <span className="shrink-0 text-[11px] tabular-nums text-overdue">
                   {daysOverdue(a.dueAt)}d overdue
                 </span>
               </Link>

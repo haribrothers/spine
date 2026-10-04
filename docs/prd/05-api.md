@@ -12,7 +12,7 @@ NestJS REST API in `apps/api`. OpenAPI document at `/api/docs` (Swagger UI) — 
 | Validation | Bodies are parsed with the Zod schemas in `@spine/shared`; failures return 400 with Zod `issues` |
 | Money | `bigint` minor units serialised as **decimal strings** (`"51000"` = 510.00) to avoid precision loss; currency is a separate field |
 | Dates | ISO 8601 strings; date-only fields as `YYYY-MM-DD` |
-| Idempotency | Every mutating route requires `Idempotency-Key` (UUID). First call executes and stores the response; a replay with the same key returns the stored response; a concurrent duplicate gets 409 ([D-009](12-decisions.md)). Gap: 14 authenticated routes lack it today ([R-10](13-risks-open-questions.md), US-OPS-08); the 2 public quote routes are protected by state checks instead |
+| Idempotency | Every mutating route requires `Idempotency-Key` (UUID). First call executes and stores the response; a replay with the same key returns the stored response; a concurrent duplicate gets 409 ([D-009](12-decisions.md)). Keys are scoped per user and per actual path; a route-introspection test enforces this on every non-GET route (US-OPS-08). The 2 public quote routes are protected by state checks instead |
 | Files | Two-step: `POST /files` (multipart, ≤ 10 MB) returns `{ id }`; other endpoints reference the id ([D-053](12-decisions.md)) |
 | Long work | PDFs and emails run on pg-boss queues; the request returns immediately with the document, and email status (`pending`/`sent`/`failed`) is a field on it. Failures retry; the Email queue view lists unresolved jobs |
 | Pagination | List endpoints return arrays filtered server-side by query parameters (`search`, `status`, `contactId`, `includeArchived`…); tables page client-side at 10/25/50. Target scale is 10,000 records per list (NFR-PERF-01) |
@@ -106,6 +106,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/credit-notes/:id` | roles: owner, staff | — |
 | PUT | `/credit-notes/:id` | roles: owner, staff | Yes |
 | GET | `/credit-notes/:id/history` | roles: owner, staff | — |
+| GET | `/credit-notes/:id/pdf` | roles: owner, staff — live for a draft, the stored PDF once issued (US-INV-17, D-116) | — |
 | POST | `/credit-notes/:id/issue` | roles: owner, staff; `credit_notes.issue` | Yes |
 
 ### Dashboard — `/dashboard`
@@ -113,15 +114,15 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/dashboard/activity-feed` | Any member | — |
-| GET | `/dashboard/checklist` | Any member | — |
-| POST | `/dashboard/checklist/dismiss` | Any member | Yes |
+| GET | `/dashboard/checklist` | Any member; `{ visible: false }` unless Owner (US-ONB-12) | — |
+| POST | `/dashboard/checklist/dismiss` | roles: owner (US-ONB-12) | Yes |
 
 ### Demo data — `/demo-data`
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | DELETE | `/demo-data` | roles: owner | Yes |
-| POST | `/demo-data/seed` | roles: owner, staff | Yes |
+| POST | `/demo-data/seed` | roles: owner (US-OPS-20) | Yes |
 | GET | `/demo-data/status` | Any member | — |
 
 ### Expense categories — `/expense-categories`
@@ -141,23 +142,23 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/expenses` | roles: owner, staff, field | — |
+| GET | `/expenses` | roles: owner, staff, field — Field gets only their own (US-OPS-20) | — |
 | POST | `/expenses` | roles: owner, staff, field; `expenses.edit_own` | Yes |
 | DELETE | `/expenses/:id` | roles: owner, staff, field | Yes |
-| GET | `/expenses/:id` | roles: owner, staff, field | — |
+| GET | `/expenses/:id` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | PUT | `/expenses/:id` | roles: owner, staff, field | Yes |
-| POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve` | Yes |
+| POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve`; never your own unless Owner (US-PUR-20) | Yes |
 | POST | `/expenses/:id/bill-to-customer` | roles: owner, staff; `expenses.bill_to_customer` | Yes |
-| GET | `/expenses/:id/history` | roles: owner, staff, field | — |
+| GET | `/expenses/:id/history` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | POST | `/expenses/:id/mark-billed` | roles: owner, staff; `expenses.mark_billed` | Yes |
-| POST | `/expenses/:id/reject` | roles: owner, staff; `expenses.reject` | Yes |
+| POST | `/expenses/:id/reject` | roles: owner, staff; `expenses.reject`; never your own unless Owner (US-PUR-20) | Yes |
 
 ### Files — `/files`
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | POST | `/files` | roles: owner, staff, field | Yes |
-| GET | `/files/:id` | Any member | — |
+| GET | `/files/:id` | Readers of the owning record, else 404 (US-OPS-20, D-117) | — |
 
 ### Health — `/health`
 
@@ -172,7 +173,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/invoices` | roles: owner, staff | — |
 | POST | `/invoices` | roles: owner, staff; `invoices.edit_own` | Yes |
 | DELETE | `/invoices/:id` | roles: owner, staff | Yes |
-| GET | `/invoices/:id` | roles: owner, staff | — |
+| GET | `/invoices/:id` | roles: owner, staff — also returns `paymentStatus`, and `job`, `milestone`, `retention { percent, heldOnJob }` for an invoice raised from a job (US-PAY-13, US-JOB-21) | — |
 | PUT | `/invoices/:id` | roles: owner, staff | Yes |
 | GET | `/invoices/:id/history` | roles: owner, staff | — |
 | POST | `/invoices/:id/issue` | roles: owner, staff; `invoices.issue` | Yes |
@@ -186,32 +187,32 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/jobs` | Any member | — |
+| GET | `/jobs` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs` | roles: owner, staff; `jobs.edit_own` | Yes |
-| GET | `/jobs/:id` | Any member | — |
+| GET | `/jobs/:id` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | PUT | `/jobs/:id` | roles: owner, staff | No |
-| GET | `/jobs/:id/assignees` | Any member | — |
+| GET | `/jobs/:id/assignees` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/assignees` | roles: owner, staff | Yes |
 | DELETE | `/jobs/:id/assignees/:userId` | roles: owner, staff | No |
-| GET | `/jobs/:id/costing` | Any member | — |
-| GET | `/jobs/:id/history` | Any member | — |
-| GET | `/jobs/:id/milestones` | Any member | — |
+| GET | `/jobs/:id/costing` | roles: owner, staff; `reports.view_job_profitability` (US-JOB-19) | — |
+| GET | `/jobs/:id/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
+| GET | `/jobs/:id/milestones` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | PUT | `/jobs/:id/milestones` | roles: owner, staff | No |
 | POST | `/jobs/:id/milestones/:milestoneId/complete` | roles: owner, staff, field | Yes |
-| GET | `/jobs/:id/milestones/:milestoneId/history` | Any member | — |
+| GET | `/jobs/:id/milestones/:milestoneId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/milestones/:milestoneId/invoice` | roles: owner, staff; `milestones.invoice` | Yes |
-| GET | `/jobs/:id/notes` | Any member | — |
+| GET | `/jobs/:id/notes` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/notes` | roles: owner, staff, field; `job_notes.edit_own` | No |
-| GET | `/jobs/:id/notes/:noteId/history` | Any member | — |
-| GET | `/jobs/:id/photos` | Any member | — |
+| GET | `/jobs/:id/notes/:noteId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
+| GET | `/jobs/:id/photos` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/photos` | roles: owner, staff, field; `job_photos.edit_own` | Yes |
-| GET | `/jobs/:id/photos/:photoId/history` | Any member | — |
+| GET | `/jobs/:id/photos/:photoId/history` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/release-retention` | roles: owner, staff; `jobs.release_retention` | Yes |
-| GET | `/jobs/:id/variation-orders` | Any member | — |
+| GET | `/jobs/:id/variation-orders` | Any member; Field only assigned jobs (else 404) and no money fields (US-JOB-19) | — |
 | POST | `/jobs/:id/variation-orders` | roles: owner, staff; `variation_orders.edit_own` | Yes |
 | POST | `/jobs/:id/variation-orders/:variationOrderId/apply` | roles: owner, staff; `variation_orders.apply` | Yes |
 | POST | `/jobs/from-quote/:quoteId` | roles: owner, staff; `jobs.edit_own` | Yes |
-| GET | `/jobs/milestones/due` | roles: owner, staff, field | — |
+| GET | `/jobs/milestones/due` | roles: owner, staff, field — Field only milestones on assigned jobs (US-JOB-19) | — |
 
 ### Leads — `/leads`
 
@@ -261,7 +262,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | POST | `/org/fiscal-periods` | roles: owner | No |
 | POST | `/org/fiscal-periods/:id/close` | roles: owner | No |
 | POST | `/org/fiscal-periods/:id/reopen` | roles: owner | No |
-| GET | `/org/invitations` | Any member | — |
+| GET | `/org/invitations` | roles: owner (US-OPS-20) | — |
 | POST | `/org/invitations` | roles: owner | Yes |
 | DELETE | `/org/invitations/:id` | roles: owner | Yes |
 | POST | `/org/invitations/:id/resend` | roles: owner | Yes |
@@ -284,6 +285,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/org/tax/prices-include-tax` | Any member | — |
 | PUT | `/org/tax/prices-include-tax` | roles: owner | Yes |
 | GET | `/org/tax/summary` | roles: owner | — |
+| GET | `/org/tax/summary/export.csv` | roles: owner — rows by rate with taxable amount and tax, adjustments, total, tax paid, net payable (US-RPT-14) | — |
 | GET | `/org/teams` | roles: owner | — |
 | POST | `/org/teams` | roles: owner | Yes |
 | DELETE | `/org/teams/:id` | roles: owner | No |
@@ -310,8 +312,8 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/public/invitations/:id` | Public | — |
-| GET | `/public/quotes/:token` | Public | — |
+| GET | `/public/invitations/:id` → 404 for an unknown id; `{ status: "pending", email, role, organizationName }` while usable; `{ status }` only (`expired`, `canceled`, `accepted`, `rejected`) otherwise (US-AUTH-11) | Public | — |
+| GET | `/public/quotes/:token` → the quote; 410 `{ status: "expired", message, business: { name, address, email, phone, logoDataUri } }` for a link we issued that has expired, been revoked or replaced; 404 `{ status: "invalid" }` for a token that matches nothing (US-QUO-21) | Public | — |
 | POST | `/public/quotes/:token/accept` | Public | No |
 | POST | `/public/quotes/:token/reject` | Public | No |
 
@@ -340,7 +342,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/reports/balance-sheet` | roles: owner | — |
 | GET | `/reports/balance-sheet/export.csv` | roles: owner | — |
 | GET | `/reports/dashboard-summary` | roles: owner, staff; `reports.view_dashboard_summary` | — |
-| GET | `/reports/invoices-due-this-week` | roles: owner, staff | — |
+| GET | `/reports/invoices-due-this-week` | roles: owner, staff; `reports.view_receivables` (US-OPS-20) | — |
 | GET | `/reports/job-profitability` | roles: owner, staff; `reports.view_job_profitability` | — |
 | GET | `/reports/job-profitability/export.csv` | roles: owner, staff; `reports.view_job_profitability` | — |
 | GET | `/reports/payables` | roles: owner, staff; `reports.view_payables` | — |
@@ -419,10 +421,16 @@ Routes the stories add. Each is created by the story named.
 |---|---|---|---|---|
 | AUTH | POST | `/api/auth/request-password-reset` (Better Auth) | Public | US-AUTH-09 |
 | AUTH | POST | `/api/auth/reset-password` (Better Auth) | Public (token) | US-AUTH-10 |
+| SET | PUT | `/org/settings/business_profile` validates the profile with `businessProfileSchema` (`@spine/shared`): `paymentInstructions` over 600 characters → 400 "Keep this under 600 characters."; other fields are kept as sent | roles: owner | US-INV-16 |
+| JOB | — | Job responses (`GET /jobs`, `GET /jobs/:id`, `POST /jobs`, `POST /jobs/from-quote/:quoteId`) gain `number`; an invoice's `job` gains `number`; the repeat-conversion 409's `existing.jobs[]` gains `number` | as the route | US-JOB-22 |
+| RPT | GET | `/reports/receivables/export.csv?search=` and `/reports/payables/export.csv?search=` — amounts are plain decimals ("1234.50") with the currency in its own column; `search` keeps rows whose number or contact contains it, ignoring case (the page table's search) | as the JSON report | US-PAY-10, US-PUR-14 |
+| OPS | — | `GET /public/quotes/:token` gains `locale` (the business's money locale). Rate limits count per session for signed-in requests and per IP for `@Public` routes (D-124) | — | US-OPS-24 |
 | AUTH | GET | `/public/signup-status` → `{ open: boolean, businessName? }` | Public | US-AUTH-08 |
+| AUTH | GET | `/public/password-reset/:token` → `{ email }`; 404 when the link is unknown, used or expired. Doesn't consume the token | Public (token) | US-AUTH-10 |
+| AUTH | GET | `/public/forgot-password` → 302 to `APP_URL/forgot-password` (the phone app's "Forgot password?") | Public | US-AUTH-09 |
 | CRM | GET/PUT | `/org/lead-stages` (list, replace ordered set; deleting a stage with leads needs `moves`) | GET any member; PUT Owner | US-CRM-19, US-CRM-20 |
 | QUO | — | `POST /quotes/:id/accept-in-person` gains `signerName` (required) and stores `signatureFileId` | `quotes.accept_in_person` | US-QUO-19 |
-| RPT | GET | `/reports/trial-balance?asOf=` and `/reports/trial-balance/export.csv` | roles: owner | US-RPT-13 |
+| RPT | GET | `/reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv` (lines: accountId, code, name, debit, credit; totalDebit, totalCredit, balanced) | roles: owner | US-RPT-13 |
 | RPT | — | Existing `GET /org/tax/summary` (roles: owner) is now shown on Reports instead of Settings; no route change | roles: owner | US-RPT-14 |
 | SET | GET/PUT | `/org/settings/branding` (generic settings route, new key) | GET any member; PUT Owner | US-SET-09, US-SET-10 |
 | SET | GET | `/org/audit-log?from=&to=&userId=&entityType=&action=&cursor=` and `/org/audit-log.csv` | roles: owner | US-SET-11, US-SET-12 |
@@ -460,9 +468,10 @@ Routes the stories add. Each is created by the story named.
 | SET | POST/GET | `/org/exports`; GET `/org/exports/:id/download` | roles: owner | US-SET-15, US-SET-16 |
 | OPS | GET | `/search?q=&limit=5` | Any member (results filtered by each module's read rules) | US-OPS-22 |
 
-| OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged file → 409 | Readers of the owning record | US-OPS-27, US-OPS-28 |
-| OPS | — | `POST /files`: 415 for disallowed types; GPS EXIF stripped; disk full → 507 "There's no space left to store this file." | as today | US-OPS-29, US-OPS-31 |
-| OPS | — | `GET /health/ready` adds `storage: { driver, usedPercent }` | Public | US-OPS-31 |
+| OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged or missing file → 409 "This file is damaged. Restore it from your latest backup." (streamed files are verified on every read; presigned `s3` files are verified by the weekly check and refused once flagged) | Readers of the owning record | US-OPS-27, US-OPS-28 |
+| OPS | GET | `/files/integrity` → `{ problemCount, message, files: [{ id, problem, label }] }` — files whose last check failed, labelled by the record they belong to | roles: owner | US-OPS-28 |
+| OPS | — | `POST /files`: 415 for disallowed types; GPS EXIF stripped; disk full → 507 "There's no space left to store this file. Ask an owner to free up space." | as today | US-OPS-29, US-OPS-31 |
+| OPS | — | `GET /health/ready` adds `storage: { driver, usedPercent }` (`usedPercent` null for `s3`; measured with `statfs` at most every 15 minutes). Built with this field only; the database and queue checks arrive with US-OPS-05 | Public | US-OPS-31 |
 | SITE | GET | `/help/*` on the **web** app (not the API): the bundled user guide and self-hosting guide for the installed version, static files | Public (no login) | US-SITE-12 |
 | SITE | — | The API's OpenAPI document is exported to `apps/api/openapi.json` at build time for the site's API reference | — | US-SITE-10 |
 ### Events added by the feature files
@@ -477,3 +486,5 @@ Routes the stories add. Each is created by the story named.
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |
 
 Queues added: `file-integrity-check` (weekly), `invoice-reminder-run` (daily), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.
+
+`GET /quotes/:id/pdf`, `/invoices/:id/pdf`, `/credit-notes/:id/pdf` and `/payments/:id/pdf` render live for a draft and, once the document is sent or issued, always serve the PDF stored at that moment (stored by `store-issued-pdf`, or on the first download for documents issued before US-INV-17). Email jobs attach the same stored file.

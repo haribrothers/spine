@@ -6,7 +6,8 @@ import { defineConfig, devices } from "@playwright/test";
  * apps/web instances (via Playwright's own `webServer`, not mocks) against
  * a dedicated scratch database (.env.e2e, same "own DB, tests TRUNCATE
  * real tables" reasoning as .env.test — see that file's own comment) on
- * ports offset from local dev's 3000/4000 (3100/4100) so this suite can
+ * ports 3110/4110 — clear of local dev (web 3000, API 4000, design-system
+ * docs 3100) — so this suite can
  * run alongside a normal `pnpm dev` session without a port clash.
  *
  * `webServer` runs migrations before starting each app (idempotent — safe
@@ -24,7 +25,7 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   timeout: 60_000,
   use: {
-    baseURL: "http://localhost:3100",
+    baseURL: "http://localhost:3110",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },
@@ -37,7 +38,7 @@ export default defineConfig({
   webServer: [
     {
       command: "pnpm --filter @spine/api build && pnpm --filter @spine/api db:migrate:e2e && pnpm --filter @spine/api start:e2e",
-      url: "http://localhost:4100/health",
+      url: "http://localhost:4110/health",
       cwd: "../..",
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,
@@ -46,7 +47,7 @@ export default defineConfig({
     },
     {
       command: "pnpm --filter @spine/web build:e2e && pnpm --filter @spine/web start:e2e",
-      url: "http://localhost:3100",
+      url: "http://localhost:3110",
       cwd: "../..",
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { VendorBillRowActions } from "./vendor-bill-row-actions";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -70,9 +70,10 @@ export function VendorBillsTable({
     {
       key: "total",
       header: "Total",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.totalAmount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.totalAmount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.totalAmount),
@@ -80,9 +81,10 @@ export function VendorBillsTable({
     {
       key: "balanceDue",
       header: "Balance due",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.balanceDue), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.balanceDue),

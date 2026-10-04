@@ -5,17 +5,14 @@ import type { Database } from "../../db/client";
 import { quotes, contacts } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
-import { FilesService } from "../files/files.service";
-import { QuotePdfService } from "../pdf/quote-pdf.service";
+import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
-import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
+import { loadEmailBrand } from "../email/email-brand";
+import { appUrl, renderEmail } from "../email/email-layout";
+import { quoteEmail } from "../email/email-templates";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
-/** Minimal HTML-escaping for the handful of values interpolated into this worker's own HTML email body — not a general-purpose sanitizer, just enough to keep a business/contact name from breaking the markup. */
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 export interface QuoteSendEmailJobData {
   orgId: string;
@@ -77,8 +74,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     @Inject(DATABASE) private readonly db: Database,
     private readonly queue: QueueService,
     private readonly email: EmailService,
-    private readonly files: FilesService,
-    private readonly pdf: QuotePdfService,
+    private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
   ) {}
 
@@ -130,28 +126,8 @@ export class QuoteEmailWorker implements OnModuleInit {
     row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
     publicToken: string | undefined,
   ): Promise<void> {
-    const { buffer, filename } = await this.pdf.render(orgId, quoteId);
-
-    // Persist the PDF (best-effort — logged, not fatal, matching
-    // pdfFileId's own doc comment: a persistence failure here must not
-    // stop the email attempt below, and vice versa).
-    if (this.files.isStorageConfigured()) {
-      try {
-        const uploaded = await this.files.upload(orgId, {
-          originalFilename: filename,
-          mimeType: "application/pdf",
-          buffer,
-          uploadedByUserId: null,
-        });
-        if (uploaded) {
-          await this.db.update(quotes).set({ pdfFileId: uploaded.id }).where(eq(quotes.id, quoteId));
-        }
-      } catch (err) {
-        this.logger.warn(`Could not persist PDF for quote ${quoteId}: ${(err as Error).message}`);
-      }
-    } else {
-      this.logger.warn(`File storage not configured — PDF for quote ${quoteId} was not persisted (email attempt continues if possible)`);
-    }
+    // US-INV-17: attach the PDF stored when the quote was sent (stored now if it isn't yet).
+    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "quote", quoteId);
 
     if (!row.contactEmail) {
       throw new Error(`Quote ${quoteId}'s contact has no email address on file — cannot send`);
@@ -160,41 +136,34 @@ export class QuoteEmailWorker implements OnModuleInit {
       throw new Error("SMTP is not configured — cannot send quote email");
     }
 
-    const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
+    const brand = await loadEmailBrand(this.db, orgId);
     const quoteNumber = row.quote.number ?? "your quote";
 
-    // PRD S-03.4/S-03.5 — a real, web-facing accept/reject link, not the
-    // API's own /public/quotes/:token JSON endpoint (a customer should land
-    // on a real page, not raw JSON — the web route calls the API's public
-    // endpoint under the hood). `publicToken` is only ever absent for a job
-    // enqueued by an older deploy still sitting in the queue (see this
-    // field's own doc comment on QuoteSendEmailJobData) — the email still
-    // sends in that case, just without a link, rather than failing the
-    // whole attempt over a cosmetic omission.
-    const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-    const quoteLink = publicToken ? `${appUrl}/quote/${publicToken}` : null;
+    // A real web page, not the API's JSON endpoint. `publicToken` is only
+    // missing for a job queued by an older deploy; the email still goes,
+    // without the button.
+    const quoteLink = publicToken ? appUrl(`/quote/${publicToken}`) : null;
+
+    // US-NTF-10/11 — the shared branded layout.
+    const template = quoteEmail({
+      businessName: brand.name,
+      locale: brand.locale,
+      contactName: row.contactName,
+      number: quoteNumber,
+      total: row.quote.totalAmount,
+      currency: row.quote.currency,
+      validUntil: row.quote.validUntil,
+      link: quoteLink,
+    });
+    const email = renderEmail(brand, template.content);
 
     await this.email.send({
       to: row.contactEmail,
-      subject: `${businessName} sent you a quote (${quoteNumber})`,
-      text: [
-        `Hi ${row.contactName ?? "there"},`,
-        "",
-        `${businessName} has sent you a quote (${quoteNumber}), attached as a PDF.`,
-        ...(quoteLink ? ["", `View and respond to the quote online: ${quoteLink}`] : []),
-        "",
-        "This is an automated email — please reply directly to discuss the quote.",
-      ].join("\n"),
-      html: quoteLink
-        ? [
-            `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-            `<p>${escapeHtml(businessName)} has sent you a quote (${escapeHtml(quoteNumber)}), attached as a PDF.</p>`,
-            `<p><a href="${quoteLink}">View and respond to the quote online</a></p>`,
-            `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly to discuss the quote.</p>`,
-          ].join("\n")
-        : undefined,
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+      fromName: brand.name,
+      subject: template.subject,
+      text: email.text,
+      html: email.html,
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
     });
   }
 }

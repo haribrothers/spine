@@ -28,7 +28,7 @@ Standard, advance (deposit), progress and retention-release invoices. Drafts are
 Legacy: S-05.1 (scratch path)
 
 **Acceptance criteria**
-- **Given** I press "New invoice", **when** the builder opens, **then** I see "Contact", "Currency", "Type" (Standard, Advance, Progress), "Issue date" (helper "Defaults to today if left blank when issued."), "Due date" (helper "Drives the overdue flag (S-05.9) once issued."), lines, "Notes" and "Terms & conditions".
+- **Given** I press "New invoice", **when** the builder opens, **then** I see "Contact", "Currency", "Type" (Standard, Advance, Progress), "Issue date" (helper "Defaults to today if left blank when issued."), "Due date" (helper "Drives the overdue flag once issued."), lines, "Notes" and "Terms & conditions".
 - **Given** lines with quantity, price, discount and tax, **when** I edit them, **then** Subtotal, Tax and Total update immediately.
 - **Given** no contact, **when** I press "Save as draft", **then** I see "Select a contact before saving.".
 - **Given** a valid invoice, **when** I press "Save as draft", **then** it's saved as a draft with no number (the list shows "— (unissued draft)").
@@ -231,7 +231,7 @@ Gap: G5 (PRD F5 "SHOULD show a payment link/instructions block")
 
 **Acceptance criteria**
 - **Given** payment instructions are set, **when** an invoice PDF renders, **then** a "How to pay" block shows them under the totals.
-- **Given** the invoice email, **when** it's sent, **then** the same instructions appear above the "View invoice" button.
+- **Given** the invoice email, **when** it's sent, **then** the same instructions appear in a "How to pay" box above the closing note (invoice emails have no button, [D-121](../prd/12-decisions.md)).
 - **Given** no instructions are set, **when** an invoice renders, **then** no empty block appears.
 
 **Implementation notes**
@@ -268,6 +268,7 @@ Decision: D-083 · Review finding: Stage 5 #32
 - Data: `issued_pdf_file_id uuid → files` on `quotes`, `invoices`, `credit_notes`, `payments` (04 "Columns added").
 - Queue: `store-issued-pdf` (pg-boss) renders and stores after commit; the email jobs attach the stored file.
 - Supersedes the per-field snapshot idea for addresses and branding; line prices and tax are still snapshotted on the lines (D-006).
+- Credit notes had no PDF before this story; one is added in the invoice PDF's layout (D-116).
 
 ### US-INV-18 · Turn on automatic payment reminders
 **Feature:** F-INV-07 · **Priority:** P1 · **Phase:** 7 · **Screens:** `SettingsReminders`

@@ -1,11 +1,15 @@
 name: spine-dev
 
-# Local development infrastructure only — Postgres and MinIO as containers,
+# Local development infrastructure only — Postgres and MailDev as containers,
 # with ports published to the host so `apps/api`/`apps/web` run natively
 # via `pnpm dev` (fast HMR, no image rebuild per change) and just point at
 # these. This is NOT what self-hosters deploy — see docker-compose.yml for
 # the production stack (which builds and runs api/web as containers behind
 # Caddy). Usage: `pnpm dev:infra:up` / `pnpm dev:infra:down` (see README.md).
+#
+# Files use the local storage driver (apps/api/.data/files), so no storage
+# container is needed. `COMPOSE_PROFILES=rustfs pnpm dev:infra:up` adds RustFS to
+# test the s3 driver (D-103).
 services:
   db:
     image: postgres:16-alpine
@@ -24,18 +28,18 @@ services:
       timeout: 5s
       retries: 10
 
-  minio:
-    image: minio/minio
+  rustfs:
+    image: rustfs/rustfs:1.0.1
     restart: unless-stopped
-    command: server /data --console-address ":9001"
     environment:
-      MINIO_ROOT_USER: spine
-      MINIO_ROOT_PASSWORD: spinespine
+      RUSTFS_ACCESS_KEY: spine
+      RUSTFS_SECRET_KEY: spinespine
     ports:
       - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
     volumes:
-      - spine_dev_minio:/data
+      - spine_dev_rustfs:/data
+    mem_limit: 1g
+    profiles: ["rustfs"]
 
   # Dev-only SMTP catcher for quote emails (F3 Stage 2) — not a real mail
   # server, nothing is ever actually delivered. Point apps/api's SMTP_HOST/
@@ -64,4 +68,4 @@ services:
 
 volumes:
   spine_dev_pgdata:
-  spine_dev_minio:
+  spine_dev_rustfs:

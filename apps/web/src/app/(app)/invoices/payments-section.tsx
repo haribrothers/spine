@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Card, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { PAYMENT_METHOD_LABELS, type InvoicePaymentRow } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Every payment allocated against this invoice — `GET /payments?invoiceId=`
@@ -55,8 +55,8 @@ export function PaymentsSection({ invoiceId, refreshKey }: { invoiceId: string; 
                   {payment.reference && <> · {payment.reference}</>}
                 </p>
               </div>
-              <span className="shrink-0 font-mono text-[13px] tabular-nums text-on-surface">
-                {toDecimalString({ amount: BigInt(payment.allocatedToThisInvoice), currency: payment.currency })} {payment.currency}
+              <span className="shrink-0 text-[13px] tabular-nums text-on-surface">
+                {formatMoney(BigInt(payment.allocatedToThisInvoice), payment.currency)}
               </span>
             </div>
           ))}

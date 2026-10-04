@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { completeMilestoneSchema, setMilestonesSchema } from "@spine/shared";
-import { roundHalfUp } from "@spine/shared";
-import { and, eq, lte } from "drizzle-orm";
+import { ZERO, decimal, multiplyMinor, percentOfMinor, plus } from "@spine/shared";
+import { and, eq, inArray, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { jobs, milestones, jobPhotos } from "../../db/schema";
+import { jobAssignments, jobPhotos, jobs, milestones } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -68,7 +68,7 @@ export class MilestonesService {
    * overdue first, so the dashboard widget doesn't need a second query for
    * the overdue case.
    */
-  async dueAcrossJobs(orgId: string, options: { withinDays?: number } = {}) {
+  async dueAcrossJobs(orgId: string, options: { withinDays?: number; assignedToUserId?: string } = {}) {
     const withinDays = options.withinDays ?? 14;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -79,7 +79,17 @@ export class MilestonesService {
       .select({ milestone: milestones, jobName: jobs.name, jobContactId: jobs.contactId, jobCurrency: jobs.currency })
       .from(milestones)
       .innerJoin(jobs, eq(milestones.jobId, jobs.id))
-      .where(and(eq(milestones.orgId, orgId), eq(milestones.status, "pending"), lte(milestones.dueDate, horizon)))
+      .where(
+        and(
+          eq(milestones.orgId, orgId),
+          eq(milestones.status, "pending"),
+          lte(milestones.dueDate, horizon),
+          // US-JOB-19: Field sees only milestones on jobs they're assigned to.
+          options.assignedToUserId
+            ? inArray(milestones.jobId, this.db.select({ id: jobAssignments.jobId }).from(jobAssignments).where(eq(jobAssignments.userId, options.assignedToUserId)))
+            : undefined,
+        ),
+      )
       .orderBy(milestones.dueDate);
 
     return rows
@@ -122,19 +132,19 @@ export class MilestonesService {
    * dropping billing history.
    *
    * Ownership ("own" vs "others") for `milestones.edit_own`/`edit_others`
-   * is keyed off who last replaced the set (any existing row's
-   * `createdByUserId` — they're all written together in the transaction
-   * below, so any one row reflects the whole set's owner), not per-row.
-   * A job with no milestones yet has no owner, so `_own` never applies to
-   * the first-ever call — only `_others` gates it, same "unowned record"
-   * rule every other own/others module uses for a null creator.
+   * is keyed off the job's creator (US-JOB-20, D-079), not who last
+   * replaced the set, so it never changes hands. A job with no recorded
+   * creator (a pre-migration row) is unowned: only `_others` can edit its
+   * milestones, the same "unowned record" rule every own/others module uses.
    */
   async setAll(orgId: string, jobId: string, actorUserId: string, input: SetMilestonesInput) {
     const job = await this.requireJob(orgId, jobId);
 
     const existing = await this.db.select().from(milestones).where(eq(milestones.jobId, jobId));
 
-    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing[0]?.createdByUserId ?? null, {
+    // US-JOB-20 (D-079): a job's milestones belong to whoever created the job,
+    // never to whoever last replaced the set — so "own" can't change hands.
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, job.createdByUserId ?? null, {
       own: "milestones.edit_own",
       others: "milestones.edit_others",
     });
@@ -145,9 +155,10 @@ export class MilestonesService {
       }
     }
 
-    const percentTotal = input.milestones.filter((m) => m.amountType === "percent").reduce((sum, m) => sum + m.amount, 0);
-    if (input.milestones.some((m) => m.amountType === "percent") && Math.round(percentTotal * 100) !== 10000) {
-      throw new BadRequestException(`Milestone percentages must total 100% (currently ${percentTotal}%)`);
+    // Summed exactly (US-TAX-07): 33.3333 + 33.3333 + 33.3334 is 100, not 99.99999999999999.
+    const percentTotal = input.milestones.filter((m) => m.amountType === "percent").reduce((sum, m) => plus(sum, decimal(m.amount)), ZERO);
+    if (input.milestones.some((m) => m.amountType === "percent") && !(percentTotal.n === 100n && percentTotal.d === 1n)) {
+      throw new BadRequestException(`Milestone percentages must total 100% (currently ${Number(percentTotal.n) / Number(percentTotal.d)}%)`);
     }
 
     const resolved: ResolvedMilestone[] = input.milestones.map((m) => ({
@@ -157,7 +168,7 @@ export class MilestonesService {
       amountType: m.amountType,
       amount: m.amount,
       resolvedAmount:
-        m.amountType === "percent" ? roundHalfUp((Number(job.contractValueAmount) * m.amount) / 100) : roundHalfUp(m.amount),
+        m.amountType === "percent" ? percentOfMinor(job.contractValueAmount, m.amount) : multiplyMinor(1n, m.amount),
       dueDate: m.dueDate ?? null,
     }));
 
@@ -313,7 +324,7 @@ export class MilestonesService {
       throw new BadRequestException("Only a completed milestone can be invoiced");
     }
 
-    const retentionAmount = job.retentionPct > 0 ? roundHalfUp((Number(milestone.resolvedAmount) * job.retentionPct) / 100) : 0n;
+    const retentionAmount = job.retentionPct > 0 ? percentOfMinor(milestone.resolvedAmount, job.retentionPct) : 0n;
 
     const invoice = await this.invoices.createFromMilestone(orgId, actorUserId, {
       jobId,
@@ -358,7 +369,7 @@ export class MilestonesService {
     const rows = await tx.select().from(milestones).where(and(eq(milestones.jobId, jobId), eq(milestones.orgId, orgId)));
     for (const m of rows) {
       if (m.status === "invoiced" || m.amountType !== "percent") continue;
-      const resolvedAmount = roundHalfUp((Number(newContractValueAmount) * m.amount) / 100);
+      const resolvedAmount = percentOfMinor(newContractValueAmount, m.amount);
       await tx.update(milestones).set({ resolvedAmount, updatedAt: new Date() }).where(eq(milestones.id, m.id));
     }
   }

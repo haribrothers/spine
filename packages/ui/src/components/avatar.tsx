@@ -17,7 +17,7 @@ export const Avatar = forwardRef<
   <AvatarPrimitive.Root
     ref={ref}
     className={cn(
-      "flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary font-semibold text-white",
+      "flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary font-semibold text-on-primary",
       sizeClasses[size],
       className,
     )}

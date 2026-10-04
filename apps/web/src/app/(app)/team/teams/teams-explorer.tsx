@@ -125,7 +125,7 @@ export function TeamsExplorer() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(team)}>Delete</AlertDialogAction>
+                <AlertDialogAction variant="danger" onClick={() => handleDelete(team)}>Delete</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
