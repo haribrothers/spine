@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
 async function buttonColours(page: import("@playwright/test").Page, theme: "light" | "dark") {
-  await page.addInitScript((t) => window.localStorage.setItem("theme", t), theme);
+  // Strings, not functions: this package has no DOM types.
+  await page.addInitScript({ content: `localStorage.setItem("theme", "${theme}");` });
   await page.goto("/login");
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-  return page.getByRole("button", { name: "Log in" }).evaluate((el) => {
-    const style = getComputedStyle(el);
-    return { text: style.color, fill: style.backgroundColor };
-  });
+  return (await page
+    .getByRole("button", { name: "Log in" })
+    .evaluate("el => { const s = getComputedStyle(el); return { text: s.color, fill: s.backgroundColor }; }")) as { text: string; fill: string };
 }
 
 test.describe("US-OPS-25", () => {
