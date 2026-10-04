@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PUR-19: manage expense categories from Expenses (Phase 6)
+
+- **New tab.** Expenses has "Expenses" and "Categories" tabs. Expenses › Categories (`/expenses/categories`) lists categories with their posting account, "Add category", edit, archive or restore, delete and history. It's the former Settings › Purchases pane with the same layout and API, plus the note "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted.".
+- **Who sees it.** Owners, and members with `expense_categories.edit_own` or `edit_others`. Everyone else gets no tab, and `/expenses/categories` shows "You don't have access to Expense categories". Field is always refused.
+- **Settings.** The Owner-only Settings dialog no longer has "Purchases".
+- **Wording.** The Expenses subtitle, the empty state and the "Submit an expense" form read "Submit an expense for approval. Categories are managed from Expenses › Categories." for members who can manage categories, and "Submit an expense for approval." for everyone else.
+- API unchanged.
+
+Tests:
+- `apps/e2e/tests/us-pur-19.spec.ts` (2): an Owner sees the wording in the page and the form, opens Categories with "Add category" and posting accounts, and Settings has no "Purchases"; the Field user sees the plain wording, no tab, and the no-access page at `/expenses/categories`.
+
 ### 2026-10-05 — US-PAY-10, US-PUR-14: export receivables and payables to CSV (Phase 6)
 
 - **Buttons.** Receivables and Payables each have an "Export CSV" button. The file has one row per open invoice or bill: number, contact, currency, due date, total, balance due, days overdue and bucket.

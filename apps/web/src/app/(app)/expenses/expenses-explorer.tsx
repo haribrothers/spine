@@ -11,6 +11,7 @@ import { ExpenseDetailDrawer } from "./expense-detail-drawer";
 import { ExpenseForm } from "./expense-form";
 import { ExpensesSkeleton } from "./expenses-skeleton";
 import { ExpensesTable } from "./expenses-table";
+import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
 import type { Expense, JobOption } from "./types";
 import { useExpenseStats } from "./use-expense-stats";
 
@@ -38,6 +39,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const canApprove = useCapability("expenses.approve");
   const canReject = useCapability("expenses.reject");
   const canCreate = useCapability("expenses.edit_own");
+  const canManageCategories = useCanManageExpenseCategories();
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -150,7 +152,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             <EmptyState
               icon={<Receipt />}
               title="No expenses yet"
-              description="Submit an expense — categories are managed from Settings → Purchases."
+              description={expensesDescription(canManageCategories)}
               action={canCreate ? <Button onClick={() => setFormOpen(true)}>Submit expense</Button> : undefined}
             />
           )}

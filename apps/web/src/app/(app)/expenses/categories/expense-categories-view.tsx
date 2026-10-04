@@ -25,10 +25,10 @@ import {
   Spinner,
 } from "@spine/ui";
 import { MoreHorizontal, Plus } from "lucide-react";
-import { apiClient } from "../../../lib/api-client";
-import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
-import { HistorySection } from "../../../components/history-section";
-import { SavedToast } from "../saved-toast";
+import { apiClient } from "../../../../lib/api-client";
+import { useCanEditOwnership, useCapability } from "../../../../lib/capabilities-context";
+import { HistorySection } from "../../../../components/history-section";
+import { SavedToast } from "../../../settings/saved-toast";
 
 interface ExpenseCategory {
   id: string;
@@ -59,7 +59,12 @@ const NO_ACCOUNT = "none";
  * pattern exactly (AlertDialog-based single-purpose form, not a full
  * Dialog, since there are only two fields).
  */
-export function PurchasesPane() {
+/**
+ * US-PUR-19 (D-078) — Expenses › Categories, moved out of the Owner-only
+ * Settings dialog so members with `expense_categories.edit_own` /
+ * `edit_others` can manage them. Same layout and API as before.
+ */
+export function ExpenseCategoriesView() {
   const [categories, setCategories] = useState<ExpenseCategory[] | null>(null);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
   const [saved, setSaved] = useState(false);
@@ -89,15 +94,10 @@ export function PurchasesPane() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Purchases</h2>
-        <p className="text-[13px] text-on-surface-muted">
-          Expense categories used when a team member submits an expense from the mobile app or web. Each category can
-          map to a default posting account.
-        </p>
-      </div>
-
       <CategoriesSection categories={categories} accounts={expenseAccounts} onChanged={reload} onSaved={() => setSaved(true)} />
+      <p className="text-[13px] text-on-surface-muted">
+        Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted.
+      </p>
 
       <SavedToast open={saved} onOpenChange={setSaved} />
     </div>

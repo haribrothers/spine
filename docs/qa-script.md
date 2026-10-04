@@ -736,7 +736,7 @@ than building every case from scratch.
 
 ### 11.1 Expense categories
 
-1. Open **Settings → Purchases**. Confirm a list of expense categories
+1. Open **Expenses › Categories** (US-PUR-19; it used to be Settings → Purchases). Confirm a list of expense categories
    (demo data seeds "Fuel & Vehicle", "Site Meals", "Tools & Small
    Equipment" — "Fuel & Vehicle" has a default posting account set, the
    other two don't).
@@ -1845,7 +1845,7 @@ revenue.
 21. **Custom account (S-09.9)**: in the same Chart of accounts pane,
     click **Add account**, create one (e.g. code `6950`, "Software
     Subscriptions", type Expense). Confirm it appears in the list
-    immediately, and that a new Settings → Purchases expense category can
+    immediately, and that a new Expenses › Categories category can
     select it as its posting account.
 22. **Regression check**: after adding a custom account or closing/
     reopening a period, reload Settings → Chart of accounts and confirm
@@ -2276,6 +2276,16 @@ Regression: converting a quote twice still warns (§42), now listing "JOB-… ·
 3. Payables › "Export CSV": the same, one row per open bill. On an organisation with no open bills, the file has only the header row.
 
 Regression: the Reports page's CSV exports (P&L, Balance Sheet, Trial Balance, Job profitability) still download as before.
+
+## 46. Expense categories from Expenses (US-PUR-19, Phase 6)
+
+1. As an Owner, open Expenses: the subtitle reads "Submit an expense for approval. Categories are managed from Expenses › Categories." and there are "Expenses" and "Categories" tabs.
+2. Categories lists each category with its posting account. "Add category", edit, archive, restore and delete work as they did in Settings.
+3. Settings (user menu) no longer has "Purchases".
+4. As a Staff member whose Team has no category rights, open Expenses: the subtitle reads "Submit an expense for approval.", with no Categories tab; `/expenses/categories` shows the no-access page. Grant the Team "Edit own" expense categories and reload: the tab appears.
+5. As Field: no tab, and the no-access page at `/expenses/categories`.
+
+Regression: submitting and approving expenses still works (§11); the expense form still lists active categories only.
 
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

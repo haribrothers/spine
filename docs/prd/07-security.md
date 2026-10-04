@@ -41,7 +41,7 @@
 
 ## Owner-only, never Team-configurable
 
-Users, Teams, privileges and invitations · organisation Settings (business profile, branding, template, currency, financial year, tax, numbering, chart of accounts, pipeline stages, quote conversion guard, meeting defaults, push, demo data) · P&L, Balance Sheet, Trial Balance, Tax Summary, revenue trend · fiscal period close/reopen · org-wide audit log · update banner.
+Users, Teams, privileges and invitations · organisation Settings (business profile, branding, template, currency, financial year, tax, numbering, chart of accounts, payment instructions, pipeline stages, quote conversion guard, meeting defaults, demo data; expense categories moved to Expenses › Categories under `expense_categories.*` (US-PUR-19), browser push to each member's profile (US-NTF-12)) · P&L, Balance Sheet, Trial Balance, Tax Summary, revenue trend · fiscal period close/reopen · org-wide audit log · update banner.
 
 ## Capability matrix
 

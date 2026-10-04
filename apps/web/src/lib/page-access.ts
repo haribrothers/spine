@@ -18,6 +18,8 @@ interface PageRule {
 const FIELD_PAGES = ["/dashboard", "/jobs", "/meetings", "/expenses", "/profile"];
 
 const RULES: PageRule[] = [
+  // US-PUR-19: more specific than "/expenses", which every role can open.
+  { prefix: "/expenses/categories", name: "Expense categories", anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
   { prefix: "/team", name: "Team", ownerOnly: true },
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
   { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
@@ -43,6 +45,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/payables": "Payables",
   "/reports": "Reports",
   "/team": "Team",
+  "/expenses/categories": "Expense categories",
 };
 
 const matches = (pathname: string, prefix: string) => pathname === prefix || pathname.startsWith(`${prefix}/`);
@@ -57,7 +60,8 @@ export function pageAccessFor(pathname: string, role: string | null, capabilitie
   const rule = RULES.find((r) => matches(pathname, r.prefix));
 
   if (role === "field") {
-    if (FIELD_PAGES.some((p) => matches(pathname, p))) return { state: "allowed" };
+    // Field's capabilities are fixed and never include expense categories.
+    if (!rule?.anyOf && FIELD_PAGES.some((p) => matches(pathname, p))) return { state: "allowed" };
     const prefix = Object.keys(PAGE_NAMES).find((p) => matches(pathname, p));
     return { state: "denied", pageName: prefix ? PAGE_NAMES[prefix]! : "this page", ownerOnly: rule?.ownerOnly ?? false, fixedRole: true };
   }
