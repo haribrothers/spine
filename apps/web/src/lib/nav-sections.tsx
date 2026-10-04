@@ -19,6 +19,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
+import type { Capability } from "@spine/shared";
 
 /**
  * The app's sidebar sections, shared across every routed page. Extracted
@@ -113,3 +114,58 @@ export const TEAM_NAV_SECTION: AppShellNavSection = {
     { href: "/team/teams", label: "Teams", icon: <Shield /> },
   ],
 };
+
+/**
+ * US-TEAM-18 — Field users get a short "Work" sidebar: the jobs they're
+ * on, their meetings and their own expenses. Nothing that holds other
+ * people's money.
+ */
+export const FIELD_NAV_SECTIONS: AppShellNavSection[] = [
+  {
+    label: "Overview",
+    items: [{ href: "/dashboard", label: "Dashboard", icon: <LayoutDashboard /> }],
+  },
+  {
+    label: "Work",
+    items: [
+      { href: "/jobs", label: "Jobs", icon: <HardHat /> },
+      { href: "/meetings", label: "Meetings", icon: <CalendarDays /> },
+      { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
+    ],
+  },
+];
+
+/** Items a Staff member sees only with the capability their page needs. */
+const ITEM_CAPABILITY: Record<string, Capability> = {
+  "/receivables": "reports.view_receivables",
+  "/payables": "reports.view_payables",
+};
+
+/** The Reports page is shown to Staff who hold any report capability. */
+const REPORT_CAPABILITIES: Capability[] = [
+  "reports.view_dashboard_summary",
+  "reports.view_receivables",
+  "reports.view_payables",
+  "reports.view_job_profitability",
+];
+
+/**
+ * US-TEAM-18 — the sidebar lists only what this person can open. Owners
+ * see everything plus Team. Field get `FIELD_NAV_SECTIONS`. Staff see the
+ * full sidebar minus Team and minus items whose capability they lack —
+ * hidden until their capabilities have loaded, so nothing appears and then
+ * vanishes. A convenience only: every page's API still refuses on its own.
+ */
+export function navSectionsFor(role: string | null, capabilities: Partial<Record<Capability, boolean>> | null): AppShellNavSection[] {
+  if (role === "owner") return [...NAV_SECTIONS, TEAM_NAV_SECTION];
+  if (role === "field") return FIELD_NAV_SECTIONS;
+  const has = (capability: Capability) => capabilities?.[capability] === true;
+  return NAV_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => {
+      if (item.href === "/reports") return REPORT_CAPABILITIES.some(has);
+      const needed = ITEM_CAPABILITY[item.href];
+      return needed ? has(needed) : true;
+    }),
+  })).filter((section) => section.items.length > 0);
+}

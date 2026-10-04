@@ -1989,6 +1989,16 @@ With a Field user assigned to one job (Jobs → Crew):
 Regression checks: Owners and Staff still see contract value, retention
 and milestone amounts everywhere (§5).
 
+## 19. Sidebar by role (US-TEAM-18, Phase 6)
+
+1. As Field: the sidebar shows "Overview" › Dashboard and "Work" › Jobs,
+   Meetings, Expenses — nothing else.
+2. As Staff in a Team without "View receivables" / "View payables": no
+   Receivables / Payables. Without any report grant: no Reports. Staff
+   never see Team (Users, Teams).
+3. Grant "View receivables" to their Team and reload: Receivables appears.
+4. As Owner: every section, including Team.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

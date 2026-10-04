@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-TEAM-18: show each person only the sections they can open (Phase 6)
+
+The sidebar now lists only what each person can open. `navSectionsFor(role, capabilities)` in `apps/web/src/lib/nav-sections.tsx` builds it, and `AppLayout` gets the role from the server and the capabilities from `CapabilitiesProvider`.
+- **Owners** see everything plus Team.
+- **Field** see "Overview" › Dashboard and "Work" › Jobs, Meetings and Expenses.
+- **Staff** see the full sidebar without Team. Receivables needs `reports.view_receivables`, Payables needs `reports.view_payables`, and Reports needs at least one report capability. These items stay hidden until capabilities load, so nothing shows and then disappears.
+
+The server checks are unchanged and still authoritative. A typed URL for a hidden page showing the no-access page is US-OPS-12, next.
+
+Tests: `apps/e2e/tests/us-team-18.spec.ts` (3):
+- The Field sidebar is exactly Dashboard, Jobs, Meetings and Expenses.
+- The demo Staff user, after the Owner turns off every report grant on the default Team, has no Receivables, Payables, Reports, Users or Teams links.
+- The Owner sees all of them.
+
+E2E 36/36.
+
 ### 2026-10-04 — US-JOB-19: keep money and unassigned jobs away from field crew (Phase 6)
 
 - **Assigned jobs only.** `JobAccessService` (`apps/api/src/modules/jobs`) scopes every job read for Field users. `GET /jobs` returns only their assigned jobs, with or without `assignedToMe`. A job they aren't assigned to is a 404, as are its milestones, photos, notes, history, variation orders and crew. The same applies to the Field write routes: adding a note or photo, or completing a milestone.
