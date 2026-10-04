@@ -52,6 +52,7 @@ export default function DataTablePage() {
         <FeatureList
           items={[
             "Client-side search filtering via a searchKey accessor.",
+            "onSearchChange reports the search text, so a page can export exactly the rows on screen.",
             "A Columns dropdown lets the user hide/show individual columns without losing sort state.",
             "Composes Table underneath rather than reimplementing row rendering.",
           ]}
@@ -81,6 +82,7 @@ export default () => (
             { prop: "rowKey", type: "(row: T) => string" },
             { prop: "searchKey", type: "(row: T) => string" },
             { prop: "searchPlaceholder", type: "string", defaultValue: '"Search…"' },
+            { prop: "onSearchChange", type: "(query: string) => void" },
             { prop: "pageSize", type: "number" },
             { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
             { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },

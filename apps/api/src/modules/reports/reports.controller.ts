@@ -1,3 +1,4 @@
+import { toDecimalString } from "@spine/shared";
 import { Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -179,21 +180,32 @@ export class ReportsController {
     sendCsv(res, `balance-sheet-${asOf}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
+  /**
+   * US-PAY-10 — one row per open invoice with its bucket. Amounts are
+   * plain decimals with the currency in its own column. `search` is the
+   * Receivables table's search text, matched the same way (invoice number
+   * and contact, ignoring case), so the file is what's on screen.
+   */
   @Get("receivables/export.csv")
   @RequireCapability("reports.view_receivables")
-  async exportReceivables(@Session() session: UserSession, @Res() res: Response) {
+  async exportReceivables(@Session() session: UserSession, @Query("search") search: string | undefined, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.receivables(orgId);
-    const rows = report.invoices.map((i) => [i.number, i.contactName, i.currency, i.dueDate, i.totalAmount, i.balanceDue, i.daysOverdue, i.bucket]);
+    const rows = report.invoices
+      .filter((i) => matchesSearch(`${i.number ?? ""} ${i.contactName ?? ""}`, search))
+      .map((i) => [i.number, i.contactName, i.currency, i.dueDate, decimal(i.totalAmount, i.currency), decimal(i.balanceDue, i.currency), i.daysOverdue, i.bucket]);
     sendCsv(res, `receivables-${report.asOf}.csv`, toCsv(["Invoice #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
 
+  /** US-PUR-14 — one row per open bill with its bucket; same conventions as receivables. */
   @Get("payables/export.csv")
   @RequireCapability("reports.view_payables")
-  async exportPayables(@Session() session: UserSession, @Res() res: Response) {
+  async exportPayables(@Session() session: UserSession, @Query("search") search: string | undefined, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.payables(orgId);
-    const rows = report.bills.map((b) => [b.billNumber, b.contactName, b.currency, b.dueDate, b.totalAmount, b.balanceDue, b.daysOverdue, b.bucket]);
+    const rows = report.bills
+      .filter((b) => matchesSearch(`${b.billNumber ?? ""} ${b.contactName ?? ""}`, search))
+      .map((b) => [b.billNumber, b.contactName, b.currency, b.dueDate, decimal(b.totalAmount, b.currency), decimal(b.balanceDue, b.currency), b.daysOverdue, b.bucket]);
     sendCsv(res, `payables-${report.asOf}.csv`, toCsv(["Bill #", "Contact", "Currency", "Due date", "Total", "Balance due", "Days overdue", "Bucket"], rows));
   }
 
@@ -207,3 +219,13 @@ export class ReportsController {
   }
 }
 
+/** Minor units → "1234.50", for CSVs a spreadsheet reads as numbers. */
+function decimal(minor: string, currency: string): string {
+  return toDecimalString({ amount: BigInt(minor), currency });
+}
+
+/** The DataTable search rule: case-insensitive substring of the row's search text. */
+function matchesSearch(text: string, search: string | undefined): boolean {
+  const query = search?.trim().toLowerCase();
+  return !query || text.toLowerCase().includes(query);
+}

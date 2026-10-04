@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PAY-10, US-PUR-14: export receivables and payables to CSV (Phase 6)
+
+- **Buttons.** Receivables and Payables each have an "Export CSV" button. The file has one row per open invoice or bill: number, contact, currency, due date, total, balance due, days overdue and bucket.
+- **Amounts.** Plain decimals ("1234.50") with the currency in its own column. Until now these exports gave minor units ("123450").
+- **Matches the screen.** Whatever is typed in the table's search box is sent along (`?search=`), and the API keeps the same rows the table shows (number or contact, ignoring case).
+- **Empty.** With nothing open, the file has only the header row.
+- **Design system.** `DataTable` gains `onSearchChange` (documented in apps/design-system) so a page can know what's on screen. Its search box now has an accessible name (its placeholder); it had none.
+
+Tests:
+- `us-pay-10-pur-14.http.integration.test.ts` (4): receivables rows match the report with decimals, a currency column and buckets; search by number and by contact, in any case, and a search with no match; payables rows; an org with no bills gets only the header.
+- `data-table.a11y.test.tsx`: the search box is labelled and reports what's typed.
+- `apps/e2e/tests/us-pay-10.spec.ts` (1): download, then search for one invoice and download just that row. `us-pur-14.spec.ts` (1): header-only download on a new org.
+
 ### 2026-10-05 — US-JOB-22: number every job (Phase 6)
 
 - **Numbers.** Every new job, whether created directly or from a quote, gets the next number from the org's Job sequence (default "JOB", padding 3: "JOB-001"). It's given in the creating transaction under the `number_sequences` row lock (D-007) and never changes. Settings › Numbering's existing "Job" row sets the prefix, padding and starting number.

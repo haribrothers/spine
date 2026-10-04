@@ -5,6 +5,7 @@ import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { ExportCsvButton } from "../../../components/export-csv-button";
 import { PayablesSkeleton } from "./payables-skeleton";
 import { PayablesTable } from "./payables-table";
 import { AGING_BUCKET_LABELS, type AgingBucket, type PayablesReport } from "./types";
@@ -22,6 +23,7 @@ const BUCKET_ORDER: AgingBucket[] = ["current", "0-30", "31-60", "61-90", "90+"]
 export function PayablesExplorer() {
   const [report, setReport] = useState<PayablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     apiClient
@@ -46,6 +48,10 @@ export function PayablesExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* US-PUR-14: the file matches what's on screen, search included. */}
+      <div className="flex justify-end">
+        <ExportCsvButton path="/reports/payables/export.csv" search={search} />
+      </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {BUCKET_ORDER.map((bucket) => (
           <StatCard
@@ -66,7 +72,7 @@ export function PayablesExplorer() {
           <EmptyState icon={<HandCoins />} title="Nothing outstanding" description="Every recorded vendor bill has been paid in full." />
         </div>
       ) : (
-        <PayablesTable bills={report.bills} />
+        <PayablesTable bills={report.bills} onSearchChange={setSearch} />
       )}
     </div>
   );

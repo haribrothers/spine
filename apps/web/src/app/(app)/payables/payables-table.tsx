@@ -14,7 +14,7 @@ const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
 };
 
 /** Every currently-outstanding recorded vendor bill, oldest-overdue first (see ReportsService.payables' own sort) — clicking a row's number navigates to the bill, mirroring receivables-table.tsx exactly. */
-export function PayablesTable({ bills }: { bills: PayablesBillRow[] }) {
+export function PayablesTable({ bills, onSearchChange }: { bills: PayablesBillRow[]; onSearchChange?: (query: string) => void }) {
   const columns: TableColumn<PayablesBillRow>[] = [
     {
       key: "billNumber",
@@ -62,6 +62,7 @@ export function PayablesTable({ bills }: { bills: PayablesBillRow[] }) {
       data={bills}
       rowKey={(row) => row.id}
       searchPlaceholder="Search payables"
+      onSearchChange={onSearchChange}
       searchKey={(row) => `${row.billNumber} ${row.contactName ?? ""}`}
       configurablePageSize
     />

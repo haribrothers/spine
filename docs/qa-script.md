@@ -2269,6 +2269,14 @@ Regression: the Jobs list, job detail and the phone's job screen show the new na
 
 Regression: converting a quote twice still warns (§42), now listing "JOB-… · <name>".
 
+## 45. Receivables and payables CSV (US-PAY-10, US-PUR-14, Phase 6)
+
+1. Receivables › "Export CSV": a file with a header and one row per open invoice. Amounts look like "1234.50" with the currency in its own column, and each row has its bucket. It opens cleanly in a spreadsheet.
+2. Type an invoice number or contact into the search box, then export again: the file has only the rows on screen.
+3. Payables › "Export CSV": the same, one row per open bill. On an organisation with no open bills, the file has only the header row.
+
+Regression: the Reports page's CSV exports (P&L, Balance Sheet, Trial Balance, Job profitability) still download as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

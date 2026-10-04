@@ -5,6 +5,7 @@ import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import { Inbox } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { ExportCsvButton } from "../../../components/export-csv-button";
 import { ReceivablesSkeleton } from "./receivables-skeleton";
 import { ReceivablesTable } from "./receivables-table";
 import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesReport } from "./types";
@@ -23,6 +24,7 @@ const BUCKET_ORDER: AgingBucket[] = ["current", "0-30", "31-60", "61-90", "90+"]
 export function ReceivablesExplorer() {
   const [report, setReport] = useState<ReceivablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     apiClient
@@ -47,6 +49,10 @@ export function ReceivablesExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* US-PAY-10: the file matches what's on screen, search included. */}
+      <div className="flex justify-end">
+        <ExportCsvButton path="/reports/receivables/export.csv" search={search} />
+      </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {BUCKET_ORDER.map((bucket) => (
           <StatCard
@@ -67,7 +73,7 @@ export function ReceivablesExplorer() {
           <EmptyState icon={<Inbox />} title="Nothing outstanding" description="Every issued invoice has been paid in full." />
         </div>
       ) : (
-        <ReceivablesTable invoices={report.invoices} />
+        <ReceivablesTable invoices={report.invoices} onSearchChange={setSearch} />
       )}
     </div>
   );

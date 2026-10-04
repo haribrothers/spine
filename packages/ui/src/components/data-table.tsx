@@ -21,6 +21,8 @@ export interface DataTableProps<T> {
   pageSizeOptions?: number[];
   searchPlaceholder?: string;
   searchKey?: (row: T) => string;
+  /** Called with the search text as it changes — lets a page export exactly the rows on screen. */
+  onSearchChange?: (query: string) => void;
   className?: string;
   /** Passed straight through to `Table` — see that component's own doc comment for grouped/expandable-row mode. */
   groupBy?: (row: T) => string;
@@ -43,6 +45,7 @@ export function DataTable<T>({
   pageSizeOptions,
   searchPlaceholder = "Search…",
   searchKey,
+  onSearchChange,
   className,
   groupBy,
   groupPrimary,
@@ -60,8 +63,12 @@ export function DataTable<T>({
         {searchKey ? (
           <Input
             placeholder={searchPlaceholder}
+            aria-label={searchPlaceholder}
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              onSearchChange?.(event.target.value);
+            }}
             className="w-64"
           />
         ) : (

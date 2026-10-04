@@ -14,7 +14,7 @@ const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
 };
 
 /** Every currently-outstanding issued invoice, oldest-overdue first (see ReportsService.receivables' own sort) — clicking a row's number navigates to the invoice, same as invoices-table.tsx's own convention. */
-export function ReceivablesTable({ invoices }: { invoices: ReceivablesInvoiceRow[] }) {
+export function ReceivablesTable({ invoices, onSearchChange }: { invoices: ReceivablesInvoiceRow[]; onSearchChange?: (query: string) => void }) {
   const columns: TableColumn<ReceivablesInvoiceRow>[] = [
     {
       key: "number",
@@ -62,6 +62,7 @@ export function ReceivablesTable({ invoices }: { invoices: ReceivablesInvoiceRow
       data={invoices}
       rowKey={(row) => row.id}
       searchPlaceholder="Search receivables"
+      onSearchChange={onSearchChange}
       searchKey={(row) => `${row.number ?? ""} ${row.contactName ?? ""}`}
       configurablePageSize
     />
