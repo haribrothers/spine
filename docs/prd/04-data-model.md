@@ -67,6 +67,8 @@ New schema the stories require. Each is created by the story named; until then i
 | `user` | `digest_enabled boolean`, `digest_time time`, `digest_days text` | US-NTF-13 |
 | `data_exports` (new) | `id`, `org_id`, `requested_by_user_id`, `formats`, `include_files`, `status`, `file_id?`, `size_bytes?`, `expires_at`, timestamps | US-SET-15 |
 | Search indexes | `pg_trgm` GIN indexes on contact names, document numbers and job names | US-OPS-22 |
+| `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by a one-off job) | US-OPS-27, US-OPS-28 |
+| `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
 | Rate and quantity columns | `tax_rates.rate`, `quote_lines`/`invoice_lines`/`credit_note_lines`/`vendor_bill_lines` `.quantity`, `.discount_percentage`, `.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount`: `real` → `numeric(18,4)` | US-TAX-07 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).

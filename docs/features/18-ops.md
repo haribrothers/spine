@@ -17,6 +17,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 | F-OPS-06 | Web app at phone width | P1 | 8 | `AppShellPhone`, `AppShellPhoneNav` |
 | F-OPS-07 | Release readiness | P1 | 8 | — |
 | F-OPS-08 | Global search | P1 | 7 | `SearchPalette` |
+| F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
 
 ## User stories
 
@@ -34,7 +35,7 @@ Legacy: S-10.7
 - **Given** a missing prerequisite, **when** the script runs, **then** it exits non-zero with a message naming what to install.
 
 **Implementation notes**
-- New `scripts/install.sh` (POSIX shell, shellcheck-clean); Compose profiles `minimal` / `full`.
+- New `scripts/install.sh` (POSIX shell, shellcheck-clean); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
 
 ### US-OPS-02 · Start with demo data from an environment flag
 **Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
@@ -58,12 +59,15 @@ Legacy: S-10.10
 Legacy: S-10.8
 
 **Acceptance criteria**
-- **Given** a running install, **when** I run `./scripts/backup.sh`, **then** it writes `spine-backup-<YYYYMMDD-HHMMSS>.tar.gz` containing a `pg_dump` of the database, the file store (MinIO bucket or local files) and a manifest with the Spine version.
+- **Given** a running install, **when** I run `./scripts/backup.sh`, **then** it writes `spine-backup-<YYYYMMDD-HHMMSS>.tar.gz` containing a `pg_dump` of the database, the files volume (or, with `STORAGE_DRIVER=s3`, a copy of the bucket) and a manifest with the Spine version and file checksums.
 - **Given** the backup completes, **when** it exits, **then** it prints the archive path and size and exits 0; on any failure it exits non-zero and removes the partial file.
 - **Given** the docs, **when** I read "Backups", **then** they include a cron example for a nightly backup and how to copy it off the machine.
+- **Given** `--passphrase` (or `BACKUP_PASSPHRASE`), **when** the backup runs, **then** the archive is encrypted (AES-256) and restore asks for the passphrase.
+- **Given** `BACKUP_REMOTE` is set to an S3/R2/B2 target, **when** the backup succeeds, **then** the encrypted archive is uploaded and remote copies are pruned to 7 daily and 4 weekly (D-105).
+- **Given** the last successful backup is more than 2 days old, **when** an Owner opens any page, **then** a banner reads "Your last backup was <n> days ago. Run a backup to keep your data safe.".
 
 **Implementation notes**
-- New `scripts/backup.sh`.
+- New `scripts/backup.sh`; uploads via the S3 API (no extra tool); last-success time written to `settings.last_backup_at` (04 "Columns added").
 
 ### US-OPS-04 · Restore a backup into a clean install
 **Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
@@ -72,7 +76,7 @@ Legacy: S-10.8
 **Acceptance criteria**
 - **Given** a clean install and a backup archive, **when** I run `./scripts/restore.sh <archive>`, **then** the database and files are restored and Spine starts with the same data.
 - **Given** the archive is from a newer Spine version, **when** I restore, **then** it refuses with a message to upgrade first.
-- **Given** the nightly CI run (and every release tag), **when** the restore job runs, **then** it backs up a seeded instance, restores into a clean one and checks the trial balance and file count match (NFR-REL-03).
+- **Given** the nightly CI run (and every release tag), **when** the restore job runs, **then** it backs up a seeded instance, restores into a clean one and checks the trial balance, file count and every file checksum match (NFR-REL-03).
 
 **Implementation notes**
 - New `scripts/restore.sh`; CI job "restore-verify".
@@ -298,7 +302,7 @@ Review findings: Stage 5 #9, #23, #29, #64 · Decision: D-072
 - **Given** a Staff or Field user, **when** they call `GET /org/invitations`, **then** the API returns 403.
 - **Given** a Staff or Field user, **when** they call `POST /demo-data/seed` or `DELETE /demo-data`, **then** the API returns 403.
 - **Given** a file attached to a record (receipt, photo, signature, logo, PDF), **when** a member requests `GET /files/:id`, **then** it's served only if they can read the owning record; otherwise 404.
-- **Given** an allowed file request, **when** it's served, **then** it's a redirect to a signed URL that expires within 5 minutes, issued only after the record check.
+- **Given** an allowed file request, **when** it's served, **then** the `local` driver streams it through the API, and the `s3` driver redirects to a signed URL that expires within 5 minutes — either way only after the record check (D-102).
 - **Given** a Staff user without `reports.view_receivables`, **when** they call `GET /reports/invoices-due-this-week`, **then** the API returns 403 and the dashboard widget is left out.
 - **Given** the integration suite, **when** it runs, **then** each of the above has a test that fails if the guard is removed.
 
@@ -408,3 +412,84 @@ Decision: D-100
 
 **Implementation notes**
 - Web: `next-themes` `data-theme` (US-AUTH-07); Native: `dark:` pairs and `useNativeColors()` per [native notes](../design/native-notes.md).
+
+### US-OPS-27 · Store files on local disk by default
+**Feature:** F-OPS-09 · **Priority:** P1 · **Phase:** 6 · **Screens:** —
+**As** a self-hoster, **I want** attachments to work with no extra storage service, **so that** Spine installs and runs without MinIO or any S3 setup.
+
+Decision: D-102
+
+**Acceptance criteria**
+- **Given** a fresh install with no storage settings, **when** a member uploads a receipt, photo, signature or logo, **then** it's saved under the API container's files volume (`/data/files`) and opens again from `GET /files/:id`.
+- **Given** `STORAGE_DRIVER=s3` with `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY` and `S3_SECRET_KEY`, **when** files are uploaded, **then** they go to that S3-compatible store instead and every file feature behaves the same.
+- **Given** the API crashes or loses power mid-upload, **when** it restarts, **then** no partial file is ever served; the upload simply failed (NFR-REL-08).
+- **Given** a file read with the `local` driver, **when** it's allowed, **then** the API streams it with its type, size, `ETag` and range support; a link that must work without a session is an API-signed URL (file id, expiry, HMAC with `AUTH_SECRET`) valid for at most 5 minutes.
+- **Given** the `minimal` Compose profile, **when** it runs, **then** attachments work fully (no read-only mode).
+- **Given** `docker-compose.yml` and `docker-compose.dev.yml`, **when** this story ships, **then** neither references `minio/minio`; both mount a named `spine_files` volume on the API, and an optional `rustfs` profile runs `rustfs/rustfs:1.0.x` with a memory limit for owners who want self-hosted S3 (D-103).
+- **Given** the test suite, **when** it runs, **then** the same storage scenarios pass against both drivers (`local` on a temp folder, `s3` against S3Mock in CI).
+
+**Implementation notes**
+- `StorageDriver` interface (`save`, `openReadStream`, `delete`, `exists`) in `apps/api/src/modules/files`; `local` and `s3` implementations; `FilesService` selects by `STORAGE_DRIVER` (default `local`).
+- Writes: temp file → `fsync` → atomic rename into `/data/files/<org-id>/<2-char prefix>/<file-id>`; paths come only from ids, never from uploaded names.
+- Data: `files.storage_driver` (04 "Columns added"). `.env.example` / `.env.e2e` gain `STORAGE_DRIVER=local`; `S3_*` become optional and commented. CI E2E switches to `local`.
+- The API container runs as a non-root user that owns `/data/files`.
+
+### US-OPS-28 · Prove stored files are intact
+**Feature:** F-OPS-09 · **Priority:** P1 · **Phase:** 6 · **Screens:** —
+**As** an owner, **I want** Spine to detect a damaged or missing file, **so that** I find out before I need that receipt or signed quote.
+
+Decision: D-104
+
+**Acceptance criteria**
+- **Given** a file is uploaded, **when** it's saved, **then** its SHA-256 checksum is stored with the file record.
+- **Given** a file is served, **when** its checksum no longer matches, **then** the API returns 409 with "This file is damaged. Restore it from your latest backup." and logs the file id.
+- **Given** the weekly integrity job runs, **when** every file matches, **then** nothing is shown.
+- **Given** the job finds a damaged or missing file, **when** it finishes, **then** Owners see "<n> stored files are damaged or missing — restore from your latest backup." on the dashboard and get an in-app notification listing the records affected.
+- **Given** an issued PDF (US-INV-17), **when** anyone tries to replace it, **then** the write is refused; issued files are write-once.
+
+**Implementation notes**
+- Data: `files.checksum_sha256` (04 "Columns added"); backfilled for existing files by a one-off job.
+- Queue: `file-integrity-check` (weekly, pg-boss); event `files_damaged` (Owners).
+
+### US-OPS-29 · Accept only safe uploads
+**Feature:** F-OPS-09 · **Priority:** P1 · **Phase:** 6 · **Screens:** —
+**As** an owner, **I want** uploads checked and served safely, **so that** a file can't attack someone's browser or leak where a photo was taken.
+
+Decision: D-104
+
+**Acceptance criteria**
+- **Given** an upload, **when** its real content type (from the file's bytes, not its name) isn't JPEG, PNG, WebP, HEIC or PDF, **then** it's refused with 415 and "This file type isn't supported. Upload a photo or a PDF.".
+- **Given** a photo with location data, **when** it's saved, **then** GPS EXIF fields are removed and orientation is kept.
+- **Given** any file is served, **when** the response is sent, **then** it carries `X-Content-Type-Options: nosniff`, the stored content type, and `Content-Disposition: attachment` for everything except images and PDFs shown inline.
+- **Given** an uploaded file name like `../../etc/passwd.pdf`, **when** it's stored, **then** it's kept only as a display label and never used in a path.
+
+**Implementation notes**
+- Type sniffing with `file-type`; EXIF stripping with `sharp` for images; limits stay at 10 MB (D-053).
+
+### US-OPS-30 · Move existing files off MinIO
+**Feature:** F-OPS-09 · **Priority:** P2 · **Phase:** 6 · **Screens:** —
+**As** someone already running Spine with MinIO, **I want** a safe way to switch to local storage, **so that** I keep every file when upgrading.
+
+Decision: D-102
+
+**Acceptance criteria**
+- **Given** an install with `S3_*` set and files in the bucket, **when** I run `pnpm --filter @spine/api files:migrate --from s3 --to local`, **then** every file referenced in the database is copied into the files volume, its checksum is verified, and a summary prints copied, skipped and failed counts.
+- **Given** a file fails to copy, **when** the command finishes, **then** it exits non-zero, lists the failures and leaves the bucket untouched.
+- **Given** the migration succeeded, **when** I set `STORAGE_DRIVER=local` and restart, **then** every attachment opens as before.
+- **Given** an owner who doesn't want to migrate, **when** they set `STORAGE_DRIVER=s3` and keep their MinIO running, **then** Spine works unchanged (documented in the upgrade notes).
+
+**Implementation notes**
+- Idempotent: re-running skips files already present with a matching checksum; `files.storage_driver` updated per row.
+
+### US-OPS-31 · Warn before the disk fills up
+**Feature:** F-OPS-09 · **Priority:** P2 · **Phase:** 6 · **Screens:** `UpgradeNotice`
+**As** an owner, **I want** a warning before storage runs out, **so that** uploads don't suddenly fail on site.
+
+**Acceptance criteria**
+- **Given** the files volume is more than 85% full, **when** an Owner opens any page, **then** a banner in the same style as the update notice reads "Storage is <n>% full. Free up space or add disk before uploads stop working.".
+- **Given** the volume is full, **when** someone uploads, **then** the upload fails with "There's no space left to store this file. Ask an owner to free up space." and nothing else breaks.
+- **Given** Staff or Field users, **when** the volume is nearly full, **then** they don't see the banner (only the upload error when it happens).
+- **Given** `/health/ready`, **when** it reports, **then** it includes `storage: { driver, usedPercent }` for the `local` driver.
+
+**Implementation notes**
+- Check with `statfs` on `/data/files` every 15 minutes; the banner reuses the `UpgradeNotice` component pattern.

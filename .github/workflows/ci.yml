@@ -2,18 +2,13 @@ name: CI
 
 # Runs only on pull requests into main (and on demand). Work happens on a
 # phase branch; the pipeline runs once the phase is ready for review.
-# Tuned for a private repo's Actions-minutes budget: docs-only changes,
-# draft PRs and superseded runs are skipped, and installs, Turbo results
-# and Playwright browsers are cached.
+# Tuned for a private repo's Actions-minutes budget: docs-only changes skip
+# the test jobs (via the "Detect changes" job), draft PRs and superseded runs
+# are skipped, and installs, Turbo results and Playwright browsers are cached.
 on:
   pull_request:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
-    paths-ignore:
-      - "docs/**"
-      - "**/*.md"
-      - ".vscode/**"
-      - "LICENSE"
   workflow_dispatch:
 
 # A new push to the same PR cancels the run still in progress.
@@ -28,10 +23,38 @@ env:
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-  test:
-    name: Unit and integration
+  # Decides whether code changed. Docs-only PRs skip the two jobs below; GitHub
+  # treats a skipped required check as passing, so they can still be merged
+  # into the protected main (a workflow-level paths-ignore would leave the
+  # required checks waiting forever).
+  changes:
+    name: Detect changes
     # Draft PRs don't use minutes; marking the PR "Ready for review" starts the run.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+    outputs:
+      code: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.code == 'true' }}
+    steps:
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name == 'pull_request'
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - "**"
+              - "!docs/**"
+              - "!**/*.md"
+              - "!.vscode/**"
+              - "!LICENSE"
+
+  test:
+    name: Unit and integration
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     # Scoped to this job: the E2E job must read its own values from .env.e2e,

@@ -78,7 +78,9 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 
 - Secrets come only from environment variables (`AUTH_SECRET`, `DATABASE_URL`, `SMTP_PASSWORD`, `S3_SECRET_KEY`, `VAPID_PRIVATE_KEY`, `CLOUDFLARE_TUNNEL_TOKEN`); never committed; `.env.example` holds placeholders only.
 - `AUTH_SECRET` must be at least 32 random bytes; the install script generates it (US-OPS-01).
-- Files are private in the bucket. Every file read is authorised against the record the file belongs to, then answered with a redirect to a signed URL valid for at most 5 minutes (US-OPS-20). Today `GET /files/:id` checks only the organisation — a known gap. No public bucket URLs.
+- Files are never served directly from the volume or bucket. Every file read is authorised against the record the file belongs to (US-OPS-20), then streamed by the API (`local` driver) or answered with a presigned URL valid for at most 5 minutes (`s3` driver); session-less links are API-signed with `AUTH_SECRET` and expire within 5 minutes. Today `GET /files/:id` checks only the organisation — a known gap.
+- Uploads are type-checked from their bytes (JPEG, PNG, WebP, HEIC, PDF), photo GPS data is stripped, paths are built from ids only, and responses carry `nosniff` (US-OPS-29). Checksums detect damage (US-OPS-28).
+- At rest: full-disk encryption on the host is recommended; per-file encryption with `FILES_ENCRYPTION_KEY` is optional and off by default because losing the key loses every file (D-106). Backups can be encrypted with a passphrase (D-105).
 
 ## Destructive actions
 

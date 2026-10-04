@@ -21,7 +21,8 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | NFR-REL-02 | The trial balance balances after every simulated workflow | 0 | `ledger-integrity` integration test |
 | NFR-REL-03 | A backup restores into a clean install with identical trial balance and file count | 8 | CI restore-verify job (US-OPS-04) |
 | NFR-REL-04 | If SMTP is down, documents still issue and email retries with back-off until sent or failed after 24 h | 1 | Integration test with SMTP stopped |
-| NFR-REL-05 | If object storage is down, the app keeps working; attachment upload/download shows an error | 1 | Manual QA |
+| NFR-REL-05 | If file storage is unavailable (S3 unreachable or disk full), the app keeps working; only the affected upload or download shows an error | 1 | Manual QA; integration test with storage stopped |
+| NFR-REL-08 | A crash or power cut during an upload never leaves a partial file that can be served | 6 | Integration test killing the API mid-write (US-OPS-27) |
 | NFR-REL-06 | Mobile outbox replays produce zero duplicates in a 100-item airplane-mode test | 5 | E2E on simulator |
 | NFR-REL-07 | Every mutating endpoint is idempotent with `Idempotency-Key` | 6 | Route-introspection test (US-OPS-08) |
 
@@ -56,6 +57,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | NFR-SEC-03 | Public quote and invitation routes are rate-limited (20/min/IP) and tokens are ≥ 128 bits random | 1 | Integration test |
 | NFR-SEC-04 | `pnpm audit --prod` has no high or critical findings at release | 8 | CI step |
 | NFR-SEC-05 | OWASP Top 10 review documented before 1.0 | 8 | `docs/security-review.md` (US-OPS-18) |
+| NFR-SEC-07 | Uploads outside the allowed types are refused, photo GPS data is stripped, and served files carry `nosniff` | 6 | Integration tests (US-OPS-29) |
 | NFR-SEC-06 | No secret is committed; files are served only through authorised API proxies | 0 | Secret scan in CI; integration test |
 
 ## Observability

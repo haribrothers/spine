@@ -15,7 +15,8 @@
 | R-09 | Mobile migration to expo-router destabilises the field app | Phase 5 slips | Medium | Migration is its own story (US-MOB-19); `apps/showcase-native` already proves the pattern |
 | R-10 | 14 authenticated mutating routes have no idempotency (finding C26, recounted in review) | Duplicate writes on retry | Medium | US-OPS-08 adds the interceptor, per-user key scope and a route-introspection test (NFR-REL-07) |
 | R-12 | Field data exposure through the API (jobs, costing, files) before US-JOB-19 / US-OPS-20 ship | A phone or a curious member reads money or other crews' files | Medium | Ship US-JOB-19 before the field app is released; US-OPS-20 before 1.0 |
-| R-13 | The default file store image `minio/minio` is no longer pullable from Docker Hub (found 2026-10-04 when CI tried to pull it), so `docker-compose.yml` and `docker-compose.dev.yml` fail on a fresh machine | New installs and new developers can't start Spine | High | Decide a replacement (Q-14) before Phase 8; CI already uses `adobe/s3mock` for E2E |
+| R-13 | ~~The default file store image `minio/minio` is no longer pullable from Docker Hub (found 2026-10-04 when CI tried to pull it), so `docker-compose.yml` and `docker-compose.dev.yml` fail on a fresh machine~~ — resolved by [D-102](12-decisions.md): local disk by default, MinIO dropped | New installs and new developers can't start Spine | High | Decide a replacement (Q-14) before Phase 8; CI already uses `adobe/s3mock` for E2E |
+| R-14 | Files and the database live on one host, so a dead disk loses both unless a backup left the machine | Data loss for the business | Medium | Off-site encrypted backups (D-105), stale-backup banner, checksum checks (D-104), restore verified in CI (US-OPS-04); cloud S3 for owners who want provider redundancy |
 | R-11 | Store review rejects the field app (server-address sign-in, no demo account) | Mobile release delayed | Medium | Provide a hosted demo server and reviewer notes ([15](15-mobile-release.md)) |
 
 ## Open questions
@@ -35,7 +36,7 @@
 | Q-11 | ~~What may anonymous visitors see on the invite-only and forgot-password pages (business name, "email may not be set up" hint)?~~ — closed by [D-084](12-decisions.md): business name only, no configuration hints | — | — | — |
 | Q-12 | ~~May a member with `expenses.approve` approve their own expense?~~ — closed by [D-085](12-decisions.md): no self-approval for Staff; Owners may | — | — | — |
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
-| Q-14 | Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`? | RustFS (MinIO-compatible, Apache-2.0) · SeaweedFS · Garage · build MinIO from source and publish our own image | Phase 8 (US-OPS-01) | Product owner |
+| Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
 
 ## Design follow-ups
 

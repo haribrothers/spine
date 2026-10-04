@@ -7,7 +7,7 @@
   Owner / Staff ─ browser ─┐                                                                                          │
   Customer ── quote link ──┼──▶ Caddy (TLS) ──▶ web  (Next.js :3000) ──server-side fetch──▶ api (NestJS :4000) ──▶ PostgreSQL 16
   Field crew ── iOS/Android┘            └──────────────────────────────────────────────▶ api        │   (data + pg-boss jobs)
-                                                                                                    ├──▶ MinIO / S3 (files)
+                                                                                                    ├──▶ files: local volume (default) or S3
                                                                                                     ├──▶ SMTP (email, optional)
                                                                                                     └──▶ Web Push (optional)
   Optional: Cloudflare Tunnel sidecar gives a NAT'd install a public URL for quote links.
@@ -18,10 +18,10 @@
 | Component | Responsibility | Talks to |
 |---|---|---|
 | `apps/web` | Office app (Owner/Staff/Field), public quote page `/quote/[token]`, onboarding, sign-in | `apps/api` over HTTP with the session cookie |
-| `apps/api` | All business rules, authorisation, ledger postings, PDFs, email, files, notifications, jobs | PostgreSQL, S3, SMTP, Web Push |
+| `apps/api` | All business rules, authorisation, ledger postings, PDFs, email, files, notifications, jobs | PostgreSQL, files volume or S3, SMTP, Web Push |
 | `apps/mobile` | Field app: today's jobs, photos, expenses, milestones, on-site acceptance, offline outbox | `apps/api` with `Authorization: Bearer <session token>` |
 | PostgreSQL | System of record, ledger constraints, pg-boss queues | — |
-| MinIO / S3 | Logos, receipts, job photos, generated PDFs, signatures | — |
+| File storage | Logos, receipts, job photos, issued PDFs, signatures — `local` driver (Docker volume `spine_files` on the API) by default, `s3` driver optionally | — |
 | Caddy | TLS termination, routing `/` → web and `/api` → api | — |
 
 **Dependency rule:** all business logic and every authorisation decision lives in `apps/api` services. `apps/web` and `apps/mobile` hide what a user can't do (UI convenience), but the API re-checks every request ([07-security](07-security.md)).
@@ -137,6 +137,20 @@ Details and the capability matrix: [07-security](07-security.md).
 - **Files:** photos and receipts are compressed on the phone, uploaded with `POST /files`, then referenced by id ([D-053](12-decisions.md)).
 - **Conflicts:** appends (photos, expenses, notes) never conflict. Milestone completion is first-write-wins: a later completion of an already-completed milestone returns 200 with `alreadyCompleted: true`, changes nothing and is recorded in history (US-MOB-15). Accept/decline of a quote needs connectivity and is refused once the quote isn't `sent` ([D-050](12-decisions.md)).
 - **Not offline:** quote acceptance, anything that issues a financial document, and sign-in ([D-050](12-decisions.md)).
+
+## File storage
+
+Files go through one `StorageDriver` interface in `apps/api/src/modules/files` ([D-102](12-decisions.md)); no other code reads the volume or bucket directly.
+
+| | `local` (default) | `s3` (optional) |
+|---|---|---|
+| Where | `/data/files/<org-id>/<prefix>/<file-id>` in the `spine_files` Docker volume mounted on the API container | Any S3-compatible store: AWS S3, Cloudflare R2, Backblaze B2, or the optional `rustfs` Compose profile |
+| Write | Temp file → `fsync` → atomic rename; SHA-256 stored in `files.checksum_sha256` | `PutObject`; same checksum |
+| Read | API checks the owning record, then streams with `ETag` and range support; links that must work without a session are API-signed (HMAC with `AUTH_SECRET`, ≤ 5 minutes) | API checks the owning record, then redirects to a presigned URL (≤ 5 minutes) |
+| Backup | `backup.sh` archives the volume with the database dump | `backup.sh` copies the bucket |
+| When unavailable | Disk full → that upload fails with a clear error; everything else keeps working | Store unreachable → uploads and downloads show an error; the app keeps working |
+
+Safety rules ([D-104](12-decisions.md)): issued files are write-once; uploads are type-checked from their bytes and GPS data is stripped from photos; files are served with `nosniff`; a weekly job verifies every checksum. Optional per-file encryption with `FILES_ENCRYPTION_KEY` is off by default ([D-106](12-decisions.md)). The host is a single point of failure, so off-site backups are what protect the data ([D-105](12-decisions.md), [R-14](13-risks-open-questions.md)).
 
 ## Updates
 

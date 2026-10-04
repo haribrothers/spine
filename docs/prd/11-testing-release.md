@@ -19,7 +19,7 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 | Job | Trigger | Steps | Blocks merge |
 |---|---|---|---|
 | `test` ("Unit and integration") | PR into `main`, manual | install (frozen lockfile) → lint → typecheck → unit → migrate → integration | Yes |
-| `e2e` ("E2E") | after `test` passes | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
+| `e2e` ("E2E") | after `test` passes; uses the `local` storage driver once US-OPS-27 ships (S3Mock until then) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
 | `a11y-routes` | PR (Phase 8) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
 | `restore-verify` | nightly and on `v*` tags (Phase 8) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
@@ -38,7 +38,7 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 | Rule | Saves |
 |---|---|
 | Runs on PRs into `main` and manual dispatch only | Every routine commit |
-| `paths-ignore` for `docs/**`, `*.md`, `.vscode/**`, `LICENSE` | Spec and docs-only PRs |
+| A "Detect changes" job (`dorny/paths-filter`) skips both test jobs when only `docs/**`, `*.md`, `.vscode/**` or `LICENSE` changed; skipped required checks count as passed, so docs-only PRs still merge | Spec and docs-only PRs (~10 s instead of ~7 min) |
 | Draft PRs skipped | Work-in-progress pushes |
 | `concurrency` with `cancel-in-progress` | Superseded runs |
 | E2E waits for `test` (`needs`) | E2E minutes when unit tests already fail |

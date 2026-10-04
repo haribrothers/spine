@@ -33,7 +33,7 @@ spine/
 ├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 8)
 ├─ docs/                      this spec, design, QA script
 ├─ docker-compose.yml         production (profiles minimal/full)
-├─ docker-compose.dev.yml     local infra: Postgres, MinIO, MailDev
+├─ docker-compose.dev.yml     local infra: Postgres, MailDev (files use the local driver; optional rustfs profile)
 └─ turbo.json
 ```
 
@@ -51,7 +51,7 @@ spine/
 | Command | Does |
 |---|---|
 | `pnpm dev` | API + web + design-system in watch mode (not the Expo apps) |
-| `pnpm dev:infra:up` / `:down` / `:reset` | Local Postgres, MinIO, MailDev |
+| `pnpm dev:infra:up` / `:down` / `:reset` | Local Postgres and MailDev (add `--profile rustfs` to test the S3 driver) |
 | `pnpm db:migrate:dev` / `db:seed:dev` / `db:reset:dev` | Migrations, seed, reset the dev database |
 | `pnpm build` / `lint` / `typecheck` / `test` | Turborepo across all packages |
 | `pnpm test:e2e` (`:ui`) | Playwright suite (needs `spine_e2e` database) |
@@ -61,7 +61,7 @@ spine/
 
 ## Pipeline (CI)
 
-Runs on pull requests into `main` only (and on demand), never on every push — see [11-testing-release](11-testing-release.md#branches-and-pull-requests) for the branch workflow and the minute-saving rules.
+Runs on pull requests into `main` only (and on demand), never on every push; docs-only PRs skip the test jobs — see [11-testing-release](11-testing-release.md#branches-and-pull-requests) for the branch workflow and the minute-saving rules.
 
 | Job | Steps |
 |---|---|

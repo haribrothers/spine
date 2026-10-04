@@ -22,7 +22,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | ORM / migrations | Drizzle ORM 0.45 + drizzle-kit 0.31, SQL migrations in `apps/api/drizzle/` | Readable SQL migrations |
 | Auth | Better Auth 1.6: email/password, `organization` plugin, `bearer()` plugin for mobile | Self-hostable, Postgres-backed ([D-016](12-decisions.md)) |
 | Background jobs | pg-boss 12 (queues in Postgres) | No Redis container |
-| Files | S3 API (`@aws-sdk/client-s3`); MinIO by default — its Docker Hub image is no longer available, replacement open ([Q-14](13-risks-open-questions.md)) | Self-host an S3-compatible store or point at S3/R2 |
+| Files | `StorageDriver` with two drivers: `local` (default — a Docker volume on the API container) and `s3` (`@aws-sdk/client-s3`, for AWS S3, R2, B2 or a self-hosted store) ([D-102](12-decisions.md)) | No extra container by default; MinIO dropped after its free images were withdrawn |
 | Email | Nodemailer 9 over SMTP | No SaaS needed; queued with retry |
 | PDF | `@react-pdf/renderer` 4 | Same output on every install |
 | Browser push | `web-push` 3 (VAPID) | Optional; disabled without keys |
@@ -58,7 +58,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 
 | Concern | Choice | Why |
 |---|---|---|
-| Container | Docker Compose, profiles `minimal` (db, api, web, caddy) and `full` (+ MinIO, Cloudflare tunnel) | Single-host deploy |
+| Container | Docker Compose, profiles `minimal` (db, api, web, caddy — attachments included) and `full` (+ Cloudflare tunnel); optional `rustfs` profile (`rustfs/rustfs:1.0.x`, memory-limited) for self-hosted S3 ([D-103](12-decisions.md)) | Single-host deploy |
 | Reverse proxy | Caddy 2 (automatic HTTPS) | Zero-config TLS |
 | Remote access | Cloudflare Tunnel (optional) | Public quote links for installs behind NAT |
 | CI | GitHub Actions: lint, typecheck, build, unit, migrations, integration; separate E2E job | |

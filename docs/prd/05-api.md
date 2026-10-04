@@ -460,6 +460,9 @@ Routes the stories add. Each is created by the story named.
 | SET | POST/GET | `/org/exports`; GET `/org/exports/:id/download` | roles: owner | US-SET-15, US-SET-16 |
 | OPS | GET | `/search?q=&limit=5` | Any member (results filtered by each module's read rules) | US-OPS-22 |
 
+| OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged file → 409 | Readers of the owning record | US-OPS-27, US-OPS-28 |
+| OPS | — | `POST /files`: 415 for disallowed types; GPS EXIF stripped; disk full → 507 "There's no space left to store this file." | as today | US-OPS-29, US-OPS-31 |
+| OPS | — | `GET /health/ready` adds `storage: { driver, usedPercent }` | Public | US-OPS-31 |
 ### Events added by the feature files
 
 | Type | Recipients | Text | Story |
@@ -468,6 +471,7 @@ Routes the stories add. Each is created by the story named.
 | `quote_accepted` (in person) | Readers of quotes | "Quote <number> was accepted in person." (exists) | US-MOB-17 |
 | `quote_rejected` (in person) | Readers of quotes | "Quote <number> was declined in person." | US-MOB-16 |
 | `recurring_invoice_draft` | Owners | "Recurring invoice ready to review: <name>" | US-INV-21 |
+| `files_damaged` | Owners | "<n> stored files are damaged or missing — restore from your latest backup." | US-OPS-28 |
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |
 
-Queues added: `invoice-reminder-run` (daily), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.
+Queues added: `file-integrity-check` (weekly), `invoice-reminder-run` (daily), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.

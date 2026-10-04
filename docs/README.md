@@ -2,7 +2,7 @@
 
 Spine is a self-hosted business management app for small service and project businesses: enquiry → quote → job → invoice → payment → books, with double-entry accounting derived from business events. This folder is the spec Claude Code builds against.
 
-115 features and 308 user stories across 18 modules.
+116 features and 313 user stories across 18 modules.
 
 ## Read in this order
 
@@ -35,7 +35,7 @@ Spine is a self-hosted business management app for small service and project bus
 | [15-team](features/15-team.md) | Users, teams & permissions | 18 |
 | [16-settings](features/16-settings.md) | Settings & administration | 16 |
 | [17-mobile](features/17-mobile.md) | Mobile field companion | 21 |
-| [18-ops](features/18-ops.md) | Self-hosting & system states | 26 |
+| [18-ops](features/18-ops.md) | Self-hosting & system states | 31 |
 
 ## Design
 
