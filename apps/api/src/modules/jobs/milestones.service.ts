@@ -132,19 +132,19 @@ export class MilestonesService {
    * dropping billing history.
    *
    * Ownership ("own" vs "others") for `milestones.edit_own`/`edit_others`
-   * is keyed off who last replaced the set (any existing row's
-   * `createdByUserId` — they're all written together in the transaction
-   * below, so any one row reflects the whole set's owner), not per-row.
-   * A job with no milestones yet has no owner, so `_own` never applies to
-   * the first-ever call — only `_others` gates it, same "unowned record"
-   * rule every other own/others module uses for a null creator.
+   * is keyed off the job's creator (US-JOB-20, D-079), not who last
+   * replaced the set, so it never changes hands. A job with no recorded
+   * creator (a pre-migration row) is unowned: only `_others` can edit its
+   * milestones, the same "unowned record" rule every own/others module uses.
    */
   async setAll(orgId: string, jobId: string, actorUserId: string, input: SetMilestonesInput) {
     const job = await this.requireJob(orgId, jobId);
 
     const existing = await this.db.select().from(milestones).where(eq(milestones.jobId, jobId));
 
-    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, existing[0]?.createdByUserId ?? null, {
+    // US-JOB-20 (D-079): a job's milestones belong to whoever created the job,
+    // never to whoever last replaced the set — so "own" can't change hands.
+    await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, job.createdByUserId ?? null, {
       own: "milestones.edit_own",
       others: "milestones.edit_others",
     });

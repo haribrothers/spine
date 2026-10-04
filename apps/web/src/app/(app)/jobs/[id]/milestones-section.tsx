@@ -67,7 +67,8 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
   const [invoicingId, setInvoicingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const canManage = useCanEditOwnership(milestones?.[0]?.createdByUserId ?? null, {
+  // US-JOB-20: milestones are owned through the job, by whoever created it.
+  const canManage = useCanEditOwnership(job.createdByUserId ?? null, {
     own: "milestones.edit_own",
     others: "milestones.edit_others",
   });

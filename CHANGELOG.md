@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-JOB-20: own a job's milestones through the job (Phase 6)
+
+- **Ownership follows the job.** `PUT /jobs/:id/milestones` checks `milestones.edit_own`/`edit_others` against the job's creator (`jobs.created_by_user_id`). It used to check whoever last replaced the milestone set, so "own" changed hands every time a colleague edited it (D-079). A job with no recorded creator is nobody's own.
+- **Editor buttons follow the same rule.** "Define milestones"/"Edit milestones" show on that basis.
+- **Unchanged:** milestone completion (Field rules, US-JOB-18).
+
+Tests: `us-job-20.http.integration.test.ts` (4):
+- A member with `edit_own` defines and edits milestones on their own job, and gets 403 on a colleague's.
+- A member with `edit_others` edits a colleague's job, and afterwards the creator still owns it while the other `edit_own` member still can't.
+- A job with no creator refuses `edit_own`.
+
 ### 2026-10-04 — US-PAY-13: allocate a deposit payment to its advance invoice (Phase 6)
 
 - **Paying a deposit request.** `POST /payments` now accepts allocations to advance (deposit) invoices, which it used to refuse. The advance invoice then shows "Paid", or "Partially paid" with its balance.

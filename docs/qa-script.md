@@ -2070,6 +2070,14 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
    3,000.00 outstanding.
 5. Deleting a payment that paid an advance invoice is refused.
 
+## 26. Milestone ownership (US-JOB-20, Phase 6)
+
+1. As Staff with "Edit own milestones" only: on a job you created, "Define
+   milestones" opens and saves; on a colleague's job the button is hidden.
+2. As Staff with "Edit others' milestones": edit a colleague's job's
+   milestones. The job's creator can still edit them afterwards; the
+   first Staff member still can't.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
