@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-20: close the read-access gaps found in review (Phase 6)
+
+- **Owner-only:** `GET /org/invitations` and `POST /demo-data/seed` (removing demo data already was). Staff and Field now get 403.
+- **Invoices due this week:** `GET /reports/invoices-due-this-week` needs `reports.view_receivables`, like the rest of receivables. The dashboard widget already hides itself on a 403.
+- **Files are served only to people who can read the record they belong to.** `FilesService.assertReadableBy` finds every record that points at a file and applies that record's rule; anyone else gets 404. The S3 redirect happens only after this check.
+  - Owners: every file.
+  - A file not attached to anything yet: only its uploader (and Owners).
+  - Staff: every attached file.
+  - Field: contact logos and photos, the business logo, avatars, photos on assigned jobs, receipts on their own expenses, and quote PDFs for quotes on assigned jobs. Never invoice, credit-note or receipt PDFs.
+  - D-117: instead of the planned `owner_type`/`owner_id` columns, the owner is found from the references themselves. That means one source of truth and no backfill, and it also covers the logo setting and avatars, which aren't foreign keys. This replaces the interim Field rule from the Group 1 review.
+- **Expenses (found while checking reads against 07-security):** Field could list and open every expense, amounts included. Field now gets only their own from `GET /expenses` (whatever `?mine` says), and a 404 for anyone else's expense or its history.
+- **Shared helper:** `getMemberRole()` in `capability.util.ts`.
+
+Tests: `us-ops-20.http.integration.test.ts` (12). It uses a demo-seeded org with an Owner, a Staff member with no grants, a Staff member granted receivables, a Field user assigned to one job, and an outsider, and covers every rule above. Each case fails if its guard is removed. Integration 31 files pass; E2E 33/33.
+
 ### 2026-10-04 — Group 1 access review: Field can't open stored money PDFs
 
 I reviewed every Group 1 change against the permission model.

@@ -1,3 +1,4 @@
+import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -54,12 +55,28 @@ export class ExpensesService {
       .then((rows) => rows.map((r) => ({ ...r.expense, categoryName: r.categoryName })));
   }
 
-  async getOne(orgId: string, id: string) {
+  /**
+   * US-OPS-20 — Field users read only the expenses they submitted (07-security:
+   * Field never reaches other people's money). Returns the user id to
+   * restrict reads to, or undefined for Owners and Staff.
+   */
+  async readScope(orgId: string, userId: string): Promise<string | undefined> {
+    return (await getMemberRole(this.db, orgId, userId)) === "field" ? userId : undefined;
+  }
+
+  /** `onlySubmittedBy` (from `readScope`) makes anyone else's expense a 404. */
+  async getOne(orgId: string, id: string, onlySubmittedBy?: string) {
     const [row] = await this.db
       .select({ expense: expenses, categoryName: expenseCategories.name })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
-      .where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+      .where(
+        and(
+          eq(expenses.orgId, orgId),
+          eq(expenses.id, id),
+          onlySubmittedBy ? eq(expenses.submittedByUserId, onlySubmittedBy) : undefined,
+        ),
+      );
     if (!row) {
       throw new NotFoundException("Expense not found");
     }
@@ -67,8 +84,8 @@ export class ExpensesService {
   }
 
   /** `GET /expenses/:id/history` — confirms the expense exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
-  async getHistory(orgId: string, id: string) {
-    await this.getOne(orgId, id);
+  async getHistory(orgId: string, id: string, onlySubmittedBy?: string) {
+    await this.getOne(orgId, id, onlySubmittedBy);
     return this.auditLog.listForEntity(orgId, "expense", id);
   }
 

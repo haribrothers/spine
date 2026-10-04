@@ -54,7 +54,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `quotes`, `invoices`, `credit_notes`, `payments` | `issued_pdf_file_id uuid → files` (the PDF stored at send/issue; on quotes and invoices it replaces the old `pdf_file_id`, whose values migration `0053` copied over before `0054` dropped it) | US-INV-17 |
 | `settings` key `business_profile` | gains `paymentInstructions` (text) | US-INV-15 |
 | `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
-| `files` | `owner_type text` and `owner_id text` (the record a file belongs to), backfilled from existing references; used for read authorisation | US-OPS-20 |
+| `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
 | `jobs` | `number text` (unique per org), allocated from the `job` number sequence | US-JOB-22 |
 | `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `created_by_user_id`, `archived_at`, timestamps | US-QUO-25 |
 | `catalog_bundle_lines` (new) | `bundle_id`, `sort_order`, `catalog_item_id?`, `name`, `description`, `quantity numeric`, `unit_price_amount bigint`, `tax_rate_id?`, `tax_group_id?` | US-QUO-25 |

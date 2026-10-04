@@ -58,6 +58,7 @@ export class InvitationsController {
    * GET /org/members and the rest aren't actionable.
    */
   @Get()
+  @OrgRoles(["owner"])
   async list(@Session() session: UserSession, @Req() request: Request) {
     const orgId = requireOrgId(session);
     const invitations = await auth.api.listInvitations({

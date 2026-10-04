@@ -122,7 +122,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | DELETE | `/demo-data` | roles: owner | Yes |
-| POST | `/demo-data/seed` | roles: owner, staff | Yes |
+| POST | `/demo-data/seed` | roles: owner (US-OPS-20) | Yes |
 | GET | `/demo-data/status` | Any member | — |
 
 ### Expense categories — `/expense-categories`
@@ -142,14 +142,14 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/expenses` | roles: owner, staff, field | — |
+| GET | `/expenses` | roles: owner, staff, field — Field gets only their own (US-OPS-20) | — |
 | POST | `/expenses` | roles: owner, staff, field; `expenses.edit_own` | Yes |
 | DELETE | `/expenses/:id` | roles: owner, staff, field | Yes |
-| GET | `/expenses/:id` | roles: owner, staff, field | — |
+| GET | `/expenses/:id` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | PUT | `/expenses/:id` | roles: owner, staff, field | Yes |
 | POST | `/expenses/:id/approve` | roles: owner, staff; `expenses.approve` | Yes |
 | POST | `/expenses/:id/bill-to-customer` | roles: owner, staff; `expenses.bill_to_customer` | Yes |
-| GET | `/expenses/:id/history` | roles: owner, staff, field | — |
+| GET | `/expenses/:id/history` | roles: owner, staff, field — Field only their own, else 404 (US-OPS-20) | — |
 | POST | `/expenses/:id/mark-billed` | roles: owner, staff; `expenses.mark_billed` | Yes |
 | POST | `/expenses/:id/reject` | roles: owner, staff; `expenses.reject` | Yes |
 
@@ -158,7 +158,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | POST | `/files` | roles: owner, staff, field | Yes |
-| GET | `/files/:id` | Any member | — |
+| GET | `/files/:id` | Readers of the owning record, else 404 (US-OPS-20, D-117) | — |
 
 ### Health — `/health`
 
@@ -262,7 +262,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | POST | `/org/fiscal-periods` | roles: owner | No |
 | POST | `/org/fiscal-periods/:id/close` | roles: owner | No |
 | POST | `/org/fiscal-periods/:id/reopen` | roles: owner | No |
-| GET | `/org/invitations` | Any member | — |
+| GET | `/org/invitations` | roles: owner (US-OPS-20) | — |
 | POST | `/org/invitations` | roles: owner | Yes |
 | DELETE | `/org/invitations/:id` | roles: owner | Yes |
 | POST | `/org/invitations/:id/resend` | roles: owner | Yes |
@@ -341,7 +341,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/reports/balance-sheet` | roles: owner | — |
 | GET | `/reports/balance-sheet/export.csv` | roles: owner | — |
 | GET | `/reports/dashboard-summary` | roles: owner, staff; `reports.view_dashboard_summary` | — |
-| GET | `/reports/invoices-due-this-week` | roles: owner, staff | — |
+| GET | `/reports/invoices-due-this-week` | roles: owner, staff; `reports.view_receivables` (US-OPS-20) | — |
 | GET | `/reports/job-profitability` | roles: owner, staff; `reports.view_job_profitability` | — |
 | GET | `/reports/job-profitability/export.csv` | roles: owner, staff; `reports.view_job_profitability` | — |
 | GET | `/reports/payables` | roles: owner, staff; `reports.view_payables` | — |

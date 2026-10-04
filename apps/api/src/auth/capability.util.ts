@@ -77,6 +77,15 @@ export const FIELD_ALWAYS_CAPABILITIES: ReadonlySet<Capability> = new Set([
  * failing closed for Field, matching Contacts/Catalogue/Leads/Activities/
  * Quotes/Meetings, none of which ever granted Field write access.
  */
+/** The caller's role in the organisation, or null when they aren't a member. */
+export async function getMemberRole(db: Database, orgId: string, userId: string): Promise<string | null> {
+  const [membership] = await db
+    .select({ role: member.role })
+    .from(member)
+    .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+  return membership?.role ?? null;
+}
+
 export async function hasCapability(
   db: Database,
   actor: { orgId: string; userId: string },

@@ -307,7 +307,7 @@ Review findings: Stage 5 #9, #23, #29, #64 · Decision: D-072
 - **Given** the integration suite, **when** it runs, **then** each of the above has a test that fails if the guard is removed.
 
 **Implementation notes**
-- API: `@OrgRoles(["owner"])` on `GET /org/invitations`, `POST /demo-data/seed`, `DELETE /demo-data`; `FilesService.get` resolves the owning record via `files.owner_type`/`owner_id` (04 "Columns added") and reuses that module's read check; `@RequireCapability("reports.view_receivables")` on invoices-due.
+- API: `@OrgRoles(["owner"])` on `GET /org/invitations`, `POST /demo-data/seed`, `DELETE /demo-data`; `FilesService.assertReadableBy` finds the owning record from what points at the file (D-117) and applies that record's read rule; `@RequireCapability("reports.view_receivables")` on invoices-due.
 - 07-security "Files" row is updated to allow short signed URLs after authorisation.
 
 ### US-OPS-21 · Remove developer wording from the interface

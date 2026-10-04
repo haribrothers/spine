@@ -9,14 +9,31 @@ import {
   ServiceUnavailableException,
   UnsupportedMediaTypeException,
 } from "@nestjs/common";
-import { and, asc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, isNull, like } from "drizzle-orm";
 import { createHash, randomUUID } from "node:crypto";
 import { statfs } from "node:fs/promises";
 import { STORAGE_FULL_MESSAGE, type StorageStatus } from "@spine/shared";
 import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contactPersons, contacts, creditNotes, expenses, files, invoices, jobPhotos, jobs, member, payments, quotes, settings } from "../../db/schema";
+import {
+  contactPersons,
+  contacts,
+  creditNotes,
+  expenses,
+  files,
+  invoices,
+  jobAssignments,
+  jobPhotos,
+  jobs,
+  jobVariationOrders,
+  member,
+  payments,
+  quotes,
+  settings,
+  user,
+} from "../../db/schema";
+import { getMemberRole } from "../../auth/capability.util";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
 import { createStorageDrivers, resolveFilesDir, type StorageDrivers } from "./storage/storage-config";
@@ -32,6 +49,11 @@ export interface UploadFileInput {
 export type FileRow = typeof files.$inferSelect;
 
 export type IntegrityProblem = "damaged" | "missing";
+
+/** A record a file belongs to (US-OPS-20). For `job_photo`, `id` is the job's id. */
+export type FileOwner =
+  | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo"; id: string }
+  | { type: "expense_receipt"; id: string; submittedBy: string | null };
 
 /** US-OPS-28 — the 409 every damaged or missing file returns. */
 const INLINE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -182,23 +204,102 @@ export class FilesService {
   }
 
   /**
-   * Field users never reach money (CLAUDE.md security rules). Since
-   * US-INV-17 stores issued invoice, credit-note and receipt PDFs as files,
-   * those files are refused to Field with a 404, like any file they can't
-   * see. The full owning-record check for every file is US-OPS-20.
+   * US-OPS-20 — a file is served only to someone who can read the record it
+   * belongs to; anyone else gets a 404, as if it didn't exist.
+   *
+   * - Owners read every record, so every file in their organisation.
+   * - A file not attached to anything yet (just uploaded, not saved) is
+   *   readable only by whoever uploaded it, and by Owners.
+   * - Staff read every record that holds files (07-security).
+   * - Field read contact logos and photos, the business logo and members'
+   *   avatars; photos on jobs they're assigned to; receipts on their own
+   *   expenses; and quote PDFs for quotes on jobs they're assigned to
+   *   (D-073). Never invoice, credit-note or receipt PDFs (US-JOB-19).
+   *
+   * The owning record is found from the columns and settings that point at
+   * the file, not stored on the file itself (D-117).
    */
   async assertReadableBy(orgId: string, userId: string, file: FileRow): Promise<void> {
-    const [membership] = await this.db
-      .select({ role: member.role })
-      .from(member)
-      .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
-    if (membership?.role !== "field") return;
-    const [invoice, creditNote, payment] = await Promise.all([
-      this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.issuedPdfFileId, file.id))).limit(1),
-      this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.issuedPdfFileId, file.id))).limit(1),
-      this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), eq(payments.issuedPdfFileId, file.id))).limit(1),
+    const role = await getMemberRole(this.db, orgId, userId);
+    if (!role) throw new NotFoundException("File not found");
+    if (role === "owner") return;
+
+    const owners = await this.owningRecords(orgId, file.id);
+    if (!owners.length) {
+      if (file.uploadedByUserId === userId) return;
+      throw new NotFoundException("File not found");
+    }
+    if (role === "staff") return;
+    if (role === "field") {
+      for (const owner of owners) {
+        if (await this.fieldMayRead(orgId, userId, owner)) return;
+      }
+    }
+    throw new NotFoundException("File not found");
+  }
+
+  /** Every record that points at this file. */
+  async owningRecords(orgId: string, fileId: string): Promise<FileOwner[]> {
+    const ids = [fileId];
+    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows] = await Promise.all([
+      this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
+      this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
+      this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
+      this.db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.issuedPdfFileId, ids))),
+      this.db.select({ id: expenses.id, submittedBy: expenses.submittedByUserId }).from(expenses).where(and(eq(expenses.orgId, orgId), inArray(expenses.receiptFileId, ids))),
+      this.db.select({ jobId: jobPhotos.jobId }).from(jobPhotos).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
+      this.db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
+      this.db.select({ id: contactPersons.id }).from(contactPersons).innerJoin(contacts, eq(contactPersons.contactId, contacts.id)).where(and(eq(contacts.orgId, orgId), inArray(contactPersons.logoFileId, ids))),
+      this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile"))),
+      this.db.select({ id: user.id }).from(user).innerJoin(member, eq(member.userId, user.id)).where(and(eq(member.organizationId, orgId), like(user.image, `%/files/${fileId}%`))),
     ]);
-    if (invoice.length || creditNote.length || payment.length) throw new NotFoundException("File not found");
+    const owners: FileOwner[] = [
+      ...invoiceRows.map((r) => ({ type: "invoice_pdf" as const, id: r.id })),
+      ...creditNoteRows.map((r) => ({ type: "credit_note_pdf" as const, id: r.id })),
+      ...paymentRows.map((r) => ({ type: "receipt_pdf" as const, id: r.id })),
+      ...quoteRows.map((r) => ({ type: "quote_pdf" as const, id: r.id })),
+      ...expenseRows.map((r) => ({ type: "expense_receipt" as const, id: r.id, submittedBy: r.submittedBy })),
+      ...photoRows.map((r) => ({ type: "job_photo" as const, id: r.jobId })),
+      ...contactRows.map((r) => ({ type: "contact_logo" as const, id: r.id })),
+      ...personRows.map((r) => ({ type: "contact_person_photo" as const, id: r.id })),
+      ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
+    ];
+    const logoUrl = (profile[0]?.value as { logoUrl?: string } | undefined)?.logoUrl;
+    if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
+    return owners;
+  }
+
+  private async fieldMayRead(orgId: string, userId: string, owner: FileOwner): Promise<boolean> {
+    switch (owner.type) {
+      case "contact_logo":
+      case "contact_person_photo":
+      case "business_logo":
+      case "user_avatar":
+        return true;
+      case "expense_receipt":
+        return owner.submittedBy === userId;
+      case "job_photo":
+        return this.isAssigned(userId, [owner.id]);
+      case "quote_pdf": {
+        const [fromQuote, fromVariations] = await Promise.all([
+          this.db.select({ id: jobs.id }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.sourceQuoteId, owner.id))),
+          this.db.select({ id: jobVariationOrders.jobId }).from(jobVariationOrders).where(and(eq(jobVariationOrders.orgId, orgId), eq(jobVariationOrders.quoteId, owner.id))),
+        ]);
+        return this.isAssigned(userId, [...fromQuote, ...fromVariations].map((r) => r.id));
+      }
+      default:
+        return false; // invoice, credit-note and receipt PDFs: money
+    }
+  }
+
+  private async isAssigned(userId: string, jobIds: string[]): Promise<boolean> {
+    if (!jobIds.length) return false;
+    const [row] = await this.db
+      .select({ id: jobAssignments.id })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.userId, userId), inArray(jobAssignments.jobId, jobIds)))
+      .limit(1);
+    return Boolean(row);
   }
 
   /** For a request carrying a verified signed link instead of a session. */

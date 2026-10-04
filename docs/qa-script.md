@@ -1946,11 +1946,35 @@ Regression checks:
   uploading each still works (logo crop, avatar, receipt, job and milestone
   photos).
 
+## 17. Read access (US-OPS-20, Phase 6)
+
+Set up an Owner, a Staff member in a Team without "View receivables", and
+a Field user assigned to one job (§13).
+
+1. As Staff and as Field: `GET /org/invitations` → 403, and Users →
+   Invitations isn't reachable. As Owner: the invitations list shows.
+2. As Staff: `POST /demo-data/seed` and `DELETE /demo-data` → 403. (Loading
+   demo data is only offered in the Owner's onboarding; deleting it only
+   in the Owner's Settings → Data.)
+3. As the Staff member without "View receivables": the dashboard has no
+   "Invoices due this week" widget, and the route returns 403. Grant it
+   to their Team: the widget appears.
+4. As Field: a photo on the assigned job opens; a photo on another job's
+   `/files/<id>` URL → 404. Your own expense receipt opens; another
+   person's receipt → 404. An invoice PDF's `/files/<id>` → 404.
+5. As Field: Expenses lists only your own expenses; another person's
+   `/expenses/<id>` → 404.
+6. As Staff: everything above opens (except the receivables widget in 3).
+7. Upload a logo in Settings but don't save: the file opens for you; as
+   another Staff member its `/files/<id>` → 404.
+
+Regression checks: contact logos, avatars, the business logo, job photos
+and receipts still show for everyone who should see them (§2, §5, §11,
+§13).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
-- `GET /files/:id` still checks only the organisation, not the record the
-  file belongs to (US-OPS-20).
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/
