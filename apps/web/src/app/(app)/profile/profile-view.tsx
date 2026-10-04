@@ -17,6 +17,7 @@ import {
 } from "@spine/ui";
 import { AlarmClock, Camera, Laptop, Moon, Sun } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { BrowserNotificationsSection } from "../../../components/browser-notifications-section";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
 import { PHOTO_ACCEPT } from "../../../lib/upload-types";
 
@@ -269,24 +270,29 @@ export function ProfileView() {
         </ToggleGroup>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-[15px] font-semibold text-on-surface">Meeting reminders</h2>
-        <p className="text-[13px] text-on-surface-muted">
-          How long before a meeting you&apos;re attending starts should we remind you? Overrides your org&apos;s default.
-        </p>
-        <ToggleGroup
-          type="single"
-          value={profile.meetingReminderLeadMinutes === null ? "" : String(profile.meetingReminderLeadMinutes)}
-          onValueChange={(v) => v !== undefined && handleReminderLeadChange(v)}
-          className="w-fit flex-wrap rounded-sm bg-surface-sunken p-0.5"
-        >
-          {REMINDER_LEAD_OPTIONS.map(({ value, label }) => (
-            <ToggleGroupItem key={value || "org-default"} value={value} aria-label={label} className="h-8 gap-1.5 px-3">
-              {value === "" && <AlarmClock size={14} />}
-              {label}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+      {/* US-NTF-12 — this member's notification preferences. */}
+      <div className="flex flex-col gap-5">
+        <h2 className="text-[15px] font-semibold text-on-surface">Notifications</h2>
+        <BrowserNotificationsSection />
+        <div className="flex flex-col gap-3">
+          <h3 className="text-[14px] font-semibold text-on-surface">Meeting reminders</h3>
+          <p className="text-[13px] text-on-surface-muted">
+            How long before a meeting you&apos;re attending starts should we remind you? Overrides your org&apos;s default.
+          </p>
+          <ToggleGroup
+            type="single"
+            value={profile.meetingReminderLeadMinutes === null ? "" : String(profile.meetingReminderLeadMinutes)}
+            onValueChange={(v) => v !== undefined && handleReminderLeadChange(v)}
+            className="w-fit flex-wrap rounded-sm bg-surface-sunken p-0.5"
+          >
+            {REMINDER_LEAD_OPTIONS.map(({ value, label }) => (
+              <ToggleGroupItem key={value || "org-default"} value={value} aria-label={label} className="h-8 gap-1.5 px-3">
+                {value === "" && <AlarmClock size={14} />}
+                {label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </div>
       </div>
     </div>
   );

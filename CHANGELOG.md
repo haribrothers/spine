@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-NTF-12: turn on push from my own profile (Phase 6)
+
+- **Where.** Profile & Preferences now has a "Notifications" section with "Browser notifications" (the same US-NTF-04 states and "Turn on" / "Turn off" for this device), followed by "Meeting reminders". Every member sees it, Field and Staff included.
+- **Settings.** The Owner-only organisation Settings dialog no longer lists "Browser notifications". The component moved from `app/settings/panes/push-pane.tsx` to `components/browser-notifications-section.tsx`. The push routes were already per-user, so nothing changed in the API.
+- The design's profile tabs and the daily digest arrive with US-NTF-14.
+
+Tests:
+- `us-ntf-12.http.integration.test.ts` (2): a Field member subscribes a device and sees it listed; a notification for them is pushed to their devices.
+- `apps/e2e/tests/us-ntf-12.spec.ts` (2): the seeded Field user finds Notifications › Browser notifications on their profile; the Owner's Settings dialog no longer lists it.
+
 ### 2026-10-04 — US-NTF-11: use the branded layout for every email type (Phase 6)
 
 - **Every email** now goes through the US-NTF-10 layout: invitation, password reset, quote, invoice, reminder, receipt, payment confirmation, and every member notification (payment received, meeting invite, cancellation, response and reminder, milestone and job completed, expense approved, quote viewed or accepted, storage and ledger alerts). Their wording lives in one file, `apps/api/src/modules/email/email-templates.ts`.

@@ -886,7 +886,8 @@ than building every case from scratch.
    public link, or a payment is recorded).
 2. Click the notification bell — confirm a right-side panel opens
    listing the event, and it's marked read once opened.
-3. If your browser prompts for notification permission, accept it, then
+3. Open Profile & Preferences › Notifications › Browser notifications and
+   press "Turn on" (US-NTF-12). When the browser asks for permission, accept, then
    trigger another event — confirm a native OS/browser push notification
    appears (this only works over a real trigger, not a manual test
    button, so pick a real action like recording a payment).
@@ -2197,6 +2198,14 @@ Send each of these and check each one has the coloured bar, your logo and name, 
 5. As a member, get a notification email (invite someone to a meeting, approve an expense, complete a milestone): one button to the record, and the footer says "You're getting this because you're a member of <Business>."
 
 Regression: quote emails still match §35; notification bells and push still arrive as before.
+
+## 37. Push from your own profile (US-NTF-12, Phase 6)
+
+1. Log in as a Field or Staff user and open Profile & Preferences: a "Notifications" heading, then "Browser notifications" showing this device's state ("Not enabled on this device" and "Turn on"), then "Meeting reminders".
+2. Press "Turn on" and allow notifications: it reads "Enabled on this device". Assign this user to a meeting from another account: a browser notification appears.
+3. As an Owner, open Settings from the user menu: there's no "Browser notifications" section any more.
+
+Regression: Meeting reminders on the profile still save; the notification bell still works (§12).
 
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

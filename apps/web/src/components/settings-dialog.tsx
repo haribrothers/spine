@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import {
   AlarmClock,
-  Bell,
   Building2,
   Calendar,
   CalendarClock,
@@ -27,7 +26,6 @@ import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { PurchasesPane } from "../app/settings/panes/purchases-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
-import { PushPane } from "../app/settings/panes/push-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
 import { DashboardMeetingsScopePane } from "../app/settings/panes/dashboard-meetings-scope-pane";
 import { MeetingReminderLeadTimePane } from "../app/settings/panes/meeting-reminder-lead-time-pane";
@@ -66,7 +64,6 @@ const SECTIONS: SettingsSection[] = [
     icon: <AlarmClock size={16} />,
     render: () => <MeetingReminderLeadTimePane />,
   },
-  { key: "push", label: "Browser notifications", icon: <Bell size={16} />, render: () => <PushPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];
 
