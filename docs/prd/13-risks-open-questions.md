@@ -37,6 +37,7 @@
 | Q-12 | ~~May a member with `expenses.approve` approve their own expense?~~ — closed by [D-085](12-decisions.md): no self-approval for Staff; Owners may | — | — | — |
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
 | Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
+| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 8 (US-SITE-14) | Product owner |
 
 ## Design follow-ups
 

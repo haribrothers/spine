@@ -341,3 +341,17 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-OPS-17 · Pass an accessibility audit of every screen
 - [ ] US-OPS-18 · Complete a security review before 1.0
 - [ ] US-OPS-19 · Ship the README, licence and contributor guide
+- [ ] US-SITE-01 · Set up the docs site in the monorepo
+- [ ] US-SITE-02 · Show a home page for people discovering Spine
+- [ ] US-SITE-03 · Find any page with search
+- [ ] US-SITE-04 · Read a task-based guide for every module
+- [ ] US-SITE-05 · Ship each story with its guide page
+- [ ] US-SITE-06 · Capture guide screenshots automatically
+- [ ] US-SITE-07 · Install Spine from the self-hosting guide
+- [ ] US-SITE-08 · Run, back up and upgrade from the self-hosting guide
+- [ ] US-SITE-09 · Learn the codebase from the developer docs
+- [ ] US-SITE-10 · Browse a generated API reference
+- [ ] US-SITE-11 · Open help for the page I'm on
+- [ ] US-SITE-12 · Read the guide without internet
+- [ ] US-SITE-13 · Read docs for the version I run
+- [ ] US-SITE-14 · Publish the site after each merge

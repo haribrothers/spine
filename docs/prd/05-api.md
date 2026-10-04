@@ -463,6 +463,8 @@ Routes the stories add. Each is created by the story named.
 | OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged file → 409 | Readers of the owning record | US-OPS-27, US-OPS-28 |
 | OPS | — | `POST /files`: 415 for disallowed types; GPS EXIF stripped; disk full → 507 "There's no space left to store this file." | as today | US-OPS-29, US-OPS-31 |
 | OPS | — | `GET /health/ready` adds `storage: { driver, usedPercent }` | Public | US-OPS-31 |
+| SITE | GET | `/help/*` on the **web** app (not the API): the bundled user guide and self-hosting guide for the installed version, static files | Public (no login) | US-SITE-12 |
+| SITE | — | The API's OpenAPI document is exported to `apps/api/openapi.json` at build time for the site's API reference | — | US-SITE-10 |
 ### Events added by the feature files
 
 | Type | Recipients | Text | Story |

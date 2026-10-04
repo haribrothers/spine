@@ -1,6 +1,6 @@
 # Screens
 
-Every screen in the product: 275 in total. **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
+Every screen in the product: 284 in total. **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
 
 The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY).
 
@@ -2514,3 +2514,86 @@ Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "S
 Links to: `DashboardOwnerRedesignDark`, `InvoicesBulkSelectDark`, `SettingsRemindersDark`
 
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
+
+## Website and help
+
+### SiteHome — Website — home page
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-SITE-02 · **Source:** Drawn
+
+![SiteHome](screens/SiteHome.webp)
+
+Links to: `SiteHomeDark`
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Run your service business from one place" · "Spine takes you from enquiry to quote, job, invoice and payment — and keeps the books for you. Self-hosted, for small contractors, fabricators and studios." · "Install in 5 minutes" · "Read the user guide" · "Enquiry" · "Quote" · "Job" · "Invoice" · "Payment" · "Books" · "Product screenshot: the dashboard (light or dark to match the reader)" · "Quotes customers accept online" · "Send a branded quote; the customer reads, accepts or declines it from any phone." · "Jobs, milestones and retention" · "Bill in stages, hold retention automatically and see each job's margin as it runs." · "Invoices that post to the books" · "Every invoice, payment and expense becomes a balanced journal entry — no data entry." · "A field app that works offline" · "Crews see today's jobs, take photos and log expenses with or without signal." · "Self-hosted — your data stays yours" · "Runs on one machine with Docker. Back up with one command, restore anywhere." · "Built for developers too" · "Architecture, local setup and the API reference live in the" · "developer docs" · "Spine · [LICENCE] licence" · "Docs for v1.2 ·" · "Older versions"
+
+### SiteHomeDark — Website — home page, dark mode
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-SITE-02 · **Source:** Drawn
+
+![SiteHomeDark](screens/SiteHomeDark.webp)
+
+Links to: `SiteHome`
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Run your service business from one place" · "Spine takes you from enquiry to quote, job, invoice and payment — and keeps the books for you. Self-hosted, for small contractors, fabricators and studios." · "Install in 5 minutes" · "Read the user guide" · "Enquiry" · "Quote" · "Job" · "Invoice" · "Payment" · "Books" · "Product screenshot: the dashboard (light or dark to match the reader)" · "Quotes customers accept online" · "Send a branded quote; the customer reads, accepts or declines it from any phone." · "Jobs, milestones and retention" · "Bill in stages, hold retention automatically and see each job's margin as it runs." · "Invoices that post to the books" · "Every invoice, payment and expense becomes a balanced journal entry — no data entry." · "A field app that works offline" · "Crews see today's jobs, take photos and log expenses with or without signal." · "Self-hosted — your data stays yours" · "Runs on one machine with Docker. Back up with one command, restore anywhere." · "Built for developers too" · "Architecture, local setup and the API reference live in the" · "developer docs" · "Spine · [LICENCE] licence" · "Docs for v1.2 ·" · "Older versions"
+
+### SiteUserGuide — User guide page
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-SITE-01, US-SITE-04, US-SITE-05, US-SITE-06, US-SITE-13 · **Source:** Drawn
+
+![SiteUserGuide](screens/SiteUserGuide.webp)
+
+Links to: `SiteUserGuideDark`
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Build a quote" · "Send a quote to a customer" · "Revise a sent quote" · "Turn a quote into a job or invoice" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "User guide › Quotes" · "Once a quote is ready, Spine emails it as a PDF with a secure link. Your customer can read it on any device and accept or decline it — you're told the moment they do." · "Who can do this" · "Owners, and staff whose Team has" · "Send and revise quotes" · …
+
+### SiteUserGuideDark — User guide page, dark mode
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-SITE-01, US-SITE-06 · **Source:** Drawn
+
+![SiteUserGuideDark](screens/SiteUserGuideDark.webp)
+
+Links to: `SiteUserGuide`
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Build a quote" · "Send a quote to a customer" · "Revise a sent quote" · "Turn a quote into a job or invoice" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "User guide › Quotes" · "Once a quote is ready, Spine emails it as a PDF with a secure link. Your customer can read it on any device and accept or decline it — you're told the moment they do." · "Who can do this" · "Owners, and staff whose Team has" · "Send and revise quotes" · …
+
+### SiteSelfHosting — Self-hosting guide — backups and restore
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-SITE-07, US-SITE-08 · **Source:** Drawn
+
+![SiteSelfHosting](screens/SiteSelfHosting.webp)
+
+Links to: —
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "Self-hosting › Backups and restore" · "One command saves your database and every stored file into a single archive. Keep copies off the machine — a backup on the same disk won't survive that disk failing." · "Take a backup" · "bash" · "./scripts/backup.sh --passphrase # → spine-backup-20261004-020000.tar.gz.enc (412 MB)" · "Copy backups off the machine automatically" · "Set these in" · ".env" · "and every backup is encrypted and uploaded, keeping 7 daily and 4 weekly copies." · …
+
+### SiteApiReference — API reference — an operation page
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-SITE-09, US-SITE-10 · **Source:** Drawn
+
+![SiteApiReference](screens/SiteApiReference.webp)
+
+Links to: —
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "Authentication" · "Idempotency" · "Errors" · "Invoices" · "Payments" · "Jobs" · "Developers › API reference › Invoices" · "Issue an invoice" · "POST" · …
+
+### SiteSearch — Docs search
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-SITE-03 · **Source:** Drawn
+
+![SiteSearch](screens/SiteSearch.webp)
+
+Links to: —
+
+Shows: "Docs" · "Search" · "Ctrl K" · "v1.2 (latest) ▾" · "Auto ▾" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Build a quote" · "Send a quote to a customer" · "Revise a sent quote" · "Turn a quote into a job or invoice" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "User guide › Quotes" · "Once a quote is ready, Spine emails it as a PDF with a secure link. Your customer can read it on any device and accept or decline it — you're told the moment they do." · "Who can do this" · "Owners, and staff whose Team has" · "Send and revise quotes" · …
+
+### AppHelpMenu — In-app Help menu
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-SITE-11 · **Source:** Drawn
+
+![AppHelpMenu](screens/AppHelpMenu.webp)
+
+Links to: —
+
+Shows: "Invoices" · "Every invoice you've raised, newest first." · "Recurring invoices" · "+ New invoice" · "Search invoices" · "All statuses" · "All contacts" · "Number" · "Contact" · "Status" · "Due date" · "Total" · "Balance due" · "INV-0012" · "Bluewater Hospitality Group" · "Issued" · "Oct 24, 2026" · "$2,185.00" · "$1,748.00" · "INV-0011" · "Maple Ridge Developments" · "Overdue" · "Sep 22, 2026" · "$4,542.50" · "INV-0010" · "Harborview Construction Co." · "Sep 28, 2026" · "$9,700.00" · "INV-0009" · "Sunstone Retail Fitouts" · "Paid" · "Sep 30, 2026" · "$14,250.00" · "INV-0008" · "Priya Nair" · "Sep 15, 2026" · "$1,320.00" · "$820.00" · "INV-0007" · "Void" · "Sep 10, 2026" · "$3,000.00" · "Help for this page" · "Invoices — opens the guide on this server" · "User guide" · …
+
+### BundledGuide — Bundled guide served by the install
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-SITE-12 · **Source:** Drawn
+
+![BundledGuide](screens/BundledGuide.webp)
+
+Links to: —
+
+Shows: "Help" · "Search" · "Ctrl K" · "Online docs ↗" · "Auto ▾" · "You're reading the guide for" · "Spine 1.2.0" · ", served by your own server — it works without internet." · "See the latest online docs ↗" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Build a quote" · "Send a quote to a customer" · "Revise a sent quote" · "Turn a quote into a job or invoice" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "User guide › Quotes" · …
