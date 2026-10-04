@@ -2304,6 +2304,15 @@ Regression: the History dialog still loads only when opened.
 
 Regression: onboarding still shows "Continue" on each step.
 
+## 49. Business name everywhere (US-TEAM-15, Phase 6)
+
+1. Sign up a new organisation and set the business name in onboarding (or Settings › Business profile) to "Riverstone Builders".
+2. Invite someone as Staff: the email says "<You> invited you to join Riverstone Builders as staff." — never "<Name>'s Organisation".
+3. Change the business name in Settings and send another invitation: it uses the new name.
+4. On an older database, run `pnpm db:migrate:dev`: organisations whose name was "<Owner>'s Organisation" now carry the business name.
+
+Regression: the sign-up page's "invite-only" message still names the business (§31).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

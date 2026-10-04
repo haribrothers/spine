@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-TEAM-15: use the business name everywhere the organisation is named (Phase 6)
+
+- **In sync.** Saving the business profile, from Settings or onboarding, now renames the organisation to the business name in the same transaction. A blank name leaves it alone. Nothing says "<Owner>'s Organisation" once a business name is set.
+- **Invitations.** "Alex Morgan invited you to join Riverstone Builders as staff.", subject "Alex Morgan invited you to join Riverstone Builders on Spine". The email has used the business profile since US-NTF-11; this story keeps the organisation row in step.
+- **Existing installs.** Migration `0062_org_name_from_business` copies each business name into its organisation where they differ.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-team-15.http.integration.test.ts` (4): a new org starts as "<Owner>'s Organisation" and takes the business name on save; a blank name changes nothing; a real invitation's subject and text name the business and the role; the migration copies the name.
+
 ### 2026-10-05 — US-SET-14: show "Save" on setup steps reused in Settings (Phase 6)
 
 - **Industry template.** Settings › Industry template's button reads "Save", not "Continue".

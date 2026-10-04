@@ -48,7 +48,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files` and `accepted_signer_name text` (on-site acceptance stores what it captured) | US-QUO-19 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
-| `organization.name` | Kept in sync with `business_profile.name` (bug: invite email shows "<Owner>'s Organisation") | US-TEAM-15 |
+| `organization.name` | Kept in sync with `business_profile.name`: `SettingsService.set` renames the organisation in the same transaction whenever a non-empty business name is saved; migration `0062` copied it for existing installs | US-TEAM-15 |
 | Better Auth `verification` | Used for password-reset tokens (no new table) | US-AUTH-09, US-AUTH-10 |
 | `idempotency_keys` | `user_id text → user`; unique index becomes (`org_id`, `user_id`, `endpoint`, `key`) | US-OPS-08 |
 | `quotes`, `invoices`, `credit_notes`, `payments` | `issued_pdf_file_id uuid → files` (the PDF stored at send/issue; on quotes and invoices it replaces the old `pdf_file_id`, whose values migration `0053` copied over before `0054` dropped it) | US-INV-17 |

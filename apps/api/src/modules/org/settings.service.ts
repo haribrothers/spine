@@ -2,7 +2,7 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { settings } from "../../db/schema";
+import { organization, settings } from "../../db/schema";
 
 /**
  * Thin key/value read-through over the generic org-scoped `settings` table
@@ -77,12 +77,20 @@ export class SettingsService {
 
   /** Upsert on (orgId, key) — matches the table's unique constraint. */
   async set(orgId: string, key: string, value: unknown): Promise<void> {
-    await this.db
-      .insert(settings)
-      .values({ orgId, key, value: value as object })
-      .onConflictDoUpdate({
-        target: [settings.orgId, settings.key],
-        set: { value: value as object, updatedAt: new Date() },
-      });
+    await this.db.transaction(async (tx) => {
+      await tx
+        .insert(settings)
+        .values({ orgId, key, value: value as object })
+        .onConflictDoUpdate({
+          target: [settings.orgId, settings.key],
+          set: { value: value as object, updatedAt: new Date() },
+        });
+      // US-TEAM-15: the organisation is named after the business, so
+      // invitations and system text never say "<Owner>'s Organisation".
+      const name = key === "business_profile" ? (value as { name?: unknown } | null)?.name : undefined;
+      if (typeof name === "string" && name.trim()) {
+        await tx.update(organization).set({ name: name.trim() }).where(eq(organization.id, orgId));
+      }
+    });
   }
 }
