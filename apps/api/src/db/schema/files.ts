@@ -31,11 +31,16 @@ export const files = pgTable(
     key: text("key").notNull(),
     /** `local` or `s3` — the driver that stored this file (D-102). */
     storageDriver: text("storage_driver").notNull().default("local"),
+    /** SHA-256 (hex) of the stored bytes, set on upload; null only until the backfill run reaches a pre-US-OPS-28 file. */
+    checksumSha256: text("checksum_sha256"),
+    /** `damaged` or `missing` when the last check failed; null when the file is intact (US-OPS-28). */
+    integrityProblem: text("integrity_problem"),
+    integrityCheckedAt: timestamp("integrity_checked_at", { withTimezone: true }),
     originalFilename: text("original_filename").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
     uploadedByUserId: text("uploaded_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("files_org_idx").on(table.orgId)],
+  (table) => [index("files_org_idx").on(table.orgId), index("files_integrity_problem_idx").on(table.orgId, table.integrityProblem)],
 );

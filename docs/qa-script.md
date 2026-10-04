@@ -1874,6 +1874,18 @@ Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
    `.env.development.example`, restart the API. Upload a photo: opening it
    redirects (302) to `localhost:9000`. Files uploaded in step 1 still open.
 
+7. Integrity (US-OPS-28): upload a receipt, then overwrite its file on disk
+   (`echo broken > apps/api/.data/files/<org>/<xx>/<id>`). Opening it now
+   shows an error and the API answers 409 "This file is damaged. Restore it
+   from your latest backup." As an Owner, the dashboard shows "1 stored file
+   is damaged or missing — restore from your latest backup." with the file
+   listed; a Staff or Field user sees no warning.
+8. Delete another file from disk: it's reported as "(missing)" the same way.
+9. Put the original bytes back (or restore the folder from a backup). After
+   the weekly check runs, the warning disappears. To run it now, restart
+   the API with a file that has no checksum, or call
+   `FileIntegrityWorker.run()` from a script.
+
 Regression checks:
 - Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
 - **Load demo data** still seeds the logo and job photos (§1.7).
@@ -1883,8 +1895,8 @@ Regression checks:
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - `GET /files/:id` still checks only the organisation, not the record the
-  file belongs to (US-OPS-20). Checksums, type checks and moving files off
-  MinIO are US-OPS-28, US-OPS-29 and US-OPS-30.
+  file belongs to (US-OPS-20). Type checks and moving files off MinIO are
+  US-OPS-29 and US-OPS-30.
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/

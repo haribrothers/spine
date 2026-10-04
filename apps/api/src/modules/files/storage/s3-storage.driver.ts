@@ -9,7 +9,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { Readable } from "node:stream";
-import { type ByteRange, type StorageDriver, StoredObjectMissingError } from "./storage-driver";
+import { type ByteRange, type StorageDriver, StoredObjectExistsError, StoredObjectMissingError } from "./storage-driver";
 
 export interface S3Config {
   endpoint: string;
@@ -54,6 +54,10 @@ export class S3StorageDriver implements StorageDriver {
 
   async save(key: string, data: Buffer | Readable, contentType: string): Promise<void> {
     await this.ensureBucket();
+    // Write-once. Not atomic with the PUT (conditional writes aren't supported
+    // by every S3-compatible store), but keys are fresh ids, so this only
+    // guards against a code path trying to overwrite an existing file.
+    if (await this.exists(key)) throw new StoredObjectExistsError(key);
     // A PUT is all-or-nothing on S3: an interrupted upload never becomes a readable object.
     const body = Buffer.isBuffer(data) ? data : await streamToBuffer(data);
     await this.client.send(

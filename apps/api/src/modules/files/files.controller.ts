@@ -18,6 +18,7 @@ import { OptionalAuth, OrgRoles, Session, type UserSession } from "@thallesp/nes
 import type { Response } from "express";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { filesDamagedMessage } from "./file-integrity.worker";
 import { verifyFileLink } from "./file-link";
 import { FilesService } from "./files.service";
 import type { ByteRange } from "./storage/storage-driver";
@@ -97,6 +98,18 @@ export class FilesController {
       uploadedByUserId: session.user?.id ?? null,
     });
     return row;
+  }
+
+  /**
+   * US-OPS-28 — files whose last integrity check failed, for the Owners'
+   * dashboard warning. Declared before `:id` so "integrity" isn't read as
+   * a file id.
+   */
+  @Get("integrity")
+  @OrgRoles(["owner"])
+  async integrity(@Session() session: UserSession) {
+    const summary = await this.filesService.integritySummary(requireOrgId(session));
+    return { ...summary, message: summary.problemCount ? filesDamagedMessage(summary.problemCount) : null };
   }
 
   /**

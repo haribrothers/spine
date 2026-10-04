@@ -10,6 +10,7 @@ const config = getS3Config();
  * points at locally. Skipped when `S3_ENDPOINT` isn't set.
  */
 describe.skipIf(!config)("US-OPS-27 · s3 driver (requires S3_ENDPOINT)", () => {
-  const driver = new S3StorageDriver(config!);
-  storageDriverScenarios(() => driver);
+  // Built lazily: Vitest still runs this callback when the suite is skipped.
+  let driver: S3StorageDriver | undefined;
+  storageDriverScenarios(() => (driver ??= new S3StorageDriver(config!)));
 });

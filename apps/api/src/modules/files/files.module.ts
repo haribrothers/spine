@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
 import { FilesController } from "./files.controller";
+import { NotificationsModule } from "../notifications/notifications.module";
+import { FileIntegrityWorker } from "./file-integrity.worker";
 import { FilesService } from "./files.service";
 
 /**
@@ -7,8 +9,9 @@ import { FilesService } from "./files.service";
  * bytes (`local` by default, `s3` optional — D-102). See files.service.ts.
  */
 @Module({
+  imports: [NotificationsModule],
   controllers: [FilesController],
-  providers: [FilesService],
+  providers: [FilesService, FileIntegrityWorker],
   exports: [FilesService],
 })
 export class FilesModule {}

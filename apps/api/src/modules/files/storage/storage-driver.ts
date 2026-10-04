@@ -16,6 +16,14 @@ export class StoredObjectMissingError extends Error {
   }
 }
 
+/** A save targeted a key that already holds a file. Stored files are write-once (D-104). */
+export class StoredObjectExistsError extends Error {
+  constructor(key: string) {
+    super(`Stored object ${key} already exists and can't be replaced`);
+    this.name = "StoredObjectExistsError";
+  }
+}
+
 /**
  * Where file bytes live (D-102). `FilesService` owns the `files` rows and
  * every permission check; a driver only stores and returns bytes by key, so
@@ -23,7 +31,11 @@ export class StoredObjectMissingError extends Error {
  */
 export interface StorageDriver {
   readonly name: StorageDriverName;
-  /** Stores the whole object or nothing: a failed save never leaves a readable partial object. */
+  /**
+   * Stores the whole object or nothing: a failed save never leaves a readable
+   * partial object. Write-once: throws `StoredObjectExistsError` if the key
+   * already holds a file, so an issued document's bytes can't be replaced.
+   */
   save(key: string, data: Buffer | Readable, contentType: string): Promise<void>;
   /** Throws `StoredObjectMissingError` when the key doesn't exist. */
   openReadStream(key: string, range?: ByteRange): Promise<Readable>;

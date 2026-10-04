@@ -7,6 +7,7 @@ import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { DashboardSummary } from "./dashboard-summary";
 import { SetupChecklist } from "./setup-checklist";
+import { StorageIntegrityAlert } from "./storage-integrity-alert";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
 
 /**
@@ -87,6 +88,7 @@ export function DashboardShell({ role }: { role: string | null }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {role === "owner" && <StorageIntegrityAlert />}
       {role !== "field" && <SetupChecklist />}
       {role !== "field" && <DashboardSummary />}
 

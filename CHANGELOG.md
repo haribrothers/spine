@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-28: prove stored files are intact (Phase 6)
+
+Each stored file now has a SHA-256 checksum, so Spine can tell when a file is damaged or missing.
+- **Checksum on upload.** New column `files.checksum_sha256`. Migration `0052` also adds `integrity_problem` (`damaged`/`missing`) and `integrity_checked_at`.
+- **Checked on read.** `GET /files/:id` (local driver) and the PDF logo reader compare the bytes with the checksum first. A damaged or missing file returns 409 with "This file is damaged. Restore it from your latest backup.", is logged and is flagged on its row. S3 files aren't downloaded on every read; the weekly check verifies them, and one already flagged is refused the same way.
+- **Weekly check.** The `file-integrity-check` job (pg-boss, Sundays 03:00) reads every file and records the outcome, and files that are intact again are cleared. Files stored before checksums existed get one from their current bytes; the job is queued once at start-up while any file still lacks one, which is the one-off backfill. A storage outage isn't counted as damage.
+- **Owner warning.** When the check finds problems, each affected organisation's Owners get an in-app notification (`files_damaged`) naming the records, such as "PDF of invoice <number>" or "Receipt for expense <number>: <description>". The dashboard shows "<n> stored files are damaged or missing — restore from your latest backup." until the files are fixed. For a single file the wording is "1 stored file is damaged or missing — …". The list comes from new Owner-only route `GET /files/integrity`.
+- **Write-once files.** A driver refuses to save to a key that already holds a file. The local driver hard-links the temp file into place instead of renaming it, which fails when the key already exists. So an issued document's bytes can't be replaced.
+- **E2E ports.** The suite moved to ports 3110/4110 because the design-system docs app in `pnpm dev` uses 3100, which made the suite fail whenever `pnpm dev` was running.
+
+Tests: `us-ops-28.test.ts` (write-once, checksum, wording), `us-ops-28.http.integration.test.ts` (8: checksum stored, 409 when damaged or missing, Owner-only summary, the weekly run's notification and clearing, backfill, nothing shown when intact) and `apps/e2e/tests/us-ops-28.spec.ts` (the dashboard warning). Integration suite 26 files pass (the s3 suite skips without `S3_ENDPOINT`); E2E 30/30.
+
 ### 2026-10-04 — US-OPS-27: files on local disk by default (Phase 6)
 
 Fresh installs no longer need MinIO, whose free images were withdrawn. Files now go through a `StorageDriver` (`apps/api/src/modules/files/storage/`) with two drivers: `local` (the default) and `s3` (`STORAGE_DRIVER=s3` plus `S3_*`, for AWS S3, R2, B2 or RustFS). The `local` driver writes to `FILES_DIR`: `/data/files` in production, which is the new `spine_files` volume on the API container, and `apps/api/.data/files` in development.

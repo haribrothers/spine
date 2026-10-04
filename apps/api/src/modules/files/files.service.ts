@@ -1,10 +1,10 @@
-import { Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import { ConflictException, Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
+import { and, asc, eq, gt, inArray, isNotNull, isNull } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
 import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { files } from "../../db/schema";
+import { contactPersons, contacts, expenses, files, invoices, jobPhotos, jobs, quotes, settings } from "../../db/schema";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { createStorageDrivers, type StorageDrivers } from "./storage/storage-config";
 import { type ByteRange, type StorageDriver, StoredObjectMissingError, fileKey } from "./storage/storage-driver";
@@ -17,6 +17,15 @@ export interface UploadFileInput {
 }
 
 export type FileRow = typeof files.$inferSelect;
+
+export type IntegrityProblem = "damaged" | "missing";
+
+/** US-OPS-28 — the 409 every damaged or missing file returns. */
+export const DAMAGED_FILE_MESSAGE = "This file is damaged. Restore it from your latest backup.";
+
+export function sha256(bytes: Buffer): string {
+  return createHash("sha256").update(bytes).digest("hex");
+}
 
 /** How `GET /files/:id` answers: stream the bytes (`local`) or redirect to a presigned URL (`s3`). */
 export type FileDownload =
@@ -69,6 +78,7 @@ export class FilesService {
           orgId,
           key,
           storageDriver: driver.name,
+          checksumSha256: sha256(input.buffer),
           originalFilename: input.originalFilename,
           mimeType: input.mimeType,
           sizeBytes: input.buffer.byteLength,
@@ -102,21 +112,146 @@ export class FilesService {
   }
 
   /** Bytes for `GET /files/:id`, after the caller has checked who may read `file`. */
+  /**
+   * Bytes for `GET /files/:id`, after the caller has checked who may read
+   * `file`. Streamed (`local`) files are verified against their checksum
+   * first; a damaged or missing file is a 409 and is flagged for the
+   * owners' dashboard. Presigned (`s3`) files aren't downloaded on every
+   * read — the weekly check verifies them — but one already flagged is
+   * refused the same way.
+   */
   async download(file: FileRow, range?: ByteRange): Promise<FileDownload> {
     const driver = this.readerFor(file);
     if (driver.presignedUrl) {
+      if (file.integrityProblem) throw new ConflictException(DAMAGED_FILE_MESSAGE);
       return { kind: "redirect", file, url: await driver.presignedUrl(file.key, MAX_FILE_LINK_SECONDS) };
     }
+    const problem = await this.verify(file);
+    if (problem) throw new ConflictException(DAMAGED_FILE_MESSAGE);
     return { kind: "stream", file, stream: await this.open(driver, file, range) };
   }
 
   /** The whole file in memory — for small files the server itself embeds, such as a logo in a PDF. */
   async readBytes(orgId: string, id: string): Promise<{ bytes: Buffer; mimeType: string }> {
     const file = await this.getMetadata(orgId, id);
-    const stream = await this.open(this.readerFor(file), file);
+    const bytes = await this.readStored(file);
+    if (bytes === null || (file.checksumSha256 && sha256(bytes) !== file.checksumSha256)) {
+      await this.recordCheck(file, bytes === null ? "missing" : "damaged");
+      throw new ConflictException(DAMAGED_FILE_MESSAGE);
+    }
+    return { bytes, mimeType: file.mimeType };
+  }
+
+  /**
+   * Checks the stored bytes against the recorded checksum and records the
+   * outcome on the row. A file stored before checksums existed gets its
+   * checksum from its current bytes (the one-off backfill). Returns the
+   * problem, or null when the file is intact.
+   */
+  async verify(file: FileRow): Promise<IntegrityProblem | null> {
+    let bytes: Buffer | null;
+    try {
+      bytes = await this.readStored(file);
+    } catch (err) {
+      // The store itself is unreachable: that's an outage, not damage.
+      this.logger.warn(`Could not check file ${file.id}: ${(err as Error).message}`);
+      return file.integrityProblem as IntegrityProblem | null;
+    }
+    if (bytes === null) return this.recordCheck(file, "missing");
+    const actual = sha256(bytes);
+    if (!file.checksumSha256) {
+      await this.db.update(files).set({ checksumSha256: actual }).where(eq(files.id, file.id));
+      file.checksumSha256 = actual;
+      return this.recordCheck(file, null);
+    }
+    return this.recordCheck(file, actual === file.checksumSha256 ? null : "damaged");
+  }
+
+  async hasFilesWithoutChecksum(): Promise<boolean> {
+    const [row] = await this.db.select({ id: files.id }).from(files).where(isNull(files.checksumSha256)).limit(1);
+    return Boolean(row);
+  }
+
+  /** Every file, a page at a time, for the weekly check. */
+  async listAfter(lastId: string | null, limit: number): Promise<FileRow[]> {
+    return this.db
+      .select()
+      .from(files)
+      .where(lastId ? gt(files.id, lastId) : undefined)
+      .orderBy(asc(files.id))
+      .limit(limit);
+  }
+
+  /** The owners' dashboard warning: files whose last check failed. */
+  async integritySummary(orgId: string): Promise<{ problemCount: number; files: { id: string; problem: IntegrityProblem; label: string }[] }> {
+    const rows = await this.db
+      .select()
+      .from(files)
+      .where(and(eq(files.orgId, orgId), isNotNull(files.integrityProblem)));
+    const labels = await this.describe(orgId, rows);
+    return {
+      problemCount: rows.length,
+      files: rows.map((row) => ({ id: row.id, problem: row.integrityProblem as IntegrityProblem, label: labels.get(row.id)! })),
+    };
+  }
+
+  /**
+   * What each file belongs to, in words an owner recognises ("Receipt for
+   * expense: Fuel"), so the notification names records rather than file ids.
+   */
+  async describe(orgId: string, rows: FileRow[]): Promise<Map<string, string>> {
+    const labels = new Map(rows.map((row) => [row.id, `File “${row.originalFilename}”`]));
+    const ids = rows.map((row) => row.id);
+    if (!ids.length) return labels;
+    const set = (id: string | null, label: string) => {
+      if (id && labels.has(id)) labels.set(id, label);
+    };
+    const [invoiceRows, quoteRows, expenseRows, photoRows, contactRows, personRows] = await Promise.all([
+      this.db.select({ id: invoices.pdfFileId, number: invoices.number }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.pdfFileId, ids))),
+      this.db.select({ id: quotes.pdfFileId, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.pdfFileId, ids))),
+      this.db.select({ id: expenses.receiptFileId, number: expenses.number, description: expenses.description }).from(expenses).where(and(eq(expenses.orgId, orgId), inArray(expenses.receiptFileId, ids))),
+      this.db.select({ id: jobPhotos.fileId, name: jobs.name }).from(jobPhotos).innerJoin(jobs, eq(jobPhotos.jobId, jobs.id)).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
+      this.db.select({ id: contacts.logoFileId, name: contacts.name }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
+      this.db.select({ id: contactPersons.logoFileId, name: contactPersons.name }).from(contactPersons).where(inArray(contactPersons.logoFileId, ids)),
+    ]);
+    for (const r of invoiceRows) set(r.id, `PDF of invoice ${r.number ?? "(draft)"}`);
+    for (const r of quoteRows) set(r.id, `PDF of quote ${r.number ?? "(draft)"}`);
+    for (const r of expenseRows) set(r.id, `Receipt for expense ${[r.number, r.description].filter(Boolean).join(": ") || "(no description)"}`);
+    for (const r of photoRows) set(r.id, `Photo on job: ${r.name}`);
+    for (const r of contactRows) set(r.id, `Logo of ${r.name}`);
+    for (const r of personRows) set(r.id, `Photo of ${r.name}`);
+    const [profile] = await this.db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
+    const logoId = (profile?.value as { logoUrl?: string } | undefined)?.logoUrl?.match(/\/files\/([0-9a-f-]{36})/i)?.[1];
+    set(logoId ?? null, "Business logo");
+    return labels;
+  }
+
+  private async recordCheck(file: FileRow, problem: IntegrityProblem | null): Promise<IntegrityProblem | null> {
+    if (problem) this.logger.error(`File ${file.id} is ${problem} (${file.storageDriver} driver)`);
+    await this.db
+      .update(files)
+      .set({ integrityProblem: problem, integrityCheckedAt: new Date() })
+      .where(eq(files.id, file.id));
+    file.integrityProblem = problem;
+    return problem;
+  }
+
+  /** The whole stored file, or null when the driver has no object for it. */
+  private async readStored(file: FileRow): Promise<Buffer | null> {
+    const driver = this.readerFor(file);
+    let stream: Readable;
+    try {
+      stream = await driver.openReadStream(file.key);
+    } catch (err) {
+      if (err instanceof StoredObjectMissingError) return null;
+      throw err;
+    }
     const chunks: Buffer[] = [];
     for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array));
-    return { bytes: Buffer.concat(chunks), mimeType: file.mimeType };
+    return Buffer.concat(chunks);
   }
 
   /** `exp` and `sig` for a session-less `GET /files/:id` link, valid for at most 5 minutes. */

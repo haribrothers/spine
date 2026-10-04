@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
-import { mkdir, open, readdir, rename, rm, stat } from "node:fs/promises";
+import { link, mkdir, open, readdir, rm, stat } from "node:fs/promises";
 import path from "node:path";
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import { type ByteRange, type StorageDriver, StoredObjectMissingError } from "./storage-driver";
+import { type ByteRange, type StorageDriver, StoredObjectExistsError, StoredObjectMissingError } from "./storage-driver";
 
 /** Keys are ids joined by `/` (see `fileKey`); anything else is refused before it reaches the disk. */
 const SAFE_KEY = /^[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/;
@@ -17,10 +17,12 @@ const STALE_TEMP_MS = 60 * 60 * 1000;
  * volume, mounted at `/data/files`.
  *
  * Crash safety (NFR-REL-08): bytes are written to `<root>/.tmp/<uuid>.part`,
- * fsynced, then renamed into place. A rename within one filesystem is
- * atomic, so a reader sees either no file or the whole file — never a
- * partial one. A crash mid-write only leaves a `.part` file, which nothing
- * ever serves and which the next start removes.
+ * fsynced, then hard-linked into place and the temp name removed. A link
+ * within one filesystem is atomic, so a reader sees either no file or the
+ * whole file — never a partial one — and unlike a rename it fails if the
+ * key already exists, which makes files write-once (US-OPS-28). A crash
+ * mid-write only leaves a `.part` file, which nothing ever serves and
+ * which the next start removes.
  */
 export class LocalStorageDriver implements StorageDriver {
   readonly name = "local" as const;
@@ -40,12 +42,16 @@ export class LocalStorageDriver implements StorageDriver {
       await pipeline(source, createWriteStream(tmp, { flags: "wx", mode: 0o600 }));
       await fsyncPath(tmp, "r+");
       await mkdir(path.dirname(target), { recursive: true });
-      await rename(tmp, target);
-      // Makes the rename itself survive a power cut.
+      try {
+        await link(tmp, target);
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === "EEXIST") throw new StoredObjectExistsError(key);
+        throw err;
+      }
+      // Makes the new name itself survive a power cut.
       await fsyncPath(path.dirname(target), "r").catch(() => undefined);
-    } catch (err) {
+    } finally {
       await rm(tmp, { force: true });
-      throw err;
     }
   }
 
