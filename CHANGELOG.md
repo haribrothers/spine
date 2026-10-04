@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-INV-16: set payment instructions in Settings (Phase 6)
+
+- **The pane.** Settings › "Payment instructions" reads "Printed under the totals on every invoice and in invoice emails, so customers know how to pay.". It has a "How customers can pay" field ("Up to 600 characters. Leave empty to hide the block."), the note "Issued invoices keep the instructions they were issued with — changing this only affects invoices issued from now on." and "Save".
+- **Limit.** More than 600 characters shows "Keep this under 600 characters." in the form, and the API refuses it too (400, same message). The rule is `businessProfileSchema` in `@spine/shared`, used by both.
+- **Storage.** Saved as `business_profile.paymentInstructions`. The pane re-reads the profile before saving, and the Business profile form keeps fields it doesn't show, so neither overwrites the other. Empty removes the block.
+- Printing them on invoices and in invoice emails is US-INV-15.
+
+Tests:
+- `us-inv-16.http.integration.test.ts` (3): saved alongside the rest of the profile; exactly 600 accepted; 601 refused with the message and the saved value kept.
+- `apps/e2e/tests/us-inv-16.spec.ts` (1): the pane's copy, the over-limit error, saving, and the value after a reload.
+
 ### 2026-10-04 — US-QUO-22: keep emailed links working until the quote is replaced (Phase 6)
 
 - **Finding C8, explained.** The demo's fourth quote (QUO-0003) is seeded as "revised": it was sent and emailed, then revised. Revising revokes every link for the old version, and that's intended. But the revision was left as a draft, so the quote still read "sent" while its only emailed link was dead.

@@ -2224,6 +2224,15 @@ Regression: accepting and declining a quote on its public page still work (§3);
 
 Regression: the quotes list still groups a revised quote under its newest version with "Superseded" on the old one.
 
+## 40. Payment instructions in Settings (US-INV-16, Phase 6)
+
+1. As an Owner, Settings › "Payment instructions": the description, the "How customers can pay" field with "Up to 600 characters. Leave empty to hide the block.", and the note that issued invoices keep their instructions.
+2. Paste more than 600 characters and press "Save": "Keep this under 600 characters." and nothing is saved.
+3. Enter a few lines (bank, account, reference) and save: "Saved". Reopen Settings: the text is still there.
+4. Open Business profile, change the address and save, then come back: the payment instructions are still there.
+
+Regression: Business profile still saves name, logo, address, email and phone (§38).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

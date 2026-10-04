@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   AlarmClock,
+  Landmark,
   Building2,
   Calendar,
   CalendarClock,
@@ -24,6 +25,7 @@ import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
 import { TaxPane } from "../app/settings/panes/tax-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
+import { PaymentInstructionsPane } from "../app/settings/panes/payment-instructions-pane";
 import { PurchasesPane } from "../app/settings/panes/purchases-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
@@ -45,6 +47,7 @@ const SECTIONS: SettingsSection[] = [
   { key: "tax", label: "Tax", icon: <Percent size={16} />, render: () => <TaxPane /> },
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
+  { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
   { key: "purchases", label: "Purchases", icon: <ShoppingCart size={16} />, render: () => <PurchasesPane /> },
   {
     key: "quote-conversion-guard",
