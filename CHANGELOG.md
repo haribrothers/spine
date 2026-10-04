@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-PAY-13: allocate a deposit payment to its advance invoice (Phase 6)
+
+- **Paying a deposit request.** `POST /payments` now accepts allocations to advance (deposit) invoices, which it used to refuse. The advance invoice then shows "Paid", or "Partially paid" with its balance.
+- **Posting (P5a, D-075).** Bank is debited; everything not allocated to an ordinary invoice, including the deposit, is credited to 2200 Customer Advances. The advance invoice never posted to AR, so there's no AR line. The money stays available as the customer's credit and is applied to the final invoice as before (P6: 2200 Dr, AR Cr).
+- **Credit stays available.** Migration `0057` changes the allocation trigger: `payments.allocated_amount` (so `unallocatedAmount`, the customer's credit) counts only allocations to ordinary invoices. Allocations to advance invoices are capped separately by the payment amount and by the invoice total.
+- **Deposits carry no tax.** Advance invoices are computed without tax, including when an invoice is turned into one; the final invoice's lines carry the full tax.
+- **Suggestions and deletes.** The oldest-first suggestion includes open advance invoices. A payment with any allocation, advance ones included, can't be deleted. The payment confirmation email counts a deposit as credit held.
+- **Paid badges.** Invoices now return a derived `paymentStatus` (`unpaid`/`partially_paid`/`paid`). The invoices list and detail show "Paid" or "Partially paid" next to the status, and "Record payment" offers advance invoices.
+- **Accountant review.** The P5a posting variant is flagged for it in Q-02.
+
+Tests: `us-pay-13.integration.test.ts` (6):
+- A 5,000.00 deposit marks the advance invoice paid, posts Bank Dr / 2200 Cr with no AR, and leaves 5,000.00 of credit.
+- A 2,000.00 part-payment leaves "partially paid" with 3,000.00 outstanding.
+- Applying the deposit to the final invoice posts 2200 Dr / AR Cr.
+- The deposit is untaxed and the final invoice fully taxed.
+- The suggestion includes the advance invoice.
+- A payment that paid an advance invoice can't be deleted.
+
+Integration 38 files pass; E2E 44/44.
+
 ### 2026-10-04 — US-TAX-07: store rates, quantities and percentages exactly (Phase 6)
 
 - **Exact storage.** Migration `0056` turns the 14 floating-point (`real`) columns into `numeric(18,4)`: tax rates; quantity, discount % and tax % on every document line; the catalogue default tax %; job retention %; and milestone amounts. The cast keeps each value's decimal form (8.875, 7.3, 33.3333), and issued totals (bigint) are untouched. Drizzle reads the columns as numbers, so API and web types are unchanged.

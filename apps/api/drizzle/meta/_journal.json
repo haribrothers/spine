@@ -400,6 +400,13 @@
       "when": 1791131161107,
       "tag": "0056_exact_decimals",
       "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791131655887,
+      "tag": "0057_payment_advance_allocations",
+      "breakpoints": true
     }
   ]
 }

@@ -158,8 +158,6 @@ export class PaymentsService {
       .where(and(eq(invoices.orgId, orgId), eq(invoices.contactId, contactId), eq(invoices.status, "issued")));
 
     const withBalance = outstanding
-      // S-05.4 — an advance invoice never posts to AR (see InvoicesService.issue's own comment), so it has no real balance to suggest a payment against.
-      .filter((inv) => inv.type !== "advance")
       .map((inv) => ({ invoice: inv, balance: inv.totalAmount - inv.retentionAmount - inv.amountPaid - inv.creditedAmount }))
       .filter((row) => row.balance > 0n)
       .sort((a, b) => {
@@ -243,11 +241,7 @@ export class PaymentsService {
       if (invoice.status !== "issued") {
         throw new BadRequestException(`Invoice ${invoice.number ?? invoice.id} is not issued and cannot receive a payment`);
       }
-      if (invoice.type === "advance") {
-        throw new BadRequestException(
-          `Invoice ${invoice.number ?? invoice.id} is an advance/deposit invoice — it never posts to Accounts Receivable (see InvoicesService.issue's own comment), so a payment can't be allocated to it. Record the deposit as an unallocated payment instead (S-06.4).`,
-        );
-      }
+      // US-PAY-13: an advance (deposit) invoice can be paid; see the posting below.
       const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds invoice ${invoice.number}'s remaining balance of ${balance}`);
@@ -290,15 +284,22 @@ export class PaymentsService {
       }
 
       const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
-      const unallocatedAmount = input.amount - totalAllocated;
+      // P4/P5/P5a: allocations to ordinary invoices clear AR. Everything else
+      // — the unallocated part and anything allocated to an advance (deposit)
+      // invoice, which never posted to AR — is held in 2200 Customer
+      // Advances until it's applied to a later invoice (US-PAY-13, D-075).
+      const arAllocated = input.allocations
+        .filter((a) => invoiceById.get(a.invoiceId)!.type !== "advance")
+        .reduce((sum, a) => sum + a.amount, 0n);
+      const heldAsAdvance = input.amount - arAllocated;
 
       const postingLines = [{ accountId: resolvedBankAccountId, debit: input.amount, credit: 0n, contactId: input.contactId }];
-      if (totalAllocated > 0n) {
-        postingLines.push({ accountId: arAccountId, debit: 0n, credit: totalAllocated, contactId: input.contactId });
+      if (arAllocated > 0n) {
+        postingLines.push({ accountId: arAccountId, debit: 0n, credit: arAllocated, contactId: input.contactId });
       }
-      if (unallocatedAmount > 0n) {
+      if (heldAsAdvance > 0n) {
         const advancesAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
-        postingLines.push({ accountId: advancesAccountId, debit: 0n, credit: unallocatedAmount, contactId: input.contactId });
+        postingLines.push({ accountId: advancesAccountId, debit: 0n, credit: heldAsAdvance, contactId: input.contactId });
       }
 
       const journalEntryId = await this.ledger.postEntry(tx, {
@@ -325,7 +326,11 @@ export class PaymentsService {
       return payment;
     });
 
-    await this.sendConfirmation(orgId, created!.id, contact, input.amount, totalAllocated);
+    // What's still held as credit includes a deposit paid against its advance invoice (US-PAY-13).
+    const arAllocatedTotal = input.allocations
+      .filter((a) => invoiceById.get(a.invoiceId)!.type !== "advance")
+      .reduce((sum, a) => sum + a.amount, 0n);
+    await this.sendConfirmation(orgId, created!.id, contact, input.amount, arAllocatedTotal);
 
     await this.issuedPdf.queueStore(orgId, "payment", created!.id);
     return this.getOne(orgId, created!.id);
@@ -591,7 +596,10 @@ export class PaymentsService {
       own: "payments.delete_own",
       others: "payments.delete_others",
     });
-    if (existing.allocatedAmount > 0n) {
+    // Any allocation, including one to an advance invoice (which doesn't count
+    // towards allocatedAmount, US-PAY-13), makes the payment part of history.
+    const [allocation] = await this.db.select({ id: paymentAllocations.id }).from(paymentAllocations).where(eq(paymentAllocations.paymentId, id)).limit(1);
+    if (existing.allocatedAmount > 0n || allocation) {
       throw new BadRequestException("Cannot delete a payment that has been allocated to an invoice");
     }
 

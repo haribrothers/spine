@@ -4,7 +4,7 @@ import { Badge, DataTable, type TableColumn } from "@spine/ui";
 import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { InvoiceRowActions } from "./invoice-row-actions";
-import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
+import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
 
 const STATUS_BADGE_CLASS: Record<Invoice["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -54,6 +54,9 @@ export function InvoicesTable({
           <Badge className={STATUS_BADGE_CLASS[row.status]}>{INVOICE_STATUS_LABELS[row.status]}</Badge>
           {row.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
           {row.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
+          {PAYMENT_STATUS_LABELS[row.paymentStatus] && (
+            <Badge className={row.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[row.paymentStatus]}</Badge>
+          )}
         </div>
       ),
     },

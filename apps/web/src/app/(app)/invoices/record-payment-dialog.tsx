@@ -108,8 +108,8 @@ export function RecordPaymentDialog({
         `/invoices?contactId=${contactId}&status=issued`,
       )
       .then((invoices) => {
-        // S-05.4 — an advance invoice never posts to AR, so it has no real balance a payment can be allocated against (PaymentsService.create rejects it server-side too).
-        const allocatable = invoices.filter((inv) => inv.type !== "advance");
+        // US-PAY-13: advance (deposit) invoices can be paid like any other open invoice.
+        const allocatable = invoices.filter((inv) => BigInt(inv.balanceDue) > 0n);
         setOutstanding(allocatable.map((inv) => ({ id: inv.id, number: inv.number, balanceDue: inv.balanceDue })));
         if (allocatable[0]?.currency) setCurrency(allocatable[0].currency);
       })

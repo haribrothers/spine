@@ -73,6 +73,15 @@ interface InvoiceLineTotalInput {
  * change to one document type's tax behaviour must not silently alter the
  * other.
  */
+/**
+ * US-PAY-13 (D-075) — a deposit request carries no tax: tax is charged on
+ * the final invoice's own lines, which carry the full tax.
+ */
+function withoutTaxIfAdvance<T extends InvoiceLineTotalInput>(lines: readonly T[], type: string | undefined): T[] {
+  if (type !== "advance") return [...lines];
+  return lines.map((line) => ({ ...line, taxRatePercentage: 0, taxRateId: null, taxGroupId: null, isTaxInclusive: false }));
+}
+
 async function computeInvoiceTotals(
   orgId: string,
   currency: string,
@@ -194,6 +203,7 @@ export class InvoicesService {
       ...r.invoice,
       contactName: r.contactName,
       isOverdue: isOverdue(r.invoice),
+      paymentStatus: paymentStatus(r.invoice),
       balanceDue: r.invoice.totalAmount - r.invoice.retentionAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
     }));
 
@@ -224,6 +234,7 @@ export class InvoicesService {
       ...row.invoice,
       contactName: row.contactName,
       isOverdue: isOverdue(row.invoice),
+      paymentStatus: paymentStatus(row.invoice),
       balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount,
       lines,
     };
@@ -247,7 +258,7 @@ export class InvoicesService {
       throw new BadRequestException("Contact not found");
     }
 
-    const totals = await computeInvoiceTotals(orgId, input.currency, input.lines, this.taxResolver);
+    const totals = await computeInvoiceTotals(orgId, input.currency, withoutTaxIfAdvance(input.lines, input.type), this.taxResolver);
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -575,7 +586,14 @@ export class InvoicesService {
     }
 
     const currency = input.currency ?? existing.currency;
-    const totals = input.lines !== undefined ? await computeInvoiceTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    const type = input.type ?? existing.type;
+    // Turning an invoice into an advance (deposit) one recomputes its lines without tax.
+    const lines =
+      input.lines ??
+      (type === "advance" && existing.type !== "advance"
+        ? (await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, id)).orderBy(invoiceLines.sortOrder)).map((l) => ({ ...l, type: l.type }))
+        : undefined);
+    const totals = lines !== undefined ? await computeInvoiceTotals(orgId, currency, withoutTaxIfAdvance(lines, type), this.taxResolver) : null;
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -601,7 +619,7 @@ export class InvoicesService {
         .where(eq(invoices.id, id))
         .returning();
 
-      if (input.lines !== undefined && totals) {
+      if (totals) {
         await tx.delete(invoiceLines).where(eq(invoiceLines.invoiceId, id));
         await insertLines(tx, id, totals.lines);
       }
@@ -1090,6 +1108,18 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
 }
 
 /** S-05.9 — computed, not stored, exactly like quotes.ts's isExpired. Only an `issued` invoice with an outstanding balance and a past due date is overdue. Balance accounts for payments, credit notes (S-05.6), and retention (S-04.6) — a fully credited invoice, or one whose only remaining balance is held-back retention not yet due for release, is no more overdue than a fully paid one. */
+/**
+ * US-PAY-13 — how much of an issued invoice has been paid: "paid" once
+ * nothing is left to collect, "partially_paid" once something has been
+ * paid. Works the same for advance (deposit) invoices.
+ */
+function paymentStatus(invoice: typeof invoices.$inferSelect): "unpaid" | "partially_paid" | "paid" {
+  if (invoice.status !== "issued") return "unpaid";
+  const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+  if (invoice.amountPaid > 0n && balance <= 0n) return "paid";
+  return invoice.amountPaid > 0n ? "partially_paid" : "unpaid";
+}
+
 function isOverdue(invoice: typeof invoices.$inferSelect): boolean {
   if (invoice.status !== "issued" || !invoice.dueDate) return false;
   if (invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount <= 0n) return false;

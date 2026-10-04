@@ -2057,6 +2057,19 @@ and milestone amounts everywhere (§5).
 Regression checks: existing quotes, invoices, credit notes, vendor bills and
 job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
+## 25. Deposits against advance invoices (US-PAY-13, Phase 6)
+
+1. Create an advance (deposit) invoice for 5,000.00 with a tax rate on the
+   line, and issue it: its tax is 0.00.
+2. "Record payment" for 5,000.00 offers the advance invoice; allocate it all.
+   The invoice shows "Paid". The payment's journal entry: Bank 5,000.00 Dr,
+   2200 Customer Advances 5,000.00 Cr, no Accounts Receivable.
+3. The customer's credit shows 5,000.00. Apply it to the final invoice: its
+   balance drops by 5,000.00; the entry is 2200 Dr / Accounts Receivable Cr.
+4. A 2,000.00 payment on a fresh 5,000.00 advance invoice: "Partially paid",
+   3,000.00 outstanding.
+5. Deleting a payment that paid an advance invoice is refused.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

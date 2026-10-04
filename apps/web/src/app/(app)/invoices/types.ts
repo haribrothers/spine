@@ -64,6 +64,8 @@ export interface Invoice {
   updatedAt: string;
   /** Computed server-side at read time (S-05.9) — only an issued invoice past its due date with a balance still owing. Never stored. */
   isOverdue: boolean;
+  /** US-PAY-13 — derived by the API from what's been paid against the balance. */
+  paymentStatus: "unpaid" | "partially_paid" | "paid";
   /** Computed server-side — totalAmount - amountPaid - creditedAmount. */
   balanceDue: string;
   lines?: InvoiceLine[];
@@ -182,3 +184,10 @@ export interface CreditNote {
   invoiceNumber: string | null;
   lines: CreditNoteLine[];
 }
+
+/** US-PAY-13 — shown next to the status badge once anything has been paid. */
+export const PAYMENT_STATUS_LABELS: Record<Invoice["paymentStatus"], string | null> = {
+  unpaid: null,
+  partially_paid: "Partially paid",
+  paid: "Paid",
+};

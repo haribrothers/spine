@@ -253,7 +253,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-INV-16 · Set payment instructions in Settings
 - [x] US-INV-17 · Keep the exact PDF that was issued
 - [ ] US-PAY-10 · Export receivables to CSV
-- [ ] US-PAY-13 · Allocate a deposit payment to its advance invoice
+- [x] US-PAY-13 · Allocate a deposit payment to its advance invoice
 - [ ] US-PUR-14 · Export payables to CSV
 - [ ] US-PUR-19 · Manage expense categories from Expenses
 - [x] US-PUR-20 · Stop staff approving their own expenses

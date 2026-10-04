@@ -31,7 +31,7 @@ import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
 import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
-import { INVOICE_STATUS_LABELS, type Invoice } from "./types";
+import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
 
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
@@ -247,6 +247,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               <Badge className={STATUS_BADGE_CLASS[invoice.status]}>{INVOICE_STATUS_LABELS[invoice.status]}</Badge>
               {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
               {invoice.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
+          {PAYMENT_STATUS_LABELS[invoice.paymentStatus] && (
+            <Badge className={invoice.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[invoice.paymentStatus]}</Badge>
+          )}
             </div>
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {invoice.contactName ?? "Unknown contact"}
