@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-23: name new jobs after their quote (Phase 6)
+
+- **New jobs.** Converting a quote names the job after its first item line and the customer, e.g. "Project management — Sunstone Retail Fitouts", instead of "Job for QUO-0002". Headings are skipped; with no item line it's "Work for <customer>". Converting the same quote again adds " (2)", " (3)"…
+- **No quote titles.** Quotes have no title field, so the story's "no title" rule applies to every quote (D-122, Owner's call).
+- **Existing jobs.** Migration `0060_job_names_from_quotes` renames jobs still called "Job for <quote number>" by the same rules, numbering repeats in creation order, and adds a history entry for each ("Someone updated this job: name …"). Jobs someone already renamed are left alone.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-job-23.integration.test.ts` (4): "<first item> — <customer>", then " (2)" on a repeat; headings skipped; the fallbacks; the migration renames two old jobs (with " (2)"), leaves a custom name alone, and records the rename in history.
+
 ### 2026-10-05 — US-QUO-23: explain a repeat conversion clearly (Phase 6)
 
 - **Wording.** The "This quote has already been converted before" dialog now reads "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once." ("invoice" when converting to an invoice), in sentence case with no shouting.

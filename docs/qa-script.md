@@ -2251,6 +2251,14 @@ Regression: invoice totals, retention and balance due still print as before (§4
 
 Regression: with Settings › "Repeat quote conversion" set to "Block", the second conversion is refused with no dialog; set to "Off", there's no dialog.
 
+## 43. Job names from quotes (US-JOB-23, Phase 6)
+
+1. Convert an accepted quote whose first line is "Project management" for "Sunstone Retail Fitouts": the job is "Project management — Sunstone Retail Fitouts".
+2. Convert it again (confirm the warning): "… (2)".
+3. On a database with older jobs named "Job for QUO-…", run `pnpm db:migrate:dev`. They're renamed the same way, and each job's History shows the rename. Jobs you'd renamed yourself keep their names.
+
+Regression: the Jobs list, job detail and the phone's job screen show the new names; editing a job's name still works (§5).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

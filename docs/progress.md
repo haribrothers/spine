@@ -248,7 +248,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-JOB-20 · Own a job's milestones through the job
 - [x] US-JOB-21 · Show retention on a progress invoice
 - [ ] US-JOB-22 · Number every job
-- [ ] US-JOB-23 · Name new jobs after their quote
+- [x] US-JOB-23 · Name new jobs after their quote
 - [x] US-INV-15 · Print payment instructions on invoices
 - [x] US-INV-16 · Set payment instructions in Settings
 - [x] US-INV-17 · Keep the exact PDF that was issued

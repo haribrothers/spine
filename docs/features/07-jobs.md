@@ -363,4 +363,5 @@ Decision: D-090
 - **Given** existing jobs named "Job for QUO-…", **when** the migration runs, **then** they're renamed by the same rules and the change is recorded in each job's history.
 
 **Implementation notes**
+- Quotes have no title field, so the "no title" rule applies to every quote for now ([D-122](../prd/12-decisions.md)).
 - API: `JobsService.createFromQuote` naming; one-off backfill migration.

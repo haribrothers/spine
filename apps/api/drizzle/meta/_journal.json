@@ -421,6 +421,13 @@
       "when": 1791138365308,
       "tag": "0059_invoice_payment_instructions",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1791139697471,
+      "tag": "0060_job_names_from_quotes",
+      "breakpoints": true
     }
   ]
 }

@@ -1,14 +1,15 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, updateJobSchema } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user } from "../../db/schema";
+import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
+import { jobNameFromQuote } from "./job-name";
 
 export type CreateJobInput = z.infer<typeof createJobSchema>;
 export type UpdateJobInput = z.infer<typeof updateJobSchema>;
@@ -159,9 +160,22 @@ export class JobsService {
 
     await this.conversionGuard.check(orgId, quoteId, confirm);
 
+    // US-JOB-23: named after the quote's first item and the customer.
+    const [firstItem] = await this.db
+      .select({ name: quoteLines.name })
+      .from(quoteLines)
+      .where(and(eq(quoteLines.quoteId, quoteId), eq(quoteLines.type, "item")))
+      .orderBy(asc(quoteLines.sortOrder))
+      .limit(1);
+    const [customer] = await this.db.select({ name: contacts.name }).from(contacts).where(eq(contacts.id, quote.contactId));
+    const [{ count: earlier } = { count: 0 }] = await this.db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(jobs)
+      .where(and(eq(jobs.orgId, orgId), eq(jobs.sourceQuoteId, quoteId)));
+
     const input: CreateJobInput = {
       contactId: quote.contactId,
-      name: quote.number ? `Job for ${quote.number}` : "New job",
+      name: jobNameFromQuote(firstItem?.name, customer?.name, earlier + 1),
       siteAddress: null,
       currency: quote.currency,
       startDate: null,
