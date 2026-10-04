@@ -2144,6 +2144,20 @@ Settings › Tax.
 4. On a fresh install (empty database), `/signup` shows the first-account
    form.
 
+## 32. Password reset (US-AUTH-09, US-AUTH-10, Phase 6)
+
+1. Signed out, `/login` → "Forgot password?" → `/forgot-password` with "Reset your password", the explanation, "Email", "Send reset link", "The link works once and expires in 1 hour." and "Back to log in".
+2. Enter an address with no account → "Check your email" naming it. The resend button reads "Resend link in 0:59" and counts down; after 60 seconds it reads "Resend link" and works.
+3. Enter your own address. With SMTP set up, an email "Reset your Spine password" arrives. Without SMTP the page looks the same and the API log says no link was sent (and shows no token).
+4. Open the link in another browser while still signed in in the first: "Choose a new password", "For <your email>. You'll be signed out on your other devices."
+5. Type two different passwords → "The passwords don't match." under "Confirm new password". Type a matching pair → the dashboard opens, signed in.
+6. In the first browser, reload: you're sent to `/login`. The old password fails; the new one works. On the phone app, the next request signs you out too.
+7. Open the same link again → "This link can't be used" with "Request a new one".
+8. On the phone app's login, "Forgot password?" opens the web page in the phone's browser.
+9. Send 11 reset requests within 15 minutes from one network → the 11th shows "Too many reset requests from this network. Wait 15 minutes and try again."
+
+Regression: `/login` still signs in, and shows "Sign up" only on a fresh install (§31).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

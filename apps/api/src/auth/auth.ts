@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
 import { assertSignupAllowed } from "./signup-policy";
+import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
@@ -55,6 +57,23 @@ export const auth = betterAuth({
       hash: hashPassword,
       verify: verifyPassword,
     },
+    // US-AUTH-09/10 — reset by emailed link. One use, one hour, and a
+    // successful reset signs the account out everywhere else.
+    sendResetPassword: async ({ user, token }) => sendResetPasswordEmail({ user, token }),
+    resetPasswordTokenExpiresIn: RESET_TOKEN_TTL_SECONDS,
+    revokeSessionsOnPasswordReset: true,
+  },
+  hooks: {
+    /**
+     * US-AUTH-09 — reset requests are limited per IP here (Better Auth's own
+     * rate limiter is off outside production and would also throttle
+     * sign-in); the per-email limit lives in `sendResetPasswordEmail`.
+     */
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/request-password-reset") return;
+      const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
+      if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });
+    }),
   },
   /**
    * Explicit, not Better Auth's undocumented defaults (7-day expiresIn /

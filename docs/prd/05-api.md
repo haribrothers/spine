@@ -422,6 +422,8 @@ Routes the stories add. Each is created by the story named.
 | AUTH | POST | `/api/auth/request-password-reset` (Better Auth) | Public | US-AUTH-09 |
 | AUTH | POST | `/api/auth/reset-password` (Better Auth) | Public (token) | US-AUTH-10 |
 | AUTH | GET | `/public/signup-status` → `{ open: boolean, businessName? }` | Public | US-AUTH-08 |
+| AUTH | GET | `/public/password-reset/:token` → `{ email }`; 404 when the link is unknown, used or expired. Doesn't consume the token | Public (token) | US-AUTH-10 |
+| AUTH | GET | `/public/forgot-password` → 302 to `APP_URL/forgot-password` (the phone app's "Forgot password?") | Public | US-AUTH-09 |
 | CRM | GET/PUT | `/org/lead-stages` (list, replace ordered set; deleting a stage with leads needs `moves`) | GET any member; PUT Owner | US-CRM-19, US-CRM-20 |
 | QUO | — | `POST /quotes/:id/accept-in-person` gains `signerName` (required) and stores `signatureFileId` | `quotes.accept_in_person` | US-QUO-19 |
 | RPT | GET | `/reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv` (lines: accountId, code, name, debit, credit; totalDebit, totalCredit, balanced) | roles: owner | US-RPT-13 |

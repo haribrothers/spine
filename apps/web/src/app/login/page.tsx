@@ -127,6 +127,11 @@ function LoginForm() {
               )}
             </FormField>
 
+            {/* US-AUTH-09 */}
+            <Link href="/forgot-password" className="-mt-2 self-end text-[13px] text-primary hover:underline">
+              Forgot password?
+            </Link>
+
             <Button type="submit" disabled={loading} className="mt-1">
               {loading ? <Spinner size="sm" /> : "Log in"}
             </Button>

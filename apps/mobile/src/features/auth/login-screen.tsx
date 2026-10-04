@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 import { Button, Spinner, TextField } from "@spine/ui-native";
 import { authClient } from "../../lib/auth/auth-client";
 
@@ -12,6 +13,15 @@ import { authClient } from "../../lib/auth/auth-client";
  * and swaps to the real tab navigator — this screen doesn't navigate
  * itself.
  */
+/**
+ * US-AUTH-09 (D-052) — password reset happens on the web. The phone only
+ * knows the API's address, which redirects to the web page.
+ */
+function openForgotPassword() {
+  const apiUrl = (process.env.EXPO_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
+  void WebBrowser.openBrowserAsync(`${apiUrl}/public/forgot-password`);
+}
+
 export function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +82,10 @@ export function LoginScreen() {
               textContentType="password"
             />
           </View>
+
+          <Button variant="ghost" onPress={openForgotPassword} testID="forgot-password">
+            Forgot password?
+          </Button>
 
           <Button onPress={handleSignIn} disabled={loading || !email.trim() || !password}>
             {loading ? <Spinner size="sm" label="Signing in" /> : "Sign in"}

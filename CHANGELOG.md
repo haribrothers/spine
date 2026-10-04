@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-AUTH-09, US-AUTH-10: reset a forgotten password (Phase 6)
+
+- **Ask for a link.** "Forgot password?" on `/login` opens `/forgot-password`: "Reset your password", "Enter the email you sign in with and we'll send you a link to choose a new password.", "Email", "Send reset link", "The link works once and expires in 1 hour." and "Back to log in". The same page shows whether or not email (SMTP) is set up (D-084).
+- **Check your email.** `/forgot-password/sent` says "If an account exists for <email>, we've sent a link to reset its password. The link works once and expires in 1 hour." for any address. "Resend link in 0:45" counts down and stays disabled for 60 seconds. The address is kept in the tab's session storage, never in the URL.
+- **Limits.** 10 requests per IP address per 15 minutes, then 429 "Too many reset requests from this network. Wait 15 minutes and try again."; at most 3 emails per address per hour (later requests get the same answer, but nothing is sent). Both are in memory, per API process (D-119).
+- **The email.** "Reset your Spine password", linking to `APP_URL/reset-password?token=…`. Without SMTP nothing is sent and a warning is logged without the token. An SMTP failure is logged and the answer doesn't change. The branded layout comes with US-NTF-11.
+- **Choose a new password.** `/reset-password?token=` shows "Choose a new password", "For <email>. You'll be signed out on your other devices.", "New password" ("At least 8 characters.") and "Confirm new password". Mismatched passwords show "The passwords don't match." and nothing is sent. "Save password" sets the password, ends every session for the account (web and phone), signs this browser in and opens the dashboard.
+- **Used or expired links** show "This link can't be used" with "Request a new one". The token works once and expires after 1 hour.
+- **Phone.** "Forgot password?" on the mobile login opens `/public/forgot-password` on the API in the phone's browser, which redirects to the web page (D-052); the app only knows the API's address.
+- **API.** Better Auth `sendResetPassword`, `resetPasswordTokenExpiresIn: 3600`, `revokeSessionsOnPasswordReset: true` and a `hooks.before` IP limit. New `GET /public/password-reset/:token` → `{ email }` (404 when unknown, used or expired; doesn't consume the token) and `GET /public/forgot-password` (302 to the web page).
+
+Tests:
+- `us-auth-09.test.ts` (6): the email's link and copy; no SMTP sends nothing; an SMTP failure is swallowed; 3 emails per address per hour; the sliding window; token encoding.
+- `us-auth-09.http.integration.test.ts` (5): the same answer for known and unknown emails; a one-hour token; the per-IP 429; the phone redirect; no token for an unknown email.
+- `us-auth-10.http.integration.test.ts` (5): the lookup shows the email; unknown and expired links 404 and can't reset; a short password is refused; a reset ends every session, swaps the password and can't be replayed.
+- `apps/e2e/tests/us-auth-09.spec.ts` (3) and `us-auth-10.spec.ts` (2): the link from login and the copy; the sent page and its 60-second countdown; the whole flow through a real email, including the mismatch error, the other device signed out, the old password refused and the used link.
+
 ### 2026-10-04 — US-AUTH-08: see that sign-up is invite-only (Phase 6)
 
 - **The sign-up page.** Once an instance has an account, `/signup` without an invitation shows "This Spine is invite-only" and "<Business name> already has an owner, so new accounts are created by invitation. Ask an owner to invite you — you'll get an email with a link to join.", with "Log in" and no form. The business name comes from the first organisation's business profile, the only detail shown to anonymous visitors (D-084).
