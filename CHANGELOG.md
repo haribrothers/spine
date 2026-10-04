@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-QUO-22: keep emailed links working until the quote is replaced (Phase 6)
+
+- **Finding C8, explained.** The demo's fourth quote (QUO-0003) is seeded as "revised": it was sent and emailed, then revised. Revising revokes every link for the old version, and that's intended. But the revision was left as a draft, so the quote still read "sent" while its only emailed link was dead.
+- **Fix.** The demo now sends the revision as well. The current version is "sent" with a working emailed link; the replaced version's link shows the branded "This quote link has expired" page (US-QUO-21).
+- **Confirmed unchanged.** A link lasts 30 days. Issuing another link for the same quote never revokes the earlier ones; a queued email retry reuses its own token. Only revising a quote revokes its links. There is no separate "resend" action that could rotate tokens.
+
+Tests:
+- `us-quo-22.http.integration.test.ts` (4): every demo quote that's sent and current has an emailed link that opens; the revised demo quote's old link answers 410 "expired" while its sent revision's link opens; two links for one quote both work; a link lasts 30 days.
+
 ### 2026-10-04 — US-QUO-21: show a branded page for an expired or invalid link (Phase 6)
 
 - **Expired or replaced.** A quote link we issued that has run out (30 days), been revoked or replaced by a revision now shows the business logo and name, "This quote link has expired" and "The link you opened is no longer active — the quote may have been updated or replaced. Contact <Business> and they'll send you the latest version.". A box follows with the business's address, email (mailto) and phone (tel), and "Sent with Spine".

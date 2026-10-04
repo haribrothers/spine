@@ -1136,8 +1136,13 @@ export class DemoDataService {
         quotesSent++;
       }
       if (seed.outcome === "revised") {
-        await this.quotesService.revise(orgId, quote.id, actorUserId);
+        // US-QUO-22: revising replaces the emailed link, so the revision is
+        // sent too — every current demo quote that reads "sent" has a link
+        // that opens, and only the replaced version shows "expired".
+        const revision = await this.quotesService.revise(orgId, quote.id, actorUserId);
+        await this.quotesService.send(orgId, revision.id, actorUserId);
         quotesRevised++;
+        quotesSent++;
       }
     }
 

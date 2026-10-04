@@ -2216,6 +2216,14 @@ Regression: Meeting reminders on the profile still save; the notification bell s
 
 Regression: accepting and declining a quote on its public page still work (§3); onboarding's business step still saves.
 
+## 39. Emailed quote links stay live (US-QUO-22, Phase 6)
+
+1. Load demo data. In MailDev, open each demo quote email's "View quote" link: every quote whose current version is "sent" opens.
+2. QUO-0003 was revised by the demo: its first email's link shows "This quote link has expired"; the email for its revision opens the revised quote.
+3. Send a quote, wait a day (or advance the clock), and open the link again: it still loads. It stops only after 30 days or when you revise the quote.
+
+Regression: the quotes list still groups a revised quote under its newest version with "Superseded" on the old one.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
