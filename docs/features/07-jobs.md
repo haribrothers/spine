@@ -1,8 +1,8 @@
 # 07 · Jobs & milestones
 
-A job is the work behind an accepted quote: its contract value, billing milestones (percentages or fixed amounts that must add up), retention held on each progress invoice and released at the end, variation orders that change the scope, site photos and notes, the crew assigned to it, and live costing from the ledger.
+A job is the work behind an accepted quote: its contract value, billing milestones (percentages or fixed amounts that must add up), retention held on each progress invoice and released at the end, variation orders that change the scope, site photos and notes, the crew assigned to it, and live costing from the ledger — against a cost budget, split by cost category, with how much of the contract has been billed.
 
-**Screens:** `JobsList` (P1), `JobsEmpty` (P1), `JobFromQuote` (P1), `JobEditDialog` (P1), `JobMilestones` (P1), `MilestonesEditor` (P1), `CompleteMilestoneDialog` (P1), `ReleaseRetentionConfirm` (P2), `JobVariations` (P2), `RaiseVariationDialog` (P2), `JobPhotos` (P2), `JobNotes` (P2), `JobCosting` (P1), `JobCrew` (P2), `InvoiceDetailProgress` (P1), `MobJobsList` (P1), `InvoiceDetailRetention` (P1)
+**Screens:** `JobsList` (P1), `JobsEmpty` (P1), `JobFromQuote` (P1), `JobEditDialog` (P1), `JobMilestones` (P1), `MilestonesEditor` (P1), `CompleteMilestoneDialog` (P1), `ReleaseRetentionConfirm` (P2), `JobVariations` (P2), `RaiseVariationDialog` (P2), `JobPhotos` (P2), `JobNotes` (P2), `JobCosting` (P1), `JobCrew` (P2), `InvoiceDetailProgress` (P1), `MobJobsList` (P1), `InvoiceDetailRetention` (P1), `JobEditDialogBudget` (P1), `JobCostingBudget` (P1), `JobsListBilling` (P1), `InvoiceDetailProgressClaim` (P2)
 **Depends on:** 06 Quotes (conversion, variation quotes), 08 Invoicing (progress and retention invoices), 10 Purchases (costs), 17 Mobile.
 
 ## Features
@@ -17,6 +17,7 @@ A job is the work behind an accepted quote: its contract value, billing mileston
 | F-JOB-06 | Job costing | P1 | 4 | `JobCosting` |
 | F-JOB-07 | Crew assignment | P2 | 5 | `JobCrew`, `MobJobsList` |
 | F-JOB-08 | Own/others job and milestone rights | P1 | 4 | `JobMilestones`, `JobEditDialog` |
+| F-JOB-09 | Cost budget and billing progress | P1 | 7 | `JobEditDialogBudget`, `JobCostingBudget`, `JobsListBilling`, `InvoiceDetailProgressClaim` |
 
 ## User stories
 
@@ -365,3 +366,112 @@ Decision: D-090
 **Implementation notes**
 - Quotes have no title field, so the "no title" rule applies to every quote for now ([D-122](../prd/12-decisions.md)).
 - API: `JobsService.createFromQuote` naming; one-off backfill migration.
+
+### US-JOB-24 · Set a cost budget for a job
+**Feature:** F-JOB-09 · **Priority:** P1 · **Phase:** 7 · **Screens:** `JobEditDialogBudget`
+**As** an owner, **I want** to record what a job should cost, **so that** I can see spending against a target, not just against revenue.
+
+Decision: D-125
+
+**Acceptance criteria**
+- **Given** a job, **when** I press "Edit job", **then** the dialog shows "Cost budget" (helper "What you expect this job to cost. Leave blank if you don't budget it.") after "Retention %".
+- **Given** I enter 32,000.00 and save, **when** the job reloads, **then** the budget is 32,000.00 and the job's history records the change from "—" to 32,000.00 with who and when.
+- **Given** a negative amount, **when** I save, **then** I see "Enter a budget of zero or more." and nothing saves.
+- **Given** I clear the field and save, **when** the job reloads, **then** it has no budget and the Costing tab shows "No budget set" (US-JOB-25).
+- **Given** a Field user, **when** any job response is returned, **then** it has no `costBudgetAmount` field (US-JOB-19).
+- **Given** an accepted variation order is applied (US-JOB-10), **when** the contract value rises, **then** the budget is unchanged until someone edits it.
+
+**Implementation notes**
+- API: `PUT /jobs/:id` accepts `costBudgetAmount` (minor units, nullable, ≥ 0); `GET /jobs/:id` returns it to Owners and Staff (`jobs.edit_own`/`edit_others` to change it).
+- Data: `jobs.cost_budget_amount bigint` (nullable).
+- The budget is a target, not a ledger figure: nothing posts when it changes.
+
+### US-JOB-25 · See budget spent and get warned before going over
+**Feature:** F-JOB-09 · **Priority:** P1 · **Phase:** 7 · **Screens:** `JobCostingBudget`, `JobsListBilling`, `DashboardOwnerConstruction`
+**As** an owner, **I want** each job to show how much of its budget is used, **so that** I act before a job loses money.
+
+Decision: D-125
+
+**Acceptance criteria**
+- **Given** a job with a 32,000.00 budget and 24,800.00 of cost, **when** I open "Costing", **then** a "Budget" card shows "Cost budget 32,000.00", "Spent 24,800.00", "Remaining 7,200.00" and a bar labelled "78% of budget used".
+- **Given** cost reaches 80% of the budget, **when** the card renders, **then** the bar shows the warning colour and the label "Nearing budget — 85% used" with a warning icon.
+- **Given** cost passes the budget, **when** the card renders, **then** it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" shows "−1,450.00", and the bar is full.
+- **Given** a job with no budget, **when** the card renders, **then** it reads "No budget set" with "Set a budget" opening the edit dialog (hidden without `jobs.edit_*` on this job).
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Budget used" column shows each job's percentage with the same three states in text ("78%", "Nearing · 85%", "Over · 104%"), and "—" for jobs without a budget.
+- **Given** jobs over budget and a member with `reports.view_job_profitability`, **when** "Needs your attention" renders (US-DASH-12), **then** a row reads "<n> job(s) over budget" naming the first job and how much it is over, with "Review" opening its Costing tab; the row comes after vendor bills due.
+
+**Implementation notes**
+- API: `GET /jobs/:id/costing` gains `budget: { amount, spent, remaining, usedPct, state: "none"|"ok"|"near"|"over" }`; `GET /jobs?include=costing` adds `budgetUsedPct` and `budgetState` per job only for callers with `reports.view_job_profitability`; `/dashboard/attention` gains kind `job_over_budget` (same capability).
+- "Spent" is the job's cost from `journal_lines.job_id` (D-011), the same figure as "Cost" (US-JOB-13).
+- Thresholds: near at ≥ 80%, over at > 100%. Colour is never the only signal (icon and text).
+
+### US-JOB-26 · See a job's cost by category
+**Feature:** F-JOB-09 · **Priority:** P1 · **Phase:** 7 · **Screens:** `JobCostingBudget`
+**As** an owner, **I want** a job's cost split into materials, labour, subcontractors, plant and the rest, **so that** I can see which kind of cost is running away.
+
+**Acceptance criteria**
+- **Given** a job with recorded bills and approved expenses, **when** I open "Costing", **then** a "Cost by category" card lists each expense account that carries cost for the job with its amount and share ("Cost of Materials · 11,200.00 · 45%"), largest first, with a donut beside it.
+- **Given** the rows, **when** they're totalled, **then** the sum equals "Cost" exactly.
+- **Given** a member with `ledger.view`, **when** they click a row, **then** the account drill-down opens filtered to this job (US-RPT-03); without it the rows aren't links.
+- **Given** a job with no cost, **when** the card renders, **then** it reads "No costs yet — bills and approved expenses tagged to this job show up here.".
+- **Given** more than six accounts, **when** the donut renders, **then** it shows the five largest and "Other", while the list shows every account.
+
+**Implementation notes**
+- API: `GET /jobs/:id/costing` gains `byCategory: [{ accountId, code, name, amount, sharePct }]`, grouped from `journal_lines` with this `job_id` on expense accounts (D-011). Never from documents.
+- A category is the expense account a bill line or expense category posts to; the Construction template's defaults (US-ONB-13) make these read as materials, subcontractors, labour, plant hire, fuel and freight, and site overheads.
+- UI: `DonutChart`; amounts and shares are written beside each slice (colour isn't the only signal).
+
+### US-JOB-27 · See how much of the contract has been billed
+**Feature:** F-JOB-09 · **Priority:** P1 · **Phase:** 7 · **Screens:** `JobCostingBudget`, `JobsListBilling`
+**As** an owner, **I want** to see billed to date against the contract value, **so that** I know how much is left to claim.
+
+Decision: D-127
+
+**Acceptance criteria**
+- **Given** a job with a 48,500.00 contract and issued progress invoices totalling 19,400.00, **when** I open "Costing", **then** a "Billing" card shows "Contract value 48,500.00", "Billed to date 19,400.00 (40%)" and "Left to bill 29,100.00" with a bar.
+- **Given** a credit note against one of those invoices, **when** I reload, **then** "Billed to date" drops by the credit note's total.
+- **Given** an advance invoice or a retention-release invoice on the job, **when** billed to date is worked out, **then** neither counts (the deposit is counted once it's offset on a progress invoice).
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Billed" column shows each job's percentage ("40%").
+- **Given** billed to date exceeds the contract value, **when** the card renders, **then** "Left to bill" reads "Billed over contract by <amount>" so a missing variation order is noticed.
+
+**Implementation notes**
+- API: `GET /jobs/:id/costing` gains `billing: { contractValue, billedToDate, billedPct, leftToBill }`; `GET /jobs?include=costing` adds `billedPct`.
+- Billed to date is gross (tax included, before retention), read from `journal_lines` with this `job_id` on 1100 AR and 1150 Retention Receivable for `invoice` and `credit_note` entries, excluding retention-release entries (D-127). The contract value is the quote total, which also includes tax.
+
+### US-JOB-28 · Record how complete a job is and compare it with billing
+**Feature:** F-JOB-09 · **Priority:** P2 · **Phase:** 7 · **Screens:** `JobEditDialogBudget`, `JobCostingBudget`
+**As** an owner, **I want** to set a job's percent complete and see it beside billed %, **so that** I spot over-billing or work I haven't claimed yet.
+
+Decision: D-127
+
+**Acceptance criteria**
+- **Given** "Edit job", **when** it opens, **then** it shows "Percent complete" (0–100, helper "Your estimate of how much of the work is done.").
+- **Given** 120 or a negative number, **when** I save, **then** I see "Enter a percentage from 0 to 100." and nothing saves.
+- **Given** a job 55% complete and 40% billed, **when** I open "Costing", **then** the Billing card shows "Work complete 55%" and "Billing is 15 points behind the work — check for a milestone to invoice."
+- **Given** a job 30% complete and 40% billed, **when** the card renders, **then** it reads "Billing is 10 points ahead of the work."
+- **Given** the gap is under 10 points or percent complete is blank, **when** the card renders, **then** no comparison line is shown.
+- **Given** a Field user, **when** a job response is returned, **then** `percentComplete` is included (it isn't money) but the billing comparison isn't.
+
+**Implementation notes**
+- API: `PUT /jobs/:id` accepts `percentComplete` (0–100, nullable); `GET /jobs/:id/costing` `billing` gains `percentComplete` and `gapPts` (billed % − complete %).
+- Data: `jobs.percent_complete numeric(5,2)` (nullable).
+- Edge: setting a job to "Completed" doesn't change percent complete; the owner sets it.
+
+### US-JOB-29 · Number each progress claim on a job
+**Feature:** F-JOB-02 · **Priority:** P2 · **Phase:** 7 · **Screens:** `InvoiceDetailProgressClaim`
+**As** office staff, **I want** each progress invoice to say which claim it is on the job, **so that** the customer and I can refer to "claim 3" the way the trade does.
+
+Decision: D-128
+
+**Acceptance criteria**
+- **Given** a job whose first two progress invoices are issued, **when** a third is issued, **then** it shows "Progress claim 3" in its header beside the job and milestone.
+- **Given** a draft progress invoice, **when** I view it, **then** no claim number is shown ("Claim number is given when the invoice is issued.").
+- **Given** claim 2 is voided, **when** the next progress invoice on that job is issued, **then** it is claim 3 and claim 2 keeps its number, shown as "Progress claim 2 (void)".
+- **Given** the invoice PDF and email, **when** they render, **then** they show "Progress claim 3 · <job number>" under the invoice number.
+- **Given** an advance, standard or retention-release invoice, **when** it's issued, **then** it gets no claim number.
+
+**Implementation notes**
+- Data: `invoices.progress_claim_no integer` (nullable); unique (`job_id`, `progress_claim_no`); allocated in the issuing transaction as max + 1 for the job under the job row's lock.
+- The invoice keeps its gapless organisation-wide number (D-007); the claim number is a per-job label, not a document number.
+- API: invoice responses gain `progressClaimNo`; the issued PDF stored at issue includes it (US-INV-17).
+

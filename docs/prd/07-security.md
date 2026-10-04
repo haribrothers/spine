@@ -30,7 +30,7 @@
 |---|---|---|---|
 | Owner | One or more; full access to everything | No | Exactly one **Primary Owner** (DB partial unique index); only they can transfer that flag, and nobody can demote, deactivate or remove them |
 | Staff | Office users | Yes — through Teams | Effective grant = union of their Teams' grants; no deny. Removing the last Team leaves read-only access |
-| Field | Field crew | No (fixed) | Reads contacts/catalogue and only jobs they're assigned to, with no money fields ([D-072](12-decisions.md), US-JOB-19); own expenses; photos/notes on assigned jobs; completes any milestone on an assigned job; presents, accepts and declines the job's quotes in person ([D-073](12-decisions.md)); never financial reports or job costing |
+| Field | Field crew | No (fixed) | Reads contacts/catalogue and only jobs they're assigned to, with no money fields — including the cost budget (US-JOB-24) — ([D-072](12-decisions.md), US-JOB-19); own expenses; photos/notes on assigned jobs; completes any milestone on an assigned job; presents, accepts and declines the job's quotes in person ([D-073](12-decisions.md)); never financial reports or job costing |
 | Customer | Quote link holder | — | Reads one quote; accepts or declines while it's `sent` |
 
 ## What every member can do without a capability
@@ -142,3 +142,15 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 - Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs, their own expenses and contacts.
 - Bulk endpoints run each item through the same capability and ownership checks as the single-item route.
 - Statements require `reports.view_receivables`.
+
+## Added with the construction costing stories (D-125–D-130)
+
+No new capabilities: every new figure reuses an existing grant, in both the API and the UI.
+
+- Job cost budget (US-JOB-24) is a money field: changed with `jobs.edit_own`/`edit_others`, omitted from every Field response like the contract value (US-JOB-19). Percent complete (US-JOB-28) isn't money and Field may read it.
+- Budget used, cost by category and billed to date (US-JOB-25–27, US-RPT-15) come only from `GET /jobs/:id/costing`, `GET /jobs?include=costing` and `GET /reports/job-profitability`, all gated by `reports.view_job_profitability`. On `GET /jobs` the extra fields are omitted for callers without it, never a 403, so the list still works for them. The `job_over_budget` attention row follows the same grant.
+- The retention card (US-DASH-20) is a receivable: `reports.view_receivables`.
+- Labour expenses (US-PUR-23) follow the expense rules unchanged: Field submits their own; review needs `expenses.approve`/`expenses.reject`, never your own as Staff (D-085). `GET /expenses/labour-trades` returns trade names and day rates from expenses the caller may read, and nothing for a Field user beyond their own.
+- The cost-category drill-down (US-JOB-26) needs `ledger.view`, as the account drill-down already does.
+- Seeding the Construction template's accounts and categories (US-ONB-13) is part of the Owner-only industry template setting.
+

@@ -38,9 +38,11 @@
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
 | Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
 | Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 8 (US-SITE-14) | Product owner |
+| Q-16 | When a customer certifies less than a progress claim, should Spine record the claimed and certified amounts on the invoice? Today the office issues a credit note for the difference after issue, or edits the draft before issuing | Keep credit notes · Record a certified amount on the draft before issue (claimed amount kept for reference) · Add a certification step after issue that raises the credit note automatically | Before the next construction round | Product owner + accountant |
 
 ## Design follow-ups
 
+- Captured screens and drawn screens from before Phase 7 show the flat white light mode; D-131 moves the light page to `#F7F6F3`. Retake each capture when its screen is next touched after US-OPS-32 ships.
 - Screens drawn on the canvas (not yet built) are marked "Drawn" in [screens.md](../design/screens.md); replace each with a capture when its story ships.
 - `TextField`'s placeholder colour is not dark-mode aware on native ([native notes](../design/native-notes.md)); fix with `useColorScheme()` when reported or during US-OPS-17.
 - The Android Today screen's single floating action ([D-051](12-decisions.md)) needs a usability check with a field user.

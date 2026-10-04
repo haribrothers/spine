@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — Spec: construction job costing and light-mode surfaces (Phase 7 planning, docs only)
+
+Ideas reviewed from a client's AI-generated prototype ("BuildLedger.Pro", a single HTML file) and specced as Phase 7 stories. Nothing is built yet; every story is unticked in `docs/progress.md`.
+
+- **Stories (12).** US-JOB-24 cost budget, US-JOB-25 budget used and the over-budget attention row, US-JOB-26 cost by category, US-JOB-27 billed to date, US-JOB-28 percent complete vs billed, US-JOB-29 progress claim numbers, US-PUR-22 job filter on bills and expenses, US-PUR-23 labour as headcount × day rate, US-ONB-13 Construction template cost categories, US-RPT-15 contract/billed/cost chart, US-DASH-20 retention held and jobs in progress, US-OPS-32 warm light-mode page so cards lift off it.
+- **Decisions.** D-125 (one budget per job, never posted), D-126 (labour is an expense, not payroll or attendance), D-127 (billed to date is gross, from journal lines), D-128 (per-job claim label beside the gapless number), D-129 (template seeding is idempotent), D-130 (retention never reduces taxable value), D-131 (light `background` `#F7F6F3`, `surface` stays white).
+- **Contracts.** New columns and the `expense_labour_lines` table in 04, route changes in 05's contract additions, notes in 06 and 07 (no new capabilities). Q-16 (claimed vs certified amounts) added to open questions.
+- **Design.** Nine new drawn screens (`JobCostingBudget`, `JobEditDialogBudget`, `JobsListBilling`, `InvoiceDetailProgressClaim`, `ReportsJobProfitabilityChart`, `DashboardOwnerConstruction`, `ExpenseDialogLabour`, `ExpensesJobFilter`, `ExpenseCategoriesConstruction`) on the canvas and in `docs/design/screens/`; the four light dashboard redesign screens redrawn on the warm page. `tokens.json`, `DESIGN.md` and the Tailwind preset keep `#FFFFFF` until US-OPS-32 is built.
+- Not adopted from the prototype: deleting issued bills, expenses without approval, and tax computed after retention.
+
 ### 2026-10-05 — US-OPS-21: remove developer wording from the interface (Phase 6)
 
 - **Helpers.**

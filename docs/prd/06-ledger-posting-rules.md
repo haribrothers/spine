@@ -60,3 +60,6 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 - A practising accountant has not yet reviewed this table ([Q-02](13-risks-open-questions.md), [R-01](13-risks-open-questions.md)).
 - An invoice with allocated payments can't be voided (P9 is refused); the correction is a credit note ([D-074](12-decisions.md)).
 - Expenses paid by an employee still credit Bank (P15); an "employee reimbursements payable" account is not modelled ([Q-05](13-risks-open-questions.md)).
+- Labour entered as headcount × day rate (US-PUR-23) is an ordinary expense: it posts P15 to its category's account (5200 Direct Labour by default) with the job's `job_id`. No new posting.
+- Job budgets (US-JOB-24) and percent complete (US-JOB-28) never post. Billed to date (US-JOB-27) is read from `invoice` and `credit_note` lines on 1100 and 1150 tagged to the job, excluding retention-release entries ([D-127](12-decisions.md)).
+- Retention never reduces the taxable value: tax is charged on the full progress claim and retention is held from the total (P2, [D-130](12-decisions.md)).

@@ -467,6 +467,17 @@ Routes the stories add. Each is created by the story named.
 | NTF | PUT | `/users/me/notification-preferences { digestEnabled, digestTime, digestDays }` | Self | US-NTF-14 |
 | SET | POST/GET | `/org/exports`; GET `/org/exports/:id/download` | roles: owner | US-SET-15, US-SET-16 |
 | OPS | GET | `/search?q=&limit=5` | Any member (results filtered by each module's read rules) | US-OPS-22 |
+| JOB | — | `PUT /jobs/:id` accepts `costBudgetAmount` (minor units, nullable, ≥ 0; else 400 "Enter a budget of zero or more.") and `percentComplete` (0–100, nullable; else 400 "Enter a percentage from 0 to 100."); `GET /jobs`, `GET /jobs/:id` return both (Field: no `costBudgetAmount`) | `jobs.edit_own`/`edit_others` to change | US-JOB-24, US-JOB-28 |
+| JOB | — | `GET /jobs/:id/costing` gains `budget { amount, spent, remaining, usedPct, state: none\|ok\|near\|over }`, `byCategory [{ accountId, code, name, amount, sharePct }]` and `billing { contractValue, billedToDate, billedPct, leftToBill, percentComplete, gapPts }`, all from `journal_lines` | `reports.view_job_profitability` | US-JOB-25–28 |
+| JOB | GET | `/jobs?include=costing` adds `billedPct`, `budgetUsedPct`, `budgetState` per job, only for callers with the capability (omitted otherwise, never 403) | Any member; fields need `reports.view_job_profitability` | US-JOB-25, US-JOB-27 |
+| JOB | — | Invoice responses and the issued PDF gain `progressClaimNo` (progress invoices, set at issue) | as the route | US-JOB-29 |
+| DASH | — | `GET /dashboard/attention` gains kind `job_over_budget` | `reports.view_job_profitability` | US-JOB-25 |
+| DASH | GET | `/dashboard/retention` → `{ total, jobCount, jobs: [{ id, number, name, held }] }` from `journal_lines` on 1150 | `reports.view_receivables` | US-DASH-20 |
+| PUR | — | `GET /vendor-bills?jobId=` and `GET /expenses?jobId=` | as the list route | US-PUR-22 |
+| PUR | — | `POST/PUT /expenses` accept `entryMode: amount\|labour` and `labourLines [{ trade, headcount, dayRateAmount }]` (1–20; the server computes `amount`; a mismatching client amount → 400; labour without `jobId` → 400 "Labour is always for a job — choose one.") | `expenses.edit_own` (Field always for own) | US-PUR-23 |
+| PUR | GET | `/expenses/labour-trades?q=` → `[{ trade, lastDayRateAmount }]` | Readers of expenses | US-PUR-23 |
+| ONB | — | `PUT /org/settings/industry_template` with `construction` seeds accounts and expense categories in the same transaction; response gains `seeded { accounts, categories, kept }` | roles: owner | US-ONB-13 |
+| RPT | — | `GET /reports/job-profitability?status=` rows and `export.csv` gain `billedToDate`, `billedPct`, `costBudget`, `budgetUsedPct` | `reports.view_job_profitability` | US-RPT-15 |
 
 | OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged or missing file → 409 "This file is damaged. Restore it from your latest backup." (streamed files are verified on every read; presigned `s3` files are verified by the weekly check and refused once flagged) | Readers of the owning record | US-OPS-27, US-OPS-28 |
 | OPS | GET | `/files/integrity` → `{ problemCount, message, files: [{ id, problem, label }] }` — files whose last check failed, labelled by the record they belong to | roles: owner | US-OPS-28 |

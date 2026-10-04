@@ -2,7 +2,7 @@
 
 The books Spine keeps underneath: a seeded chart of accounts owners can extend, fiscal periods that can be closed, and the reports an owner and accountant need — Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and job profitability — all derived from journal lines, all drillable to the source documents and exportable to CSV.
 
-**Screens:** `ReportsPL` (P1), `ReportsEmpty` (P2), `ReportsBalanceSheet` (P1), `ReportsJobProfitability` (P1), `AccountDrilldownDialog` (P1), `SettingsAccounts` (P2), `AddAccountDialog` (P2), `TeamPrivileges` (P1), `ReportsTrialBalance` (P2), `ReportsTaxSummary` (P1), `DashboardOwner` (P1)
+**Screens:** `ReportsPL` (P1), `ReportsEmpty` (P2), `ReportsBalanceSheet` (P1), `ReportsJobProfitability` (P1), `AccountDrilldownDialog` (P1), `SettingsAccounts` (P2), `AddAccountDialog` (P2), `TeamPrivileges` (P1), `ReportsTrialBalance` (P2), `ReportsTaxSummary` (P1), `DashboardOwner` (P1), `ReportsJobProfitabilityChart` (P1)
 **Depends on:** every posting module (06-ledger-posting-rules), 15 Team (report capabilities).
 
 ## Features
@@ -11,7 +11,7 @@ The books Spine keeps underneath: a seeded chart of accounts owners can extend, 
 |---|---|---|---|---|
 | F-RPT-01 | Profit & Loss and Balance Sheet | P1 | 4 | `ReportsPL`, `ReportsEmpty`, `ReportsBalanceSheet` |
 | F-RPT-02 | Drill-down and CSV export | P1 | 4 | `AccountDrilldownDialog`, `ReportsPL` |
-| F-RPT-03 | Job profitability | P1 | 4 | `ReportsJobProfitability` |
+| F-RPT-03 | Job profitability | P1 | 4 | `ReportsJobProfitability`, `ReportsJobProfitabilityChart` |
 | F-RPT-04 | Chart of accounts and period close | P2 | 4 | `SettingsAccounts`, `AddAccountDialog` |
 | F-RPT-05 | Report access rights | P1 | 4 | `TeamPrivileges`, `AccountDrilldownDialog` |
 | F-RPT-06 | Ledger integrity monitoring | P1 | 6 | `DashboardOwner` |
@@ -219,3 +219,23 @@ Legacy: S-08.4 · Decision: D-057 · Findings: C13, C23
 
 **Implementation notes**
 - API: existing `GET /org/tax/summary` (roles: owner); per-rate breakdown reads `invoice_lines` (D-031).
+
+### US-RPT-15 · Compare contract, billed and cost across jobs
+**Feature:** F-RPT-03 · **Priority:** P1 · **Phase:** 7 · **Screens:** `ReportsJobProfitabilityChart`
+**As** an owner, **I want** a chart of each job's contract value, billed to date and cost, **so that** I see at a glance which jobs are under-billed or eating their margin.
+
+Decision: D-127
+
+**Acceptance criteria**
+- **Given** "Job Profitability", **when** it opens, **then** a chart above the table shows three bars per job — "Contract value", "Billed to date" and "Cost" — for active and on-hold jobs, largest contract first, up to 10 jobs, with "Showing 10 of <n> jobs — the table lists them all." when there are more.
+- **Given** a job with a budget, **when** its bars render, **then** a marker on its cost bar shows the budget, labelled in the tooltip ("Budget 32,000.00 · 78% used").
+- **Given** I hover or focus a job, **when** the tooltip opens, **then** it shows contract value, billed to date and %, cost, budget used and margin.
+- **Given** the table, **when** it renders, **then** it gains "Billed to date", "Billed %" and "Budget used" columns after "Contract value", and the CSV export (US-RPT-06) gains the same columns as plain numbers.
+- **Given** a status filter ("Active", "On hold", "Completed", "All"), **when** I change it, **then** the chart and table follow it; the default is "Active and on hold".
+- **Given** a screen reader, **when** it reaches the chart, **then** the chart is labelled "Contract, billed and cost by job" and points to the table as its text alternative.
+
+**Implementation notes**
+- API: `GET /reports/job-profitability?status=` rows gain `billedToDate`, `billedPct`, `costBudget`, `budgetUsedPct`; `export.csv` gains the same columns. Same capability (`reports.view_job_profitability`).
+- Figures are the same as the job's Costing tab (US-JOB-25, US-JOB-27): one service computes both, from `journal_lines` (D-011).
+- UI: grouped `BarChart` with series colours from chart tokens; bars carry value labels on focus, and the legend names each series in text.
+

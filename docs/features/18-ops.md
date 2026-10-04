@@ -2,7 +2,7 @@
 
 What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 8 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
@@ -493,3 +493,24 @@ Decision: D-102
 
 **Implementation notes**
 - Check with `statfs` on `/data/files` every 15 minutes; the banner reuses the `UpgradeNotice` component pattern.
+
+### US-OPS-32 · Lift cards off the page in light mode
+**Feature:** F-OPS-04 · **Priority:** P1 · **Phase:** 7 · **Screens:** `DashboardOwnerRedesign`, `DashboardStaffRedesign`, `DashboardFieldRedesign`, `DashboardCaughtUp`, `DashboardOwnerConstruction`, `JobCostingBudget`, `JobsListBilling`, `ReportsJobProfitabilityChart`, `ExpensesJobFilter`
+**As** a member who uses light mode, **I want** cards to stand out from the page, **so that** busy screens like the dashboard don't read as one white sheet.
+
+Decision: D-131
+
+**Acceptance criteria**
+- **Given** light mode, **when** any signed-in page renders, **then** the page behind the content uses `background` `#F7F6F3`, while cards, tables, dialogs, drawers, menus, the search palette and the sidebar stay `surface` `#FFFFFF` with their 1px `border`.
+- **Given** inputs, selects and buttons that sit directly on the page (filter bars, page headers), **when** they render, **then** they keep their `surface` fill, so they don't take on the page tint.
+- **Given** every text and status colour, **when** it's checked against `background` as well as `surface`, **then** it passes 4.5:1 (`on-surface-muted` 4.85:1, `due-soon` 4.67:1 on `#F7F6F3`) and the contrast test (US-OPS-25) covers both surfaces.
+- **Given** dark mode, **when** any page renders, **then** nothing changes (`background` `#121110`, `surface` `#191815`).
+- **Given** PDFs, customer emails and the public quote page, **when** they're produced, **then** they stay white.
+- **Given** the E2E suite, **when** it runs, **then** light screenshot baselines are updated in the same change and axe passes.
+
+**Implementation notes**
+- Tokens: change `color.light.background` in `docs/design/tokens.json`, `background` in `docs/DESIGN.md`'s front matter and `--color-background` in `packages/config/tailwind-preset.css` in one change; no component hard-codes the value.
+- Audit: page shells use `bg-background`, cards and panels use `bg-surface`. Fix any page container painted with `surface` or card painted with `background` (the app shell, list pages, settings, reports, the job detail tabs).
+- Native: `packages/ui-native/src/tokens` gets the same light `background`; screens that use the system grouped background keep it ([native notes](../design/native-notes.md)).
+- Design: drawn screens on the canvas use the new page colour from Phase 7 on; captured screens are retaken as each one is next touched.
+

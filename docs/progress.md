@@ -285,12 +285,19 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 7 · Product upgrades
 
+- [ ] US-ONB-13 · Start a construction business with site cost categories
 - [ ] US-CRM-19 · Rename, reorder and add pipeline stages
 - [ ] US-CRM-20 · Delete a stage and move its leads
 - [ ] US-CAT-06 · Add a new item while building a quote
 - [ ] US-QUO-24 · Duplicate a quote as a new draft
 - [ ] US-QUO-25 · Save quote lines as a reusable bundle
 - [ ] US-QUO-26 · Add a bundle while building a quote
+- [ ] US-JOB-24 · Set a cost budget for a job
+- [ ] US-JOB-25 · See budget spent and get warned before going over
+- [ ] US-JOB-26 · See a job's cost by category
+- [ ] US-JOB-27 · See how much of the contract has been billed
+- [ ] US-JOB-28 · Record how complete a job is and compare it with billing
+- [ ] US-JOB-29 · Number each progress claim on a job
 - [ ] US-INV-18 · Turn on automatic payment reminders
 - [ ] US-INV-19 · Send reminders on schedule without double-sending
 - [ ] US-INV-20 · Set up a recurring invoice
@@ -301,6 +308,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-PAY-14 · Send a customer a statement
 - [ ] US-PAY-15 · Give customers a clear statement PDF
 - [ ] US-PUR-21 · Approve several expenses at once
+- [ ] US-PUR-22 · Filter bills and expenses by job
+- [ ] US-PUR-23 · Enter site labour as headcount × day rate
 - [ ] US-DASH-12 · See what needs my attention first
 - [ ] US-DASH-13 · Act on an attention item in one click
 - [ ] US-DASH-14 · See key figures with a trend and a comparison
@@ -309,6 +318,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-DASH-17 · Get a staff dashboard of only what I can act on
 - [ ] US-DASH-18 · Get a field dashboard of my day
 - [ ] US-DASH-19 · Read who did what in the activity feed
+- [ ] US-DASH-20 · See retention held and job billing on the dashboard
+- [ ] US-RPT-15 · Compare contract, billed and cost across jobs
 - [ ] US-NTF-13 · Get a daily digest by email
 - [ ] US-NTF-14 · Choose when my digest arrives
 - [ ] US-SET-09 · Pick a theme for the whole organisation
@@ -320,6 +331,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-OPS-22 · Search everything from anywhere
 - [ ] US-OPS-23 · Use search with the keyboard and a screen reader
 - [ ] US-OPS-26 · Use every new screen in dark mode
+- [ ] US-OPS-32 · Lift cards off the page in light mode
 
 ## Phase 8 · Packaging & 1.0
 

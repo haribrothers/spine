@@ -72,6 +72,12 @@ New schema the stories require. Each is created by the story named; until then i
 | Search indexes | `pg_trgm` GIN indexes on contact names, document numbers and job names | US-OPS-22 |
 | `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by the first `file-integrity-check` run), `integrity_problem text` (`damaged`/`missing`, null when intact), `integrity_checked_at timestamptz`; index `(org_id, integrity_problem)` | US-OPS-27, US-OPS-28 |
 | `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
+| `jobs` | `cost_budget_amount bigint` (nullable; a target, never posted). Omitted from Field responses with the other money fields | US-JOB-24 |
+| `jobs` | `percent_complete numeric(5,2)` (nullable, 0–100) | US-JOB-28 |
+| `invoices` | `progress_claim_no integer` (nullable; progress invoices only, set at issue as the job's max + 1 under the job row lock, never reused); unique (`job_id`, `progress_claim_no`) | US-JOB-29 |
+| `expenses` | `entry_mode text not null default 'amount'` (`amount`/`labour`) | US-PUR-23 |
+| `expense_labour_lines` (new) | `id`, `org_id`, `expense_id` → expenses (cascade), `sort_order`, `trade text`, `headcount integer` (> 0), `day_rate_amount bigint` (> 0), `line_amount bigint` (= headcount × day rate); max 20 per expense; the expense `amount` is their sum. No worker names or hours (D-126) | US-PUR-23 |
+| `accounts`, `expense_categories` | Rows seeded when the Construction template is chosen: accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight, 5500 Site Overheads & Permits; six expense categories mapped to 5000–5500. Existing codes and names are kept, never duplicated (D-129) | US-ONB-13 |
 | Rate and quantity columns | `tax_rates.rate`, `quote_lines`/`invoice_lines`/`credit_note_lines`/`vendor_bill_lines` `.quantity`, `.discount_percentage`, `.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount`: `real` → `numeric(18,4)` | US-TAX-07 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).
