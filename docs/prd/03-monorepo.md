@@ -22,7 +22,8 @@ spine/
 │  ├─ e2e/                    Playwright suite against real api + web
 │  ├─ design-system/          Docs app for @spine/ui
 │  ├─ design-system-native/   Docs app for NativeWind @spine/ui-native components
-│  └─ showcase-native/        Docs app for @expo/ui @spine/ui-native components (expo-router)
+│  ├─ showcase-native/        Docs app for @expo/ui @spine/ui-native components (expo-router)
+│  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 8)
 ├─ packages/
 │  ├─ shared/                 money + tax engine, Zod schemas, capability list, shared types
 │  ├─ ui/                     @spine/ui (78 web components)

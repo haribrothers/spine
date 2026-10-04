@@ -41,6 +41,18 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Command palette | cmdk | |
 | Docs | `apps/design-system` (Next.js docs app) | Living spec for `@spine/ui` |
 
+## `apps/site` — website, user guide and developer docs (Phase 8)
+
+| Concern | Choice | Why |
+|---|---|---|
+| Framework | Astro 5 + Starlight ([D-108](12-decisions.md)) | Static docs site with navigation, dark mode, accessible markup and i18n built in |
+| Search | Pagefind (built into Starlight) | Runs in the browser, so it works in the offline bundled guide |
+| API reference | `starlight-openapi`, from the API's OpenAPI document | Generated, so it never drifts from the code |
+| Versions | `starlight-versions`, one per minor release from 1.0 ([D-111](12-decisions.md)) | Self-hosters on older versions read matching docs |
+| Link checks | `starlight-links-validator` | Broken links fail the build |
+| Hosting | GitHub Pages at `docs.[DOMAIN]` ([D-112](12-decisions.md), [Q-15](13-risks-open-questions.md)) | Free on the Pro plan; public site from the private repo |
+| In-app copy | The user guide and self-hosting sections are bundled into the web image at `/help` ([D-110](12-decisions.md)) | Help works offline and matches the installed version |
+
 ## `apps/mobile` — the field app (Phase 5)
 
 | Concern | Choice | Why |

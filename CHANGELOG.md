@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — Website and help planned (spec only)
+
+New module 19 · Website and help (D-108–D-113): a public Astro + Starlight site in `apps/site` with a home page, task-based user guide, self-hosting guide, developer docs and a generated API reference, hosted on GitHub Pages at `docs.[DOMAIN]` (domain open, Q-15). The user guide is bundled into every install at `/help` so the Help menu works offline and matches the installed version; this replaces D-070 (help inside `apps/web`). Docs are versioned per minor release from 1.0; English only for now. 14 Phase 8 stories (US-SITE-01–14) and 9 drawn screens (incl. dark mode). From Phase 8, each user-facing story updates its guide page in the same change.
+
 ### 2026-10-04 — File storage decision: local disk by default, MinIO dropped (spec only)
 
 `minio/minio` can no longer be pulled from Docker Hub, which breaks fresh installs and dev setups. Decided (D-102–D-107): a built-in `local` storage driver (Docker volume on the API container) becomes the default, the existing S3 code becomes the optional `s3` driver, RustFS (pinned 1.0.x, memory-limited) is the optional self-hosted S3 profile, per-file encryption is optional and off by default, and backups gain optional passphrase encryption and off-site upload. New Phase 6 stories US-OPS-27–31 (driver, checksums, safe uploads, MinIO migration, disk-space warning); US-OPS-01/03/04/20 updated. No code changes yet — the compose files still reference MinIO until US-OPS-27 ships.

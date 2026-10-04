@@ -152,6 +152,14 @@ Files go through one `StorageDriver` interface in `apps/api/src/modules/files` (
 
 Safety rules ([D-104](12-decisions.md)): issued files are write-once; uploads are type-checked from their bytes and GPS data is stripped from photos; files are served with `nosniff`; a weekly job verifies every checksum. Optional per-file encryption with `FILES_ENCRYPTION_KEY` is off by default ([D-106](12-decisions.md)). The host is a single point of failure, so off-site backups are what protect the data ([D-105](12-decisions.md), [R-14](13-risks-open-questions.md)).
 
+## Help and documentation
+
+The public site (`apps/site`, Astro + Starlight) holds the home page, user guide, self-hosting guide, developer docs and the generated API reference ([D-108](12-decisions.md)). It is the only place user help is written ([D-109](12-decisions.md)).
+
+- **Bundled guide:** the web image's build copies the user guide and self-hosting sections for that release into `/help`, served as static files by the web app — no login, no outside requests, search included ([D-110](12-decisions.md)).
+- **Help button:** the sidebar's Help (?) menu maps the current route to its guide page (`apps/web/src/lib/help-links.ts`) and opens `/help/...` on the same server; "Online docs ↗" opens the public site at the matching version.
+- **Publishing:** `.github/workflows/site.yml` builds and deploys the site to GitHub Pages after merges that change `apps/site/**` or the OpenAPI document ([D-112](12-decisions.md)).
+
 ## Updates
 
 Migrations run automatically on boot, forward-only and idempotent, after an automatic pre-migration database snapshot. Semantic versioning; every release notes breaking changes. Once a day the server checks the latest public release and shows Owners an update banner unless disabled ([D-055](12-decisions.md)). Mobile builds ship through the stores; JavaScript-only fixes may ship over the air ([15-mobile-release](15-mobile-release.md)).

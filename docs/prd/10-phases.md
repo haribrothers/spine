@@ -12,9 +12,9 @@ Phases 0–4 are built; Phase 5 is in progress; Phases 6–8 follow ([D-098](12-
 | 5 | Mobile field companion | 26 | The app works end-to-end in airplane mode and syncs without duplicates |
 | 6 | Fix and harden | 46 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
-| 8 | Packaging & 1.0 | 18 | A stranger installs from the README and issues their first invoice |
+| 8 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 313 stories.
+Total: 327 stories.
 
 ## Phase 0 · Foundation
 
@@ -573,13 +573,14 @@ Total: 313 stories.
 
 **Goal:** A stranger installs from the README and issues their first invoice.
 
-**Deliverables:** Install script, backup/restore with CI-verified restore, upgrades, health checks, logs, update notice, demo seed, system pages, phone-width web layout, reduced motion, i18n extraction, accessibility audit, security review, README, licence and the v1.0 release.
+**Deliverables:** Install script, backup/restore with CI-verified restore, upgrades, health checks, logs, update notice, demo seed, system pages, phone-width web layout, reduced motion, i18n extraction, accessibility audit, security review, README, licence, the public website and docs (Astro + Starlight: home page, user guide, self-hosting, developer docs, API reference) with the guide bundled into every install for offline help, and the v1.0 release.
 
 **Done when:**
 - A stranger installs on a clean machine using only the README and issues their first invoice in under 5 minutes (NFR-MNT-01).
 - Backup → restore is verified nightly in CI (NFR-REL-03).
 - Every route passes axe AA and works at 390×844 (NFR-A11Y-02, NFR-COMP-02).
 - The security review is written up with no open high-severity items (NFR-SEC-05).
+- Every feature has a user-guide page, and the Help menu opens the bundled guide offline.
 
 **Stories:**
 
@@ -609,3 +610,20 @@ Total: 313 stories.
 - US-OPS-17 · Pass an accessibility audit of every screen (P1)
 - US-OPS-18 · Complete a security review before 1.0 (P1)
 - US-OPS-19 · Ship the README, licence and contributor guide (P1)
+
+*Website and help*
+
+- US-SITE-01 · Set up the docs site in the monorepo (P1)
+- US-SITE-02 · Show a home page for people discovering Spine (P1)
+- US-SITE-03 · Find any page with search (P2)
+- US-SITE-04 · Read a task-based guide for every module (P1)
+- US-SITE-05 · Ship each story with its guide page (P1)
+- US-SITE-06 · Capture guide screenshots automatically (P2)
+- US-SITE-07 · Install Spine from the self-hosting guide (P1)
+- US-SITE-08 · Run, back up and upgrade from the self-hosting guide (P1)
+- US-SITE-09 · Learn the codebase from the developer docs (P2)
+- US-SITE-10 · Browse a generated API reference (P2)
+- US-SITE-11 · Open help for the page I'm on (P1)
+- US-SITE-12 · Read the guide without internet (P1)
+- US-SITE-13 · Read docs for the version I run (P2)
+- US-SITE-14 · Publish the site after each merge (P2)

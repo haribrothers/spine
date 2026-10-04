@@ -45,7 +45,7 @@ Every non-obvious choice, numbered and permanent. **Accepted** = decided by the 
 | D-039 | `CLAUDE.md` is the short rule set (~60 lines); detailed lessons live in `docs/prd/07-security.md`, `docs/prd/09-design-system.md`, `docs/design/native-notes.md` and this file | Accepted | |
 | D-040 | `docs/progress.md` ticks a story only when its behaviour is verified in the code or running app | Accepted | |
 | D-041 | Phases 0–6 are kept as in the original PRD so CHANGELOG history lines up; Phase 6 is later split into 6–8 ([D-098](12-decisions.md)) | Accepted | |
-| D-042 | 18 modules ([README](../README.md)) | Accepted | |
+| D-042 | 18 modules ([README](../README.md)); a 19th, Website and help, added by [D-108](12-decisions.md) | Accepted | |
 | D-043 | v1 adds: configurable lead stages, theme presets + brand colours, org-wide audit log, password reset | Accepted | Gaps G1, G3/G4, G6, G7 |
 | D-044 | Stories created from gaps and findings land in Phase 6, except mobile/native ones (Phase 5); new product features land in Phase 7 ([D-098](12-decisions.md)) | Accepted | |
 | D-045 | Phone-width web layouts are specified for the public quote page and the app shell only | Accepted | Staff web is desktop-first; field crew use the app |
@@ -73,7 +73,7 @@ Every non-obvious choice, numbered and permanent. **Accepted** = decided by the 
 | D-067 | Every outgoing email uses one branded layout (logo, business name, document colour bar, footer) | Default | Findings C2, C9, C22 |
 | D-068 | Controls for features that ship in a later phase are hidden behind flags in `packages/shared/src/feature-flags.ts` | Default | Template rule; file created in Phase 6 |
 | D-069 | User-facing strings move to `packages/shared/src/i18n/en/*.json` in Phase 8 (i18n extraction, US-OPS-16); until then strings stay in the component | Default | NFR-MNT-03 |
-| D-070 | Help content for users lives in `apps/web/src/content/help/` and is opened by the in-app Help button | Default | Keeps help out of the spec |
+| D-070 | ~~Help content for users lives in `apps/web/src/content/help/` and is opened by the in-app Help button~~ — superseded by [D-109](12-decisions.md) | Superseded | Keeps help out of the spec |
 | D-071 | The mobile app sends `X-Spine-Client-Version`; the server answers `426 CLIENT_TOO_OLD` below its minimum and the app shows "Update Spine to keep going"; OTA updates use the `appVersion` runtime policy | Default | Keeps old field apps from writing against a changed API ([15](15-mobile-release.md)) |
 | D-072 | Field reads through the API only the jobs they're assigned to, with contract value, retention, milestone amounts and costing removed; job costing requires `reports.view_job_profitability`; file reads are authorised by the owning record | Accepted | Owner, Stage 5 review; enforces D-048 on the server (US-JOB-19, US-OPS-20) |
 | D-073 | A field user presents a job's variation-order quotes and its source quote while `sent`, and can record the customer's acceptance (with signature) or decline (with optional comment) through authenticated routes | Accepted | Owner, Stage 5 review |
@@ -111,3 +111,9 @@ Every non-obvious choice, numbered and permanent. **Accepted** = decided by the 
 | D-105 | Backups: one archive (database + files), optionally encrypted with a passphrase and optionally uploaded off-site (S3/R2/B2) with 7 daily and 4 weekly copies; Owners see a banner when the last backup is more than 2 days old | Accepted | Owner, 2026-10-04 (US-OPS-03) |
 | D-106 | Per-file encryption at rest is optional (`FILES_ENCRYPTION_KEY`) and off by default; the install guide recommends full-disk encryption on the host | Accepted | Owner, 2026-10-04; losing an app key would lose every file |
 | D-107 | The file-storage stories ship in Phase 6 because fresh installs and dev setups can't pull MinIO today; the backup additions stay with US-OPS-03 in Phase 8 | Accepted | Owner, 2026-10-04 |
+| D-108 | A website built with Astro + Starlight (`apps/site`) holds the home page, user guide, self-hosting guide, developer docs and generated API reference; English only for 1.0 with Starlight's i18n structure in place | Accepted | Owner, 2026-10-04 |
+| D-109 | The site is the single source of user help (replaces D-070); the spec in `docs/` stays separate and is not published as-is | Accepted | Owner, 2026-10-04 |
+| D-110 | Every install bundles the user guide and self-hosting guide for its version at `/help`, so the Help menu works offline; a link offers the public site | Accepted | Owner, 2026-10-04 |
+| D-111 | Docs are versioned per minor release from 1.0 (`starlight-versions`) | Accepted | Owner, 2026-10-04 |
+| D-112 | The site is public, hosted on GitHub Pages from the private repo, at `docs.[DOMAIN]` until Q-15 is answered; published by a workflow after merges that change it | Accepted | Owner, 2026-10-04 |
+| D-113 | The site skeleton, home page, self-hosting guide, developer docs and in-app help ship in Phase 8; guide pages for features built in Phases 0–7 are written then, and from Phase 8 every user-facing story updates its guide page in the same change | Accepted | Owner, 2026-10-04 |
