@@ -10,11 +10,11 @@ Phases 0–4 are built; Phase 5 is in progress; Phases 6–8 follow ([D-098](12-
 | 3 | Jobs & construction billing | 15 | A full contract lifecycle reconciles |
 | 4 | Money out & books | 62 | A simulated quarter produces accountant-acceptable reports |
 | 5 | Mobile field companion | 26 | The app works end-to-end in airplane mode and syncs without duplicates |
-| 6 | Fix and harden | 41 | Everything already built is correct, secure and consistent |
+| 6 | Fix and harden | 46 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Packaging & 1.0 | 18 | A stranger installs from the README and issues their first invoice |
 
-Total: 308 stories.
+Total: 313 stories.
 
 ## Phase 0 · Foundation
 
@@ -485,6 +485,11 @@ Total: 308 stories.
 - US-OPS-21 · Remove developer wording from the interface (P3)
 - US-OPS-24 · Show money the same way everywhere (P1)
 - US-OPS-25 · Keep text readable on coloured controls in dark mode (P1)
+- US-OPS-27 · Store files on local disk by default (P1)
+- US-OPS-28 · Prove stored files are intact (P1)
+- US-OPS-29 · Accept only safe uploads (P1)
+- US-OPS-30 · Move existing files off MinIO (P2)
+- US-OPS-31 · Warn before the disk fills up (P2)
 
 ## Phase 7 · Product upgrades
 

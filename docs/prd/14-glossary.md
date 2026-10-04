@@ -49,6 +49,7 @@
 | Recurring invoice | A schedule that creates an invoice automatically, e.g. monthly maintenance |
 | Daily digest | The morning email summarising what needs you and what happened yesterday |
 | Needs your attention | The dashboard list of things waiting on you, each with a one-click action |
+| Storage driver | How Spine stores files: `local` (a Docker volume on the API, default) or `s3` (any S3-compatible store) |
 | Demo data | A seeded sample business (Riverstone Builders) for exploring the app |
 | Industry template | Onboarding choice that sets defaults, e.g. Construction turns on milestones and retention |
 

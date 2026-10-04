@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — File storage decision: local disk by default, MinIO dropped (spec only)
+
+`minio/minio` can no longer be pulled from Docker Hub, which breaks fresh installs and dev setups. Decided (D-102–D-107): a built-in `local` storage driver (Docker volume on the API container) becomes the default, the existing S3 code becomes the optional `s3` driver, RustFS (pinned 1.0.x, memory-limited) is the optional self-hosted S3 profile, per-file encryption is optional and off by default, and backups gain optional passphrase encryption and off-site upload. New Phase 6 stories US-OPS-27–31 (driver, checksums, safe uploads, MinIO migration, disk-space warning); US-OPS-01/03/04/20 updated. No code changes yet — the compose files still reference MinIO until US-OPS-27 ships.
+
+CI: replaced the workflow-level `paths-ignore` with a "Detect changes" job, because `main` requires both checks and a workflow that never starts leaves them waiting forever; docs-only PRs now skip the test jobs and still merge.
+
 ### 2026-10-04 — Product spec rebuilt as `docs/` (PRD package), CI moved to pull requests
 
 The single-file PRD (`docs/spine-prd.md`, now archived at `docs/archive/spine-prd.md`) is replaced by a structured spec: `docs/README.md` (index), `docs/prd/00–15` (overview, stack, architecture, monorepo, data model, API, posting rules, security, NFRs, design system, phases, testing and release, decisions D-001–D-101, risks and open questions, glossary, mobile release), `docs/features/01–18` (115 features, 308 user stories with Given/When/Then criteria and legacy `S-xx.yy` references), `docs/design/` (brand book, `tokens.json`, motion, 109 component pages, native notes, and `screens.md` with 275 screens — 172 captured from the running app, 103 drawn, including dark-mode variants) and `docs/progress.md` (189 stories ticked after verifying them against the code).

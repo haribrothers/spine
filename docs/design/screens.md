@@ -2426,7 +2426,7 @@ Shows: "Marina office fit-out" · "Harborview Construction Co. · [JOB NUMBER]" 
 ## Self-hosting & system states
 
 ### UpgradeNotice — Update available
-**Priority:** P3 · **Phase:** 8 · **Stories:** US-OPS-06 · **Source:** Drawn
+**Priority:** P3 · **Phase:** 6 · **Stories:** US-OPS-06, US-OPS-31 · **Source:** Drawn
 
 ![UpgradeNotice](screens/UpgradeNotice.webp)
 

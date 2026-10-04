@@ -277,6 +277,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-OPS-21 · Remove developer wording from the interface
 - [ ] US-OPS-24 · Show money the same way everywhere
 - [ ] US-OPS-25 · Keep text readable on coloured controls in dark mode
+- [ ] US-OPS-27 · Store files on local disk by default
+- [ ] US-OPS-28 · Prove stored files are intact
+- [ ] US-OPS-29 · Accept only safe uploads
+- [ ] US-OPS-30 · Move existing files off MinIO
+- [ ] US-OPS-31 · Warn before the disk fills up
 
 ## Phase 7 · Product upgrades
 

@@ -29,6 +29,7 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 - Money is `bigint` minor units + currency code; rounding once per line, half-up; tax per line.
 - Issued documents snapshot their data, get a gapless permanent number under a row lock, and are never edited or deleted — only voided or credited.
 - Every mutating endpoint accepts an `Idempotency-Key`.
+- Files go through `StorageDriver` (`local` by default, `s3` optional); never read the files volume or bucket directly, and never serve a file without checking the owning record.
 - Job costing and AR/AP aging come from filtering journal lines (`contact_id`, `job_id`) — never a parallel calculation. Retention posts to 1150 Retention Receivable.
 - The app boots with only `DATABASE_URL`, `AUTH_SECRET`, `APP_URL`; SMTP or storage outages degrade, never crash.
 
