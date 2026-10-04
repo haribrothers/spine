@@ -280,7 +280,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-OPS-27 · Store files on local disk by default
 - [x] US-OPS-28 · Prove stored files are intact
 - [x] US-OPS-29 · Accept only safe uploads
-- [ ] US-OPS-30 · Move existing files off MinIO
+- [x] US-OPS-30 · Move existing files off MinIO
 - [ ] US-OPS-31 · Warn before the disk fills up
 
 ## Phase 7 · Product upgrades

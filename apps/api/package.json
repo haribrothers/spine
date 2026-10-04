@@ -16,7 +16,8 @@
     "start:e2e": "dotenv -e ../../.env.e2e -- node dist/main.js",
     "db:studio": "dotenv -e ../../.env -- drizzle-kit studio",
     "db:seed": "dotenv -e ../../.env -- tsx src/db/seed/index.ts",
-    "db:reset": "dotenv -e ../../.env -- tsx src/db/reset.ts"
+    "db:reset": "dotenv -e ../../.env -- tsx src/db/reset.ts",
+    "files:migrate": "dotenv -e ../../.env -- tsx src/scripts/files-migrate.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1104.0",

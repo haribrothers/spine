@@ -1897,6 +1897,17 @@ Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
     nosniff` and `Content-Disposition: inline; filename="…"` for photos
     and PDFs.
 
+13. Moving off MinIO (US-OPS-30): with `COMPOSE_PROFILES=rustfs pnpm
+    dev:infra:up`, set `STORAGE_DRIVER=s3` and the `S3_*` values, restart
+    the API and upload a few files. Then run
+    `pnpm --filter @spine/api files:migrate --from s3 --to local`: it
+    prints "Copied: <n>  Skipped (already in local): <m>  Failed: 0". Set
+    `STORAGE_DRIVER=local`, restart: every file still opens. Run the
+    command again: "Copied: 0". The bucket still holds the originals.
+14. Delete one object from the bucket before migrating: the command lists
+    it as "missing from s3", exits with an error, and that file's record
+    still points at S3.
+
 Regression checks:
 - Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
 - **Load demo data** still seeds the logo and job photos (§1.7).
@@ -1908,7 +1919,7 @@ Regression checks:
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - `GET /files/:id` still checks only the organisation, not the record the
-  file belongs to (US-OPS-20). Moving files off MinIO is US-OPS-30.
+  file belongs to (US-OPS-20).
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/

@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-30: move existing files off MinIO (Phase 6)
+
+New command `pnpm --filter @spine/api files:migrate --from s3 --to local`, which works in either direction and takes `--org <id>` to limit it to one organisation.
+- **What it does.** Every file recorded on the source driver is copied to the target. Each copy is checked against the file's checksum, and only then is the record switched to the target's driver with a new id-only key. Old S3 keys contained the uploaded file name.
+- **Summary.** It prints copied, skipped and failed counts. On any failure it lists the files and exits 1.
+- **Safe to re-run.** The source bucket is never changed or deleted. Files already moved are skipped, and a copy left by an interrupted run is reused when its checksum matches.
+- **Refuses bad files.** A file missing from the bucket, damaged (its checksum doesn't match), or blocked by a different file at the target is left on its old record.
+- **Upgrade notes** are in the README ("Upgrading an install that used MinIO"): migrate, or keep MinIO with `STORAGE_DRIVER=s3`.
+
+Logic in `apps/api/src/modules/files/migrate-files.ts`; CLI in `src/scripts/files-migrate.ts`. Tests: `us-ops-30.integration.test.ts` (6). They cover an in-memory stand-in for an old bucket with legacy name-based keys: copy and verify, attachments open afterwards with the local driver, re-run skips, an interrupted run is reused, and failures are listed while the rest still move. A real S3 run is included when `S3_ENDPOINT` is set, as in CI; it passed locally against S3Mock.
+
 ### 2026-10-04 — US-OPS-29: accept only safe uploads (Phase 6)
 
 - **Type from the bytes.** `POST /files` reads a file's type from its first bytes, ignoring its name and the browser's claim. Anything other than JPEG, PNG, WebP, HEIC or PDF is refused with 415 "This file type isn't supported. Upload a photo or a PDF.", including SVG, HTML, GIF and AVIF. The stored `mime_type` is the detected type.

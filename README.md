@@ -253,6 +253,26 @@ keep files in S3, R2 or B2 instead, set `STORAGE_DRIVER=s3` and the `S3_*`
 values; add `--profile rustfs` to run a self-hosted S3 store. Use the
 `full` profile instead of `minimal` to add the Cloudflare Tunnel sidecar.
 
+### Upgrading an install that used MinIO
+
+Spine now stores files on the API's own volume (`STORAGE_DRIVER=local`,
+the default) instead of MinIO, and `docker-compose.yml` no longer starts
+MinIO. You can either:
+
+- **Move your files to local storage (recommended).** Keep MinIO running
+  and your `S3_*` settings in `.env`, start the new version, then run
+  `docker compose exec api pnpm --filter @spine/api files:migrate --from s3 --to local`.
+  It copies every file into the `spine_files` volume, checks each copy
+  against its checksum, and prints copied, skipped and failed counts.
+  Nothing in the bucket is changed or deleted. If anything fails, it lists
+  those files and exits with an error; fix the cause and run it again, and
+  files already moved are skipped. When it reports no failures, set
+  `STORAGE_DRIVER=local` (or remove it) and restart. You can stop MinIO
+  once you've checked your attachments.
+- **Keep MinIO.** Set `STORAGE_DRIVER=s3`, keep your `S3_*` settings, and
+  run MinIO yourself, for example from your old compose file or as its own
+  service. Spine works unchanged.
+
 The `db:migrate` step is currently manual (run it once after the first
 `up`, and again after pulling any update that adds a migration) — a
 one-command install script (S-10.7) and automatic migrate-on-upgrade
