@@ -21,6 +21,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
  * site in this codebase keeps working completely unchanged — this is
  * additive, not a breaking change to the client's error shape.
  */
+/** Fired on `window` when the API refuses an action (403); `PermissionToast` listens for it. */
+export const FORBIDDEN_EVENT = "spine:forbidden";
+export const FORBIDDEN_MESSAGE = "You don't have permission to do that. If you need to, ask an owner.";
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -65,6 +69,11 @@ async function request<T>(
     } catch {
       // response wasn't JSON — keep the generic message
     }
+    if (res.status === 403) {
+      // US-OPS-12: a refusal is explained, never shown as a raw error.
+      message = FORBIDDEN_MESSAGE;
+      if (method !== "GET" && typeof window !== "undefined") window.dispatchEvent(new Event(FORBIDDEN_EVENT));
+    }
     throw new ApiError(message, res.status, data);
   }
 
@@ -101,6 +110,10 @@ async function upload<T>(path: string, file: File): Promise<T> {
       message = data?.message ?? message;
     } catch {
       // response wasn't JSON — keep the generic message
+    }
+    if (res.status === 403) {
+      message = FORBIDDEN_MESSAGE;
+      if (typeof window !== "undefined") window.dispatchEvent(new Event(FORBIDDEN_EVENT));
     }
     throw new Error(message);
   }

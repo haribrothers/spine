@@ -1999,6 +1999,23 @@ and milestone amounts everywhere (§5).
 3. Grant "View receivables" to their Team and reload: Receivables appears.
 4. As Owner: every section, including Team.
 
+## 20. No-access page (US-OPS-12, Phase 6)
+
+1. As Staff without report grants, open `/reports` and `/receivables`:
+   "You don't have access to Reports" / "…Receivables", naming the
+   owners, with "Go to dashboard". DevTools → Network shows no
+   `/reports/*` request from that page.
+2. As Staff, open `/team/users`: "Team is only available to owners." —
+   no mention of team permissions.
+3. As Staff with "View job profitability", open Reports: it opens on Job
+   Profitability; the Profit & Loss tab shows "Profit & Loss is only
+   available to owners."
+4. As Field, open `/invoices`: the no-access page, without the "change
+   your team's permissions" part.
+5. Trigger a refused action (e.g. remove a grant from a Staff member's
+   Team while they have the page open, then use that button): a toast
+   reads "You don't have permission to do that", not a raw error.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

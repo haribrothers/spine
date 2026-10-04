@@ -12,6 +12,10 @@ import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
 import { navSectionsFor } from "../lib/nav-sections";
+import { pageAccessFor } from "../lib/page-access";
+import { RoleProvider } from "../lib/role-context";
+import { NoAccess } from "./no-access";
+import { PermissionToast } from "./permission-toast";
 
 const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 
@@ -65,9 +69,12 @@ export interface AppLayoutProps {
  */
 export function AppLayout(props: AppLayoutProps) {
   return (
-    <CapabilitiesProvider>
-      <AppLayoutShell {...props} />
-    </CapabilitiesProvider>
+    <RoleProvider value={props.role}>
+      <CapabilitiesProvider>
+        <AppLayoutShell {...props} />
+        <PermissionToast />
+      </CapabilitiesProvider>
+    </RoleProvider>
   );
 }
 
@@ -75,6 +82,9 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
   const { capabilities } = useCapabilities();
   const sections = navSectionsFor(role, capabilities);
   const pathname = usePathname();
+  // US-OPS-12: a page this person can't open is replaced by the no-access
+  // page before it mounts, so none of its data is ever requested.
+  const access = pageAccessFor(pathname ?? "", role, capabilities);
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const fullWidth = FULL_WIDTH_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
@@ -122,7 +132,11 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
         }
       />
       <AppShellContent fullWidth={fullWidth} banner={isOwner ? <StorageBanner /> : null}>
-        {children}
+        {access.state === "allowed" ? (
+          children
+        ) : access.state === "denied" ? (
+          <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
+        ) : null}
       </AppShellContent>
     </AppShell>
   );

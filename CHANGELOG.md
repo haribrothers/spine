@@ -80,6 +80,28 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-12: explain why I can't open a page (Phase 6)
+
+- **No-access page.** A page someone can't open is replaced, before it mounts, by "You don't have access to <page>". Nothing from the refused page is requested. The rules are in `apps/web/src/lib/page-access.ts`; `AppLayout` checks them and shows `NoAccess`.
+  - Field can open Dashboard, Jobs, Meetings, Expenses and Profile.
+  - Staff need the matching grant for Receivables and Payables, and any report grant for Reports.
+  - Team is Owner-only.
+- **What it says.**
+  - Normally: "Your account can't open this page. If you need it for your work, ask an owner — <owner names> — to change your team's permissions." with "Go to dashboard". Owner names come from the members list.
+  - Owner-only pages: "<page> is only available to owners." with no suggestion to change Teams.
+  - Field roles are fixed, so the Team clause is left out for them.
+- **Owner-only report tabs.** The Profit & Loss and Balance Sheet tabs on Reports show the Owner-only message for everyone else, without fetching. Non-owners open on Job Profitability.
+- **Refused actions.** `apiClient` turns any 403 into "You don't have permission to do that. If you need to, ask an owner.". A refused create, change, delete or upload also shows a "You don't have permission to do that" toast (`PermissionToast`) instead of a raw error.
+- **Role in the client.** The role is now available to client components through `RoleProvider`/`useMyRole()`.
+
+Tests: `apps/e2e/tests/us-ops-12.spec.ts` (4):
+- Staff without report grants see the message with the owner's name on Reports and Receivables, and no report data is requested.
+- The Owner-only text shows on Team and the Profit & Loss tab.
+- Field gets the fixed-role text on Invoices.
+- A refused action (an intercepted 403) shows the toast and no raw error.
+
+E2E 40/40.
+
 ### 2026-10-04 — Team grants never cross organisations (security fix)
 
 Found while testing US-OPS-12. A Staff member's capabilities were the union of every Team their membership row belonged to, without checking that those Teams belonged to the member's own organisation.

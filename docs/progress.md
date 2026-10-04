@@ -272,7 +272,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [ ] US-OPS-08 · Make every mutating request safe to repeat
 - [ ] US-OPS-10 · Style confirmations by what they do
-- [ ] US-OPS-12 · Explain why I can't open a page
+- [x] US-OPS-12 · Explain why I can't open a page
 - [x] US-OPS-20 · Close the read-access gaps found in review
 - [ ] US-OPS-21 · Remove developer wording from the interface
 - [ ] US-OPS-24 · Show money the same way everywhere

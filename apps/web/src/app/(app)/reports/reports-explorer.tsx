@@ -1,5 +1,7 @@
 "use client";
 
+import { NoAccess } from "../../../components/no-access";
+import { useMyRole } from "../../../lib/role-context";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -65,18 +67,20 @@ function ownerOnlyMessage(err: unknown): string {
  * TaxSummarySection), rather than hiding the tabs entirely.
  */
 export function ReportsExplorer() {
+  // US-OPS-12: P&L and Balance Sheet are Owner-only; others see why, and nothing is fetched.
+  const isOwner = useMyRole() === "owner";
   return (
-    <Tabs defaultValue="pl">
+    <Tabs defaultValue={isOwner ? "pl" : "jobs"}>
       <TabsList>
         <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
         <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
         <TabsTrigger value="jobs">Job Profitability</TabsTrigger>
       </TabsList>
       <TabsContent value="pl">
-        <ProfitAndLossTab />
+        {isOwner ? <ProfitAndLossTab /> : <NoAccess pageName="Profit & Loss" ownerOnly />}
       </TabsContent>
       <TabsContent value="bs">
-        <BalanceSheetTab />
+        {isOwner ? <BalanceSheetTab /> : <NoAccess pageName="Balance Sheet" ownerOnly />}
       </TabsContent>
       <TabsContent value="jobs">
         <JobProfitabilityTab />
