@@ -125,7 +125,9 @@ export class FilesService {
     if (this.usage && now - this.usageCheckedAt < USAGE_CACHE_MS) return this.usage;
     let usedPercent: number | null = null;
     try {
-      const stats = await statfs(resolveFilesDir());
+      // The folder this driver writes to, as configured when it was built.
+      const dir = "root" in driver && typeof driver.root === "string" ? driver.root : resolveFilesDir();
+      const stats = await statfs(dir);
       const used = stats.blocks - stats.bfree;
       const usable = used + stats.bavail;
       usedPercent = usable > 0 ? Math.round((used / usable) * 1000) / 10 : null;
