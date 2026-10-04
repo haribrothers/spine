@@ -5,9 +5,10 @@ async function buttonColours(page: import("@playwright/test").Page, theme: "ligh
   await page.addInitScript({ content: `localStorage.setItem("theme", "${theme}");` });
   await page.goto("/login");
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
-  return (await page
-    .getByRole("button", { name: "Log in" })
-    .evaluate("el => { const s = getComputedStyle(el); return { text: s.color, fill: s.backgroundColor }; }")) as { text: string; fill: string };
+  await expect(page.getByRole("button", { name: "Log in" })).toBeVisible();
+  return (await page.evaluate(
+    `(() => { const b = [...document.querySelectorAll("button")].find((x) => x.textContent.trim() === "Log in"); const s = getComputedStyle(b); return { text: s.color, fill: s.backgroundColor }; })()`,
+  )) as { text: string; fill: string };
 }
 
 test.describe("US-OPS-25", () => {
