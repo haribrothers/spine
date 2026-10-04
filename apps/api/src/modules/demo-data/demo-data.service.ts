@@ -1220,6 +1220,13 @@ export class DemoDataService {
         .returning();
       usersCreated++;
 
+      // The membership row moved organisations: drop its Team memberships
+      // from wherever it was before, so no other organisation's grants
+      // follow it here.
+      if (movedMember) {
+        await this.db.delete(teamMemberships).where(eq(teamMemberships.memberId, movedMember.id));
+      }
+
       // Deletes the throwaway auto-created org — cascades onto its own
       // chart of accounts and default team (both now orphaned, since the
       // member row above already moved out), per every FK's `onDelete:

@@ -144,6 +144,18 @@ describe("US-OPS-20 · close the read-access gaps (requires local Postgres)", ()
     });
   });
 
+  it("never counts a Team from another organisation towards a member's grants", async () => {
+    const [outsiderMembership] = await db.select().from(member).where(eq(member.userId, outsider.userId));
+    const [foreignTeam] = await db.insert(teams).values({ orgId: outsiderMembership!.organizationId, name: `Foreign ${randomUUID()}` }).returning();
+    await db.insert(teamPrivileges).values({ teamId: foreignTeam!.id, capability: "reports.view_receivables", granted: true });
+    const [staffMembership] = await db.select().from(member).where(eq(member.userId, staff.userId));
+    await db.insert(teamMemberships).values({ teamId: foreignTeam!.id, memberId: staffMembership!.id });
+
+    expect((await get("/reports/invoices-due-this-week", staff)).status).toBe(403);
+    const caps = (await (await get("/org/members/me/capabilities", staff)).json()) as Record<string, boolean>;
+    expect(caps["reports.view_receivables"]).toBe(false);
+  });
+
   it("needs reports.view_receivables for invoices due this week", async () => {
     expect((await get("/reports/invoices-due-this-week", staff)).status).toBe(403);
     expect((await get("/reports/invoices-due-this-week", staffWithReceivables)).status).toBe(200);

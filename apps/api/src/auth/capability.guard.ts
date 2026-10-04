@@ -1,12 +1,13 @@
 import { CanActivate, ExecutionContext, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { fromNodeHeaders } from "better-auth/node";
 import type { Capability } from "@spine/shared";
 import { auth } from "./auth";
 import { DATABASE } from "../db/db.module";
 import type { Database } from "../db/client";
-import { member, teamMemberships, teamPrivileges } from "../db/schema";
+import { member } from "../db/schema";
+import { hasCapability } from "./capability.util";
 import { CAPABILITY_KEY } from "./require-capability.decorator";
 
 /**
@@ -97,30 +98,8 @@ export class CapabilityGuard implements CanActivate {
       throw new ForbiddenException(`Role "${membership.role}" is not eligible for capability "${required}"`);
     }
 
-    const teamIds = await this.db
-      .select({ teamId: teamMemberships.teamId })
-      .from(teamMemberships)
-      .where(eq(teamMemberships.memberId, membership.id));
-    if (teamIds.length === 0) {
-      throw new ForbiddenException(`Missing capability: ${required}`);
-    }
-
-    const [grant] = await this.db
-      .select({ granted: teamPrivileges.granted })
-      .from(teamPrivileges)
-      .where(
-        and(
-          inArray(
-            teamPrivileges.teamId,
-            teamIds.map((t) => t.teamId),
-          ),
-          eq(teamPrivileges.capability, required),
-          eq(teamPrivileges.granted, true),
-        ),
-      )
-      .limit(1);
-
-    if (!grant) {
+    // Same rule as everywhere else (hasCapability): only this organisation's Teams count.
+    if (!(await hasCapability(this.db, { orgId, userId }, required))) {
       throw new ForbiddenException(`Missing capability: ${required}`);
     }
     return true;

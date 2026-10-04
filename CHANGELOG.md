@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — Team grants never cross organisations (security fix)
+
+Found while testing US-OPS-12. A Staff member's capabilities were the union of every Team their membership row belonged to, without checking that those Teams belonged to the member's own organisation.
+- **How it leaked.** The demo seed moves its demo users' membership rows between organisations, and their old Team memberships moved with them. The demo Staff user had collected 12 "General Staff" Teams from 12 organisations, so turning a grant off in one organisation had no effect.
+- **The fix.** `hasCapability`, `getEffectiveCapabilities` and `CapabilityGuard` now count only Teams in the member's organisation, and the guard now calls `hasCapability` instead of keeping its own copy of the query. The demo seed also clears a moved member's old Team memberships.
+- **Test.** A case in `us-ops-20.http.integration.test.ts` puts a Staff member into another organisation's Team that grants receivables and checks they're still refused. It fails without the fix.
+
 ### 2026-10-04 — US-TEAM-18: show each person only the sections they can open (Phase 6)
 
 The sidebar now lists only what each person can open. `navSectionsFor(role, capabilities)` in `apps/web/src/lib/nav-sections.tsx` builds it, and `AppLayout` gets the role from the server and the capabilities from `CapabilitiesProvider`.
