@@ -2,7 +2,7 @@ import { Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
-import { toCsv } from "../../common/csv";
+import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
@@ -207,8 +207,3 @@ export class ReportsController {
   }
 }
 
-function sendCsv(res: Response, filename: string, csv: string): void {
-  res.setHeader("Content-Type", "text/csv; charset=utf-8");
-  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-  res.send(csv);
-}

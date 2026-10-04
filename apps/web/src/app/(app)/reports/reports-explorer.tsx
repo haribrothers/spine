@@ -31,6 +31,7 @@ import {
   type JobProfitabilityReport,
   type ProfitAndLossReport,
   type ReportAccountLine,
+  type TaxSummaryReport,
   type TrialBalanceReport,
 } from "./types";
 
@@ -77,6 +78,7 @@ export function ReportsExplorer() {
         <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
         <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
         <TabsTrigger value="tb">Trial Balance</TabsTrigger>
+        <TabsTrigger value="tax">Tax Summary</TabsTrigger>
         <TabsTrigger value="jobs">Job Profitability</TabsTrigger>
       </TabsList>
       <TabsContent value="pl">
@@ -87,6 +89,9 @@ export function ReportsExplorer() {
       </TabsContent>
       <TabsContent value="tb">
         {isOwner ? <TrialBalanceTab /> : <NoAccess pageName="Trial Balance" ownerOnly />}
+      </TabsContent>
+      <TabsContent value="tax">
+        {isOwner ? <TaxSummaryTab /> : <NoAccess pageName="Tax Summary" ownerOnly />}
       </TabsContent>
       <TabsContent value="jobs">
         <JobProfitabilityTab />
@@ -658,6 +663,142 @@ function TrialBalanceTab() {
 
       {drilldown && (
         <DrilldownDialog accountId={drilldown.accountId} accountLabel={`${drilldown.code} — ${drilldown.name}`} from="2000-01-01" to={toDateParam(asOf)} currency={currency} onClose={() => setDrilldown(null)} />
+      )}
+    </div>
+  );
+}
+
+/**
+ * US-RPT-14 (D-057) — tax collected and paid for a period, with a per-rate
+ * breakdown, for filing. Collected is from the ledger (after credit notes
+ * and voids); the per-rate rows come from issued invoices' lines (D-031).
+ */
+function TaxSummaryTab() {
+  const [from, setFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
+  const [to, setTo] = useState<Date>(endOfToday());
+  const [currency, setCurrency] = useState("USD");
+  const [report, setReport] = useState<TaxSummaryReport | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => {
+        if (res.value?.code) setCurrency(res.value.code);
+      })
+      .catch(() => {});
+  }, []);
+
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      setReport(await apiClient.get<TaxSummaryReport>(`/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`));
+    } catch (err) {
+      setError(ownerOnlyMessage(err));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void load();
+    // Loads once on open; "Refresh" reloads for new dates.
+  }, []);
+
+  const money = (value: string) => toDecimalString({ amount: BigInt(value), currency });
+
+  return (
+    <div className="flex flex-col gap-4 pt-4">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="flex flex-col gap-1.5">
+          <Label>From</Label>
+          <DatePicker value={from} onChange={setFrom} />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label>To</Label>
+          <DatePicker value={to} onChange={setTo} />
+        </div>
+        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+          {loading ? <Spinner size="sm" /> : "Refresh"}
+        </Button>
+        {!error && (
+          <a
+            href={`${API_URL}/org/tax/summary/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-[13px] font-medium text-primary hover:underline"
+          >
+            Export CSV
+          </a>
+        )}
+      </div>
+
+      {error && (
+        <Alert variant="critical">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {report && !error && (
+        <>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3" data-testid="tax-summary-cards">
+            {[
+              { label: "Tax collected", value: report.taxCollected, note: "On issued invoices, after credit notes" },
+              { label: "Tax paid", value: report.taxPaid, note: "On recorded vendor bills and approved expenses" },
+              { label: "Net payable", value: report.netTaxPayable, note: "Collected minus paid" },
+            ].map((card) => (
+              <div key={card.label} className="rounded-md border border-border-strong p-4">
+                <p className="text-[13px] text-on-surface-muted">{card.label}</p>
+                <p className="mt-1 text-[22px] font-semibold tabular-nums text-on-surface">
+                  {money(card.value)} {currency}
+                </p>
+                <p className="mt-1 text-[12px] text-on-surface-muted">{card.note}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto rounded-md border border-border-strong">
+            <table className="w-full text-[13px]" data-testid="tax-summary-table">
+              <thead>
+                <tr className="border-b border-border text-left text-on-surface-muted">
+                  <th className="px-4 py-2 font-medium">Collected by rate</th>
+                  <th className="px-4 py-2 text-right font-medium">Taxable amount</th>
+                  <th className="px-4 py-2 text-right font-medium">Tax</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.collectedByRate.map((row) => (
+                  <tr key={row.name} className="border-b border-border">
+                    <td className="px-4 py-2">{row.name}</td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(row.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(row.amount)}</td>
+                  </tr>
+                ))}
+                {report.adjustments && (
+                  <tr className="border-b border-border">
+                    <td className="px-4 py-2">Adjustments from credit notes and voided invoices</td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(report.adjustments.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(report.adjustments.amount)}</td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-border-strong font-semibold">
+                  <td className="px-4 py-2">Total collected</td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">
+                    {money(report.totalTaxable)} {currency}
+                  </td>
+                  <td className="px-4 py-2 text-right font-mono tabular-nums">
+                    {money(report.taxCollected)} {currency}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <p className="text-[12px] text-on-surface-muted">Spine produces the numbers for your return; it doesn&apos;t file it. Only owners can see this report.</p>
+        </>
       )}
     </div>
   );

@@ -2114,6 +2114,21 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 4. "Export CSV" downloads Code, Account, Debit, Credit and a Total row.
 5. As Staff, the tab shows "Trial Balance is only available to owners."
 
+## 30. Tax Summary on Reports (US-RPT-14, Phase 6)
+
+1. As Owner, Reports › "Tax Summary": choose "From"/"To", "Refresh". Cards:
+   "Tax collected" (on issued invoices, after credit notes), "Tax paid" (on
+   recorded vendor bills and approved expenses), "Net payable".
+2. "Collected by rate" lists each named rate or group with taxable amount
+   and tax; after issuing a credit note, an "Adjustments from credit notes
+   and voided invoices" row appears; "Total collected" equals the card.
+3. "Export CSV" downloads the same rows plus tax paid and net payable.
+4. Settings › Tax no longer has a tax summary section.
+5. As Staff, the tab shows "Tax Summary is only available to owners."
+
+Regression checks: §10's tax summary steps now happen on Reports, not in
+Settings › Tax.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
@@ -2129,9 +2144,8 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
   job (§11.3/§11.4) — Phase 4 Stage 2 (Purchases & Expenses) closed this
   gap. A job with no tagged bills/expenses still correctly shows Cost: 0
   — that's a real zero, not a missing feature.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) still
-  lives in its own "Tax summary" section at the bottom of Settings →
-  Tax, not folded into the new Reports page (§15) — it has its own
+- The tax collected/paid report (§10.14, `GET /org/tax/summary`) now
+  lives on Reports › "Tax Summary" (US-RPT-14), not Settings → Tax — it has its own
   working per-rate breakdown UI that Reports deliberately doesn't
   duplicate (see CHANGELOG's own note on this). No CSV export on that
   specific view, unlike every report on the new Reports page. Tax

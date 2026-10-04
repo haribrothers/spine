@@ -260,7 +260,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TAX-07 · Store rates, quantities and percentages exactly
 - [x] US-RPT-12 · Warn me if the books ever stop balancing
 - [x] US-RPT-13 · See a Trial Balance
-- [ ] US-RPT-14 · See tax collected and paid on Reports
+- [x] US-RPT-14 · See tax collected and paid on Reports
 - [ ] US-NTF-10 · Send every email in one branded layout
 - [ ] US-NTF-11 · Use the branded layout for every email type
 - [ ] US-NTF-12 · Turn on push from my own profile

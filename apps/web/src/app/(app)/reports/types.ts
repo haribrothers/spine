@@ -94,3 +94,15 @@ export interface TrialBalanceReport {
   totalCredit: string;
   balanced: boolean;
 }
+
+/** US-RPT-14 — `GET /org/tax/summary`. */
+export interface TaxSummaryReport {
+  from: string;
+  to: string;
+  taxCollected: string;
+  taxPaid: string;
+  netTaxPayable: string;
+  collectedByRate: { name: string; percentage: number; taxableAmount: string; amount: string }[];
+  adjustments: { taxableAmount: string; amount: string } | null;
+  totalTaxable: string;
+}

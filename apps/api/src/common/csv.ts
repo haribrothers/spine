@@ -1,3 +1,4 @@
+import type { Response } from "express";
 /**
  * S-09.7 — "export any report to CSV, so my accountant can work with it."
  * One tiny shared writer rather than a dependency: quoting is RFC 4180
@@ -14,4 +15,11 @@ export function toCsv(headers: string[], rows: (string | number | null | undefin
   };
   const lines = [headers.map(escape).join(","), ...rows.map((row) => row.map(escape).join(","))];
   return lines.join("\r\n");
+}
+
+/** Sends a CSV download (used by every report export). */
+export function sendCsv(res: Response, filename: string, csv: string): void {
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(csv);
 }

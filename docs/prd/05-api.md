@@ -285,6 +285,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/org/tax/prices-include-tax` | Any member | — |
 | PUT | `/org/tax/prices-include-tax` | roles: owner | Yes |
 | GET | `/org/tax/summary` | roles: owner | — |
+| GET | `/org/tax/summary/export.csv` | roles: owner — rows by rate with taxable amount and tax, adjustments, total, tax paid, net payable (US-RPT-14) | — |
 | GET | `/org/teams` | roles: owner | — |
 | POST | `/org/teams` | roles: owner | Yes |
 | DELETE | `/org/teams/:id` | roles: owner | No |

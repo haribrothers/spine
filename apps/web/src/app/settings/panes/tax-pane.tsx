@@ -12,7 +12,6 @@ import {
   AlertDialogTitle,
   Button,
   Checkbox,
-  DatePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -23,9 +22,8 @@ import {
   Spinner,
   Switch,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { MoreHorizontal, Plus } from "lucide-react";
-import { apiClient, ApiError } from "../../../lib/api-client";
+import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 
 interface TaxRate {
@@ -45,21 +43,6 @@ interface TaxGroup {
 
 interface PricesIncludeTaxSetting {
   inclusive: boolean;
-}
-
-interface TaxByRateRow {
-  name: string;
-  percentage: number;
-  amount: string;
-}
-
-interface TaxSummaryReport {
-  from: string;
-  to: string;
-  taxCollected: string;
-  taxPaid: string;
-  netTaxPayable: string;
-  collectedByRate: TaxByRateRow[];
 }
 
 /**
@@ -131,130 +114,8 @@ export function TaxPane() {
 
       <TaxRatesSection rates={rates} onChanged={reload} onSaved={() => setSaved(true)} />
       <TaxGroupsSection groups={groups} rates={rates.filter((r) => !r.archivedAt)} onChanged={reload} onSaved={() => setSaved(true)} />
-      <TaxSummarySection />
 
       <SavedToast open={saved} onOpenChange={setSaved} />
-    </div>
-  );
-}
-
-function startOfYear(): Date {
-  const d = new Date();
-  return new Date(d.getFullYear(), 0, 1);
-}
-
-function endOfToday(): Date {
-  const d = new Date();
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
-
-function toDateParam(d: Date): string {
-  return d.toISOString().slice(0, 10);
-}
-
-/**
- * S-08.4 — tax collected/paid/net for a date range, with a per-rate
- * breakdown. Owner-only server-side (`GET /org/tax/summary`); this
- * component renders unconditionally (matching every other pane's "no
- * client-side capability check" convention, see CHANGELOG's own note on
- * that gap) and just shows the API's real 403 error if a Staff user
- * somehow reaches Settings and opens this section.
- */
-function TaxSummarySection() {
-  const [from, setFrom] = useState<Date>(startOfYear());
-  const [to, setTo] = useState<Date>(endOfToday());
-  const [currency, setCurrency] = useState("USD");
-  const [report, setReport] = useState<TaxSummaryReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    apiClient
-      .get<{ value: { code: string } | null }>("/org/settings/currency")
-      .then((res) => {
-        if (res.value?.code) setCurrency(res.value.code);
-      })
-      .catch(() => {});
-  }, []);
-
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await apiClient.get<TaxSummaryReport>(
-        `/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`,
-      );
-      setReport(res);
-    } catch (err) {
-      setError(err instanceof ApiError && err.status === 403 ? "Owner-only report." : "Could not load the tax summary.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-  }, []);
-
-  function money(amount: string) {
-    return `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Tax summary</h3>
-      <p className="text-[13px] text-on-surface-muted">Tax collected from customers vs. tax paid to vendors, for filing.</p>
-
-      <div className="flex flex-wrap items-end gap-2">
-        <div className="flex flex-col gap-1.5">
-          <Label>From</Label>
-          <DatePicker value={from} onChange={setFrom} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>To</Label>
-          <DatePicker value={to} onChange={setTo} />
-        </div>
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
-          {loading ? <Spinner size="sm" /> : "Refresh"}
-        </Button>
-      </div>
-
-      {error && <p className="text-[13px] text-overdue">{error}</p>}
-
-      {report && !error && (
-        <div className="flex flex-col gap-3 rounded-md border border-border-strong p-3">
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <p className="text-[11px] font-medium text-on-surface-muted">Collected</p>
-              <p className="text-[15px] font-semibold text-on-surface">{money(report.taxCollected)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-on-surface-muted">Paid</p>
-              <p className="text-[15px] font-semibold text-on-surface">{money(report.taxPaid)}</p>
-            </div>
-            <div>
-              <p className="text-[11px] font-medium text-on-surface-muted">Net payable</p>
-              <p className="text-[15px] font-semibold text-on-surface">{money(report.netTaxPayable)}</p>
-            </div>
-          </div>
-
-          {report.collectedByRate.length > 0 && (
-            <div className="flex flex-col gap-1 border-t border-border pt-3">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Collected by rate</p>
-              {report.collectedByRate.map((row) => (
-                <div key={row.name} className="flex items-center justify-between text-[13px]">
-                  <span className="text-on-surface">
-                    {row.name}
-                    {row.percentage > 0 && <span className="text-on-surface-muted"> ({row.percentage}%)</span>}
-                  </span>
-                  <span className="font-mono tabular-nums text-on-surface">{money(row.amount)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }

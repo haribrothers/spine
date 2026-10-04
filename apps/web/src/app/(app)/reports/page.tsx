@@ -8,7 +8,7 @@ export default function ReportsPage() {
       <AppShellHeader
         breadcrumb={[{ label: "Reports" }]}
         title="Reports"
-        description="Profit & Loss, Balance Sheet, and job profitability, derived from the ledger."
+        description="Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and job profitability, derived from the ledger."
       />
       <ReportsExplorer />
     </>

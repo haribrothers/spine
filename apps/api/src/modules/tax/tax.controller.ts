@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Put, Query, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import type { Response } from "express";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { sendCsv, toCsv } from "../../common/csv";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { SettingsService } from "../org/settings.service";
@@ -75,5 +77,20 @@ export class TaxController {
   async taxSummary(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string) {
     const orgId = requireOrgId(session);
     return this.reportsService.taxSummary(orgId, from, to);
+  }
+
+  /** US-RPT-14 — the tax summary as CSV, for the return. Owner-only. */
+  @Get("summary/export.csv")
+  @OrgRoles(["owner"])
+  async exportTaxSummary(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string, @Res() res: Response) {
+    const report = await this.reportsService.taxSummary(requireOrgId(session), from, to);
+    const rows: (string | number)[][] = [
+      ...report.collectedByRate.map((r) => [r.name, r.taxableAmount, r.amount]),
+      ...(report.adjustments ? [["Adjustments from credit notes and voided invoices", report.adjustments.taxableAmount, report.adjustments.amount]] : []),
+      ["Total collected", report.totalTaxable, report.taxCollected],
+      ["Tax paid", "", report.taxPaid],
+      ["Net payable", "", report.netTaxPayable],
+    ];
+    sendCsv(res, `tax-summary-${from}-to-${to}.csv`, toCsv(["Collected by rate", "Taxable amount", "Tax"], rows));
   }
 }

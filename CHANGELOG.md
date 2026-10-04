@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-RPT-14: see tax collected and paid on Reports (Phase 6)
+
+- **The tab.** Reports › "Tax Summary" (Owner-only, D-057) has "From" and "To", "Refresh" and "Export CSV". Three cards follow:
+  - "Tax collected", on issued invoices after credit notes, from the ledger;
+  - "Tax paid", on recorded vendor bills and approved expenses;
+  - "Net payable".
+- **Breakdown.** A "Collected by rate" table gives the taxable amount and tax for each named rate or group, from issued invoices' lines (D-031). An "Adjustments from credit notes and voided invoices" row appears when there are any, and a "Total collected" row always matches the ledger figure. The footer reads "Spine produces the numbers for your return; it doesn't file it. Only owners can see this report."
+- **API.** `GET /org/tax/summary` now returns each rate's `taxableAmount`, the `adjustments` row and `totalTaxable`. The adjustments row replaces the old "Other / from removed invoices"; its taxable amount comes from credit notes issued in the period and earlier invoices voided in it. New `GET /org/tax/summary/export.csv`, Owner-only. `sendCsv` moved to `common/csv.ts` so both report controllers share it.
+- **Moved.** The tax summary is gone from Settings › Tax, and the Reports description names all five reports.
+
+Tests:
+- `us-rpt-14.http.integration.test.ts` (3), on a demo-seeded org: collected, paid and net, with per-rate taxable amounts and rows that total the ledger; an adjustments row for the credit note; the CSV.
+- `apps/e2e/tests/us-rpt-14.spec.ts`: the cards and their notes, the table headers, the adjustments and total rows, and the footer.
+
+Integration 43 files pass; E2E 48/48.
+
 ### 2026-10-04 — US-RPT-13: see a Trial Balance (Phase 6)
 
 - **The report.** Reports › "Trial Balance" (Owner-only, D-065) lists every account's balance as of a date, read from journal lines, with Code, Account, Debit and Credit. A net debit shows in Debit and a net credit in Credit. A "Total" row closes the table, and the status line reads "Balanced — total debits equal total credits." (or the difference if they don't match).

@@ -13,6 +13,7 @@ import {
   taxGroups,
   vendorBills,
   jobs,
+  creditNotes,
 } from "../../db/schema";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
@@ -319,14 +320,18 @@ export class ReportsService {
     const taxPaid = paidRows.reduce((sum, r) => sum + r.line.debit - r.line.credit, 0n);
 
     const collectedByRate = await this.taxCollectedByRate(orgId, from, to);
-    const attributedTotal = collectedByRate.reduce((sum, r) => sum + BigInt(r.amount), 0n);
-    // See taxSummary's own doc comment on why these can legitimately
-    // differ — surfaced explicitly rather than silently letting the
-    // breakdown under-total the ledger figure with no explanation.
-    const unattributed = taxCollected - attributedTotal;
-    if (unattributed !== 0n) {
-      collectedByRate.push({ name: "Other / from removed invoices", percentage: 0, amount: unattributed.toString() });
-    }
+    const attributedTax = collectedByRate.reduce((sum, r) => sum + BigInt(r.amount), 0n);
+    const attributedTaxable = collectedByRate.reduce((sum, r) => sum + BigInt(r.taxableAmount), 0n);
+
+    // US-RPT-14: the per-rate rows cover invoices issued in the period. What
+    // the ledger also holds — credit notes, invoices voided in the period
+    // after being issued earlier, and postings whose documents were since
+    // removed — is one "adjustments" row, so the table always totals the
+    // ledger's tax collected.
+    const adjustmentTax = taxCollected - attributedTax;
+    const adjustmentTaxable = await this.taxableAdjustments(orgId, from, to);
+    const adjustments =
+      adjustmentTax !== 0n || adjustmentTaxable !== 0n ? { taxableAmount: adjustmentTaxable.toString(), amount: adjustmentTax.toString() } : null;
 
     return {
       from,
@@ -335,6 +340,8 @@ export class ReportsService {
       taxPaid: taxPaid.toString(),
       netTaxPayable: (taxCollected - taxPaid).toString(),
       collectedByRate,
+      adjustments,
+      totalTaxable: (attributedTaxable + adjustmentTaxable).toString(),
     };
   }
 
@@ -721,6 +728,30 @@ export class ReportsService {
       .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""));
   }
 
+  /** Taxable amounts taken back in the period: credit notes issued, and invoices issued before it but voided in it. */
+  private async taxableAdjustments(orgId: string, from: string, to: string): Promise<bigint> {
+    const toEnd = `${to}T23:59:59.999Z`;
+    const [credited] = await this.db
+      .select({ total: sql<string>`coalesce(sum(${creditNotes.subtotalAmount}), 0)` })
+      .from(creditNotes)
+      .where(
+        and(eq(creditNotes.orgId, orgId), eq(creditNotes.status, "issued"), gte(creditNotes.issuedAt, new Date(from)), lte(creditNotes.issuedAt, new Date(toEnd))),
+      );
+    const [voided] = await this.db
+      .select({ total: sql<string>`coalesce(sum(${invoices.subtotalAmount} - ${invoices.discountAmount}), 0)` })
+      .from(invoices)
+      .where(
+        and(
+          eq(invoices.orgId, orgId),
+          eq(invoices.status, "void"),
+          gte(invoices.voidedAt, new Date(from)),
+          lte(invoices.voidedAt, new Date(toEnd)),
+          sql`${invoices.issueDate} < ${from}`,
+        ),
+      );
+    return -(BigInt(credited?.total ?? "0") + BigInt(voided?.total ?? "0"));
+  }
+
   private async taxCollectedByRate(orgId: string, from: string, to: string): Promise<TaxByRateRow[]> {
     const lineRows = await this.db
       .select({ line: invoiceLines })
@@ -747,7 +778,7 @@ export class ReportsService {
     const rateNameById = new Map(rateNames.map((r) => [r.id, r.name]));
     const groupNameById = new Map(groupNames.map((g) => [g.id, g.name]));
 
-    const buckets = new Map<string, { key: string; name: string; percentage: number; amount: bigint }>();
+    const buckets = new Map<string, { key: string; name: string; percentage: number; taxable: bigint; amount: bigint }>();
     for (const { line } of lineRows) {
       if (line.lineTaxAmount === 0n) continue;
 
@@ -767,14 +798,15 @@ export class ReportsService {
       const existing = buckets.get(key);
       if (existing) {
         existing.amount += line.lineTaxAmount;
+        existing.taxable += line.lineSubtotalAmount;
       } else {
-        buckets.set(key, { key, name, percentage: line.taxRatePercentage, amount: line.lineTaxAmount });
+        buckets.set(key, { key, name, percentage: line.taxRatePercentage, taxable: line.lineSubtotalAmount, amount: line.lineTaxAmount });
       }
     }
 
     return Array.from(buckets.values())
       .sort((a, b) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0))
-      .map((b) => ({ name: b.name, percentage: b.percentage, amount: b.amount.toString() }));
+      .map((b) => ({ name: b.name, percentage: b.percentage, taxableAmount: b.taxable.toString(), amount: b.amount.toString() }));
   }
 }
 
@@ -783,6 +815,8 @@ export interface TaxByRateRow {
   name: string;
   /** Blended percentage — see invoice_lines.taxRatePercentage's own comment. */
   percentage: number;
+  /** Net (pre-tax) amount of the lines taxed at this rate (US-RPT-14). */
+  taxableAmount: string;
   amount: string;
 }
 
@@ -804,6 +838,10 @@ export interface TaxSummaryReport {
    * is itself "0".
    */
   collectedByRate: TaxByRateRow[];
+  /** Credit notes, voids of earlier invoices and removed documents in the period; null when there are none (US-RPT-14). */
+  adjustments: { taxableAmount: string; amount: string } | null;
+  /** Taxable amount across the rows and adjustments. */
+  totalTaxable: string;
 }
 
 export interface ReportAccountLine {
