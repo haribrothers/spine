@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-ONB-12: show the setup checklist to owners only (Phase 6)
+
+- **Owners only.** `GET /dashboard/checklist` returns `{ visible: false }` to Staff and Field, and `{ visible: true, … }` to Owners. Dismissing (`POST /dashboard/checklist/dismiss`) is now Owner-only, because it hides the card for every Owner in the organisation. The web card renders only for Owners and only when `visible`.
+- **Demo data doesn't count.** The demo seed created its variation-order quotes through the normal quote service without marking them as demo. So an Owner with only demo data saw "Send your first quote" already ticked. Those quotes are now marked demo; removing demo data still works (checked).
+- **Later.** The redesigned card copy ("Three steps to your first sent quote. Only owners see this.") stays hidden until Phase 7 (US-DASH-12), as the story says.
+
+Tests:
+- `us-onb-12.http.integration.test.ts` (3): Staff and Field get `{ visible: false }`; the Owner sees it with nothing ticked from demo data; Staff can't dismiss (403); one Owner's dismissal hides it for another.
+- `apps/e2e/tests/us-onb-12.spec.ts`: the demo Staff user's dashboard has no "Get started".
+
+Integration 35 files pass.
+
 ### 2026-10-04 — US-TEAM-16 and US-TEAM-17: confirm before making an owner; protect the Primary Owner's row (Phase 6)
 
 - **Confirm before promoting (US-TEAM-16).** "Promote to Owner" now opens "Make <name> an owner?" with "Owners have full access to everything in <Business> — every record and report, plus Users, Teams and Settings. Team permissions no longer apply to <name>. Any owner can change them back to Staff later.", plus "Cancel" and "Make owner". "Make owner" is a primary button, not danger (D-058). The business name comes from the business profile.

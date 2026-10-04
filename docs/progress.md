@@ -235,7 +235,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 6 · Fix and harden
 
-- [ ] US-ONB-12 · Show the setup checklist to owners only
+- [x] US-ONB-12 · Show the setup checklist to owners only
 - [ ] US-AUTH-08 · See that sign-up is invite-only
 - [ ] US-AUTH-09 · Ask for a password reset link
 - [ ] US-AUTH-10 · Choose a new password from the reset link

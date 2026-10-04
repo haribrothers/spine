@@ -2036,6 +2036,13 @@ and milestone amounts everywhere (§5).
    menu shows only "Transfer primary ownership…"; as another Owner, the
    row has no ⋯ menu at all.
 
+## 23. Setup checklist (US-ONB-12, Phase 6)
+
+1. As Staff or Field: the dashboard has no "Get started" card.
+2. As Owner after "Load demo data" only: the card shows with none of the
+   three steps ticked.
+3. Dismiss it as one Owner: another Owner no longer sees it either.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

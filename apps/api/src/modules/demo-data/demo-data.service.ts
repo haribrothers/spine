@@ -1536,6 +1536,9 @@ export class DemoDataService {
       });
       const created = variationOrders[variationOrders.length - 1];
       if (created) {
+        // The variation order's quote is demo data too (so the Owners' setup
+        // checklist doesn't count it as their first sent quote, US-ONB-12).
+        await this.db.update(quotes).set({ isDemo: true }).where(eq(quotes.id, created.quoteId));
         await this.quotesService.send(orgId, created.quoteId, actorUserId);
         variationOrdersCreated++;
       }

@@ -89,7 +89,7 @@ export function DashboardShell({ role }: { role: string | null }) {
   return (
     <div className="flex flex-col gap-6">
       {role === "owner" && <StorageIntegrityAlert />}
-      {role !== "field" && <SetupChecklist />}
+      {role === "owner" && <SetupChecklist />}
       {role !== "field" && <DashboardSummary />}
 
       <div className="flex justify-end">

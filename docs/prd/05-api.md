@@ -114,8 +114,8 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/dashboard/activity-feed` | Any member | — |
-| GET | `/dashboard/checklist` | Any member | — |
-| POST | `/dashboard/checklist/dismiss` | Any member | Yes |
+| GET | `/dashboard/checklist` | Any member; `{ visible: false }` unless Owner (US-ONB-12) | — |
+| POST | `/dashboard/checklist/dismiss` | roles: owner (US-ONB-12) | Yes |
 
 ### Demo data — `/demo-data`
 
