@@ -13,7 +13,7 @@
 | Topic | Rule |
 |---|---|
 | Method | Email + password (Better Auth). Passwords hashed with Argon2id (`apps/api/src/auth/password.ts`, `@node-rs/argon2`); minimum 8 characters |
-| Sign-up | Open only while the instance has no users; the first user becomes Owner and Primary Owner. After that `/signup` shows "This Spine is invite-only" and the API rejects sign-up without a valid invitation (US-AUTH-08) |
+| Sign-up | Open only while the instance has no users; the first user becomes Owner and Primary Owner. After that `/signup` shows "This Spine is invite-only" and the API rejects sign-up without a valid pending invitation for that email (Better Auth `user.create.before` hook, US-AUTH-08). `SPINE_ALLOW_OPEN_SIGNUP` opens it for automated tests and is ignored in production |
 | Invitations | Created by an Owner (Staff or Field only — never Owner, [D-020](12-decisions.md)); emailed link; accepting requires being signed in with the invited email; expired, cancelled or used invitations show "This invitation can't be used" |
 | Password reset | Email link, single-use, expires in 1 hour; resend after 60 s; responses never reveal whether an account exists; a reset signs out other sessions (US-AUTH-09, US-AUTH-10, [D-056](12-decisions.md)) |
 | Sessions (web) | HTTP-only session cookie (Better Auth); `Secure` when served over HTTPS; lifetime pinned explicitly in `auth.ts` |

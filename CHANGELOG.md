@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-AUTH-08: see that sign-up is invite-only (Phase 6)
+
+- **The sign-up page.** Once an instance has an account, `/signup` without an invitation shows "This Spine is invite-only" and "<Business name> already has an owner, so new accounts are created by invitation. Ask an owner to invite you — you'll get an email with a link to join.", with "Log in" and no form. The business name comes from the first organisation's business profile, the only detail shown to anonymous visitors (D-084).
+- **Still open for some.** An invitation link still gets the form with its email; a fresh install gets the first-account form. `/login` shows "Don't have an account? Sign up" only while sign-up is open.
+- **Server check.** The server now enforces it too: until now anyone could sign up on an existing install and get a new organisation of their own. A Better Auth `user.create.before` hook refuses any new account unless the instance is empty or a pending invitation exists for that email (403 "This Spine is invite-only…").
+- **API.** New `GET /public/signup-status` → `{ open, businessName }`.
+- **Test switch.** Tests create a fresh organisation per case, so `SPINE_ALLOW_OPEN_SIGNUP=true` keeps sign-up open in `.env.test`, `.env.e2e` and CI. It is ignored when `NODE_ENV=production`. To sign up a second organisation in local dev, set it in `.env`.
+
+Tests:
+- `us-auth-08.http.integration.test.ts` (4), with the switch off: the status reports closed with the business name; a direct sign-up without an invitation gets 403 and creates no user; a sign-up with a pending invitation succeeds; the switch is ignored in production.
+- `apps/e2e/tests/us-auth-08.spec.ts` (4): the closed page and its Log in link; login without "Sign up"; an invitation link keeps the form; a fresh install shows the first-account form.
+
+Integration 44 files pass; E2E 52/52.
+
 ### 2026-10-04 — US-RPT-14: see tax collected and paid on Reports (Phase 6)
 
 - **The tab.** Reports › "Tax Summary" (Owner-only, D-057) has "From" and "To", "Refresh" and "Export CSV". Three cards follow:

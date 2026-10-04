@@ -19,6 +19,7 @@ import {
 } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
+import { useSignupStatus } from "../../lib/signup-status";
 
 export default function LoginPage() {
   return (
@@ -33,6 +34,7 @@ export default function LoginPage() {
 }
 
 function LoginForm() {
+  const signupStatus = useSignupStatus();
   const router = useRouter();
   const searchParams = useSearchParams();
   // Set by accept-invite when an invited person without a session needs to
@@ -130,12 +132,15 @@ function LoginForm() {
             </Button>
           </form>
 
-          <p className="mt-4 text-center text-[13px] text-on-surface-muted">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
+          {/* US-AUTH-08: only while the instance has no accounts yet. */}
+          {signupStatus?.open && (
+            <p className="mt-4 text-center text-[13px] text-on-surface-muted">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-primary hover:underline">
+                Sign up
+              </Link>
+            </p>
+          )}
         </CardContent>
       </Card>
     </main>

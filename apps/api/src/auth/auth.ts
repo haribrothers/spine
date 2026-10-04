@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
+import { assertSignupAllowed } from "./signup-policy";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { bearer } from "better-auth/plugins/bearer";
 import { jwt } from "better-auth/plugins/jwt";
@@ -190,6 +191,11 @@ export const auth = betterAuth({
          * free to retry with the same email — rather than a phantom
          * "successful" signup that's broken forever.
          */
+        /** US-AUTH-08 — closed sign-up: only the first account, or an invited email, may be created. */
+        before: async (user) => {
+          await assertSignupAllowed(db, user.email);
+          return { data: user };
+        },
         after: async (user) => {
           const [pendingInvitation] = await db
             .select({ id: invitationTable.id })

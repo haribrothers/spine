@@ -19,6 +19,7 @@ import {
 } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
+import { useSignupStatus } from "../../lib/signup-status";
 
 export default function SignupPage() {
   return (
@@ -40,6 +41,7 @@ function SignupForm() {
   const inviteId = searchParams.get("inviteId");
   const invitedEmail = searchParams.get("email");
 
+  const signupStatus = useSignupStatus();
   const [name, setName] = useState("");
   const [email, setEmail] = useState(invitedEmail ?? "");
   const [password, setPassword] = useState("");
@@ -97,6 +99,26 @@ function SignupForm() {
         />
       </div>
       <ThemeToggle />
+      {/* US-AUTH-08: an existing install takes new people by invitation only. */}
+      {!inviteId && signupStatus === null ? (
+        <Spinner />
+      ) : !inviteId && !signupStatus?.open ? (
+        <Card className="w-full max-w-sm" data-testid="signup-closed">
+          <CardHeader>
+            <CardTitle>This Spine is invite-only</CardTitle>
+            <CardDescription>
+              {signupStatus?.businessName ?? "This business"} already has an owner, so new accounts are created by invitation. Ask an owner
+              to invite you — you&apos;ll get an email with a link to join.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4">
+            <Button asChild>
+              <Link href="/login">Log in</Link>
+            </Button>
+            <p className="text-center text-[13px] text-on-surface-muted">Already have an invite? Open the link in your email.</p>
+          </CardContent>
+        </Card>
+      ) : (
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle>Create your account</CardTitle>
@@ -166,6 +188,7 @@ function SignupForm() {
           </p>
         </CardContent>
       </Card>
+      )}
     </main>
   );
 }

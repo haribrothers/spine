@@ -63,6 +63,8 @@ jobs:
       DATABASE_URL: postgres://spine:spine@localhost:5432/spine
       AUTH_SECRET: ci-test-secret-not-for-production-use-only
       APP_URL: http://localhost:3000
+      # Tests sign up a fresh organisation per case (US-AUTH-08 keeps sign-up closed otherwise).
+      SPINE_ALLOW_OPEN_SIGNUP: "true"
       # The s3 storage-driver tests run against S3Mock (US-OPS-27); uploads
       # elsewhere use the default local driver.
       S3_ENDPOINT: http://localhost:9000

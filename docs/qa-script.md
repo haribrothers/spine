@@ -37,7 +37,10 @@ before considering that work's QA "done."
 
 1. Go to http://localhost:3000/signup and create an account. This first
    signup on a fresh instance should become the **Primary Owner**
-   automatically — no separate "create org" step.
+   automatically — no separate "create org" step. (On an instance that
+   already has an owner, sign-up is invite-only — §31; set
+   `SPINE_ALLOW_OPEN_SIGNUP=true` in `.env` to create another organisation
+   in dev.)
 2. Confirm you land in the onboarding wizard. Step through: business
    profile → industry template → currency/locale/financial year → tax
    rates → numbering prefixes → chart-of-accounts confirmation → team
@@ -2128,6 +2131,18 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
 Regression checks: §10's tax summary steps now happen on Reports, not in
 Settings › Tax.
+
+## 31. Invite-only sign-up (US-AUTH-08, Phase 6)
+
+1. Signed out, on an instance with an owner, open `/signup`: "This Spine is
+   invite-only" naming your business, a "Log in" button, no form. "Log in"
+   goes to `/login`, which has no "Sign up" link.
+2. Open an invitation's sign-up link (`/signup?inviteId=…&email=…`): the
+   normal form, with the invited email.
+3. `curl -X POST localhost:4000/api/auth/sign-up/email` with a new email and
+   no invitation → 403 "This Spine is invite-only…".
+4. On a fresh install (empty database), `/signup` shows the first-account
+   form.
 
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
