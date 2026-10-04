@@ -5,6 +5,7 @@ import { RequireCapability } from "../../auth/require-capability.decorator";
 import { toCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService } from "./reports.service";
+import { LedgerIntegrityService } from "./ledger-integrity.service";
 
 /**
  * `@OrgRoles(["owner", "staff"])` at the class level — Field never reaches
@@ -25,7 +26,10 @@ import { ReportsService } from "./reports.service";
 @Controller("reports")
 @OrgRoles(["owner", "staff"])
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) {}
+  constructor(
+    private readonly reportsService: ReportsService,
+    private readonly ledgerIntegrityService: LedgerIntegrityService,
+  ) {}
 
   /** S-09.10 — the real dashboard summary. */
   @Get("dashboard-summary")
@@ -51,6 +55,13 @@ export class ReportsController {
   async invoicesDueThisWeek(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.invoicesDueThisWeek(orgId);
+  }
+
+  /** US-RPT-12 — the latest daily check that the books balance; Owners only. */
+  @Get("ledger-integrity")
+  @OrgRoles(["owner"])
+  async ledgerIntegrity(@Session() session: UserSession) {
+    return this.ledgerIntegrityService.status(requireOrgId(session));
   }
 
   @Get("receivables")

@@ -66,6 +66,7 @@ const TABLES = [
   "contacts",
   "files",
   "idempotency_keys",
+  "ledger_integrity_checks",
   "number_sequences",
   "settings",
   "team_privileges",

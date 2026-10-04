@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-RPT-12: warn me if the books ever stop balancing (Phase 6)
+
+- **Daily check.** A daily `ledger-integrity-check` job (pg-boss, 02:00) sums every organisation's journal lines (debits − credits) and stores the result in the new `ledger_integrity_checks` table (migration `0058`, one row per organisation). The table is kept out of `settings` because every member can read settings.
+- **When the books are out.** Owners get an in-app notification (`ledger_out_of_balance`), and the dashboard shows "Your books are out of balance by <amount>. Contact the person who runs Spine." in the organisation's currency. The log entry names the difference and when the books last balanced. The warning disappears once a later check passes; nothing shows while the books balance.
+- **API.** `GET /reports/ledger-integrity` (Owners only).
+- **Why it matters.** The database trigger already refuses an unbalanced entry, so this guards against data repairs made outside the app.
+
+Tests:
+- `us-rpt-12.integration.test.ts` (2): a balanced ledger shows nothing. Writing a journal line with triggers off (a "repair" mistake) makes the check report 12.34 out, sets the message and notifies Owners; undoing it clears the warning.
+- `apps/e2e/tests/us-rpt-12.spec.ts`: the dashboard shows nothing when balanced, and the warning when the check says otherwise.
+
+E2E 46/46.
+
 ### 2026-10-04 — US-JOB-21: show retention on a progress invoice (Phase 6)
 
 - **Invoice detail.** A progress invoice now shows:

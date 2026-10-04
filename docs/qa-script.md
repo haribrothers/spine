@@ -2092,6 +2092,17 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
    retention held and the amount due.
 4. A progress invoice on a job with 0% retention shows no retention row.
 
+## 28. Ledger balance check (US-RPT-12, Phase 6)
+
+1. As Owner, the dashboard shows no "out of balance" warning.
+2. To see the warning, a developer can unbalance the dev ledger on purpose
+   (insert a stray journal line with `session_replication_role = replica`)
+   and run the check (`LedgerIntegrityService.check(orgId)` or wait for
+   02:00): the dashboard reads "Your books are out of balance by <amount>.
+   Contact the person who runs Spine." and an in-app notification arrives.
+   Undo it and run the check again: the warning goes.
+3. As Staff, `GET /reports/ledger-integrity` → 403.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
