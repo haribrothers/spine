@@ -19,7 +19,7 @@ function startOfToday(): Date {
   return date;
 }
 
-/** Job-site/business-relevant sample events per docs/spine-prd.md's domain (§enquiry→quote→job→invoice→payment). */
+/** Job-site/business-relevant sample events per docs/archive/spine-prd.md's domain (§enquiry→quote→job→invoice→payment). */
 function buildSampleEvents(): CalendarEvent[] {
   return [
     {

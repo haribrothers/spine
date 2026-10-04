@@ -31,7 +31,7 @@ const authLogger = new Logger("Auth");
 /**
  * Cookie sessions for web, a Bearer-sent session token for mobile — see
  * the `bearer()` plugin's own doc comment below for why this is the
- * `bearer` plugin, not the `jwt` plugin, despite docs/spine-prd.md §5's
+ * `bearer` plugin, not the `jwt` plugin, despite docs/archive/spine-prd.md §5's
  * original "JWT for mobile" phrasing (a real design correction made
  * during Phase 5's mobile-auth build, not the original plan). The
  * organization plugin is what makes membership/role per-org (§2.1); `jwt()`

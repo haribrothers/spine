@@ -9,7 +9,7 @@ export function NativeTextFieldDemo() {
   if (Platform.OS !== "ios") {
     return (
       <DemoLead>
-        `NativeTextField` is `@expo/ui/swift-ui`'s real SwiftUI `TextField`, iOS-only by design (no Jetpack Compose
+        `NativeTextField` is `@expo/ui/swift-ui`’s real SwiftUI `TextField`, iOS-only by design (no Jetpack Compose
         equivalent is used here — `FloatingLabelField`/`TextField` cover Android). Run this demo on iOS to see it.
       </DemoLead>
     );
@@ -18,7 +18,7 @@ export function NativeTextFieldDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui/swift-ui`'s real SwiftUI `TextField`, iOS-only — the iOS pilot `FloatingLabelField` wraps
+        `@expo/ui/swift-ui`’s real SwiftUI `TextField`, iOS-only — the iOS pilot `FloatingLabelField` wraps
         internally. Not used directly on Android (`TextField` covers that platform there).
       </DemoLead>
       <DemoSection title="Default">

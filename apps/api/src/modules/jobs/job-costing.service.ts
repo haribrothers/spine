@@ -23,7 +23,7 @@ export interface JobCostingReport {
  * job; `expense` debits = cost incurred against this job) — never a
  * separate running total maintained by application code.
  *
- * **Revenue side only, per the PRD's own Phase 3 scope** (`docs/spine-prd.md`
+ * **Revenue side only, per the PRD's own Phase 3 scope** (`docs/archive/spine-prd.md`
  * §12: "S-04.8 (revenue side only until Phase 4 supplies costs)") —
  * `journal_lines.jobId` is populated today only by
  * `InvoicesService.issue`'s revenue/retention/tax postings (this Phase),

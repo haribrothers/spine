@@ -113,5 +113,6 @@ export const darkColors = {
   overlaySubtle: "rgba(243,242,238,0.16)",
 } as const;
 
-export type ColorToken = keyof typeof lightColors;
+/** Flat colour tokens only — `gradients` is a nested object, not a colour string (see `GradientTone`). */
+export type ColorToken = Exclude<keyof typeof lightColors, "gradients">;
 export type GradientTone = keyof typeof lightColors.gradients;

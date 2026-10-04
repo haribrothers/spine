@@ -9,7 +9,7 @@ export function BottomSheetDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s universal BottomSheet — genuinely cross-platform (iOS, Android, and web), a real native modal
+        `@expo/ui`’s universal BottomSheet — genuinely cross-platform (iOS, Android, and web), a real native modal
         sheet.
       </DemoLead>
       <DemoSection title="Default">

@@ -8,7 +8,7 @@ export function SwitchDemo() {
 
   return (
     <>
-      <DemoLead>`@expo/ui`'s universal Switch — a real native on/off toggle.</DemoLead>
+      <DemoLead>`@expo/ui`’s universal Switch — a real native on/off toggle.</DemoLead>
       <DemoSection title="Default">
         <DemoPreview>
           <Switch value={on} onValueChange={setOn} label="Enable notifications" />

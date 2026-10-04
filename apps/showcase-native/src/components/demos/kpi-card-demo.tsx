@@ -8,7 +8,7 @@ export function KpiCardDemo() {
   return (
     <>
       <DemoLead>
-        A gradient-filled stat card — label, value, trend, and an icon. See Home's KPI carousel for this in real use;
+        A gradient-filled stat card — label, value, trend, and an icon. See Home’s KPI carousel for this in real use;
         this component itself has no carousel logic, just the card.
       </DemoLead>
       <DemoSection title="Default">

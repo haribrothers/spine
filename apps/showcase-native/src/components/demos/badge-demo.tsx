@@ -5,7 +5,7 @@ import { DemoLead, DemoPreview, DemoSection } from "../demo-screen";
 export function BadgeDemo() {
   return (
     <>
-      <DemoLead>A neutral pill label for tags and metadata — never used for financial status, that's StatusChip's job.</DemoLead>
+      <DemoLead>A neutral pill label for tags and metadata — never used for financial status, that’s StatusChip’s job.</DemoLead>
       <DemoSection title="Default">
         <DemoPreview>
           <View className="flex-row flex-wrap gap-2">

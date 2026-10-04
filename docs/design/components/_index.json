@@ -1,0 +1,578 @@
+[
+  {
+    "md": "Accordion",
+    "name": "accordion",
+    "platform": "Web"
+  },
+  {
+    "md": "AlertDialog",
+    "name": "alert-dialog",
+    "platform": "Web"
+  },
+  {
+    "md": "Alert",
+    "name": "alert",
+    "platform": "Web"
+  },
+  {
+    "md": "AppShell",
+    "name": "app-shell",
+    "platform": "Web"
+  },
+  {
+    "md": "AspectRatio",
+    "name": "aspect-ratio",
+    "platform": "Web"
+  },
+  {
+    "md": "Avatar",
+    "name": "avatar",
+    "platform": "Web"
+  },
+  {
+    "md": "Badge",
+    "name": "badge",
+    "platform": "Web"
+  },
+  {
+    "md": "Breadcrumb",
+    "name": "breadcrumb",
+    "platform": "Web"
+  },
+  {
+    "md": "ButtonGroup",
+    "name": "button-group",
+    "platform": "Web"
+  },
+  {
+    "md": "Button",
+    "name": "button",
+    "platform": "Web"
+  },
+  {
+    "md": "CalendarMini",
+    "name": "calendar-mini",
+    "platform": "Web"
+  },
+  {
+    "md": "Calendar",
+    "name": "calendar",
+    "platform": "Web"
+  },
+  {
+    "md": "Card",
+    "name": "card",
+    "platform": "Web"
+  },
+  {
+    "md": "Carousel",
+    "name": "carousel",
+    "platform": "Web"
+  },
+  {
+    "md": "Chart",
+    "name": "chart",
+    "platform": "Web"
+  },
+  {
+    "md": "Checkbox",
+    "name": "checkbox",
+    "platform": "Web"
+  },
+  {
+    "md": "Collapsible",
+    "name": "collapsible",
+    "platform": "Web"
+  },
+  {
+    "md": "Combobox",
+    "name": "combobox",
+    "platform": "Web"
+  },
+  {
+    "md": "Command",
+    "name": "command",
+    "platform": "Web"
+  },
+  {
+    "md": "ContextMenu",
+    "name": "context-menu",
+    "platform": "Web"
+  },
+  {
+    "md": "DataList",
+    "name": "data-list",
+    "platform": "Web"
+  },
+  {
+    "md": "DataTable",
+    "name": "data-table",
+    "platform": "Web"
+  },
+  {
+    "md": "DatePicker",
+    "name": "date-picker",
+    "platform": "Web"
+  },
+  {
+    "md": "Dialog",
+    "name": "dialog",
+    "platform": "Web"
+  },
+  {
+    "md": "DonutChart",
+    "name": "donut-chart",
+    "platform": "Web"
+  },
+  {
+    "md": "Drawer",
+    "name": "drawer",
+    "platform": "Web"
+  },
+  {
+    "md": "DropdownMenu",
+    "name": "dropdown-menu",
+    "platform": "Web"
+  },
+  {
+    "md": "EmptyState",
+    "name": "empty-state",
+    "platform": "Web"
+  },
+  {
+    "md": "Field",
+    "name": "field",
+    "platform": "Web"
+  },
+  {
+    "md": "FormField",
+    "name": "form-field",
+    "platform": "Web"
+  },
+  {
+    "md": "Form",
+    "name": "form",
+    "platform": "Web"
+  },
+  {
+    "md": "HelperText",
+    "name": "helper-text",
+    "platform": "Web"
+  },
+  {
+    "md": "HoverCard",
+    "name": "hover-card",
+    "platform": "Web"
+  },
+  {
+    "md": "InputGroup",
+    "name": "input-group",
+    "platform": "Web"
+  },
+  {
+    "md": "Input",
+    "name": "input",
+    "platform": "Web"
+  },
+  {
+    "md": "Kanban",
+    "name": "kanban",
+    "platform": "Web"
+  },
+  {
+    "md": "Kbd",
+    "name": "kbd",
+    "platform": "Web"
+  },
+  {
+    "md": "Label",
+    "name": "label",
+    "platform": "Web"
+  },
+  {
+    "md": "Layout",
+    "name": "layout",
+    "platform": "Web"
+  },
+  {
+    "md": "Menubar",
+    "name": "menubar",
+    "platform": "Web"
+  },
+  {
+    "md": "MoneyInput",
+    "name": "money-input",
+    "platform": "Web"
+  },
+  {
+    "md": "MultiSelect",
+    "name": "multi-select",
+    "platform": "Web"
+  },
+  {
+    "md": "NativeSelect",
+    "name": "native-select",
+    "platform": "Web"
+  },
+  {
+    "md": "NavigationMenu",
+    "name": "navigation-menu",
+    "platform": "Web"
+  },
+  {
+    "md": "OtpField",
+    "name": "otp-field",
+    "platform": "Web"
+  },
+  {
+    "md": "PageLoader",
+    "name": "page-loader",
+    "platform": "Web"
+  },
+  {
+    "md": "PaginationBar",
+    "name": "pagination-bar",
+    "platform": "Web"
+  },
+  {
+    "md": "Pagination",
+    "name": "pagination",
+    "platform": "Web"
+  },
+  {
+    "md": "PasswordToggleField",
+    "name": "password-toggle-field",
+    "platform": "Web"
+  },
+  {
+    "md": "Popover",
+    "name": "popover",
+    "platform": "Web"
+  },
+  {
+    "md": "Progress",
+    "name": "progress",
+    "platform": "Web"
+  },
+  {
+    "md": "RadioGroup",
+    "name": "radio-group",
+    "platform": "Web"
+  },
+  {
+    "md": "ReorderableList",
+    "name": "reorderable-list",
+    "platform": "Web"
+  },
+  {
+    "md": "Resizable",
+    "name": "resizable",
+    "platform": "Web"
+  },
+  {
+    "md": "RichTextEditor",
+    "name": "rich-text-editor",
+    "platform": "Web"
+  },
+  {
+    "md": "ScrollArea",
+    "name": "scroll-area",
+    "platform": "Web"
+  },
+  {
+    "md": "Select",
+    "name": "select",
+    "platform": "Web"
+  },
+  {
+    "md": "Separator",
+    "name": "separator",
+    "platform": "Web"
+  },
+  {
+    "md": "Sidebar",
+    "name": "sidebar",
+    "platform": "Web"
+  },
+  {
+    "md": "Skeleton",
+    "name": "skeleton",
+    "platform": "Web"
+  },
+  {
+    "md": "Slider",
+    "name": "slider",
+    "platform": "Web"
+  },
+  {
+    "md": "Spinner",
+    "name": "spinner",
+    "platform": "Web"
+  },
+  {
+    "md": "StatCard",
+    "name": "stat-card",
+    "platform": "Web"
+  },
+  {
+    "md": "StatusChip",
+    "name": "status-chip",
+    "platform": "Web"
+  },
+  {
+    "md": "Stepper",
+    "name": "stepper",
+    "platform": "Web"
+  },
+  {
+    "md": "Switch",
+    "name": "switch",
+    "platform": "Web"
+  },
+  {
+    "md": "TableSkeleton",
+    "name": "table-skeleton",
+    "platform": "Web"
+  },
+  {
+    "md": "Table",
+    "name": "table",
+    "platform": "Web"
+  },
+  {
+    "md": "Tabs",
+    "name": "tabs",
+    "platform": "Web"
+  },
+  {
+    "md": "Textarea",
+    "name": "textarea",
+    "platform": "Web"
+  },
+  {
+    "md": "Timeline",
+    "name": "timeline",
+    "platform": "Web"
+  },
+  {
+    "md": "Toast",
+    "name": "toast",
+    "platform": "Web"
+  },
+  {
+    "md": "ToggleGroup",
+    "name": "toggle-group",
+    "platform": "Web"
+  },
+  {
+    "md": "Toggle",
+    "name": "toggle",
+    "platform": "Web"
+  },
+  {
+    "md": "Toolbar",
+    "name": "toolbar",
+    "platform": "Web"
+  },
+  {
+    "md": "Tooltip",
+    "name": "tooltip",
+    "platform": "Web"
+  },
+  {
+    "md": "TrendBarChart",
+    "name": "trend-bar-chart",
+    "platform": "Web"
+  },
+  {
+    "md": "Typography",
+    "name": "typography",
+    "platform": "Web"
+  },
+  {
+    "md": "ActionTileNative",
+    "name": "action-tile",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "AvatarNative",
+    "name": "avatar",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "BadgeNative",
+    "name": "badge",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "BottomSheetNative",
+    "name": "bottom-sheet",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "ButtonNative",
+    "name": "button",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "CardNative",
+    "name": "card",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "ContextMenuNative",
+    "name": "context-menu",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "DateTimePickerNative",
+    "name": "date-time-picker",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "DividerNative",
+    "name": "divider",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "EmptyStateNative",
+    "name": "empty-state",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "FloatingLabelFieldNative",
+    "name": "floating-label-field",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "FormRowNative",
+    "name": "form-row",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "FullWidthButtonNative",
+    "name": "full-width-button",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "GaugeIndicatorNative",
+    "name": "gauge-indicator",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "KpiCardNative",
+    "name": "kpi-card",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "NativeTextFieldNative",
+    "name": "native-text-field",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "ScrollEdgeMaskNative",
+    "name": "scroll-edge-mask",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "SegmentedControlNative",
+    "name": "segmented-control",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "SelectFieldNative",
+    "name": "select-field",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "SelectListFieldNative",
+    "name": "select-list-field",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "SelectNative",
+    "name": "select",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "SkeletonNative",
+    "name": "skeleton",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "SliderNative",
+    "name": "slider",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "SpinnerNative",
+    "name": "spinner",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "StatusChipNative",
+    "name": "status-chip",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "StepperNative",
+    "name": "stepper",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "SwitchNative",
+    "name": "switch",
+    "platform": "Native",
+    "hasDoc": false
+  },
+  {
+    "md": "TextFieldNative",
+    "name": "text-field",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "ToastNative",
+    "name": "toast",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "FloatingTabBarNative",
+    "name": "floating-tab-bar",
+    "platform": "Native",
+    "hasDoc": true
+  },
+  {
+    "md": "TabBarNative",
+    "name": "tab-bar",
+    "platform": "Native",
+    "hasDoc": true
+  }
+]

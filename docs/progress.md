@@ -1,0 +1,338 @@
+# Progress
+
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076).
+
+## Phase 0 · Foundation
+
+- [x] US-ONB-01 · Start the setup wizard after signing up
+- [x] US-ONB-02 · Skip setup at any step
+- [x] US-ONB-03 · Enter my business details
+- [x] US-ONB-05 · Set currency, locale and financial year
+- [x] US-ONB-06 · Confirm a default tax rate and document numbering
+- [x] US-ONB-07 · Review the chart of accounts
+- [x] US-ONB-08 · Invite my team as the last step
+- [x] US-ONB-11 · Change any setup answer later
+- [x] US-AUTH-01 · Create the first account on a new install
+- [x] US-AUTH-02 · Log in with email and password
+- [x] US-AUTH-03 · Sign out from the user menu
+- [x] US-AUTH-04 · Accept an invitation while signed in
+- [x] US-AUTH-05 · Create my account from an invitation
+- [x] US-AUTH-06 · Edit my name, email, password and avatar
+- [x] US-AUTH-07 · Choose light, dark or system theme
+- [x] US-TEAM-01 · See everyone with access in one place
+- [x] US-TEAM-02 · Invite a teammate with a role
+- [x] US-TEAM-03 · Resend or cancel a pending invite
+- [x] US-TEAM-04 · Deactivate a user without losing their history
+- [x] US-TEAM-05 · Reactivate a user
+- [x] US-TEAM-06 · Promote a staff member to Owner
+- [x] US-TEAM-07 · Demote an owner back to staff
+- [x] US-TEAM-08 · Transfer primary ownership deliberately
+- [x] US-TEAM-09 · Create and rename Teams
+- [x] US-TEAM-10 · Put staff members on Teams
+- [x] US-TEAM-11 · Choose exactly what a Team can do
+- [x] US-TEAM-12 · Delete a Team
+- [x] US-TEAM-13 · Give staff on several Teams the union of their grants
+- [x] US-TEAM-14 · Keep Field access fixed
+- [x] US-SET-01 · Open organisation Settings as an owner
+- [x] US-SET-02 · Search settings
+- [x] US-SET-03 · Change my business details later
+- [x] US-SET-04 · Change template, currency and financial year later
+- [x] US-SET-05 · Continue my existing document numbers
+- [x] US-SET-06 · See who changed a record and when
+- [x] US-SET-07 · Record every change to money documents
+
+## Phase 1 · Sales spine
+
+- [x] US-ONB-10 · Follow a checklist to my first transaction
+- [x] US-CRM-01 · Add a customer or vendor
+- [x] US-CRM-02 · Mark a contact as both customer and vendor
+- [x] US-CRM-03 · Find contacts and switch views
+- [x] US-CRM-04 · Archive or delete a contact
+- [x] US-CRM-05 · Add the people at a company
+- [x] US-CRM-06 · Add billing, shipping and site addresses
+- [x] US-CRM-07 · See everything about a contact on one timeline
+- [x] US-CRM-08 · Log a call, meeting, note or task with a follow-up date
+- [x] US-CRM-09 · Mark a follow-up done
+- [x] US-CRM-10 · Create a lead with a value and stage
+- [x] US-CRM-11 · See the pipeline by stage with totals
+- [x] US-CRM-12 · See a contact's leads
+- [x] US-CRM-13 · Delete a lead
+- [x] US-CRM-14 · Import contacts from a spreadsheet
+- [x] US-CRM-15 · Review duplicates and failed rows after an import
+- [x] US-MTG-01 · Schedule a meeting on the calendar
+- [x] US-MTG-02 · Switch calendar views and jump to a date
+- [x] US-MTG-03 · Show or hide colleagues' calendars and my activities
+- [x] US-MTG-04 · Link a meeting to a contact
+- [x] US-MTG-05 · Invite specific colleagues privately
+- [x] US-MTG-06 · Make a meeting visible to the whole organisation
+- [x] US-MTG-07 · Respond to a meeting invitation
+- [x] US-MTG-08 · Check a meeting's details in a quick view
+- [x] US-MTG-09 · Change or delete one occurrence or the whole series
+- [x] US-MTG-10 · Duplicate a meeting
+- [x] US-CAT-01 · Save a service or material with a default price
+- [x] US-CAT-02 · Map an item to income and expense accounts
+- [x] US-CAT-03 · Find items and spot missing setup
+- [x] US-CAT-04 · Archive or delete an item
+- [x] US-CAT-05 · Change a line's price without changing the catalogue
+- [x] US-QUO-01 · Build a multi-line quote
+- [x] US-QUO-02 · Add section headings and text lines
+- [x] US-QUO-03 · Find quotes by status and contact
+- [x] US-QUO-04 · Delete a draft quote
+- [x] US-QUO-05 · Preview and download a branded PDF
+- [x] US-QUO-06 · Email a quote with a secure link
+- [x] US-QUO-07 · See emails waiting to go out
+- [x] US-QUO-08 · Read a quote on my phone from the link
+- [x] US-QUO-09 · Accept or decline a quote with a comment
+- [x] US-QUO-10 · Get told when a customer views or answers a quote
+- [x] US-QUO-11 · Revise a sent quote into a new version
+- [x] US-QUO-12 · Require owner approval for big discounts
+- [x] US-QUO-13 · Show quotes as expired after their validity date
+- [x] US-NTF-01 · See recent notifications from the bell
+- [x] US-NTF-02 · Mark notifications as read everywhere
+- [x] US-NTF-03 · Only get notifications about things I can see
+- [x] US-NTF-04 · Turn on browser notifications for this device
+- [x] US-NTF-05 · Get a push notification when the tab is closed
+- [x] US-NTF-06 · Be told when I'm invited to, removed from or uninvited from a meeting
+- [x] US-NTF-07 · Notify the right people about job and expense events
+- [x] US-NTF-08 · Get a reminder before a meeting starts
+- [x] US-NTF-09 · Set the reminder lead time for the org and for myself
+
+## Phase 2 · Money in
+
+- [x] US-QUO-14 · Turn an accepted quote into an invoice
+- [x] US-INV-01 · Create an invoice from scratch
+- [x] US-INV-02 · Edit a draft invoice freely
+- [x] US-INV-03 · Issue an invoice to lock it and number it
+- [x] US-INV-04 · Find invoices and see which are overdue
+- [x] US-INV-05 · Delete a draft invoice
+- [x] US-INV-06 · Void an issued invoice with a reason
+- [x] US-INV-07 · Raise an advance (deposit) invoice
+- [x] US-INV-08 · Offset a deposit against a later invoice
+- [x] US-INV-09 · Issue a credit note against an invoice
+- [x] US-INV-10 · See all credit notes
+- [x] US-INV-11 · Email an invoice as a PDF
+- [x] US-INV-12 · Send a payment reminder in one click
+- [x] US-PAY-01 · Record a payment against an invoice
+- [x] US-PAY-02 · Split one payment across several invoices
+- [x] US-PAY-03 · Record a part-payment and see what's left
+- [x] US-PAY-04 · Find payments and open one
+- [x] US-PAY-05 · Hold a payment as customer credit
+- [x] US-PAY-06 · Delete a payment recorded by mistake
+- [x] US-PAY-07 · Give the customer a receipt
+- [x] US-PAY-08 · Tell the office when a payment arrives
+- [x] US-PAY-09 · See who owes what and for how long
+
+## Phase 3 · Jobs & construction billing
+
+- [x] US-ONB-04 · Pick an industry template
+- [x] US-QUO-15 · Turn an accepted quote into a job
+- [x] US-QUO-16 · Warn before converting the same quote twice
+- [x] US-JOB-01 · See all jobs and their status
+- [x] US-JOB-02 · Edit a job's details
+- [x] US-JOB-03 · Define billing milestones as percentages or fixed amounts
+- [x] US-JOB-04 · Stop me if milestone percentages don't add up
+- [x] US-JOB-05 · Mark a milestone complete with photos and notes
+- [x] US-JOB-06 · Raise a progress invoice from a completed milestone
+- [x] US-JOB-07 · Hold retention on each progress invoice automatically
+- [x] US-JOB-08 · Release retention as a final invoice
+- [x] US-JOB-09 · Raise a variation order for a scope change
+- [x] US-JOB-10 · Apply an accepted variation order to the job
+- [x] US-JOB-11 · Upload site photos to a job
+- [x] US-JOB-12 · Add notes to a job
+
+## Phase 4 · Money out & books
+
+- [x] US-CRM-16 · Let a Team edit only its own contacts
+- [x] US-CRM-17 · Set lead and activity rights separately from contacts
+- [x] US-CRM-18 · Control who manages a contact's people and addresses
+- [x] US-MTG-11 · Let a Team manage only the meetings it organises
+- [x] US-MTG-12 · Keep meeting visibility independent of management rights
+- [x] US-CAT-07 · Let a Team edit only the items it created
+- [x] US-CAT-08 · Grant catalogue rights independently of contacts
+- [x] US-QUO-17 · Let a Team edit only its own quotes
+- [x] US-QUO-18 · Grant sending and revising separately from drafting
+- [x] US-JOB-13 · See a job's cost, revenue and margin as it runs
+- [x] US-JOB-14 · Count tagged bills and expenses as job cost
+- [x] US-JOB-17 · Let a Team edit only its own jobs
+- [x] US-JOB-18 · Let field crew complete any milestone
+- [x] US-INV-13 · Let a Team edit only its own invoices and credit notes
+- [x] US-INV-14 · Grant issuing, voiding, emailing and reminders separately
+- [x] US-PAY-11 · Let a Team delete only payments it recorded
+- [x] US-PAY-12 · Grant applying credit and sending receipts separately
+- [x] US-PUR-01 · Enter a bill from a vendor
+- [x] US-PUR-02 · Record a bill so it posts to the books
+- [x] US-PUR-03 · Find vendor bills and see what's overdue
+- [x] US-PUR-04 · Void a recorded bill with a reason
+- [x] US-PUR-05 · Pay a vendor across several bills
+- [x] US-PUR-06 · See and delete vendor payments
+- [x] US-PUR-07 · Submit an expense with a receipt
+- [x] US-PUR-08 · Approve a submitted expense
+- [x] US-PUR-09 · Reject a submitted expense with a comment
+- [x] US-PUR-10 · Edit or delete my submitted expense
+- [x] US-PUR-11 · Bill an approved expense to the customer
+- [x] US-PUR-12 · Mark an expense billed without a new invoice
+- [x] US-PUR-13 · See what we owe vendors and when
+- [x] US-PUR-15 · Manage expense categories
+- [x] US-PUR-16 · Delete an unused expense category
+- [x] US-PUR-17 · Let a Team edit only its own purchases records
+- [x] US-PUR-18 · Grant approving, rejecting, recording and voiding separately
+- [x] US-TAX-01 · Define my own named tax rates
+- [x] US-TAX-02 · Change or retire a tax rate safely
+- [x] US-TAX-03 · Combine rates into a group for split taxes
+- [x] US-TAX-04 · Apply a group on a line and get the right total
+- [x] US-TAX-05 · Choose whether my prices include tax
+- [x] US-TAX-06 · Override tax-inclusive pricing on one line
+- [x] US-RPT-01 · See profit and loss for any period
+- [x] US-RPT-02 · See what the business is worth on a date
+- [x] US-RPT-03 · Click a figure to see the entries behind it
+- [x] US-RPT-04 · Export any report to CSV
+- [x] US-RPT-05 · Compare profitability across all jobs
+- [x] US-RPT-06 · Export job profitability
+- [x] US-RPT-07 · Close a fiscal period so nobody back-dates into it
+- [x] US-RPT-08 · Reopen a closed period
+- [x] US-RPT-09 · Add my own account
+- [x] US-RPT-10 · Grant each report to Teams separately
+- [x] US-RPT-11 · Let a Team drill into the ledger
+- [x] US-DASH-01 · See cash, receivables, overdue and revenue at a glance
+- [x] US-DASH-02 · Get a dashboard that fits my role
+- [x] US-DASH-03 · See the revenue trend and pipeline by stage
+- [x] US-DASH-04 · See my overdue follow-ups
+- [x] US-DASH-05 · See upcoming meetings
+- [x] US-DASH-06 · See invoices and milestones coming due
+- [x] US-DASH-07 · See receivables aging and job winners and losers
+- [x] US-DASH-08 · See what happened recently across the business
+- [x] US-DASH-09 · Keep financial events out of the field feed
+- [x] US-DASH-10 · Reorder and hide my widgets
+- [x] US-DASH-11 · Keep my layout on every device
+
+## Phase 5 · Mobile field companion
+
+- [ ] US-QUO-19 · Store the signature from an on-site acceptance
+- [ ] US-QUO-20 · Show how a quote was accepted
+- [x] US-JOB-15 · Assign crew to a job
+- [ ] US-JOB-16 · Show field crew only their assigned jobs
+- [ ] US-JOB-19 · Keep money and unassigned jobs away from field crew
+- [ ] US-MOB-01 · Sign in to my company's Spine on my phone
+- [ ] US-MOB-02 · Stay signed in and sign out safely
+- [ ] US-MOB-03 · See today's jobs with addresses and tap-to-call
+- [ ] US-MOB-04 · Browse my assigned jobs
+- [ ] US-MOB-05 · Open a job's details on site
+- [ ] US-MOB-06 · Keep financial reports off phones
+- [ ] US-MOB-07 · Keep working when there's no signal
+- [ ] US-MOB-08 · See what's waiting to sync
+- [ ] US-MOB-09 · Send each item exactly once and fix failures
+- [ ] US-MOB-10 · Show a clear error when the server can't be reached
+- [ ] US-MOB-11 · Take site photos tagged to a job, even offline
+- [ ] US-MOB-12 · See my expenses and their status
+- [ ] US-MOB-13 · Submit an expense with a receipt photo
+- [ ] US-MOB-14 · Ask for camera access with a reason
+- [ ] US-MOB-15 · Mark a milestone complete from the phone
+- [ ] US-MOB-16 · Present a quote to the customer on my phone
+- [ ] US-MOB-17 · Capture the customer's acceptance and signature
+- [ ] US-MOB-18 · Require a connection to accept a quote
+- [ ] US-MOB-19 · Run the field app on native tabs
+- [ ] US-MOB-20 · Give Android users a designed Material 3 app
+- [ ] US-MOB-21 · Document every native component in a showcase app
+
+## Phase 6 · Fix and harden
+
+- [ ] US-ONB-12 · Show the setup checklist to owners only
+- [ ] US-AUTH-08 · See that sign-up is invite-only
+- [ ] US-AUTH-09 · Ask for a password reset link
+- [ ] US-AUTH-10 · Choose a new password from the reset link
+- [ ] US-AUTH-11 · See why an invitation can't be used
+- [ ] US-AUTH-12 · Keep my unsaved work when my session expires
+- [ ] US-QUO-21 · Show a branded page for an expired or invalid link
+- [ ] US-QUO-22 · Keep emailed links working until the quote is replaced
+- [ ] US-QUO-23 · Explain a repeat conversion clearly
+- [ ] US-JOB-20 · Own a job's milestones through the job
+- [ ] US-JOB-21 · Show retention on a progress invoice
+- [ ] US-JOB-22 · Number every job
+- [ ] US-JOB-23 · Name new jobs after their quote
+- [ ] US-INV-15 · Print payment instructions on invoices
+- [ ] US-INV-16 · Set payment instructions in Settings
+- [ ] US-INV-17 · Keep the exact PDF that was issued
+- [ ] US-PAY-10 · Export receivables to CSV
+- [ ] US-PAY-13 · Allocate a deposit payment to its advance invoice
+- [ ] US-PUR-14 · Export payables to CSV
+- [ ] US-PUR-19 · Manage expense categories from Expenses
+- [ ] US-PUR-20 · Stop staff approving their own expenses
+- [ ] US-TAX-07 · Store rates, quantities and percentages exactly
+- [ ] US-RPT-12 · Warn me if the books ever stop balancing
+- [ ] US-RPT-13 · See a Trial Balance
+- [ ] US-RPT-14 · See tax collected and paid on Reports
+- [ ] US-NTF-10 · Send every email in one branded layout
+- [ ] US-NTF-11 · Use the branded layout for every email type
+- [ ] US-NTF-12 · Turn on push from my own profile
+- [ ] US-TEAM-15 · Use the business name everywhere the organisation is named
+- [ ] US-TEAM-16 · Confirm before making someone an owner
+- [ ] US-TEAM-17 · Protect the Primary Owner's row
+- [ ] US-TEAM-18 · Show each person only the sections they can open
+- [ ] US-SET-13 · Open contact history the same way as everywhere else
+- [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
+- [ ] US-OPS-08 · Make every mutating request safe to repeat
+- [ ] US-OPS-10 · Style confirmations by what they do
+- [ ] US-OPS-12 · Explain why I can't open a page
+- [ ] US-OPS-20 · Close the read-access gaps found in review
+- [ ] US-OPS-21 · Remove developer wording from the interface
+- [ ] US-OPS-24 · Show money the same way everywhere
+- [ ] US-OPS-25 · Keep text readable on coloured controls in dark mode
+
+## Phase 7 · Product upgrades
+
+- [ ] US-CRM-19 · Rename, reorder and add pipeline stages
+- [ ] US-CRM-20 · Delete a stage and move its leads
+- [ ] US-CAT-06 · Add a new item while building a quote
+- [ ] US-QUO-24 · Duplicate a quote as a new draft
+- [ ] US-QUO-25 · Save quote lines as a reusable bundle
+- [ ] US-QUO-26 · Add a bundle while building a quote
+- [ ] US-INV-18 · Turn on automatic payment reminders
+- [ ] US-INV-19 · Send reminders on schedule without double-sending
+- [ ] US-INV-20 · Set up a recurring invoice
+- [ ] US-INV-21 · Create recurring invoices automatically
+- [ ] US-INV-22 · Pause, edit or stop a recurring invoice
+- [ ] US-INV-23 · Send reminders for several invoices at once
+- [ ] US-INV-24 · Download several invoice PDFs at once
+- [ ] US-PAY-14 · Send a customer a statement
+- [ ] US-PAY-15 · Give customers a clear statement PDF
+- [ ] US-PUR-21 · Approve several expenses at once
+- [ ] US-DASH-12 · See what needs my attention first
+- [ ] US-DASH-13 · Act on an attention item in one click
+- [ ] US-DASH-14 · See key figures with a trend and a comparison
+- [ ] US-DASH-15 · See money in and out by month
+- [ ] US-DASH-16 · See today's schedule beside my tasks
+- [ ] US-DASH-17 · Get a staff dashboard of only what I can act on
+- [ ] US-DASH-18 · Get a field dashboard of my day
+- [ ] US-DASH-19 · Read who did what in the activity feed
+- [ ] US-NTF-13 · Get a daily digest by email
+- [ ] US-NTF-14 · Choose when my digest arrives
+- [ ] US-SET-09 · Pick a theme for the whole organisation
+- [ ] US-SET-10 · Put my brand colour and footer on documents
+- [ ] US-SET-11 · See every change across the organisation
+- [ ] US-SET-12 · Export the audit log
+- [ ] US-SET-15 · Export all my data
+- [ ] US-SET-16 · Keep data exports private
+- [ ] US-OPS-22 · Search everything from anywhere
+- [ ] US-OPS-23 · Use search with the keyboard and a screen reader
+- [ ] US-OPS-26 · Use every new screen in dark mode
+
+## Phase 8 · Packaging & 1.0
+
+- [ ] US-ONB-09 · Load demo data to explore
+- [ ] US-SET-08 · Remove demo data and keep my real data
+- [ ] US-OPS-01 · Install Spine with one command
+- [ ] US-OPS-02 · Start with demo data from an environment flag
+- [ ] US-OPS-03 · Back up everything into one file
+- [ ] US-OPS-04 · Restore a backup into a clean install
+- [ ] US-OPS-05 · Report health and readiness
+- [ ] US-OPS-06 · Tell owners a new version is available
+- [ ] US-OPS-07 · Log every request with an id
+- [ ] US-OPS-09 · Respect reduced-motion settings everywhere
+- [ ] US-OPS-11 · Show a helpful page for a missing page
+- [ ] US-OPS-13 · Recover from an unexpected error
+- [ ] US-OPS-14 · Use the web app on a phone
+- [ ] US-OPS-15 · Keep wide tables usable on small screens
+- [ ] US-OPS-16 · Move every user-facing string into translation files
+- [ ] US-OPS-17 · Pass an accessibility audit of every screen
+- [ ] US-OPS-18 · Complete a security review before 1.0
+- [ ] US-OPS-19 · Ship the README, licence and contributor guide

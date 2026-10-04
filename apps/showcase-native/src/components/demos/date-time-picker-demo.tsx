@@ -10,7 +10,7 @@ export function DateTimePickerDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s community DateTimePicker — `@react-native-community/datetimepicker`-compatible, real native
+        `@expo/ui`’s community DateTimePicker — `@react-native-community/datetimepicker`-compatible, real native
         date/time pickers on both platforms.
       </DemoLead>
       <DemoSection title="Date">

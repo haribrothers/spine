@@ -1,0 +1,69 @@
+# Calendar
+
+**Package:** `@spine/ui` · **Platform:** Web · **Source:** `packages/ui/src/components/calendar.tsx` · **Doc page:** `apps/design-system/src/app/components/calendar/page.tsx`
+
+An Outlook-style scheduling calendar with Day, Week, Month, and Agenda views. Drag an empty slot to create an event, drag an existing event to move it, drag its edges to resize (Day/Week), and overlapping events lay out side-by-side rather than stacking. Supports all-day and multi-day events, a fixed color-coded category palette, and simple daily/weekly/monthly recurrence with an end date or occurrence count.
+
+## Import
+
+```tsx
+import { CalendarView, RecurringMoveOrResizeRequest, Calendar } from "@spine/ui";
+```
+
+## Props
+
+| Prop | Type | Default |
+|---|---|---|
+| `events` | CalendarEvent[] | — |
+| `onEventCreate` | (event: CalendarEvent, extra?: Record<string, unknown>) => void | — |
+| `onEventUpdate` | (event: CalendarEvent, extra?: Record<string, unknown>) => void | — |
+| `onEventDelete` | (eventId: string) => void | — |
+| `onViewChange` | (view: CalendarView) => void | — |
+| `date` | Date | — |
+| `onDateChange` | (date: Date) => void | — |
+| `contactOptions` | { value: string; label: string }[] | — |
+| `readOnlyEventIds` | Set<string> | — |
+| `onReadOnlyEventClick` | (instance: CalendarEventInstance) => void | — |
+| `nonEditableEventIds` | Set<string> | — |
+| `nonDeletableEventIds` | Set<string> | — |
+| `canCreateEvents` | boolean | true |
+| `renderExtraFields` | (ctx: { isEdit: boolean; event: CalendarEvent \| null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode | — |
+| `className` | string | — |
+| `id` | string | — |
+| `title` | string | — |
+| `start` | Date | — |
+| `end` | Date | — |
+| `allDay` | boolean | false |
+| `location` | string | — |
+| `description` | string | — |
+| `recurrence` | CalendarRecurrenceRule | — |
+| `contactId` | string | — |
+| `interval` | number | 1 |
+| `selected` | Date | — |
+| `onSelect` | (date: Date) => void | — |
+| `className` | string | — |
+| `headerAction` | ReactNode | — |
+
+## Rules and behaviour
+
+- Day, Week, Month, and Agenda views, switchable via a toolbar view toggle.
+- Click-and-drag on an empty time slot to create an event, pre-filled with the dragged time range.
+- Drag an existing event to move it to a new time or day; drag its top/bottom edge to resize (Day/Week only).
+- Overlapping events in the same time range lay out side-by-side via a greedy column-assignment algorithm, never stacked illegibly.
+- All-day events render in a dedicated all-day strip (Day/Week) or as full-width bars (Month).
+- Multi-day events render as spanning bars across Month/Week.
+- Simple recurrence — daily/weekly/monthly with an end date or occurrence count — expanded into concrete instances per visible range via date-fns, including month-boundary and DST-adjacent arithmetic.
+- A fixed 8-color category palette (docs/DESIGN.md's category-* tokens), assigned per event.
+- A mini month-picker in the toolbar (built on the same MiniCalendar DatePicker uses) to jump the visible range to any date.
+- Prev / Today / Next navigation, scoped to the active view's step size.
+- Fully controlled — the caller owns events, view, and date; drag/resize/create interaction state stays internal.
+- Optional contactOptions prop adds a Contact field to the event editor (a searchable Combobox) so an event can optionally link to an external record — first used by the /meetings page (S-01.9) to schedule meetings against a CRM contact.
+- Optional readOnlyEventIds + onReadOnlyEventClick let a caller overlay events from another source Calendar shouldn't let the user drag/resize/edit through its own dialog — a matching id skips move/resize entirely and routes clicks to the caller's own handler instead of the built-in editor. First used to overlay activities (calls/notes/tasks with a due date, no time range) alongside real scheduled meetings.
+
+## Exports
+
+`CalendarView` · `RecurringMoveOrResizeRequest` · `CalendarProps` · `Calendar`
+
+## Accessibility
+
+Automated check: `packages/ui/src/components/calendar.a11y.test.tsx`. Keyboard, focus ring and labelling rules from [README](../README.md#accessibility) apply.

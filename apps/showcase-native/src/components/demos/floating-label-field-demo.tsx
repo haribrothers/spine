@@ -13,7 +13,7 @@ export function FloatingLabelFieldDemo() {
       <DemoLead>
         A Material-style floating label — empty, the label sits centered acting as the placeholder itself; once
         focused or a value exists, it animates/snaps up to a small caption above the value. iOS uses `NativeTextField`
-        internally; Android uses `TextField` — see this component's own doc comment.
+        internally; Android uses `TextField` — see this component’s own doc comment.
       </DemoLead>
       <DemoSection title="With a value">
         <DemoPreview>

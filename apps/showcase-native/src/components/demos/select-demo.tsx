@@ -14,7 +14,7 @@ export function SelectDemo() {
   return (
     <>
       <DemoLead>
-        `@expo/ui`'s universal Picker — a real native picker (a compact menu on both platforms by default; SwiftUI
+        `@expo/ui`’s universal Picker — a real native picker (a compact menu on both platforms by default; SwiftUI
         also offers an inline `wheel` appearance on iOS).
       </DemoLead>
       <DemoSection title="Default">

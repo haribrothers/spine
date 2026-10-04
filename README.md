@@ -10,7 +10,7 @@ workflow a small business actually runs on:
 Double-entry accounting is derived automatically from business events
 (an invoice issued, a payment received) rather than typed in by the user —
 the owner never has to think in debits and credits. See
-[`docs/spine-prd.md`](docs/spine-prd.md) for the full product spec, and
+[`docs/README.md`](docs/README.md) for the full product spec, and
 [`CLAUDE.md`](CLAUDE.md) for the architecture rules that govern implementation.
 
 ## Status
@@ -55,7 +55,7 @@ spine/
 │  ├─ ui/         # @spine/ui — Radix + Tailwind component library
 │  └─ config/     # shared eslint, tsconfig, tailwind presets
 ├─ docker/        # Dockerfile.api, Dockerfile.web, Caddyfile (production)
-├─ docs/          # spine-prd.md — the product spec; DESIGN.md — the design system spec
+├─ docs/          # product spec (README.md → prd/, features/, design/), progress.md, qa-script.md
 ├─ scripts/       # seed.ts
 ├─ docker-compose.yml       # production stack (builds api/web, runs behind Caddy)
 ├─ docker-compose.dev.yml   # local dev infra only (Postgres, MinIO, MailDev)

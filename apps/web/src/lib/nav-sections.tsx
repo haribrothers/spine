@@ -28,7 +28,7 @@ import type { AppShellNavSection } from "@spine/ui";
  * (Quotes, ...) append here as their modules land.
  *
  * "Billing" is a deliberate second section, not folded into "Sales" —
- * mirrors the PRD's own phase naming (`docs/spine-prd.md` §12: Phase 1 is
+ * mirrors the PRD's own phase naming (`docs/archive/spine-prd.md` §12: Phase 1 is
  * "Sales Spine", Phase 2 is "Money In", not part of Sales) and its
  * enquiry → quote → job → invoice → payment → books workflow, where a
  * quote is a sales document but an invoice is a financial one.

@@ -5,7 +5,7 @@ export function GaugeIndicatorDemo() {
   return (
     <>
       <DemoLead>
-        A semi-circular animated progress gauge — see Home's revenue-goal card for this in real use. Animates a
+        A semi-circular animated progress gauge — see Home’s revenue-goal card for this in real use. Animates a
         genuine sweep-in from 0% on mount, not an instant jump to the final value.
       </DemoLead>
       <DemoSection title="Values">
