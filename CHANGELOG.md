@@ -82,7 +82,7 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ### 2026-10-04 — Website and help planned (spec only)
 
-New module 19 · Website and help (D-108–D-113): a public Astro + Starlight site in  with a home page, task-based user guide, self-hosting guide, developer docs and a generated API reference, hosted on GitHub Pages at  (domain open, Q-15). The user guide is bundled into every install at  so the Help menu works offline and matches the installed version; this replaces D-070 (help inside ). Docs are versioned per minor release from 1.0; English only for now. 14 Phase 8 stories (US-SITE-01–14) and 9 drawn screens (incl. dark mode). From Phase 8, each user-facing story updates its guide page in the same change.
+New module 19 · Website and help (D-108–D-113): a public Astro + Starlight site in `apps/site` with a home page, task-based user guide, self-hosting guide, developer docs and a generated API reference, hosted on GitHub Pages at `docs.[DOMAIN]` (domain open, Q-15). The user guide is bundled into every install at `/help` so the Help menu works offline and matches the installed version; this replaces D-070 (help inside `apps/web`). Docs are versioned per minor release from 1.0; English only for now. 14 Phase 8 stories (US-SITE-01–14) and 9 drawn screens (incl. dark mode). From Phase 8, each user-facing story updates its guide page in the same change.
 
 ### 2026-10-04 — File storage decision: local disk by default, MinIO dropped (spec only)
 
