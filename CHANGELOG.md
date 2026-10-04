@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — Docker images no longer contain `.env` or local files
+
+The repo had no `.dockerignore`, so `docker build` copied the host's `.env` (with `AUTH_SECRET` and the VAPID private key), `.env.*` files, uploaded files in `.data/`, `.git` and host `node_modules` into the images. A new `.dockerignore` keeps all of these out; only `.env.example` is kept. Both images rebuild, and the API image passed the storage smoke test again (non-root, upload, serve with `nosniff`, survives a restart).
+
 ### 2026-10-04 — US-OPS-30: move existing files off MinIO (Phase 6)
 
 New command `pnpm --filter @spine/api files:migrate --from s3 --to local`, which works in either direction and takes `--org <id>` to limit it to one organisation.
