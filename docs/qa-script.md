@@ -16,13 +16,14 @@ before considering that work's QA "done."
 ## Setup (do this once per test pass)
 
 1. Start dev infra: `docker compose -f docker-compose.dev.yml up -d`
-   (Postgres, MailDev, MinIO).
+   (Postgres, MailDev). Uploaded files go to `apps/api/.data/files`
+   (local storage driver) — no storage container.
 2. Start the app: `pnpm dev` — web on http://localhost:3000, API on
    http://localhost:4000.
 3. MailDev inbox (every email the app sends lands here in dev):
    http://localhost:1080
-4. MinIO console (uploaded files/logos): http://localhost:9001
-   (credentials in `.env`).
+4. Uploaded files/logos are on disk under
+   `apps/api/.data/files/<org-id>/<2-char prefix>/<file-id>`.
 5. For a genuinely fresh org, run `pnpm db:reset` (in `apps/api`) — it
    truncates every app table (a hardcoded list kept in sync with the
    schema; see `apps/api/src/db/reset.ts`) but does **not** seed demo
@@ -67,7 +68,7 @@ before considering that work's QA "done."
      jobs (3, at different stages — see §5 below).
    - A business logo (a real uploaded file, not a URL string — confirm
      it shows in Settings and on quote/invoice PDFs, and that the file
-     exists in the MinIO console).
+     exists under `apps/api/.data/files`).
    - A second tax rate ("State Surcharge", compound) and a tax group
      combining it with the seeded "Sales Tax" rate (§10).
    - A partial credit note against one of the seeded invoices (§7).
@@ -1849,7 +1850,44 @@ revenue.
 
 ---
 
+## 16. File storage (US-OPS-27, Phase 6)
+
+Files are stored by the `local` driver unless `STORAGE_DRIVER=s3`.
+
+1. With no `STORAGE_DRIVER` or `S3_*` in `.env`, restart the API. Upload a
+   business logo (Settings), a receipt on an expense (§11.2) and a photo on
+   a job (§5). Reload each page: every file still shows.
+2. Confirm each file exists on disk at
+   `apps/api/.data/files/<org-id>/<2-char prefix>/<file-id>` — the folder
+   names are ids, never the uploaded file name.
+3. Open a job photo in its own tab. In DevTools → Network the
+   `/files/<id>` response is 200 with `Content-Type: image/…`,
+   `Content-Length`, `ETag` and `Accept-Ranges: bytes`. Reload: 304.
+4. Sign out and open the same `/files/<id>` URL: 401. Sign in as a user of
+   another organisation and open it: 404.
+5. Production stack: `docker compose --profile minimal up -d` with no
+   `S3_*` in `.env`. Upload a logo, then `docker compose exec api ls -R
+   /data/files` shows it and `docker compose exec api id -un` prints
+   `node` (not root). `docker compose restart api`: the logo still shows.
+6. S3 driver: `COMPOSE_PROFILES=rustfs pnpm dev:infra:up`, set
+   `STORAGE_DRIVER=s3` and the commented `S3_*` values from
+   `.env.development.example`, restart the API. Upload a photo: opening it
+   redirects (302) to `localhost:9000`. Files uploaded in step 1 still open.
+
+Regression checks:
+- Quote, invoice and receipt PDFs still show the business logo (§4, §7, §8).
+- **Load demo data** still seeds the logo and job photos (§1.7).
+- Contact logos, profile avatars and expense receipt links still open.
+
 ## Known gaps — don't file these as bugs
+- The production images (`docker compose --profile minimal up -d --build`)
+  don't build yet: `pnpm install` fails compiling `canvas` on Alpine.
+  Step 5 of §16 waits for that fix.
+- Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
+  screen creates one yet; they arrive with the stories that need them.
+- `GET /files/:id` still checks only the organisation, not the record the
+  file belongs to (US-OPS-20). Checksums, type checks and moving files off
+  MinIO are US-OPS-28, US-OPS-29 and US-OPS-30.
 - No client-side fine-grained capability check exists in the web app —
   every gated page (Quotes, Teams, Jobs) approximates server-side
   `@RequireCapability` enforcement by checking coarse role (owner/staff/

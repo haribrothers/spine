@@ -135,7 +135,7 @@ export const milestones = pgTable(
 /**
  * S-04.4/S-04.10 — a photo tagged to a job (progress/condition record) or,
  * optionally, to one specific milestone (a completion photo). Reuses
- * `files` for the actual S3/MinIO object per Files' own "plain nullable FK
+ * `files` for the stored bytes per Files' own "plain nullable FK
  * per consumer, not polymorphic" convention (see files.ts's doc comment) —
  * this table is the job-specific association + caption, not a duplicate
  * upload mechanism.

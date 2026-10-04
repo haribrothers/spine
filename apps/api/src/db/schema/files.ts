@@ -2,7 +2,7 @@ import { pgTable, uuid, text, bigint, timestamp, index } from "drizzle-orm/pg-co
 import { organization, user } from "./auth";
 
 /**
- * A generic, org-scoped uploaded-file record — the S3/MinIO object key plus
+ * A generic, org-scoped uploaded-file record — the storage key plus
  * enough metadata to serve and label it. Deliberately NOT a polymorphic
  * `attachableType`/`attachableId` association: nothing in this codebase
  * uses that pattern (checked `journal_lines.contact_id`/`job_id`, both
@@ -14,11 +14,12 @@ import { organization, user } from "./auth";
  * column(s) pointing at `files.id`, following this same precedent, rather
  * than this table growing a speculative "what points to me" association.
  *
- * `key` is the S3 object key (not a full URL — endpoint/bucket vary by
- * environment and object storage is optional, see s3-client.ts), scoped
- * per-org in its path (`{orgId}/{id}/{filename}`) purely for readability
- * in a bucket browser; org isolation is enforced by the `orgId` column and
- * every query filtering on it, not by the key shape.
+ * `key` is where the bytes live inside `storage_driver` (`local`: a path
+ * under the files volume; `s3`: an object key). New files use
+ * `{orgId}/{2-char prefix}/{id}`, built from ids only (D-104); rows from
+ * before US-OPS-27 keep their old S3 keys, `{orgId}/{id}/{filename}`.
+ * Org isolation is enforced by the `orgId` column and every query
+ * filtering on it, not by the key shape.
  */
 export const files = pgTable(
   "files",
@@ -28,6 +29,8 @@ export const files = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     key: text("key").notNull(),
+    /** `local` or `s3` — the driver that stored this file (D-102). */
+    storageDriver: text("storage_driver").notNull().default("local"),
     originalFilename: text("original_filename").notNull(),
     mimeType: text("mime_type").notNull(),
     sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),

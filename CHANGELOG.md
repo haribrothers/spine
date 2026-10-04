@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-27: files on local disk by default (Phase 6)
+
+Fresh installs no longer need MinIO, whose free images were withdrawn. Files now go through a `StorageDriver` (`apps/api/src/modules/files/storage/`) with two drivers: `local` (the default) and `s3` (`STORAGE_DRIVER=s3` plus `S3_*`, for AWS S3, R2, B2 or RustFS). The `local` driver writes to `FILES_DIR`: `/data/files` in production, which is the new `spine_files` volume on the API container, and `apps/api/.data/files` in development.
+- **Crash-safe writes.** A save writes a temp file, fsyncs it and renames it into place, so a crash or a failed upload never leaves a partial file that can be served. Temp files left by a crash are removed on the next start.
+- **Paths from ids only.** Files are stored at `<org-id>/<2-char prefix>/<file-id>`; the uploaded name is never used in a path.
+- **Driver recorded per file.** New column `files.storage_driver`. Migration `0051` backfills existing rows to `s3`, so files stored before a switch stay readable while their driver's settings remain.
+- **Serving.** With `local`, `GET /files/:id` streams the file with `Content-Type`, `Content-Length`, an `ETag` (304 on match) and single-range support (206/416). With `s3`, it redirects to a 5-minute presigned URL. A request with no session is allowed only with an API-signed link (`?exp=&sig=`, HMAC with `AUTH_SECRET`, at most 5 minutes; otherwise 403). No screen creates such links yet.
+- **PDF logos.** Quote, invoice and receipt PDFs read the logo through `FilesService.readBytes` instead of three copies of S3 code.
+- **Docker.** `docker-compose.yml` and `docker-compose.dev.yml` no longer reference `minio/minio`. The `rustfs` profile runs `rustfs/rustfs:1.0.1` with a 1 GB memory limit. The API image runs as the non-root `node` user, which owns `/data/files`.
+- **Env.** `.env.example`, `.env.development.example` and `.env.e2e` gain `STORAGE_DRIVER=local`, and `S3_*` are now commented out.
+- **CI.** The E2E job drops its S3 service. The unit/integration job gains S3Mock so the same storage scenarios run against both drivers.
+- **Docker images (partly fixed).** `Dockerfile.api` and `Dockerfile.web` now copy `patches/`. Without it, `pnpm install` stopped on the missing Expo patch, so neither production image had built since that patch was added. The builds still fail at the next step: `canvas` (a `packages/ui` dependency pulled into the install) has no prebuilt binary for Alpine and can't compile there. Not fixed here. The non-root `/data/files` setup was verified with a stand-in Alpine image (a fresh named volume is owned by `node` and writable).
+- **Tests.** API integration test files now run one at a time (`fileParallelism: false`). They share one database and `ledger-integrity` truncates organisations, which made the suite fail intermittently on `main` too (deadlocks, FK violations, "too many clients").
+
+Tests: `us-ops-27.test.ts` (34: local driver scenarios, failed and interrupted uploads, unsafe keys, driver selection, signed links, range parsing), `us-ops-27.s3.integration.test.ts` (the same 6 scenarios on S3; checked against MinIO and S3Mock) and `us-ops-27.http.integration.test.ts` (10, through the real routes). Full integration suite 26/26 files and E2E 29/29 on the local driver.
+
 ### 2026-10-04 — Website and help planned (spec only)
 
 New module 19 · Website and help (D-108–D-113): a public Astro + Starlight site in `apps/site` with a home page, task-based user guide, self-hosting guide, developer docs and a generated API reference, hosted on GitHub Pages at `docs.[DOMAIN]` (domain open, Q-15). The user guide is bundled into every install at `/help` so the Help menu works offline and matches the installed version; this replaces D-070 (help inside `apps/web`). Docs are versioned per minor release from 1.0; English only for now. 14 Phase 8 stories (US-SITE-01–14) and 9 drawn screens (incl. dark mode). From Phase 8, each user-facing story updates its guide page in the same change.

@@ -3,10 +3,8 @@ import { FilesController } from "./files.controller";
 import { FilesService } from "./files.service";
 
 /**
- * Real S3/MinIO-backed file storage — was a literal empty stub before this
- * change (`@Module({})`). See files.service.ts for the graceful-
- * degradation behavior when `S3_ENDPOINT` is unset and s3-client.ts for the
- * client wrapper itself.
+ * Uploaded files: the `files` rows plus the storage drivers that hold the
+ * bytes (`local` by default, `s3` optional — D-102). See files.service.ts.
  */
 @Module({
   controllers: [FilesController],

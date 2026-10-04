@@ -157,7 +157,7 @@ export const quotes = pgTable(
     acceptedByUserId: text("accepted_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /**
      * PRD F3 Stage 2 (S-03.3/S-03.4) — the exact PDF generated at send time,
-     * persisted via `FilesService` (S3/MinIO) rather than regenerated on
+     * persisted via `FilesService` (its storage driver) rather than regenerated on
      * every download. Nullable: null on every draft (nothing to show yet —
      * the web UI instead calls `GET /quotes/:id/pdf` for a live preview,
      * which renders on demand from the current draft snapshot), and also

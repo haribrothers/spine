@@ -1,12 +1,13 @@
-import { Inject, Injectable, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
-import { CreateBucketCommand, GetObjectCommand, HeadBucketCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { Inject, Injectable, Logger, NotFoundException, ServiceUnavailableException } from "@nestjs/common";
 import { and, eq } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
+import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { files } from "../../db/schema";
-import { getS3Client, getS3Config } from "./s3-client";
+import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
+import { createStorageDrivers, type StorageDrivers } from "./storage/storage-config";
+import { type ByteRange, type StorageDriver, StoredObjectMissingError, fileKey } from "./storage/storage-driver";
 
 export interface UploadFileInput {
   originalFilename: string;
@@ -15,121 +16,136 @@ export interface UploadFileInput {
   uploadedByUserId: string | null;
 }
 
+export type FileRow = typeof files.$inferSelect;
+
+/** How `GET /files/:id` answers: stream the bytes (`local`) or redirect to a presigned URL (`s3`). */
+export type FileDownload =
+  | { kind: "stream"; file: FileRow; stream: Readable }
+  | { kind: "redirect"; file: FileRow; url: string };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
- * Owns all S3/MinIO interaction plus the `files` table row. Every method
- * that needs the object-storage client checks `getS3Client()` for `null`
- * first and throws a clear `ServiceUnavailableException` (503) rather than
- * letting an undefined-client call crash — per CLAUDE.md's graceful-
- * degradation rule, this must degrade the *file* feature, not the process.
+ * Owns the `files` rows and every read and write of file bytes (D-102).
+ * Bytes go through a `StorageDriver`: `local` (the `spine_files` volume) by
+ * default, `s3` when `STORAGE_DRIVER=s3`. Each row records the driver that
+ * stored it, so files stay readable after an owner switches drivers.
+ *
+ * Storage problems degrade the file feature with a 503, never the process.
  */
 @Injectable()
 export class FilesService {
+  private readonly logger = new Logger(FilesService.name);
+  private readonly drivers: StorageDrivers = createStorageDrivers();
+
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   isStorageConfigured(): boolean {
-    return getS3Client() !== null;
+    return this.drivers.primary !== null;
   }
 
-  /**
-   * MinIO (unlike a real AWS account) starts with zero buckets — nothing in
-   * `docker-compose.dev.yml` or the prod compose file provisions the
-   * `spine` bucket automatically. Rather than requiring an undocumented
-   * manual `mc mb` step on every fresh environment (dev, a self-hosted
-   * prod install, CI), the first upload self-heals: `HeadBucket` checks
-   * existence, `CreateBucket` only runs on a 404. Cached in-process after
-   * the first successful check/create so steady-state uploads don't pay an
-   * extra round-trip per request.
-   */
-  private bucketEnsured = false;
-  private async ensureBucket(client: S3Client, bucket: string) {
-    if (this.bucketEnsured) return;
-    try {
-      await client.send(new HeadBucketCommand({ Bucket: bucket }));
-    } catch {
-      await client.send(new CreateBucketCommand({ Bucket: bucket }));
-    }
-    this.bucketEnsured = true;
-  }
-
-  async upload(orgId: string, input: UploadFileInput) {
-    const client = getS3Client();
-    const config = getS3Config();
-    if (!client || !config) {
+  async upload(orgId: string, input: UploadFileInput): Promise<FileRow> {
+    const driver = this.drivers.primary;
+    if (!driver) {
       throw new ServiceUnavailableException(
-        "File storage is not configured on this server — attachments are unavailable.",
+        "File storage isn't set up on this server, so files can't be uploaded. Ask the owner to check the storage settings.",
       );
     }
-    await this.ensureBucket(client, config.bucket);
 
     const id = randomUUID();
-    // Scoped per-org purely for readability in a bucket browser; org
-    // isolation itself is enforced by the `orgId` column, not this path.
-    const key = `${orgId}/${id}/${input.originalFilename}`;
+    const key = fileKey(orgId, id);
+    try {
+      await driver.save(key, input.buffer, input.mimeType);
+    } catch (err) {
+      this.logger.error(`Could not save file ${id} with the ${driver.name} driver: ${(err as Error).message}`);
+      throw new ServiceUnavailableException("The file couldn't be saved. Try again; if it keeps failing, ask the owner to check the server's storage.");
+    }
 
-    await client.send(
-      new PutObjectCommand({
-        Bucket: config.bucket,
-        Key: key,
-        Body: input.buffer,
-        ContentType: input.mimeType,
-      }),
-    );
-
-    const [row] = await this.db
-      .insert(files)
-      .values({
-        id,
-        orgId,
-        key,
-        originalFilename: input.originalFilename,
-        mimeType: input.mimeType,
-        sizeBytes: input.buffer.byteLength,
-        uploadedByUserId: input.uploadedByUserId,
-      })
-      .returning();
-    return row;
+    try {
+      const [row] = await this.db
+        .insert(files)
+        .values({
+          id,
+          orgId,
+          key,
+          storageDriver: driver.name,
+          originalFilename: input.originalFilename,
+          mimeType: input.mimeType,
+          sizeBytes: input.buffer.byteLength,
+          uploadedByUserId: input.uploadedByUserId,
+        })
+        .returning();
+      return row!;
+    } catch (err) {
+      // No row points at the bytes, so nothing could ever serve them.
+      await driver.delete(key).catch(() => undefined);
+      throw err;
+    }
   }
 
-  async getMetadata(orgId: string, id: string) {
+  async getMetadata(orgId: string, id: string): Promise<FileRow> {
+    if (!UUID.test(id)) throw new NotFoundException("File not found");
     const [row] = await this.db
       .select()
       .from(files)
       .where(and(eq(files.orgId, orgId), eq(files.id, id)));
-    if (!row) {
-      throw new NotFoundException("File not found");
-    }
+    if (!row) throw new NotFoundException("File not found");
     return row;
   }
 
-  /**
-   * A short-lived signed GET URL rather than a proxy stream. This is a
-   * single-host, self-hosted deployment (docker/Caddyfile reverse-proxies
-   * `api`/`web` under one origin, MinIO/S3 is its own service on its own
-   * port) — MinIO already speaks HTTP directly and a signed URL means the
-   * API process never has to buffer/stream file bytes through itself,
-   * which would otherwise burn a request-handling thread per download for
-   * no benefit here (no per-download authorization logic beyond "does this
-   * file belong to my org," which the signed URL's short expiry plus this
-   * org-scoped lookup already covers). A proxy-stream approach would only
-   * be preferable if MinIO were not reachable from the browser at all
-   * (e.g. a private network); this dev/self-hosted stack exposes MinIO's
-   * port directly (docker-compose.dev.yml, `.env.example`), so that's not
-   * the case here.
-   */
-  async getSignedUrl(orgId: string, id: string): Promise<{ url: string; file: typeof files.$inferSelect }> {
-    const client = getS3Client();
-    const config = getS3Config();
-    if (!client || !config) {
+  /** For a request carrying a verified signed link instead of a session. */
+  async getMetadataForSignedLink(id: string): Promise<FileRow> {
+    if (!UUID.test(id)) throw new NotFoundException("File not found");
+    const [row] = await this.db.select().from(files).where(eq(files.id, id));
+    if (!row) throw new NotFoundException("File not found");
+    return row;
+  }
+
+  /** Bytes for `GET /files/:id`, after the caller has checked who may read `file`. */
+  async download(file: FileRow, range?: ByteRange): Promise<FileDownload> {
+    const driver = this.readerFor(file);
+    if (driver.presignedUrl) {
+      return { kind: "redirect", file, url: await driver.presignedUrl(file.key, MAX_FILE_LINK_SECONDS) };
+    }
+    return { kind: "stream", file, stream: await this.open(driver, file, range) };
+  }
+
+  /** The whole file in memory — for small files the server itself embeds, such as a logo in a PDF. */
+  async readBytes(orgId: string, id: string): Promise<{ bytes: Buffer; mimeType: string }> {
+    const file = await this.getMetadata(orgId, id);
+    const stream = await this.open(this.readerFor(file), file);
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as Uint8Array));
+    return { bytes: Buffer.concat(chunks), mimeType: file.mimeType };
+  }
+
+  /** `exp` and `sig` for a session-less `GET /files/:id` link, valid for at most 5 minutes. */
+  signLink(fileId: string, ttlSeconds?: number): { exp: number; sig: string } {
+    const secret = process.env.AUTH_SECRET;
+    if (!secret) throw new ServiceUnavailableException("AUTH_SECRET is not set, so file links can't be signed.");
+    return signFileLink(fileId, secret, ttlSeconds);
+  }
+
+  private readerFor(file: FileRow): StorageDriver {
+    const driver = this.drivers.readers[file.storageDriver as keyof StorageDrivers["readers"]];
+    if (!driver) {
       throw new ServiceUnavailableException(
-        "File storage is not configured on this server — attachments are unavailable.",
+        "This file is stored in S3, which isn't set up on this server. Ask the owner to check the storage settings.",
       );
     }
-    const file = await this.getMetadata(orgId, id);
-    const url = await getSignedUrl(
-      client,
-      new GetObjectCommand({ Bucket: config.bucket, Key: file.key }),
-      { expiresIn: 300 },
-    );
-    return { url, file };
+    return driver;
+  }
+
+  private async open(driver: StorageDriver, file: FileRow, range?: ByteRange): Promise<Readable> {
+    try {
+      return await driver.openReadStream(file.key, range);
+    } catch (err) {
+      if (err instanceof StoredObjectMissingError) {
+        this.logger.error(`File ${file.id} has a record but no stored bytes (${driver.name} driver)`);
+        throw new NotFoundException("File not found");
+      }
+      this.logger.error(`Could not read file ${file.id} with the ${driver.name} driver: ${(err as Error).message}`);
+      throw new ServiceUnavailableException("The file couldn't be opened. Try again; if it keeps failing, ask the owner to check the server's storage.");
+    }
   }
 }

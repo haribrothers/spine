@@ -3,10 +3,9 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, invoiceLines, contacts, files } from "../../db/schema";
+import { invoices, invoiceLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
-import { getS3Client, getS3Config } from "../files/s3-client";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
+import { FilesService } from "../files/files.service";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
 /**
@@ -23,6 +22,7 @@ export class InvoicePdfService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly settings: SettingsService,
+    private readonly files: FilesService,
   ) {}
 
   async render(orgId: string, invoiceId: string): Promise<{ buffer: Buffer; filename: string }> {
@@ -61,26 +61,12 @@ export class InvoicePdfService {
 
   private async tryFetchLogoAsDataUri(orgId: string, logoUrl: string): Promise<string | undefined> {
     try {
-      const client = getS3Client();
-      const config = getS3Config();
-      if (!client || !config) return undefined;
-
       const match = logoUrl.match(/\/files\/([0-9a-fA-F-]{36})/);
       const fileId = match?.[1];
       if (!fileId) return undefined;
 
-      const [fileRow] = await this.db
-        .select()
-        .from(files)
-        .where(and(eq(files.orgId, orgId), eq(files.id, fileId)));
-      if (!fileRow) return undefined;
-
-      const result = await client.send(new GetObjectCommand({ Bucket: config.bucket, Key: fileRow.key }));
-      const bytes = await result.Body?.transformToByteArray();
-      if (!bytes) return undefined;
-
-      const base64 = Buffer.from(bytes).toString("base64");
-      return `data:${fileRow.mimeType};base64,${base64}`;
+      const { bytes, mimeType } = await this.files.readBytes(orgId, fileId);
+      return `data:${mimeType};base64,${bytes.toString("base64")}`;
     } catch (err) {
       this.logger.warn(`Could not fetch org logo for PDF, continuing without it: ${(err as Error).message}`);
       return undefined;

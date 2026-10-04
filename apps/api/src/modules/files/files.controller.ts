@@ -1,23 +1,57 @@
 import {
   BadRequestException,
   Controller,
+  ForbiddenException,
   Get,
+  Headers,
   Param,
   Post,
+  Query,
   Res,
+  UnauthorizedException,
   UploadedFile,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { ApiBody, ApiConsumes } from "@nestjs/swagger";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { OptionalAuth, OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { verifyFileLink } from "./file-link";
 import { FilesService } from "./files.service";
+import type { ByteRange } from "./storage/storage-driver";
 
 /** Matches CLAUDE.md's field-role-read-only precedent, same as Contacts. */
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB — generous for a logo/avatar or a document attachment.
+
+/**
+ * Parses a single `bytes=start-end` range. `null` means "send the whole
+ * file"; `"unsatisfiable"` becomes a 416. Multi-range requests get the
+ * whole file, which RFC 9110 allows.
+ */
+export function parseRange(header: string | undefined, size: number): ByteRange | null | "unsatisfiable" {
+  if (!header) return null;
+  const match = /^bytes=(\d*)-(\d*)$/.exec(header.trim());
+  if (!match) return null;
+  const [, startText, endText] = match;
+  if (startText === "" && endText === "") return null;
+  if (size === 0) return "unsatisfiable";
+  let start: number;
+  let end: number;
+  if (startText === "") {
+    // Suffix range: the last N bytes.
+    const length = Number(endText);
+    if (length === 0) return "unsatisfiable";
+    start = Math.max(size - length, 0);
+    end = size - 1;
+  } else {
+    start = Number(startText);
+    end = endText === "" ? size - 1 : Math.min(Number(endText), size - 1);
+  }
+  if (start >= size || start > end) return "unsatisfiable";
+  return { start, end };
+}
 
 @Controller("files")
 export class FilesController {
@@ -66,16 +100,71 @@ export class FilesController {
   }
 
   /**
-   * Redirects to a short-lived signed URL rather than proxy-streaming the
-   * bytes — see FilesService.getSignedUrl's comment for why. No role
-   * restriction: any authenticated org member can view an attachment they
-   * can already see metadata for (matching Contacts' GET routes carrying
-   * no `@OrgRoles`, since field reads everything per §2.1).
+   * US-OPS-27 — with the `local` driver the API streams the file with its
+   * type, size, `ETag` and range support; with `s3` it redirects to a
+   * presigned URL valid for 5 minutes. Either way the file must belong to
+   * the caller's org. A request with no session is allowed only with a
+   * valid signed link (`?exp=&sig=`, HMAC with `AUTH_SECRET`, ≤ 5 minutes).
+   *
+   * No role restriction: any org member can view an attachment they can
+   * already see metadata for (matching Contacts' GET routes carrying no
+   * `@OrgRoles`, since field reads everything per §2.1).
    */
   @Get(":id")
-  async get(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
-    const orgId = requireOrgId(session);
-    const { url } = await this.filesService.getSignedUrl(orgId, id);
-    res.redirect(302, url);
+  @OptionalAuth()
+  async get(
+    @Session() session: UserSession | null | undefined,
+    @Param("id") id: string,
+    @Query("exp") exp: string | undefined,
+    @Query("sig") sig: string | undefined,
+    @Headers("range") rangeHeader: string | undefined,
+    @Headers("if-none-match") ifNoneMatch: string | undefined,
+    @Res() res: Response,
+  ) {
+    let file;
+    if (session?.user) {
+      file = await this.filesService.getMetadata(requireOrgId(session), id);
+    } else if (sig !== undefined || exp !== undefined) {
+      if (!verifyFileLink(id, exp, sig, process.env.AUTH_SECRET ?? "")) {
+        throw new ForbiddenException("This file link has expired. Open the file from Spine again.");
+      }
+      file = await this.filesService.getMetadataForSignedLink(id);
+    } else {
+      throw new UnauthorizedException();
+    }
+
+    const etag = `"${file.id}"`;
+    res.setHeader("ETag", etag);
+    res.setHeader("Cache-Control", "private, no-cache");
+    if (ifNoneMatch?.split(",").some((tag) => tag.trim().replace(/^W\//, "") === etag)) {
+      res.status(304).end();
+      return;
+    }
+
+    const size = Number(file.sizeBytes);
+    const range = parseRange(rangeHeader, size);
+    if (range === "unsatisfiable") {
+      res.status(416).setHeader("Content-Range", `bytes */${size}`).end();
+      return;
+    }
+
+    const download = await this.filesService.download(file, range ?? undefined);
+    if (download.kind === "redirect") {
+      res.redirect(302, download.url);
+      return;
+    }
+
+    res.setHeader("Content-Type", file.mimeType);
+    res.setHeader("Accept-Ranges", "bytes");
+    if (range) {
+      res.status(206);
+      res.setHeader("Content-Range", `bytes ${range.start}-${range.end}/${size}`);
+      res.setHeader("Content-Length", String(range.end - range.start + 1));
+    } else {
+      res.status(200);
+      res.setHeader("Content-Length", String(size));
+    }
+    download.stream.on("error", (err) => res.destroy(err));
+    download.stream.pipe(res);
   }
 }

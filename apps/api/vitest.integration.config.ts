@@ -15,5 +15,9 @@ export default defineConfig({
   ],
   test: {
     include: ["**/*.integration.test.ts"],
+    // Every file shares one database, and ledger-integrity TRUNCATEs
+    // `organization ... CASCADE` — run in parallel, files deleted each
+    // other's orgs mid-test (FK violations, deadlocks, "too many clients").
+    fileParallelism: false,
   },
 });

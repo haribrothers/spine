@@ -52,7 +52,7 @@ spine/
 | Command | Does |
 |---|---|
 | `pnpm dev` | API + web + design-system in watch mode (not the Expo apps) |
-| `pnpm dev:infra:up` / `:down` / `:reset` | Local Postgres and MailDev (add `--profile rustfs` to test the S3 driver) |
+| `pnpm dev:infra:up` / `:down` / `:reset` | Local Postgres and MailDev (prefix `COMPOSE_PROFILES=rustfs` to add RustFS for testing the S3 driver) |
 | `pnpm db:migrate:dev` / `db:seed:dev` / `db:reset:dev` | Migrations, seed, reset the dev database |
 | `pnpm build` / `lint` / `typecheck` / `test` | Turborepo across all packages |
 | `pnpm test:e2e` (`:ui`) | Playwright suite (needs `spine_e2e` database) |

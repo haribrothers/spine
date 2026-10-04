@@ -157,7 +157,7 @@ Backs the `Idempotency-Key` header required on mutating endpoints per CLAUDE.md/
 
 #### `files`
 
-A generic, org-scoped uploaded-file record — the S3/MinIO object key plus enough metadata to serve and label it. Deliberately NOT a polymorphic `attachableType`/`attachableId` association: nothing in this codebase uses that pattern (checked `journal_lines.contact_id`/`job_id`, both plain nullable FKs to a single…
+A generic, org-scoped uploaded-file record — the storage key (inside the driver named by `storage_driver`, US-OPS-27) plus enough metadata to serve and label it. Deliberately NOT a polymorphic `attachableType`/`attachableId` association: nothing in this codebase uses that pattern (checked `journal_lines.contact_id`/`job_id`, both plain nullable FKs to a single…
 
 `id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `key` text (not null) · `original_filename` text (not null) · `mime_type` text (not null) · `size_bytes` bigint (not null) · `uploaded_by_user_id` text (→ user (set null)) · `created_at` timestamp (not null, default now)
 

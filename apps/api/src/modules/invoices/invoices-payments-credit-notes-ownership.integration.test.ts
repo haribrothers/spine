@@ -20,6 +20,7 @@ import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PushService } from "../notifications/push.service";
 import { PaymentPdfService } from "../pdf/payment-pdf.service";
+import { FilesService } from "../files/files.service";
 
 /**
  * Regression coverage for the own/others capability split extended to
@@ -78,7 +79,7 @@ describe("Invoices/Payments/Credit Notes ownership split (requires local Postgre
     const conversionGuard = new QuoteConversionGuardService(db, settings);
     const notifications = new NotificationsService(db, queue, new PushService(db));
     const email = new EmailService();
-    const paymentPdf = new PaymentPdfService(db, settings);
+    const paymentPdf = new PaymentPdfService(db, settings, new FilesService(db));
 
     invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
     paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, paymentPdf);
