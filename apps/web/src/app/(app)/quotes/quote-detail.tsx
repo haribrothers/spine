@@ -18,7 +18,6 @@ import {
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
@@ -27,6 +26,7 @@ import { HistorySection } from "../../../components/history-section";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
@@ -435,15 +435,15 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: quote.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: quote.currency })}
+                <span className="shrink-0 tabular-nums text-on-surface">
+                  {formatMoney(BigInt(line.lineTotalAmount), quote.currency)}
                 </span>
               )}
             </div>
@@ -453,7 +453,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={quote.subtotalAmount} currency={quote.currency} />
-        <TotalRow label="Discount" value={`-${toDecimalString({ amount: BigInt(quote.discountAmount), currency: quote.currency })}`} currency="" raw />
+        <TotalRow label="Discount" value={formatMoney(-(BigInt(quote.discountAmount)), quote.currency)} currency="" raw />
         <TotalRow label="Tax" value={quote.taxAmount} currency={quote.currency} />
         <div className="border-t border-border pt-2">
           <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
@@ -553,13 +553,13 @@ function TotalRow({
   emphasize?: boolean;
   raw?: boolean;
 }) {
-  const display = raw ? value : `${toDecimalString({ amount: BigInt(value), currency })} ${currency}`;
+  const display = raw ? value : formatMoney(BigInt(value), currency);
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
-      <span className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
         {display}
       </span>
     </div>

@@ -11,7 +11,8 @@
     "./tsconfig/nestjs": "./tsconfig.nestjs.json",
     "./tsconfig/nextjs": "./tsconfig.nextjs.json",
     "./tsconfig/expo": "./tsconfig.expo.json",
-    "./tailwind": "./tailwind-preset.css"
+    "./tailwind": "./tailwind-preset.css",
+    "./eslint/money": "./eslint-money.js"
   },
   "dependencies": {
     "@eslint/js": "^9.17.0",

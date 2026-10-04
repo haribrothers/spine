@@ -12,7 +12,8 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { InvoicesService } from "../invoices/invoices.service";
-import { toDecimalString } from "@spine/shared";
+import { orgLocale } from "../../common/money-format";
+import { formatMoney } from "@spine/shared";
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
@@ -298,7 +299,7 @@ export class ExpensesService {
       return row;
     });
 
-    const amountText = `${toDecimalString({ amount: result!.amount, currency: result!.currency })} ${result!.currency}`;
+    const amountText = formatMoney(result!.amount, result!.currency, await orgLocale(this.db, orgId));
     void this.notifications.notify(orgId, {
       subject: `Expense approved — ${category?.name ?? "Uncategorized"}`,
       text: `Expense ${result!.number} (${category?.name ?? "Uncategorized"}, ${amountText}) was approved.`,

@@ -24,6 +24,7 @@ import { Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * S-01.4 — "create a lead with an estimated value and stage." This is the
@@ -182,7 +183,7 @@ function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void })
         <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
         <span className="text-on-surface-muted">
           {" "}
-          · {(Number(lead.valueAmount) / 100).toLocaleString(undefined, { style: "currency", currency: lead.valueCurrency })}
+          · {formatMoney(lead.valueAmount, lead.valueCurrency)}
         </span>
       </div>
       <div className="flex items-center gap-3">

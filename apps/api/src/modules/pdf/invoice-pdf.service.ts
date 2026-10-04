@@ -6,6 +6,7 @@ import type { Database } from "../../db/client";
 import { invoices, invoiceLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { orgLocale } from "../../common/money-format";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
 /**
@@ -52,6 +53,7 @@ export class InvoicePdfService {
         contactEmail: row.contactEmail,
         business,
         logoDataUri,
+        locale: await orgLocale(this.db, orgId),
       }),
     );
 

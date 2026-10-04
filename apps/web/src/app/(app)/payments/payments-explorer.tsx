@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { Banknote } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -13,6 +12,7 @@ import { PaymentsSkeleton } from "./payments-skeleton";
 import { PaymentsTable } from "./payments-table";
 import type { ContactOption, Payment } from "./types";
 import { usePaymentStats } from "./use-payment-stats";
+import { formatMoney } from "../../../lib/money";
 
 const ALL_CONTACTS = "__all__";
 
@@ -92,7 +92,7 @@ export function PaymentsExplorer() {
               ? stats.hasMixedCurrencies
                 ? "Mixed currencies"
                 : "—"
-              : `${toDecimalString({ amount: stats.unallocatedTotal, currency: stats.currency ?? "USD" })} ${stats.currency ?? ""}`
+              : `${formatMoney(stats.unallocatedTotal, stats.currency ?? "USD")} ${stats.currency ?? ""}`
           }
         />
       </div>

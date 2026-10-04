@@ -15,6 +15,7 @@ export interface EmailTemplate {
 const REPLY_NOTE = "Questions? Reply to this email.";
 
 export function quoteEmail(d: {
+  locale?: string;
   businessName: string;
   contactName: string | null;
   number: string;
@@ -34,7 +35,7 @@ export function quoteEmail(d: {
       ],
       facts: [
         { label: "Quote", value: d.number },
-        { label: "Total", value: emailMoney(d.total, d.currency) },
+        { label: "Total", value: emailMoney(d.total, d.currency, d.locale) },
         ...(d.validUntil ? [{ label: "Valid until", value: emailDate(d.validUntil) }] : []),
       ],
       button: d.link ? { label: "View quote", url: d.link } : undefined,
@@ -44,6 +45,7 @@ export function quoteEmail(d: {
 }
 
 export function invoiceEmail(d: {
+  locale?: string;
   businessName: string;
   contactName: string | null;
   number: string;
@@ -77,9 +79,9 @@ export function invoiceEmail(d: {
       ],
       facts: [
         { label: "Invoice", value: d.number },
-        { label: "Total", value: emailMoney(d.total, d.currency) },
-        ...(d.retention > 0n ? [{ label: "Retention held", value: `-${emailMoney(d.retention, d.currency)}` }] : []),
-        { label: "Balance due", value: emailMoney(paid ? 0n : d.balanceDue, d.currency) },
+        { label: "Total", value: emailMoney(d.total, d.currency, d.locale) },
+        ...(d.retention > 0n ? [{ label: "Retention held", value: emailMoney(-d.retention, d.currency, d.locale) }] : []),
+        { label: "Balance due", value: emailMoney(paid ? 0n : d.balanceDue, d.currency, d.locale) },
         ...(d.dueDate ? [{ label: "Due", value: emailDate(d.dueDate) }] : []),
       ],
       callout: instructions && !paid ? { title: "How to pay", body: instructions } : undefined,
@@ -89,6 +91,7 @@ export function invoiceEmail(d: {
 }
 
 export function paymentConfirmationEmail(d: {
+  locale?: string;
   businessName: string;
   contactName: string;
   number: string | null;
@@ -102,28 +105,35 @@ export function paymentConfirmationEmail(d: {
     content: {
       heading: "Thanks — we've received your payment",
       greeting: `Hi ${firstName(d.contactName)},`,
-      paragraphs: [`${d.businessName} has received your payment of ${emailMoney(d.amount, d.currency)}.`],
+      paragraphs: [`${d.businessName} has received your payment of ${emailMoney(d.amount, d.currency, d.locale)}.`],
       facts: [
         ...(d.number ? [{ label: "Payment", value: d.number }] : []),
-        { label: "Amount", value: emailMoney(d.amount, d.currency) },
-        ...(d.applied > 0n ? [{ label: "Applied to invoices", value: emailMoney(d.applied, d.currency) }] : []),
-        ...(credit > 0n ? [{ label: "Held as credit", value: emailMoney(credit, d.currency) }] : []),
+        { label: "Amount", value: emailMoney(d.amount, d.currency, d.locale) },
+        ...(d.applied > 0n ? [{ label: "Applied to invoices", value: emailMoney(d.applied, d.currency, d.locale) }] : []),
+        ...(credit > 0n ? [{ label: "Held as credit", value: emailMoney(credit, d.currency, d.locale) }] : []),
       ],
       note: REPLY_NOTE,
     },
   };
 }
 
-export function receiptEmail(d: { businessName: string; contactName: string | null; number: string; amount: bigint; currency: string }): EmailTemplate {
+export function receiptEmail(d: {
+  locale?: string;
+  businessName: string;
+  contactName: string | null;
+  number: string;
+  amount: bigint;
+  currency: string;
+}): EmailTemplate {
   return {
     subject: `${d.businessName} sent you a receipt (${d.number})`,
     content: {
       heading: "Your receipt",
       greeting: `Hi ${firstName(d.contactName)},`,
-      paragraphs: [`Here's your receipt for a payment of ${emailMoney(d.amount, d.currency)}, attached as a PDF.`],
+      paragraphs: [`Here's your receipt for a payment of ${emailMoney(d.amount, d.currency, d.locale)}, attached as a PDF.`],
       facts: [
         { label: "Receipt", value: d.number },
-        { label: "Amount", value: emailMoney(d.amount, d.currency) },
+        { label: "Amount", value: emailMoney(d.amount, d.currency, d.locale) },
       ],
       note: REPLY_NOTE,
     },

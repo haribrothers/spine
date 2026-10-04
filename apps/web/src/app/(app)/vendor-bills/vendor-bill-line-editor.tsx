@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Client-side line shape while editing — money fields as `bigint` (never a
@@ -279,8 +279,8 @@ export function VendorBillLineEditor({
                         <MoneyInput value={line.unitPriceAmount} onValueChange={(v) => updateLine(index, { unitPriceAmount: v })} currency={currency} />
                       </FieldLabel>
                       <FieldLabel label="Line total">
-                        <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 font-mono text-[14px] tabular-nums">
-                          {toDecimalString({ amount: preview.total, currency })}
+                        <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
+                          {formatMoney(preview.total, currency)}
                         </div>
                       </FieldLabel>
                     </div>

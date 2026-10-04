@@ -36,8 +36,8 @@ function allTemplates(): Record<string, EmailTemplate> {
     meetingInvite: notify("You've been invited: Site walk", `You've been invited to "Site walk".`, "/meetings?id=m1"),
     meetingReminder: notify("Starting soon: Site walk", `"Site walk" starts at 17 Oct 2026, 09:00 UTC.`, "/meetings?id=m1"),
     milestone: notify("Milestone completed — Excavation & footings", `Milestone "Excavation & footings" on job "Phase 2 townhomes - foundations" was marked completed.`, "/jobs/j1"),
-    expense: notify("Expense approved — Fuel & Vehicle", "Expense BXP-0001 (Fuel & Vehicle, 85.00 USD) was approved.", "/expenses/e1"),
-    paymentReceived: notify("Payment received from Alan Brooks", "Alan Brooks paid 2,500.00 USD (PAY-0002).", "/payments/p1"),
+    expense: notify("Expense approved — Fuel & Vehicle", "Expense BXP-0001 (Fuel & Vehicle, $85.00) was approved.", "/expenses/e1"),
+    paymentReceived: notify("Payment received from Alan Brooks", "Alan Brooks paid $2,500.00 (PAY-0002).", "/payments/p1"),
   };
 }
 

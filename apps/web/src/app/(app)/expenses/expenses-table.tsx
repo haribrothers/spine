@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import type { MemberRow } from "../../../lib/members";
 import { ExpenseRowActions } from "./expense-row-actions";
 import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
   submitted: "bg-draft-bg text-draft",
@@ -67,9 +67,10 @@ export function ExpensesTable({
     {
       key: "amount",
       header: "Amount",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.amount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.amount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.amount),

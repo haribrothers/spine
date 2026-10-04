@@ -72,8 +72,10 @@ describe("US-NTF-10 · one branded layout for every email", () => {
   });
 
   it("formats money, dates and first names the way the emails show them", () => {
-    expect(emailMoney(51000n, "USD")).toBe("510.00 USD");
-    expect(emailMoney(123456789n, "USD")).toBe("1,234,567.89 USD");
+    expect(emailMoney(51000n, "USD")).toBe("$510.00");
+    expect(emailMoney(123456789n, "USD")).toBe("$1,234,567.89");
+    expect(emailMoney(-433500n, "USD")).toBe("−$4,335.00");
+    expect(emailMoney(12024750n, "INR", "en-IN")).toBe("₹1,20,247.50");
     expect(emailDate(new Date("2026-10-17T00:00:00Z"))).toBe("17 Oct 2026");
     expect(firstName("Alan Brooks")).toBe("Alan");
     expect(firstName(null)).toBe("there");

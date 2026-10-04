@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import type { TaxGroupOption, TaxRateOption, VariationOrderCatalogItemOption } from "../types";
+import { formatMoney } from "../../../../lib/money";
 
 type VariationLineType = "item" | "heading" | "text";
 
@@ -324,8 +324,8 @@ function ItemLineFields({
           />
         </FieldLabel>
         <FieldLabel label="Line total">
-          <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 font-mono text-[14px] tabular-nums">
-            {toDecimalString({ amount: preview.total, currency })}
+          <div className="flex h-10 items-center justify-end rounded-sm border border-border bg-surface-sunken px-2.5 text-[14px] tabular-nums">
+            {formatMoney(preview.total, currency)}
           </div>
         </FieldLabel>
       </div>

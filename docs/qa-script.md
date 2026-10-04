@@ -2313,6 +2313,17 @@ Regression: onboarding still shows "Continue" on each step.
 
 Regression: the sign-up page's "invite-only" message still names the business (§31).
 
+## 50. Money format (US-OPS-24, Phase 6)
+
+1. With Settings › Currency & locale at USD / en-US, check Invoices, Quotes, Payments, Receivables, the dashboard, Reports and an invoice's detail: amounts read like "$12,024.75", right-aligned in tables, in the normal font. No "USD" after numbers.
+2. A credit note, discount or retention shows "−$…" with a proper minus sign.
+3. Change the locale to de-DE and reload: "12.024,75 $". Try en-IN with INR: "₹1,20,247.50".
+4. Download an invoice PDF: the same format. A negative uses a dash, and an INR invoice reads "INR 1,20,247.50".
+5. Send a quote: the email's Total reads "$…". Approve an expense: the notification reads "… $85.00".
+6. Use the app normally with several people from one office for a while: no "Too Many Requests" errors.
+
+Regression: CSV exports still have plain decimals ("1234.50") with a currency column (§45).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

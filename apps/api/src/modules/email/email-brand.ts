@@ -40,9 +40,10 @@ export async function loadEmailBrand(db: Database, orgId: string): Promise<Email
   const rows = await db
     .select({ key: settings.key, value: settings.value })
     .from(settings)
-    .where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "branding"])));
+    .where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "branding", "currency"])));
   const profile = (rows.find((r) => r.key === "business_profile")?.value ?? {}) as BusinessProfile;
   const branding = (rows.find((r) => r.key === "branding")?.value ?? {}) as Branding;
+  const locale = (rows.find((r) => r.key === "currency")?.value as { locale?: string } | undefined)?.locale || "en-US";
 
   let name = profile.name?.trim();
   if (!name) {
@@ -55,6 +56,7 @@ export async function loadEmailBrand(db: Database, orgId: string): Promise<Email
     name,
     color: branding.documentColor && HEX.test(branding.documentColor) ? branding.documentColor : EMAIL_COLORS.primary,
     footer,
+    locale,
     logo: await loadLogo(orgId, profile.logoUrl),
   };
 }

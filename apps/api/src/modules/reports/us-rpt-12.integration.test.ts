@@ -62,13 +62,13 @@ describe("US-RPT-12 · warn me if the books ever stop balancing (requires local 
     const out = await status();
     expect(out.balanced).toBe(false);
     expect(out.message).toBe(outOfBalanceMessage(1234n, "USD"));
-    expect(out.message).toMatch(/^Your books are out of balance by 12\.34 [A-Z]{3}\. Contact the person who runs Spine\.$/);
+    expect(out.message).toMatch(/^Your books are out of balance by \$12\.34\. Contact the person who runs Spine\.$/);
 
     const [sent] = await db
       .select()
       .from(notifications)
       .where(and(eq(notifications.orgId, orgId), eq(notifications.recipientUserId, userId), eq(notifications.type, "ledger_out_of_balance")));
-    expect(sent?.message).toMatch(/^Your books are out of balance by 12\.34/);
+    expect(sent?.message).toMatch(/^Your books are out of balance by \$12\.34/);
 
     // The repair is undone: the next check passes and the warning goes.
     await db.transaction(async (tx) => {

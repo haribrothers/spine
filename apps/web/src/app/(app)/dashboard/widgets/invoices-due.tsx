@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
 
 interface InvoiceDueRow {
   id: string;
@@ -70,8 +70,8 @@ export function InvoicesDue() {
                   <span className="text-[11px] text-on-surface-muted">{row.contactName ?? "—"}</span>
                 </div>
                 <div className="flex flex-col items-end gap-0.5">
-                  <span className="font-mono tabular-nums text-on-surface">
-                    {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
+                  <span className="tabular-nums text-on-surface">
+                    {formatMoney(BigInt(row.balanceDue), row.currency)}
                   </span>
                   <Badge className="bg-due-soon-bg text-due-soon">{dueLabel(row.dueDate)}</Badge>
                 </div>

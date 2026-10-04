@@ -1,6 +1,8 @@
 import { AppLayout } from "../../components/app-layout";
 import { getMyMembership } from "../../lib/get-my-membership";
 import { getSession } from "../../lib/get-session";
+import { getOrgLocale } from "../../lib/get-org-locale";
+import { MoneyLocaleProvider } from "../../components/money-locale-provider";
 
 /**
  * Shared chrome for every authenticated page (dashboard, quotes, contacts,
@@ -14,15 +16,17 @@ import { getSession } from "../../lib/get-session";
  * here rather than duplicated in every page.tsx.
  */
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  const [session, membership] = await Promise.all([getSession(), getMyMembership()]);
+  const [session, membership, locale] = await Promise.all([getSession(), getMyMembership(), getOrgLocale()]);
   return (
-    <AppLayout
-      role={membership?.role ?? null}
-      userName={session?.user?.name ?? "Signed in"}
-      userEmail={session?.user?.email ?? ""}
-      isOwner={membership?.role === "owner"}
-    >
-      {children}
-    </AppLayout>
+    <MoneyLocaleProvider locale={locale}>
+      <AppLayout
+        role={membership?.role ?? null}
+        userName={session?.user?.name ?? "Signed in"}
+        userEmail={session?.user?.email ?? ""}
+        isOwner={membership?.role === "owner"}
+      >
+        {children}
+      </AppLayout>
+    </MoneyLocaleProvider>
   );
 }

@@ -35,6 +35,8 @@ export interface PublicQuoteView {
   version: number;
   validUntil: string | null;
   currency: string;
+  /** US-OPS-24 — the business's locale for formatting money. */
+  locale?: string | null;
   subtotalAmount: string;
   discountAmount: string;
   taxAmount: string;

@@ -9,6 +9,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
+import { orgLocale } from "../../common/money-format";
 import { QuotePublicTokenService } from "./quote-public-token.service";
 
 /**
@@ -63,6 +64,8 @@ export interface PublicQuoteUnavailableBusiness {
 
 export interface PublicQuoteView {
   id: string;
+  /** US-OPS-24 — the business's locale for formatting money on the public page. */
+  locale: string;
   number: string | null;
   status: "sent" | "accepted" | "rejected";
   version: number;
@@ -385,6 +388,7 @@ export class PublicQuotesService {
       version: row.quote.version,
       validUntil: row.quote.validUntil ? new Date(row.quote.validUntil).toISOString() : null,
       currency: row.quote.currency,
+      locale: await orgLocale(this.db, orgId),
       subtotalAmount: row.quote.subtotalAmount.toString(),
       discountAmount: row.quote.discountAmount.toString(),
       taxAmount: row.quote.taxAmount.toString(),

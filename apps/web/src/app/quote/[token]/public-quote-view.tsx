@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { CheckCircle2, Clock, LinkIcon, XCircle } from "lucide-react";
 import type { PublicQuoteUnavailableBusiness, PublicQuoteView as PublicQuoteViewData } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -133,7 +133,8 @@ export function PublicQuoteView({ token }: { token: string }) {
   }
 
   const { quote } = state;
-  const fmt = (amount: string) => `${toDecimalString({ amount: BigInt(amount), currency: quote.currency })} ${quote.currency}`;
+  // The business's locale comes with the quote; this page is outside the signed-in layout.
+  const fmt = (amount: string | bigint) => formatMoney(amount, quote.currency, quote.locale ?? undefined);
   const isResolved = quote.status === "accepted" || quote.status === "rejected";
 
   return (
@@ -170,14 +171,14 @@ export function PublicQuoteView({ token }: { token: string }) {
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: quote.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">{fmt(line.lineTotalAmount)}</span>
+                <span className="shrink-0 tabular-nums text-on-surface">{fmt(line.lineTotalAmount)}</span>
               )}
             </div>
           ))}
@@ -186,7 +187,7 @@ export function PublicQuoteView({ token }: { token: string }) {
 
       <Card className="flex flex-col gap-2">
         <TotalRow label="Subtotal" value={fmt(quote.subtotalAmount)} />
-        {BigInt(quote.discountAmount) > 0n && <TotalRow label="Discount" value={`-${fmt(quote.discountAmount)}`} />}
+        {BigInt(quote.discountAmount) > 0n && <TotalRow label="Discount" value={fmt(-BigInt(quote.discountAmount))} />}
         <TotalRow label="Tax" value={fmt(quote.taxAmount)} />
         <div className="border-t border-border pt-2">
           <TotalRow label="Total" value={fmt(quote.totalAmount)} emphasize />
@@ -302,7 +303,7 @@ function TotalRow({ label, value, emphasize }: { label: string; value: string; e
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>{label}</span>
-      <span className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
         {value}
       </span>
     </div>

@@ -26,6 +26,7 @@ import { LeadDialog } from "./lead-dialog";
 import { LEAD_STAGES, LEAD_STAGE_LABELS, type Contact, type Lead, type LeadStage } from "../contacts/types";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
+import { formatMoney } from "../../../lib/money";
 
 type SortKey = "value-desc" | "value-asc" | "newest" | "oldest" | "title";
 
@@ -56,9 +57,6 @@ interface ViewSettings {
 
 const DEFAULT_VIEW_SETTINGS: ViewSettings = { showValue: true, showSource: true };
 
-function formatMoney(amount: string | number | bigint, currency: string) {
-  return (Number(amount) / 100).toLocaleString(undefined, { style: "currency", currency });
-}
 
 /**
  * S-01.5 — the org-wide leads pipeline board. Composes the generic

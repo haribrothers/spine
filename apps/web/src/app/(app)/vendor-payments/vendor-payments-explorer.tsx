@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -13,6 +12,7 @@ import { VendorPaymentsSkeleton } from "./vendor-payments-skeleton";
 import { VendorPaymentsTable } from "./vendor-payments-table";
 import type { ContactOption, VendorPayment } from "./types";
 import { useVendorPaymentStats } from "./use-vendor-payment-stats";
+import { formatMoney } from "../../../lib/money";
 
 const ALL_CONTACTS = "__all__";
 
@@ -90,7 +90,7 @@ export function VendorPaymentsExplorer() {
               ? stats.hasMixedCurrencies
                 ? "Mixed currencies"
                 : "—"
-              : `${toDecimalString({ amount: stats.totalAmount, currency: stats.currency ?? "USD" })} ${stats.currency ?? ""}`
+              : `${formatMoney(stats.totalAmount, stats.currency ?? "USD")} ${stats.currency ?? ""}`
           }
         />
       </div>

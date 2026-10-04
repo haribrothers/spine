@@ -1,9 +1,11 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { toDecimalString } from "@spine/shared";
 import type { creditNotes, creditNoteLines } from "../../db/schema";
+import { formatMoneyForPdf } from "../../common/money-format";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
 export interface CreditNotePdfData {
+  /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
+  locale?: string;
   creditNote: typeof creditNotes.$inferSelect;
   lines: (typeof creditNoteLines.$inferSelect)[];
   invoiceNumber: string | null;
@@ -93,9 +95,9 @@ function formatDate(value: Date | string | null): string {
  * it's against, the reason, the lines and the total credited. Rendered
  * from the credit note's own snapshot only.
  */
-export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri }: CreditNotePdfData) {
+export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri, locale }: CreditNotePdfData) {
   const currency = creditNote.currency;
-  const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
 
   return (
     <Document title={creditNote.number ?? "Credit note"} author={business?.name ?? "Spine"}>

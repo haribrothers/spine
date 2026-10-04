@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { Undo2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { CreditNoteDetailDrawer } from "../invoices/credit-note-detail-drawer";
@@ -10,6 +9,7 @@ import { CreditNotesSkeleton } from "./credit-notes-skeleton";
 import { CreditNotesTable } from "./credit-notes-table";
 import { useCreditNoteStats } from "./use-credit-note-stats";
 import type { ContactOption, CreditNoteRow } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
@@ -99,7 +99,7 @@ export function CreditNotesExplorer() {
               ? stats.hasMixedCurrencies
                 ? "Mixed currencies"
                 : "—"
-              : `${toDecimalString({ amount: stats.issuedTotal, currency: stats.currency ?? "USD" })} ${stats.currency ?? ""}`
+              : `${formatMoney(stats.issuedTotal, stats.currency ?? "USD")} ${stats.currency ?? ""}`
           }
         />
       </div>

@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { JOB_STATUS_LABELS, type Job } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
@@ -49,9 +49,10 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       {
         key: "contractValue",
         header: "Contract value",
+        align: "right",
         render: (row) => (
-          <span className="font-mono tabular-nums">
-            {toDecimalString({ amount: BigInt(row.contractValueAmount ?? 0), currency: row.currency })} {row.currency}
+          <span className="tabular-nums">
+            {formatMoney(BigInt(row.contractValueAmount ?? 0), row.currency)}
           </span>
         ),
         sortValue: (row) => Number(row.contractValueAmount ?? 0),

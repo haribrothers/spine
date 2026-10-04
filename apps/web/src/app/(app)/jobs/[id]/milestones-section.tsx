@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Alert, AlertDescription, Badge, Button, Card, DatePicker, FormField, Input, NativeSelect, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { Plus, Trash2 } from "lucide-react";
 import { authClient } from "../../../../lib/auth-client";
 import { apiClient } from "../../../../lib/api-client";
@@ -10,6 +9,7 @@ import { useCanEditOwnership, useCapabilities, useCapability } from "../../../..
 import { HistorySection } from "../../../../components/history-section";
 import { CompleteMilestoneDialog } from "./complete-milestone-dialog";
 import { MILESTONE_STATUS_LABELS, type EditableMilestone, type Job, type Milestone, type MilestoneAmountType } from "../types";
+import { formatMoney } from "../../../../lib/money";
 
 const STATUS_BADGE_CLASS: Record<Milestone["status"], string> = {
   pending: "bg-draft-bg text-draft",
@@ -228,6 +228,7 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
                     </NativeSelect>
                   )}
                 </FormField>
+                {/* eslint-disable-next-line no-restricted-syntax -- a field label naming the currency to type in, not an amount */}
                 <FormField label={row.amountType === "percent" ? "Percent" : `Amount (${job.currency})`} className="w-32">
                   {(field) => (
                     <Input
@@ -332,8 +333,8 @@ export function MilestonesSection({ job, onJobChanged }: { job: Job; onJobChange
                 </div>
                 <div className="flex items-center gap-3">
                   {m.resolvedAmount !== undefined && (
-                    <span className="font-mono text-[13px] tabular-nums text-on-surface">
-                      {toDecimalString({ amount: BigInt(m.resolvedAmount), currency: job.currency })} {job.currency}
+                    <span className="text-[13px] tabular-nums text-on-surface">
+                      {formatMoney(BigInt(m.resolvedAmount), job.currency)}
                     </span>
                   )}
                   <HistorySection endpoint={`/jobs/${job.id}/milestones/${m.id}/history`} subjectLabel="this milestone" />

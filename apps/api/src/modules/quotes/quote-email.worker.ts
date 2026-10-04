@@ -147,6 +147,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     // US-NTF-10/11 — the shared branded layout.
     const template = quoteEmail({
       businessName: brand.name,
+      locale: brand.locale,
       contactName: row.contactName,
       number: quoteNumber,
       total: row.quote.totalAmount,

@@ -41,7 +41,6 @@ import {
   TabsTrigger,
   Textarea,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, ChevronDown } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -54,6 +53,7 @@ import { PhotosSection } from "./[id]/photos-section";
 import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
@@ -201,7 +201,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
           items={[
             // Field users get no money fields (US-JOB-19), so these are left out for them.
             ...(job.contractValueAmount !== undefined
-              ? [{ label: "Contract value", value: `${toDecimalString({ amount: BigInt(job.contractValueAmount), currency: job.currency })} ${job.currency}` }]
+              ? [{ label: "Contract value", value: formatMoney(BigInt(job.contractValueAmount), job.currency) }]
               : []),
             ...(job.retentionPct !== undefined ? [{ label: "Retention", value: job.retentionPct > 0 ? `${job.retentionPct}%` : "None" }] : []),
             { label: "Start date", value: job.startDate ? new Date(job.startDate).toLocaleDateString() : "—" },

@@ -2,7 +2,8 @@ import { Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { toDecimalString } from "@spine/shared";
+import { formatMoney } from "@spine/shared";
+import { orgLocale } from "../../common/money-format";
 import {
   quoteEvents,
   quotes,
@@ -94,9 +95,10 @@ export class ActivityFeedService {
       .orderBy(desc(payments.createdAt))
       .limit(PER_SOURCE_LIMIT);
 
+    const locale = await orgLocale(this.db, orgId);
     return rows.map((row) => ({
       type: "payment_received",
-      message: `Payment of ${toDecimalString({ amount: row.payment.amount, currency: row.payment.currency })} ${row.payment.currency} received from ${row.contactName}`,
+      message: `Payment of ${formatMoney(row.payment.amount, row.payment.currency, locale)} received from ${row.contactName}`,
       link: `/payments/${row.payment.id}`,
       occurredAt: row.payment.createdAt.toISOString(),
     }));
@@ -111,11 +113,12 @@ export class ActivityFeedService {
       .orderBy(desc(expenses.approvedAt))
       .limit(PER_SOURCE_LIMIT);
 
+    const locale = await orgLocale(this.db, orgId);
     return rows
       .filter((row) => row.expense.approvedAt !== null)
       .map((row) => ({
         type: "expense_approved",
-        message: `Expense approved — ${row.categoryName}, ${toDecimalString({ amount: row.expense.amount, currency: row.expense.currency })} ${row.expense.currency}`,
+        message: `Expense approved — ${row.categoryName}, ${formatMoney(row.expense.amount, row.expense.currency, locale)}`,
         link: `/expenses/${row.expense.id}`,
         occurredAt: row.expense.approvedAt!.toISOString(),
       }));

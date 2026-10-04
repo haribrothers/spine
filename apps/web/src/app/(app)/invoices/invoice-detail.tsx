@@ -20,7 +20,6 @@ import {
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
@@ -32,6 +31,7 @@ import { useEntityToast } from "./entity-toast";
 import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
@@ -374,15 +374,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">
-                    {line.quantity} × {toDecimalString({ amount: BigInt(line.unitPriceAmount), currency: invoice.currency })}
+                    {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), invoice.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
                   </p>
                 )}
               </div>
               {line.type === "item" && (
-                <span className="shrink-0 font-mono tabular-nums text-on-surface">
-                  {toDecimalString({ amount: BigInt(line.lineTotalAmount), currency: invoice.currency })}
+                <span className="shrink-0 tabular-nums text-on-surface">
+                  {formatMoney(BigInt(line.lineTotalAmount), invoice.currency)}
                 </span>
               )}
             </div>
@@ -397,7 +397,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
         <TotalRow
           label="Discount"
-          value={`-${toDecimalString({ amount: BigInt(invoice.discountAmount), currency: invoice.currency })}`}
+          value={formatMoney(-(BigInt(invoice.discountAmount)), invoice.currency)}
           currency=""
           raw
         />
@@ -409,7 +409,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           <>
             <TotalRow
               label={`Retention held (${invoice.retention?.percent ?? "0"}%)`}
-              value={`-${toDecimalString({ amount: retentionAmount, currency: invoice.currency })}`}
+              value={formatMoney(-(retentionAmount), invoice.currency)}
               currency=""
               raw
             />
@@ -419,10 +419,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </>
         )}
         {amountPaid > 0n && (
-          <TotalRow label="Paid" value={`-${toDecimalString({ amount: amountPaid, currency: invoice.currency })}`} currency="" raw />
+          <TotalRow label="Paid" value={formatMoney(-(amountPaid), invoice.currency)} currency="" raw />
         )}
         {creditedAmount > 0n && (
-          <TotalRow label="Credited" value={`-${toDecimalString({ amount: creditedAmount, currency: invoice.currency })}`} currency="" raw />
+          <TotalRow label="Credited" value={formatMoney(-(creditedAmount), invoice.currency)} currency="" raw />
         )}
         {(amountPaid > 0n || creditedAmount > 0n) && (
           <div className="border-t border-border pt-2">
@@ -434,7 +434,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       {retentionAmount > 0n && invoice.retention && (
         <p className="text-[12px] text-on-surface-muted" data-testid="retention-note">
           Retention is held in Retention Receivable until you release it from the job. Held on this job so far:{" "}
-          {toDecimalString({ amount: BigInt(invoice.retention.heldOnJob), currency: invoice.currency })} {invoice.currency}.
+          {formatMoney(BigInt(invoice.retention.heldOnJob), invoice.currency)}.
         </p>
       )}
 
@@ -539,14 +539,14 @@ function TotalRow({
   raw?: boolean;
   critical?: boolean;
 }) {
-  const display = raw ? value : `${toDecimalString({ amount: BigInt(value), currency })} ${currency}`;
+  const display = raw ? value : formatMoney(BigInt(value), currency);
   return (
     <div className="flex items-center justify-between">
       <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
         {label}
       </span>
       <span
-        className={`font-mono tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
+        className={`tabular-nums ${emphasize ? "text-[16px] font-bold" : "text-[14px]"} ${critical ? "text-overdue" : "text-on-surface"}`}
       >
         {display}
       </span>

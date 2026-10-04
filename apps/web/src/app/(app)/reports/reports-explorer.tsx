@@ -21,7 +21,6 @@ import {
   TabsList,
   TabsTrigger,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import {
@@ -34,6 +33,7 @@ import {
   type TaxSummaryReport,
   type TrialBalanceReport,
 } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -122,8 +122,8 @@ function AccountLineRow({
       >
         {line.code ? `${line.code} — ${line.name}` : line.name}
       </button>
-      <span className={`font-mono tabular-nums ${negative ? "text-overdue" : "text-on-surface"}`}>
-        {toDecimalString({ amount, currency })} {currency}
+      <span className={`tabular-nums ${negative ? "text-overdue" : "text-on-surface"}`}>
+        {formatMoney(amount, currency)}
       </span>
     </div>
   );
@@ -207,8 +207,8 @@ function ProfitAndLossTab() {
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total income</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalIncome), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalIncome), currency)}
               </span>
             </div>
           </div>
@@ -222,16 +222,16 @@ function ProfitAndLossTab() {
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total expenses</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalExpenses), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalExpenses), currency)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-border-strong pt-3 text-[15px] font-semibold">
             <span>Net profit</span>
-            <span className="font-mono tabular-nums">
-              {toDecimalString({ amount: BigInt(report.netProfit), currency })} {currency}
+            <span className="tabular-nums">
+              {formatMoney(BigInt(report.netProfit), currency)}
             </span>
           </div>
         </div>
@@ -315,8 +315,8 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total assets</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalAssets), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalAssets), currency)}
               </span>
             </div>
           </div>
@@ -328,8 +328,8 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total liabilities</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalLiabilities), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalLiabilities), currency)}
               </span>
             </div>
           </div>
@@ -341,16 +341,16 @@ function BalanceSheetTab() {
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total equity</span>
-              <span className="font-mono tabular-nums">
-                {toDecimalString({ amount: BigInt(report.totalEquity), currency })} {currency}
+              <span className="tabular-nums">
+                {formatMoney(BigInt(report.totalEquity), currency)}
               </span>
             </div>
           </div>
 
           <div className="flex items-center justify-between border-t border-border-strong pt-3 text-[15px] font-semibold">
             <span>Total liabilities + equity</span>
-            <span className="font-mono tabular-nums">
-              {toDecimalString({ amount: BigInt(report.totalLiabilitiesAndEquity), currency })} {currency}
+            <span className="tabular-nums">
+              {formatMoney(BigInt(report.totalLiabilitiesAndEquity), currency)}
             </span>
           </div>
         </div>
@@ -424,13 +424,13 @@ function JobProfitabilityTab() {
                     </Link>
                   </td>
                   <td className="px-3 py-2 text-on-surface-muted">{job.status}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">
-                    {toDecimalString({ amount: BigInt(job.contractValueAmount), currency: job.currency })}
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(job.contractValueAmount), job.currency)}
                   </td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.revenue), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.cost), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{toDecimalString({ amount: BigInt(job.margin), currency: job.currency })}</td>
-                  <td className="px-3 py-2 text-right font-mono tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.revenue), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.cost), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.margin), job.currency)}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
                 </tr>
               ))}
             </tbody>
@@ -506,8 +506,8 @@ function DrilldownDialog({
                         )}
                         <span className="text-[11px] text-on-surface-muted">{new Date(entry.date).toLocaleDateString()}</span>
                       </div>
-                      <span className="font-mono tabular-nums text-on-surface-muted">
-                        {side} {toDecimalString({ amount: BigInt(amount), currency })} {currency}
+                      <span className="tabular-nums text-on-surface-muted">
+                        {side} {formatMoney(BigInt(amount), currency)}
                       </span>
                     </div>
                   );
@@ -560,7 +560,7 @@ function TrialBalanceTab() {
     // Loads once on open; "Refresh" and the checkbox reload after that.
   }, []);
 
-  const money = (value: string) => (BigInt(value) === 0n ? "—" : toDecimalString({ amount: BigInt(value), currency }));
+  const money = (value: string) => (BigInt(value) === 0n ? "—" : formatMoney(value, currency));
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -611,7 +611,7 @@ function TrialBalanceTab() {
           ) : (
             <Alert variant="critical" data-testid="trial-balance-status">
               <AlertDescription>
-                Out of balance by {toDecimalString({ amount: BigInt(report.totalDebit) - BigInt(report.totalCredit), currency })} {currency}.
+                Out of balance by {formatMoney(BigInt(report.totalDebit) - BigInt(report.totalCredit), currency)}.
               </AlertDescription>
             </Alert>
           )}
@@ -638,8 +638,8 @@ function TrialBalanceTab() {
                         {line.name}
                       </button>
                     </td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(line.debit)}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(line.credit)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(line.debit)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(line.credit)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -647,11 +647,11 @@ function TrialBalanceTab() {
                 <tr className="border-t border-border-strong font-semibold">
                   <td className="px-4 py-2" />
                   <td className="px-4 py-2">Total</td>
-                  <td className="px-4 py-2 text-right font-mono tabular-nums">
-                    {toDecimalString({ amount: BigInt(report.totalDebit), currency })} {currency}
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(report.totalDebit), currency)}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono tabular-nums">
-                    {toDecimalString({ amount: BigInt(report.totalCredit), currency })} {currency}
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {formatMoney(BigInt(report.totalCredit), currency)}
                   </td>
                 </tr>
               </tfoot>
@@ -707,7 +707,7 @@ function TaxSummaryTab() {
     // Loads once on open; "Refresh" reloads for new dates.
   }, []);
 
-  const money = (value: string) => toDecimalString({ amount: BigInt(value), currency });
+  const money = (value: string) => formatMoney(value, currency);
 
   return (
     <div className="flex flex-col gap-4 pt-4">
@@ -752,7 +752,7 @@ function TaxSummaryTab() {
               <div key={card.label} className="rounded-md border border-border-strong p-4">
                 <p className="text-[13px] text-on-surface-muted">{card.label}</p>
                 <p className="mt-1 text-[22px] font-semibold tabular-nums text-on-surface">
-                  {money(card.value)} {currency}
+                  {money(card.value)}
                 </p>
                 <p className="mt-1 text-[12px] text-on-surface-muted">{card.note}</p>
               </div>
@@ -772,26 +772,26 @@ function TaxSummaryTab() {
                 {report.collectedByRate.map((row) => (
                   <tr key={row.name} className="border-b border-border">
                     <td className="px-4 py-2">{row.name}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(row.taxableAmount)}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(row.amount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(row.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(row.amount)}</td>
                   </tr>
                 ))}
                 {report.adjustments && (
                   <tr className="border-b border-border">
                     <td className="px-4 py-2">Adjustments from credit notes and voided invoices</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(report.adjustments.taxableAmount)}</td>
-                    <td className="px-4 py-2 text-right font-mono tabular-nums">{money(report.adjustments.amount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(report.adjustments.taxableAmount)}</td>
+                    <td className="px-4 py-2 text-right tabular-nums">{money(report.adjustments.amount)}</td>
                   </tr>
                 )}
               </tbody>
               <tfoot>
                 <tr className="border-t border-border-strong font-semibold">
                   <td className="px-4 py-2">Total collected</td>
-                  <td className="px-4 py-2 text-right font-mono tabular-nums">
-                    {money(report.totalTaxable)} {currency}
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {money(report.totalTaxable)}
                   </td>
-                  <td className="px-4 py-2 text-right font-mono tabular-nums">
-                    {money(report.taxCollected)} {currency}
+                  <td className="px-4 py-2 text-right tabular-nums">
+                    {money(report.taxCollected)}
                   </td>
                 </tr>
               </tfoot>

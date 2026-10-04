@@ -1,6 +1,7 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { percentageOf, toDecimalString } from "@spine/shared";
+import { percentageOf } from "@spine/shared";
 import type { invoices, invoiceLines } from "../../db/schema";
+import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 
 export interface InvoicePdfBusinessProfile {
@@ -21,6 +22,8 @@ export function invoicePaymentInstructions(invoice: { status: string; paymentIns
 }
 
 export interface InvoicePdfData {
+  /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
+  locale?: string;
   invoice: typeof invoices.$inferSelect;
   lines: (typeof invoiceLines.$inferSelect)[];
   contactName: string | null;
@@ -121,9 +124,9 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale }: InvoicePdfData) {
   const currency = invoice.currency;
-  const fmt = (amount: bigint | string) => `${toDecimalString({ amount: BigInt(amount), currency })} ${currency}`;
+  const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
   // US-JOB-21: retention held back is not part of what's due now.
   const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
   const amountDue = invoice.totalAmount - invoice.retentionAmount;
@@ -205,7 +208,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           {invoice.discountAmount > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Discount</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.discountAmount)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.discountAmount))}</Text>
             </View>
           )}
           <View style={styles.totalsRow}>
@@ -222,7 +225,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
                 <Text style={styles.totalsLabel}>
                   Retention held ({percentageOf(invoice.retentionAmount, invoice.subtotalAmount - invoice.discountAmount)}%)
                 </Text>
-                <Text style={styles.totalsValue}>-{fmt(invoice.retentionAmount)}</Text>
+                <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.retentionAmount))}</Text>
               </View>
               <View style={styles.grandTotalRow}>
                 <Text style={styles.grandTotalLabel}>Amount due</Text>
@@ -233,13 +236,13 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           {invoice.amountPaid > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Paid</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.amountPaid)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.amountPaid))}</Text>
             </View>
           )}
           {invoice.creditedAmount > 0n && (
             <View style={styles.totalsRow}>
               <Text style={styles.totalsLabel}>Credited</Text>
-              <Text style={styles.totalsValue}>-{fmt(invoice.creditedAmount)}</Text>
+              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.creditedAmount))}</Text>
             </View>
           )}
           {balanceDue > 0n && invoice.status !== "draft" && (

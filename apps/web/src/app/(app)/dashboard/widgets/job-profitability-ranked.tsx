@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
 
 interface JobProfitabilityRow {
   jobId: string;
@@ -26,8 +26,8 @@ function MarginRow({ job }: { job: JobProfitabilityRow }) {
     <Link href={`/reports`} className="flex flex-col gap-1 rounded-sm px-1 py-1.5 hover:bg-surface-secondary">
       <div className="flex items-center justify-between text-[13px]">
         <span className="truncate text-on-surface">{job.name}</span>
-        <span className={`font-mono tabular-nums ${negative ? "text-overdue" : "text-paid"}`}>
-          {toDecimalString({ amount: margin, currency: job.currency })} {job.currency}
+        <span className={`tabular-nums ${negative ? "text-overdue" : "text-paid"}`}>
+          {formatMoney(margin, job.currency)}
         </span>
       </div>
       <div className="h-1.5 w-full overflow-hidden rounded-full bg-border">

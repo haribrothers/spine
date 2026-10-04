@@ -106,6 +106,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
 
     const template = invoiceEmail({
       businessName: brand.name,
+      locale: brand.locale,
       contactName: row.contactName,
       number: invoice.number ?? "your invoice",
       currency: invoice.currency,

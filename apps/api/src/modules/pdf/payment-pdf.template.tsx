@@ -1,5 +1,5 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { toDecimalString } from "@spine/shared";
+import { formatMoneyForPdf } from "../../common/money-format";
 import type { payments, paymentAllocations } from "../../db/schema";
 
 export interface PaymentPdfBusinessProfile {
@@ -15,6 +15,8 @@ export interface PaymentPdfAllocationRow {
 }
 
 export interface PaymentPdfData {
+  /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
+  locale?: string;
   payment: typeof payments.$inferSelect;
   contactName: string | null;
   contactEmail: string | null;
@@ -111,9 +113,9 @@ function formatDate(value: Date | string | null): string {
  * to (if any), not catalogue lines, since that's the information a
  * recipient actually needs from a receipt.
  */
-export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri }: PaymentPdfData) {
+export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale }: PaymentPdfData) {
   const currency = payment.currency;
-  const fmt = (amount: bigint) => `${toDecimalString({ amount, currency })} ${currency}`;
+  const fmt = (amount: bigint) => formatMoneyForPdf(amount, currency, locale);
   const unallocated = payment.amount - payment.allocatedAmount;
 
   return (

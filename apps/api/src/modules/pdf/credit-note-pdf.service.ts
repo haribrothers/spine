@@ -7,6 +7,7 @@ import { contacts, creditNoteLines, creditNotes, invoices } from "../../db/schem
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
+import { orgLocale } from "../../common/money-format";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
 /** US-INV-17 (D-116) — renders a credit note to a PDF, the same way InvoicePdfService renders an invoice. */
@@ -49,6 +50,7 @@ export class CreditNotePdfService {
         contactEmail: row.contactEmail,
         business,
         logoDataUri,
+        locale: await orgLocale(this.db, orgId),
       }),
     );
     return { buffer, filename: `${row.creditNote.number ?? "credit-note-draft"}.pdf` };

@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Card, Spinner } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { CreditNoteDetailDrawer } from "./credit-note-detail-drawer";
+import { formatMoney } from "../../../lib/money";
 
 interface CreditNoteRow {
   id: string;
@@ -64,8 +64,8 @@ export function CreditNotesSection({ invoiceId, refreshKey }: { invoiceId: strin
                   <span className="text-[13px] font-medium text-on-surface">{cn.number ?? "Credit note"}</span>
                   {cn.reason && <p className="text-[12px] text-on-surface-muted">{cn.reason}</p>}
                 </div>
-                <span className="shrink-0 font-mono text-[13px] tabular-nums text-overdue">
-                  -{toDecimalString({ amount: BigInt(cn.totalAmount), currency: cn.currency })} {cn.currency}
+                <span className="shrink-0 text-[13px] tabular-nums text-overdue">
+                  {formatMoney(-BigInt(cn.totalAmount), cn.currency)}
                 </span>
               </button>
             ))}

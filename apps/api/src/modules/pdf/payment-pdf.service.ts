@@ -6,6 +6,7 @@ import type { Database } from "../../db/client";
 import { payments, paymentAllocations, invoices, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { orgLocale } from "../../common/money-format";
 import { PaymentPdfDocument, type PaymentPdfBusinessProfile } from "./payment-pdf.template";
 
 /**
@@ -52,6 +53,7 @@ export class PaymentPdfService {
         allocations: allocationRows,
         business,
         logoDataUri,
+        locale: await orgLocale(this.db, orgId),
       }),
     );
 

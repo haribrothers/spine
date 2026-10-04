@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { ExportCsvButton } from "../../../components/export-csv-button";
 import { PayablesSkeleton } from "./payables-skeleton";
 import { PayablesTable } from "./payables-table";
 import { AGING_BUCKET_LABELS, type AgingBucket, type PayablesReport } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const BUCKET_ORDER: AgingBucket[] = ["current", "0-30", "31-60", "61-90", "90+"];
 
@@ -57,14 +57,14 @@ export function PayablesExplorer() {
           <StatCard
             key={bucket}
             label={AGING_BUCKET_LABELS[bucket]}
-            value={report.buckets[bucket] === "0" ? "—" : `${toDecimalString({ amount: BigInt(report.buckets[bucket]), currency: currency || "USD" })} ${currency}`}
+            value={report.buckets[bucket] === "0" ? "—" : formatMoney(BigInt(report.buckets[bucket]), currency || "USD")}
           />
         ))}
       </div>
 
       <StatCard
         label="Total outstanding"
-        value={report.totalOutstanding === "0" ? "—" : `${toDecimalString({ amount: BigInt(report.totalOutstanding), currency: currency || "USD" })} ${currency}`}
+        value={report.totalOutstanding === "0" ? "—" : formatMoney(BigInt(report.totalOutstanding), currency || "USD")}
       />
 
       {report.bills.length === 0 ? (

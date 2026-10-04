@@ -1,4 +1,4 @@
-/** Mirrors apps/api/src/db/schema/purchases.ts's `vendorPayments`/`vendorPaymentAllocations` row shapes — hand-written to match the API's JSON response, following payments/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+/** Mirrors apps/api/src/db/schema/purchases.ts's `vendorPayments`/`vendorPaymentAllocations` row shapes — hand-written to match the API's JSON response, following payments/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {

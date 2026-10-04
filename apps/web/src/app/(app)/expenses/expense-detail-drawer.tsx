@@ -24,7 +24,6 @@ import {
   Input,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { useSession } from "../../../lib/auth-client";
@@ -32,6 +31,7 @@ import { useMyRole } from "../../../lib/role-context";
 import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -214,11 +214,11 @@ export function ExpenseDetailDrawer({
                   <Field label="Category" value={expense.categoryName ?? "—"} />
                   <Field
                     label="Amount"
-                    value={`${toDecimalString({ amount: BigInt(expense.amount), currency: expense.currency })} ${expense.currency}`}
+                    value={formatMoney(BigInt(expense.amount), expense.currency)}
                   />
                   <Field
                     label="Tax"
-                    value={`${toDecimalString({ amount: BigInt(expense.taxAmount), currency: expense.currency })} ${expense.currency}`}
+                    value={formatMoney(BigInt(expense.taxAmount), expense.currency)}
                   />
                   <Field label="Paid by" value={EXPENSE_PAID_BY_LABELS[expense.paidBy]} />
                   <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />

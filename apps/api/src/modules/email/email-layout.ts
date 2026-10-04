@@ -1,4 +1,4 @@
-import { money, toDecimalString } from "@spine/shared";
+import { formatMoney } from "@spine/shared";
 import type { SendEmailInput } from "./email.service";
 
 /**
@@ -29,6 +29,8 @@ export interface EmailBrand {
   logo?: { content: Buffer; contentType: string };
   /** "Riverstone Builders · 14 Harbour Road, Marina District" */
   footer: string;
+  /** For money in the email (Settings › Currency & locale). */
+  locale?: string;
 }
 
 export interface EmailContent {
@@ -133,12 +135,9 @@ ${content.note ? `<p style="margin:0 0 20px;color:${c.muted};font-size:13px;line
   return { html, text, attachments };
 }
 
-/** "1,510.00 USD" */
-export function emailMoney(amountMinor: bigint, currency: string): string {
-  const [whole = "0", fraction] = toDecimalString(money(amountMinor, currency)).split(".");
-  const sign = whole.startsWith("-") ? "-" : "";
-  const grouped = whole.replace("-", "").replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  return `${sign}${grouped}${fraction ? `.${fraction}` : ""} ${currency}`;
+/** "$1,510.00" in the organisation's locale (US-OPS-24, D-089). */
+export function emailMoney(amountMinor: bigint, currency: string, locale = "en-US"): string {
+  return formatMoney(amountMinor, currency, locale);
 }
 
 /** "17 Oct 2026" */

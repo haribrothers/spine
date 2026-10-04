@@ -6,6 +6,7 @@ import type { Database } from "../../db/client";
 import { quotes, quoteLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { orgLocale } from "../../common/money-format";
 import { QuotePdfDocument, type QuotePdfBusinessProfile } from "./quote-pdf.template";
 
 /**
@@ -59,6 +60,7 @@ export class QuotePdfService {
         contactEmail: row.contactEmail,
         business,
         logoDataUri,
+        locale: await orgLocale(this.db, orgId),
       }),
     );
 

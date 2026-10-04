@@ -81,7 +81,7 @@ export function DonutChart({ segments, centerLabel, emptyState, className }: Don
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
               <span>{s.label}</span>
             </div>
-            <span className="font-mono tabular-nums text-on-surface">{s.value === 0 ? "—" : s.formattedValue}</span>
+            <span className="tabular-nums text-on-surface">{s.value === 0 ? "—" : s.formattedValue}</span>
           </div>
         ))}
       </div>

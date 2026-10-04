@@ -20,9 +20,9 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import type { Payment } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 interface OutstandingInvoice {
   id: string;
@@ -136,7 +136,7 @@ export function ApplyCreditDialog({
         <DialogHeader>
           <DialogTitle>Apply credit</DialogTitle>
           <DialogDescription>
-            {payment.number ?? "This payment"} has {toDecimalString({ amount: creditAvailable, currency })} {currency} sitting as
+            {payment.number ?? "This payment"} has {formatMoney(creditAvailable, currency)} sitting as
             unallocated customer credit. Apply it against one or more outstanding invoices.
           </DialogDescription>
         </DialogHeader>
@@ -151,7 +151,7 @@ export function ApplyCreditDialog({
           <div className="flex items-center justify-between">
             <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
             <span className="text-[12px] text-on-surface-muted">
-              Remaining credit: {toDecimalString({ amount: remaining, currency })} {currency}
+              Remaining credit: {formatMoney(remaining, currency)}
             </span>
           </div>
 
@@ -168,7 +168,7 @@ export function ApplyCreditDialog({
                 <div key={row.invoiceId} className="flex items-center gap-2">
                   <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
                   <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
-                    Balance {toDecimalString({ amount: row.balanceDue, currency })}
+                    Balance {formatMoney(row.balanceDue, currency)}
                   </span>
                   <div className="flex-1">
                     <MoneyInput
@@ -197,7 +197,7 @@ export function ApplyCreditDialog({
                     <SelectContent>
                       {unallocatedInvoices.map((inv) => (
                         <SelectItem key={inv.id} value={inv.id}>
-                          {inv.number ?? "Unnumbered"} — balance {toDecimalString({ amount: BigInt(inv.balanceDue), currency })}
+                          {inv.number ?? "Unnumbered"} — balance {formatMoney(BigInt(inv.balanceDue), currency)}
                         </SelectItem>
                       ))}
                     </SelectContent>

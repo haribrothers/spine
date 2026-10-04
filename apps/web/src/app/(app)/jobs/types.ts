@@ -1,4 +1,4 @@
-/** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `toDecimalString`. */
+/** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type JobStatus = "active" | "on_hold" | "completed" | "cancelled";
 export type MilestoneAmountType = "fixed" | "percent";
 export type MilestoneStatus = "pending" | "completed" | "invoiced";

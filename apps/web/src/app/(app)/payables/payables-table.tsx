@@ -1,9 +1,9 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { AGING_BUCKET_LABELS, type AgingBucket, type PayablesBillRow } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const BUCKET_BADGE_CLASS: Record<AgingBucket, string> = {
   current: "bg-paid-bg text-paid",
@@ -47,9 +47,10 @@ export function PayablesTable({ bills, onSearchChange }: { bills: PayablesBillRo
     {
       key: "balanceDue",
       header: "Balance due",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.balanceDue), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.balanceDue), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.balanceDue),

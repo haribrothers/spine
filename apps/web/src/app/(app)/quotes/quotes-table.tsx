@@ -1,10 +1,10 @@
 "use client";
 
 import { Badge, DataTable, type TableColumn } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import Link from "next/link";
 import { QuoteRowActions } from "./quote-row-actions";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /** Item 4, user feedback — the newest version of a quote family is always the primary/collapsed row; older, superseded versions expand underneath it. */
 function groupPrimary(rows: Quote[]): Quote {
@@ -76,9 +76,10 @@ export function QuotesTable({ quotes, onDeleted }: { quotes: Quote[]; onDeleted:
     {
       key: "total",
       header: "Total",
+      align: "right",
       render: (row) => (
-        <span className="font-mono tabular-nums">
-          {toDecimalString({ amount: BigInt(row.totalAmount), currency: row.currency })} {row.currency}
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.totalAmount), row.currency)}
         </span>
       ),
       sortValue: (row) => Number(row.totalAmount),

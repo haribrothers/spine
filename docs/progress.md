@@ -275,7 +275,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-OPS-12 · Explain why I can't open a page
 - [x] US-OPS-20 · Close the read-access gaps found in review
 - [ ] US-OPS-21 · Remove developer wording from the interface
-- [ ] US-OPS-24 · Show money the same way everywhere
+- [x] US-OPS-24 · Show money the same way everywhere
 - [ ] US-OPS-25 · Keep text readable on coloured controls in dark mode
 - [x] US-OPS-27 · Store files on local disk by default
 - [x] US-OPS-28 · Prove stored files are intact

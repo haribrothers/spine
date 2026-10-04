@@ -1,10 +1,11 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { eq, sql } from "drizzle-orm";
-import { toDecimalString } from "@spine/shared";
+import { formatMoney } from "@spine/shared";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
 import { ledgerIntegrityChecks, organization, settings } from "../../db/schema";
 import { NotificationsService } from "../notifications/notifications.service";
+import { orgLocale } from "../../common/money-format";
 import { QueueService } from "../queue/queue.service";
 
 export const LEDGER_INTEGRITY_QUEUE = "ledger-integrity-check";
@@ -19,9 +20,9 @@ export interface LedgerIntegrityStatus {
 }
 
 /** US-RPT-12 — the Owners' warning, with the difference in the organisation's currency. */
-export function outOfBalanceMessage(difference: bigint, currency: string): string {
+export function outOfBalanceMessage(difference: bigint, currency: string, locale = "en-US"): string {
   const amount = difference < 0n ? -difference : difference;
-  return `Your books are out of balance by ${toDecimalString({ amount, currency })} ${currency}. Contact the person who runs Spine.`;
+  return `Your books are out of balance by ${formatMoney(amount, currency, locale)}. Contact the person who runs Spine.`;
 }
 
 /**
@@ -74,7 +75,7 @@ export class LedgerIntegrityService implements OnModuleInit {
       this.logger.error(
         `Ledger out of balance for organisation ${orgId}: debits − credits = ${difference} (minor units). Last good check: ${lastBalancedAt?.toISOString() ?? "never"}.`,
       );
-      const message = outOfBalanceMessage(difference, await this.currency(orgId));
+      const message = outOfBalanceMessage(difference, await this.currency(orgId), await orgLocale(this.db, orgId));
       await this.notifications.notify(orgId, {
         recipientRoles: ["owner"],
         subject: "Your books are out of balance",
@@ -89,7 +90,7 @@ export class LedgerIntegrityService implements OnModuleInit {
     const [row] = await this.db.select().from(ledgerIntegrityChecks).where(eq(ledgerIntegrityChecks.orgId, orgId));
     if (!row) return { balanced: true, checkedAt: null, message: null };
     if (row.difference === 0n) return { balanced: true, checkedAt: row.checkedAt, message: null };
-    return { balanced: false, checkedAt: row.checkedAt, message: outOfBalanceMessage(row.difference, await this.currency(orgId)) };
+    return { balanced: false, checkedAt: row.checkedAt, message: outOfBalanceMessage(row.difference, await this.currency(orgId), await orgLocale(this.db, orgId)) };
   }
 
   private async currency(orgId: string): Promise<string> {

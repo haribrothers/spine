@@ -3,7 +3,7 @@ import { renderEmail } from "../email/email-layout";
 import { paymentConfirmationEmail, receiptEmail } from "../email/email-templates";
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
-import { toDecimalString } from "@spine/shared";
+import { formatMoney } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -16,6 +16,7 @@ import { EmailService } from "../email/email.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
+import { orgLocale } from "../../common/money-format";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
@@ -470,12 +471,13 @@ export class PaymentsService {
     if (!payment) return; // shouldn't happen — just committed — but never let a confirmation failure surface as a real error
 
     const currency = payment.currency;
-    const amountText = `${toDecimalString({ amount, currency })} ${currency}`;
+    const amountText = formatMoney(amount, currency, await orgLocale(this.db, orgId));
     if (contact.email && this.email.isConfigured()) {
       try {
         const brand = await loadEmailBrand(this.db, orgId);
         const template = paymentConfirmationEmail({
           businessName: brand.name,
+          locale: brand.locale,
           contactName: contact.name,
           number: payment.number,
           amount,
@@ -539,6 +541,7 @@ export class PaymentsService {
     const brand = await loadEmailBrand(this.db, orgId);
     const template = receiptEmail({
       businessName: brand.name,
+      locale: brand.locale,
       contactName: row.contactName,
       number: row.payment.number ?? "your receipt",
       amount: row.payment.amount,

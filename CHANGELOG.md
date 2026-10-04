@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-24: show money the same way everywhere (Phase 6)
+
+- **One formatter.** `formatMoney(minor, currency, locale)` in `@spine/shared`, built on `Intl.NumberFormat`. It gives the currency symbol, the locale's grouping and decimal marks, the currency's own decimals and a true minus sign: "$12,024.75", "−$4,335.00", "₹1,20,247.50", "12.024,75 €". Amounts stay exact (decimal strings, never floats).
+- **Web.** About 100 call sites in 55 files now use it: lists, details, builders, dashboard widgets, reports, receivables and payables, the public quote page. They used to show "12024.75 USD" or plain numbers.
+  - **Locale.** Comes from Settings › Currency & locale. The server layout reads it once and `MoneyLocaleProvider` sets it before anything renders. The public quote API returns the business's `locale`.
+  - **Columns.** Money columns are right-aligned, with tabular figures in the normal UI font (no more monospace), in the web app and in `@spine/ui`'s chart, donut and money input.
+  - **Negatives.** Credit notes, discounts, retention, paid and credited amounts show "−$…" instead of a hand-typed "-".
+- **PDFs** (quote, invoice, receipt, credit note) use the same formatter. They have an en dash for the minus, and the currency code when Helvetica has no symbol for it (D-123).
+- **Emails and notifications.** Email facts, payment and expense notifications, the activity feed and the out-of-balance warning use the organisation's locale. CSV exports keep plain decimals on purpose (US-PAY-10).
+- **Lint rule.** `@spine/config/eslint/money`, applied to `apps/web` and the API's PDF and email code, fails on importing `toDecimalString` and on joining an amount with a currency code (`${amount} ${currency}` or `{amount} {currency}`). It caught the catalogue price showing its currency twice.
+- **Found along the way (D-124).** Rate limits counted per IP address, and the web app's server-side calls (session, membership, locale) all come from the web server's one address. So the whole team shared one bucket of 300 requests a minute, and the full E2E run tripped it ("ThrottlerException: Too Many Requests"). `SessionThrottlerGuard` now counts signed-in requests per session and public routes per IP.
+
+Tests:
+- `packages/shared/src/money/us-ops-24.test.ts` (5): the story's examples in en-US, en-IN and de-DE, the true minus, JPY decimals, exactness beyond 2^53, fallbacks.
+- `us-ops-24.test.ts` (API, 3): PDF money (symbol, en dash, code fallback). `us-ops-24-lint.test.ts` (4): the lint rule fails on template strings, JSX and the import, and passes `formatMoney`.
+- `session-throttler.http.integration.test.ts` (2): one user's limit doesn't throttle another on the same address; random cookies don't get around a public route's limit.
+- `apps/e2e/tests/us-ops-24.spec.ts` (1): invoice amounts read "$1,234.50" with no " USD", and switch to "1.234,50 $" after changing the locale to de-DE.
+- Updated for the new format: email snapshots, `us-ntf-10`, `us-rpt-12`, `quote-to-payment` and `us-ntf-10` E2E.
+
 ### 2026-10-05 — US-TEAM-15: use the business name everywhere the organisation is named (Phase 6)
 
 - **In sync.** Saving the business profile, from Settings or onboarding, now renames the organisation to the business name in the same transaction. A blank name leaves it alone. Nothing says "<Owner>'s Organisation" once a business name is set.

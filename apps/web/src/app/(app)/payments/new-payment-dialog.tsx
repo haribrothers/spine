@@ -23,10 +23,10 @@ import {
   SelectValue,
   Spinner,
 } from "@spine/ui";
-import { toDecimalString } from "@spine/shared/money";
 import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = (
   Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]
@@ -256,7 +256,7 @@ export function NewPaymentDialog({
               <div className="flex items-center justify-between">
                 <h3 className="text-[13px] font-semibold text-on-surface">Allocation</h3>
                 <span className="text-[12px] text-on-surface-muted">
-                  Unallocated: {toDecimalString({ amount: unallocated, currency })} {currency}
+                  Unallocated: {formatMoney(unallocated, currency)}
                 </span>
               </div>
 
@@ -275,7 +275,7 @@ export function NewPaymentDialog({
                     <div key={row.invoiceId} className="flex items-center gap-2">
                       <span className="w-24 shrink-0 text-[13px] font-medium text-on-surface">{row.invoiceNumber ?? "—"}</span>
                       <span className="w-28 shrink-0 text-[12px] text-on-surface-muted">
-                        Balance {toDecimalString({ amount: row.balanceDue, currency })}
+                        Balance {formatMoney(row.balanceDue, currency)}
                       </span>
                       <div className="flex-1">
                         <MoneyInput
@@ -304,7 +304,7 @@ export function NewPaymentDialog({
                         <SelectContent>
                           {unallocatedInvoices.map((inv) => (
                             <SelectItem key={inv.id} value={inv.id}>
-                              {inv.number ?? "Unnumbered"} — balance {toDecimalString({ amount: BigInt(inv.balanceDue), currency })}
+                              {inv.number ?? "Unnumbered"} — balance {formatMoney(BigInt(inv.balanceDue), currency)}
                             </SelectItem>
                           ))}
                         </SelectContent>

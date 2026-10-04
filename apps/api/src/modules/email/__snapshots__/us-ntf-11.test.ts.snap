@@ -7,7 +7,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > expense: matche
 
 Expense approved — Fuel & Vehicle
 
-Expense BXP-0001 (Fuel & Vehicle, 85.00 USD) was approved.
+Expense BXP-0001 (Fuel & Vehicle, $85.00) was approved.
 
 View expense: https://spine.example/expenses/e1
 
@@ -28,7 +28,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > expense: matche
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Expense approved — Fuel &amp; Vehicle</h1>
 
-<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Expense BXP-0001 (Fuel &amp; Vehicle, 85.00 USD) was approved.</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Expense BXP-0001 (Fuel &amp; Vehicle, $85.00) was approved.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/expenses/e1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View expense</a></td></tr></table>
 
 </td></tr>
@@ -88,8 +88,8 @@ Hi Alan,
 Here's invoice INV-0007 from Riverstone Builders, attached as a PDF.
 
 Invoice: INV-0007
-Total: 2,200.00 USD
-Balance due: 2,200.00 USD
+Total: $2,200.00
+Balance due: $2,200.00
 Due: 17 Oct 2026
 
 The invoice is attached as a PDF. Questions? Reply to this email.
@@ -111,7 +111,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > invoice: matche
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your invoice is ready</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
 <p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s invoice INV-0007 from Riverstone Builders, attached as a PDF.</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The invoice is attached as a PDF. Questions? Reply to this email.</p>
 </td></tr>
 <tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
@@ -282,12 +282,12 @@ exports[`US-NTF-11 · every email type uses the branded layout > paymentNotice: 
 Thanks — we've received your payment
 
 Hi Alan,
-Riverstone Builders has received your payment of 2,500.00 USD.
+Riverstone Builders has received your payment of $2,500.00.
 
 Payment: PAY-0002
-Amount: 2,500.00 USD
-Applied to invoices: 2,200.00 USD
-Held as credit: 300.00 USD
+Amount: $2,500.00
+Applied to invoices: $2,200.00
+Held as credit: $300.00
 
 Questions? Reply to this email.
 
@@ -307,8 +307,8 @@ exports[`US-NTF-11 · every email type uses the branded layout > paymentNotice: 
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Thanks — we&#39;ve received your payment</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
-<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Riverstone Builders has received your payment of 2,500.00 USD.</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Payment</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,500.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Applied to invoices</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Held as credit</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">300.00 USD</td></tr></table>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Riverstone Builders has received your payment of $2,500.00.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Payment</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,500.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Applied to invoices</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Held as credit</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$300.00</td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">Questions? Reply to this email.</p>
 </td></tr>
 <tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
@@ -324,7 +324,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > paymentReceived
 
 Payment received from Alan Brooks
 
-Alan Brooks paid 2,500.00 USD (PAY-0002).
+Alan Brooks paid $2,500.00 (PAY-0002).
 
 View payment: https://spine.example/payments/p1
 
@@ -345,7 +345,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > paymentReceived
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Payment received from Alan Brooks</h1>
 
-<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Alan Brooks paid 2,500.00 USD (PAY-0002).</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Alan Brooks paid $2,500.00 (PAY-0002).</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/payments/p1" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View payment</a></td></tr></table>
 
 </td></tr>
@@ -366,7 +366,7 @@ Hi Alan,
 Here's our quote. You can read it, accept it or decline it online — no account needed.
 
 Quote: QUO-0004
-Total: 510.00 USD
+Total: $510.00
 Valid until: 17 Oct 2026
 
 View quote: https://spine.example/quote/tok
@@ -390,7 +390,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > quote: matches 
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your quote is ready</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
 <p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s our quote. You can read it, accept it or decline it online — no account needed.</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Quote</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">QUO-0004</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">510.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Valid until</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/quote/tok" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View quote</a></td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Quote</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">QUO-0004</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$510.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Valid until</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table><table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:#2954E5;"><a href="https://spine.example/quote/tok" style="display:inline-block;padding:11px 22px;color:#FFFFFF;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">View quote</a></td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The quote is also attached as a PDF. Questions? Reply to this email.</p>
 </td></tr>
 <tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
@@ -407,10 +407,10 @@ exports[`US-NTF-11 · every email type uses the branded layout > receipt: matche
 Your receipt
 
 Hi Alan,
-Here's your receipt for a payment of 2,200.00 USD, attached as a PDF.
+Here's your receipt for a payment of $2,200.00, attached as a PDF.
 
 Receipt: PAY-0002
-Amount: 2,200.00 USD
+Amount: $2,200.00
 
 Questions? Reply to this email.
 
@@ -430,8 +430,8 @@ exports[`US-NTF-11 · every email type uses the branded layout > receipt: matche
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your receipt</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
-<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s your receipt for a payment of 2,200.00 USD, attached as a PDF.</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Receipt</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr></table>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">Here&#39;s your receipt for a payment of $2,200.00, attached as a PDF.</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Receipt</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">PAY-0002</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Amount</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">Questions? Reply to this email.</p>
 </td></tr>
 <tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>
@@ -451,8 +451,8 @@ Hi Alan,
 This is a friendly reminder that invoice INV-0007 from Riverstone Builders is now overdue.
 
 Invoice: INV-0007
-Total: 2,200.00 USD
-Balance due: 2,200.00 USD
+Total: $2,200.00
+Balance due: $2,200.00
 Due: 17 Oct 2026
 
 The invoice is attached as a PDF. Questions? Reply to this email.
@@ -474,7 +474,7 @@ exports[`US-NTF-11 · every email type uses the branded layout > reminder: match
 <h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your invoice is overdue</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
 <p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">This is a friendly reminder that invoice INV-0007 from Riverstone Builders is now overdue.</p>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">2,200.00 USD</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The invoice is attached as a PDF. Questions? Reply to this email.</p>
 </td></tr>
 <tr><td style="padding:16px 32px;background:#FAFAF9;border-top:1px solid #E7E5E0;border-radius:0 0 8px 8px;color:#726C5A;font-size:12px;line-height:1.5;">Riverstone Builders · 14 Harbour Road, Marina District</td></tr>

@@ -15,7 +15,7 @@ test.describe("US-NTF-10", () => {
     expect(html).toContain("border-top:6px solid");
     expect(html).toContain("Your quote is ready");
     expect(html).toContain("Hi Alan,");
-    for (const label of ["Quote", "Total", "510.00 USD", "View quote"]) expect(html).toContain(label);
+    for (const label of ["Quote", "Total", "$510.00", "View quote"]) expect(html).toContain(label);
     expect(email.text).toContain("Your quote is ready");
     expect(email.text).toContain("View quote: ");
   });
