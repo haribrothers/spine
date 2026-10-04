@@ -7,7 +7,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Concern | Choice | Why |
 |---|---|---|
 | Language | TypeScript 5.7 (web, API, shared); TypeScript ~6.0 (Expo apps) | One language end to end |
-| Runtime | Node ≥ 20 (22 in development) | LTS |
+| Runtime | Node ≥ 20 in production images; Node 22 for development and CI (jsdom 30 needs ≥ 22.22.2) | LTS |
 | Monorepo | pnpm 9.15 workspaces + Turborepo 2 | Fast installs, cached task graph |
 | Validation | Zod 4 schemas in `@spine/shared`, used by API and clients | One contract for request bodies |
 | Money and tax | `@spine/shared` money/tax engine: integer minor units (`bigint`) + currency code; half-up rounding per line | Financial correctness ([D-004](12-decisions.md)) |

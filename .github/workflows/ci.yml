@@ -29,6 +29,7 @@ env:
   AUTH_SECRET: ci-test-secret-not-for-production-use-only
   APP_URL: http://localhost:3000
   TURBO_TELEMETRY_DISABLED: 1
+  # Node 22: the test tooling needs it (jsdom 30 requires ^22.22.2, undici 8 >=22.19).
 
 jobs:
   test:
@@ -63,7 +64,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Restore Turbo cache
@@ -131,7 +132,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
