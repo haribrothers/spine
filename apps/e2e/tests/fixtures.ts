@@ -3,7 +3,7 @@ import { test as base, expect } from "@playwright/test";
 import type { Page } from "@playwright/test";
 import { signUpNewOrg } from "./helpers";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4100";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4110";
 
 /**
  * The demo-data seed's own Field-role user (`demo-data.service.ts`'s

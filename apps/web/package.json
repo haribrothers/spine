@@ -7,7 +7,7 @@
     "build:e2e": "dotenv -e ../../.env.e2e -- next build",
     "dev": "dotenv -e ../../.env -- next dev --port 3000",
     "start": "dotenv -e ../../.env -- next start",
-    "start:e2e": "dotenv -e ../../.env.e2e -- next start --port 3100",
+    "start:e2e": "dotenv -e ../../.env.e2e -- next start --port 3110",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit"
   },
