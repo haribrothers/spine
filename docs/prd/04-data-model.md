@@ -26,7 +26,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums)
 | I9 | Milestone percentages on a job total 100 before any write | Service layer (tested) |
 | I10 | No journal posting dated inside a closed `fiscal_periods` row | Service layer (tested) |
 | I11 | A quote, invoice or bill line stores its own name, price and tax (snapshot) | Columns on `*_lines` |
-| I12 | An idempotency key is unique per org + endpoint + key today, and per org + user + endpoint + key after US-OPS-08; replays return the stored response | `idempotency_keys` |
+| I12 | An idempotency key is unique per org + user + endpoint + key, where endpoint is the method and actual path (not the route pattern); replays return the stored response (US-OPS-08) | `idempotency_keys` |
 
 ## Relationships worth knowing
 

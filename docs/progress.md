@@ -270,7 +270,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-18 · Show each person only the sections they can open
 - [ ] US-SET-13 · Open contact history the same way as everywhere else
 - [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
-- [ ] US-OPS-08 · Make every mutating request safe to repeat
+- [x] US-OPS-08 · Make every mutating request safe to repeat
 - [ ] US-OPS-10 · Style confirmations by what they do
 - [x] US-OPS-12 · Explain why I can't open a page
 - [x] US-OPS-20 · Close the read-access gaps found in review

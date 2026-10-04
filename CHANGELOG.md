@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-OPS-08: make every mutating request safe to repeat (Phase 6)
+
+- **All mutating routes covered.** The 14 routes that changed data without `IdempotencyInterceptor` now use it: fiscal periods create, close and reopen; the five `PUT /users/me…` routes; deleting a team; and on jobs, edit, unassign, set milestones and add a note. Push unsubscribe is covered too.
+- **Introspection test.** `us-ops-08.http.integration.test.ts` reads every controller's route metadata and fails if any non-GET route lacks the interceptor. The only exceptions are the two public quote routes, listed with the reason.
+- **Keys scoped per user and per record.** Migration `0055` adds `idempotency_keys.user_id`, and the unique key is now organisation, user, endpoint and key, so two people or devices never collide. The stored endpoint is the method plus the actual path instead of the route pattern. Before, reusing a key on another record (say another invoice's "Issue") replayed the first record's response.
+- **Duplicates while running.** A second request with the same key while the first is still running now gets 409 "This request is already being processed. Wait a moment, then refresh." It used to get an empty response.
+- **Unchanged.** No key still gets 400, and a failed request still frees its key for a retry.
+- **Clients.** The web client already sent a key on every change. The mobile SDK takes a caller-supplied key, kept for the offline outbox.
+
+Tests: `us-ops-08.http.integration.test.ts` (5):
+- Introspection over every route, more than 100.
+- A repeated key returns the first response and adds only one note.
+- No key returns 400.
+- Two users with the same key both get their change.
+- The same key on another job is a new request.
+
+Integration 36 files pass; E2E 44/44.
+
 ### 2026-10-04 — US-ONB-12: show the setup checklist to owners only (Phase 6)
 
 - **Owners only.** `GET /dashboard/checklist` returns `{ visible: false }` to Staff and Field, and `{ visible: true, … }` to Owners. Dismissing (`POST /dashboard/checklist/dismiss`) is now Owner-only, because it hides the card for every Owner in the organisation. The web card renders only for Owners and only when `visible`.

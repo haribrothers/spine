@@ -83,6 +83,7 @@ export class NotificationsController {
   }
 
   @Delete("push/subscribe")
+  @UseInterceptors(IdempotencyInterceptor)
   async unsubscribePush(@Session() session: UserSession, @Query("endpoint") endpoint: string) {
     const orgId = requireOrgId(session);
     await this.push.unsubscribe(orgId, session.user.id, endpoint);

@@ -135,6 +135,7 @@ export class JobsController {
   }
 
   @Put(":id")
+  @UseInterceptors(IdempotencyInterceptor)
   @OrgRoles(["owner", "staff"])
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -162,6 +163,7 @@ export class JobsController {
   }
 
   @Delete(":id/assignees/:userId")
+  @UseInterceptors(IdempotencyInterceptor)
   @OrgRoles(["owner", "staff"])
   async unassign(@Session() session: UserSession, @Param("id") id: string, @Param("userId") userId: string) {
     const orgId = requireOrgId(session);
@@ -178,6 +180,7 @@ export class JobsController {
 
   /** S-04.2/S-04.3 — replaces the job's entire milestone set with server-side percentage-total validation. Ownership check happens in the service, since "own" here means whoever last replaced the set (see MilestonesService.setAll's own doc comment). */
   @Put(":id/milestones")
+  @UseInterceptors(IdempotencyInterceptor)
   @OrgRoles(["owner", "staff"])
   async setMilestones(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
@@ -286,6 +289,7 @@ export class JobsController {
 
   /** Field-reachable, same shape as addPhoto above. */
   @Post(":id/notes")
+  @UseInterceptors(IdempotencyInterceptor)
   @OrgRoles(["owner", "staff", "field"])
   @RequireCapability("job_notes.edit_own")
   @ApiBody({ type: AddJobNoteDto })
