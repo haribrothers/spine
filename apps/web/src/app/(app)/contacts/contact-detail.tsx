@@ -39,7 +39,7 @@ import { ContactLogo } from "./contact-logo";
 import { ContactPersonsSection } from "./contact-persons-section";
 import { LeadsSection } from "./leads-section";
 import { ActivitiesSection } from "./activities-section";
-import { HistorySection } from "./history-section";
+import { HistorySection } from "../../../components/history-section";
 import { TimelineSection } from "./timeline-section";
 import { useEntityToast } from "./entity-toast";
 
@@ -286,6 +286,8 @@ export function ContactDetail({ contactId }: { contactId: string }) {
 
         {!editing && (
           <div className="flex items-center gap-2">
+            {/* US-SET-13 (D-061): History opens the same dialog as on every other record. */}
+            <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel="this contact" ownEntityType="contact" />
             {/* Edit is the single primary (filled) action per docs/DESIGN.md; archive/restore/delete are secondary or danger. Each gated by contacts.edit_own/edit_others (Edit) or contacts.delete_own/delete_others (Archive/Restore/Delete) — own vs. others resolved from contact.createdByUserId, mirroring ContactsService's own server-side checks. */}
             {canEdit && (
               <Button variant="primary" onClick={startEdit}>
@@ -401,7 +403,6 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline">
@@ -436,9 +437,6 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             onChanged={reloadActivities}
             onCreated={() => showToast("Activity logged", "The activity has been saved.")}
           />
-        </TabsContent>
-        <TabsContent value="history">
-          <HistorySection contactId={contactId} />
         </TabsContent>
       </Tabs>
 

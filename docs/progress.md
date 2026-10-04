@@ -268,7 +268,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TEAM-16 · Confirm before making someone an owner
 - [x] US-TEAM-17 · Protect the Primary Owner's row
 - [x] US-TEAM-18 · Show each person only the sections they can open
-- [ ] US-SET-13 · Open contact history the same way as everywhere else
+- [x] US-SET-13 · Open contact history the same way as everywhere else
 - [ ] US-SET-14 · Show "Save" on setup steps reused in Settings
 - [x] US-OPS-08 · Make every mutating request safe to repeat
 - [ ] US-OPS-10 · Style confirmations by what they do

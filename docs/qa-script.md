@@ -129,8 +129,8 @@ before considering that work's QA "done."
    org's configured currency.
 9. Go to **Contacts** and use **Import from CSV** — upload a small CSV
    with a few rows, confirm contacts are created and mapped correctly.
-10. Open a contact's **History** tab (audit log) — confirm edits you've
-    made show up with before/after values.
+10. On a contact, press the **History** button (clock icon, US-SET-13) —
+    confirm edits you've made read as sentences with before/after values.
 
 ---
 
@@ -2286,6 +2286,15 @@ Regression: the Reports page's CSV exports (P&L, Balance Sheet, Trial Balance, J
 5. As Field: no tab, and the no-access page at `/expenses/categories`.
 
 Regression: submitting and approving expenses still works (§11); the expense form still lists active categories only.
+
+## 47. History reads as sentences (US-SET-13, Phase 6)
+
+1. Open a contact: there's no "History" tab. The clock button beside Edit opens "History".
+2. Change the contact's phone and email in one save: the entry reads "<You> changed the phone from … to … and changed the email from … to …". Change five fields at once: three are listed, then "and 2 more".
+3. On a contact with invoices, credit notes or a job, its history reads "issued an invoice", "created a credit note", "invoiced a milestone" — never "undefined" or long ids.
+4. Open History on an invoice, a quote and a job: the same sentence style.
+
+Regression: the History dialog still loads only when opened.
 
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

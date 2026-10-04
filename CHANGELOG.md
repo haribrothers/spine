@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-13: open contact history the same way as everywhere else (Phase 6)
+
+- **Same as everywhere.** A contact no longer has a "History" tab. The History button (clock icon, "View history") beside Edit opens the same History dialog as invoices, quotes, jobs and the rest.
+- **Sentences.** Every History dialog now uses one formatter, `describeHistoryEntry` in `@spine/shared`. Entries read like "Sarah Mendes changed the phone from +1-555-0107 to +1-555-0177", "set the email to …" or "cleared the tax id". Field names are written for people ("total amount"), money fields are decimals, and internal ids are left out.
+- **Long entries.** At most three changes are listed, then "and N more".
+- **Related records.** On a contact, entries about its invoices, credit notes, milestones and so on name the record ("Alex Morgan issued an invoice") instead of "issued undefined: status draft → issued". A transition's status change is said by its verb.
+- The old contact-only `history-section.tsx` and its types are removed.
+
+Tests:
+- `packages/shared/src/us-set-13.test.ts` (6): a changed field as a sentence; set and cleared fields; three changes then "and 2 more"; related records named and ids hidden; money and field labels; an unknown actor is "Someone".
+- `apps/e2e/tests/us-set-13.spec.ts` (1): no History tab on a contact; the History button shows "Sarah Mendes changed the phone from +1-555-0107 to +1-555-0177" and "created this contact", with no "undefined".
+
 ### 2026-10-05 — US-PUR-19: manage expense categories from Expenses (Phase 6)
 
 - **New tab.** Expenses has "Expenses" and "Categories" tabs. Expenses › Categories (`/expenses/categories`) lists categories with their posting account, "Add category", edit, archive or restore, delete and history. It's the former Settings › Purchases pane with the same layout and API, plus the note "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted.".
