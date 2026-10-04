@@ -261,7 +261,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-RPT-12 · Warn me if the books ever stop balancing
 - [x] US-RPT-13 · See a Trial Balance
 - [x] US-RPT-14 · See tax collected and paid on Reports
-- [ ] US-NTF-10 · Send every email in one branded layout
+- [x] US-NTF-10 · Send every email in one branded layout
 - [ ] US-NTF-11 · Use the branded layout for every email type
 - [ ] US-NTF-12 · Turn on push from my own profile
 - [ ] US-TEAM-15 · Use the business name everywhere the organisation is named

@@ -36,6 +36,7 @@ import {
 import { getMemberRole } from "../../auth/capability.util";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
+import { registerEmailLogoReader } from "../email/email-brand";
 import { createStorageDrivers, resolveFilesDir, type StorageDrivers } from "./storage/storage-config";
 import { type ByteRange, type StorageDriver, StoredObjectMissingError, fileKey } from "./storage/storage-driver";
 
@@ -100,7 +101,10 @@ export class FilesService {
   private readonly logger = new Logger(FilesService.name);
   private readonly drivers: StorageDrivers = createStorageDrivers();
 
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(@Inject(DATABASE) private readonly db: Database) {
+    // US-NTF-10: emails embed the business logo through this service.
+    registerEmailLogoReader((orgId, fileId) => this.readBytes(orgId, fileId));
+  }
 
   isStorageConfigured(): boolean {
     return this.drivers.primary !== null;

@@ -7,14 +7,11 @@ import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { SettingsService } from "../org/settings.service";
-import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
+import { loadEmailBrand } from "../email/email-brand";
+import { appUrl, emailDate, emailMoney, firstName, renderEmail } from "../email/email-layout";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
-/** Minimal HTML-escaping for the handful of values interpolated into this worker's own HTML email body — not a general-purpose sanitizer, just enough to keep a business/contact name from breaking the markup. */
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-}
 
 export interface QuoteSendEmailJobData {
   orgId: string;
@@ -138,41 +135,40 @@ export class QuoteEmailWorker implements OnModuleInit {
       throw new Error("SMTP is not configured — cannot send quote email");
     }
 
-    const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
-    const businessName = business?.name || "Spine";
+    const brand = await loadEmailBrand(this.db, orgId);
     const quoteNumber = row.quote.number ?? "your quote";
 
-    // PRD S-03.4/S-03.5 — a real, web-facing accept/reject link, not the
-    // API's own /public/quotes/:token JSON endpoint (a customer should land
-    // on a real page, not raw JSON — the web route calls the API's public
-    // endpoint under the hood). `publicToken` is only ever absent for a job
-    // enqueued by an older deploy still sitting in the queue (see this
-    // field's own doc comment on QuoteSendEmailJobData) — the email still
-    // sends in that case, just without a link, rather than failing the
-    // whole attempt over a cosmetic omission.
-    const appUrl = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-    const quoteLink = publicToken ? `${appUrl}/quote/${publicToken}` : null;
+    // A real web page, not the API's JSON endpoint. `publicToken` is only
+    // missing for a job queued by an older deploy; the email still goes,
+    // without the button.
+    const quoteLink = publicToken ? appUrl(`/quote/${publicToken}`) : null;
+
+    // US-NTF-10 — the shared branded layout.
+    const email = renderEmail(brand, {
+      preheader: `${brand.name} sent you a quote (${quoteNumber}).`,
+      heading: "Your quote is ready",
+      greeting: `Hi ${firstName(row.contactName)},`,
+      paragraphs: [
+        quoteLink
+          ? "Here's our quote. You can read it, accept it or decline it online — no account needed."
+          : "Here's our quote, attached as a PDF.",
+      ],
+      facts: [
+        { label: "Quote", value: quoteNumber },
+        { label: "Total", value: emailMoney(row.quote.totalAmount, row.quote.currency) },
+        ...(row.quote.validUntil ? [{ label: "Valid until", value: emailDate(row.quote.validUntil) }] : []),
+      ],
+      button: quoteLink ? { label: "View quote", url: quoteLink } : undefined,
+      note: "The quote is also attached as a PDF. Questions? Reply to this email.",
+    });
 
     await this.email.send({
       to: row.contactEmail,
-      subject: `${businessName} sent you a quote (${quoteNumber})`,
-      text: [
-        `Hi ${row.contactName ?? "there"},`,
-        "",
-        `${businessName} has sent you a quote (${quoteNumber}), attached as a PDF.`,
-        ...(quoteLink ? ["", `View and respond to the quote online: ${quoteLink}`] : []),
-        "",
-        "This is an automated email — please reply directly to discuss the quote.",
-      ].join("\n"),
-      html: quoteLink
-        ? [
-            `<p>Hi ${escapeHtml(row.contactName ?? "there")},</p>`,
-            `<p>${escapeHtml(businessName)} has sent you a quote (${escapeHtml(quoteNumber)}), attached as a PDF.</p>`,
-            `<p><a href="${quoteLink}">View and respond to the quote online</a></p>`,
-            `<p style="color:#888;font-size:12px;">This is an automated email — please reply directly to discuss the quote.</p>`,
-          ].join("\n")
-        : undefined,
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }],
+      fromName: brand.name,
+      subject: `${brand.name} sent you a quote (${quoteNumber})`,
+      text: email.text,
+      html: email.html,
+      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
     });
   }
 }

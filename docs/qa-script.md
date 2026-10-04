@@ -2177,6 +2177,16 @@ Regression: the invitation sign-up link (`/signup?inviteId=…&email=…`) still
 
 Regression: a Staff user without a capability still gets the "You don't have permission to do that" toast (US-OPS-12), not the signed-out dialog.
 
+## 35. Branded emails (US-NTF-10, Phase 6)
+
+1. With a logo and address in Settings › Business, send a quote to a contact with an email. In MailDev (or your inbox): the From name is your business; the subject is "<Business> sent you a quote (QUO-…)".
+2. The email has a coloured bar at the top, your logo and name, "Your quote is ready", "Hi <first name>,", a box with Quote, Total and Valid until, one "View quote" button, the small print, and a footer with your name and address. "View quote" opens the public quote page.
+3. Turn images off in the mail client: your business name still shows, and the email still reads correctly.
+4. View the plain-text version: same content, with the link written out.
+5. Remove the logo and send another quote: no broken image; the name shows alone.
+
+Regression: the quote PDF is still attached; the quote's email status still turns "sent" (§3).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

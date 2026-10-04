@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-NTF-10: send every email in one branded layout (Phase 6)
+
+- **The layout.** `renderEmail()` in `apps/api/src/modules/email/email-layout.ts` is used for every email from now on. It has a 6px bar in the document colour, the logo and business name, a heading, a short body, an optional key-facts box, at most one button, small print, and the business footer (name · address · branding footer). Colours are the light token values, inlined; emails stay light.
+- **Brand.** `loadEmailBrand(db, orgId)` reads `business_profile` (name, address, logo) and, once US-SET-10 adds it, `branding.documentColor` and `documentFooter`. A bad colour falls back to the default blue. The logo is attached inline (CID), so no public file link is needed. With images blocked, the business name still shows as text and is the logo's alt text (D-120).
+- **Plain text.** Every email built with the layout carries a plain-text alternative with the same content and the button's link.
+- **The quote email.** It now reads "Your quote is ready", "Hi <first name>,", "Here's our quote. You can read it, accept it or decline it online — no account needed.", then Quote, Total and Valid until, a "View quote" button and "The quote is also attached as a PDF. Questions? Reply to this email.". The From name is the business name; the address is still `SMTP_FROM`.
+- The other emails move to the layout in US-NTF-11.
+
+Tests:
+- `us-ntf-10.test.ts` (7): the bar, logo, name, heading and footer; the facts and exactly one button; images blocked; the plain-text part; the inline logo; colour fallback and escaping; money, date and first-name formatting.
+- `apps/e2e/tests/us-ntf-10.spec.ts` (1): a sent quote's real email (through MailDev) has the layout, "Hi Alan,", the facts, "View quote" and a text part.
+
 ### 2026-10-04 — US-AUTH-12: keep my unsaved work when my session expires (Phase 6)
 
 - **The dialog.** If the session has ended, a save (any create, change, delete or upload through the API client) opens "You've been signed out" with "Your session ended, so this change wasn't saved yet. Log in again to save it — the draft stays open in this tab." and "Log in again". Logging in happens inside the dialog ("Log in as <email>." and "Password"), so the page and everything typed on it stay as they were. The save isn't retried; you press it again.
