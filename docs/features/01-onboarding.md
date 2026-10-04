@@ -176,6 +176,7 @@ Legacy: S-12.8
 - **Given** demo data is loaded, **when** I open Settings › Demo data and confirm "Delete all demo data", **then** only rows marked as demo are removed and my own records remain.
 - **Given** the demo data includes a recurring meeting, **when** I edit it, **then** the "This event" / "All events" choice appears (finding C5).
 - **Given** demo job photos are seeded, **when** I open a job's Photos tab, **then** each shows a real image, not a blank tile (finding C10).
+- **Given** object storage is unreachable, **when** demo data is seeded, **then** seeding still succeeds without photos and the response notes "Photos skipped — file storage isn't reachable" (today it fails with 500; NFR-REL-05).
 
 **Implementation notes**
 - API: `POST /demo-data/seed`, `DELETE /demo-data`, `GET /demo-data/status`.
