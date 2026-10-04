@@ -414,6 +414,13 @@
       "when": 1791132772162,
       "tag": "0058_ledger_integrity_checks",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1791138365308,
+      "tag": "0059_invoice_payment_instructions",
+      "breakpoints": true
     }
   ]
 }

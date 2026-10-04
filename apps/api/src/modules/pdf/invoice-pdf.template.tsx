@@ -8,6 +8,16 @@ export interface InvoicePdfBusinessProfile {
   logoUrl?: string;
   address?: string;
   industry?: string;
+  paymentInstructions?: string;
+}
+
+/**
+ * US-INV-15 — what the "How to pay" block prints: the copy kept on an
+ * issued invoice, or the current setting for a draft preview.
+ */
+export function invoicePaymentInstructions(invoice: { status: string; paymentInstructions: string | null }, business: InvoicePdfBusinessProfile | null): string | null {
+  const text = invoice.status === "draft" ? business?.paymentInstructions : invoice.paymentInstructions;
+  return text?.trim() || null;
 }
 
 export interface InvoicePdfData {
@@ -78,6 +88,8 @@ const styles = StyleSheet.create({
   balanceDueLabel: { fontSize: 10, fontWeight: 700, color: "#b91c1c" },
   balanceDueValue: { fontSize: 10, fontWeight: 700, color: "#b91c1c" },
   footer: { marginTop: 28 },
+  howToPay: { marginTop: 20, padding: 10, borderWidth: 1, borderColor: "#E7E5E0", borderRadius: 4, backgroundColor: "#FAFAF9" },
+  howToPayTitle: { fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#211F1A" },
   footerLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
   footerText: { fontSize: 9, color: "#333333", lineHeight: 1.4 },
   footerParagraph: { fontSize: 9, color: "#333333", lineHeight: 1.4, marginBottom: 4 },
@@ -115,6 +127,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
   // US-JOB-21: retention held back is not part of what's due now.
   const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
   const amountDue = invoice.totalAmount - invoice.retentionAmount;
+  const paymentInstructions = invoicePaymentInstructions(invoice, business);
 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
@@ -236,6 +249,13 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             </View>
           )}
         </View>
+
+        {paymentInstructions && (
+          <View style={styles.howToPay} wrap={false}>
+            <Text style={styles.howToPayTitle}>How to pay</Text>
+            <Text style={styles.footerText}>{paymentInstructions}</Text>
+          </View>
+        )}
 
         {invoice.notes && (
           <View style={styles.footer}>

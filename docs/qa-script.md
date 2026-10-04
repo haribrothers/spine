@@ -2233,6 +2233,15 @@ Regression: the quotes list still groups a revised quote under its newest versio
 
 Regression: Business profile still saves name, logo, address, email and phone (§38).
 
+## 41. Payment instructions on invoices (US-INV-15, Phase 6)
+
+1. Set payment instructions (§40). Issue an invoice and download its PDF: a "How to pay" box under the totals with your text, line breaks kept.
+2. Email that invoice: the email shows the same text in a "How to pay" box above "The invoice is attached as a PDF.".
+3. Change the instructions in Settings. Download the first invoice's PDF again and send it a reminder: both still show the old text. Issue a new invoice: it shows the new text.
+4. Clear the instructions and issue another invoice: no empty "How to pay" box in the PDF or email.
+
+Regression: invoice totals, retention and balance due still print as before (§4); invoice PDFs are still stored at issue (US-INV-17).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

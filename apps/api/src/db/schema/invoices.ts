@@ -121,6 +121,12 @@ export const invoices = pgTable(
     creditedAmount: bigint("credited_amount", { mode: "bigint" }).notNull().default(sql`0`),
     notes: text("notes"),
     termsAndConditions: text("terms_and_conditions"),
+    /**
+     * US-INV-15 — Settings › Payment instructions, copied at issue so later
+     * edits never change an issued invoice's PDF or emails. Null on drafts
+     * (they show the current setting) and when none was set.
+     */
+    paymentInstructions: text("payment_instructions"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set once, in the same transaction as the status flip to `issued` — never touched again (an issued invoice is immutable). */
     issuedAt: timestamp("issued_at", { withTimezone: true }),

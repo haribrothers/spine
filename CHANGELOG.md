@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — US-INV-15: print payment instructions on invoices (Phase 6)
+
+- **PDF.** A "How to pay" box under the totals (before notes and terms) prints the instructions from Settings › Payment instructions (US-INV-16). With none set, no block appears.
+- **Email.** The invoice and reminder emails show the same instructions in a "How to pay" box above the closing note (no button, D-121). The box is left out once the invoice is paid.
+- **Snapshot.** Issuing an invoice copies the instructions to the new `invoices.payment_instructions` column (migration `0059_invoice_payment_instructions`). Later edits to the setting never change an issued invoice's PDF or emails. A draft's preview shows the current setting.
+- **Run `pnpm db:migrate:dev` after pulling.**
+
+Tests:
+- `us-inv-15.integration.test.ts` (5): an issued invoice keeps the instructions it was issued with; the PDF's "How to pay" block sits under the totals with the issued text, not the later one; a draft preview shows the current setting; no block without instructions; the invoice email shows the same text in a "How to pay" box above the closing note, in HTML and plain text.
+
 ### 2026-10-04 — US-INV-16: set payment instructions in Settings (Phase 6)
 
 - **The pane.** Settings › "Payment instructions" reads "Printed under the totals on every invoice and in invoice emails, so customers know how to pay.". It has a "How customers can pay" field ("Up to 600 characters. Leave empty to hide the block."), the note "Issued invoices keep the instructions they were issued with — changing this only affects invoices issued from now on." and "Save".

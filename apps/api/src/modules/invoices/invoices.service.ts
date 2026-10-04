@@ -5,7 +5,7 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones } from "../../db/schema";
+import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -822,6 +822,13 @@ export class InvoicesService {
         });
       }
 
+      // US-INV-15: the payment instructions as they are now, kept with the invoice.
+      const [profile] = await tx
+        .select({ value: settings.value })
+        .from(settings)
+        .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
+      const paymentInstructions = (profile?.value as { paymentInstructions?: string } | undefined)?.paymentInstructions?.trim() || null;
+
       const [row] = await tx
         .update(invoices)
         .set({
@@ -830,6 +837,7 @@ export class InvoicesService {
           issuedAt,
           issueDate: existing.issueDate ?? issuedAt,
           journalEntryId,
+          paymentInstructions,
           updatedAt: issuedAt,
         })
         .where(eq(invoices.id, id))
