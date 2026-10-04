@@ -175,7 +175,7 @@ export function VendorPaymentDetailDrawer({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               {busy ? <Spinner size="sm" /> : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

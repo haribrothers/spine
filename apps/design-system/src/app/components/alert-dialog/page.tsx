@@ -53,6 +53,7 @@ export default function AlertDialogPage() {
             "Focus is trapped and automatically managed.",
             "Can be controlled or uncontrolled.",
             "Requires an explicit AlertDialogAction or AlertDialogCancel choice — the overlay does not close on outside click, unlike Dialog.",
+            "AlertDialogAction is primary by default; pass variant=\"danger\" only when the action deletes, voids, deactivates or removes something (D-058).",
           ]}
         />
       </DocSection>
@@ -94,6 +95,7 @@ export default () => (
           rows={[
             { prop: "open", type: "boolean" },
             { prop: "onOpenChange", type: "(open: boolean) => void" },
+            { prop: "AlertDialogAction variant", type: '"primary" | "danger"', defaultValue: '"primary"' },
           ]}
         />
       </DocSection>

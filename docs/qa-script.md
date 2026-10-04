@@ -2332,6 +2332,13 @@ Regression: CSV exports still have plain decimals ("1234.50") with a currency co
 
 Regression: disabled buttons, secondary and ghost buttons look as before in both modes.
 
+## 52. Confirmation colours (US-OPS-10, Phase 6)
+
+1. Edit a recurring meeting: "Edit recurring event" shows a blue "All events". Delete one: "Delete recurring event" shows a red "All events".
+2. On a billable expense, "Bill to customer": "Create invoice" is blue.
+3. Delete a contact, quote, invoice or payment, void a vendor bill, remove an address, deactivate a user: the confirm button is red.
+4. Save a tax rate, approve an expense, release retention, promote someone to Owner: the confirm button is blue.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

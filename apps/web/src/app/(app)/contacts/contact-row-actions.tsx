@@ -119,7 +119,7 @@ export function ContactRowActions({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction disabled={busy} onClick={handleDelete}>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={handleDelete}>
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

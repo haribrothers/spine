@@ -165,7 +165,7 @@ export function AddressesSection({
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
+                        <AlertDialogAction variant="danger" onClick={() => handleRemove(address.id)}>Remove</AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>

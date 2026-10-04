@@ -321,7 +321,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                    <AlertDialogAction variant="danger" onClick={handleDelete}>Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

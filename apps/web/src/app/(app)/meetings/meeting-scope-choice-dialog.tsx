@@ -52,7 +52,10 @@ export function MeetingScopeChoiceDialog({
           <Button variant="secondary" onClick={() => onChoose("occurrence")}>
             This event
           </Button>
-          <AlertDialogAction onClick={() => onChoose("series")}>All events</AlertDialogAction>
+          {/* US-OPS-10: red only when "All events" deletes the series. */}
+          <AlertDialogAction variant={action === "delete" ? "danger" : "primary"} onClick={() => onChoose("series")}>
+            All events
+          </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

@@ -15,7 +15,6 @@ import {
   AvatarFallback,
   Badge,
   Button,
-  buttonVariants,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -109,7 +108,7 @@ export function UserRow({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => guarded(() => onDeactivate(member.id))}>
+              <AlertDialogAction variant="danger" onClick={() => guarded(() => onDeactivate(member.id))}>
                 {busy ? <Spinner size="sm" /> : "Deactivate"}
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -153,7 +152,6 @@ export function UserRow({
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              className={buttonVariants({ variant: "primary" })}
               onClick={async () => {
                 await guarded(() => onPromote(member.id));
                 setConfirmPromote(false);

@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-10: style confirmations by what they do (Phase 6)
+
+- **Default.** `AlertDialogAction` in `@spine/ui` gains `variant: "primary" | "danger"`, defaulting to primary (D-058). It used to be red everywhere.
+- **Red only for destructive actions.** 18 confirmations pass `variant="danger"`: deleting contacts, quotes, invoices, payments, expenses, leads, catalogue items, meetings, Teams, vendor bills, vendor payments and demo data; voiding a vendor bill; removing an address or contact person; deactivating a user.
+- **Now blue.**
+  - "All events" on "Edit recurring event", which stays red on "Delete recurring event".
+  - "Create invoice" on "Bill this expense to the customer?".
+  - Save, Add account, Approve, Reject, Release retention, Promote and Demote.
+- **Clean-up.** The Promote confirmation's hand-made primary class override is gone. The design-system page documents `variant`, and the a11y test covers both styles.
+
+Tests:
+- `alert-dialog.a11y.test.tsx`: primary by default, danger when asked (in both themes).
+- `apps/api/src/common/us-ops-10.test.ts` (4): reads every `AlertDialogAction` in `apps/web/src` and fails if a delete, void, remove or deactivate confirmation isn't danger, or anything else is. Recurring "All events" is danger only when deleting; "Create invoice" is primary.
+
 ### 2026-10-05 — US-OPS-25: keep text readable on coloured controls in dark mode (Phase 6)
 
 - **Tokens.** `on-primary` and `on-danger` (white in light mode, `#121110` in dark, D-099) are now defined everywhere colours are: `docs/DESIGN.md`'s front matter, `packages/config/tailwind-preset.css` (light, dark and system-dark blocks plus the Tailwind theme) and `packages/ui-native`'s colour maps.

@@ -23,7 +23,9 @@ AlertDialogOverlay.displayName = "AlertDialogOverlay";
  * A modal requiring explicit confirmation before a critical/destructive
  * action (e.g. voiding an invoice), per docs/DESIGN.md — unlike Dialog,
  * always renders an explicit Cancel action alongside the primary one.
- * Reach for this specifically when an action can't be undone.
+ * Reach for this specifically when an action can't be undone. The confirm
+ * button (`AlertDialogAction`) is primary by default; pass
+ * `variant="danger"` for delete, void, deactivate and remove (D-058).
  */
 export const AlertDialogContent = forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
@@ -82,17 +84,26 @@ export const AlertDialogCancel = forwardRef<
 ));
 AlertDialogCancel.displayName = "AlertDialogCancel";
 
-export const AlertDialogAction = forwardRef<
-  React.ElementRef<typeof AlertDialogPrimitive.Action>,
-  React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
->(({ className, ...props }, ref) => (
-  <AlertDialogPrimitive.Action
-    ref={ref}
-    className={cn(
-      "inline-flex h-10 items-center justify-center rounded-md bg-overdue px-4 text-[13px] font-semibold text-on-danger transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-      className,
-    )}
-    {...props}
-  />
-));
+export interface AlertDialogActionProps extends React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action> {
+  /**
+   * US-OPS-10 (D-058): `primary` unless the action deletes, voids,
+   * deactivates or removes something — then `danger`.
+   */
+  variant?: "primary" | "danger";
+}
+
+export const AlertDialogAction = forwardRef<React.ElementRef<typeof AlertDialogPrimitive.Action>, AlertDialogActionProps>(
+  ({ className, variant = "primary", ...props }, ref) => (
+    <AlertDialogPrimitive.Action
+      ref={ref}
+      data-variant={variant}
+      className={cn(
+        "inline-flex h-10 items-center justify-center rounded-md px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50",
+        variant === "danger" ? "bg-overdue text-on-danger hover:opacity-90" : "bg-primary text-on-primary hover:bg-primary-hover",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 AlertDialogAction.displayName = "AlertDialogAction";
