@@ -138,6 +138,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-e2e-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            turbo-e2e-${{ runner.os }}-
+            turbo-test-${{ runner.os }}-
+
+      # Playwright starts the API and web app with their own build commands,
+      # which expect the workspace packages they import (@spine/shared, @spine/sdk) to be built.
+      - name: Build workspace dependencies
+        run: pnpm turbo run build --cache-dir=.turbo --filter=@spine/api^... --filter=@spine/web^...
+
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
