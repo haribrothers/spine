@@ -6,13 +6,14 @@ import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createInvoiceSchema } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
-import { contacts, creditNotes, files, invoices, member, payments, quotes, user } from "../../db/schema";
+import { contacts, creditNotes, files, invoices, member, payments, quotes, session as sessionTable, user } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { FilesService } from "../files/files.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { SettingsService } from "../org/settings.service";
 import type { QueueService } from "../queue/queue.service";
 import { IssuedPdfService, STORE_ISSUED_PDF_QUEUE, queueIssuedPdf } from "./issued-pdf.service";
+import { MINIMAL_PDF } from "../files/test-photos";
 
 /**
  * US-INV-17 — issued documents keep the PDF stored at issue; drafts render
@@ -191,5 +192,42 @@ describe("US-INV-17 · keep the exact PDF that was issued (requires local Postgr
     }
     const [row] = await db.select().from(invoices).where(eq(invoices.id, id));
     expect(row?.status).toBe("issued");
+  });
+
+  it("keeps stored invoice, credit-note and receipt PDFs away from Field users", async () => {
+    const fieldEmail = `us-inv-17-field-${randomUUID()}@example.com`;
+    createdEmails.push(fieldEmail);
+    const field = await signUp(testApp.baseUrl, { email: fieldEmail, password: "testpassword123", name: "Field Crew" });
+    await db.delete(member).where(eq(member.userId, field.userId));
+    await db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId: field.userId, role: "field", createdAt: new Date() });
+    await db.update(sessionTable).set({ activeOrganizationId: orgId }).where(eq(sessionTable.userId, field.userId));
+
+    const service = testApp.app.get(IssuedPdfService);
+    const [invoice] = await db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued"))).limit(1);
+    const [creditNote] = await db.select().from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.status, "issued"))).limit(1);
+    const [payment] = await db.select().from(payments).where(eq(payments.orgId, orgId)).limit(1);
+    await service.getOrStore(orgId, "invoice", invoice!.id);
+    await service.getOrStore(orgId, "credit_note", creditNote!.id);
+    await service.getOrStore(orgId, "payment", payment!.id);
+    const fileIds = [
+      (await db.select().from(invoices).where(eq(invoices.id, invoice!.id)))[0]!.issuedPdfFileId!,
+      (await db.select().from(creditNotes).where(eq(creditNotes.id, creditNote!.id)))[0]!.issuedPdfFileId!,
+      (await db.select().from(payments).where(eq(payments.id, payment!.id)))[0]!.issuedPdfFileId!,
+    ];
+
+    for (const fileId of fileIds) {
+      const asField = await fetch(`${testApp.baseUrl}/files/${fileId}`, { headers: { cookie: field.cookie } });
+      expect(asField.status).toBe(404);
+      const asOwner = await fetch(`${testApp.baseUrl}/files/${fileId}`, { headers: { cookie } });
+      expect(asOwner.status).toBe(200);
+    }
+
+    // Field still opens files that aren't money, such as a photo they upload.
+    const form = new FormData();
+    form.append("file", new Blob([MINIMAL_PDF], { type: "application/pdf" }), "site-note.pdf");
+    const uploaded = (await (
+      await fetch(`${testApp.baseUrl}/files`, { method: "POST", headers: { cookie: field.cookie, "Idempotency-Key": randomUUID() }, body: form })
+    ).json()) as { id: string };
+    expect((await fetch(`${testApp.baseUrl}/files/${uploaded.id}`, { headers: { cookie: field.cookie } })).status).toBe(200);
   });
 });

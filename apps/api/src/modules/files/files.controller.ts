@@ -136,7 +136,9 @@ export class FilesController {
   ) {
     let file;
     if (session?.user) {
-      file = await this.filesService.getMetadata(requireOrgId(session), id);
+      const orgId = requireOrgId(session);
+      file = await this.filesService.getMetadata(orgId, id);
+      await this.filesService.assertReadableBy(orgId, session.user.id, file);
     } else if (sig !== undefined || exp !== undefined) {
       if (!verifyFileLink(id, exp, sig, process.env.AUTH_SECRET ?? "")) {
         throw new ForbiddenException("This file link has expired. Open the file from Spine again.");

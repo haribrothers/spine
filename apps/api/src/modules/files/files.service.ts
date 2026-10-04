@@ -16,7 +16,7 @@ import { STORAGE_FULL_MESSAGE, type StorageStatus } from "@spine/shared";
 import type { Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contactPersons, contacts, creditNotes, expenses, files, invoices, jobPhotos, jobs, payments, quotes, settings } from "../../db/schema";
+import { contactPersons, contacts, creditNotes, expenses, files, invoices, jobPhotos, jobs, member, payments, quotes, settings } from "../../db/schema";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
 import { createStorageDrivers, resolveFilesDir, type StorageDrivers } from "./storage/storage-config";
@@ -179,6 +179,26 @@ export class FilesService {
       .where(and(eq(files.orgId, orgId), eq(files.id, id)));
     if (!row) throw new NotFoundException("File not found");
     return row;
+  }
+
+  /**
+   * Field users never reach money (CLAUDE.md security rules). Since
+   * US-INV-17 stores issued invoice, credit-note and receipt PDFs as files,
+   * those files are refused to Field with a 404, like any file they can't
+   * see. The full owning-record check for every file is US-OPS-20.
+   */
+  async assertReadableBy(orgId: string, userId: string, file: FileRow): Promise<void> {
+    const [membership] = await this.db
+      .select({ role: member.role })
+      .from(member)
+      .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
+    if (membership?.role !== "field") return;
+    const [invoice, creditNote, payment] = await Promise.all([
+      this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.issuedPdfFileId, file.id))).limit(1),
+      this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.issuedPdfFileId, file.id))).limit(1),
+      this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), eq(payments.issuedPdfFileId, file.id))).limit(1),
+    ]);
+    if (invoice.length || creditNote.length || payment.length) throw new NotFoundException("File not found");
   }
 
   /** For a request carrying a verified signed link instead of a session. */

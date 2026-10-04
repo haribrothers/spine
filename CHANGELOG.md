@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-04 — Group 1 access review: Field can't open stored money PDFs
+
+I reviewed every Group 1 change against the permission model.
+- **Unchanged:** the capability list, guards, Team privileges, settings service and settings pages.
+- **Owner-only:** the new owner surfaces (`GET /files/integrity`, the damaged-files and storage banners, `files_damaged` notifications).
+- **Gap fixed:** since US-INV-17, stored invoice, credit-note and receipt PDFs are files. `GET /files/:id` served any file to any member, so a Field user who had a file id could open them. `FilesService.assertReadableBy` now refuses those files to Field with a 404, ahead of the full owning-record check (US-OPS-20). Tested in `us-inv-17.http.integration.test.ts`: Field gets 404, the Owner gets 200, and Field can still open a file they uploaded.
+- **Docs:** `07-security.md` records the interim file-access rules and the Owner-only storage administration.
+
 ### 2026-10-04 — The API no longer fails to start when the checksum backfill check fails
 
 When the database hadn't had migration `0052` applied, the start-up check for files without a checksum (US-OPS-28) threw an error and stopped the API, so sign-in failed with "Failed to fetch". That check now logs a warning instead, and the weekly integrity run catches up. Covered by a new case in `us-ops-28.test.ts`. After pulling, run `pnpm db:migrate:dev`.
