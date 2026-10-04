@@ -29,7 +29,7 @@ Multi-line quotes with sections, discounts and per-line tax; a branded PDF; emai
 Legacy: S-03.1, S-08.5
 
 **Acceptance criteria**
-- **Given** I press "New quote", **when** the builder opens, **then** I see "Contact" (required), "Currency", "Valid until" (helper "Quote shows as expired after this date (S-03.11)."), a lines editor, "Notes" (helper "Visible to the customer on the quote.") and "Terms & conditions".
+- **Given** I press "New quote", **when** the builder opens, **then** I see "Contact" (required), "Currency", "Valid until" (helper "Quote shows as expired after this date."), a lines editor, "Notes" (helper "Visible to the customer on the quote.") and "Terms & conditions".
 - **Given** a line, **when** I enter quantity, unit price, discount % and choose a tax rate or group, **then** the line total and the Subtotal, Tax and Total update immediately.
 - **Given** a line picked from the catalogue, **when** it's added, **then** its tax defaults from the item and I can override it on the line.
 - **Given** no contact is chosen, **when** I press "Save as draft", **then** I see "Select a contact before saving." and nothing saves.

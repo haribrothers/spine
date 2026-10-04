@@ -174,7 +174,7 @@ export function PaymentDetailDrawer({
                   <h3 className="mb-2 text-[13px] font-semibold text-on-surface-muted">Allocated to</h3>
                   {!payment.allocations?.length ? (
                     <p className="text-[13px] text-on-surface-muted">
-                      Not allocated to any invoice — held entirely as unallocated customer credit (S-06.4).
+                      Not allocated to any invoice — held entirely as unallocated customer credit.
                     </p>
                   ) : (
                     <div className="flex flex-col divide-y divide-border">

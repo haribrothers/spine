@@ -138,7 +138,7 @@ export default function OnboardingPage() {
       )}
 
       {step === "fiscal_year" && (
-        <StepCard title="Financial year" description="Number sequences reset annually on this date by default.">
+        <StepCard title="Financial year" description="The day your financial year starts, used for reports and closing periods. Document numbers never reset.">
           <FiscalYearStepBody onSaved={() => setStep("tax")} onSkip={handleSkip} />
         </StepCard>
       )}
@@ -162,7 +162,7 @@ export default function OnboardingPage() {
       )}
 
       {step === "team" && (
-        <StepCard title="Invite your team" description="Optional — you can always invite people later from Settings.">
+        <StepCard title="Invite your team" description="You can invite people later from Team › Users.">
           <InviteTeamStep
             onInvite={(email, role) => apiClient.post("/org/invitations", { email, role })}
             onFinish={handleFinish}

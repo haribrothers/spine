@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-21: remove developer wording from the interface (Phase 6)
+
+- **Helpers.**
+  - "Quote shows as expired after this date." and "Drives the overdue flag once issued." lose their "(S-03.11)" and "(S-05.9)".
+  - The three payment dialogs and the payment drawer lose "(S-06.4)".
+  - Financial year (onboarding and Settings) now reads "The day your financial year starts, used for reports and closing periods. Document numbers never reset." instead of "Number sequences reset annually…", which was never true (D-077).
+- **Onboarding.** The Team step reads "You can invite people later from Team › Users.". The Business step's "the next step picks a template" helper shows only in the wizard; in Settings it reads "What your business does, in your own words.".
+- **Invoices list.** A void invoice's balance column shows "—" instead of its old total, and sorts as zero.
+- **Privilege matrix.** Twelve capability descriptions are rewritten in plain language. No capability keys ("edit_own"), "Phase 5", "S-11.2", "(mobile)" or file names remain.
+- "Convert to invoice" was already in sentence case. US-QUO-01 and US-INV-01 quote the new helper text.
+
+Tests:
+- `packages/shared/src/us-ops-21.test.ts` (90): no capability label or description has developer wording.
+- `apps/api/src/common/us-ops-21.test.ts` (2): a TypeScript-parser scan of every string and JSX text under `apps/web/src` fails on "(S-NN.N)" (comments are allowed), plus a check that the scan catches one.
+- `apps/e2e/tests/us-ops-21.spec.ts` (2): onboarding's Financial year and Team copy; on a demo org, the void invoice's "—", the quote builder helper, and Settings › Business profile and Financial year.
+
 ### 2026-10-05 — US-OPS-10: style confirmations by what they do (Phase 6)
 
 - **Default.** `AlertDialogAction` in `@spine/ui` gains `variant: "primary" | "danger"`, defaulting to primary (D-058). It used to be red everywhere.

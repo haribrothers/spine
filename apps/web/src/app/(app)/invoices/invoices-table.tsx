@@ -81,12 +81,14 @@ export function InvoicesTable({
       key: "balanceDue",
       header: "Balance due",
       align: "right",
-      render: (row) => (
-        <span className="tabular-nums">
-          {formatMoney(BigInt(row.balanceDue), row.currency)}
-        </span>
-      ),
-      sortValue: (row) => Number(row.balanceDue),
+      // US-OPS-21: a void invoice owes nothing, so it shows "—", not its old total.
+      render: (row) =>
+        row.status === "void" ? (
+          <span className="text-on-surface-muted">—</span>
+        ) : (
+          <span className="tabular-nums">{formatMoney(BigInt(row.balanceDue), row.currency)}</span>
+        ),
+      sortValue: (row) => (row.status === "void" ? 0 : Number(row.balanceDue)),
     },
     {
       key: "actions",

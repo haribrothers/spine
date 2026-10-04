@@ -24,7 +24,7 @@ export function FiscalYearPane() {
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-1">
         <h2 className="text-[15px] font-semibold text-on-surface">Financial year</h2>
-        <p className="text-[13px] text-on-surface-muted">Number sequences reset annually on this date by default.</p>
+        <p className="text-[13px] text-on-surface-muted">The day your financial year starts, used for reports and closing periods. Document numbers never reset.</p>
       </div>
       <FinancialYearStep
         initialValue={value}

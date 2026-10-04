@@ -208,8 +208,7 @@ export function NewPaymentDialog({
         <DialogHeader>
           <DialogTitle>Record a payment</DialogTitle>
           <DialogDescription>
-            Pick a contact, then allocate the payment across their outstanding invoices, or leave any part unallocated as customer credit
-            (S-06.4).
+            Pick a contact, then allocate the payment across their outstanding invoices, or leave any part unallocated as customer credit.
           </DialogDescription>
         </DialogHeader>
 

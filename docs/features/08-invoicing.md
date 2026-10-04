@@ -28,7 +28,7 @@ Standard, advance (deposit), progress and retention-release invoices. Drafts are
 Legacy: S-05.1 (scratch path)
 
 **Acceptance criteria**
-- **Given** I press "New invoice", **when** the builder opens, **then** I see "Contact", "Currency", "Type" (Standard, Advance, Progress), "Issue date" (helper "Defaults to today if left blank when issued."), "Due date" (helper "Drives the overdue flag (S-05.9) once issued."), lines, "Notes" and "Terms & conditions".
+- **Given** I press "New invoice", **when** the builder opens, **then** I see "Contact", "Currency", "Type" (Standard, Advance, Progress), "Issue date" (helper "Defaults to today if left blank when issued."), "Due date" (helper "Drives the overdue flag once issued."), lines, "Notes" and "Terms & conditions".
 - **Given** lines with quantity, price, discount and tax, **when** I edit them, **then** Subtotal, Tax and Total update immediately.
 - **Given** no contact, **when** I press "Save as draft", **then** I see "Select a contact before saving.".
 - **Given** a valid invoice, **when** I press "Save as draft", **then** it's saved as a draft with no number (the list shows "— (unissued draft)").

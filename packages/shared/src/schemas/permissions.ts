@@ -165,14 +165,12 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "contacts.manage_persons": {
     label: "Manage contact persons",
-    description:
-      "Add, edit, or remove a contact's people (name, title, email, phone). Independent of edit_own/edit_others — contact persons have no creator of their own to split \"own\" from \"others\" by, so this is a single grant covering every contact's persons, not an ownership-based pair. Still requires edit access to the contact itself.",
+    description: "Add, edit or remove the people at a contact (name, title, email, phone), on any contact. They also need permission to edit the contact itself.",
     group: "Manage Contacts",
   },
   "contacts.manage_addresses": {
     label: "Manage contact addresses",
-    description:
-      "Add, edit, or remove a contact's addresses. Independent of edit_own/edit_others and of manage_persons, same \"no creator to split by\" reasoning. Still requires edit access to the contact itself.",
+    description: "Add, edit or remove a contact's addresses, on any contact. They also need permission to edit the contact itself.",
     group: "Manage Contacts",
   },
   "catalog.edit_own": {
@@ -261,7 +259,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "quotes.send": {
     label: "Send a quote",
-    description: "Issue a draft quote (allocates its number and emails it to the contact) — a one-way transition, not an edit, so it's gated separately from edit_own/edit_others.",
+    description: "Send a draft quote: it gets its number and is emailed to the customer. Sending can't be undone, so it's separate from editing.",
     group: "Manage Quotes",
   },
   "quotes.revise": {
@@ -276,8 +274,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "quotes.accept_in_person": {
     label: "Accept a quote in person",
-    description:
-      "Present a quote on your device and capture the customer's on-site acceptance with a signature (Phase 5, mobile) — a distinct workflow action from the customer's own public accept link, gated separately since it lets a Field/Staff/Owner user resolve a quote on the customer's behalf.",
+    description: "Show a quote on a phone or tablet and record the customer's acceptance with their signature, on site.",
     group: "Manage Quotes",
   },
   "invoices.edit_own": {
@@ -303,7 +300,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "invoices.issue": {
     label: "Issue an invoice",
-    description: "Allocate the invoice number, post the ledger entry, and flip a draft invoice to issued — a one-way transition, not an edit, so it's gated separately from edit_own/edit_others.",
+    description: "Issue a draft invoice: it gets its number and is posted to the books. Issuing can't be undone, so it's separate from editing.",
     group: "Manage Invoices",
   },
   "invoices.void": {
@@ -375,7 +372,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "credit_notes.issue": {
     label: "Issue a credit note",
-    description: "Allocate the credit note number, post the ledger entry, and flip a draft credit note to issued — a one-way transition, not an edit, so it's gated separately from edit_own/edit_others.",
+    description: "Issue a draft credit note: it gets its number and is posted to the books. Issuing can't be undone, so it's separate from editing.",
     group: "Manage Credit Notes",
   },
   "expenses.edit_own": {
@@ -391,7 +388,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "expenses.delete_own": {
     label: "Delete own expenses",
-    description: "Delete a submitted expense this user submitted themselves. Field users always have this for their own expenses, same as edit_own.",
+    description: "Delete an expense they submitted, while it's still waiting for approval. Field crew can always do this for their own expenses.",
     group: "Manage Expenses",
   },
   "expenses.delete_others": {
@@ -463,7 +460,7 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "vendor_bills.record": {
     label: "Record a vendor bill",
-    description: "Post a draft vendor bill to the ledger — a one-way transition, not an edit, so it's gated separately from edit_own/edit_others.",
+    description: "Record a draft vendor bill in the books. This can't be undone, so it's separate from editing.",
     group: "Manage Vendor Bills",
   },
   "vendor_bills.void": {
@@ -505,23 +502,22 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   },
   "jobs.release_retention": {
     label: "Release retention",
-    description: "Release a job's outstanding retention as a final invoice — a one-way billing action, not an edit, so it's gated separately from edit_own/edit_others.",
+    description: "Release a job's retention as a final invoice. This can't be undone, so it's separate from editing.",
     group: "Manage Jobs",
   },
   "jobs.assign": {
     label: "Assign crew to a job",
-    description: "Assign or unassign field users to/from a job's crew — decides who sees the job on their mobile home screen (Phase 5, S-11.2). A one-way workflow action, not an edit to the job's own fields, so it's gated separately from edit_own/edit_others.",
+    description: "Add field crew to a job or take them off it. Crew see the jobs they're assigned to on their phone.",
     group: "Manage Jobs",
   },
   "milestones.edit_own": {
     label: "Define/edit own milestones",
-    description:
-      "Replace a job's milestone set (own = whoever last defined it this way) and mark a milestone complete. Field users always have BOTH this and Edit others' milestones for completing a milestone, regardless of Team grants — marking site work done was never meant to depend on who defined the milestone set (see FIELD_ALWAYS_CAPABILITIES in capability.util.ts). There is no delete action for milestones — the whole set is replaced, never removed one at a time.",
+    description: "Set up a job's milestones and mark them complete, where they set the milestones up. Field crew can always mark milestones complete.",
     group: "Manage Jobs",
   },
   "milestones.edit_others": {
     label: "Edit others' milestones",
-    description: "Replace, re-edit, or complete a milestone set that a different user last defined. Field always has this too — see edit_own's description.",
+    description: "Set up, change or complete milestones that someone else set up. Field crew can always mark milestones complete.",
     group: "Manage Jobs",
   },
   "milestones.invoice": {

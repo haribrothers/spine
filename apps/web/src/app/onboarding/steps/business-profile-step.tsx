@@ -95,7 +95,11 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
         </FormField>
       </div>
 
-      <FormField label="Industry" helperText="Free text — the next step picks a template that pre-configures the app.">
+      {/* US-OPS-21: "the next step" only means something in the wizard. */}
+      <FormField
+        label="Industry"
+        helperText={onSkip ? "Free text — the next step picks a template that pre-configures the app." : "What your business does, in your own words."}
+      >
         {(field) => (
           <Input {...field} value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. Electrical contracting" />
         )}

@@ -21,7 +21,7 @@ export interface FinancialYearStepProps {
   saveLabel?: string;
 }
 
-/** S-12.4 (financial year half). Month + day-of-month picker — sequences reset annually on this date per §14.3. */
+/** S-12.4 (financial year half). Month + day-of-month picker — used for reports and period close; document numbers never reset (D-077). */
 export function FinancialYearStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: FinancialYearStepProps) {
   const [month, setMonth] = useState(initialValue.month || 1);
   const [day, setDay] = useState(initialValue.day || 1);

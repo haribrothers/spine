@@ -159,7 +159,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
           <FormField label="Currency" required>
             {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} />}
           </FormField>
-          <FormField label="Valid until" helperText="Quote shows as expired after this date (S-03.11).">
+          <FormField label="Valid until" helperText="Quote shows as expired after this date.">
             {() => <DatePicker value={validUntil} onChange={setValidUntil} />}
           </FormField>
         </div>

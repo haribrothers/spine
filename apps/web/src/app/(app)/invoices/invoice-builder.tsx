@@ -197,7 +197,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
           <FormField label="Issue date" helperText="Defaults to today if left blank when issued.">
             {() => <DatePicker value={issueDate} onChange={setIssueDate} />}
           </FormField>
-          <FormField label="Due date" helperText="Drives the overdue flag (S-05.9) once issued.">
+          <FormField label="Due date" helperText="Drives the overdue flag once issued.">
             {() => <DatePicker value={dueDate} onChange={setDueDate} />}
           </FormField>
         </div>

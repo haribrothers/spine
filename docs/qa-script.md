@@ -2339,6 +2339,14 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 3. Delete a contact, quote, invoice or payment, void a vendor bill, remove an address, deactivate a user: the confirm button is red.
 4. Save a tax rate, approve an expense, release retention, promote someone to Owner: the confirm button is blue.
 
+## 53. Plain wording (US-OPS-21, Phase 6)
+
+1. New quote: "Valid until" says "Quote shows as expired after this date." New invoice: "Due date" says "Drives the overdue flag once issued." Record a payment: no "(S-06.4)".
+2. Team › Teams › a Team › expand a privilege group: every description is plain English — no "edit_own", "Phase", "S-11.2" or "(mobile)".
+3. Onboarding: the Financial year step says document numbers never reset; the Team step says "You can invite people later from Team › Users.".
+4. Settings › Business profile: the Industry helper doesn't mention "the next step".
+5. Invoices: a void invoice's Balance due shows "—".
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

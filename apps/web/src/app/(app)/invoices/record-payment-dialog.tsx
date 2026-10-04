@@ -234,7 +234,7 @@ export function RecordPaymentDialog({
           <DialogTitle>Record a payment</DialogTitle>
           <DialogDescription>
             {contactName ? `From ${contactName}.` : "From this contact."} Allocate it across outstanding invoices, or leave any part
-            unallocated as customer credit (S-06.4).
+            unallocated as customer credit.
           </DialogDescription>
         </DialogHeader>
 
