@@ -1880,9 +1880,6 @@ Regression checks:
 - Contact logos, profile avatars and expense receipt links still open.
 
 ## Known gaps — don't file these as bugs
-- The production images (`docker compose --profile minimal up -d --build`)
-  don't build yet: `pnpm install` fails compiling `canvas` on Alpine.
-  Step 5 of §16 waits for that fix.
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - `GET /files/:id` still checks only the organisation, not the record the

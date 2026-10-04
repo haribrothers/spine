@@ -15,6 +15,11 @@ COPY patches patches
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/config/package.json packages/config/package.json
+# `canvas` is a test-only dependency (jsdom in packages/ui's tests) that
+# still lands here through peer dependencies; nothing in production loads
+# it, and it can't compile on Alpine without cairo/pango, so skip its build
+# (only in this image — dev machines still build it for the UI tests).
+RUN node -e 'const f="package.json",p=JSON.parse(require("fs").readFileSync(f));p.pnpm.neverBuiltDependencies=["canvas"];require("fs").writeFileSync(f,JSON.stringify(p,null,2))'
 RUN pnpm install --frozen-lockfile --filter @spine/api...
 
 FROM base AS build
