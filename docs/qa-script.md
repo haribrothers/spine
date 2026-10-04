@@ -2242,6 +2242,15 @@ Regression: Business profile still saves name, logo, address, email and phone (�
 
 Regression: invoice totals, retention and balance due still print as before (§4); invoice PDFs are still stored at issue (US-INV-17).
 
+## 42. Repeat conversion warning (US-QUO-23, Phase 6)
+
+1. Convert an accepted quote to a job, go back to the quote and press "Convert to job" again.
+2. The dialog reads "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once." Under "Existing job", each job is on its own line and opens the job.
+3. "Convert to job anyway" is blue (primary), not red. Pressing it creates a second job.
+4. Do the same with "Convert to invoice": the text says "invoice" and the existing invoices are listed as links.
+
+Regression: with Settings › "Repeat quote conversion" set to "Block", the second conversion is refused with no dialog; set to "Off", there's no dialog.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

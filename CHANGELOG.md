@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-QUO-23: explain a repeat conversion clearly (Phase 6)
+
+- **Wording.** The "This quote has already been converted before" dialog now reads "Converting again creates a separate job. The amount isn't split between them. Only do this if you mean to bill or track this quote's work more than once." ("invoice" when converting to an invoice), in sentence case with no shouting.
+- **Layout.** Existing jobs and invoices are listed under "Existing job(s)" / "Existing invoice(s)", each on its own line as a link to the record, instead of being run into the sentence.
+- **Button.** "Convert to job anyway" (or "Convert to invoice anyway") is now a primary button, not red: it creates something, it doesn't delete (D-058). It's a plain `Button`, because `AlertDialogAction` is always styled as danger.
+
+Tests:
+- `apps/e2e/tests/us-quo-23.spec.ts` (1): accept a quote, convert it to a job, convert again: the copy, the existing job as a separate link to the first job, the primary "Convert to job anyway", and confirming creates a second job.
+
 ### 2026-10-04 — US-INV-15: print payment instructions on invoices (Phase 6)
 
 - **PDF.** A "How to pay" box under the totals (before notes and terms) prints the instructions from Settings › Payment instructions (US-INV-16). With none set, no block appears.
