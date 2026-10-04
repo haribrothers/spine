@@ -117,3 +117,4 @@ Every non-obvious choice, numbered and permanent. **Accepted** = decided by the 
 | D-111 | Docs are versioned per minor release from 1.0 (`starlight-versions`) | Accepted | Owner, 2026-10-04 |
 | D-112 | The site is public, hosted on GitHub Pages from the private repo, at `docs.[DOMAIN]` until Q-15 is answered; published by a workflow after merges that change it | Accepted | Owner, 2026-10-04 |
 | D-113 | The site skeleton, home page, self-hosting guide, developer docs and in-app help ship in Phase 8; guide pages for features built in Phases 0–7 are written then, and from Phase 8 every user-facing story updates its guide page in the same change | Accepted | Owner, 2026-10-04 |
+| D-114 | US-JOB-19 (Field reads only assigned jobs, no money) moves from Phase 5 to Phase 6, so every server-side access gap closes together with US-OPS-20 | Accepted | Owner, 2026-10-04 |

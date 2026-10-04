@@ -211,7 +211,6 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-QUO-20 · Show how a quote was accepted
 - [x] US-JOB-15 · Assign crew to a job
 - [ ] US-JOB-16 · Show field crew only their assigned jobs
-- [ ] US-JOB-19 · Keep money and unassigned jobs away from field crew
 - [ ] US-MOB-01 · Sign in to my company's Spine on my phone
 - [ ] US-MOB-02 · Stay signed in and sign out safely
 - [ ] US-MOB-03 · See today's jobs with addresses and tap-to-call
@@ -245,6 +244,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-QUO-21 · Show a branded page for an expired or invalid link
 - [ ] US-QUO-22 · Keep emailed links working until the quote is replaced
 - [ ] US-QUO-23 · Explain a repeat conversion clearly
+- [ ] US-JOB-19 · Keep money and unassigned jobs away from field crew
 - [ ] US-JOB-20 · Own a job's milestones through the job
 - [ ] US-JOB-21 · Show retention on a progress invoice
 - [ ] US-JOB-22 · Number every job
