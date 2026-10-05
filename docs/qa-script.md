@@ -2645,6 +2645,16 @@ Regression: "Amount" entry, editing a submitted expense, receipts and approval w
 
 Regression: the dashboard's "Job profitability" widget still lists every job; the other report tabs are unchanged.
 
+## 83. Needs your attention (US-DASH-12, Phase 7)
+
+1. Open the dashboard as an Owner: "Good morning|afternoon|evening, <first name>" and "<weekday> <day> <month> · <business> · <n> things need you today".
+2. "Needs your attention" lists one row per kind, in order: overdue invoices, expenses waiting for approval, quotes needing discount approval, milestones ready to invoice, quotes expiring this week, vendor bills due within 3 days, jobs over budget. Each row has a title with its count, a line naming the first record (amount and age), and a button. The chip by the heading equals the number of rows.
+3. Pay the overdue invoice (or approve the expense) elsewhere, then come back: that row is gone.
+4. As Staff without "Approve expenses", there's no expenses row; with it, your own submitted expenses never count. The note reads "Only things you can act on".
+5. In a new organisation: "You're all caught up" with "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you." and the header says "nothing needs you right now".
+
+Regression: the KPI row, setup checklist (Owners) and widgets below still show; "Edit layout" still hides and shows widgets; light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

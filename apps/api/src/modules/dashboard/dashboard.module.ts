@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { DashboardController } from "./dashboard.controller";
+import { AttentionService } from "./attention.service";
 import { DashboardService } from "./dashboard.service";
 import { ActivityFeedController } from "./activity-feed.controller";
 import { ActivityFeedService } from "./activity-feed.service";
@@ -18,6 +19,6 @@ import { ActivityFeedService } from "./activity-feed.service";
  */
 @Module({
   controllers: [DashboardController, ActivityFeedController],
-  providers: [DashboardService, ActivityFeedService],
+  providers: [DashboardService, ActivityFeedService, AttentionService],
 })
 export class DashboardModule {}

@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-12: see what needs my attention first (Phase 7)
+
+- **Header.** The dashboard now opens with "Good morning|afternoon|evening, <first name>" and "<weekday> <day> <month> · <business> · <n> things need you today" (or "nothing needs you right now"), with "Edit layout" beside it (`DashboardOwnerRedesign`).
+- **"Needs your attention"** comes first: one row per kind with an icon, a title with the count ("1 invoice is overdue"), a line naming the first record with its amount and age ("INV-0002 · Maple Ridge Developments · $4,542.50 · 12 days late") and an action button. The order is fixed: overdue invoices, expenses waiting for approval, quotes needing discount approval, milestones ready to invoice, quotes expiring within 7 days, vendor bills due within 3 days, jobs over budget. The chip beside the heading is the number of rows. It's rebuilt on every visit, so cleared items disappear on their own. With nothing open: "You're all caught up" (`DashboardCaughtUp`). For an Owner the setup checklist sits beside it until dismissed.
+- **Server-side filtering.** `GET /dashboard/attention` leaves out kinds the member can't act on (e.g. no expense approvals without `expenses.approve`), never shows Staff their own expenses to approve (D-085), and shows Staff only their own expiring quotes. `describeAttention` (`@spine/shared`) writes each row. The buttons link to the matching page for now; US-DASH-13 makes them one-click.
+
+Tests:
+- `packages/shared/src/us-dash-12.test.ts` (2): every kind's wording, greeting and count.
+- `apps/api/src/modules/dashboard/us-dash-12.http.integration.test.ts` (4): order, counts and first records; capability and ownership filtering; resolved items disappear; empty.
+- `apps/e2e/tests/us-dash-12.spec.ts` (2): header, chip and rows in order; "You're all caught up".
+
 ### 2026-10-05 — US-RPT-15: compare contract, billed and cost across jobs (Phase 7)
 
 - **Job Profitability** (`ReportsJobProfitabilityChart`) opens with "Contract, billed and cost by job". It shows three bars per job (contract value, billed to date, cost) for up to 10 jobs, largest contract first, with "Showing 10 of N jobs — the table lists them all." when there are more. A dashed marker over the cost bar shows the job's budget. The tooltip lists contract value, billed to date and %, cost, budget and % used, and margin.

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Button, DragHandle, HideToggle, ReorderableItem, ReorderableList, useReorderableItemDragState } from "@spine/ui";
-import { DASHBOARD_WIDGETS, mergeDashboardLayout, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
+import { AppShellHeader, Button, DragHandle, HideToggle, ReorderableItem, ReorderableList, useReorderableItemDragState } from "@spine/ui";
+import { DASHBOARD_WIDGETS, attentionSummary, greetingFor, mergeDashboardLayout, type AttentionItem, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { DashboardSummary } from "./dashboard-summary";
@@ -10,6 +10,13 @@ import { SetupChecklist } from "./setup-checklist";
 import { LedgerIntegrityAlert } from "./ledger-integrity-alert";
 import { StorageIntegrityAlert } from "./storage-integrity-alert";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
+import { AttentionCard } from "./attention-card";
+
+/** `YYYY-MM-DD` in the browser's own calendar. */
+function localToday(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 /**
  * S-09.12's per-role visible set. `capability`/`ownerOnly` on
@@ -54,9 +61,24 @@ const FULL_WIDTH_KEYS = new Set<string>(["activity-feed"]);
  * isn't part of the customizable widget set at all, so there's no
  * "Edit layout" affordance on it.
  */
-export function DashboardShell({ role }: { role: string | null }) {
+export function DashboardShell({ role, userName }: { role: string | null; userName: string | null }) {
   const [savedLayout, setSavedLayout] = useState<DashboardLayout | null | undefined>(undefined);
   const [editing, setEditing] = useState(false);
+  // US-DASH-12 — what's waiting, and the header that counts it.
+  const [attention, setAttention] = useState<AttentionItem[] | null>(null);
+  const [business, setBusiness] = useState<string | null>(null);
+  const [now] = useState(() => new Date());
+
+  useEffect(() => {
+    apiClient
+      .get<AttentionItem[]>("/dashboard/attention")
+      .then(setAttention)
+      .catch(() => setAttention([]));
+    apiClient
+      .get<{ value: { name?: string } | null }>("/org/settings/business_profile")
+      .then((res) => setBusiness(res.value?.name?.trim() || null))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     apiClient
@@ -87,26 +109,39 @@ export function DashboardShell({ role }: { role: string | null }) {
   // re-show one) — the normal view shows only what's actually visible.
   const displayed = editing ? merged : merged.filter((entry) => !entry.hidden);
 
+  const firstName = userName?.trim().split(/\s+/)[0];
+  const dateLine = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
+  const subtitle = [dateLine, business, attention ? attentionSummary(attention.length) : null].filter(Boolean).join(" · ");
+
   return (
     <div className="flex flex-col gap-6">
+      <AppShellHeader
+        className="mb-0"
+        breadcrumb={[{ label: "Overview" }, { label: "Dashboard" }]}
+        title={`${greetingFor(now.getHours())}${firstName ? `, ${firstName}` : ""}`}
+        description={subtitle}
+        action={
+          <Button variant="secondary" onClick={() => setEditing((v) => !v)}>
+            {editing ? (
+              <>
+                <Check size={14} /> Done
+              </>
+            ) : (
+              <>
+                <Pencil size={14} /> Edit layout
+              </>
+            )}
+          </Button>
+        }
+      />
       {role === "owner" && <LedgerIntegrityAlert />}
       {role === "owner" && <StorageIntegrityAlert />}
-      {role === "owner" && <SetupChecklist />}
-      {role !== "field" && <DashboardSummary />}
 
-      <div className="flex justify-end">
-        <Button variant="secondary" size="sm" onClick={() => setEditing((v) => !v)}>
-          {editing ? (
-            <>
-              <Check size={14} /> Done
-            </>
-          ) : (
-            <>
-              <Pencil size={14} /> Edit layout
-            </>
-          )}
-        </Button>
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+        {role !== "field" && <AttentionCard className="lg:col-span-2" items={attention} today={localToday()} note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"} />}
+        {role === "owner" && <SetupChecklist />}
       </div>
+      {role !== "field" && <DashboardSummary />}
 
       <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
         {displayed.map((entry) => {

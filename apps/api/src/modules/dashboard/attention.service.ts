@@ -1,0 +1,202 @@
+import { Inject, Injectable } from "@nestjs/common";
+import { budgetFigures, type AttentionItem, type AttentionKind, type AttentionRecord } from "@spine/shared";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
+import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
+import { DATABASE } from "../../db/db.module";
+import type { Database } from "../../db/client";
+import { contacts, expenseCategories, expenses, invoices, jobs, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
+import { orgClock } from "../../common/org-clock";
+import { costByJob } from "../jobs/job-costing.service";
+
+/** How many records each row carries (the first is the one it names). */
+const SAMPLE = 3;
+
+function isoDate(value: Date | string | null): string | null {
+  if (!value) return null;
+  return typeof value === "string" ? value.slice(0, 10) : value.toISOString().slice(0, 10);
+}
+
+function addDays(date: string, days: number): string {
+  const d = new Date(`${date}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * US-DASH-12 (D-087, D-088) — what's waiting on a member, one row per kind,
+ * in a fixed order: overdue invoices, expenses to approve, quotes needing
+ * discount approval, completed milestones not invoiced, quotes expiring
+ * within 7 days, vendor bills due within 3 days, jobs over budget. A kind
+ * the member has no capability for is left out, never shown locked. Rows
+ * are worked out on every request, so a resolved item simply disappears.
+ */
+@Injectable()
+export class AttentionService {
+  constructor(@Inject(DATABASE) private readonly db: Database) {}
+
+  async list(orgId: string, userId: string): Promise<AttentionItem[]> {
+    const role = await getMemberRole(this.db, orgId, userId);
+    if (role !== "owner" && role !== "staff") return [];
+    const can = await getEffectiveCapabilities(this.db, { orgId, userId });
+    const currency = await this.currency(orgId);
+    const today = orgClock().date;
+
+    const rows: (AttentionItem | null)[] = [
+      await this.invoicesOverdue(orgId, today, currency),
+      can["expenses.approve"] ? await this.expensesAwaitingApproval(orgId, role === "owner" ? null : userId, currency) : null,
+      can["quotes.approve_discount"] ? await this.quotesDiscountApproval(orgId, currency) : null,
+      can["milestones.invoice"] ? await this.milestonesToInvoice(orgId, currency) : null,
+      await this.quotesExpiring(orgId, today, role === "owner" ? null : userId, currency),
+      can["vendor_payments.edit_own"] ? await this.vendorBillsDue(orgId, today, currency) : null,
+      can["reports.view_job_profitability"] ? await this.jobsOverBudget(orgId, currency) : null,
+    ];
+    return rows.filter((r): r is AttentionItem => r !== null && r.count > 0);
+  }
+
+  private item(kind: AttentionKind, count: number, currency: string, items: AttentionRecord[]): AttentionItem {
+    return { kind, count, currency, items: items.slice(0, SAMPLE) };
+  }
+
+  private async invoicesOverdue(orgId: string, today: string, currency: string): Promise<AttentionItem> {
+    const balance = sql<bigint>`${invoices.totalAmount} - ${invoices.retentionAmount} - ${invoices.amountPaid} - ${invoices.creditedAmount}`;
+    const rows = await this.db
+      .select({ id: invoices.id, number: invoices.number, name: contacts.name, balance: sql<string>`(${balance})::text`, dueDate: invoices.dueDate })
+      .from(invoices)
+      .leftJoin(contacts, eq(invoices.contactId, contacts.id))
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued"), isNotNull(invoices.dueDate), lt(invoices.dueDate, new Date(`${today}T00:00:00Z`)), sql`${balance} > 0`))
+      .orderBy(asc(invoices.dueDate));
+    return this.item(
+      "invoices_overdue",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.balance, date: isoDate(r.dueDate) })),
+    );
+  }
+
+  /** Staff never see their own expenses here (D-085); Owners may approve their own. */
+  private async expensesAwaitingApproval(orgId: string, excludeSubmitter: string | null, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: expenses.id, submitter: user.name, category: expenseCategories.name, amount: expenses.amount, date: expenses.date })
+      .from(expenses)
+      .leftJoin(user, eq(expenses.submittedByUserId, user.id))
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.status, "submitted"), excludeSubmitter ? sql`${expenses.submittedByUserId} is distinct from ${excludeSubmitter}` : undefined))
+      .orderBy(asc(expenses.date), asc(expenses.createdAt));
+    return this.item(
+      "expenses_awaiting_approval",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, name: r.submitter, party: r.category, amount: r.amount.toString(), date: isoDate(r.date) })),
+    );
+  }
+
+  private async quotesDiscountApproval(orgId: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: quotes.id, number: quotes.number, name: contacts.name, subtotal: quotes.subtotalAmount, discount: quotes.discountAmount, total: quotes.totalAmount })
+      .from(quotes)
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(and(eq(quotes.orgId, orgId), eq(quotes.status, "draft"), eq(quotes.discountRequiresApproval, true), isNull(quotes.approvedAt)))
+      .orderBy(asc(quotes.createdAt));
+    return this.item(
+      "quotes_discount_approval",
+      rows.length,
+      currency,
+      rows.map((r) => ({
+        id: r.id,
+        number: r.number,
+        name: r.name,
+        amount: r.total.toString(),
+        note: r.subtotal > 0n ? `${Math.round(Number((r.discount * 1000n) / r.subtotal) / 10)}% discount` : null,
+      })),
+    );
+  }
+
+  private async milestonesToInvoice(orgId: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: milestones.id, name: milestones.name, jobId: jobs.id, jobName: jobs.name, completedBy: user.name, completedAt: milestones.completedAt })
+      .from(milestones)
+      .innerJoin(jobs, eq(milestones.jobId, jobs.id))
+      .leftJoin(user, eq(milestones.completedByUserId, user.id))
+      .where(and(eq(milestones.orgId, orgId), eq(milestones.status, "completed")))
+      .orderBy(asc(milestones.completedAt));
+    return this.item(
+      "milestones_to_invoice",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, name: r.name, party: r.jobName, note: r.completedBy, jobId: r.jobId, date: isoDate(r.completedAt) })),
+    );
+  }
+
+  /** Sent quotes whose validity ends within 7 days; Staff see their own (US-DASH-17). */
+  private async quotesExpiring(orgId: string, today: string, onlyCreatedBy: string | null, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: quotes.id, number: quotes.number, name: contacts.name, total: quotes.totalAmount, validUntil: quotes.validUntil })
+      .from(quotes)
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(
+        and(
+          eq(quotes.orgId, orgId),
+          eq(quotes.status, "sent"),
+          gte(quotes.validUntil, new Date(`${today}T00:00:00Z`)),
+          lte(quotes.validUntil, new Date(`${addDays(today, 7)}T00:00:00Z`)),
+          onlyCreatedBy ? eq(quotes.createdByUserId, onlyCreatedBy) : undefined,
+        ),
+      )
+      .orderBy(asc(quotes.validUntil));
+    return this.item(
+      "quotes_expiring",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.total.toString(), date: isoDate(r.validUntil) })),
+    );
+  }
+
+  /** Recorded bills with a balance, due today or within 3 days. */
+  private async vendorBillsDue(orgId: string, today: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: vendorBills.id, number: vendorBills.billNumber, name: contacts.name, balance: sql<string>`(${vendorBills.totalAmount} - ${vendorBills.amountPaid})::text`, dueDate: vendorBills.dueDate })
+      .from(vendorBills)
+      .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
+      .where(
+        and(
+          eq(vendorBills.orgId, orgId),
+          eq(vendorBills.status, "recorded"),
+          sql`${vendorBills.totalAmount} - ${vendorBills.amountPaid} > 0`,
+          gte(vendorBills.dueDate, new Date(`${today}T00:00:00Z`)),
+          lte(vendorBills.dueDate, new Date(`${addDays(today, 3)}T00:00:00Z`)),
+        ),
+      )
+      .orderBy(asc(vendorBills.dueDate));
+    return this.item(
+      "vendor_bills_due",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.balance, date: isoDate(r.dueDate) })),
+    );
+  }
+
+  /** US-JOB-25 — active jobs whose cost has passed their budget, the furthest over first. */
+  private async jobsOverBudget(orgId: string, currency: string): Promise<AttentionItem> {
+    const active = await this.db
+      .select({ id: jobs.id, number: jobs.number, name: jobs.name, budget: jobs.costBudgetAmount })
+      .from(jobs)
+      .where(and(eq(jobs.orgId, orgId), inArray(jobs.status, ["active", "on_hold"]), isNotNull(jobs.costBudgetAmount)));
+    const costs = await costByJob(this.db, active.map((j) => j.id));
+    const over = active
+      .map((j) => ({ ...j, cost: costs.get(j.id) ?? 0n }))
+      .filter((j) => budgetFigures(j.budget, j.cost).state === "over")
+      .sort((a, b) => (b.cost - b.budget! > a.cost - a.budget! ? 1 : -1));
+    return this.item(
+      "jobs_over_budget",
+      over.length,
+      currency,
+      over.map((j) => ({ id: j.id, number: j.number, name: j.name, amount: j.cost.toString(), budget: j.budget!.toString(), jobId: j.id })),
+    );
+  }
+
+  private async currency(orgId: string): Promise<string> {
+    const [row] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+    return (row?.value as { code?: string } | undefined)?.code ?? "USD";
+  }
+}
+
