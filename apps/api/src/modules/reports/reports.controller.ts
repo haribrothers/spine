@@ -5,7 +5,7 @@ import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
-import { ReportsService } from "./reports.service";
+import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
 
 /**
@@ -38,6 +38,14 @@ export class ReportsController {
   async dashboardSummary(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     return this.reportsService.dashboardSummary(orgId);
+  }
+
+  /** US-DASH-15 — money received and spent per month, from the cash and bank accounts. */
+  @Get("money-in-out")
+  @RequireCapability("reports.view_dashboard_summary")
+  async moneyInOut(@Session() session: UserSession, @Query("months") months?: string) {
+    const n = months === "3" ? 3 : months === "6" ? 6 : 12;
+    return this.reportsService.moneyInOut(requireOrgId(session), n);
   }
 
   /** S-09.11 (dashboard v2) — revenue trend chart. Owner-only, no capability bypass — same gate as P&L/Balance Sheet, since this is derived from the same income-account journal history those reports summarize. */
@@ -105,17 +113,19 @@ export class ReportsController {
     @Query("accountId") accountId: string,
     @Query("from") from: string,
     @Query("to") to: string,
+    @Query("jobId") jobId?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.reportsService.accountDrilldown(orgId, accountId, from, to);
+    // US-JOB-26: from a job's cost by category, only that job's lines.
+    return this.reportsService.accountDrilldown(orgId, accountId, from, to, jobId || undefined);
   }
 
   /** S-09.6 — all-jobs profitability summary; its own independent capability, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */
   @Get("job-profitability")
   @RequireCapability("reports.view_job_profitability")
-  async jobProfitability(@Session() session: UserSession) {
+  async jobProfitability(@Session() session: UserSession, @Query("status") status?: string) {
     const orgId = requireOrgId(session);
-    return this.reportsService.jobProfitability(orgId);
+    return this.reportsService.jobProfitability(orgId, jobStatusFilter(status));
   }
 
   /**
@@ -211,11 +221,24 @@ export class ReportsController {
 
   @Get("job-profitability/export.csv")
   @RequireCapability("reports.view_job_profitability")
-  async exportJobProfitability(@Session() session: UserSession, @Res() res: Response) {
+  async exportJobProfitability(@Session() session: UserSession, @Res() res: Response, @Query("status") status?: string) {
     const orgId = requireOrgId(session);
-    const report = await this.reportsService.jobProfitability(orgId);
-    const rows = report.jobs.map((j) => [j.name, j.status, j.currency, j.contractValueAmount, j.revenue, j.cost, j.margin, j.marginPct ?? ""]);
-    sendCsv(res, "job-profitability.csv", toCsv(["Job", "Status", "Currency", "Contract value", "Revenue", "Cost", "Margin", "Margin %"], rows));
+    const report = await this.reportsService.jobProfitability(orgId, jobStatusFilter(status));
+    // Money as decimals ("1234.50") like every other export; US-RPT-15 adds billed and budget-used columns.
+    const rows = report.jobs.map((j) => [
+      j.name,
+      j.status,
+      j.currency,
+      decimal(j.contractValueAmount, j.currency),
+      decimal(j.billedToDate, j.currency),
+      j.billedPct ?? "",
+      j.budgetUsedPct ?? "",
+      decimal(j.revenue, j.currency),
+      decimal(j.cost, j.currency),
+      decimal(j.margin, j.currency),
+      j.marginPct ?? "",
+    ]);
+    sendCsv(res, "job-profitability.csv", toCsv(["Job", "Status", "Currency", "Contract value", "Billed to date", "Billed %", "Budget used %", "Revenue", "Cost", "Margin", "Margin %"], rows));
   }
 }
 
@@ -228,4 +251,9 @@ function decimal(minor: string, currency: string): string {
 function matchesSearch(text: string, search: string | undefined): boolean {
   const query = search?.trim().toLowerCase();
   return !query || text.toLowerCase().includes(query);
+}
+
+/** US-RPT-15 — `?status=`: active and on hold unless asked for another set. */
+function jobStatusFilter(status?: string): JobProfitabilityStatus {
+  return status === "active" || status === "on_hold" || status === "completed" || status === "all" ? status : "active_on_hold";
 }

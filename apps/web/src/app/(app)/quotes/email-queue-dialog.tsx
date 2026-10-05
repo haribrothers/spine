@@ -94,7 +94,7 @@ export function EmailQueueDialog({ trigger }: { trigger: React.ReactNode }) {
                   <Spinner />
                 </div>
               ) : jobs.length === 0 ? (
-                <div className="rounded-lg border border-border">
+                <div className="rounded-lg border border-border bg-surface">
                   <EmptyState
                     icon={<Inbox />}
                     title="Nothing pending"
@@ -102,7 +102,7 @@ export function EmailQueueDialog({ trigger }: { trigger: React.ReactNode }) {
                   />
                 </div>
               ) : (
-                <div className="overflow-auto rounded-lg border border-border">
+                <div className="overflow-auto rounded-lg border border-border bg-surface">
                   <table className="w-full text-[14px]">
                     <thead className="sticky top-0 border-b border-border bg-surface-sunken text-left text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">
                       <tr>

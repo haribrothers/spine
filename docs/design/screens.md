@@ -1,6 +1,6 @@
 # Screens
 
-Every screen in the product: 284 in total. **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
+Every screen in the product: 293 in total. **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
 
 The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY).
 
@@ -25,7 +25,7 @@ Links to: `OnbWelcome`, `OnbChartOfAccounts`
 Shows: "1) Business" · "2) Template" · "3 Currency" · "Fiscal year" · "Tax -" · "6) Numbering -" · "7) Accounts" · "Team" · "Tell us about your business" · "Name, logo and address - shown on quotes and invoices." · "Business name *" · "Logo" · "No logo yet" · "Click the square to upload - shown on quotes and invoices." · "Address" · "Industry" · "e.g. Electrical contracting" · "Free text - the next step picks a template that pre-configures the app." · "Skip to dashboard" · "Continue"
 
 ### OnbIndustryTemplate — Industry template picker
-**Priority:** P1 · **Phase:** 3 · **Stories:** US-ONB-04 · **Source:** Captured
+**Priority:** P1 · **Phase:** 3 · **Stories:** US-ONB-04, US-ONB-13 · **Source:** Captured
 
 ![OnbIndustryTemplate](screens/OnbIndustryTemplate.webp)
 
@@ -106,7 +106,7 @@ Links to: —
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Get started" · "A few things to do before your first real transaction." · "Add your first customer" · "Create your first Item" · "Send your first quote" · "Dismiss" · "Cash position" · "Receivables" · "Overdue Invoices" · "Revenue this month" · "0.00 USD" · "O Edit layout" · "Revenue trend" · "3M" · "6M" · "12M" · "Pipeline by stage" · "View board" · "No leads yet." · "No revenue posted In this range yet." · "Receivables aging" · "View all" · "Job profitability" · "No lobs vet." · "Nothing outstanding" · "My overdue follow-ups" · "Upcoming meetings" · "View calendar" · "Nothing overdue." · "Nothing in the next 7 days." · "Invoices due this week" · "Job milestones due" · "Nothing due this week." · "Nothing due soon." · "Recent activity" · "Nothing yet."
 
 ### DashboardCaughtUp — Dashboard (redesign) — all caught up, setup checklist
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-ONB-12, US-DASH-12 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-ONB-12, US-DASH-12, US-OPS-32 · **Source:** Drawn
 
 ![DashboardCaughtUp](screens/DashboardCaughtUp.webp)
 
@@ -115,7 +115,7 @@ Links to: `DashboardStaffRedesign`, `DashboardOwnerRedesign`
 Shows: "Overview" · "Dashboard" · "Good morning, Alex" · "Sunday 4 October · Riverstone Builders · nothing needs you right now" · "Edit layout" · "+ New" · "Get started" · "Three steps to your first sent quote. Only owners see this." · "Dismiss" · "Add your first customer" · "Contacts" · "Create your first item" · "Catalogue" · "Send your first quote" · "New quote" · "You're all caught up" · "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you." · "Cash position" · "$0.00" · "No data yet" · "Profit this month" · "Receivables" · "Overdue" · "Money in and out" · "Money in and out appears after your first payment or bill." · "Today" · "Open calendar" · "Nothing scheduled today."
 
 ### DashboardStaffRedesign — Dashboard (redesign) — staff
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-ONB-12, US-DASH-14, US-DASH-16, US-DASH-17, US-TEAM-18 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-ONB-12, US-DASH-14, US-DASH-16, US-DASH-17, US-TEAM-18, US-OPS-32 · **Source:** Drawn
 
 ![DashboardStaffRedesign](screens/DashboardStaffRedesign.webp)
 
@@ -774,6 +774,17 @@ Links to: `JobFromQuote`, `JobsEmpty`, `MobJobDetail`
 
 Shows: "Jobs" · "OVERVIEW" · "98 Dashboard" · "Track work from an accepted quote through milestone billing, variation orders, and retention." · "SALES" · "D, Contacts" · "Total Jobs" · "Active" · "On hold" · "Completed" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "All contacts" · "Quotes" · "JOBS" · "Search jobs" · "*= Columns" · "Job tu" · "Contact t1" · "Contract value 11" · "Retention tu" · "BILLING" · "[Invoices" · "Hotel lobby renovation" · "Bluewater Hospitality Group" · "21000.00 USD" · "8%" · "S Credit Notes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "12500.00 USD" · "10%" · "• Payments" · "Marina office fit-out" · "Harborview Construction Co." · "48500.00 USD" · "5%" · "• Receivables" · "1-3 of 3 per page" · "10" · "PURCHASES" · "• Vendor Bills" · "EJ Expenses" · …
 
+### JobsListBilling — Jobs list with billed and budget used
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-JOB-25, US-JOB-27 · **Source:** Drawn
+
+![JobsListBilling](screens/JobsListBilling.webp)
+
+Links to: `JobCostingBudget`, `JobsEmpty`
+
+Shows: "Jobs" · "Track work from an accepted quote through milestone billing, variation orders, and retention." · "New job" · "Total jobs 4" · "Active 3" · "On hold 1" · "Completed 0" · "Search jobs" · "All statuses" · "All contacts" · "Columns" · "Job" · "Number" · "Contact" · "Status" · "Contract value" · "Billed" · "Budget used" · "Retention" · "Warehouse slab & canopy" · "JOB-004" · "On hold" · "$86,000.00" · "25%" · "Nearing · 86%" · "Marina office fit-out" · "JOB-001" · "40%" · "78%" · "Hotel lobby renovation" · "0%" · "—" · "Phase 2 townhomes — foundations" · "70%" · "Over · 104%" · "Billed and Budget used show for people who can see job profitability. Budget used warns at 80% and flags anything over 100%."
+
+Adds the Billed and Budget used columns to `JobsList`; members without `reports.view_job_profitability` see the list without them.
+
 ### JobsEmpty — Jobs — empty
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-01 · **Source:** Captured
 
@@ -791,6 +802,17 @@ Shows: "Jobs" · "OVERVIEW" · "98 Dashboard" · "Track work from an accepted qu
 Links to: `JobFromQuote`, `JobMilestones`
 
 Shows: "Jobs › Detail" · "Job" · "Edit job" · "< Back to jobs" · "Job name*" · "Marina office fit-out" · "Ac" · "Release retention" · "Harborview Construction Co. • 48" · "Site address" · "Contract value" · "48500.00 USD" · "48 Harbor Way, Portland, ME 04101" · "Retention" · "5%" · "Status *" · "Start date" · "9/19/2026" · "Active" · "End date" · "Pick a date" · "Milestones" · "Variation orders" · "Notes" · "Billing milestones" · "Edit milestones" · "Mobilisation & site setup" · "~ Advanced (retention)" · "9700.00 USD" · "Mark complete" · "20% of contract • Due 10/10/2026" · "Retention %" · "Framing & rough-in comple" · "19400.00 USD" · "40% of contract • Due 11/2/2026" · "Percentage of each progress invoice held back until Release" · "retention." · "Final fit-out & handover" · "40% of contract • Due 12/2/2026" · "Cancel" · "Save"
+
+### JobEditDialogBudget — Edit job with cost budget and percent complete
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-JOB-24, US-JOB-28 · **Source:** Drawn
+
+![JobEditDialogBudget](screens/JobEditDialogBudget.webp)
+
+Links to: `JobCostingBudget`
+
+Shows: "Edit job" · "Changes are saved to the job's history with your name." · "Job name *" · "Site address" · "Status *" · "Start date" · "End date" · "Retention %" · "Held back from each progress invoice until you release retention." · "Contract value" · "Changes only by applying variation orders." · "Budget and progress" · "Cost budget" · "32,000.00" · "What you expect this job to cost. Leave blank if you don't budget it." · "Percent complete" · "55" · "Your estimate of how much of the work is done." · "Notes" · "Cancel" · "Save"
+
+Replaces `JobEditDialog` once US-JOB-24 ships.
 
 ### JobMilestones — Job detail — Milestones (retention)
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-03, US-JOB-06, US-JOB-07, US-JOB-17, US-JOB-18, US-JOB-20 · **Source:** Captured
@@ -873,6 +895,17 @@ Links to: `MobJobsList`, `MobJobDetail`
 
 Shows: "Jobs > Detail" · "OVERVIEW" · "Job" · "98 Dashboard" · "< Back to jobs" · "SALES" · "9, Contacts" · "Marina office fit-out Active" · "Pipeline" · "Edit job" · "Release retention" · "Harborview Construction Co. • 48 Harbor Way, Portland, ME 04101/" · "Meetings" · "Catalogue" · "Contract value" · "48500.00 USD" · "Quotes" · "Retention" · "5%" · "JOBS" · "Start date" · "9/19/2026" · "Jobs" · "End date" · "BILLING" · "$ Invoices" · "• Credit Notes" · "Milestones" · "Variation orders" · "Photos" · "Notes" · "Crew" · "Costing" · "• Payments" · "• Receivables" · "Job costing" · "PURCHASES" · "• Vendor Bills" · "Revenue recognised" · "0.00 USD" · "El Expenses" · "Cost" · "4335.00 USD" · "9g Vendor Payments" · "Margin" · …
 
+### JobCostingBudget — Job detail — Costing with budget, billing and cost by category
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-JOB-25, US-JOB-26, US-JOB-27, US-JOB-28, US-PUR-22 · **Source:** Drawn
+
+![JobCostingBudget](screens/JobCostingBudget.webp)
+
+Links to: `JobEditDialogBudget`, `ExpensesJobFilter`, `AccountDrilldownDialog`
+
+Shows: "Marina office fit-out" · "Active" · "JOB-001 · Harborview Construction Co. · 48 Harbor Way, Portland, ME 04101" · "Edit job" · "Release retention" · "Costing" · "Job costing" · "View bills and expenses" · "Contract value $48,500.00" · "Revenue recognised $19,400.00" · "Cost $24,800.00" · "Margin −$5,400.00" · "Margin % −27.8%" · "Budget" · "Edit budget" · "Cost budget $32,000.00" · "Spent $24,800.00" · "Remaining $7,200.00" · "78% of budget used" · "Warning at 80% · over at 100%" · "Billing" · "Billed to date $19,400.00" · "40% of contract" · "Left to bill $29,100.00" · "Billed 40%" · "Work complete 55%" · "Billing is 15 points behind the work — check for a milestone to invoice." · "Cost by category" · "From bills and approved expenses tagged to this job" · "5000 · Cost of Materials $11,200.00 45%" · "5100 · Subcontractor Costs $6,450.00 26%" · "5200 · Direct Labour $4,180.00 17%" · "5300 · Plant & Equipment Hire $1,850.00 7%" · "5400 · Fuel & Freight $720.00 3%" · "5500 · Site Overheads & Permits $400.00 2%" · "Total cost $24,800.00 100%"
+
+Replaces `JobCosting` once US-JOB-25 ships. Gated by `reports.view_job_profitability` like the tab it replaces (US-JOB-19).
+
 ### JobCrew — Job detail — Crew
 **Priority:** P2 · **Phase:** 5 · **Stories:** US-JOB-15, US-JOB-16 · **Source:** Captured
 
@@ -908,6 +941,15 @@ Shows: "Jobs" · "Search jobs" · "ASSIGNED TO YOU · 3" · "Marina office fit-o
 Links to: —
 
 Shows: "Billing" · "Invoices" · "Detail" · "INV-0013" · "Maple Ridge Developments · Progress invoice · due Oct 18, 2026" · "Issued" · "Download PDF" · "Record payment" · "Job" · "JOB-002 · Phase 2 townhomes — foundations" · "Milestone" · "Foundation walls poured (35%)" · "Lines" · "Description" · "Amount" · "Foundation walls poured — 35% of contract value $12,500.00" · "$4,375.00" · "Subtotal" · "Tax" · "$0.00" · "Total" · "Retention held (10%)" · "−$437.50" · "Amount due" · "$3,937.50" · "Retention is held in Retention Receivable until you release it from the job. Held on this job so far: $875.00."
+
+### InvoiceDetailProgressClaim — Progress invoice with claim number
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-JOB-29 · **Source:** Drawn
+
+![InvoiceDetailProgressClaim](screens/InvoiceDetailProgressClaim.webp)
+
+Links to: `InvoiceDetailRetention`
+
+Shows: "INV-0013" · "Maple Ridge Developments · Progress claim 2 · due Oct 18, 2026" · "Issued" · "Download PDF" · "Record payment" · "Job JOB-002 · Phase 2 townhomes — foundations" · "Milestone Foundation walls poured (35%)" · "Progress claim 2 of this job" · "Retention held (10%)" · "−$437.50" · "Amount due" · "$3,937.50" · "On the PDF and email" · "Stored at issue (US-INV-17)" · "Invoice INV-0013" · "Progress claim 2 · JOB-002" · "The claim number is given when the invoice is issued; a draft shows \"Claim number is given when the invoice is issued.\"" · "A voided claim keeps its number (\"Progress claim 1 (void)\") and the next claim continues from it." · "The invoice keeps its own number from the invoice sequence."
 
 ## Invoicing & credit notes
 
@@ -1347,6 +1389,17 @@ Links to: `VendorBillsList`, `ExpenseDialog`, `ExpensesEmpty`
 
 Shows: "Purchases › Expenses" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "SALES" · "9, Contacts" · "Total expenses" · "Submitted" · "Approved" · "Rejected" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "My expenses only" · "Submit expense" · "• Quotes" · "JOBS" · "Search expenses" · "*= Columns" · "• Jobs" · "Date tu" · "Category T" · "Job Tu" · "Amount 11" · "Submitted by t" · "BILLING" · "E Invoices" · "9/25/2026" · "Site Meals" · "120.00 USD" · "Alex Morgan" · "..." · "S Credit Notes" · "10/1/2026" · "Fuel & Vehicle" · "60.00 USD" · "••." · "• Payments" · "9/13/2026" · "Tools & Small Equipment" · "150.00 USD" · "• Receivables" · "9/21/2026" · …
 
+### ExpensesJobFilter — Expenses filtered by job
+**Priority:** P2 · **Phase:** 7 · **Stories:** US-PUR-22 · **Source:** Drawn
+
+![ExpensesJobFilter](screens/ExpensesJobFilter.webp)
+
+Links to: `JobCostingBudget`, `VendorBillsList`
+
+Shows: "Expenses" · "Expenses" · "Categories" · "Total expenses 4" · "Submitted 1" · "Approved 3" · "Rejected 0" · "Search expenses" · "All statuses" · "Job: JOB-001 · Marina office fit-out" · "Clear job filter" · "My expenses only" · "Columns" · "Showing expenses on JOB-001 · Marina office fit-out." · "See vendor bills on this job" · "Open the job's costing" · "Date" · "Category" · "Job" · "Amount" · "Submitted by" · "Status" · "5 Oct 2026 · Site labour · JOB-001 · $3,940.00 · Marcus Webb · Submitted" · "Fuel & freight $60.00" · "Materials $192.00" · "Plant & equipment hire $450.00" · "Total on this job $4,642.00"
+
+`VendorBillsList` gets the same job filter (`?jobId=`); no separate screen is drawn for it.
+
 ### ExpensesEmpty — Expenses — empty
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-07 · **Source:** Captured
 
@@ -1364,6 +1417,17 @@ Shows: "Purchases > Expenses" · "OVERVIEW" · "Expenses" · "98 Dashboard" · "
 Links to: `ExpensesList`, `ExpensesEmpty`, `ExpenseCategoryDialog`, `ExpenseCategories`
 
 Shows: "Purchases › Expenses" · "Expenses" · "Submit an expense for approval. Categories are managed from Settings → Purchases." · "Submit an expense" · "ejected" · "A submitted expense doesn't post to the ledger until an owner or staff member approves it." · "Category *" · "Job" · "Select a category..." · "No job" · "Submit expense" · "Optional — flows into job costing once approved." · "Date *" · "Currency *" · "= Columns" · "10/4/2026" · "USD" · "Submitted by t" · "Amount*" · "Tax rate" · "Alex Morgan" · "0.00" · "No tax" · "••." · "Tax amount" · "Paid by*" · "Company" · "Included in the amount above, not added on top." · "Description" · "What was this for?" · "Receipt" · "Upload receipt" · "Cancel" · "Save expense"
+
+### ExpenseDialogLabour — New expense — headcount × day rate
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-PUR-23 · **Source:** Drawn
+
+![ExpenseDialogLabour](screens/ExpenseDialogLabour.webp)
+
+Links to: `ExpensesList`, `ExpenseDrawerSubmitted`
+
+Shows: "Submit an expense" · "A submitted expense doesn't post to the ledger until an owner or staff member approves it." · "Enter as" · "Amount" · "Headcount × day rate" · "Category *" · "Site labour" · "Preselected: posts to 5200 Direct Labour." · "Job *" · "JOB-001 · Marina office fit-out" · "Labour is always for a job." · "Date *" · "Currency" · "USD" · "Trade" · "Workers" · "Day rate" · "Total" · "Mason 4 320.00 $1,280.00" · "Carpenter 3 300.00 $900.00" · "Labourer 8 220.00 $1,760.00" · "+ Add trade" · "Total for the day · 15 workers" · "$3,940.00" · "Only headcounts and day rates are recorded — no names, attendance or hours." · "Tax rate" · "No tax" · "Paid by *" · "Company" · "Description" · "Receipt" · "Upload a muster sheet or receipt" · "Optional · JPEG, PNG, HEIC or PDF up to 10 MB." · "Cancel" · "Submit expense"
+
+The "Amount" side of the switch is today's `ExpenseDialog`.
 
 ### ExpenseDrawerSubmitted — Expense drawer — submitted
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-PUR-08, US-PUR-10 · **Source:** Captured
@@ -1473,6 +1537,17 @@ Links to: `ExpenseDialog`, `ExpenseCategoryDialog`
 
 Shows: "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "+ Add category" · "Categories" · "Name" · "Posting account" · "Used by" · "Status" · "Fuel" · "6300 · Travel & Vehicle" · "14 expenses" · "Active" · "Materials" · "5000 · Cost of Materials" · "22 expenses" · "Tools" · "6900 · Other Expenses" · "3 expenses" · "Travel" · "9 expenses" · "Meals" · "0 expenses" · "Archived" · "Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted."
 
+### ExpenseCategoriesConstruction — Expense categories seeded by the Construction template
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-ONB-13 · **Source:** Drawn
+
+![ExpenseCategoriesConstruction](screens/ExpenseCategoriesConstruction.webp)
+
+Links to: `ExpenseCategories`, `ExpenseCategoryDialog`
+
+Shows: "Expenses" · "Categories" · "+ Add category" · "Set up by the Construction / Contracting template: 5 new categories and accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits. Kept your existing category “Materials”. These are ordinary categories — rename, remap or archive them like any other." · "Materials 5000 · Cost of Materials" · "Subcontractors 5100 · Subcontractor Costs" · "Site labour 5200 · Direct Labour" · "Plant & equipment hire 5300 · Plant & Equipment Hire" · "Fuel & freight 5400 · Fuel & Freight" · "Site overheads & permits 5500 · Site Overheads & Permits" · "Travel 6300 · Travel & Vehicle" · "Active"
+
+The note shows once, after the template is applied. `OnbIndustryTemplate`'s Construction card adds "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads."
+
 ### ExpenseDrawerOwn — Expense drawer — your own expense
 **Priority:** P1 · **Phase:** 6 · **Stories:** US-PUR-20 · **Source:** Drawn
 
@@ -1548,6 +1623,17 @@ Shows: "Reports" · "OVERVIEW" · "98 Dashboard" · "Profit & Loss, Balance Shee
 Links to: —
 
 Shows: "Reports" · "OVERVIEW" · "98 Dashboard" · "Profit & Loss, Balance Sheet, and job profitability, derived from the ledger." · "SALES" · "Profit & Loss" · "Balance Sheet" · "Job Profitability" · "D, Contacts" · "Pipeline" · "Export CSV" · "Meetings" · "• Catalogue" · "Job" · "Status" · "Contract value" · "Revenue" · "Cost" · "Margin" · "Margin %" · "B Quotes" · "Hotel lobby renovation" · "active" · "21000.00" · "0.00" · "100₴" · "JOBS" · "Phase 2 townhomes - foundations" · "12500.00" · "8750.00" · "• Jobs" · "Job for QUO-0002" · "13604.50" · "BILLING" · "[E Invoices" · "Marina office fit-out" · "48500.00" · "4335.00" · "-4335.00" · "• Credit Notes" · "•• Payments" · "• Receivables" · "PURCHASES" · "• Vendor Bills" · "• Expenses" · …
+
+### ReportsJobProfitabilityChart — Job profitability with contract, billed and cost chart
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-RPT-15 · **Source:** Drawn
+
+![ReportsJobProfitabilityChart](screens/ReportsJobProfitabilityChart.webp)
+
+Links to: `ReportsJobProfitability`, `JobCostingBudget`
+
+Shows: "Reports" · "Profit & Loss" · "Balance Sheet" · "Trial Balance" · "Tax Summary" · "Job Profitability" · "Active and on hold" · "Export CSV" · "Contract, billed and cost by job" · "Contract value" · "Billed to date" · "Cost" · "Cost budget" · "$90k" · "$60k" · "$30k" · "$0k" · "Marina office fit-out" · "Contract value $48,500.00" · "Billed to date $19,400.00 · 40%" · "Cost $24,800.00" · "Budget $32,000.00 · 78% used" · "Margin −$5,400.00" · "Job" · "Status" · "Billed %" · "Budget used" · "Revenue" · "Margin" · "Margin %" · "Warehouse slab & canopy · on hold · $86,000.00 · $21,500.00 · 25% · Nearing · 86%" · "Phase 2 townhomes — foundations · 70% · Over · 104% · $770.00 · 8.8%"
+
+Replaces `ReportsJobProfitability` once US-RPT-15 ships.
 
 ### AccountDrilldownDialog — Drill-down to documents
 **Priority:** P1 · **Phase:** 4 · **Stories:** US-RPT-03, US-RPT-11 · **Source:** Captured
@@ -1651,7 +1737,7 @@ Links to: `DashboardOwner`
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Get started" · "Q Search settings" · "Upcoming meetings" · "Choose what the dashboard's "Upcoming meetings" widget shows." · "ORGANISATION" · "‹E Business profile" · "Only my meetings" · "Each person's dashboard shows only the meetings they organize." · "* Industry template" · "° Currency & locale" · "Every org meeting" · "• Financial year" · "Everyone's dashboard shows every meeting in the org, not just their own - useful" · "for a small team that plans as one calendar." · "% Tax" · "evenue this month" · "lE Numbering" · "Field users always see only their own meetings, regardless of this setting." · "15265.00 USD" · "Chart of accounts" · "Save" · "?. Purchases" · "0 Edit layout" · "• Repeat quote conversion" · "to Upcoming meetings" · "View board" · "@ Meeting reminders" · "A Browser notifications" · "• Demo data" · "Won 422.00 USD • 4" · "Lost 155.00 USD • 1" · "Dec" · "Feb" · "Apr" · "Jun" · "Ang" · "Oct" · "Receivables aging" · "View all" · "Job profitability"
 
 ### DashboardOwnerRedesign — Dashboard (redesign) — owner
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-DASH-12, US-DASH-13, US-DASH-14, US-DASH-15, US-DASH-16, US-DASH-19, US-OPS-24 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-DASH-12, US-DASH-13, US-DASH-14, US-DASH-15, US-DASH-16, US-DASH-19, US-OPS-24, US-OPS-32 · **Source:** Drawn
 
 ![DashboardOwnerRedesign](screens/DashboardOwnerRedesign.webp)
 
@@ -1659,8 +1745,19 @@ Links to: `DashboardStaffRedesign`, `DashboardCaughtUp`, `DashboardFieldRedesign
 
 Shows: "Overview" · "Dashboard" · "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders · 6 things need you today" · "Edit layout" · "+ New" · "Needs your attention" · "Cleared items disappear automatically" · "1 invoice is overdue" · "INV-0002 · Maple Ridge Developments · $4,542.50 · 12 days late" · "Send reminder" · "2 expenses waiting for your approval" · "Sarah Mendes · Travel $85.00 · Materials $192.00" · "Review" · "QUO-0006 needs discount approval" · "Bluewater Hospitality Group · 25% discount · $12,800.00" · "Approve" · "Milestone ready to invoice" · "Mobilisation & site setup · Marina office fit-out · completed by Marcus Webb" · "Raise invoice" · "2 quotes expire this week" · "QUO-0004 Harborview Construction Co. · $510.00 · Fri 9 Oct, and 1 more" · "Follow up" · "Vendor bill due in 3 days" · "Ace Timber Supply · BILL-2231 · $2,160.00 · due Wed 7 Oct" · "Pay bill" · "Today" · "Open calendar" · "2:30 PM" · "Weekly crew scheduling" · "Meeting · office" · "Due Sat" · "Mobilisation & site setup" · "Milestone · Marina office fit-out" · "Call back Priya Nair" · "Follow-up · Harborview Construction Co." · "Mon 8:00" · "Monday site stand-up" · "Meeting · Marina office fit-out" · "Cash position" · "$12,024.75" · "▲ +8.2%" · "vs last month" · "Profit this month" · "$20,665.00" · …
 
+### DashboardOwnerConstruction — Dashboard (redesign) — owner, Construction template
+**Priority:** P1 · **Phase:** 7 · **Stories:** US-DASH-20, US-JOB-25, US-OPS-32 · **Source:** Drawn
+
+![DashboardOwnerConstruction](screens/DashboardOwnerConstruction.webp)
+
+Links to: `DashboardOwnerRedesign`, `JobCostingBudget`, `ReportsJobProfitabilityChart`
+
+Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders · 7 things need you today" · "Needs your attention 7" · "1 job is over budget" · "JOB-002 · Phase 2 townhomes — foundations · $280.00 over a $7,700.00 budget" · "Review" · "Retention held" · "View jobs" · "$2,920.00" · "on 3 jobs · in Retention Receivable until released" · "JOB-004 · Warehouse slab & canopy $1,075.00 Release" · "JOB-001 · Marina office fit-out $970.00 Release" · "JOB-002 · Phase 2 townhomes — foundations $875.00 Release" · "Jobs in progress" · "Job profitability" · "Job" · "Billed of contract" · "Budget used" · "Marina office fit-out JOB-001 · $48,500.00 40% billed 78%" · "Hotel lobby renovation 0% billed No budget" · "Phase 2 townhomes — foundations 70% billed Over · 104%"
+
+Everything else is `DashboardOwnerRedesign` unchanged. The two cards show by default only with the Construction template (US-DASH-20).
+
 ### DashboardFieldRedesign — Dashboard (redesign) — field, trimmed sidebar
-**Priority:** P1 · **Phase:** 6 · **Stories:** US-DASH-16, US-DASH-18, US-TEAM-18 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 6 · **Stories:** US-DASH-16, US-DASH-18, US-TEAM-18, US-OPS-32 · **Source:** Drawn
 
 ![DashboardFieldRedesign](screens/DashboardFieldRedesign.webp)
 

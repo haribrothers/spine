@@ -4,7 +4,7 @@ import { createLeadSchema, updateLeadSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
-import { LeadsService, type LeadStage } from "./leads.service";
+import { LeadsService } from "./leads.service";
 
 /**
  * Own/others ownership-aware capability split (PRD §9 S-01.16), same
@@ -20,9 +20,9 @@ export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
   @Get()
-  async list(@Session() session: UserSession, @Query("stage") stage?: LeadStage) {
+  async list(@Session() session: UserSession, @Query("stageId") stageId?: string) {
     const orgId = requireOrgId(session);
-    return this.leadsService.list(orgId, stage);
+    return this.leadsService.list(orgId, stageId);
   }
 
   /** S-09.11 (dashboard v2) — "pipeline by stage" chart. Declared before `:id` — see JobsController.milestonesDue's own comment on why route order matters here. */

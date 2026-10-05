@@ -14,7 +14,7 @@ export const PasswordToggleFieldInput = forwardRef<
   <PasswordToggleFieldPrimitive.Input
     ref={ref}
     className={cn(
-      "h-10 w-full rounded-sm border border-border-strong bg-surface px-2.5 pr-10 text-[14px] text-on-surface placeholder:text-on-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+      "h-10 w-full rounded-sm border border-border-strong bg-surface px-2.5 pr-10 text-[14px] text-on-surface placeholder:text-on-surface-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50",
       className,
     )}
     {...props}

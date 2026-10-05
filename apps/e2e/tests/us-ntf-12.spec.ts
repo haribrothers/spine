@@ -7,7 +7,9 @@ test.describe("US-NTF-12", () => {
     await page.context().clearCookies();
     await logIn(page, DEMO_FIELD_USER);
     await page.goto("/profile");
-    await expect(page.getByRole("heading", { name: "Notifications", exact: true })).toBeVisible();
+    // US-NTF-14: notification preferences live on the Notifications tab.
+    await page.getByRole("tab", { name: "Notifications" }).click();
+    await expect(page.getByRole("tab", { name: "Notifications" })).toHaveAttribute("aria-selected", "true");
     const section = page.getByTestId("browser-notifications");
     await expect(section.getByRole("heading", { name: "Browser notifications" })).toBeVisible();
     // One of the US-NTF-04 states for this device.

@@ -1,8 +1,8 @@
 # 10 · Purchases & expenses
 
-Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post, billable expenses passed on to customers, and a payables view of what's due.
+Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post — including site labour entered as headcount × day rate — billable expenses passed on to customers, and a payables view of what's due.
 
-**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1)
+**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1), `ExpensesJobFilter` (P2), `ExpenseDialogLabour` (P1)
 **Depends on:** 03 Contacts (vendors), 07 Jobs (costing), 11 Tax, 08 Invoicing (billing expenses on), 17 Mobile (field submission).
 
 ## Features
@@ -16,6 +16,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-05 | Payables and AP aging | P1 | 4 | `Payables`, `PayablesEmpty` |
 | F-PUR-06 | Expense categories | P2 | 4 | `SettingsPurchases`, `ExpenseCategoryDialog` |
 | F-PUR-07 | Own/others and workflow rights | P1 | 4 | `ExpensesList`, `VendorBillsList` |
+| F-PUR-08 | Job filter and labour expenses | P1 | 7 | `ExpensesJobFilter`, `ExpenseDialogLabour` |
 
 ## User stories
 
@@ -314,3 +315,41 @@ Decision: D-097
 
 **Implementation notes**
 - API: `POST /expenses/bulk/approve { ids }`, `POST /expenses/bulk/reject { ids, comment }` (contract additions, `expenses.approve`/`expenses.reject`, idempotent, max 100); each item posts its own journal entry (P15).
+
+### US-PUR-22 · Filter bills and expenses by job
+**Feature:** F-PUR-08 · **Priority:** P2 · **Phase:** 7 · **Screens:** `ExpensesJobFilter`, `JobCostingBudget`
+**As** an owner, **I want** to list only the bills and expenses on one job, **so that** I can check what makes up its cost.
+
+**Acceptance criteria**
+- **Given** Vendor Bills or Expenses, **when** the filter bar renders, **then** it has a job filter ("All jobs", then each job as "<number> · <name>") beside the existing filters.
+- **Given** I choose a job, **when** it applies, **then** only bills or expenses tagged to it show, the counters above the table count only those, and the URL keeps the filter (`?jobId=`) so it can be shared or reloaded.
+- **Given** a job with nothing tagged, **when** I filter by it, **then** I see "No vendor bills on this job" or "No expenses on this job" with "Clear filter".
+- **Given** a job's Costing tab, **when** I press "View bills and expenses" under "Cost", **then** Vendor Bills opens filtered to that job, with a link to the same filter on Expenses.
+- **Given** a Field user, **when** they filter their own expenses by job, **then** only their own expenses on jobs they're assigned to are listed and offered.
+
+**Implementation notes**
+- API: `GET /vendor-bills?jobId=` and `GET /expenses?jobId=` (contract additions); existing read rules unchanged.
+- UI: job options come from `GET /jobs` (Field: assigned jobs only, US-JOB-19).
+
+### US-PUR-23 · Enter site labour as headcount × day rate
+**Feature:** F-PUR-08 · **Priority:** P1 · **Phase:** 7 · **Screens:** `ExpenseDialogLabour`
+**As** a site supervisor or office staff, **I want** to enter a day's labour as workers per trade times their day rate, **so that** labour cost reaches the job without working the total out by hand.
+
+Decision: D-126
+
+**Acceptance criteria**
+- **Given** "Submit an expense", **when** it opens, **then** an "Enter as" switch offers "Amount" (today's form, the default) and "Headcount × day rate".
+- **Given** "Headcount × day rate", **when** I choose it, **then** the "Amount" field is replaced by rows of "Trade" (placeholder "e.g. Mason"), "Workers" and "Day rate" with each row's total, "+ Add trade" and a running "Total for the day", and "Job" becomes required ("Labour is always for a job — choose one.").
+- **Given** 4 masons at 950.00, 3 carpenters at 900.00 and 8 helpers at 650.00, **when** I look at the total, **then** it reads 11,700.00 and saving stores the expense amount as 11,700.00.
+- **Given** a trade I've used before, **when** I type it, **then** it's suggested and its last day rate is filled in, which I can change.
+- **Given** a row with no trade, zero workers or a zero day rate, **when** I save, **then** I see "Every row needs a trade, at least one worker and a day rate." and nothing saves.
+- **Given** an organisation with a category posting to 5200 Direct Labour, **when** I switch to "Headcount × day rate", **then** that category is preselected; I can choose another.
+- **Given** the expense is approved, **when** it posts, **then** it posts like any expense (P15) to the category's account, tagged to the job, and the expense drawer lists each row ("4 Mason × 950.00 = 3,800.00").
+- **Given** the form, **when** it renders, **then** it never asks for workers' names, attendance or hours.
+
+**Implementation notes**
+- API: `POST/PUT /expenses` accept `entryMode: "amount"|"labour"` and, for labour, `labourLines: [{ trade, headcount, dayRateAmount }]` (max 20); the server computes each line and the expense `amount` and refuses a client-sent amount that disagrees. `GET /expenses/labour-trades?q=` → `[{ trade, lastDayRateAmount }]` from the organisation's previous labour lines (readers of expenses).
+- Data: `expenses.entry_mode text not null default 'amount'`; new `expense_labour_lines` (`id`, `org_id`, `expense_id` → expenses cascade, `sort_order`, `trade`, `headcount integer`, `day_rate_amount bigint`, `line_amount bigint`).
+- Money: each line is headcount × day rate in minor units (no rounding needed); the expense amount is the sum.
+- Mobile: the phone expense form (US-MOB-13) keeps the amount form in this phase; the labour form on the phone is a later story.
+

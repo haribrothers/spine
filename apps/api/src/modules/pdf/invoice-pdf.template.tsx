@@ -3,6 +3,7 @@ import { percentageOf } from "@spine/shared";
 import type { invoices, invoiceLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
+import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 
 export interface InvoicePdfBusinessProfile {
   name: string;
@@ -22,8 +23,12 @@ export function invoicePaymentInstructions(invoice: { status: string; paymentIns
 }
 
 export interface InvoicePdfData {
+  /** US-SET-10 — document colour and footer from Settings › Branding. */
+  branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
   locale?: string;
+  /** US-JOB-29 — "Progress claim 3 · JOB-002", under the invoice number. */
+  claimLabel?: string;
   invoice: typeof invoices.$inferSelect;
   lines: (typeof invoiceLines.$inferSelect)[];
   contactName: string | null;
@@ -124,7 +129,8 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel }: InvoicePdfData) {
+  const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
   const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
   // US-JOB-21: retention held back is not part of what's due now.
@@ -134,7 +140,8 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
 
   return (
     <Document title={invoice.number ?? "Invoice"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+        <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
             {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
@@ -144,8 +151,9 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={styles.docTitle}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : "INVOICE"}</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : "INVOICE"}</Text>
             <Text style={styles.docNumber}>{invoice.number ?? "DRAFT"}</Text>
+            {claimLabel && <Text style={styles.docNumber}>{claimLabel}</Text>}
           </View>
         </View>
 
@@ -217,7 +225,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           </View>
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Total</Text>
-            <Text style={styles.grandTotalValue}>{fmt(invoice.totalAmount)}</Text>
+            <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(invoice.totalAmount)}</Text>
           </View>
           {invoice.retentionAmount > 0n && (
             <>
@@ -229,7 +237,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
               </View>
               <View style={styles.grandTotalRow}>
                 <Text style={styles.grandTotalLabel}>Amount due</Text>
-                <Text style={styles.grandTotalValue}>{fmt(amountDue)}</Text>
+                <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(amountDue)}</Text>
               </View>
             </>
           )}
@@ -273,6 +281,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           </View>
         )}
 
+        <DocumentFooterLine footer={brand.footer} />
         <Text
           style={styles.pageFooter}
           render={({ pageNumber, totalPages }) => `${invoice.number ?? "Draft invoice"} · Page ${pageNumber} of ${totalPages}`}

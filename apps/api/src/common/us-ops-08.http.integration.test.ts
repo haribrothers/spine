@@ -18,6 +18,9 @@ const EXEMPT = new Set([
   // declining is itself one-shot (a resolved quote refuses a second answer).
   "POST /public/quotes/:token/accept",
   "POST /public/quotes/:token/reject",
+  // US-INV-24: a read sent as POST (the ids don't fit a URL); it changes
+  // nothing, and it streams a ZIP the interceptor can't replay.
+  "POST /invoices/bulk/pdf",
 ]);
 
 function controllerFiles(dir: string): string[] {

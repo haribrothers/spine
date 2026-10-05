@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { Inbox } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -25,6 +26,9 @@ export function ReceivablesExplorer() {
   const [report, setReport] = useState<ReceivablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  // US-DASH-14: the dashboard's "Overdue" card opens ?overdue=1.
+  const router = useRouter();
+  const overdueOnly = useSearchParams().get("overdue") === "1";
 
   useEffect(() => {
     apiClient
@@ -69,11 +73,23 @@ export function ReceivablesExplorer() {
       />
 
       {report.invoices.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState icon={<Inbox />} title="Nothing outstanding" description="Every issued invoice has been paid in full." />
         </div>
       ) : (
-        <ReceivablesTable invoices={report.invoices} onSearchChange={setSearch} />
+        <>
+          {overdueOnly && (
+            <Alert variant="info">
+              <AlertDescription>
+                Showing overdue invoices only.{" "}
+                <button type="button" className="font-medium text-primary hover:underline" onClick={() => router.replace("/receivables")}>
+                  Show all
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
+          <ReceivablesTable invoices={overdueOnly ? report.invoices.filter((i) => i.bucket !== "current") : report.invoices} onSearchChange={setSearch} />
+        </>
       )}
     </div>
   );

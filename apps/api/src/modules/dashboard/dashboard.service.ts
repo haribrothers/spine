@@ -1,8 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, isNull, ne } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
+import type { RetentionHeld } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { catalogItems, contacts, quotes, settings } from "../../db/schema";
+import { accounts, catalogItems, contacts, journalEntries, journalLines, jobs, quotes, settings } from "../../db/schema";
 
 const CHECKLIST_DISMISSED_KEY = "dashboard_checklist_dismissed";
 
@@ -78,5 +79,33 @@ export class DashboardService {
         target: [settings.orgId, settings.key],
         set: { value: { dismissed: true }, updatedAt: new Date() },
       });
+  }
+
+  /**
+   * US-DASH-20 — retention held: the balance of 1150 Retention Receivable,
+   * from journal lines grouped by job (never a parallel calculation), with
+   * the three jobs holding the most.
+   */
+  async retentionHeld(orgId: string): Promise<RetentionHeld> {
+    const held = sql<string>`sum(${journalLines.debit} - ${journalLines.credit})`;
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, held })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), eq(accounts.code, "1150"), isNotNull(journalLines.jobId)))
+      .groupBy(journalLines.jobId);
+    const holding = rows.map((r) => ({ jobId: r.jobId!, held: BigInt(r.held) })).filter((r) => r.held > 0n);
+    holding.sort((a, b) => (b.held > a.held ? 1 : b.held < a.held ? -1 : 0));
+    const top = holding.slice(0, 3);
+    const names = top.length
+      ? await this.db.select({ id: jobs.id, number: jobs.number, name: jobs.name }).from(jobs).where(and(eq(jobs.orgId, orgId), inArray(jobs.id, top.map((t) => t.jobId))))
+      : [];
+    const byId = new Map(names.map((j) => [j.id, j]));
+    return {
+      total: holding.reduce((sum, r) => sum + r.held, 0n).toString(),
+      jobCount: holding.length,
+      jobs: top.map((t) => ({ id: t.jobId, number: byId.get(t.jobId)?.number ?? null, name: byId.get(t.jobId)?.name ?? "", held: t.held.toString() })),
+    };
   }
 }

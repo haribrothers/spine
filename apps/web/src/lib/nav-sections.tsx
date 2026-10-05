@@ -6,6 +6,7 @@ import {
   FileText,
   HandCoins,
   HardHat,
+  History,
   Inbox,
   LayoutDashboard,
   Package,
@@ -112,6 +113,8 @@ export const TEAM_NAV_SECTION: AppShellNavSection = {
   items: [
     { href: "/team/users", label: "Users", icon: <UserCog /> },
     { href: "/team/teams", label: "Teams", icon: <Shield /> },
+    // US-SET-11 (D-064)
+    { href: "/team/audit-log", label: "Audit log", icon: <History /> },
   ],
 };
 

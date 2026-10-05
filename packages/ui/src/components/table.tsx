@@ -154,7 +154,7 @@ export function Table<T>({
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className="overflow-x-auto rounded-lg border border-border">
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-[var(--z-sticky-header)] border-b border-border bg-surface-sunken">
             <tr>

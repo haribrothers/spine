@@ -36,7 +36,7 @@ const DRAWER_SIZES = {
  * only that middle region scrolls when content is tall.
  */
 const drawerVariants = cva(
-  "fixed z-[var(--z-modal)] flex h-full w-full flex-col border-border bg-surface shadow-[0_10px_30px_rgba(33,31,26,0.14)] focus:outline-none",
+  "fixed z-[var(--z-modal)] flex h-full w-full flex-col border-border bg-surface shadow-overlay focus:outline-none",
   {
     variants: {
       side: DRAWER_SIDES,

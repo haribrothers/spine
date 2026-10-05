@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createExpenseSchema, rejectExpenseSchema, reviewExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import { bulkIdsSchema, bulkRejectSchema, createExpenseSchema, rejectExpenseSchema, reviewExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -48,7 +48,16 @@ export class ExpensesController {
     const orgId = requireOrgId(session);
     // Field always sees only their own expenses, whatever `mine` says (US-OPS-20).
     const scope = await this.expensesService.readScope(orgId, session.user.id);
+    // US-PUR-22: Field can only filter by a job they're assigned to.
+    if (scope && jobId && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
     return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
+  }
+
+  /** US-PUR-23 — trades used on earlier labour expenses, with their last day rate. Declared before `:id`. */
+  @Get("labour-trades")
+  @OrgRoles(["owner", "staff", "field"])
+  async labourTrades(@Session() session: UserSession, @Query("q") q?: string) {
+    return this.expensesService.labourTrades(requireOrgId(session), q);
   }
 
   @Get(":id")
@@ -73,8 +82,9 @@ export class ExpensesController {
   @ApiBody({ type: CreateExpenseDto })
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const input = createExpenseSchema.parse(body);
-    return this.expensesService.create(orgId, session.user.id, input);
+    const parsed = createExpenseSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the expense and try again.");
+    return this.expensesService.create(orgId, session.user.id, parsed.data);
   }
 
   @Put(":id")
@@ -82,8 +92,31 @@ export class ExpensesController {
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const input = updateExpenseSchema.parse(body);
-    return this.expensesService.update(orgId, id, session.user.id, input);
+    const parsed = updateExpenseSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the expense and try again.");
+    return this.expensesService.update(orgId, id, session.user.id, parsed.data);
+  }
+
+  /** US-PUR-21 (D-097) — approve up to 100 submitted expenses; each posts its own journal entry. */
+  @Post("bulk/approve")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("expenses.approve")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkApprove(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkIdsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select 100 or fewer.");
+    return this.expensesService.bulkReview(requireOrgId(session), session.user.id, parsed.data.ids, { approve: true });
+  }
+
+  /** US-PUR-21 — reject up to 100 submitted expenses with one comment. */
+  @Post("bulk/reject")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("expenses.reject")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkReject(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkRejectSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select 100 or fewer.");
+    return this.expensesService.bulkReview(requireOrgId(session), session.user.id, parsed.data.ids, { approve: false, comment: parsed.data.comment });
   }
 
   @Post(":id/approve")

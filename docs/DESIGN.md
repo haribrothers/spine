@@ -12,7 +12,7 @@ colors:
   neutral-500: "#726C5A" # WCAG AA pass (2026-08-06): darkened from #8A8578, which was 3.68:1 on surface / 3.26:1 on draft-bg — both fail 4.5:1 body text
   neutral-700: "#4B473E"
   neutral-900: "#211F1A"
-  background: "#FFFFFF"
+  background: "#F7F6F3" # D-131 (US-OPS-32): warm page so white cards lift off it
   surface: "#FFFFFF"
   surface-sunken: "{colors.neutral-50}"
   on-surface: "{colors.neutral-900}"
@@ -21,7 +21,7 @@ colors:
   border-strong: "{colors.neutral-300}"
   paid: "#177044" # WCAG AA pass (2026-08-06): darkened from #1A7F4B, 4.44:1 on paid-bg — failed 4.5:1
   paid-bg: "#E4F5EB"
-  due-soon: "#9A6300"
+  due-soon: "#946000"
   due-soon-bg: "#FCF0D4"
   overdue: "#B3261E"
   overdue-bg: "#FBE6E4"
@@ -35,7 +35,7 @@ colors:
   category-blue-bg: "#EAEFFD"
   category-green: "#1A7F4B"
   category-green-bg: "#E4F5EB"
-  category-amber: "#9A6300"
+  category-amber: "#946000"
   category-amber-bg: "#FCF0D4"
   category-red: "#B3261E"
   category-red-bg: "#FBE6E4"
@@ -54,7 +54,7 @@ colors-dark:
   neutral-100: "#201F1B"
   neutral-200: "#2C2B26"
   neutral-300: "#3B392F"
-  neutral-500: "#93907F"
+  neutral-500: "#9A9786"
   neutral-700: "#C7C4B8"
   neutral-900: "#F3F2EE"
   background: "#121110"
@@ -312,3 +312,16 @@ components:
 The token values above are the authored source for Spine's design tokens (read by `packages/config/tailwind-preset.css`, `packages/ui-native/src/tokens/`, and the generator that writes `docs/design/tokens.json`).
 
 The brand book — voice, colour, type, layout, platforms, motion, accessibility and every component — lives in [docs/design/README.md](design/README.md).
+
+## Theme presets (US-SET-09, D-063)
+
+An Owner picks one app theme for the organisation in Settings › Branding. A preset replaces only `primary` and `primary-hover`; neutrals and the four status colours never change.
+
+| Preset | Light primary / hover | Dark primary / hover |
+|---|---|---|
+| Spine Blue (default) | `#2954E5` / `#2044C4` | `#6B8AFF` / `#88A1FF` |
+| Harbour Teal | `#0D6E6E` / `#0A5858` | `#4FD1D1` / `#7ADEDE` |
+| Plum | `#7C3AED` / `#6A2BD4` | `#B79CFB` / `#C9B4FC` |
+| Graphite | `#4B473E` / `#37342D` | `#C7C4B8` / `#DAD8CF` |
+
+Every light value passes 4.5:1 with white text and on the page; every dark value passes 4.5:1 with the dark `on-primary` text and on the dark surface. On the web the presets are `[data-brand="<id>"]` rules in `packages/config/tailwind-preset.css`.

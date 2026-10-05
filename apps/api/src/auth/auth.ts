@@ -23,6 +23,7 @@ import { appUrl, renderEmail } from "../modules/email/email-layout";
 import { invitationEmail } from "../modules/email/email-templates";
 import { seedChartOfAccounts } from "../db/seed/chart-of-accounts";
 import { seedDefaultTeam } from "../db/seed/default-team";
+import { seedLeadStages } from "../db/seed/lead-stages";
 import { accessControl, fieldRole, ownerRole, staffRole } from "./access-control";
 import { hashPassword, verifyPassword } from "./password";
 
@@ -286,6 +287,9 @@ export const auth = betterAuth({
             // Seed the "General Staff" team so a newly invited Staff user
             // has sensible default access with zero extra owner setup.
             await seedDefaultTeam(db, org.id);
+
+            // US-CRM-19 — the default pipeline stages.
+            await seedLeadStages(db, org.id);
           } catch (err) {
             authLogger.error(
               `Signup for ${user.email} (user ${user.id}) failed to create its organisation — deleting the orphaned user${createdOrgId ? " and organisation" : ""} row(s) so signup fails cleanly instead of leaving a permanently broken account`,

@@ -3,9 +3,10 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, invoiceLines, contacts } from "../../db/schema";
+import { invoices, invoiceLines, contacts, jobs } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { progressClaimLabel, resolveDocumentBranding } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -43,6 +44,10 @@ export class InvoicePdfService {
       .orderBy(invoiceLines.sortOrder);
 
     const business = await this.settings.get<InvoicePdfBusinessProfile>(orgId, "business_profile");
+
+    // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
+
+    const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
     const buffer = await renderToBuffer(
@@ -54,11 +59,20 @@ export class InvoicePdfService {
         business,
         logoDataUri,
         locale: await orgLocale(this.db, orgId),
+        branding,
+        claimLabel: await this.claimLabel(row.invoice),
       }),
     );
 
     const filename = `${row.invoice.number ?? "invoice-draft"}.pdf`;
     return { buffer, filename };
+  }
+
+  /** US-JOB-29 — "Progress claim 3 · JOB-002" for an issued progress invoice on a job. */
+  async claimLabel(invoice: { progressClaimNo: number | null; jobId: string | null; status: string }): Promise<string | undefined> {
+    if (!invoice.progressClaimNo || !invoice.jobId) return undefined;
+    const [job] = await this.db.select({ number: jobs.number }).from(jobs).where(eq(jobs.id, invoice.jobId));
+    return progressClaimLabel(invoice.progressClaimNo, { jobNumber: job?.number, voided: invoice.status === "void" });
   }
 
   private async tryFetchLogoAsDataUri(orgId: string, logoUrl: string): Promise<string | undefined> {

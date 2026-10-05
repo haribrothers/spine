@@ -127,7 +127,7 @@ export function AddressesSection({
       {addresses.length > 0 && (
         <ul className="flex flex-col gap-2">
           {addresses.map((address) => (
-            <li key={address.id} className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
+            <li key={address.id} className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
               <div>
                 <span className="font-medium capitalize text-on-surface">{address.type}</span>
                 <span className="text-on-surface-muted">

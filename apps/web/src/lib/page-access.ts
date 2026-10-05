@@ -15,7 +15,7 @@ interface PageRule {
 }
 
 /** Pages a Field user can open; everything else is refused (US-TEAM-18). */
-const FIELD_PAGES = ["/dashboard", "/jobs", "/meetings", "/expenses", "/profile"];
+const FIELD_PAGES = ["/dashboard", "/activity", "/jobs", "/meetings", "/expenses", "/profile"];
 
 const RULES: PageRule[] = [
   // US-PUR-19: more specific than "/expenses", which every role can open.

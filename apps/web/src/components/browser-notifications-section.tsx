@@ -57,17 +57,17 @@ export function BrowserNotificationsSection() {
       </div>
 
       {state === "unsupported" ? (
-        <div className="rounded-md border border-border p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <span className="text-[13px] text-on-surface-muted">This browser doesn't support push notifications.</span>
         </div>
       ) : state === "not-configured" ? (
-        <div className="rounded-md border border-border p-4">
+        <div className="rounded-md border border-border bg-surface p-4">
           <span className="text-[13px] text-on-surface-muted">
             Browser notifications aren't configured on this Spine instance. Ask your self-hoster to set a VAPID keypair.
           </span>
         </div>
       ) : (
-        <div className="flex items-center justify-between rounded-md border border-border p-4">
+        <div className="flex items-center justify-between rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-medium text-on-surface">
               {state === "subscribed" ? "Enabled on this device" : state === "denied" ? "Blocked by the browser" : "Not enabled on this device"}

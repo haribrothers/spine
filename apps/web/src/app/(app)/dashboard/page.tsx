@@ -1,4 +1,3 @@
-import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../lib/get-session";
 import { getMyMembership } from "../../../lib/get-my-membership";
 import { DashboardShell } from "./dashboard-shell";
@@ -27,14 +26,6 @@ import { DashboardShell } from "./dashboard-shell";
 export default async function DashboardPage() {
   const [session, membership] = await Promise.all([getSession(), getMyMembership()]);
 
-  return (
-    <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Overview" }, { label: "Dashboard" }]}
-        title={session?.user?.name ? `Welcome, ${session.user.name}` : "Dashboard"}
-        description="You're signed in to Spine."
-      />
-      <DashboardShell role={membership?.role ?? null} />
-    </>
-  );
+  // US-DASH-12: the greeting and date line are written in the browser (its own time of day).
+  return <DashboardShell role={membership?.role ?? null} userName={session?.user?.name ?? null} />;
 }

@@ -1,6 +1,8 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { TaxModule } from "../tax/tax.module";
+import { CatalogBundlesController } from "./catalog-bundles.controller";
+import { CatalogBundlesService } from "./catalog-bundles.service";
 import { CatalogController } from "./catalog.controller";
 import { CatalogService } from "./catalog.service";
 
@@ -14,8 +16,8 @@ import { CatalogService } from "./catalog.service";
  */
 @Module({
   imports: [AuditModule, TaxModule],
-  controllers: [CatalogController],
-  providers: [CatalogService],
-  exports: [CatalogService],
+  controllers: [CatalogController, CatalogBundlesController],
+  providers: [CatalogService, CatalogBundlesService],
+  exports: [CatalogService, CatalogBundlesService],
 })
 export class CatalogModule {}

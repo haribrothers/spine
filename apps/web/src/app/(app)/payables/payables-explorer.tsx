@@ -68,7 +68,7 @@ export function PayablesExplorer() {
       />
 
       {report.bills.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState icon={<HandCoins />} title="Nothing outstanding" description="Every recorded vendor bill has been paid in full." />
         </div>
       ) : (

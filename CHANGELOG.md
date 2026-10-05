@@ -80,6 +80,580 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-26: use every new screen in dark mode (Phase 7)
+
+- **Sweep**: every Phase 7 screen is checked in light and dark mode, with a screenshot of each attached to the test report and axe (WCAG 2.1 A/AA, contrast included) passing in both. The screens are the Owner and Field dashboards, the search palette, invoices with bulk selection, Settings › Automatic reminders and Data export, the audit log, Activity, Profile › Notifications, recurring invoices, job costing and the job profitability report.
+- **What the sweep caught and fixed**:
+  - Light `due-soon` and `category-amber` text (`#9A6300`) was 4.46:1 on its tint. It's now `#946000` (4.72:1).
+  - Dark muted text (`#93907F`) was 4.41:1 on sunken surfaces such as table headers and the palette footer. It's now `#9A9786` (4.83:1).
+  - Both values are updated in `tokens.json`, the web preset, the native tokens and the design docs.
+  - The setup checklist's checkboxes and the contact filter on Invoices, Quotes, Payments, Jobs and Credit notes had no accessible name. They're labelled now.
+- **Overlays and elevation as tokens**: dialogs, alert dialogs, drawers and the search palette sit on a new `scrim` token, darkened to 62% in dark mode. Menus, popovers, dialogs and toasts use new `shadow-raised`, `shadow-overlay` and `shadow-toast` tokens, which are stronger in dark mode, so surfaces stay distinct from the page. These replace the raw `bg-black/30` and `rgba(...)` shadows in 16 `@spine/ui` components.
+- **Dashboard**: money-out bars use `border-strong`, as in the dark design. The sidebar shows the light wordmark in dark mode (already in place; now tested).
+- **Emails and PDFs**: emails declare a light colour scheme and carry only light values (tested). PDFs have no theme.
+- **E2E**: a shared axe helper (`tests/axe.ts`) injects `axe-core` (new dev dependency, already used by `@spine/ui`).
+
+Tests:
+- `apps/e2e/tests/us-ops-26.spec.ts` (25): 12 screens in each theme (page colours from tokens, a screenshot, axe), plus dark-mode wordmark, scrim, palette surface and money-out bar colour.
+- `apps/api/src/modules/email/us-ops-26.test.ts` (2): emails are light only.
+
+### 2026-10-05 — US-OPS-23: use search with the keyboard and a screen reader (Phase 7)
+
+- **Screen readers**: the palette is announced as a dialog named "Search". The field is a combobox controlling a listbox of options.
+- **Keyboard**: the first result is highlighted as soon as results arrive. Up and Down move the highlight, and the active option is announced through `aria-activedescendant`, which the palette now keeps in step itself (`cmdk` only worked it out once, before late results existed, and its id lookup failed for values with ":"). Enter opens the highlighted record and closes the palette. Escape closes it and puts focus back where it was, even when it was opened with ⌘K and no button.
+- **Reduced motion**: the palette appears at once with no scale-in. Otherwise it scales in over the base duration (`palette-in` keyframes in the shared theme).
+
+Tests:
+- `packages/ui/src/components/command-palette.a11y.test.tsx` (now 7): first result highlighted on arrival; Escape returns focus.
+- `apps/e2e/tests/us-ops-23.spec.ts` (2): roles and `aria-controls`; arrows move and announce the highlight; Enter opens and closes; Escape returns focus; no animation with reduced motion, `palette-in` without.
+
+### 2026-10-05 — US-OPS-22: search everything from anywhere (Phase 7)
+
+- **Search palette**: ⌘K (Mac) or Ctrl+K on any page, or the new search button in the sidebar footer beside Help and Notifications (the app has no top bar), opens it with focus in the field.
+- **Results** from 2 characters: CONTACTS, QUOTES, JOBS, INVOICES, VENDOR BILLS and EXPENSES, up to 5 each. Each result has a second line ("Harborview Construction Co. · $9,700.00 due", "48 Harbor Way, Portland, ME 04101") and a status on the right ("Overdue", "Sent", "Active", "Contact"). Opening a result goes to the record.
+- **Document numbers**: "INV-0010", "QUO-4" or "inv 10" puts that document first.
+- **Nothing found**: "No results for “<query>”". The footer reads "↑↓ to move", "Enter to open" and "Searches contacts, quotes, invoices, jobs, bills and expenses".
+- **Read rules**: results follow each module's own rules. Field users only see jobs they're on and their own expenses.
+- **Speed**: Postgres trigram indexes (migration 0076, `pg_trgm`), no external service. Answers stay under 500 ms with 10,000 contacts.
+- **`@spine/ui` `CommandPalette`** (new, on `cmdk`): grouped results with a second line and status, an Esc chip, a footer, and a scale-in only when motion is allowed. It has its design-system page and an a11y test.
+- **API.** `GET /search?q=&limit=5`.
+
+Tests:
+- `packages/shared/src/us-ops-22.test.ts` (2): reading and matching document numbers.
+- `apps/api/src/modules/search/us-ops-22.http.integration.test.ts` (5): groups, second lines and statuses; numbers first; Field's limits; the minimum length and no matches; under 500 ms at 10,000 contacts.
+- `packages/ui/src/components/command-palette.a11y.test.tsx` (5): axe with results and empty; dialog, combobox and listbox roles; arrows and Enter; motion-safe only.
+- `apps/e2e/tests/us-ops-22.spec.ts` (1): shortcut and button, groups, number first, no results, opening a record, Field's limits.
+
+### 2026-10-05 — US-SET-16: keep data exports private (Phase 7)
+
+- **Owner-only link**: an export's download link answers 404 to everyone but an Owner of the organisation: Staff, Field, someone signed out, or an Owner of another organisation. It's never 401 or 403, so the link reveals nothing. The ZIP is never served through `/files/:id`, even to Owners, and the response isn't cached.
+- **7-day expiry**: after 7 days the link answers 404 and the file is deleted from storage. That happens when someone uses the link or opens Settings › Data export, and otherwise on an hourly sweep (`data-export-cleanup`).
+- **Audit log**: preparing and downloading an export appear as "Data export" entries with the person ("Prepared", "Downloaded").
+- **The ready email** links to Settings › Data export only; the file is never attached or linked.
+
+Tests:
+- `apps/api/src/modules/data-export/us-set-16.http.integration.test.ts` (6): only Owners download (everyone else 404); never via `/files/:id`; audit entries with the person; the email's link; expiry deletes the file from storage; the hourly sweep.
+- `apps/e2e/tests/us-set-16.spec.ts` (1): the link for an Owner, Staff and a signed-out visitor; both actions in the audit log.
+
+### 2026-10-05 — US-SET-15: export all my data (Phase 7)
+
+- **Settings › Data export** (Owners): "Records as CSV" (on by default), "Records as JSON" and "Files", then "Prepare export". The button shows "Preparing…" and the pane says "Large exports are prepared in the background. We'll email you when the file is ready." It checks back every few seconds.
+- **Last export**: "Oct 5, 2026 by Alex Morgan · 59.8 KB · Download again (link expires in 7 days)".
+- **The ZIP** (`spine-export-<date>.zip`) contains:
+  - one CSV with a header row (or JSON) per table, from contacts to journal lines; in `csv/` and `json/` folders when both are chosen;
+  - `members` with names, emails and roles;
+  - `files/` with receipts, photos, logos and issued PDFs when chosen;
+  - a `README.txt` describing each file and its row count.
+
+  It's built in the background (`data-export` queue) and streamed straight to private storage. Secrets are never exported: passwords, sessions, sign-in and quote tokens, push keys, and secret settings.
+- **Email when ready**: "Your <Business> data export is ready", with a button to Settings › Data export (new `?settings=<pane>` link). The email never contains the file or a link to it.
+- **Staff and Field** get 403 from `POST /org/exports`.
+- **API.** `POST /org/exports`, `GET /org/exports`, `GET /org/exports/:id/download`. New `data_exports` table (migration 0075). Preparing an export is audit-logged.
+
+Tests:
+- `apps/api/src/modules/data-export/us-set-15.http.integration.test.ts` (5): no export yet; CSV ZIP with header rows, files and README; no secrets; JSON and both formats; Owner-only and audit-logged.
+- `apps/e2e/tests/us-set-15.spec.ts` (1): opened from the email link, defaults, prepared in the background, downloaded and unzipped; Staff refused.
+
+### 2026-10-05 — US-SET-12: export the audit log (Phase 7)
+
+- **Export CSV** on Team › Audit log downloads the entries matching the current filters, as `audit-log-<date>.csv`.
+- **Columns**: timestamp (ISO 8601), actor name, actor email, action, record type, record id, the record's name, and the changes as JSON.
+- **Large logs** stream in batches of 1,000, so an export of more than 10,000 entries never times out.
+- **API.** `GET /org/audit-log.csv` (Owner only), with the same filters as the page.
+
+Tests:
+- `apps/api/src/modules/audit/us-set-12.http.integration.test.ts` (2): a filtered export with every column, quoting and a JSON diff; 10,500 entries streamed, each exactly once.
+- `apps/e2e/tests/us-set-12.spec.ts` (1): the export follows a filter and downloads a CSV with the expected header and rows.
+
+### 2026-10-05 — US-SET-11: see every change across the organisation (Phase 7)
+
+- **Team › Audit log** (`/team/audit-log`, Owners only): "Every change to records in <Business>, newest first. Only owners can see this page." The table has When ("Today, 10:42 AM"), Who, Action (a chip with its name, e.g. "Accepted in person", "Voided"), Record ("Quote · QUO-0004", opening the record) and Details ("Owner → Staff", "Phone: … → …", "Title: Site walk").
+- **Filters**: From and To (default: the last month), Person, Record type and Action, built from what's in the log. Changing a filter goes back to the first page. "1–50 of 1,284 entries" with Previous and Next.
+- **Role and access changes are recorded**: promote, demote, deactivate, reactivate and primary-ownership transfer each write an entry with record type "User", the member's name and the old and new role or state.
+- **Staff and Field** get the no-access page; the API returns 403.
+- **Dashboard**: Owners' "View all" on Recent activity now opens the audit log (Staff and Field keep the full feed page).
+- **Data**: `audit_log.entity_id` is now text, so user ids fit. There's a new index for the org-wide list (migration 0074).
+- **API.** `GET /org/audit-log` with filters, a 50-entry page from `cursor`, the total, filter options, and each record's name and link.
+
+Tests:
+- `packages/shared/src/us-set-11.test.ts` (3): action and type names, tones, the Details summary.
+- `apps/api/src/modules/audit/us-set-11.http.integration.test.ts` (5): entries with records and links; the four member changes as "User"; filters and bad dates; paging; Owner-only.
+- `apps/e2e/tests/us-set-11.spec.ts` (1): heading, columns, filtering to role changes, a record link, paging, and Staff refused.
+- `apps/e2e/tests/us-dash-19.spec.ts`: Owners' "View all" opens the audit log.
+
+### 2026-10-05 — US-NTF-14: choose when my digest arrives (Phase 7)
+
+- **Profile & Preferences has tabs**: Profile, Password, Appearance and Notifications. `?tab=notifications` opens the last one directly. The header reads "Your personal account settings. Only you can change these."
+- **Notifications tab**: "Browser notifications" (US-NTF-12), "Daily digest" and "Meeting reminders" (US-NTF-09). Daily digest has "Email me a summary each morning" with a switch, plus "Send at" (5:00 AM to 11:00 AM, every half hour) and "Days" ("Every day" or "Monday to Friday"). Each change saves straight away and confirms it ("Daily digest turned off."). Times are in the organisation's time zone.
+- **API.** `PUT /users/me/notification-preferences { digestEnabled, digestTime, digestDays }` changes only your own row. `GET /users/me` reports the digest settings, resolved against your role's default.
+
+Tests:
+- `apps/api/src/modules/users/us-ntf-14.http.integration.test.ts` (4): role defaults; saving and reading back your own choice only; validation; turned off sends nothing, moved to 6:30 arrives at 6:30.
+- `apps/e2e/tests/us-ntf-14.spec.ts` (1): the tab, defaults, changing Send at and Days, turning it off, and the choices kept after a reload.
+- `apps/e2e/tests/us-ntf-12.spec.ts`: opens the Notifications tab.
+
+### 2026-10-05 — US-NTF-13: get a daily digest by email (Phase 7)
+
+- **One email each morning** at the member's "Send at", on their chosen days. The subject reads "Your Spine day: <n> things need you · Mon 5 Oct". The email opens "Good morning, Alex" and lists:
+  - the dashboard's attention rows as counts, with totals for overdue invoices, expenses to approve and bills due ("1 · $4,542.50");
+  - **Today**: meetings later today and milestones due within 7 days ("Due Sat · Mobilisation & site setup (Marina office fit-out)");
+  - **Yesterday**: "$5,000.00 received · 1 quote accepted ($14,250.00) · 3 quotes viewed".
+
+  It ends with "Open dashboard" and the footer "You get this daily digest because you're an owner of <business>. Turn it off or change the time in Profile › Notifications." ("a member of" for others).
+- **Nothing to report, no email.** It goes out once a day at most, even if the worker runs late or twice. A run more than 3 hours after "Send at" skips the day. Without SMTP the worker logs and skips.
+- **Field users** get counts only, with no money anywhere and no "Yesterday" section (D-048).
+- **Defaults (D-093)**: on for Owners at 7:00 AM Monday to Friday, off for others (US-NTF-14 adds the controls).
+- **Under the hood**: new `daily-digest` queue (every 15 minutes) and `DigestService`. New `user` columns `digest_enabled`, `digest_time`, `digest_days`, `digest_last_sent_on` (migration 0073). Money attention rows carry `total`. The email layout gains titled sections. `GET /meetings/upcoming`'s service takes a start time.
+
+Tests:
+- `packages/shared/src/us-ntf-13.test.ts` (5): due window, weekdays, role defaults, subject and footer, the time format.
+- `apps/api/src/modules/dashboard/us-ntf-13.http.integration.test.ts` (5): not before "Send at"; the Owner's email content; once a day; Field without money; Staff off by default; nothing to report.
+
+### 2026-10-05 — US-DASH-20: see retention held and job billing on the dashboard (Phase 7)
+
+- **Retention held** (Owner, or Staff with "View receivables"): the total in 1150 Retention Receivable, "on <n> jobs · in Retention Receivable until released", and the three jobs holding the most. Each has its amount and "Release", which opens the job with the release dialog. With nothing held, the card is a single line: "No retention held."
+- **Jobs in progress** (with "View job profitability"): each active job's name, number and contract value, a bar of billed % of contract, and "Budget used" with its state ("No budget", "78%", "Nearing · 92%", "Over · 104%" with an icon). The card links to Job Profitability.
+- **Defaults**: with the Construction template both cards show below "Money in and out" when there's no saved layout. With any other template they start hidden and can be shown from Edit layout. A member without a card's capability never gets the card or an empty slot; the shell now leaves out every widget the member lacks the capability for.
+- **Layout fixes**: a wide card that won't fit its row now widens the card before it instead of leaving a hole. Cards can shrink to their column (Receivables aging overflowed it). `TrendBarChart` (horizontal) draws value labels after the bar, not over it, which Pipeline by stage showed in a narrow column.
+- **API.** New `GET /dashboard/retention` (`reports.view_receivables`), from journal lines. Jobs reads `?release=1`.
+
+Tests:
+- `packages/shared/src/us-dash-20.test.ts` (3): Construction defaults, other templates start hidden, a saved choice wins.
+- `apps/api/src/modules/dashboard/us-dash-20.http.integration.test.ts` (3): nothing held, totals by job with a released job at zero and the top three, capability gating.
+- `apps/e2e/tests/us-dash-20.spec.ts` (1): both cards shown (from Edit layout when not Construction), Release links, billed bars, link to Job Profitability.
+
+### 2026-10-05 — US-DASH-19: read who did what in the activity feed (Phase 7)
+
+- **Who did it**: each row starts with an avatar (initials, soft category colour) and the actor's name in bold. Members' rows read "Alex Morgan recorded a payment of **$5,000.00** from Maple Ridge Developments", "Marcus Webb completed Mobilisation & site setup on Marina office fit-out", "Sarah Mendes submitted an expense · Travel · **$85.00**". Customer actions name the customer: "Harborview Construction Co. viewed QUO-0004", "Sunstone Retail Fitouts accepted QUO-0002 · **$14,250.00**".
+- **Grouping**: when a customer views the same quote several times within 24 hours, it's one row ending "· n times" with the latest time.
+- **Amounts** are bold, in the shared money format.
+- **View all** opens a new full feed page, `/activity` (last 100 events, Field included and filtered as on the dashboard). Owners' "View all" moves to the organisation audit log when that ships (US-SET-11, step 7).
+- **Feed sources**: expense submissions are now listed as well as approvals. Payment and expense rows open the record (Payments and Expenses read `?id=`). They used to point at pages that didn't exist.
+- **API.** `GET /dashboard/activity-feed` rows gain `actor`, `parts` and `groupCount`, plus `?limit=`. Field still get no financial events.
+
+Tests:
+- `packages/shared/src/us-dash-19.test.ts` (3): sentences, 24-hour grouping, initials.
+- `apps/api/src/modules/dashboard/us-dash-19.http.integration.test.ts` (3): actors and bold amounts per source; three views as one row; no money for Field; limit.
+- `apps/e2e/tests/us-dash-19.spec.ts` (1): bold names and amounts, "View all" to the full feed.
+
+### 2026-10-05 — US-DASH-18: a field dashboard of my day (Phase 7)
+
+- **Header**: "<n> jobs on your list · <n> things need you" (or "nothing needs you right now").
+- **Needs your attention, for Field**: milestones due within 7 days on their assigned jobs ("Mark complete" opens the job), and their rejected expenses with the reviewer's reason and name ("Fix and resubmit" opens the expense). The caught-up message never mentions money.
+- **My jobs**: each assigned active job with its name, number, customer, site address, next milestone, and "Directions" (opens a map route). There are no money fields.
+- **My expenses**: the last 5 with category, date, amount and an "Approved", "Rejected" or "Submitted" chip. "Submit expense" opens the form.
+- **Recent activity on my jobs**: job and milestone events on assigned jobs only. There are no quote, payment or expense events.
+- **Layout**: [attention | Today] on top, [My jobs | My expenses] below, then the feed. These cards are Field-only, and Edit layout works on them.
+- **API.** `GET /dashboard/attention` adds the Field kinds. `GET /jobs?include=next_milestone` adds `nextMilestone`, and `include` now takes a comma list. The feed filters Field to assigned jobs. Expenses opens `?id=`, `?new=1` and `?mine=true` from links. The feed's expense links now open the expense; they pointed at a page that didn't exist.
+
+Tests:
+- `apps/api/src/modules/dashboard/us-dash-18.http.integration.test.ts` (3): Field attention rows and wording; my jobs with next milestone and no money; the feed limited to assigned jobs.
+- `apps/e2e/tests/us-dash-18.spec.ts` (1): header, cards, Directions, the 5-expense cap, and no money anywhere.
+
+### 2026-10-05 — US-DASH-17: a staff dashboard of only what I can act on (Phase 7)
+
+- **Needs your attention, for Staff**: "Only things you can act on". Kinds come from their Team's grants as before, plus "<n> follow-ups are overdue" for their own follow-ups. "Open" goes to the oldest one's contact. Expiring quotes are their own and read "Your quote QUO-0004 expires Friday". Their own submitted expense never appears (D-085).
+- **KPI row, for Staff without "View dashboard summary"**: "Receivables" and "Overdue" (with "View receivables"), "Open pipeline" and "Quotes won this month" (with "$… accepted"). Staff with the summary grant see the Owner's four. "Quotes won this month" opens Quotes filtered to accepted; Quotes now reads `?status=`.
+- **API.** `GET /dashboard/attention` adds `followups_overdue` for Staff and `mine` on their expiring quotes. `GET /dashboard/kpis` returns the Staff set.
+- **Fix**: the follow-ups row linked to `/activities`, which doesn't exist.
+
+Tests:
+- `apps/api/src/modules/dashboard/us-dash-17.http.integration.test.ts` (4): Staff attention (own follow-ups and quotes, no own expense); the Staff KPI set and its values; KPIs follow grants; a closed lead leaves the pipeline.
+- `apps/e2e/tests/us-dash-17.spec.ts` (1): note, follow-ups row, the four Staff KPIs, no Team links, "Open" to the contact.
+
+### 2026-10-05 — US-DASH-16: see today's schedule beside my tasks (Phase 7)
+
+- **"Today" card**: my meetings today, milestones due within 7 days on jobs I can see, my follow-ups due today or overdue, and my next meeting after today, in time order. Each entry shows a time or "Due <day>", the title, and the kind and record ("Meeting · office", "Milestone · Marina office fit-out", "Follow-up · Harborview Construction Co."). A coloured bar marks the kind, and the kind is also written out. "Open calendar" opens Meetings in day view on today. With nothing scheduled it reads "Nothing scheduled today."
+- **Layout**: the dashboard grid is now three columns. Today sits beside "Needs your attention". While the setup checklist is showing, the checklist and attention share the top row and Today moves beside "Money in and out". Field users see Today above their recent activity.
+- **Replaced**: the separate "My overdue follow-ups", "Upcoming meetings" and "Job milestones due" cards are gone. A saved layout that mentions them still loads. The meetings-scope setting now describes the Today card.
+- **API.** `GET /activities/overdue?includeToday=true` also includes follow-ups due later today. Each row now carries `contactName`, which is the lead's contact for a lead's follow-up.
+
+Tests:
+- `packages/shared/src/us-dash-16.test.ts` (3): merging and time order, labels for each kind, past and future days, the empty list.
+- `apps/api/src/modules/contacts/us-dash-16.http.integration.test.ts` (2): the cutoff with and without `includeToday`; contact names, including a lead's.
+- `apps/e2e/tests/us-dash-16.spec.ts` (1): a follow-up due today, the next meeting after it, "Open calendar".
+- `apps/e2e/tests/dashboard.spec.ts`: Owner and Field checks now look for the Today card.
+
+### 2026-10-05 — US-DASH-15: see money in and out by month (Phase 7)
+
+- **"Money in and out"** replaces the revenue trend chart on the dashboard. Each month has a bar pair: "Money in (payments received)" and "Money out (bills, expenses)". The range is 3M, 6M or 12M (default 12M).
+- **Totals above the chart**: "In · <range>", "Out · <range>" and "Net". Net is green with "+" when positive and red with "−" when negative. Hovering or focusing a month shows its in, out and net.
+- **Empty state**: before any payment or bill, the card reads "Money in and out appears after your first payment or bill."
+- **API.** `GET /reports/money-in-out?months=3|6|12` (`reports.view_dashboard_summary`) works from journal lines on the cash and bank accounts (1000, 1010), never from documents (D-011). A transfer between them counts as neither in nor out. The widget is in the layout under the key `money-in-out`, and Staff with the dashboard-summary grant see it too. `/reports/revenue-trend` is unchanged.
+
+Tests:
+- `apps/api/src/modules/reports/us-dash-15.http.integration.test.ts` (3): zero months before any activity; in, out, totals and net per range with a transfer ignored; Field refused.
+- `apps/e2e/tests/us-dash-15.spec.ts` (1): range default, totals, net sign, legend, month tooltip, switching to 3M.
+- `apps/e2e/tests/dashboard.spec.ts`: widget heading and edit-layout checks now use "Money in and out".
+
+### 2026-10-05 — US-DASH-14: see key figures with a trend and a comparison (Phase 7)
+
+- **KPI row** (pinned, as before): "Cash position", "Profit this month", "Receivables" and "Overdue". Each card has the amount, a line of the last 8 weeks and "▲/▼ n% vs last month". The change is green when it's good for the business (cash and profit up; receivables and overdue down) and red otherwise, always with the arrow and sign. Receivables adds "Current … · overdue …"; Overdue adds "n invoice(s)". With nothing a month ago: "No data last month"; with no data at all: "No data yet".
+- **Cards open their report**: cash → Balance Sheet, profit → P&L, receivables → Receivables, overdue → Receivables filtered to overdue (new `?overdue=1`, with "Show all"). Reports opens the tab named in `?tab=`.
+- **API.** `GET /dashboard/kpis` works the figures out from journal lines (D-011), with overdue rebuilt from invoices, payments and credit notes as they stood on each date. It returns only the figures the member may see (US-DASH-17 adds the Staff set). The old summary card row is replaced.
+- **Sparkline** (`@spine/ui`): a small decorative trend line in positive, negative and neutral tones, with its design-system page and a11y test.
+
+Tests:
+- `packages/shared/src/us-dash-14.test.ts` (3): good and bad tones with arrows, count differences, no data.
+- `apps/api/src/modules/dashboard/us-dash-14.http.integration.test.ts` (3): the four figures with 8 points, previous and detail; Field gets none; a month earlier.
+- `apps/e2e/tests/us-dash-14.spec.ts` (1): cards, comparison lines, details, and the overdue and cash links.
+- `packages/ui/src/components/sparkline.a11y.test.tsx` (4).
+
+### 2026-10-05 — US-DASH-13: act on an attention item in one click (Phase 7)
+
+- **Send reminder.** With one overdue invoice, the dashboard sends its reminder straight away; the toast reads "Reminder sent for INV-0002". With several, it opens Invoices filtered to overdue with those invoices ticked, ready for "Send reminders" (US-INV-23).
+- **Other buttons go straight to the record:**
+  - "Review": expenses filtered to submitted.
+  - "Approve" and "Follow up": the quote.
+  - "Raise invoice": the completed milestone's job.
+  - "Pay bill": the vendor payment dialog, opened on that bill's vendor.
+  - "Review" on a job over budget: its Costing tab.
+- **No capability, no action.** Without the capability for an action (e.g. `invoices.send_reminder`), the button reads "Open" and just opens the record.
+- **Deep links.** Invoices and Expenses read `?status=` (and Invoices `?select=overdue`). Vendor Payments reads `?contactId=&pay=1` to open "New vendor payment" on that vendor. No new endpoints.
+
+Tests:
+- `apps/e2e/tests/us-dash-13.spec.ts` (5): one-click reminder with toast; Review to submitted expenses; several overdue to the filtered, ticked list; Pay bill's payment dialog; "Open" without the capability.
+- `apps/api/src/modules/dashboard/us-dash-12.http.integration.test.ts`: vendor bill rows carry the vendor.
+
+### 2026-10-05 — US-DASH-12: see what needs my attention first (Phase 7)
+
+- **Header.** The dashboard now opens with "Good morning|afternoon|evening, <first name>" and "<weekday> <day> <month> · <business> · <n> things need you today" (or "nothing needs you right now"), with "Edit layout" beside it (`DashboardOwnerRedesign`).
+- **"Needs your attention"** comes first: one row per kind with an icon, a title with the count ("1 invoice is overdue"), a line naming the first record with its amount and age ("INV-0002 · Maple Ridge Developments · $4,542.50 · 12 days late") and an action button. The order is fixed: overdue invoices, expenses waiting for approval, quotes needing discount approval, milestones ready to invoice, quotes expiring within 7 days, vendor bills due within 3 days, jobs over budget. The chip beside the heading is the number of rows. It's rebuilt on every visit, so cleared items disappear on their own. With nothing open: "You're all caught up" (`DashboardCaughtUp`). For an Owner the setup checklist sits beside it until dismissed.
+- **Server-side filtering.** `GET /dashboard/attention` leaves out kinds the member can't act on (e.g. no expense approvals without `expenses.approve`), never shows Staff their own expenses to approve (D-085), and shows Staff only their own expiring quotes. `describeAttention` (`@spine/shared`) writes each row. The buttons link to the matching page for now; US-DASH-13 makes them one-click.
+
+Tests:
+- `packages/shared/src/us-dash-12.test.ts` (2): every kind's wording, greeting and count.
+- `apps/api/src/modules/dashboard/us-dash-12.http.integration.test.ts` (4): order, counts and first records; capability and ownership filtering; resolved items disappear; empty.
+- `apps/e2e/tests/us-dash-12.spec.ts` (2): header, chip and rows in order; "You're all caught up".
+
+### 2026-10-05 — US-RPT-15: compare contract, billed and cost across jobs (Phase 7)
+
+- **Job Profitability** (`ReportsJobProfitabilityChart`) opens with "Contract, billed and cost by job". It shows three bars per job (contract value, billed to date, cost) for up to 10 jobs, largest contract first, with "Showing 10 of N jobs — the table lists them all." when there are more. A dashed marker over the cost bar shows the job's budget. The tooltip lists contract value, billed to date and %, cost, budget and % used, and margin.
+- **Status filter**: "Active and on hold" (default), "Active", "On hold", "Completed", "All". The chart, table and CSV follow it.
+- **Table** gains "Billed to date", "Billed %" and "Budget used" (with "Nearing" / "Over" text and icons); negative margins read in red. **CSV** gains the same columns as plain numbers, and its money columns are now decimals ("48500.00") like every other export, not minor units.
+- **One source.** The report reads the same `billedByJob` / `costByJob` / `budgetFigures` as each job's Costing tab, so the figures always agree. The dashboard's job profitability widget keeps showing all jobs.
+- **GroupedBarChart** (`@spine/ui`): grouped bars with a text legend, even ticks, a custom tooltip and an optional dashed marker over one series. It ships with its design-system page and a11y test. For screen readers the chart is a labelled image pointing to the table.
+
+Tests:
+- `apps/api/src/modules/reports/us-rpt-15.http.integration.test.ts` (3): new row fields equal the Costing tab, status filter, CSV columns.
+- `apps/e2e/tests/us-rpt-15.spec.ts` (1): the chart, legend, columns and status filter.
+- `packages/ui/src/components/grouped-bar-chart.a11y.test.tsx` (3): with and without a marker, empty.
+
+### 2026-10-05 — US-PUR-23: enter site labour as headcount × day rate (Phase 7)
+
+- **"Enter as"** on "Submit an expense": "Amount" (as before, the default) or "Headcount × day rate" (`ExpenseDialogLabour`). The second swaps the Amount field for rows of Trade ("e.g. Mason"), Workers and Day rate, each with its total, "+ Add trade" and "Total for the day · N workers". Job becomes required ("Labour is always for a job.").
+- **Helpful defaults.** A category posting to 5200 Direct Labour is preselected ("Preselected: posts to 5200 Direct Labour."). A trade used before is suggested and fills in its last day rate. A note says "Only headcounts and day rates are recorded — no names, attendance or hours." (D-126).
+- **Checks.** An incomplete row: "Every row needs a trade, at least one worker and a day rate."; no job: "Labour is always for a job — choose one.". The server works out each row (headcount × day rate, exact) and refuses an amount that disagrees.
+- **Posting** is unchanged: an approved labour expense posts like any expense to its category's account, tagged to the job. The expense drawer lists each row ("4 Mason × $950.00 = $3,800.00").
+- **Data and API.** `expenses.entry_mode` and `expense_labour_lines` (migration `0072`); `entryMode` / `labourLines` on `POST/PUT /expenses`; `GET /expenses/labour-trades?q=`. Expense categories now include their posting account's code and name. Invalid expense bodies get a 400 with the reason instead of a server error. The phone form keeps the amount entry for now.
+
+Tests:
+- `packages/shared/src/us-pur-23.test.ts` (2): the 11,700.00 example, row checks.
+- `apps/api/src/modules/purchases/us-pur-23.http.integration.test.ts` (5): rows and amount saved, mismatched amount refused, job and row checks, trade suggestions with the last rate, posting on approval.
+- `apps/e2e/tests/us-pur-23.spec.ts` (2): the form (preselected category, rows, total, job required) and the drawer's rows; trade suggestion fills the day rate.
+
+### 2026-10-05 — US-PUR-22: filter bills and expenses by job (Phase 7)
+
+- **Job filter** on Vendor Bills and Expenses ("All jobs", then "JOB-001 · Marina office fit-out"), beside the existing filters (`ExpensesJobFilter`). It's kept in the URL (`?jobId=`) so it can be shared and survives a reload, and the counters above the table count only that job.
+- **While filtered**, a note reads "Showing expenses on JOB-001 · Marina office fit-out." with links to the same job on the other list and to the job's costing (with job-profitability rights). A job with nothing tagged shows "No vendor bills on this job" / "No expenses on this job" with "Clear filter".
+- **Costing tab**: "View bills and expenses" opens Vendor Bills filtered to the job.
+- **Field users** pick from their assigned jobs only, and `GET /expenses?jobId=` returns nothing for a job they aren't assigned to.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-22.http.integration.test.ts` (3): bills by job, expenses by job, Field limited to assigned jobs.
+- `apps/e2e/tests/us-pur-22.spec.ts` (2): filter, URL, reload, note and link across; empty state with Clear filter; Costing link.
+
+### 2026-10-05 — US-JOB-29: number each progress claim on a job (Phase 7)
+
+- **Claim numbers.** Issuing a progress invoice on a job gives it the job's next claim number (`invoices.progress_claim_no`, migration `0071`, unique per job). The number is the job's highest + 1 under the job row lock, kept when voided and never reused (D-128). Advance, standard and retention-release invoices get none. The invoice keeps its own organisation-wide number.
+- **Invoice page.** The job card reads "Progress claim 2 of this job" ("(void)" when voided). A draft progress invoice says "Claim number is given when the invoice is issued."
+- **PDF and email.** The invoice PDF prints "Progress claim 3 · JOB-002" under the invoice number (in the PDF stored at issue), and the invoice email adds it as "Claim". `progressClaimLabel` (`@spine/shared`) words it.
+
+Tests:
+- `packages/shared/src/us-job-29.test.ts` (2): the label, voided and without a job number.
+- `apps/api/src/modules/jobs/us-job-29.http.integration.test.ts` (4): draft none then 1, 2; void keeps 2 and the next is 3; other types none; PDF and email text.
+- `apps/e2e/tests/us-job-29.spec.ts` (1): a milestone's draft progress invoice, then its claim number once issued.
+
+### 2026-10-05 — US-JOB-28: record how complete a job is and compare it with billing (Phase 7)
+
+- **"Percent complete"** in Edit job's "Budget and progress" ("Your estimate of how much of the work is done."), 0–100 or blank. Anything else gets "Enter a percentage from 0 to 100." and nothing saves. `jobs.percent_complete` (migration `0070`). It isn't money, so Field users see it; marking a job Completed doesn't change it.
+- **Billing card** adds a "Work complete" bar beside "Billed". When the gap is 10 points or more it says "Billing is 15 points behind the work — check for a milestone to invoice." or "Billing is 10 points ahead of the work." Smaller gaps, or no percent complete, show no line. `billing` gains `percentComplete` and `gapPts`; `billingGapMessage` (`@spine/shared`) words it.
+
+Tests:
+- `packages/shared/src/us-job-28.test.ts` (4): behind, ahead, no line, the 0–100 rule.
+- `apps/api/src/modules/jobs/us-job-28.http.integration.test.ts` (5): gap, refusals, Completed leaves it, Field sees it but not costing, clearing.
+- `apps/e2e/tests/us-job-28.spec.ts` (1): the field, its error, the Work complete bar and the comparison line.
+
+### 2026-10-05 — US-JOB-27: see how much of the contract has been billed (Phase 7)
+
+- **Billing card** on the Costing tab: "Contract value", "Billed to date" with "40% of contract", "Left to bill" and a "Billed" bar. When billing passes the contract, "Left to bill" reads "Billed over contract by <amount>" in the danger colour, so a missing variation order gets noticed.
+- **Jobs list** gains "Billed" (e.g. "40%") beside "Budget used", for job-profitability viewers.
+- **From the ledger (D-127).** Billed to date is the net of 1100 AR and 1150 Retention Receivable lines tagged to the job from invoices, voids and credit notes. That makes it gross (tax included, before retention). Advance invoices post nothing at issue, so a deposit counts once a progress invoice offsets it; retention-release invoices are left out. `billingFigures` (`@spine/shared`) shares the maths.
+- **Posting fix.** Credit notes now tag their journal lines with the credited invoice's job (P8 in doc 06), so a credit lowers the job's revenue and billed to date. Credit notes issued before this change aren't tagged; journal entries are immutable.
+
+Tests:
+- `packages/shared/src/us-job-27.test.ts` (3): 40% and left to bill, billed over, zero contract.
+- `apps/api/src/modules/jobs/us-job-27.http.integration.test.ts` (6): nothing billed, gross progress invoices, advance and retention release excluded, credit note subtracted, billed over, list `billedPct`.
+- `apps/e2e/tests/us-job-27.spec.ts` (1): the card's figures and bar, the list column.
+
+### 2026-10-05 — US-JOB-26: see a job's cost by category (Phase 7)
+
+- **"Cost by category"** card on the Costing tab ("From bills and approved expenses tagged to this job") lists each expense account carrying cost for the job, largest first, with its amount and share ("5000 · Cost of Materials · $11,200.00 · 45%") and a "Total cost" row that equals Cost exactly. A donut sits beside it with the cost in the middle, showing the five largest accounts plus "Other" once there are more than six (the list always shows every account). With `ledger.view` each row opens the account drill-down filtered to this job; without it the rows aren't links. A job with no cost reads "No costs yet — bills and approved expenses tagged to this job show up here."
+- **API.** `GET /jobs/:id/costing` gains `byCategory`, grouped from journal lines tagged to the job (D-011), never from documents. `GET /reports/account-drilldown` takes an optional `jobId`.
+- **DonutChart** (`@spine/ui`) gains `legend={false}` and `aria-label` for pages that list the breakdown beside the ring, with its design-system page and a11y test. `DrilldownDialog` is shared from Reports with a `jobId` prop.
+
+Tests:
+- `apps/api/src/modules/jobs/us-job-26.http.integration.test.ts` (3): empty, amounts and shares adding up to cost, drill-down filtered to the job.
+- `apps/e2e/tests/us-job-26.spec.ts` (2): the list, total and donut, drill-down; the empty state.
+- `packages/ui/src/components/donut-chart.a11y.test.tsx`: without its legend.
+
+### 2026-10-05 — US-JOB-25: see budget spent and get warned before going over (Phase 7)
+
+- **Costing tab** (`JobCostingBudget`) is laid out as cards: "Job costing" (contract value, revenue recognised, cost, margin, margin % — a negative margin reads "Cost is ahead of billing" in the danger colour) and a new **Budget** card. The Budget card shows "Cost budget", "Spent" and "Remaining", with a bar labelled "78% of budget used". From 80% it turns to the warning colour with an icon and "Nearing budget — 85% used". Past the budget it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" goes negative and the bar is full. With no budget: "No budget set" and "Set a budget" (only with edit rights on the job), which opens Edit job. The old "cost tracking goes live later" note is gone.
+- **Jobs list** gains "Budget used" ("78%", "Nearing · 85%", "Over · 104%", or "—") for members with `reports.view_job_profitability`, through `GET /jobs?include=costing`.
+- **API.** `GET /jobs/:id/costing` gains `budget { amount, spent, remaining, usedPct, state }`, where spent is the job's cost from journal lines (D-011). The thresholds live in `budgetFigures` (`@spine/shared`), so every screen agrees.
+- **Progress** (`@spine/ui`) gains `tone` (`default`, `warning`, `danger`, `neutral`), with its design-system page and a11y test.
+- The dashboard's "job(s) over budget" attention row arrives with the attention list itself (US-DASH-12, step 5).
+
+Tests:
+- `packages/shared/src/us-job-25.test.ts` (5): figures, near and over, no or zero budget, list text, rounding.
+- `apps/api/src/modules/jobs/us-job-25.http.integration.test.ts` (4): no budget, 78% used, near and over, list figures only for job-profitability viewers.
+- `apps/e2e/tests/us-job-25.spec.ts` (1): used, nearing and over states, the list column, "No budget set" → "Set a budget".
+- `packages/ui/src/components/progress.a11y.test.tsx`: the new tones.
+
+### 2026-10-05 — US-JOB-24: set a cost budget for a job (Phase 7)
+
+- **"Edit job"** gains a "Budget and progress" section with "Cost budget" ("What you expect this job to cost. Leave blank if you don't budget it."). A negative amount is refused with "Enter a budget of zero or more."; leaving it blank removes the budget.
+- **Data and API.** `jobs.cost_budget_amount` (migration `0069`, nullable, a target that never posts). `PUT /jobs/:id` takes `costBudgetAmount` (minor units or null) and now answers bad input with a 400 and the first problem, not a server error. Each change is recorded in the job's history ("set the cost budget amount to 32000.00"). Field users never get the budget, in job responses or in history. Applying a variation order doesn't change it (D-125).
+
+Tests:
+- `packages/shared/src/us-job-24.test.ts` (2): minor units or null; negative refused.
+- `apps/api/src/modules/jobs/us-job-24.http.integration.test.ts` (5): save and history, negative refused, variation order leaves it, hidden from Field, cleared.
+- `apps/e2e/tests/us-job-24.spec.ts` (1): the field, its error, saving and clearing.
+
+### 2026-10-05 — US-ONB-13: start a construction business with site cost categories (Phase 7)
+
+- **Construction / Contracting** (onboarding Template step and Settings › Industry template) now says it "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads." Choosing it adds accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits, plus six expense categories: Materials (5000), Subcontractors (5100), Site labour (5200), Plant & equipment hire (5300), Fuel & freight (5400) and Site overheads & permits (5500). It runs in the same transaction as saving the template (D-129).
+- **Never duplicates or removes.** An existing code or category name is kept and listed ("Kept your existing account 5300 · Vehicle Lease"). A second run creates nothing. Switching to another template leaves everything in place. The categories are ordinary ones, so they can be renamed, remapped or archived.
+- **Expenses › Categories** shows a note saying what the template set up (`industry_template_seed`).
+- **Demo data** for a Construction organisation now files its expenses under these categories (fuel → Fuel & freight, site meals → Site overheads & permits, tools → Plant & equipment hire). Other templates keep the old three demo categories.
+
+Tests:
+- `packages/shared/src/us-onb-13.test.ts` (2): what's seeded, the note's wording.
+- `apps/api/src/modules/org/us-onb-13.http.integration.test.ts` (5): accounts and categories created, existing ones kept and reported, idempotent and kept on switching, ordinary categories, unknown template refused.
+- `apps/e2e/tests/us-onb-13.spec.ts` (1): description, save, the categories with their accounts and the note.
+
+### 2026-10-05 — US-PUR-21: approve several expenses at once (Phase 7)
+
+- **Tick submitted expenses** on the Expenses list. A bar shows "<n> selected · <amount>" with "Approve (<n>)", "Reject…" and "Clear" (`ExpensesBulkSelect`). Without `expenses.approve` there are no tick boxes.
+- **Staff can't tick their own** expenses (the box is disabled), and the page notes "Your own expenses can't be selected for approval — someone else approves them." Owners may select their own (D-085).
+- **Approve** reviews each expense through the same code as a single approval, with its own number and its own journal entry. Toast: "2 expenses approved", listing any skipped with the reason. **Reject…** asks for one comment, applied to every selected expense.
+- **API.** `POST /expenses/bulk/approve { ids }` and `/expenses/bulk/reject { ids, comment }` (at most 100, D-097) return `{ done, skipped }`.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-21.http.integration.test.ts` (4): approve and post each, own/not-submitted skipped with reasons, Owner's own allowed, one comment for all rejections, the 100 cap and 403s.
+- `apps/e2e/tests/us-pur-21.spec.ts` (2): the bar, Approve (2) with toast, Reject… with one comment; Staff's own expense disabled with the note, no tick boxes without approval rights.
+
+### 2026-10-05 — US-PAY-15: give customers a clear statement PDF (Phase 7)
+
+- **Statement PDF** (`StatementPdf`), same fonts and colours as invoices: the business (logo, or its initials), "STATEMENT" and the period ("Jul 6 – Oct 4, 2026"), "Statement for <customer>" with their billing address, and "Balance due".
+- **Table**: Date, Reference, Type, Charges, Payments and Balance, starting with "Opening balance" (all activity). "Open invoices only" leaves out paid invoices, their payments and the opening balance.
+- **Aging strip**: Current, 1–30 days, 31–60 days, 61–90 days and 90+ days for what's still owed, by days past due today.
+- **How to pay**: the payment instructions (Settings › Payment instructions) at the bottom when set.
+
+Tests:
+- `apps/api/src/modules/statements/us-pay-15.integration.test.ts` (5): header, table and opening balance, aging strip, How to pay on and off, open-invoices-only.
+
+### 2026-10-05 — US-PAY-14: send a customer a statement (Phase 7)
+
+- **"Send statement"** on a customer's contact page opens "Send a statement" (`ContactStatementDialog`): Period (Last 30 days, Last 90 days, This year, Custom), Show (Open invoices only, All activity), a summary ("Opening balance (<date>)", "Invoiced", "Paid and credited", "Balance due"), To (the contact's email) and Message (greeting the main contact person). Needs `reports.view_receivables`; vendors don't get it.
+- **Send statement** emails the statement PDF with the message. The toast says "Statement sent to <email>", and the contact's timeline gets a note. **Download PDF** saves the same PDF without emailing. With no invoices yet, sending is disabled: "No invoices for this customer yet." If email isn't set up, the dialog says so.
+- **Derived, not stored.** The statement is read from the customer's Accounts Receivable journal lines (D-011): the balance before the period, then each invoice, payment, credit and void with a running balance. "Open invoices only" lists the invoices still owing with their payments and credits. New `StatementsModule` (`StatementsService`, `StatementDocumentsService`, the `StatementPdf` template) and the `statementEmail` template. The PDF's aging strip and "How to pay" block are US-PAY-15.
+
+Tests:
+- `packages/shared/src/us-pay-14.test.ts` (4): period choices and dates, send checks, the history line.
+- `apps/api/src/modules/statements/us-pay-14.http.integration.test.ts` (7): summary and rows from the ledger, opening balance, PDF download, send (email, attachment, timeline note, history), no-email 503, no-invoices 400, 403 without the capability.
+- `apps/e2e/tests/us-pay-14.spec.ts` (3): the dialog, download, send with toast and timeline; disabled with no invoices; hidden without the capability.
+
+### 2026-10-05 — US-INV-24: download several invoice PDFs at once (Phase 7)
+
+- **"Download PDFs"** on the Invoices bulk bar downloads one ZIP, "invoices-<date>.zip", holding each selected invoice's stored PDF (the same bytes as a single download, US-INV-17). Drafts are skipped, and the toast says which. More than 100 selected: "Select 100 or fewer invoices."
+- **API.** `POST /invoices/bulk/pdf { ids }` returns the ZIP. Skipped invoices are listed in the `X-Spine-Skipped` header. ZIPs are built with `fflate` (D-132), PDFs stored as they are. `apiClient.download` fetches a file from a POST.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-24.http.integration.test.ts` (3): ZIP name and contents match the stored PDFs, draft skipped and reported, only-drafts refused, the 100 cap.
+- `apps/e2e/tests/us-inv-24.spec.ts` (1): the download's file name and the toast naming the skipped draft.
+
+### 2026-10-05 — US-INV-23: send reminders for several invoices at once (Phase 7)
+
+- **Select rows** on the Invoices list (a tick box per row). A bar appears: "<n> selected · <amount> outstanding", "Send reminders (<m>)" and "Clear" (`InvoicesBulkSelect`). The count includes only invoices that are issued, have a balance and weren't reminded today. Without `invoices.send_reminder` the button isn't shown.
+- **Sending** reminds every eligible invoice's customer and toasts "3 reminders sent", listing each skipped invoice with its reason. Overdue isn't required: the email reads "is due in N days" or "is due today" as fits.
+- **API.** `POST /invoices/bulk/send-reminders { ids }` (at most 100, D-097) returns `{ done, skipped }`. Each reminder sent counts as that day's reminder, so the automatic run and a second bulk send skip it. `GET /invoices` rows now carry `remindedToday`. Shared `bulkIdsSchema` / `bulkInvoiceIdsSchema` / `BulkResult` for the bulk stories.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-23.http.integration.test.ts` (4): eligible sent and every skip reason, `remindedToday` on the list, the 100 cap, 403 without the capability.
+- `apps/e2e/tests/us-inv-23.spec.ts` (2): the bar, counting only eligible, toast with skips, reminded-today drops out; hidden button without the capability.
+
+### 2026-10-05 — US-INV-22: pause, edit or stop a recurring invoice (Phase 7)
+
+- **Row menu** on Invoices › Recurring invoices: Edit (also by clicking the name), Pause / Resume and Delete.
+- **Pause** stops the schedule creating invoices; "Next invoice" shows "—". **Resume** picks the next occurrence after today. Dates missed while paused aren't back-filled, and a schedule whose end passed while paused becomes Finished.
+- **Edit** opens the same dialog with the schedule filled in ("Changes apply to invoices it creates from now on."). Invoices already created never change.
+- **Delete** asks "Delete this schedule? Invoices it already created are kept." The invoices stay and lose their link to the schedule.
+- **API.** `POST /recurring-invoices/:id/pause`, `/resume`, `DELETE /recurring-invoices/:id` (`invoices.manage_recurring`). History names "a recurring invoice" and the paused/resumed actions.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-22.http.integration.test.ts` (5): list fields, paused creates nothing, resume to the next future date, editing leaves created invoices alone, delete keeps invoices.
+- `apps/e2e/tests/us-inv-22.spec.ts` (1): pause, resume, edit, delete with its confirmation.
+
+### 2026-10-05 — US-INV-21: create recurring invoices automatically (Phase 7)
+
+- **Run.** The `recurring-invoice-run` queue fires every 15 minutes. From 6:00 AM organisation time it gives each active schedule that's due one invoice, built from its lines with that day's tax (issue date today, due after the schedule's payment terms). It goes through the same create/issue/email code as a manual invoice, so the number, ledger posting and email are identical.
+- **"Issue and email"** issues and emails the invoice. **"Create a draft"** leaves a draft, and Owners get "Recurring invoice ready to review: <name>" (in-app, email, push) linking to it. If issuing fails, the invoice stays a draft for an Owner to finish.
+- **Never twice.** Invoices record `recurring_invoice_id` and `recurring_run_on`, unique together (migration `0068`), so a late, repeated or racing run can't make a second invoice for the same date. A run missed while the server was off catches up once; missed dates aren't back-filled.
+- **Finished.** Once the end date or number of invoices is reached, the schedule shows "Finished" and has no next date.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-21.http.integration.test.ts` (5): issue and email (number, posting, email, next date), draft plus notification, not before 6:00 and never twice (including a race), missed-run catch-up, finished by count and by date.
+
+### 2026-10-05 — US-INV-20: set up a recurring invoice (Phase 7)
+
+- **Invoices › Recurring invoices** (`RecurringInvoicesList`): name, customer, repeats ("Monthly · 1st", "Every 3 months · 15th"), next invoice, amount, status and when it runs, with the note on how runs work. "Recurring invoices" on the Invoices page opens it.
+- **"+ New recurring invoice"** (`RecurringInvoiceDialog`): Name, Customer, Repeats (Weekly, Monthly, Every 3 months, Yearly), On (a weekday, the 1st–28th or the last day), Starts, Ends (Never, On a date, After a number of invoices), Payment due, "When it runs" (issue and email, or create a draft for review) and the lines (the invoice line editor, with a one-line summary). A start date in the past is refused: "Pick today or a later start date." A saved schedule is listed "Active" with its first invoice date.
+- **Data.** `recurring_invoices` and `recurring_invoice_lines` (migration `0067`). The schedule maths (`occurrenceOnOrAfter`, `occurrenceAfter`, `scheduleFinished`) lives in `@spine/shared`. Nothing creates invoices yet; that's US-INV-21.
+- **Permission.** New Team-configurable capability `invoices.manage_recurring` ("Manage recurring invoices", granted to General Staff by default; backfilled from `invoices.edit_own`). Without it the link is hidden and every `/recurring-invoices` route returns 403.
+
+Tests:
+- `packages/shared/src/us-inv-20.test.ts` (6): options, day choices, descriptions, run dates, end conditions, form checks.
+- `apps/api/src/modules/invoices/us-inv-20.http.integration.test.ts` (5): Active with next date and amount, past start refused, needs a line / ends too early, Staff with the grant, 403 without.
+- `apps/e2e/tests/us-inv-20.spec.ts` (2): the dialog's fields, past start error, saved row; link hidden and 403 without the grant.
+
+### 2026-10-05 — US-INV-19: send reminders on schedule without double-sending (Phase 7)
+
+- **Daily run.** The `invoice-reminder-run` queue fires every 15 minutes. For each organisation with automatic reminders on, once organisation time (the server's `TZ`) passes "Send at", it runs the day once: every issued invoice with a balance whose due date is a scheduled number of days away gets one reminder email ("Reminder: invoice INV-… is 7 days overdue" / "is due today" / "is due in 3 days"). If the server was off at send time, the day runs once when it comes back. Missed days aren't caught up.
+- **No double-sending.** New `invoice_reminders` table, one row per invoice per day (unique `invoice_id`, `sent_on`). Manual "Send reminder" records a row too, so the run skips an invoice already reminded that day. Paid, voided and fully credited invoices are never picked.
+- **Pause per customer.** "Pause automatic reminders" switch on a customer's contact page (`contacts.reminders_paused`, through `PUT /contacts/:id` with `contacts.edit_*`). Vendors don't get the switch. Members who can't edit the contact see "Automatic reminders paused" instead.
+- **History.** Each automatic reminder shows "Automatic reminder sent" in the invoice history.
+
+Tests:
+- `packages/shared/src/us-inv-19.test.ts` (2): the history line and the contact field.
+- `apps/api/src/common/us-inv-19.test.ts` (2): organisation clock and day counting.
+- `apps/api/src/modules/invoices/us-inv-19.http.integration.test.ts` (8): scheduled days, repeats, same-day skip (auto and manual), paid/void/credited skip, paused contact, once per day after "Send at", history, email subject/balance/instructions.
+- `apps/e2e/tests/us-inv-19.spec.ts` (2): the pause switch saves; vendors don't get it.
+
+### 2026-10-05 — US-INV-18: turn on automatic payment reminders (Phase 7)
+
+- **Settings › Automatic reminders** (Owner-only, the `SettingsReminders` design): "Send reminders automatically" (off), the schedule (3 days before, on the due date, 7 and 14 days after, and every 14 days after that up to 3 more times), "Send at" in half-hour steps (organisation time = the server's `TZ`), "Save" and "Preview email" (the email in a sandboxed frame with its subject).
+- **Setting.** `invoice_reminders` `{ enabled, offsets, repeatEvery, repeatMax, sendAt }`, checked by `invoiceRemindersSchema` ("Pick at least one reminder."); D-091's defaults (due date, +7, +14 at 9:00) when unset; `reminderDays` works out every day a reminder is due.
+- **Reminder email.** Subject and heading now read "Reminder: invoice INV-… is 7 days overdue" / "is due today" / "is due in 3 days", with "If you've already paid, thank you — please ignore this email." (manual reminders too). No "View invoice" button: customers have no invoice page, so the PDF is attached (D-121 overrides the story here).
+- **API.** `GET /invoice-reminders/preview` (Owner): the most overdue unpaid invoice's reminder, or a sample. The daily sending run is US-INV-19.
+
+Tests:
+- `packages/shared/src/us-inv-18.test.ts` (4): options, defaults, the at-least-one rule, repeats.
+- `apps/api/src/modules/invoices/us-inv-18.http.integration.test.ts` (5): saving, refusal, Staff 403, preview for the most overdue invoice, sample.
+- `apps/e2e/tests/us-inv-18.spec.ts` (1): defaults, the at-least-one error, save, preview.
+
+### 2026-10-05 — US-QUO-26: add a bundle while building a quote (Phase 7)
+
+- **Picker.** `LineItemPicker` lists matching bundles under "BUNDLES" (name, total, "Adds <n> lines: …") above "ITEMS". Choosing one replaces the line it was picked on with the bundle's lines, in order, with the bundle's prices and tax; each is an ordinary editable line. A line whose catalogue item has been archived is added without the item link (a one-off line). Only bundles in the document's currency are offered (`GET /catalog-bundles?currency=`).
+- **Invoices** now use the same picker (with bundles; "Also save to catalogue" stays a quote feature), replacing the name box and "Prefill from catalogue…" dropdown. Vendor bills keep their items-only prefill.
+- Shared helpers in `apps/web/src/lib/bundles.ts` (`useBundles`, `bundleLines`). No API change beyond US-QUO-25.
+
+Tests:
+- `apps/e2e/tests/us-quo-26.spec.ts` (2): on a quote the bundle comes first with its summary, adds its lines in order with the bundle's prices, lines stay editable, and an archived item's line is saved without its item link; invoices offer the bundle; vendor bills show no bundles.
+
+### 2026-10-05 — US-QUO-25: save quote lines as a reusable bundle (Phase 7)
+
+- **Data.** `catalog_bundles` (name, description, currency, saved total, creator, archived) and `catalog_bundle_lines` (a snapshot of each quote line: type, item link, name, quantity, price, discount, tax) — migration `0065`.
+- **API.** `/catalog-bundles`: list (with lines; archived and currency filters), get, create from a quote (`sourceQuoteId` — the server copies the lines, so a later quote change never reaches the bundle), rename, archive/restore, delete. Catalogue own/others rules: create `catalog.edit_own`, rename `catalog.edit_*`, archive/restore/delete `catalog.delete_*`, by who saved it.
+- **Web.** The quote's "More ▾" gains "Save lines as a bundle…" (the `CatalogBundleDialog` design: name, line summary and total, description, "Give the bundle a name.", "Bundle saved" toast). Catalogue gets Items and Bundles tabs (`?tab=bundles`); Bundles lists name, description, lines, total and status with Edit, Archive/Restore and Delete.
+
+Tests:
+- `apps/api/src/modules/catalog/us-quo-25.http.integration.test.ts` (4): name required; lines and total copied and listed; unchanged after the quote changes; own/others for rename, archive, restore and delete.
+- `apps/e2e/tests/us-quo-25.spec.ts` (1): the dialog, the name error, the toast, and the bundle under Catalogue › Bundles.
+
+### 2026-10-05 — US-QUO-24: duplicate a quote as a new draft (Phase 7)
+
+- **"More ▾"** on the quote page (the `QuoteActionsMenu` design): "Duplicate as new draft" (members with `quotes.edit_own`), "Email again" (sent quotes, `quotes.send`) and "View history" (the History dialog, which can now be opened from a menu). "Save lines as a bundle…" joins it with US-QUO-25.
+- **API.** `POST /quotes/:id/duplicate` copies the contact, lines with their snapshot prices and tax, notes and terms into a new draft — no number, no parent, version 1, valid until today plus the original's validity period (30 days if it had none) — and audits `duplicated` from the original's number, which History shows as "Duplicated from QUO-0004 by Sarah Mendes". `POST /quotes/:id/resend` re-queues a sent quote's email with a fresh public link (earlier links stay valid).
+
+Tests:
+- `packages/shared/src/us-quo-24.test.ts` (1): the history sentence.
+- `apps/api/src/modules/quotes/us-quo-24.http.integration.test.ts` (5): the copy's fields; original line prices kept after a catalogue price change; history entry; 403 without `quotes.edit_own`; "Email again" queues the email with a working link, and a draft is refused.
+- `apps/e2e/tests/us-quo-24.spec.ts` (1): the menu items, duplicating into a draft, and the history sentence.
+
+### 2026-10-05 — US-CAT-06: add a new item while building a quote (Phase 7)
+
+- **One item field.** The quote line's separate name box and "Prefill from catalogue…" dropdown are replaced by `LineItemPicker` (`apps/web/src/components/line-item-picker.tsx`), laid out as the `QuoteLinePicker` design: type a name and an ARIA combobox list shows matching catalogue items with price and unit; when nothing matches exactly it ends with "Use “<name>” as a one-off line" and, for members with `catalog.edit_own`, "Also save to catalogue". Arrows, Enter and Escape work; focus leaving closes the list.
+- **Saving to the catalogue.** A marked one-off line shows a note under the field ("Added to the catalogue when you save the quote — give it a price first." / "Don't add it"). Saving the quote first creates an item for each marked line with a price (name, description, price and tax from the line; unit "each") through the existing `POST /catalog-items`, then saves the quote linked to it. Lines without a price stay one-off. No API change. The picker is built to take bundles next (US-QUO-26).
+
+Tests:
+- `apps/e2e/tests/us-cat-06.spec.ts` (3): one-off with "Also save to catalogue" creates the item at the line's price and links the quote line; typing finds an existing item and fills the line; Staff without catalogue rights get the one-off line but no tick box.
+
+### 2026-10-05 — US-CRM-20: delete a stage and move its leads (Phase 7)
+
+- **Settings › Pipeline stages** gains a red ✕ on every open stage. A stage with no leads is removed at once; one with leads opens "Delete “<stage>”?" with "Move <n> leads to:" and a stage picker, and "Delete stage" stays disabled until a stage is chosen. Moves wait until Save and are sent with the stages (`moves`), so nothing changes if you leave without saving; a stage that was itself a move target passes its incoming leads on.
+- **API** (built with US-CRM-19): a deleted stage that still has leads is refused with '"<stage>" still has <n> leads. Choose a stage to move them to first.'; a move into a stage being deleted is refused; leads move and the stage is deleted in one transaction. Staff get 403.
+
+Tests:
+- `apps/api/src/modules/contacts/us-crm-20.http.integration.test.ts` (5): empty stage deleted; refused while it has leads; leads moved to the chosen stage; no move into a deleted stage; Staff 403.
+- `apps/e2e/tests/us-crm-20.spec.ts` (1): on a fresh organisation, an empty stage goes straight away; Proposal's 3 leads move to Qualified after "Move 3 leads to:" and Save.
+
+### 2026-10-05 — US-CRM-19: rename, reorder and add pipeline stages (Phase 7)
+
+- **Data.** New `lead_stages` table (name, kind open/won/lost, position, token colour) replaces the fixed `lead_stage` enum. Migration `0063` seeds New / Qualified / Proposal / Won / Lost for every organisation and maps each lead to the stage at its old position; `0064` drops the enum column. New organisations get the same stages at sign-up, and `LeadStagesService.ensureSeeded` covers any organisation without them.
+- **API.** `GET/PUT /org/lead-stages` (read: any member; replace: Owner, idempotent). Rules live in `putLeadStagesSchema` (`@spine/shared`) so the form and API refuse the same things: up to 12, exactly one Won and one Lost, always last, distinct names; Won/Lost keep their kind and can't be removed. Each stage change is audited. Leads now carry `stageId`, `stageName`, `stageKind`; `summary-by-stage` returns one row per stage with its kind. The service already accepts `moves` for deleting a stage with leads; the delete control arrives with US-CRM-20.
+- **Web.** Settings › Pipeline stages, laid out as the `LeadStagesSettings` design: drag handle (plus keyboard Move up/down buttons), colour dot, name field, kind, lead count, padlock on Won/Lost, "+ Add stage" (disabled at 12). The board's columns, filter and "Add lead", both lead forms, the contact Leads list, the Contacts open-lead count and the dashboard pipeline chart all read the organisation's stages.
+
+Tests:
+- `packages/shared/src/us-crm-19.test.ts` (5): defaults, accepted set, 12 limit, Won/Lost last and once, names.
+- `apps/api/src/modules/contacts/us-crm-19.http.integration.test.ts` (8): seeded stages with counts; default stage on create; rename keeps leads; new stage at its position; 12 limit; Won/Lost rename only; another organisation's stage refused; summary by stage.
+- `apps/e2e/tests/us-crm-19.spec.ts` (1): rename, add, keyboard reorder, board columns and counts, padlocks, the 12-stage limit.
+
+### 2026-10-05 — US-SET-10: put my brand colour and footer on documents (Phase 7)
+
+- **Settings › Branding** gains "Document colour" (swatch picker plus `#RRGGBB` field) with a live check ("✓ Readable on white (6.0:1, passes AA)" or "Too light to read on white (2.0:1). Pick a darker colour — documents need at least 4.5:1."), "Document footer" (up to 300 characters), and a preview of an invoice that stays light in dark mode (`[data-surface="document"]`). Save is disabled while either field is invalid; "Reset to Spine defaults" resets the theme and the colour, not the footer. The layout now matches the `SettingsBranding` design.
+- **API.** `brandingSchema` checks `documentColor` (format and 4.5:1 on white) and `documentFooter`; `resolveDocumentBranding` (`@spine/shared`) gives Spine Blue and no footer when nothing valid is saved.
+- **PDFs.** Quote, invoice, credit-note and receipt PDFs draw a bar in the document colour, colour the title and total, and print the footer above the page number on every page (`pdf/document-branding.tsx`). Emails use the same resolver for colour and footer. Issued documents are served from the PDF stored at issue, so they don't change.
+
+Tests:
+- `packages/shared/src/us-set-10.test.ts` (6): contrast maths and messages, format, footer length, fallback.
+- `apps/api/src/modules/pdf/us-set-10.http.integration.test.ts` (6): too-light, malformed and too-long values refused with the saved value kept; an issued invoice's PDF is byte-identical after a branding change; draft invoice and quote, and first-download credit note and receipt, contain the footer and the document colour (read from the PDF's content streams); Spine Blue fallback; email brand.
+- `apps/e2e/tests/us-set-10.spec.ts` (1): the contrast check, Save disabled for #8FB3FF, preview footer and colour, values kept after reload.
+
+### 2026-10-05 — US-SET-09: pick a theme for the whole organisation (Phase 7)
+
+- **Settings › Branding** (Owner-only, after Business profile): "App theme" cards for Spine Blue (Default), Harbour Teal, Plum and Graphite, each with a swatch that shows that preset in the viewer's own mode, the note about personal light/dark mode, "Reset to Spine defaults" and "Save". Saving applies the theme straight away.
+- **Storage.** `branding.themePreset` through the generic settings route; `brandingSchema` (`@spine/shared`) refuses anything else with "Choose one of the listed themes." and keeps other branding fields.
+- **Applying it.** The authenticated layout reads the preset server-side and sets `data-brand` on `<html>` with an inline script, so a themed organisation never flashes blue; `[data-brand]` rules in the Tailwind preset replace only `--color-primary`/`--color-primary-hover`, with dark-mode values. Status and neutral colours are untouched. Presets are recorded in `DESIGN.md` and `tokens.json` (`themePresets`), which also gets the light `--color-background` that US-OPS-32 missed in its `cssVariables` mirror.
+
+Tests:
+- `packages/shared/src/us-set-09.test.ts` (4): the four presets, Spine Blue default, refusal message, fallback for unknown values.
+- `packages/ui/src/test/us-set-09.test.ts` (9): each preset's light and dark rules set only the primary pair and match `tokens.json`; white/on-primary text and primary-on-page pass 4.5:1 in both modes; Spine Blue equals the default primary.
+- `apps/api/src/modules/org/us-set-09.http.integration.test.ts` (6): Owner saves and every member reads; other fields kept; unknown preset 400 with the saved value kept; reset; Staff 403.
+- `apps/e2e/tests/us-set-09.spec.ts` (1): the pane's cards and note; Harbour Teal after reload (`#0d6e6e`), status colours unchanged; the Field member in dark mode gets `#4fd1d1`; reset returns `#2954e5`.
+
+### 2026-10-05 — US-OPS-32: lift cards off the page in light mode (Phase 7)
+
+- **Tokens (D-131).** Light `background` is `#F7F6F3` in `docs/design/tokens.json`, `docs/DESIGN.md`, `packages/config/tailwind-preset.css` and the native `lightColors`; `surface` stays `#FFFFFF`. Dark mode is unchanged.
+- **Raised things stay white.** Secondary buttons now have a `surface` fill instead of transparent; the data-table container, 50 bordered panels and lists across the web app (explorer tables, line editors, settings lists, report tables, contact sub-lists) gained `bg-surface`; the public quote page uses `surface`. Focus rings leave a `surface` gap (`ring-offset-surface`) instead of the page colour.
+- **Docs.** The design-system Color page explains page vs surface; the Button page notes the secondary fill; the brand book's "Surfaces and layers" rule is rewritten.
+- **E2E tooling.** The E2E web build now writes to `apps/web/.next-e2e` (`NEXT_DIST_DIR`) so it can run while `pnpm dev` owns `.next`, as the Playwright config already promised.
+
+Tests:
+- `packages/ui/src/test/us-ops-32.test.tsx` (10): light background and surface in tokens, web CSS and native; dark unchanged; on-surface, muted, primary, paid, due-soon and overdue pass 4.5:1 on both background and surface; AppShell paints `background` while Card, Table and secondary Button paint `surface`; focus-ring gap is `surface`.
+- `apps/e2e/tests/us-ops-32.spec.ts` (3): on a demo org the body is `rgb(247, 246, 243)` with a white sidebar, table container and "Edit layout" button; dark mode keeps `#121110`/`#191815`; the public quote page is white.
+
+### 2026-10-05 — Spec: construction job costing and light-mode surfaces (Phase 7 planning, docs only)
+
+Ideas reviewed from a client's AI-generated prototype ("BuildLedger.Pro", a single HTML file) and specced as Phase 7 stories. Nothing is built yet; every story is unticked in `docs/progress.md`.
+
+- **Stories (12).** US-JOB-24 cost budget, US-JOB-25 budget used and the over-budget attention row, US-JOB-26 cost by category, US-JOB-27 billed to date, US-JOB-28 percent complete vs billed, US-JOB-29 progress claim numbers, US-PUR-22 job filter on bills and expenses, US-PUR-23 labour as headcount × day rate, US-ONB-13 Construction template cost categories, US-RPT-15 contract/billed/cost chart, US-DASH-20 retention held and jobs in progress, US-OPS-32 warm light-mode page so cards lift off it.
+- **Decisions.** D-125 (one budget per job, never posted), D-126 (labour is an expense, not payroll or attendance), D-127 (billed to date is gross, from journal lines), D-128 (per-job claim label beside the gapless number), D-129 (template seeding is idempotent), D-130 (retention never reduces taxable value), D-131 (light `background` `#F7F6F3`, `surface` stays white).
+- **Contracts.** New columns and the `expense_labour_lines` table in 04, route changes in 05's contract additions, notes in 06 and 07 (no new capabilities). Q-16 (claimed vs certified amounts) added to open questions.
+- **Design.** Nine new drawn screens (`JobCostingBudget`, `JobEditDialogBudget`, `JobsListBilling`, `InvoiceDetailProgressClaim`, `ReportsJobProfitabilityChart`, `DashboardOwnerConstruction`, `ExpenseDialogLabour`, `ExpensesJobFilter`, `ExpenseCategoriesConstruction`) on the canvas and in `docs/design/screens/`; the four light dashboard redesign screens redrawn on the warm page. `tokens.json`, `DESIGN.md` and the Tailwind preset keep `#FFFFFF` until US-OPS-32 is built.
+- Not adopted from the prototype: deleting issued bills, expenses without approval, and tax computed after retention.
+
 ### 2026-10-05 — US-OPS-21: remove developer wording from the interface (Phase 6)
 
 - **Helpers.**

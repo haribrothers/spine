@@ -666,6 +666,113 @@ export class QuotesService {
   }
 
   /**
+   * US-QUO-24 (D-096) — a new draft from any quote: same contact, lines,
+   * notes and terms, with the lines' own snapshot prices and tax (never
+   * re-read from the catalogue). It isn't a revision (no parent, version 1,
+   * no number) and gets a fresh validity date: today plus the original's
+   * validity period, or 30 days when it had none. History opens with
+   * "Duplicated from <number>".
+   */
+  async duplicate(orgId: string, id: string, actorUserId: string) {
+    const [source] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
+    if (!source) throw new NotFoundException("Quote not found");
+    const sourceLines = await this.db.select().from(quoteLines).where(eq(quoteLines.quoteId, id)).orderBy(quoteLines.sortOrder);
+
+    const DAY = 24 * 60 * 60 * 1000;
+    const start = source.sentAt ?? source.createdAt;
+    const periodDays = source.validUntil ? Math.max(1, Math.round((new Date(source.validUntil).getTime() - new Date(start).getTime()) / DAY)) : 30;
+    const validUntil = new Date(Date.now() + periodDays * DAY);
+
+    const copy = await this.db.transaction(async (tx) => {
+      const [row] = await tx
+        .insert(quotes)
+        .values({
+          orgId,
+          contactId: source.contactId,
+          status: "draft",
+          parentQuoteId: null,
+          version: 1,
+          validUntil,
+          currency: source.currency,
+          subtotalAmount: source.subtotalAmount,
+          discountAmount: source.discountAmount,
+          taxAmount: source.taxAmount,
+          totalAmount: source.totalAmount,
+          discountRequiresApproval: source.discountRequiresApproval,
+          notes: source.notes,
+          termsAndConditions: source.termsAndConditions,
+          createdByUserId: actorUserId,
+          isDemo: source.isDemo,
+        })
+        .returning();
+      if (sourceLines.length) {
+        await tx.insert(quoteLines).values(
+          sourceLines.map((line) => ({
+            quoteId: row!.id,
+            sortOrder: line.sortOrder,
+            type: line.type,
+            catalogItemId: line.catalogItemId,
+            name: line.name,
+            description: line.description,
+            quantity: line.quantity,
+            unitPriceAmount: line.unitPriceAmount,
+            unitPriceCurrency: line.unitPriceCurrency,
+            discountPercentage: line.discountPercentage,
+            taxRatePercentage: line.taxRatePercentage,
+            taxRateId: line.taxRateId,
+            taxGroupId: line.taxGroupId,
+            isTaxInclusive: line.isTaxInclusive,
+            lineSubtotalAmount: line.lineSubtotalAmount,
+            lineTaxAmount: line.lineTaxAmount,
+            lineTotalAmount: line.lineTotalAmount,
+          })),
+        );
+      }
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "duplicated",
+        entityType: "quote",
+        entityId: row!.id,
+        contactId: source.contactId,
+        changes: [{ field: "duplicatedFrom", from: null, to: source.number ?? `draft v${source.version}` }],
+      });
+      return row!;
+    });
+    return this.getOne(orgId, copy.id);
+  }
+
+  /**
+   * US-QUO-24 — "Email again" for a sent quote: queues the same quote email
+   * with a fresh public link. Earlier links keep working (US-QUO-22); the
+   * PDF is the one stored when it was sent (US-INV-17).
+   */
+  async resend(orgId: string, id: string, actorUserId: string) {
+    const { token } = await this.db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
+      if (!existing) throw new NotFoundException("Quote not found");
+      if (existing.status !== "sent") throw new BadRequestException("Only a sent quote can be emailed again.");
+      await tx.update(quotes).set({ emailStatus: "pending", emailError: null, updatedAt: new Date() }).where(eq(quotes.id, id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "email_queued",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [],
+      });
+      return this.publicTokens.issue(tx, orgId, id);
+    });
+    try {
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
+    } catch (err) {
+      this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
+    }
+    return this.getOne(orgId, id);
+  }
+
+  /**
    * S-03.9 — owner approves a quote whose blended discount met/exceeded the
    * org's threshold. Owner-only, enforced via `@OrgRoles(["owner"])` on the
    * controller route (server-side authorization per CLAUDE.md — the role

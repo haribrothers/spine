@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -54,6 +54,7 @@ import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
@@ -87,6 +88,8 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
   const [isConstruction, setIsConstruction] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  // US-DASH-20: the dashboard's "Release" opens ?release=1 — the dialog, once the job shows it can be released.
+  const wantsRelease = searchParams.get("release") === "1";
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -116,6 +119,13 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
 
   const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
   const canReleaseRetention = useCapability("jobs.release_retention");
+  const releaseAsked = useRef(false);
+  useEffect(() => {
+    if (wantsRelease && !releaseAsked.current && job && canReleaseRetention && (job.retentionPct ?? 0) > 0) {
+      releaseAsked.current = true;
+      setReleaseOpen(true);
+    }
+  }, [wantsRelease, job, canReleaseRetention]);
   // US-JOB-19: job costing is financial reporting; Field never has this grant.
   const canViewCosting = useCapability("reports.view_job_profitability");
 
@@ -246,7 +256,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </TabsContent>
         {canViewCosting && (
           <TabsContent value="costing">
-            <CostingSection job={job} />
+            <CostingSection job={job} onEditJob={canEditJob ? () => setEditOpen(true) : undefined} />
           </TabsContent>
         )}
       </Tabs>
@@ -317,6 +327,10 @@ function EditJobDialog({
   const [endDate, setEndDate] = useState<Date | undefined>(job.endDate ? new Date(job.endDate) : undefined);
   const [retentionPct, setRetentionPct] = useState(job.retentionPct ?? 0);
   const [notes, setNotes] = useState(job.notes ?? "");
+  const [budget, setBudget] = useState(budgetText(job));
+  const [budgetError, setBudgetError] = useState<string | undefined>();
+  const [percentComplete, setPercentComplete] = useState(job.percentComplete == null ? "" : String(job.percentComplete));
+  const [percentError, setPercentError] = useState<string | undefined>();
   const [advancedOpen, setAdvancedOpen] = useState((job.retentionPct ?? 0) > 0 || defaultShowRetention);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +344,10 @@ function EditJobDialog({
     setEndDate(job.endDate ? new Date(job.endDate) : undefined);
     setRetentionPct(job.retentionPct ?? 0);
     setNotes(job.notes ?? "");
+    setBudget(budgetText(job));
+    setBudgetError(undefined);
+    setPercentComplete(job.percentComplete == null ? "" : String(job.percentComplete));
+    setPercentError(undefined);
     setAdvancedOpen((job.retentionPct ?? 0) > 0 || defaultShowRetention);
     setError(null);
   }, [open, job, defaultShowRetention]);
@@ -339,10 +357,26 @@ function EditJobDialog({
       setError("Job name is required.");
       return;
     }
+    // US-JOB-24 — blank means "not budgeted".
+    const budgetAmount = budget.trim() ? fromDecimalString(budget.replace(/,/g, "").trim(), job.currency) : null;
+    if (budget.trim() && (budgetAmount === null || budgetAmount < 0n)) {
+      setBudgetError(BUDGET_NOT_NEGATIVE);
+      return;
+    }
+    setBudgetError(undefined);
+    // US-JOB-28 — blank means "not set".
+    const percent = percentComplete.trim() === "" ? null : Number(percentComplete);
+    if (percent !== null && (!Number.isFinite(percent) || percent < 0 || percent > 100)) {
+      setPercentError(PERCENT_COMPLETE_RANGE);
+      return;
+    }
+    setPercentError(undefined);
     setSaving(true);
     setError(null);
     try {
       const updated = await apiClient.put<Job>(`/jobs/${job.id}`, {
+        ...(job.costBudgetAmount !== undefined ? { costBudgetAmount: budgetAmount === null ? null : budgetAmount.toString() } : {}),
+        percentComplete: percent,
         name: name.trim(),
         siteAddress: siteAddress || null,
         status,
@@ -428,6 +462,22 @@ function EditJobDialog({
               </FormField>
             </CollapsibleContent>
           </Collapsible>
+
+          {job.costBudgetAmount !== undefined && (
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <h3 className="text-[13px] font-semibold text-on-surface">Budget and progress</h3>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label="Cost budget" helperText="What you expect this job to cost. Leave blank if you don't budget it." errorText={budgetError}>
+                  {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="—" />}
+                </FormField>
+                <FormField label="Percent complete" helperText="Your estimate of how much of the work is done." errorText={percentError}>
+                  {(field) => (
+                    <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={percentComplete} onChange={(e) => setPercentComplete(e.target.value)} placeholder="—" />
+                  )}
+                </FormField>
+              </div>
+            </div>
+          )}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
@@ -440,4 +490,13 @@ function EditJobDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** The budget as the field shows it ("32000.00"), or blank when the job has none. */
+function budgetText(job: Job): string {
+  if (!job.costBudgetAmount) return "";
+  // An editable number, not a display amount: digits and a decimal point only.
+  const exp = minorUnitExponent(job.currency);
+  const digits = job.costBudgetAmount.padStart(exp + 1, "0");
+  return exp ? `${digits.slice(0, -exp)}.${digits.slice(-exp)}` : digits;
 }

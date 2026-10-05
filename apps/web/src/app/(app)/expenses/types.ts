@@ -42,6 +42,9 @@ export interface Expense {
   journalEntryId: string | null;
   createdAt: string;
   updatedAt: string;
+  /** US-PUR-23 — "labour" when entered as headcount × day rate. */
+  entryMode?: "amount" | "labour";
+  labourLines?: { id: string; trade: string; headcount: number; dayRateAmount: string; lineAmount: string }[];
 }
 
 export interface ExpenseCategory {
@@ -49,6 +52,9 @@ export interface ExpenseCategory {
   orgId: string;
   name: string;
   accountId: string | null;
+  /** US-PUR-23 — the posting account, e.g. "5200" / "Direct Labour". */
+  accountCode?: string | null;
+  accountName?: string | null;
   createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;

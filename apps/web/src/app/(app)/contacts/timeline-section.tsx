@@ -154,7 +154,7 @@ export function TimelineSection({ contactId }: { contactId: string }) {
       ) : items.length > 0 ? (
         <Timeline items={items} />
       ) : (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<History />}
             title="Nothing yet"

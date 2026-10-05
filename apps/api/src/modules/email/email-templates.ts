@@ -55,30 +55,44 @@ export function invoiceEmail(d: {
   retention: bigint;
   balanceDue: bigint;
   dueDate: Date | string | null;
+  /**
+   * A reminder (manual S-05.10 or automatic US-INV-19). `daysOverdue` is
+   * days past the due date: negative means due in that many days, 0 due today.
+   */
   reminder?: { daysOverdue: number | null };
   paymentInstructions?: string | null;
+  /** US-JOB-29 — "Progress claim 3 · JOB-002". */
+  claimLabel?: string | null;
 }): EmailTemplate {
-  const overdue = d.reminder
-    ? d.reminder.daysOverdue !== null
-      ? `${d.reminder.daysOverdue} day${d.reminder.daysOverdue === 1 ? "" : "s"} overdue`
-      : "overdue"
-    : null;
   const paid = d.balanceDue <= 0n;
   const instructions = d.paymentInstructions?.trim();
+  const days = d.reminder?.daysOverdue ?? null;
+  // US-INV-19: "is 7 days overdue", "is due today", "is due in 3 days".
+  const state = !d.reminder
+    ? null
+    : days === null
+      ? "is overdue"
+      : days > 0
+        ? `is ${days} day${days === 1 ? "" : "s"} overdue`
+        : days === 0
+          ? "is due today"
+          : `is due in ${-days} day${days === -1 ? "" : "s"}`;
+  const dueOn = d.dueDate ? emailDate(d.dueDate) : null;
   return {
-    subject: overdue ? `Reminder: ${d.number} is now ${overdue}` : `${d.businessName} sent you an invoice (${d.number})`,
+    subject: state ? `Reminder: invoice ${d.number} ${state}` : `${d.businessName} sent you an invoice (${d.number})`,
     content: {
-      preheader: overdue ? `Invoice ${d.number} is ${overdue}.` : `${d.businessName} sent you an invoice (${d.number}).`,
-      heading: overdue ? "Your invoice is overdue" : "Your invoice is ready",
+      preheader: state ? `Invoice ${d.number} ${state}.` : `${d.businessName} sent you an invoice (${d.number}).`,
+      heading: state ? `Invoice ${d.number} ${state}` : "Your invoice is ready",
       greeting: `Hi ${firstName(d.contactName)},`,
       paragraphs: [
-        overdue
-          ? `This is a friendly reminder that invoice ${d.number} from ${d.businessName} is now overdue.`
+        state
+          ? `This is a friendly reminder that invoice ${d.number} ${days !== null && days > 0 ? "was due" : "is due"}${dueOn ? ` on ${dueOn}` : ""}. If you've already paid, thank you — please ignore this email.`
           : `Here's invoice ${d.number} from ${d.businessName}, attached as a PDF.`,
         ...(paid ? ["This invoice is already paid in full — nothing is owing."] : []),
       ],
       facts: [
         { label: "Invoice", value: d.number },
+        ...(d.claimLabel ? [{ label: "Claim", value: d.claimLabel }] : []),
         { label: "Total", value: emailMoney(d.total, d.currency, d.locale) },
         ...(d.retention > 0n ? [{ label: "Retention held", value: emailMoney(-d.retention, d.currency, d.locale) }] : []),
         { label: "Balance due", value: emailMoney(paid ? 0n : d.balanceDue, d.currency, d.locale) },
@@ -134,6 +148,32 @@ export function receiptEmail(d: {
       facts: [
         { label: "Receipt", value: d.number },
         { label: "Amount", value: emailMoney(d.amount, d.currency, d.locale) },
+      ],
+      note: REPLY_NOTE,
+    },
+  };
+}
+
+/** US-PAY-14 — a customer statement, with the PDF attached and the sender's own message. */
+export function statementEmail(d: {
+  locale?: string;
+  businessName: string;
+  contactName: string | null;
+  period: string;
+  balanceDue: bigint;
+  currency: string;
+  message?: string | null;
+}): EmailTemplate {
+  const balance = emailMoney(d.balanceDue, d.currency, d.locale);
+  return {
+    subject: `Your statement from ${d.businessName} (${d.period})`,
+    content: {
+      heading: "Your statement",
+      greeting: d.message ? undefined : `Hi ${firstName(d.contactName)},`,
+      paragraphs: d.message ? d.message.split(/\n{2,}/) : [`Here's your statement for ${d.period}, attached as a PDF. It lists every invoice, payment and credit in that time.`],
+      facts: [
+        { label: "Period", value: d.period },
+        { label: "Balance due", value: balance },
       ],
       note: REPLY_NOTE,
     },

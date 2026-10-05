@@ -66,10 +66,13 @@ export function NewVendorPaymentDialog({
   open,
   onOpenChange,
   onRecorded,
+  initialContactId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onRecorded: () => void;
+  /** US-DASH-13 — "Pay bill" opens the dialog on that bill's vendor. */
+  initialContactId?: string;
 }) {
   const [contactId, setContactId] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -84,7 +87,7 @@ export function NewVendorPaymentDialog({
 
   useEffect(() => {
     if (!open) return;
-    setContactId("");
+    setContactId(initialContactId ?? "");
     setAmount(0n);
     setDate(new Date());
     setMethod("bank_transfer");
@@ -92,7 +95,7 @@ export function NewVendorPaymentDialog({
     setOutstanding(null);
     setAllocations([]);
     setError(null);
-  }, [open]);
+  }, [open, initialContactId]);
 
   useEffect(() => {
     if (!open || !contactId) {
@@ -258,7 +261,7 @@ export function NewVendorPaymentDialog({
                   <Spinner size="sm" />
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-3">
                   {allocations.length === 0 && (
                     <p className="text-[13px] text-on-surface-muted">
                       No bill allocated yet — allocate the full payment amount before saving.

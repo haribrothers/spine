@@ -3,7 +3,6 @@ import { currencyCodeSchema, uuidSchema } from "./common.ts";
 
 export const contactTypeSchema = z.enum(["customer", "vendor", "both"]);
 export const addressTypeSchema = z.enum(["billing", "shipping", "site", "other"]);
-export const leadStageSchema = z.enum(["new", "qualified", "proposal", "won", "lost"]);
 export const activityTypeSchema = z.enum(["call", "meeting", "note", "task"]);
 
 export const contactPersonInputSchema = z.object({
@@ -74,13 +73,16 @@ export const updateContactSchema = z.object({
   taxId: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
   logoFileId: uuidSchema.optional().nullable(),
+  /** US-INV-19 — "Pause automatic reminders" for this contact's invoices. */
+  remindersPaused: z.boolean().optional(),
   contactPersons: z.array(contactPersonInputSchema).optional(),
   addresses: z.array(addressInputSchema).optional(),
 });
 
 export const createLeadSchema = z.object({
   contactId: uuidSchema,
-  stage: leadStageSchema.optional(),
+  /** US-CRM-19 — one of the organisation's pipeline stages; the first open stage when omitted. */
+  stageId: uuidSchema.optional(),
   valueAmount: z.coerce.bigint().optional(),
   valueCurrency: currencyCodeSchema,
   source: z.string().optional().nullable(),

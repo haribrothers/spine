@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { ProfileView } from "./profile-view";
 
@@ -11,8 +12,11 @@ import { ProfileView } from "./profile-view";
 export default function ProfilePage() {
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Profile & Preferences" }]} title="Profile & Preferences" />
-      <ProfileView />
+      <AppShellHeader breadcrumb={[{ label: "Account" }]} title="Profile & Preferences" description="Your personal account settings. Only you can change these." />
+      {/* ProfileView reads ?tab= via useSearchParams, which needs a Suspense boundary. */}
+      <Suspense>
+        <ProfileView />
+      </Suspense>
     </>
   );
 }

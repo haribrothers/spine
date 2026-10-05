@@ -23,7 +23,8 @@ import {
 } from "@spine/ui";
 import { ArrowUpDown, Plus, Search, SlidersHorizontal, Target } from "lucide-react";
 import { LeadDialog } from "./lead-dialog";
-import { LEAD_STAGES, LEAD_STAGE_LABELS, type Contact, type Lead, type LeadStage } from "../contacts/types";
+import { type Contact, type Lead, type LeadStage } from "../contacts/types";
+import { useLeadStages } from "../contacts/use-lead-stages";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
@@ -46,7 +47,6 @@ const SORTERS: Record<SortKey, (a: Lead, b: Lead) => number> = {
   title: (a, b) => (a.title ?? "").localeCompare(b.title ?? ""),
 };
 
-const STAGE_OPTIONS = LEAD_STAGES.map((s) => ({ value: s, label: LEAD_STAGE_LABELS[s] }));
 
 const BOARD_VIEW_STORAGE_KEY = "spine.leads.view-settings";
 
@@ -80,7 +80,10 @@ export function LeadsBoard() {
   const [viewSettings, setViewSettings] = useState<ViewSettings>(DEFAULT_VIEW_SETTINGS);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
-  const [createStage, setCreateStage] = useState<LeadStage | undefined>(undefined);
+  const [createStage, setCreateStage] = useState<string | undefined>(undefined);
+  // US-CRM-19: the columns are the organisation's own stages.
+  const { stages, error: stagesError } = useLeadStages();
+  const stageOptions = useMemo(() => (stages ?? []).map((s) => ({ value: s.id, label: s.name })), [stages]);
 
   useEffect(() => {
     const stored = window.localStorage.getItem(BOARD_VIEW_STORAGE_KEY);
@@ -125,7 +128,7 @@ export function LeadsBoard() {
     if (!leads) return null;
     const query = search.trim().toLowerCase();
     return leads.filter((lead) => {
-      if (stageFilter.length > 0 && !stageFilter.includes(lead.stage)) return false;
+      if (stageFilter.length > 0 && !stageFilter.includes(lead.stageId)) return false;
       if (!query) return true;
       const contact = contactsById.get(lead.contactId);
       return (lead.title ?? "").toLowerCase().includes(query) || (contact?.name ?? "").toLowerCase().includes(query);
@@ -133,28 +136,28 @@ export function LeadsBoard() {
   }, [leads, search, stageFilter, contactsById]);
 
   const columns = useMemo(() => {
-    const grouped = new Map<LeadStage, Lead[]>(LEAD_STAGES.map((s) => [s, []]));
+    const grouped = new Map<string, Lead[]>((stages ?? []).map((s) => [s.id, []]));
     for (const lead of filteredLeads ?? []) {
-      grouped.get(lead.stage)?.push(lead);
+      grouped.get(lead.stageId)?.push(lead);
     }
     const sorter = SORTERS[sort];
     for (const rows of grouped.values()) rows.sort(sorter);
     return grouped;
-  }, [filteredLeads, sort]);
+  }, [filteredLeads, sort, stages]);
 
   async function moveLead(lead: Lead, stage: LeadStage) {
-    if (lead.stage === stage) return;
-    setLeads((prev) => prev?.map((l) => (l.id === lead.id ? { ...l, stage } : l)) ?? prev);
+    if (lead.stageId === stage.id) return;
+    setLeads((prev) => prev?.map((l) => (l.id === lead.id ? { ...l, stageId: stage.id, stageName: stage.name, stageKind: stage.kind } : l)) ?? prev);
     try {
-      await apiClient.put(`/leads/${lead.id}`, { stage });
+      await apiClient.put(`/leads/${lead.id}`, { stageId: stage.id });
     } catch {
       loadLeads();
     }
   }
 
-  function openCreateDialog(stage?: LeadStage) {
+  function openCreateDialog(stageId?: string) {
     setEditingLead(null);
-    setCreateStage(stage);
+    setCreateStage(stageId);
     setDialogOpen(true);
   }
 
@@ -175,18 +178,18 @@ export function LeadsBoard() {
     setLeads((prev) => prev?.filter((l) => l.id !== leadId) ?? prev);
   }
 
-  if (error) {
+  if (error || stagesError) {
     return (
       <Alert variant="critical">
-        <AlertDescription>{error}</AlertDescription>
+        <AlertDescription>{error ?? stagesError}</AlertDescription>
       </Alert>
     );
   }
 
-  if (!leads) {
+  if (!leads || !stages) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {LEAD_STAGES.map((s) => (
+        {[0, 1, 2, 3, 4].map((s) => (
           <Skeleton key={s} className="h-96 rounded-lg" />
         ))}
       </div>
@@ -207,7 +210,7 @@ export function LeadsBoard() {
             />
           </div>
           <MultiSelect
-            options={STAGE_OPTIONS}
+            options={stageOptions}
             value={stageFilter}
             onValueChange={setStageFilter}
             placeholder="All stages"
@@ -270,7 +273,7 @@ export function LeadsBoard() {
       </div>
 
       {filteredLeads && filteredLeads.length === 0 && leads.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
             title="No leads yet"
@@ -279,7 +282,7 @@ export function LeadsBoard() {
           />
         </div>
       ) : filteredLeads && filteredLeads.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Target />}
             title="No leads match these filters"
@@ -299,18 +302,18 @@ export function LeadsBoard() {
         </div>
       ) : (
         <KanbanBoard className="min-h-0 flex-1">
-          {LEAD_STAGES.map((stage) => {
-            const stageLeads = columns.get(stage) ?? [];
+          {stages.map((stage) => {
+            const stageLeads = columns.get(stage.id) ?? [];
             const totalsByCurrency = new Map<string, number>();
             for (const lead of stageLeads) {
               totalsByCurrency.set(lead.valueCurrency, (totalsByCurrency.get(lead.valueCurrency) ?? 0) + Number(lead.valueAmount));
             }
-            const isLost = stage === "lost";
+            const isLost = stage.kind === "lost";
 
             return (
               <KanbanColumn
-                key={stage}
-                title={LEAD_STAGE_LABELS[stage]}
+                key={stage.id}
+                title={stage.name}
                 meta={stageLeads.length}
                 className={isLost ? "border-overdue bg-overdue-bg" : undefined}
                 subtitle={
@@ -347,7 +350,7 @@ export function LeadsBoard() {
                   );
                 })}
                 {canCreate && (
-                  <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreateDialog(stage)}>
+                  <Button variant="ghost" size="sm" className="justify-start text-on-surface-muted" onClick={() => openCreateDialog(stage.id)}>
                     <Plus size={14} />
                     Add lead
                   </Button>
@@ -364,7 +367,8 @@ export function LeadsBoard() {
         lead={editingLead}
         contacts={contacts}
         leads={leads}
-        defaultStage={createStage}
+        stages={stages}
+        defaultStageId={createStage}
         onSaved={handleSaved}
         onDeleted={handleDeleted}
       />

@@ -2,6 +2,7 @@ import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/render
 import type { quotes, quoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
+import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 
 export interface QuotePdfBusinessProfile {
   name: string;
@@ -11,6 +12,8 @@ export interface QuotePdfBusinessProfile {
 }
 
 export interface QuotePdfData {
+  /** US-SET-10 — document colour and footer from Settings › Branding. */
+  branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
   locale?: string;
   quote: typeof quotes.$inferSelect;
@@ -99,13 +102,15 @@ function formatDate(value: Date | string | null): string {
  * app uses the same formatter), never a hand-rolled division, so this template can never
  * silently misplace a decimal point.
  */
-export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale }: QuotePdfData) {
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding }: QuotePdfData) {
+  const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = quote.currency;
   const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
 
   return (
     <Document title={quote.number ?? "Quote"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+        <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
             {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
@@ -115,7 +120,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={styles.docTitle}>QUOTE</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>QUOTE</Text>
             <Text style={styles.docNumber}>{quote.number ?? "DRAFT"}</Text>
           </View>
         </View>
@@ -188,7 +193,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Total</Text>
-            <Text style={styles.grandTotalValue}>{fmt(quote.totalAmount)}</Text>
+            <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(quote.totalAmount)}</Text>
           </View>
         </View>
 
@@ -210,6 +215,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
         )}
 
+        <DocumentFooterLine footer={brand.footer} />
         <Text
           style={styles.pageFooter}
           render={({ pageNumber, totalPages }) => `${quote.number ?? "Draft quote"} · Page ${pageNumber} of ${totalPages}`}

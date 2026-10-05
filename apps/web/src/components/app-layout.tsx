@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { AppShell, AppShellContent, AppShellSidebar } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
+import { SearchButton, SearchPalette } from "./search-palette";
 import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
@@ -89,6 +90,8 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
   const access = pageAccessFor(pathname ?? "", role, capabilities);
   const [collapsed, setCollapsed] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  // US-OPS-22: the search palette, opened by ⌘K / Ctrl+K or the search button.
+  const [searchOpen, setSearchOpen] = useState(false);
   const fullWidth = FULL_WIDTH_ROUTES.some((route) => pathname === route || pathname?.startsWith(`${route}/`));
 
   useEffect(() => {
@@ -118,6 +121,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
         userMenu={
           (hydrated ? collapsed : false) ? (
             <div className="flex flex-col items-center gap-1">
+              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed />
               <NotificationBell collapsed />
               <AppUserMenu name={userName} email={userEmail} collapsed isOwner={isOwner} />
@@ -127,6 +131,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
               <div className="min-w-0 flex-1">
                 <AppUserMenu name={userName} email={userEmail} collapsed={false} isOwner={isOwner} />
               </div>
+              <SearchButton onClick={() => setSearchOpen(true)} />
               <HelpButton collapsed={false} />
               <NotificationBell collapsed={false} />
             </div>
@@ -140,6 +145,7 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
           <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />
         ) : null}
       </AppShellContent>
+      <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} />
     </AppShell>
   );
 }

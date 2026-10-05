@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
+import { bundleLines, useBundles } from "../../../lib/bundles";
 import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -129,10 +131,8 @@ export function InvoiceLineEditor({
       .catch(() => {});
   }, []);
 
-  const catalogOptions = useMemo(
-    () => catalogItems.filter((i) => !i.archivedAt).map((i) => ({ value: i.id, label: i.name })),
-    [catalogItems],
-  );
+  // US-QUO-26: the same item picker as quotes, with bundles in this invoice's currency.
+  const { bundles, pickerBundles } = useBundles(currency);
 
   const taxOptions = useMemo(
     () => [
@@ -168,6 +168,15 @@ export function InvoiceLineEditor({
     onChange([...lines, blankLine(type)]);
   }
 
+  /** Replaces the line the bundle was picked on with the bundle's lines, in order. */
+  function insertBundle(index: number, bundleId: string) {
+    const bundle = bundles.find((b) => b.id === bundleId);
+    if (!bundle) return;
+    const activeIds = new Set(catalogItems.filter((i) => !i.archivedAt).map((i) => i.id));
+    const added = bundleLines(bundle, activeIds).map((fields) => ({ ...blankLine(fields.type), ...fields }));
+    onChange([...lines.slice(0, index), ...added, ...lines.slice(index + 1)]);
+  }
+
   function applyCatalogItem(index: number, catalogItemId: string) {
     const item = catalogItems.find((i) => i.id === catalogItemId);
     if (!item) return;
@@ -186,7 +195,7 @@ export function InvoiceLineEditor({
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-3">
         {lines.map((line, index) => (
-          <div key={line.key} className="rounded-lg border border-border p-3">
+          <div key={line.key} className="rounded-lg border border-border bg-surface p-3">
             <div className="flex items-start gap-2">
               <div className="flex flex-col gap-1 pt-1">
                 <button
@@ -214,7 +223,9 @@ export function InvoiceLineEditor({
                   <ItemLineFields
                     line={line}
                     currency={currency}
-                    catalogOptions={catalogOptions}
+                    catalogItems={catalogItems}
+                    bundles={pickerBundles}
+                    onPickBundle={(id) => insertBundle(index, id)}
                     taxOptions={taxOptions}
                     taxRates={taxRates}
                     taxGroups={taxGroups}
@@ -257,7 +268,9 @@ export function InvoiceLineEditor({
 function ItemLineFields({
   line,
   currency,
-  catalogOptions,
+  catalogItems,
+  bundles,
+  onPickBundle,
   taxOptions,
   taxRates,
   taxGroups,
@@ -266,7 +279,9 @@ function ItemLineFields({
 }: {
   line: EditableInvoiceLine;
   currency: string;
-  catalogOptions: { value: string; label: string }[];
+  catalogItems: CatalogItemOption[];
+  bundles: PickerBundle[];
+  onPickBundle: (id: string) => void;
   taxOptions: { value: string; label: string }[];
   taxRates: TaxRateOption[];
   taxGroups: TaxGroupOption[];
@@ -288,17 +303,18 @@ function ItemLineFields({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Input value={line.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="Item name" required />
-        <div className="w-48">
-          <Combobox
-            options={catalogOptions}
-            value={line.catalogItemId ?? undefined}
-            onValueChange={onApplyCatalogItem}
-            placeholder="Prefill from catalogue…"
-          />
-        </div>
-      </div>
+      <LineItemPicker
+        name={line.name}
+        onNameChange={(name) => onChange({ name })}
+        items={catalogItems}
+        bundles={bundles}
+        onPickBundle={onPickBundle}
+        currency={currency}
+        canSaveToCatalogue={false}
+        saveToCatalogue={false}
+        onPickItem={onApplyCatalogItem}
+        onOneOff={() => onChange({ catalogItemId: null })}
+      />
       <Input
         value={line.description}
         onChange={(e) => onChange({ description: e.target.value })}

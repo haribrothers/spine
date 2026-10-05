@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, bigint, integer, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { files } from "./files";
@@ -70,6 +70,8 @@ export const contacts = pgTable(
      * touches these rows, never real customer/vendor data. Not surfaced in
      * any list UI — it's purely a filter key for that one bulk-delete op.
      */
+    /** US-INV-19 — "Pause automatic reminders": the reminder run skips this contact's invoices. */
+    remindersPaused: boolean("reminders_paused").notNull().default(false),
     isDemo: boolean("is_demo").notNull().default(false),
     /**
      * PRD §2.1/§9 S-01.15 — the "own vs others" capability split
@@ -156,15 +158,36 @@ export const addresses = pgTable(
 );
 
 /**
- * Fixed pipeline stages for v1. PRD F1 says "configurable stages" but true
- * per-org configurable stages (add/rename/reorder) is a materially bigger
- * feature (a stages table, referential integrity when a stage is deleted
- * out from under existing leads, a reorder UI) — deferred per the task
- * brief. This enum is deliberately the seam: swapping it for a
- * `lead_stages` table later only touches this file and the pipeline
- * board/list UI, not the rest of the leads model.
+ * US-CRM-19 (D-062) — what a pipeline stage means for reporting, whatever
+ * it's called: an open opportunity, or closed as won or lost. Renaming a
+ * stage never changes its kind.
  */
-export const leadStageEnum = pgEnum("lead_stage", ["new", "qualified", "proposal", "won", "lost"]);
+export const leadStageKindEnum = pgEnum("lead_stage_kind", ["open", "won", "lost"]);
+
+/**
+ * US-CRM-19 — an organisation's own pipeline stages (the board's columns).
+ * Up to 12; exactly one `won` and one `lost`, always last (enforced in
+ * LeadStagesService). `color` is a design-token category name (slate,
+ * blue, teal, amber, green, red, purple, pink), never a hex value.
+ * Seeded with New / Qualified / Proposal / Won / Lost for every
+ * organisation (migration 0063 and sign-up).
+ */
+export const leadStages = pgTable(
+  "lead_stages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    kind: leadStageKindEnum("kind").notNull().default("open"),
+    sortOrder: integer("sort_order").notNull(),
+    color: text("color").notNull().default("slate"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("lead_stages_org_idx").on(table.orgId, table.sortOrder)],
+);
 
 /**
  * PRD F1 "MUST track leads through configurable stages with an estimated
@@ -190,7 +213,9 @@ export const leads = pgTable(
     contactId: uuid("contact_id")
       .notNull()
       .references(() => contacts.id, { onDelete: "cascade" }),
-    stage: leadStageEnum("stage").notNull().default("new"),
+    stageId: uuid("stage_id")
+      .notNull()
+      .references(() => leadStages.id, { onDelete: "restrict" }),
     valueAmount: bigint("value_amount", { mode: "bigint" }).notNull().default(sql`0`),
     valueCurrency: text("value_currency").notNull(),
     source: text("source"),
@@ -216,7 +241,7 @@ export const leads = pgTable(
   },
   (table) => [
     index("leads_org_idx").on(table.orgId),
-    index("leads_org_stage_idx").on(table.orgId, table.stage),
+    index("leads_org_stage_idx").on(table.orgId, table.stageId),
     index("leads_contact_idx").on(table.contactId),
     index("leads_owner_idx").on(table.ownerUserId),
     index("leads_created_by_idx").on(table.createdByUserId),

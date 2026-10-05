@@ -9,9 +9,11 @@ export type AuditEntityType =
   | "contact_person"
   | "address"
   | "lead"
+  | "lead_stage"
   | "activity"
   | "meeting"
   | "catalog_item"
+  | "catalog_bundle"
   | "quote"
   | "quote_line"
   | "invoice"
@@ -28,7 +30,12 @@ export type AuditEntityType =
   | "vendor_bill_line"
   | "expense_category"
   | "expense"
-  | "vendor_payment";
+  | "vendor_payment"
+  | "recurring_invoice"
+  // US-SET-11: role and access changes; entity id is the member's user id.
+  | "user"
+  // US-SET-16: data exports prepared and downloaded.
+  | "data_export";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

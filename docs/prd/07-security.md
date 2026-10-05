@@ -30,7 +30,7 @@
 |---|---|---|---|
 | Owner | One or more; full access to everything | No | Exactly one **Primary Owner** (DB partial unique index); only they can transfer that flag, and nobody can demote, deactivate or remove them |
 | Staff | Office users | Yes — through Teams | Effective grant = union of their Teams' grants; no deny. Removing the last Team leaves read-only access |
-| Field | Field crew | No (fixed) | Reads contacts/catalogue and only jobs they're assigned to, with no money fields ([D-072](12-decisions.md), US-JOB-19); own expenses; photos/notes on assigned jobs; completes any milestone on an assigned job; presents, accepts and declines the job's quotes in person ([D-073](12-decisions.md)); never financial reports or job costing |
+| Field | Field crew | No (fixed) | Reads contacts/catalogue and only jobs they're assigned to, with no money fields — including the cost budget (US-JOB-24) — ([D-072](12-decisions.md), US-JOB-19); own expenses; photos/notes on assigned jobs; completes any milestone on an assigned job; presents, accepts and declines the job's quotes in person ([D-073](12-decisions.md)); never financial reports or job costing |
 | Customer | Quote link holder | — | Reads one quote; accepts or declines while it's `sent` |
 
 ## What every member can do without a capability
@@ -61,7 +61,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | Quotes | `quotes.edit_own`, `quotes.edit_others`, `quotes.delete_own`, `quotes.delete_others`, `quotes.send`, `quotes.revise` | ✓ | — |
 | | `quotes.approve_discount` | ✗ | — |
 | | `quotes.accept_in_person` | ✓ | ✓F |
-| Invoices | `invoices.edit_own`, `invoices.edit_others`, `invoices.delete_own`, `invoices.delete_others`, `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder` | ✓ | — |
+| Invoices | `invoices.edit_own`, `invoices.edit_others`, `invoices.delete_own`, `invoices.delete_others`, `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder`, `invoices.manage_recurring` | ✓ | — |
 | Payments | `payments.edit_own` (create), `payments.edit_others` (reserved), `payments.delete_own`, `payments.delete_others`, `payments.apply_credit`, `payments.send_receipt` | ✓ | — |
 | Credit notes | `credit_notes.edit_own`, `credit_notes.edit_others`, `credit_notes.delete_own`, `credit_notes.delete_others`, `credit_notes.issue` | ✓ | — |
 | Expenses | `expenses.edit_own`, `expenses.delete_own` | ✓ | ✓F (own only) |
@@ -137,8 +137,26 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 
 ## Added with the Phase 7 feature round (D-087–D-097)
 
-- New Team-configurable capability `invoices.manage_recurring` (group "Manage Invoices"; General Staff default: granted). Gates every `/recurring-invoices` route. Add it to `CAPABILITIES`, `CAPABILITY_LABELS` and `DEFAULT_TEAM_GRANTS` with a backfill migration, like the other capabilities.
+- New Team-configurable capability `invoices.manage_recurring` (group "Manage Invoices"; General Staff default: granted). Gates every `/recurring-invoices` route, reads included, and the "Recurring invoices" link on Invoices. In `CAPABILITIES`, `CAPABILITY_LABELS` ("Manage recurring invoices") and `DEFAULT_TEAM_GRANTS`; migration `0067` backfills it onto every Team with the same grant as its `invoices.edit_own` (US-INV-20).
+- Field users filtering their expenses by job (`GET /expenses?jobId=`) get nothing for a job they aren't assigned to (US-PUR-22); the job list they pick from is their assigned jobs.
+- Customer statements (`/contacts/:id/statement*`, US-PAY-14) show what a customer owes, so every statement route needs `reports.view_receivables`; the "Send statement" button is hidden without it.
 - Data export is Owner-only, never Team-configurable (it copies everything). Export links are authorised per request and expire after 7 days; secrets are never exported.
-- Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs, their own expenses and contacts.
+- Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs and their own expenses (contacts are left out for Field too, since Field can't open contact pages, US-TEAM-18).
 - Bulk endpoints run each item through the same capability and ownership checks as the single-item route.
 - Statements require `reports.view_receivables`.
+- The Field dashboard (US-DASH-18) reads only Field-scoped data: `GET /dashboard/attention` gives Field milestones due on their assigned jobs and their own rejected expenses, and nothing else. `GET /dashboard/activity-feed` gives Field job and milestone events on their assigned jobs only, with no quote, payment or expense events. `GET /jobs?include=next_milestone` still strips money fields for Field. `GET /dashboard/kpis` returns `[]` for Field. The full feed page `/activity` (US-DASH-19) reads the same endpoint, so Field see the same filtered events there; it is on Field's page list.
+- Data export (US-SET-15/16, D-094) is Owner-only: `POST`/`GET /org/exports` are `@OrgRoles(["owner"])` (403 for Staff and Field). The download route answers 404 to anyone who isn't an Owner of the organisation and after expiry, and the ZIP's `files` row is refused by `/files/:id` for everyone. Secrets (password hashes, sessions, sign-in and public quote tokens, push subscriptions, VAPID/SMTP settings) are never exported. Preparing and downloading are audit-logged; the ready email links to Settings › Data export, never to the file.
+- The organisation audit log (`GET /org/audit-log*`, `/team/audit-log`, US-SET-11/12) is Owner-only and never Team-configurable; Staff and Field get 403 from the API and the no-access page on the web. Promoting, demoting, deactivating and reactivating a member and transferring primary ownership are each written to the audit log with the acting Owner.
+- The daily digest email (US-NTF-13) is built per member from the same server-side checks as their dashboard: attention rows by capability and ownership, Field limited to their assigned jobs and own expenses with no money at all, and "money received" only with `reports.view_receivables`. Notification preferences (`PUT /users/me/notification-preferences`) change only the caller's own row.
+
+## Added with the construction costing stories (D-125–D-130)
+
+No new capabilities: every new figure reuses an existing grant, in both the API and the UI.
+
+- Job cost budget (US-JOB-24) is a money field: changed with `jobs.edit_own`/`edit_others`, omitted from every Field response like the contract value (US-JOB-19). Percent complete (US-JOB-28) isn't money and Field may read it.
+- Budget used, cost by category and billed to date (US-JOB-25–27, US-RPT-15) come only from `GET /jobs/:id/costing`, `GET /jobs?include=costing` and `GET /reports/job-profitability`, all gated by `reports.view_job_profitability`. On `GET /jobs` the extra fields are omitted for callers without it, never a 403, so the list still works for them. The `job_over_budget` attention row follows the same grant.
+- The retention card (US-DASH-20) is a receivable: `reports.view_receivables`.
+- Labour expenses (US-PUR-23) follow the expense rules unchanged: Field submits their own; review needs `expenses.approve`/`expenses.reject`, never your own as Staff (D-085). `GET /expenses/labour-trades` returns trade names and day rates from expenses the caller may read, and nothing for a Field user beyond their own.
+- The cost-category drill-down (US-JOB-26) needs `ledger.view`, as the account drill-down already does.
+- Seeding the Construction template's accounts and categories (US-ONB-13) is part of the Owner-only industry template setting.
+

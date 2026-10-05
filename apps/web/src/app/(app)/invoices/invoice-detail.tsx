@@ -361,6 +361,16 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               </Link>
             </span>
           )}
+          {/* US-JOB-29 (D-128): the claim number is given at issue and kept when voided. */}
+          {invoice.type === "progress" &&
+            (invoice.progressClaimNo ? (
+              <span className="text-on-surface-muted">
+                Progress claim <span className="font-semibold text-on-surface">{invoice.progressClaimNo}</span>
+                {invoice.status === "void" ? " (void)" : ""} of this job
+              </span>
+            ) : (
+              invoice.status === "draft" && <span className="text-on-surface-muted">Claim number is given when the invoice is issued.</span>
+            ))}
         </Card>
       )}
 

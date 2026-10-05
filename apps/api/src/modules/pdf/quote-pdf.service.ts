@@ -6,6 +6,7 @@ import type { Database } from "../../db/client";
 import { quotes, quoteLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { resolveDocumentBranding } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { QuotePdfDocument, type QuotePdfBusinessProfile } from "./quote-pdf.template";
 
@@ -50,6 +51,10 @@ export class QuotePdfService {
       .orderBy(quoteLines.sortOrder);
 
     const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
+
+    // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
+
+    const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
     const buffer = await renderToBuffer(
@@ -61,6 +66,7 @@ export class QuotePdfService {
         business,
         logoDataUri,
         locale: await orgLocale(this.db, orgId),
+        branding,
       }),
     );
 

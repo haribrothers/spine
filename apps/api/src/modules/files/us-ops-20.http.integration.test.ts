@@ -13,6 +13,7 @@ import {
   jobAssignments,
   jobPhotos,
   jobs,
+  jobVariationOrders,
   member,
   quotes,
   session as sessionTable,
@@ -200,11 +201,19 @@ describe("US-OPS-20 · close the read-access gaps (requires local Postgres)", ()
     });
 
     it("quote PDFs: Field only for quotes on jobs they're assigned to", async () => {
-      const [onJob, unrelated] = await db
-        .select()
-        .from(quotes)
-        .where(and(eq(quotes.orgId, orgId), ne(quotes.status, "draft"), isNotNull(quotes.number)))
-        .limit(2);
+      // A variation-order quote on the assigned job is readable by Field too,
+      // so "unrelated" must be neither the job's source quote nor one of them.
+      const onAssignedJob = new Set(
+        (await db.select({ id: jobVariationOrders.quoteId }).from(jobVariationOrders).where(eq(jobVariationOrders.jobId, assignedJobId))).map((r) => r.id),
+      );
+      const candidates = (
+        await db
+          .select()
+          .from(quotes)
+          .where(and(eq(quotes.orgId, orgId), ne(quotes.status, "draft"), isNotNull(quotes.number)))
+          .orderBy(quotes.createdAt)
+      ).filter((q) => !onAssignedJob.has(q.id));
+      const [onJob, unrelated] = candidates;
       await db.update(jobs).set({ sourceQuoteId: onJob!.id }).where(eq(jobs.id, assignedJobId));
       const service = testApp.app.get(IssuedPdfService);
       const pdfOf = async (quoteId: string) => {

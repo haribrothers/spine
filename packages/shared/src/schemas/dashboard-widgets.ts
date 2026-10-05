@@ -28,16 +28,25 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
-  { key: "revenue-trend", capability: null, ownerOnly: true },
-  { key: "pipeline-by-stage", capability: null, ownerOnly: false },
-  { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false },
-  { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false },
-  { key: "overdue-followups", capability: null, ownerOnly: false },
-  { key: "upcoming-meetings", capability: null, ownerOnly: false },
-  { key: "invoices-due", capability: null, ownerOnly: false },
-  { key: "milestones-due", capability: null, ownerOnly: false },
-  { key: "activity-feed", capability: null, ownerOnly: false },
-] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean }[];
+  { key: "money-in-out", capability: "reports.view_dashboard_summary" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  { key: "pipeline-by-stage", capability: null, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-20 — shown by default only for the Construction template; elsewhere they start hidden.
+  { key: "retention-held", capability: "reports.view_receivables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: true },
+  { key: "jobs-in-progress", capability: "reports.view_job_profitability" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: true },
+  { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  { key: "activity-feed", capability: null, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  { key: "invoices-due", capability: null, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-18 — a Field user's own cards.
+  { key: "my-jobs", capability: null, ownerOnly: false, fieldOnly: true, constructionDefault: false },
+  { key: "my-expenses", capability: null, ownerOnly: false, fieldOnly: true, constructionDefault: false },
+  { key: "my-activity", capability: null, ownerOnly: false, fieldOnly: true, constructionDefault: false },
+] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean; fieldOnly: boolean; constructionDefault: boolean }[];
+
+/** US-DASH-20 — widgets that start hidden unless the organisation uses the Construction template. */
+export function defaultHiddenWidgets(template: string | null | undefined): string[] {
+  return template === "construction" ? [] : DASHBOARD_WIDGETS.filter((w) => w.constructionDefault).map((w) => w.key);
+}
 
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGETS)[number]["key"];
 
@@ -76,11 +85,12 @@ export type DashboardLayout = DashboardLayoutEntry[];
  * 3. Any `visibleKeys` entry with no saved entry (a widget added to the
  *    registry since the user last saved, or a first-time viewer with no
  *    saved layout at all) is appended at the end, in registry order,
- *    marked not hidden.
+ *    marked not hidden — unless it's in `defaultHidden` (US-DASH-20).
  */
 export function mergeDashboardLayout(
   saved: DashboardLayout | null,
   visibleKeys: readonly string[],
+  defaultHidden: readonly string[] = [],
 ): { widgetKey: string; hidden: boolean }[] {
   const visibleSet = new Set(visibleKeys);
   const savedByKey = new Map((saved ?? []).filter((entry) => visibleSet.has(entry.widgetKey)).map((entry) => [entry.widgetKey, entry]));
@@ -91,7 +101,7 @@ export function mergeDashboardLayout(
 
   for (const key of visibleKeys) {
     if (!savedByKey.has(key)) {
-      ordered.push({ widgetKey: key, hidden: false });
+      ordered.push({ widgetKey: key, hidden: defaultHidden.includes(key) });
     }
   }
 

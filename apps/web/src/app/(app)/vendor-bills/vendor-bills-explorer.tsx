@@ -11,6 +11,7 @@ import { VendorBillsSkeleton } from "./vendor-bills-skeleton";
 import { VendorBillsTable } from "./vendor-bills-table";
 import type { ContactOption, VendorBill } from "./types";
 import { useVendorBillStats } from "./use-vendor-bill-stats";
+import { JobFilter, JobFilterNote, useJobFilter } from "../../../components/job-filter";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Draft" },
@@ -38,16 +39,22 @@ export function VendorBillsExplorer() {
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const { show: showToast, toast } = useEntityToast();
+  // US-PUR-22 — filter by job, kept in the URL.
+  const job = useJobFilter();
+  const canViewCosting = useCapability("reports.view_job_profitability");
 
   const stats = useVendorBillStats(bills);
 
   const loadBills = useCallback(() => {
-    const query = contactFilter !== ALL_CONTACTS ? `?contactId=${contactFilter}` : "";
+    const params = new URLSearchParams();
+    if (contactFilter !== ALL_CONTACTS) params.set("contactId", contactFilter);
+    if (job.filtering) params.set("jobId", job.jobId);
+    const query = params.toString() ? `?${params}` : "";
     apiClient
       .get<VendorBill[]>(`/vendor-bills${query}`)
       .then(setBills)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load vendor bills."));
-  }, [contactFilter]);
+  }, [contactFilter, job.filtering, job.jobId]);
 
   useEffect(() => {
     loadBills();
@@ -133,6 +140,7 @@ export function VendorBillsExplorer() {
             placeholder="All vendors"
             className="w-48"
           />
+          <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />
         </div>
         {canCreate && (
           <Button asChild>
@@ -141,11 +149,24 @@ export function VendorBillsExplorer() {
         )}
       </div>
 
+      {job.filtering && job.selectedLabel && <JobFilterNote kind="vendor bills" jobId={job.jobId} label={job.selectedLabel} canViewCosting={canViewCosting} />}
+
       {!filteredBills ? (
         <VendorBillsSkeleton />
       ) : filteredBills.length === 0 ? (
-        <div className="rounded-lg border border-border">
-          {statusFilter.length || contactFilter !== ALL_CONTACTS ? (
+        <div className="rounded-lg border border-border bg-surface">
+          {job.filtering && !statusFilter.length && contactFilter === ALL_CONTACTS ? (
+            <EmptyState
+              icon={<ClipboardList />}
+              title="No vendor bills on this job"
+              description="Bills tagged to this job show up here."
+              action={
+                <Button variant="secondary" onClick={() => job.setJobId("__all__")}>
+                  Clear filter
+                </Button>
+              }
+            />
+          ) : statusFilter.length || contactFilter !== ALL_CONTACTS || job.filtering ? (
             <EmptyState
               icon={<ClipboardList />}
               title="No vendor bills match these filters"
@@ -156,6 +177,7 @@ export function VendorBillsExplorer() {
                   onClick={() => {
                     setStatusFilter([]);
                     setContactFilter(ALL_CONTACTS);
+                    job.setJobId("__all__");
                   }}
                 >
                   Clear filters

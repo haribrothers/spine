@@ -4,7 +4,7 @@ import { and, asc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenseCategories, expenses } from "../../db/schema";
+import { expenseCategories, expenses, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
@@ -20,11 +20,15 @@ export class ExpenseCategoriesService {
   ) {}
 
   async list(orgId: string, options: { includeArchived?: boolean } = {}) {
-    let rows = await this.db
-      .select()
-      .from(expenseCategories)
-      .where(eq(expenseCategories.orgId, orgId))
-      .orderBy(asc(expenseCategories.name));
+    // US-PUR-23: with the posting account's code and name, so the labour form can preselect the 5200 category.
+    let rows = (
+      await this.db
+        .select({ category: expenseCategories, accountCode: accounts.code, accountName: accounts.name })
+        .from(expenseCategories)
+        .leftJoin(accounts, eq(expenseCategories.accountId, accounts.id))
+        .where(eq(expenseCategories.orgId, orgId))
+        .orderBy(asc(expenseCategories.name))
+    ).map((r) => ({ ...r.category, accountCode: r.accountCode, accountName: r.accountName }));
     if (!options.includeArchived) {
       rows = rows.filter((row) => row.archivedAt === null);
     }

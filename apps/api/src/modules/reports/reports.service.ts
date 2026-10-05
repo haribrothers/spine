@@ -1,5 +1,8 @@
+import { billingFigures, budgetFigures, type MoneyInOutReport } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { billedByJob, costByJob } from "../jobs/job-costing.service";
+import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
@@ -542,7 +545,7 @@ export class ReportsService {
    * human-readable fallback for source types the client doesn't have a
    * dedicated link for.
    */
-  async accountDrilldown(orgId: string, accountId: string, from: string, to: string): Promise<AccountDrilldownReport> {
+  async accountDrilldown(orgId: string, accountId: string, from: string, to: string, jobId?: string): Promise<AccountDrilldownReport> {
     const [account] = await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.id, accountId)));
     if (!account) {
       return { accountId, accountCode: "", accountName: "", from, to, entries: [] };
@@ -558,6 +561,7 @@ export class ReportsService {
           eq(journalLines.accountId, accountId),
           gte(journalEntries.date, from),
           lte(journalEntries.date, to),
+          ...(jobId ? [eq(journalLines.jobId, jobId)] : []),
         ),
       );
 
@@ -583,8 +587,15 @@ export class ReportsService {
    * `jobId` in one query instead of N — never a shadow costing table, same
    * as that service's own doc comment.
    */
-  async jobProfitability(orgId: string): Promise<JobProfitabilityReport> {
-    const jobRows = await this.db.select().from(jobs).where(eq(jobs.orgId, orgId));
+  async jobProfitability(orgId: string, status: JobProfitabilityStatus = "active_on_hold"): Promise<JobProfitabilityReport> {
+    const statuses: (typeof jobs.$inferSelect.status)[] | null =
+      status === "all" ? null : status === "active_on_hold" ? ["active", "on_hold"] : [status];
+    const jobRows = await this.db
+      .select()
+      .from(jobs)
+      .where(and(eq(jobs.orgId, orgId), statuses ? inArray(jobs.status, statuses) : undefined));
+    const ids = jobRows.map((j) => j.id);
+    const [costs, billed] = await Promise.all([costByJob(this.db, ids), billedByJob(this.db, orgId, ids)]);
     const rows = await this.db
       .select({ jobId: journalLines.jobId, debit: journalLines.debit, credit: journalLines.credit, accountType: accounts.type })
       .from(journalLines)
@@ -602,8 +613,10 @@ export class ReportsService {
     }
 
     const jobRowsReport: JobProfitabilityRow[] = jobRows.map((job) => {
-      const totals = byJob.get(job.id) ?? { revenue: 0n, cost: 0n };
+      const totals = { revenue: byJob.get(job.id)?.revenue ?? 0n, cost: costs.get(job.id) ?? 0n };
       const margin = totals.revenue - totals.cost;
+      const billing = billingFigures(job.contractValueAmount, billed.get(job.id) ?? 0n);
+      const budget = budgetFigures(job.costBudgetAmount, totals.cost);
       const marginPct = totals.revenue > 0n ? Number((margin * 10000n) / totals.revenue) / 100 : null;
       return {
         jobId: job.id,
@@ -615,6 +628,11 @@ export class ReportsService {
         cost: totals.cost.toString(),
         margin: margin.toString(),
         marginPct,
+        billedToDate: billing.billedToDate,
+        billedPct: billing.billedPct,
+        costBudget: budget.amount,
+        budgetUsedPct: budget.usedPct,
+        budgetState: budget.state,
       };
     });
 
@@ -675,6 +693,54 @@ export class ReportsService {
    * date-range queries, and a year of journal activity is small enough
    * that grouping in JS costs nothing meaningful.
    */
+  /**
+   * US-DASH-15 — money received and money spent per month, from the cash
+   * and bank accounts' journal lines (1000, 1010; D-011), never from
+   * documents. Each entry counts once by its net effect on cash: in when
+   * it adds cash, out when it takes it, so a transfer between the two
+   * accounts counts as neither.
+   */
+  async moneyInOut(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
+    const today = orgClock().date;
+    const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
+    const startStr = start.toISOString().slice(0, 10);
+    const rows = await this.db
+      .select({ entryId: journalEntries.id, date: journalEntries.date, debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+
+    const byEntry = new Map<string, { month: string; net: bigint }>();
+    for (const row of rows) {
+      const entry = byEntry.get(row.entryId) ?? { month: row.date.slice(0, 7), net: 0n };
+      entry.net += row.debit - row.credit;
+      byEntry.set(row.entryId, entry);
+    }
+    const byMonth = new Map<string, { in: bigint; out: bigint }>();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
+      byMonth.set(d.toISOString().slice(0, 7), { in: 0n, out: 0n });
+    }
+    for (const entry of byEntry.values()) {
+      const month = byMonth.get(entry.month);
+      if (!month) continue;
+      if (entry.net > 0n) month.in += entry.net;
+      else month.out -= entry.net;
+    }
+    const list = [...byMonth.entries()].map(([month, v]) => ({ month, in: v.in.toString(), out: v.out.toString() }));
+    const totalIn = [...byMonth.values()].reduce((s, v) => s + v.in, 0n);
+    const totalOut = [...byMonth.values()].reduce((s, v) => s + v.out, 0n);
+    const [anyCash] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"])))
+      .limit(1);
+    return { months: list, totalIn: totalIn.toString(), totalOut: totalOut.toString(), net: (totalIn - totalOut).toString(), hasActivity: Boolean(anyCash) };
+  }
+
   async revenueTrend(orgId: string, months: 3 | 6 | 12): Promise<RevenueTrendReport> {
     const now = new Date();
     const windowStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);
@@ -920,7 +986,16 @@ export interface JobProfitabilityRow {
   cost: string;
   margin: string;
   marginPct: number | null;
+  /** US-RPT-15 — the same figures as the job's Costing tab (`billedByJob`, `budgetFigures`). */
+  billedToDate: string;
+  billedPct: number | null;
+  costBudget: string | null;
+  budgetUsedPct: number | null;
+  budgetState: "none" | "ok" | "near" | "over";
 }
+
+/** US-RPT-15 — which jobs the report covers; the default is active and on hold. */
+export type JobProfitabilityStatus = "active_on_hold" | "active" | "on_hold" | "completed" | "all";
 
 export interface JobProfitabilityReport {
   jobs: JobProfitabilityRow[];

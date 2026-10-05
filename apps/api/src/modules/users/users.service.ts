@@ -1,10 +1,10 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import type { DashboardLayout } from "@spine/shared";
-import { eq } from "drizzle-orm";
+import { digestEnabledFor, type DashboardLayout, type DigestDays, type NotificationPreferences } from "@spine/shared";
+import { and, eq } from "drizzle-orm";
 import { auth } from "../../auth/auth";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { user } from "../../db/schema";
+import { member, user } from "../../db/schema";
 
 export interface ProfileRow {
   id: string;
@@ -13,6 +13,10 @@ export interface ProfileRow {
   image: string | null;
   themePreference: string;
   meetingReminderLeadMinutes: number | null;
+  /** US-NTF-14 — the daily digest, resolved against the role default (D-093). */
+  digestEnabled: boolean;
+  digestTime: string;
+  digestDays: DigestDays;
 }
 
 /**
@@ -25,7 +29,7 @@ export interface ProfileRow {
 export class UsersService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  async getMe(userId: string): Promise<ProfileRow> {
+  async getMe(userId: string, orgId?: string | null): Promise<ProfileRow> {
     const [row] = await this.db
       .select({
         id: user.id,
@@ -34,13 +38,30 @@ export class UsersService {
         image: user.image,
         themePreference: user.themePreference,
         meetingReminderLeadMinutes: user.meetingReminderLeadMinutes,
+        digestEnabled: user.digestEnabled,
+        digestTime: user.digestTime,
+        digestDays: user.digestDays,
       })
       .from(user)
       .where(eq(user.id, userId));
     if (!row) {
       throw new BadRequestException("User not found");
     }
-    return row;
+    const [membership] = orgId
+      ? await this.db.select({ role: member.role }).from(member).where(and(eq(member.userId, userId), eq(member.organizationId, orgId)))
+      : [];
+    return {
+      ...row,
+      digestEnabled: digestEnabledFor(membership?.role, row.digestEnabled),
+      digestTime: row.digestTime.slice(0, 5),
+      digestDays: row.digestDays === "daily" ? "daily" : "weekdays",
+    };
+  }
+
+  /** US-NTF-14 — turn the daily digest on or off and choose its time and days (self only). */
+  async setNotificationPreferences(userId: string, orgId: string | null, input: NotificationPreferences): Promise<ProfileRow> {
+    await this.db.update(user).set({ digestEnabled: input.digestEnabled, digestTime: input.digestTime, digestDays: input.digestDays }).where(eq(user.id, userId));
+    return this.getMe(userId, orgId);
   }
 
   /**
@@ -62,7 +83,7 @@ export class UsersService {
     if (input.email !== undefined) {
       await auth.api.changeEmail({ headers, body: { newEmail: input.email } });
     }
-    return this.getMe(userId);
+    return this.getMe(userId, null);
   }
 
   async changePassword(headers: Headers, currentPassword: string, newPassword: string): Promise<void> {
@@ -71,7 +92,7 @@ export class UsersService {
 
   async updatePreferences(userId: string, themePreference: string): Promise<ProfileRow> {
     await this.db.update(user).set({ themePreference }).where(eq(user.id, userId));
-    return this.getMe(userId);
+    return this.getMe(userId, null);
   }
 
   /**
@@ -98,6 +119,6 @@ export class UsersService {
    */
   async setMeetingReminderLeadMinutes(userId: string, minutes: number | null): Promise<ProfileRow> {
     await this.db.update(user).set({ meetingReminderLeadMinutes: minutes }).where(eq(user.id, userId));
-    return this.getMe(userId);
+    return this.getMe(userId, null);
   }
 }

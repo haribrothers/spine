@@ -24,7 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@spine/ui";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE } from "@spine/shared";
+import { LabourRows, blankLabourRow, headcountOf, rowsTotal, type LabourRow } from "./labour-rows";
 import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
 import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
@@ -88,6 +92,10 @@ export function ExpenseForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // US-PUR-23 — "Headcount × day rate" entry.
+  const [entryMode, setEntryMode] = useState<"amount" | "labour">("amount");
+  const [labourRows, setLabourRows] = useState<LabourRow[]>([blankLabourRow()]);
+  const [trades, setTrades] = useState<{ trade: string; lastDayRateAmount: string }[]>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -103,6 +111,12 @@ export function ExpenseForm({
     setReceiptFileId(expense?.receiptFileId ?? null);
     setReceiptFilename(null);
     setIsBillable(expense?.isBillable ?? false);
+    setEntryMode(expense?.entryMode ?? "amount");
+    setLabourRows(
+      expense?.labourLines?.length
+        ? expense.labourLines.map((l) => ({ key: l.id, trade: l.trade, headcount: String(l.headcount), dayRateAmount: BigInt(l.dayRateAmount) }))
+        : [blankLabourRow()],
+    );
     setError(null);
   }, [open, expense]);
 
@@ -111,7 +125,18 @@ export function ExpenseForm({
     apiClient.get<ExpenseCategory[]>("/expense-categories").then(setCategories).catch(() => {});
     apiClient.get<JobOption[]>("/jobs").then(setJobs).catch(() => {});
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
+    apiClient.get<{ trade: string; lastDayRateAmount: string }[]>("/expenses/labour-trades").then(setTrades).catch(() => {});
   }, [open]);
+
+  const labourCategory = categories.find((c) => !c.archivedAt && c.accountCode === "5200");
+
+  function changeEntryMode(next: string) {
+    if (next !== "amount" && next !== "labour") return;
+    setEntryMode(next);
+    setError(null);
+    // A category posting to 5200 Direct Labour is preselected; it can be changed.
+    if (next === "labour" && labourCategory && (!categoryId || !expense)) setCategoryId(labourCategory.id);
+  }
 
   useEffect(() => {
     if (expense) return; // only pre-fill the org default currency for a brand-new expense
@@ -159,7 +184,17 @@ export function ExpenseForm({
       setError("Select a category before saving.");
       return;
     }
-    if (amount <= 0n) {
+    const labour = entryMode === "labour";
+    if (labour) {
+      if (labourRows.some((r) => !r.trade.trim() || headcountOf(r) < 1 || r.dayRateAmount <= 0n)) {
+        setError(LABOUR_ROW_INCOMPLETE);
+        return;
+      }
+      if (jobId === NO_JOB) {
+        setError(LABOUR_NEEDS_JOB);
+        return;
+      }
+    } else if (amount <= 0n) {
       setError("Enter an amount greater than zero.");
       return;
     }
@@ -170,7 +205,9 @@ export function ExpenseForm({
         jobId: jobId === NO_JOB ? null : jobId,
         date: date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         currency,
-        amount: amount.toString(),
+        amount: (labour ? rowsTotal(labourRows) : amount).toString(),
+        entryMode,
+        ...(labour ? { labourLines: labourRows.map((r) => ({ trade: r.trade.trim(), headcount: headcountOf(r), dayRateAmount: r.dayRateAmount.toString() })) } : {}),
         taxAmount: taxAmount.toString(),
         taxRateId: taxRateSelection || null,
         description: description || null,
@@ -209,11 +246,29 @@ export function ExpenseForm({
             </Alert>
           )}
 
+          <div className="flex flex-col gap-1.5">
+            <span id="entry-mode-label" className="text-[13px] font-medium text-on-surface">
+              Enter as
+            </span>
+            <ToggleGroup type="single" value={entryMode} onValueChange={changeEntryMode} aria-labelledby="entry-mode-label" className="w-full rounded-md bg-surface-sunken p-1">
+              <ToggleGroupItem value="amount" className="flex-1 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                Amount
+              </ToggleGroupItem>
+              <ToggleGroupItem value="labour" className="flex-1 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                Headcount × day rate
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <FormField label="Category" required>
+            <FormField
+              label="Category"
+              required
+              helperText={entryMode === "labour" && labourCategory && categoryId === labourCategory.id ? `Preselected: posts to ${labourCategory.accountCode} ${labourCategory.accountName}.` : undefined}
+            >
               {() => <Combobox options={categoryOptions} value={categoryId} onValueChange={setCategoryId} placeholder="Select a category…" />}
             </FormField>
-            <FormField label="Job" helperText="Optional — flows into job costing once approved.">
+            <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
               {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
             </FormField>
             <FormField label="Date" required>
@@ -222,9 +277,11 @@ export function ExpenseForm({
             <FormField label="Currency" required>
               {() => <Input value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />}
             </FormField>
-            <FormField label="Amount" required>
-              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
-            </FormField>
+            {entryMode === "amount" && (
+              <FormField label="Amount" required>
+                {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+              </FormField>
+            )}
             <FormField label="Tax rate">
               {() => <Combobox options={taxOptions} value={taxRateSelection} onValueChange={setTaxRateSelection} placeholder="No tax" />}
             </FormField>
@@ -248,6 +305,15 @@ export function ExpenseForm({
               )}
             </FormField>
           </div>
+
+          {entryMode === "labour" && (
+            <>
+              <LabourRows rows={labourRows} onChange={setLabourRows} currency={currency} trades={trades} />
+              <Alert variant="info">
+                <AlertDescription>Only headcounts and day rates are recorded — no names, attendance or hours.</AlertDescription>
+              </Alert>
+            </>
+          )}
 
           <FormField label="Description">
             {(field) => <Input {...field} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What was this for?" />}

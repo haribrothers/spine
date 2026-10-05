@@ -128,7 +128,7 @@ export function CompleteMilestoneDialog({
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap gap-2">
                   {photos.map((p) => (
-                    <div key={p.id} className="group relative h-16 w-16 overflow-hidden rounded-md border border-border">
+                    <div key={p.id} className="group relative h-16 w-16 overflow-hidden rounded-md border border-border bg-surface">
                       {/* Object URL preview of a locally picked file, not an app asset — <Image> doesn't apply here. */}
                       <img src={p.previewUrl} alt="" className="h-full w-full object-cover" />
                       <button

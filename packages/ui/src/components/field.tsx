@@ -15,7 +15,7 @@ export function FieldGroup({ className, ...props }: React.HTMLAttributes<HTMLDiv
 }
 
 export function FieldSet({ className, ...props }: React.FieldsetHTMLAttributes<HTMLFieldSetElement>) {
-  return <fieldset className={cn("flex flex-col gap-4 rounded-lg border border-border p-4", className)} {...props} />;
+  return <fieldset className={cn("flex flex-col gap-4 rounded-lg border border-border bg-surface p-4", className)} {...props} />;
 }
 
 export function FieldLegend({ className, ...props }: React.HTMLAttributes<HTMLLegendElement>) {

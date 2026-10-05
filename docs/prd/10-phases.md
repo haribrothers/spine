@@ -495,14 +495,19 @@ Total: 327 stories.
 
 **Goal:** An owner runs the business from the dashboard and gets paid without chasing.
 
-**Deliverables:** The action-first dashboard redesign for Owner, Staff and Field (D-087), global search, automatic payment reminders, recurring invoices, customer statements, quote duplication and bundles, bulk actions, the daily digest, full data export, configurable pipeline stages, organisation themes and document branding, and the organisation audit log.
+**Deliverables:** The action-first dashboard redesign for Owner, Staff and Field (D-087), global search, automatic payment reminders, recurring invoices, customer statements, quote duplication and bundles, bulk actions, the daily digest, full data export, configurable pipeline stages, organisation themes and document branding, the organisation audit log, and construction job costing: cost budgets, cost by category, billed to date and percent complete, progress claim numbers, labour expenses by headcount × day rate, the job filter on bills and expenses, and the Construction template's cost categories (D-125–D-130).
 
 **Done when:**
 - An owner opens the dashboard and clears every attention item from it without visiting another page first.
 - Reminders and recurring invoices run unattended for a simulated month with no duplicates.
 - Search finds any contact, document or job by name or number in under 500 ms (NFR-PERF-06).
+- On a Construction install, an owner sees a job's budget used, cost by category and billed % on its Costing tab, and a job over budget appears in "Needs your attention"; the figures match Job Profitability to the cent.
 
 **Stories:**
+
+*Onboarding & first run*
+
+- US-ONB-13 · Start a construction business with site cost categories (P1)
 
 *Contacts & CRM*
 
@@ -518,6 +523,15 @@ Total: 327 stories.
 - US-QUO-24 · Duplicate a quote as a new draft (P2)
 - US-QUO-25 · Save quote lines as a reusable bundle (P2)
 - US-QUO-26 · Add a bundle while building a quote (P2)
+
+*Jobs & milestones*
+
+- US-JOB-24 · Set a cost budget for a job (P1)
+- US-JOB-25 · See budget spent and get warned before going over (P1)
+- US-JOB-26 · See a job's cost by category (P1)
+- US-JOB-27 · See how much of the contract has been billed (P1)
+- US-JOB-28 · Record how complete a job is and compare it with billing (P2)
+- US-JOB-29 · Number each progress claim on a job (P2)
 
 *Invoicing & credit notes*
 
@@ -537,6 +551,8 @@ Total: 327 stories.
 *Purchases & expenses*
 
 - US-PUR-21 · Approve several expenses at once (P2)
+- US-PUR-22 · Filter bills and expenses by job (P2)
+- US-PUR-23 · Enter site labour as headcount × day rate (P1)
 
 *Dashboard*
 
@@ -548,6 +564,11 @@ Total: 327 stories.
 - US-DASH-17 · Get a staff dashboard of only what I can act on (P1)
 - US-DASH-18 · Get a field dashboard of my day (P2)
 - US-DASH-19 · Read who did what in the activity feed (P2)
+- US-DASH-20 · See retention held and job billing on the dashboard (P1)
+
+*Accounting & reports*
+
+- US-RPT-15 · Compare contract, billed and cost across jobs (P1)
 
 *Notifications*
 
@@ -568,6 +589,7 @@ Total: 327 stories.
 - US-OPS-22 · Search everything from anywhere (P1)
 - US-OPS-23 · Use search with the keyboard and a screen reader (P2)
 - US-OPS-26 · Use every new screen in dark mode (P1)
+- US-OPS-32 · Lift cards off the page in light mode (P1)
 
 ## Phase 8 · Packaging & 1.0
 

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { QuotesExplorer } from "./quotes-explorer";
 
@@ -10,7 +11,10 @@ export default function QuotesPage() {
         title="Quotes"
         description="Build multi-line quotes, revise sent quotes into new versions, and track validity."
       />
-      <QuotesExplorer />
+      {/* QuotesExplorer reads ?status= via useSearchParams, which needs a Suspense boundary. */}
+      <Suspense>
+        <QuotesExplorer />
+      </Suspense>
     </>
   );
 }

@@ -2,7 +2,7 @@
 
 One dashboard that adapts to who's looking: a pinned row of key figures, charts for owners and permitted staff, "my day" widgets for everyone, an organisation-wide activity feed, and per-user layout that follows the person across devices. Every widget is gated server-side by the same right as its full report, so the dashboard adds no new access.
 
-**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1)
+**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1)
 **Depends on:** 12 Reports, 03 Contacts (activities, leads), 04 Meetings, 07 Jobs, 08 Invoicing, 15 Team (capabilities).
 
 ## Features
@@ -15,7 +15,7 @@ One dashboard that adapts to who's looking: a pinned row of key figures, charts 
 | F-DASH-04 | Recent activity feed | P2 | 4 | `DashboardOwner`, `DashboardField` |
 | F-DASH-05 | Personal layout | P3 | 4 | `DashboardEditLayout` |
 | F-DASH-06 | Attention list and today (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardCaughtUp`, `DashboardStaffRedesign`, `DashboardFieldRedesign` |
-| F-DASH-07 | Key figures, money chart and activity (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardStaffRedesign` |
+| F-DASH-07 | Key figures, money chart and activity (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardStaffRedesign`, `DashboardOwnerConstruction` |
 | F-DASH-08 | Staff and field layouts (redesign A) | P1 | 7 | `DashboardStaffRedesign`, `DashboardFieldRedesign` |
 
 ## User stories
@@ -202,6 +202,7 @@ Decision: D-087, D-088
 - API: `GET /dashboard/attention` (contract addition) returns `{ kind, count, first: { id, label, amount?, dueAt? } }[]`, filtered server-side by capability.
 - UI: replaces the KPI-first layout of US-DASH-01; the setup checklist (US-ONB-12) sits in the same row for Owners until dismissed.
 - Edge: quotes expiring = `sent` with `validUntil` within 7 days; bills due = `recorded` with balance and `dueDate` within 3 days.
+- US-JOB-25 adds a seventh kind, jobs over budget (`job_over_budget`, `reports.view_job_profitability`), after vendor bills due.
 
 ### US-DASH-13 · Act on an attention item in one click
 **Feature:** F-DASH-06 · **Priority:** P1 · **Phase:** 7 · **Screens:** `DashboardOwnerRedesign`
@@ -306,3 +307,19 @@ Decision: D-089
 
 **Implementation notes**
 - API: `GET /dashboard/activity` gains `actor` and `groupCount` (contract addition).
+
+### US-DASH-20 · See retention held and job billing on the dashboard
+**Feature:** F-DASH-07 · **Priority:** P1 · **Phase:** 7 · **Screens:** `DashboardOwnerConstruction`
+**As** the owner of a construction business, **I want** retention held and how far each job is billed on my dashboard, **so that** money waiting on me is never forgotten.
+
+**Acceptance criteria**
+- **Given** an Owner, or Staff with `reports.view_receivables`, **when** the "Retention held" card renders, **then** it shows the total held (the balance of 1150 Retention Receivable), "on <n> jobs", and the three jobs holding the most, each with its amount and "Release" linking to the job.
+- **Given** nothing is held, **when** the card renders, **then** it reads "No retention held." and stays out of the way (single line).
+- **Given** a member with `reports.view_job_profitability`, **when** the "Jobs in progress" card renders, **then** each active job shows its name, a bar of billed % against contract value, "Budget used" with its state (US-JOB-25), and the list links to Job Profitability.
+- **Given** the organisation's template is Construction, **when** a member's dashboard has no saved layout, **then** both cards are shown below "Money in and out"; with any other template they start hidden and can be shown from "Edit layout" (US-DASH-10).
+- **Given** a member without the card's capability, **when** the dashboard renders, **then** the card is absent, never shown locked.
+
+**Implementation notes**
+- API: `GET /dashboard/retention` → `{ total, jobCount, jobs: [{ id, number, name, held }] }` (`reports.view_receivables`), from `journal_lines` on 1150 grouped by `job_id`; the jobs card reuses `GET /jobs?include=costing&status=active` (`reports.view_job_profitability`).
+- The budget attention row (`job_over_budget`) is part of US-JOB-25.
+

@@ -9,7 +9,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums)
 - Ownership: the stable creator column is `created_by_user_id` (`submitted_by_user_id` for expenses, `organizer_user_id` for meetings). It is set once and never reassigned ([D-018](12-decisions.md)). Reassignable people fields (`leads.owner_user_id`, `activities.assigned_to_user_id`) never decide edit rights.
 - Demo data: `is_demo boolean` marks seeded rows so "Delete all demo data" removes exactly them.
 - Soft states over deletes: master data is archived (`archived_at`); financial documents are never deleted once issued — only voided or credited.
-- Settings are key/value rows in `settings` (`org_id`, `key`, `value jsonb`). Keys in use: `business_profile`, `industry_template`, `currency`, `default_tax_rate`, `prices_include_tax`, `discount_approval_threshold`, `quote_conversion_guard`, `dashboard_meetings_scope`, `meeting_reminder_lead_minutes`, plus onboarding/checklist state.
+- Settings are key/value rows in `settings` (`org_id`, `key`, `value jsonb`). Keys in use: `business_profile`, `industry_template`, `currency`, `default_tax_rate`, `prices_include_tax`, `discount_approval_threshold`, `quote_conversion_guard`, `dashboard_meetings_scope`, `meeting_reminder_lead_minutes`, `industry_template_seed` (US-ONB-13: what the Construction template last set up, `{ accounts, categories, kept }`), plus onboarding/checklist state.
 
 ## Invariants (enforced in the database unless noted)
 
@@ -43,8 +43,8 @@ New schema the stories require. Each is created by the story named; until then i
 
 | Table / key | Change | Story |
 |---|---|---|
-| `lead_stages` (new) | `id`, `org_id`, `name`, `kind` enum(`open`,`won`,`lost`), `sort_order`, `color`; seeded with New / Qualified / Proposal / Won / Lost; max 12 per org | US-CRM-19 |
-| `leads` | `stage_id uuid → lead_stages` replaces the `lead_stage` enum column (backfill migration maps old values) | US-CRM-19 |
+| `lead_stages` (new) | `id`, `org_id`, `name`, `kind` enum `lead_stage_kind` (`open`,`won`,`lost`), `sort_order`, `color` (a design-token category name — slate, blue, teal, amber, purple, pink, green, red — never hex), timestamps; index (`org_id`, `sort_order`). Seeded with New / Qualified / Proposal / Won / Lost for every organisation (migration `0063`, sign-up, and `LeadStagesService.ensureSeeded` for orgs made any other way); max 12 per org; exactly one `won` and one `lost`, always last (service + `putLeadStagesSchema`) | US-CRM-19 |
+| `leads` | `stage_id uuid not null → lead_stages (restrict)` replaces the `lead_stage` enum column: migration `0063` maps new/qualified/proposal/won/lost to the seeded stages at the same position, `0064` makes it not null and drops the old column and enum; index (`org_id`, `stage_id`) | US-CRM-19 |
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files` and `accepted_signer_name text` (on-site acceptance stores what it captured) | US-QUO-19 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
@@ -55,23 +55,30 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `business_profile` | gains `paymentInstructions` (text) | US-INV-15 |
 | `invoices.payment_instructions` | text, nullable — the payment instructions copied at issue; the PDF and every later email use this copy. Null on drafts and when none were set (migration `0059`) | US-INV-15 |
 | `settings` key `business_profile` | gains `email` and `phone` (text), shown on the expired-quote-link page | US-QUO-21 |
-| `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
+| `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes (`role_changed`, `deactivated`, `reactivated`, `primary_owner_transferred`; entity id = the member's user id; `changes` `[{ field: role\|status\|primaryOwner, from, to }]`); new index `audit_log_org_created_idx (org_id, created_at)` — migration `0074_audit_log_entity_text` | US-SET-11 |
 | `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
 | `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
 | `jobs` | `number text` (unique per org, index `jobs_org_number_unique`), allocated from the `job` number sequence in the creating transaction; migration `0061` numbered existing jobs in creation order. Nullable only for rows written outside `JobsService` | US-JOB-22 |
-| `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `created_by_user_id`, `archived_at`, timestamps | US-QUO-25 |
-| `catalog_bundle_lines` (new) | `bundle_id`, `sort_order`, `catalog_item_id?`, `name`, `description`, `quantity numeric`, `unit_price_amount bigint`, `tax_rate_id?`, `tax_group_id?` | US-QUO-25 |
+| `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `currency` (offered on documents in that currency), `total_amount bigint` (sum of the line totals when saved, for the picker), `created_by_user_id` (own/others), `archived_at`, timestamps (migration `0065`) | US-QUO-25 |
+| `catalog_bundle_lines` (new) | `id`, `bundle_id` → bundles (cascade), `sort_order`, `type` enum `catalog_bundle_line_type` (item/heading/text), `catalog_item_id?` (provenance, set null), `name`, `description`, `quantity numeric(18,4)`, `unit_price_amount bigint`, `discount_percentage`, `tax_rate_percentage`, `tax_rate_id?`, `tax_group_id?`, `is_tax_inclusive` — a snapshot of the quote line it was saved from (D-096) | US-QUO-25 |
 | `settings` key `invoice_reminders` | `{ enabled, offsets: int[], repeatEvery?, repeatMax?, sendAt }` | US-INV-18 |
-| `contacts` | `reminders_paused boolean not null default false` | US-INV-19 |
-| `invoice_reminders` (new) | `id`, `org_id`, `invoice_id`, `sent_at`, `kind` (`auto`/`manual`); unique (`invoice_id`, date of `sent_at`) | US-INV-19 |
-| `recurring_invoices` (new) | `id`, `org_id`, `name`, `contact_id`, `frequency` (`weekly`/`monthly`/`quarterly`/`yearly`), `day_rule`, `starts_on`, `ends_on?`, `max_count?`, `due_days`, `mode` (`issue_and_email`/`draft`), `status` (`active`/`paused`/`finished`), `next_run_on`, `created_by_user_id`, timestamps | US-INV-20 |
-| `recurring_invoice_lines` (new) | same shape as `catalog_bundle_lines`, keyed by `recurring_invoice_id` | US-INV-20 |
-| `invoices` | `recurring_invoice_id uuid?`, `recurring_run_on date?`; unique (`recurring_invoice_id`, `recurring_run_on`) | US-INV-21 |
-| `user` | `digest_enabled boolean`, `digest_time time`, `digest_days text` | US-NTF-13 |
-| `data_exports` (new) | `id`, `org_id`, `requested_by_user_id`, `formats`, `include_files`, `status`, `file_id?`, `size_bytes?`, `expires_at`, timestamps | US-SET-15 |
-| Search indexes | `pg_trgm` GIN indexes on contact names, document numbers and job names | US-OPS-22 |
+| `contacts` | `reminders_paused boolean not null default false` (migration `0066`) | US-INV-19 |
+| `invoice_reminders` (new) | `id`, `org_id`, `invoice_id` → invoices (cascade), `sent_on date` (organisation date), `sent_at`, `kind` enum `invoice_reminder_kind` (`auto`/`manual`); unique (`invoice_id`, `sent_on`) — at most one reminder per invoice per day, automatic or manual (migration `0066`) | US-INV-19 |
+| `settings` key `invoice_reminders_last_run` | `{ date }` — the organisation date the reminder run last completed, so a day runs once | US-INV-19 |
+| `recurring_invoices` (new) | `id`, `org_id`, `name`, `contact_id` → contacts (cascade), `currency`, `frequency` enum `recurring_frequency` (`weekly`/`monthly`/`quarterly`/`yearly`), `day_rule` (ISO weekday `1`–`7` for weekly; otherwise day of month `1`–`28` or `last`; monthly/quarterly/yearly count months from `starts_on`), `starts_on date`, `ends_on date?`, `max_count?`, `created_count int default 0`, `due_days`, `mode` enum `recurring_mode` (`issue_and_email`/`draft`), `status` enum `recurring_status` (`active`/`paused`/`finished`), `next_run_on date?` (null while paused or finished), `total_amount bigint` (the lines' total when saved, for the list), `created_by_user_id`, timestamps (migration `0067`) | US-INV-20 |
+| `recurring_invoice_lines` (new) | same shape as `catalog_bundle_lines` (`type` uses `invoice_line_type`), keyed by `recurring_invoice_id` → recurring_invoices (cascade) | US-INV-20 |
+| `invoices` | `recurring_invoice_id uuid?` → recurring_invoices (set null), `recurring_run_on date?` (the schedule date it was created for); unique (`recurring_invoice_id`, `recurring_run_on`) `invoices_recurring_run_uidx` (migration `0068`) | US-INV-21 |
+| `user` | `digest_enabled boolean` (null = role default: on for Owners, D-093), `digest_time time` (default `07:00`, organisation time), `digest_days text` (`weekdays` default \| `daily`), `digest_last_sent_on date` (organisation date of the last run that sent or skipped, so a member gets at most one digest a day) — migration `0073_user_daily_digest` | US-NTF-13 |
+| `data_exports` (new) | `id`, `org_id`, `requested_by_user_id`, `formats jsonb` (`["csv"]`, `["json"]` or both), `include_files`, `status` (`preparing` → `ready` \| `failed`; `expired` once deleted after 7 days), `file_id?` (→ files, set null; the ZIP is never served by `/files/:id`), `size_bytes?`, `error?`, `expires_at`, timestamps — migration `0075_data_exports` | US-SET-15 |
+| Search indexes | `pg_trgm` extension and GIN `gin_trgm_ops` indexes on `contacts.name`, `quotes.number`, `invoices.number`, `jobs.name`, `jobs.number`, `vendor_bills.bill_number`, `expenses.number` — migration `0076_search_trigram` (hand-written: `CREATE EXTENSION IF NOT EXISTS pg_trgm`) | US-OPS-22 |
 | `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by the first `file-integrity-check` run), `integrity_problem text` (`damaged`/`missing`, null when intact), `integrity_checked_at timestamptz`; index `(org_id, integrity_problem)` | US-OPS-27, US-OPS-28 |
 | `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
+| `jobs` | `cost_budget_amount bigint` (nullable; a target, never posted; migration `0069`). Omitted from Field responses with the other money fields (`JOB_MONEY_FIELDS`), including job history | US-JOB-24 |
+| `jobs` | `percent_complete numeric(5,2)` (nullable, 0–100; migration `0070`). Not money: Field responses keep it | US-JOB-28 |
+| `invoices` | `progress_claim_no integer` (nullable; progress invoices only, set at issue as the job's max + 1 under the job row lock, never reused); unique (`job_id`, `progress_claim_no`) `invoices_job_progress_claim_uidx` (migration `0071`) | US-JOB-29 |
+| `expenses` | `entry_mode text not null default 'amount'` (`amount`/`labour`) | US-PUR-23 |
+| `expense_labour_lines` (new) | `id`, `org_id`, `expense_id` → expenses (cascade), `sort_order`, `trade text`, `headcount integer` (> 0), `day_rate_amount bigint` (> 0), `line_amount bigint` (= headcount × day rate); max 20 per expense; the expense `amount` is their sum. No worker names or hours (D-126). Migration `0072` | US-PUR-23 |
+| `accounts`, `expense_categories` | Rows seeded when the Construction template is chosen: accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight, 5500 Site Overheads & Permits; six expense categories mapped to 5000–5500. Existing codes and names are kept, never duplicated (D-129) | US-ONB-13 |
 | Rate and quantity columns | `tax_rates.rate`, `quote_lines`/`invoice_lines`/`credit_note_lines`/`vendor_bill_lines` `.quantity`, `.discount_percentage`, `.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount`: `real` → `numeric(18,4)` | US-TAX-07 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).
@@ -150,7 +157,7 @@ One row per (org, document type). Allocating the next number requires a row lock
 
 One entry per create/update/issue/void/delete on any financial document, per §10.4/S-10.6. Written alongside the mutation, never edited afterward. First real write instrumentation lands scoped to Contacts (see apps/api/src/modules/audit/audit-log.service.ts) — `entityType` is one of…
 
-`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `actor_user_id` text (→ user (set null)) · `action` text (not null) · `entity_type` text (not null) · `entity_id` uuid (not null) · `contact_id` uuid (→ contacts (cascade)) · `changes` jsonb · `created_at` timestamp (not null, default now)
+`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `actor_user_id` text (→ user (set null)) · `action` text (not null) · `entity_type` text (not null) · `entity_id` text (not null; uuid of the record, or a user id for `user`) · `contact_id` uuid (→ contacts (cascade)) · `changes` jsonb · `created_at` timestamp (not null, default now)
 
 #### `idempotency_keys`
 

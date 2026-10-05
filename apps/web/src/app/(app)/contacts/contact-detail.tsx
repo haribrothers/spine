@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Switch,
   Tabs,
   TabsContent,
   TabsList,
@@ -32,7 +33,7 @@ import {
 } from "@spine/ui";
 import { ArrowLeft } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { useCanEditOwnership } from "../../../lib/capabilities-context";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Activity, Contact, ContactType, Lead, SpineFile } from "./types";
 import { AddressesSection } from "./addresses-section";
 import { ContactLogo } from "./contact-logo";
@@ -42,6 +43,7 @@ import { ActivitiesSection } from "./activities-section";
 import { HistorySection } from "../../../components/history-section";
 import { TimelineSection } from "./timeline-section";
 import { useEntityToast } from "./entity-toast";
+import { StatementDialog } from "./statement-dialog";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
   customer: "Customer",
@@ -96,6 +98,10 @@ export function ContactDetail({ contactId }: { contactId: string }) {
 
   const { show: showToast, toast } = useEntityToast();
   const canEdit = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.edit_own", others: "contacts.edit_others" });
+  // US-PAY-14 — statements show what a customer owes, so they follow the receivables report's capability.
+  const canSendStatement = useCapability("reports.view_receivables");
+  const [statementOpen, setStatementOpen] = useState(false);
+  const [timelineKey, setTimelineKey] = useState(0);
   const canDelete = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.delete_own", others: "contacts.delete_others" });
 
   async function reloadContact() {
@@ -174,6 +180,20 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   async function handleLogoUploaded(file: SpineFile) {
     await apiClient.put(`/contacts/${contactId}`, { logoFileId: file.id });
     await reloadContact();
+  }
+
+  async function handleRemindersPaused(remindersPaused: boolean) {
+    setContact((c) => (c ? { ...c, remindersPaused } : c));
+    try {
+      await apiClient.put(`/contacts/${contactId}`, { remindersPaused });
+      showToast(
+        remindersPaused ? "Reminders paused" : "Reminders on",
+        remindersPaused ? `${contact?.name ?? "This contact"} won't get automatic payment reminders.` : `${contact?.name ?? "This contact"} gets automatic payment reminders again.`,
+      );
+    } catch (err) {
+      setContact((c) => (c ? { ...c, remindersPaused: !remindersPaused } : c));
+      setError(err instanceof Error ? err.message : "Could not save the reminder setting.");
+    }
   }
 
   async function handleArchive() {
@@ -281,6 +301,18 @@ export function ContactDetail({ contactId }: { contactId: string }) {
                 )}
               </p>
             )}
+            {/* US-INV-19 — per-customer opt-out of the automatic reminder run (Settings › Automatic reminders). */}
+            {contact.type !== "vendor" &&
+              (canEdit ? (
+                <div className="flex items-center gap-2">
+                  <Switch id="reminders-paused" checked={contact.remindersPaused} onCheckedChange={handleRemindersPaused} />
+                  <label htmlFor="reminders-paused" className="text-[13px] text-on-surface">
+                    Pause automatic reminders
+                  </label>
+                </div>
+              ) : (
+                contact.remindersPaused && <p className="text-[13px] text-on-surface-muted">Automatic reminders paused</p>
+              ))}
           </div>
         </div>
 
@@ -288,6 +320,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <div className="flex items-center gap-2">
             {/* US-SET-13 (D-061): History opens the same dialog as on every other record. */}
             <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel="this contact" ownEntityType="contact" />
+            {canSendStatement && contact.type !== "vendor" && (
+              <Button variant="secondary" onClick={() => setStatementOpen(true)}>
+                Send statement
+              </Button>
+            )}
             {/* Edit is the single primary (filled) action per docs/DESIGN.md; archive/restore/delete are secondary or danger. Each gated by contacts.edit_own/edit_others (Edit) or contacts.delete_own/delete_others (Archive/Restore/Delete) — own vs. others resolved from contact.createdByUserId, mirroring ContactsService's own server-side checks. */}
             {canEdit && (
               <Button variant="primary" onClick={startEdit}>
@@ -406,7 +443,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         </TabsList>
 
         <TabsContent value="timeline">
-          <TimelineSection contactId={contactId} />
+          <TimelineSection key={timelineKey} contactId={contactId} />
         </TabsContent>
         <TabsContent value="persons">
           <ContactPersonsSection
@@ -440,6 +477,18 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         </TabsContent>
       </Tabs>
 
+      <StatementDialog
+        open={statementOpen}
+        onOpenChange={setStatementOpen}
+        contactId={contactId}
+        greetingName={contact.isCompany ? ((contact.contactPersons ?? []).find((p) => p.isPrimary) ?? contact.contactPersons?.[0])?.name ?? null : contact.name}
+        contactEmail={contact.email}
+        onSent={(sentTo) => {
+          setStatementOpen(false);
+          setTimelineKey((k) => k + 1);
+          showToast("Statement sent", `Statement sent to ${sentTo}`);
+        }}
+      />
       {toast}
     </div>
   );

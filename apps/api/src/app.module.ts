@@ -15,6 +15,7 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
 import { QuotesModule } from "./modules/quotes/quotes.module";
 import { JobsModule } from "./modules/jobs/jobs.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
+import { StatementsModule } from "./modules/statements/statements.module";
 import { CreditNotesModule } from "./modules/credit-notes/credit-notes.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { PurchasesModule } from "./modules/purchases/purchases.module";
@@ -27,6 +28,8 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 import { AuditModule } from "./modules/audit/audit.module";
 import { DemoDataModule } from "./modules/demo-data/demo-data.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
+import { DataExportModule } from "./modules/data-export/data-export.module";
+import { SearchModule } from "./modules/search/search.module";
 import { QueueModule } from "./modules/queue/queue.module";
 import { EmailModule } from "./modules/email/email.module";
 import { PdfModule } from "./modules/pdf/pdf.module";
@@ -56,6 +59,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     QuotesModule,
     JobsModule,
     InvoicesModule,
+    StatementsModule,
     CreditNotesModule,
     PaymentsModule,
     PurchasesModule,
@@ -68,6 +72,8 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     AuditModule,
     DemoDataModule,
     DashboardModule,
+    DataExportModule,
+    SearchModule,
   ],
   providers: [
     // Signed-in requests count per session, public ones per IP.

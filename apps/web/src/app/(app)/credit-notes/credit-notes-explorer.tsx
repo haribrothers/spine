@@ -113,13 +113,13 @@ export function CreditNotesExplorer() {
           aria-label="Filter by status"
           className="w-40"
         />
-        <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" className="w-48" />
+        <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" aria-label="Filter by contact" className="w-48" />
       </div>
 
       {!filteredCreditNotes ? (
         <CreditNotesSkeleton />
       ) : filteredCreditNotes.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           <EmptyState
             icon={<Undo2 />}
             title={statusFilter.length || contactFilter !== ALL_CONTACTS ? "No credit notes match these filters" : "No credit notes yet"}

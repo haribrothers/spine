@@ -31,7 +31,7 @@ import {
 import { Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
-import { LEAD_STAGE_LABELS, LEAD_STAGES, type Contact, type Lead, type LeadStage } from "../contacts/types";
+import { type Contact, type Lead, type LeadStage } from "../contacts/types";
 
 // Same list quote-builder.tsx uses for its currency Combobox — kept in sync
 // manually since neither module imports from the other.
@@ -63,7 +63,8 @@ export function LeadDialog({
   lead,
   contacts,
   leads,
-  defaultStage,
+  stages,
+  defaultStageId,
   onSaved,
   onDeleted,
 }: {
@@ -74,14 +75,16 @@ export function LeadDialog({
   contacts: Contact[];
   /** Every lead in the org, used only to suggest previously-used Source values — not re-fetched here since the board already has them loaded. */
   leads: Lead[] | null;
-  /** Stage to preselect when creating (e.g. the column the user clicked "Add" from). */
-  defaultStage?: LeadStage;
+  /** US-CRM-19 — the organisation's pipeline stages, in board order. */
+  stages: LeadStage[];
+  /** Stage to preselect when creating (e.g. the column the user clicked "Add" from); the first stage otherwise. */
+  defaultStageId?: string;
   onSaved: (lead: Lead) => void;
   onDeleted: (leadId: string) => void;
 }) {
   const [contactId, setContactId] = useState("");
   const [title, setTitle] = useState("");
-  const [stage, setStage] = useState<LeadStage>("new");
+  const [stageId, setStageId] = useState("");
   const [amount, setAmount] = useState(0n);
   const [currency, setCurrency] = useState("USD");
   const [source, setSource] = useState("");
@@ -96,14 +99,14 @@ export function LeadDialog({
     if (lead) {
       setContactId(lead.contactId);
       setTitle(lead.title ?? "");
-      setStage(lead.stage);
+      setStageId(lead.stageId);
       setAmount(BigInt(lead.valueAmount));
       setCurrency(lead.valueCurrency);
       setSource(lead.source ?? "");
     } else {
       setContactId("");
       setTitle("");
-      setStage(defaultStage ?? "new");
+      setStageId(defaultStageId ?? stages[0]?.id ?? "");
       setAmount(0n);
       setSource("");
       // Org default currency, matching quote-builder.tsx's own pre-fill —
@@ -115,7 +118,7 @@ export function LeadDialog({
         })
         .catch(() => {});
     }
-  }, [open, lead, defaultStage]);
+  }, [open, lead, defaultStageId, stages]);
 
   const currencyOptions = useMemo(() => {
     const codes = COMMON_CURRENCIES.includes(currency) ? COMMON_CURRENCIES : [currency, ...COMMON_CURRENCIES];
@@ -146,7 +149,7 @@ export function LeadDialog({
         const updated = await apiClient.put<Lead>(`/leads/${lead.id}`, {
           contactId,
           title: title || null,
-          stage,
+          stageId,
           valueAmount: amount.toString(),
           valueCurrency: currency,
           source: source || null,
@@ -156,7 +159,7 @@ export function LeadDialog({
         const created = await apiClient.post<Lead>("/leads", {
           contactId,
           title: title || undefined,
-          stage,
+          stageId: stageId || undefined,
           valueAmount: amount.toString(),
           valueCurrency: currency,
           source: source || undefined,
@@ -206,14 +209,14 @@ export function LeadDialog({
             </FormField>
             <FormField label="Stage">
               {(field) => (
-                <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)}>
+                <Select value={stageId} onValueChange={setStageId}>
                   <SelectTrigger {...field} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LEAD_STAGES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {LEAD_STAGE_LABELS[s]}
+                    {stages.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

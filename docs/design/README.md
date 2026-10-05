@@ -17,7 +17,8 @@ Calm, understated, quietly competent. Spine is money software for people who did
 
 ## Surfaces and layers
 
-- `background` is the page canvas; `surface` is cards and panels. Identical in light mode (flat), split in dark mode (`#121110` vs `#191815`) so raised content still reads as a step up.
+- `background` is the page canvas; `surface` is cards and panels. Split in both themes so raised content reads as a step up: light `#F7F6F3` vs `#FFFFFF`, dark `#121110` vs `#191815` ([D-131](../prd/12-decisions.md)).
+- The sidebar, dialogs, drawers, menus and inputs are `surface` in both themes; only the page behind the content is `background`.
 - Depth comes from borders and one tonal step, not shadows. A card is a 1px-bordered surface.
 - Shadows are reserved for temporary, layered UI: dialogs, drawers, popovers, toasts.
 - Stacking order (`zIndex` in tokens): dropdown 1000 → sticky header 1100 → overlay 1200 → modal 1300 → popover 1600 → toast 1700 → tooltip 1800. Popover sits above modal because selects and menus open inside dialogs.
@@ -29,12 +30,14 @@ Calm, understated, quietly competent. Spine is money software for people who did
 |---|---|---|---|
 | `primary` | `#2954E5` | `#6B8AFF` | The one primary action per screen, links, active nav, focus ring |
 | `on-surface` | `#211F1A` | `#F3F2EE` | Body text |
-| `on-surface-muted` | `#726C5A` | `#93907F` | Secondary text, captions |
+| `on-surface-muted` | `#726C5A` | `#9A9786` | Secondary text, captions |
+| `scrim` | `rgba(18,17,16,0.32)` | `rgba(0,0,0,0.62)` | The dimmed backdrop behind dialogs, drawers and the search palette (US-OPS-26) |
+| `shadow-raised` / `shadow-overlay` / `shadow-toast` | `0 4px 14px rgba(33,31,26,.10)` / `0 10px 30px …0.14` / `0 4px 14px …0.16` | `rgba(0,0,0,.45)` / `.55` / `.55` | Menus and popovers / dialogs, drawers, palette / toasts — stronger in dark so surfaces stand off the page |
 | `border` / `border-strong` | `#E7E5E0` / `#D3D0C9` | `#2C2B26` / `#3B392F` | Hairline and emphasised borders |
 | `paid` on `paid-bg` | `#177044` on `#E4F5EB` | `#4ADE94` on `#132A1E` | Paid, approved, complete, synced |
-| `due-soon` on `due-soon-bg` | `#9A6300` on `#FCF0D4` | `#F2B23D` on `#332506` | Due soon, waiting to sync, needs attention |
+| `due-soon` on `due-soon-bg` | `#946000` on `#FCF0D4` | `#F2B23D` on `#332506` | Due soon, waiting to sync, needs attention |
 | `overdue` on `overdue-bg` | `#B3261E` on `#FBE6E4` | `#F17B72` on `#3A1512` | Overdue, rejected, failed, destructive action |
-| `draft` on `draft-bg` | `#726C5A` on `#F2F1EE` | `#93907F` on `#201F1B` | Draft, pending — nothing has happened yet |
+| `draft` on `draft-bg` | `#726C5A` on `#F2F1EE` | `#9A9786` on `#201F1B` | Draft, pending — nothing has happened yet |
 | `info` on `info-bg` | `#2954E5` on `#EAEFFD` | `#6B8AFF` on `#181F35` | Neutral system messages, submitted |
 
 Rules:

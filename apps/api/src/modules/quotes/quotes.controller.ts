@@ -122,6 +122,24 @@ export class QuotesController {
     return this.quotesService.send(orgId, id, session.user.id);
   }
 
+  /** US-QUO-24 — a new draft from this quote (anyone who can create quotes). */
+  @Post(":id/duplicate")
+  @RequireCapability("quotes.edit_own")
+  @UseInterceptors(IdempotencyInterceptor)
+  async duplicate(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.quotesService.duplicate(orgId, id, session.user.id);
+  }
+
+  /** US-QUO-24 — "Email again": re-sends a sent quote's email. */
+  @Post(":id/resend")
+  @RequireCapability("quotes.send")
+  @UseInterceptors(IdempotencyInterceptor)
+  async resend(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.quotesService.resend(orgId, id, session.user.id);
+  }
+
   @Post(":id/revise")
   @RequireCapability("quotes.revise")
   @UseInterceptors(IdempotencyInterceptor)

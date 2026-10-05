@@ -26,7 +26,7 @@ export function ContactsListView({
   onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
 }) {
   return (
-    <ul className="flex flex-col divide-y divide-border rounded-lg border border-border">
+    <ul className="flex flex-col divide-y divide-border rounded-lg border border-border bg-surface">
       {contacts.map((contact) => (
         <li key={contact.id} className="flex items-center gap-3 px-4 py-2.5">
           <ContactLogo name={contact.name} fileId={contact.logoFileId} size="md" editable={false} onUploaded={() => {}} />

@@ -3,6 +3,7 @@ import { Body, Controller, Get, Put, Req, UseInterceptors } from "@nestjs/common
 import {
   changePasswordSchema,
   dashboardLayoutSchema,
+  notificationPreferencesSchema,
   updateMeetingReminderLeadMinutesSchema,
   updatePreferencesSchema,
   updateProfileSchema,
@@ -20,13 +21,16 @@ import { UsersService } from "./users.service";
  * Field, since this is self-service for one's own account, not an admin
  * surface. Deliberately separate from the Owner-gated org/teams area.
  */
+/** The member's current organisation, for role defaults (the digest, D-093). */
+const orgOf = (session: UserSession): string | null => (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+
 @Controller("users")
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get("me")
   async getMe(@Session() session: UserSession) {
-    return this.usersService.getMe(session.user.id);
+    return this.usersService.getMe(session.user.id, orgOf(session));
   }
 
   @Put("me")
@@ -36,7 +40,8 @@ export class UsersController {
     @Req() request: Request,
     @Body(new ZodValidationPipe(updateProfileSchema)) body: z.infer<typeof updateProfileSchema>,
   ) {
-    return this.usersService.updateProfile(session.user.id, fromNodeHeaders(request.headers), body);
+    await this.usersService.updateProfile(session.user.id, fromNodeHeaders(request.headers), body);
+    return this.usersService.getMe(session.user.id, orgOf(session));
   }
 
   @Put("me/password")
@@ -55,7 +60,8 @@ export class UsersController {
     @Session() session: UserSession,
     @Body(new ZodValidationPipe(updatePreferencesSchema)) body: z.infer<typeof updatePreferencesSchema>,
   ) {
-    return this.usersService.updatePreferences(session.user.id, body.themePreference);
+    await this.usersService.updatePreferences(session.user.id, body.themePreference);
+    return this.usersService.getMe(session.user.id, orgOf(session));
   }
 
   @Get("me/dashboard-layout")
@@ -82,6 +88,17 @@ export class UsersController {
     @Body(new ZodValidationPipe(updateMeetingReminderLeadMinutesSchema))
     body: z.infer<typeof updateMeetingReminderLeadMinutesSchema>,
   ) {
-    return this.usersService.setMeetingReminderLeadMinutes(session.user.id, body.meetingReminderLeadMinutes);
+    await this.usersService.setMeetingReminderLeadMinutes(session.user.id, body.meetingReminderLeadMinutes);
+    return this.usersService.getMe(session.user.id, orgOf(session));
+  }
+
+  /** US-NTF-14 — the daily digest: on or off, "Send at" (organisation time) and days. Self only. */
+  @Put("me/notification-preferences")
+  @UseInterceptors(IdempotencyInterceptor)
+  async updateNotificationPreferences(
+    @Session() session: UserSession,
+    @Body(new ZodValidationPipe(notificationPreferencesSchema)) body: z.infer<typeof notificationPreferencesSchema>,
+  ) {
+    return this.usersService.setNotificationPreferences(session.user.id, orgOf(session), body);
   }
 }

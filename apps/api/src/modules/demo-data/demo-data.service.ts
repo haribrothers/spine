@@ -1,14 +1,15 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, invoices, invoiceLines, jobs, journalLines, leads, payments, quotes, settings, taxRates, taxGroups, vendorBills, expenses, expenseCategories, vendorPayments, accounts, meetings as meetingsTable, creditNotes } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, invoices, invoiceLines, jobs, journalLines, leads, leadStages, payments, quotes, settings, taxRates, taxGroups, vendorBills, expenses, expenseCategories, vendorPayments, accounts, meetings as meetingsTable, creditNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { PaymentsService } from "../payments/payments.service";
 import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
+import { IndustryTemplateService } from "../org/industry-template.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxRatesService } from "../tax/tax-rates.service";
 import { TaxGroupsService } from "../tax/tax-groups.service";
@@ -18,6 +19,7 @@ import { ExpensesService } from "../purchases/expenses.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
 import { CreditNotesService } from "../credit-notes/credit-notes.service";
 import { MeetingsService } from "../contacts/meetings.service";
+import { LeadStagesService } from "../contacts/lead-stages.service";
 import { VariationOrdersService } from "../jobs/variation-orders.service";
 import { FilesService } from "../files/files.service";
 import { TeamsService } from "../teams/teams.service";
@@ -604,6 +606,8 @@ export class DemoDataService {
     private readonly variationOrdersService: VariationOrdersService,
     private readonly filesService: FilesService,
     private readonly teamsService: TeamsService,
+    private readonly leadStagesService: LeadStagesService,
+    private readonly industryTemplate: IndustryTemplateService,
   ) {}
 
   /**
@@ -730,6 +734,17 @@ export class DemoDataService {
       // DEMO_QUOTES entry's contactIndex/catalogItemIndex into a real id.
       const contactIds: string[] = [];
 
+      // US-CRM-19: demo leads go into the organisation's own stages — the
+      // nth open stage for new/qualified/proposal, and the Won/Lost stage.
+      await this.leadStagesService.ensureSeeded(orgId, tx);
+      const stages = await tx.select().from(leadStages).where(eq(leadStages.orgId, orgId)).orderBy(asc(leadStages.sortOrder));
+      const open = stages.filter((st) => st.kind === "open");
+      const stageIdFor = (stage: DemoContactSeed["lead"]["stage"]): string => {
+        if (stage === "won" || stage === "lost") return stages.find((st) => st.kind === stage)!.id;
+        const position = { new: 0, qualified: 1, proposal: 2 }[stage];
+        return (open[position] ?? open[open.length - 1]!).id;
+      };
+
       for (const seed of DEMO_CONTACTS) {
         const [contact] = await tx
           .insert(contacts)
@@ -813,7 +828,7 @@ export class DemoDataService {
           .values({
             orgId,
             contactId: contact.id,
-            stage: seed.lead.stage,
+            stageId: stageIdFor(seed.lead.stage),
             valueAmount: seed.lead.valueAmount,
             valueCurrency: currencyCode,
             source: seed.lead.source,
@@ -1586,21 +1601,35 @@ export class DemoDataService {
       .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
     const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
 
-    const [expenseAccountRow] = await this.db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6300"))); // Travel & Vehicle
-    const fuelCategory = await this.expenseCategoriesService.create(orgId, actorUserId, {
-      name: "Fuel & Vehicle",
-      accountId: expenseAccountRow?.id ?? null,
-    });
-    const mealsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Site Meals" });
-    const toolsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Tools & Small Equipment" });
-    const categoryByName = new Map([
-      [fuelCategory.name, fuelCategory.id],
-      [mealsCategory.name, mealsCategory.id],
-      [toolsCategory.name, toolsCategory.id],
-    ]);
+    // US-ONB-13: a Construction organisation's demo expenses use the template's own site cost categories.
+    const template = (await this.settingsService.get<{ template?: string }>(orgId, "industry_template"))?.template;
+    let categoryByName: Map<string, string>;
+    if (template === "construction") {
+      await this.industryTemplate.seedConstruction(this.db, orgId, actorUserId);
+      const rows = await this.db.select({ id: expenseCategories.id, name: expenseCategories.name }).from(expenseCategories).where(eq(expenseCategories.orgId, orgId));
+      const idOf = (name: string) => rows.find((r) => r.name.toLowerCase() === name.toLowerCase())?.id ?? "";
+      categoryByName = new Map([
+        ["Fuel & Vehicle", idOf("Fuel & freight")],
+        ["Site Meals", idOf("Site overheads & permits")],
+        ["Tools & Small Equipment", idOf("Plant & equipment hire")],
+      ]);
+    } else {
+      const [expenseAccountRow] = await this.db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6300"))); // Travel & Vehicle
+      const fuelCategory = await this.expenseCategoriesService.create(orgId, actorUserId, {
+        name: "Fuel & Vehicle",
+        accountId: expenseAccountRow?.id ?? null,
+      });
+      const mealsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Site Meals" });
+      const toolsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Tools & Small Equipment" });
+      categoryByName = new Map([
+        [fuelCategory.name, fuelCategory.id],
+        [mealsCategory.name, mealsCategory.id],
+        [toolsCategory.name, toolsCategory.id],
+      ]);
+    }
 
     let vendorBillsCreated = 0;
     let vendorBillsRecorded = 0;

@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { progressClaimLabel } from "@spine/shared";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, contacts } from "../../db/schema";
+import { invoices, contacts, jobs } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
@@ -19,6 +20,8 @@ export interface InvoiceSendEmailJobData {
   invoiceId: string;
   /** S-05.10 — same worker, reminder-specific subject/body (see attemptSend's own branch) instead of the standard "here's your invoice" copy. Does not affect emailStatus/pdfFileId bookkeeping, which stays identical either way. */
   isReminder?: boolean;
+  /** US-INV-19 — days past the due date the reminder run worked out (negative = due in that many days). */
+  daysOverdue?: number;
 }
 
 /**
@@ -54,7 +57,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
   }
 
   async process(data: InvoiceSendEmailJobData): Promise<void> {
-    const { orgId, invoiceId, isReminder = false } = data;
+    const { orgId, invoiceId, isReminder = false, daysOverdue } = data;
 
     const [row] = await this.db
       .select({ invoice: invoices, contactName: contacts.name, contactEmail: contacts.email })
@@ -67,7 +70,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     }
 
     try {
-      await this.attemptSend(orgId, invoiceId, row, isReminder);
+      await this.attemptSend(orgId, invoiceId, row, isReminder, daysOverdue);
       await this.db
         .update(invoices)
         .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
@@ -84,6 +87,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     invoiceId: string,
     row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
     isReminder: boolean,
+    scheduledDaysOverdue?: number,
   ): Promise<void> {
     // US-INV-17: attach the PDF stored when the invoice was issued (stored now if it isn't yet).
     const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
@@ -100,11 +104,18 @@ export class InvoiceEmailWorker implements OnModuleInit {
     // US-JOB-21: retention held back isn't due now.
     const balanceDue = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
     // S-05.10 — a reminder says how many days overdue rather than restating the date.
-    const daysOverdue = invoice.dueDate
-      ? Math.max(0, Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000)))
-      : null;
+    const daysOverdue =
+      scheduledDaysOverdue ??
+      (invoice.dueDate ? Math.max(0, Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000))) : null);
 
+    // US-JOB-29: "Progress claim 3 · JOB-002" for a numbered progress claim.
+    let claimLabel: string | null = null;
+    if (invoice.progressClaimNo && invoice.jobId) {
+      const [job] = await this.db.select({ number: jobs.number }).from(jobs).where(eq(jobs.id, invoice.jobId));
+      claimLabel = progressClaimLabel(invoice.progressClaimNo, { jobNumber: job?.number, voided: invoice.status === "void" });
+    }
     const template = invoiceEmail({
+      claimLabel,
       businessName: brand.name,
       locale: brand.locale,
       contactName: row.contactName,

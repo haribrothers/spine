@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from "@spine/ui";
 import { HandCoins } from "lucide-react";
@@ -26,9 +27,12 @@ export function VendorPaymentsExplorer() {
   const canCreate = useCapability("vendor_payments.edit_own");
   const [payments, setPayments] = useState<VendorPayment[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
+  // US-DASH-13: "Pay bill" arrives as ?contactId=<vendor>&pay=1 and opens the payment dialog on that vendor.
+  const searchParams = useSearchParams();
+  const payFor = searchParams.get("pay") === "1" ? (searchParams.get("contactId") ?? undefined) : undefined;
+  const [contactFilter, setContactFilter] = useState<string>(searchParams.get("contactId") ?? ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
-  const [newPaymentOpen, setNewPaymentOpen] = useState(false);
+  const [newPaymentOpen, setNewPaymentOpen] = useState(Boolean(payFor));
   const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
   const { show: showToast, toast } = useEntityToast();
 
@@ -109,7 +113,7 @@ export function VendorPaymentsExplorer() {
       {!payments ? (
         <VendorPaymentsSkeleton />
       ) : payments.length === 0 ? (
-        <div className="rounded-lg border border-border">
+        <div className="rounded-lg border border-border bg-surface">
           {contactFilter !== ALL_CONTACTS ? (
             <EmptyState
               icon={<HandCoins />}
@@ -134,7 +138,7 @@ export function VendorPaymentsExplorer() {
         <VendorPaymentsTable payments={payments} onOpen={(payment) => setSelectedPaymentId(payment.id)} />
       )}
 
-      <NewVendorPaymentDialog open={newPaymentOpen} onOpenChange={setNewPaymentOpen} onRecorded={handleRecorded} />
+      <NewVendorPaymentDialog open={newPaymentOpen} onOpenChange={setNewPaymentOpen} onRecorded={handleRecorded} initialContactId={payFor} />
       <VendorPaymentDetailDrawer
         open={selectedPaymentId !== null}
         onOpenChange={(open) => {

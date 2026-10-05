@@ -1,0 +1,1 @@
+ALTER TABLE "jobs" ADD COLUMN "percent_complete" numeric(5, 2);

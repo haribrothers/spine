@@ -23,7 +23,8 @@ import {
 import { Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
-import { LEAD_STAGE_LABELS, LEAD_STAGES, type Lead, type LeadStage } from "./types";
+import { type Lead } from "./types";
+import { useLeadStages } from "./use-lead-stages";
 import { formatMoney } from "../../../lib/money";
 
 /**
@@ -56,7 +57,9 @@ export function LeadsSection({
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState("");
-  const [stage, setStage] = useState<LeadStage>("new");
+  const [stageId, setStageId] = useState("");
+  // US-CRM-19: the organisation's own stages; a new lead starts in the first one.
+  const { stages } = useLeadStages();
   const [amount, setAmount] = useState(0n);
   const [currency, setCurrency] = useState("USD");
   const [saving, setSaving] = useState(false);
@@ -65,7 +68,7 @@ export function LeadsSection({
   function openAddDialog() {
     setEditingId(null);
     setTitle("");
-    setStage("new");
+    setStageId(stages?.[0]?.id ?? "");
     setAmount(0n);
     setCurrency("USD");
     setOpen(true);
@@ -74,7 +77,7 @@ export function LeadsSection({
   function openEditDialog(lead: Lead) {
     setEditingId(lead.id);
     setTitle(lead.title ?? "");
-    setStage(lead.stage);
+    setStageId(lead.stageId);
     setAmount(BigInt(lead.valueAmount));
     setCurrency(lead.valueCurrency);
     setOpen(true);
@@ -86,7 +89,7 @@ export function LeadsSection({
       if (editingId) {
         await apiClient.put(`/leads/${editingId}`, {
           title: title || null,
-          stage,
+          stageId,
           valueAmount: amount.toString(),
           valueCurrency: currency,
         });
@@ -94,7 +97,7 @@ export function LeadsSection({
         await apiClient.post("/leads", {
           contactId,
           title: title || undefined,
-          stage,
+          stageId: stageId || undefined,
           valueAmount: amount.toString(),
           valueCurrency: currency,
         });
@@ -138,14 +141,14 @@ export function LeadsSection({
             </FormField>
             <FormField label="Stage">
               {(field) => (
-                <Select value={stage} onValueChange={(v) => setStage(v as LeadStage)}>
+                <Select value={stageId} onValueChange={setStageId}>
                   <SelectTrigger {...field} className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {LEAD_STAGES.map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {LEAD_STAGE_LABELS[s]}
+                    {(stages ?? []).map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -178,7 +181,7 @@ function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void })
   const canEdit = useCanEditOwnership(lead.createdByUserId, { own: "leads.edit_own", others: "leads.edit_others" });
 
   return (
-    <li className="flex items-center justify-between rounded-md border border-border-strong px-3 py-2 text-[13px]">
+    <li className="flex items-center justify-between rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
       <div>
         <span className="font-medium text-on-surface">{lead.title ?? "Untitled lead"}</span>
         <span className="text-on-surface-muted">
@@ -187,7 +190,7 @@ function LeadRow({ lead, onEdit }: { lead: Lead; onEdit: (lead: Lead) => void })
         </span>
       </div>
       <div className="flex items-center gap-3">
-        <Badge>{LEAD_STAGE_LABELS[lead.stage]}</Badge>
+        <Badge>{lead.stageName}</Badge>
         {canEdit && (
           <button
             type="button"

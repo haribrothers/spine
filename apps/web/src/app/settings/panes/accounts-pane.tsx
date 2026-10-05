@@ -253,7 +253,7 @@ function PeriodCloseSection() {
       </div>
 
       {periods && periods.length > 0 && (
-        <div className="rounded-md border border-border-strong">
+        <div className="rounded-md border border-border-strong bg-surface">
           {periods.map((period) => (
             <div key={period.id} className="flex items-center justify-between border-b border-border px-3 py-2 text-[13px] last:border-b-0">
               <span className="text-on-surface">

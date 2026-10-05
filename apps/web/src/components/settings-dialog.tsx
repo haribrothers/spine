@@ -1,23 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  AlarmClock,
-  Landmark,
-  Building2,
-  Calendar,
-  CalendarClock,
-  Coins,
-  Database,
-  ListOrdered,
-  Percent,
-  Search,
-  ShieldAlert,
-  Sparkles,
-  Wallet,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlarmClock, BellRing, Building2, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
+import { BrandingPane } from "../app/settings/panes/branding-pane";
 import { TemplatePane } from "../app/settings/panes/template-pane";
 import { CurrencyPane } from "../app/settings/panes/currency-pane";
 import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
@@ -25,7 +12,10 @@ import { TaxPane } from "../app/settings/panes/tax-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { PaymentInstructionsPane } from "../app/settings/panes/payment-instructions-pane";
+import { LeadStagesPane } from "../app/settings/panes/lead-stages-pane";
+import { RemindersPane } from "../app/settings/panes/reminders-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
+import { DataExportPane } from "../app/settings/panes/data-export-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
 import { DashboardMeetingsScopePane } from "../app/settings/panes/dashboard-meetings-scope-pane";
 import { MeetingReminderLeadTimePane } from "../app/settings/panes/meeting-reminder-lead-time-pane";
@@ -39,6 +29,7 @@ interface SettingsSection {
 
 const SECTIONS: SettingsSection[] = [
   { key: "business", label: "Business profile", icon: <Building2 size={16} />, render: () => <BusinessPane /> },
+  { key: "branding", label: "Branding", icon: <Palette size={16} />, render: () => <BrandingPane /> },
   { key: "template", label: "Industry template", icon: <Sparkles size={16} />, render: () => <TemplatePane /> },
   { key: "currency", label: "Currency & locale", icon: <Coins size={16} />, render: () => <CurrencyPane /> },
   { key: "fiscal-year", label: "Financial year", icon: <Calendar size={16} />, render: () => <FiscalYearPane /> },
@@ -46,6 +37,8 @@ const SECTIONS: SettingsSection[] = [
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
   { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
+  { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
+  { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
   {
     key: "quote-conversion-guard",
     label: "Repeat quote conversion",
@@ -64,6 +57,8 @@ const SECTIONS: SettingsSection[] = [
     icon: <AlarmClock size={16} />,
     render: () => <MeetingReminderLeadTimePane />,
   },
+  // US-SET-15/16 (D-094)
+  { key: "data-export", label: "Data export", icon: <Download size={16} />, render: () => <DataExportPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];
 
@@ -94,13 +89,19 @@ export function SettingsDialog({
   open,
   onOpenChange,
   isOwner,
+  initialKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isOwner: boolean;
+  /** US-SET-15: open on this pane (e.g. "data-export" from the export-ready email's `?settings=` link). */
+  initialKey?: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [activeKey, setActiveKey] = useState("business");
+  useEffect(() => {
+    if (open && initialKey && SECTIONS.some((s) => s.key === initialKey)) setActiveKey(initialKey);
+  }, [open, initialKey]);
 
   if (!isOwner) return null;
 

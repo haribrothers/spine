@@ -27,6 +27,8 @@ A warm-leaning stone scale rather than a cool blue-grey, so dense tables and for
 
 ## Surfaces
 
+`background` is the page behind the content; `surface` is everything raised on it — cards, tables, dialogs, drawers, menus, the sidebar and form controls. The two differ in both themes (light: warm grey page, white surface; dark: near-black page, a step lighter surface), so content lifts off the page without shadows (D-131).
+
 <ColorSwatchGrid swatches={[
   { name: "Background", variable: "--color-background" },
   { name: "Surface", variable: "--color-surface" },
@@ -34,6 +36,10 @@ A warm-leaning stone scale rather than a cool blue-grey, so dense tables and for
   { name: "Border", variable: "--color-border" },
   { name: "Border strong", variable: "--color-border-strong" },
 ]} />
+
+## Theme presets
+
+An Owner can switch the whole organisation to Harbour Teal, Plum or Graphite in Settings › Branding (US-SET-09). A preset replaces only Primary and Primary hover, through `[data-brand]` rules in the preset CSS; neutrals and the financial status colours below never change. Values for both modes are in `docs/DESIGN.md` and `tokens.json` (`themePresets`).
 
 ## Financial status (reserved)
 

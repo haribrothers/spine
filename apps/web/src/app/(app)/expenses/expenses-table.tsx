@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, DataTable, type TableColumn } from "@spine/ui";
+import { Badge, Checkbox, DataTable, type TableColumn } from "@spine/ui";
 import type { MemberRow } from "../../../lib/members";
 import { ExpenseRowActions } from "./expense-row-actions";
 import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
@@ -27,8 +27,11 @@ export function ExpensesTable({
   members,
   onDeleted,
   onOpen,
+  selection,
 }: {
   expenses: Expense[];
+  /** US-PUR-21 — ticked rows for bulk approval; no tick boxes when absent. */
+  selection?: { selected: Set<string>; canSelect: (expense: Expense) => boolean; onToggle: (expense: Expense, on: boolean) => void };
   jobs: JobOption[];
   members: MemberRow[];
   onDeleted: (expense: Expense) => void;
@@ -38,6 +41,22 @@ export function ExpensesTable({
   const memberByUserId = new Map(members.map((m) => [m.userId, m]));
 
   const columns: TableColumn<Expense>[] = [
+    ...(selection
+      ? [
+          {
+            key: "select",
+            header: "",
+            render: (row: Expense) => (
+              <Checkbox
+                checked={selection.selected.has(row.id)}
+                disabled={!selection.canSelect(row)}
+                onCheckedChange={(v) => selection.onToggle(row, v === true)}
+                aria-label={`Select ${row.categoryName ?? "expense"} ${formatMoney(BigInt(row.amount), row.currency)}`}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       key: "date",
       header: "Date",

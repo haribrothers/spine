@@ -61,7 +61,7 @@ export function MultiSelect({
           aria-labelledby={ariaLabelledBy}
           disabled={disabled}
           className={cn(
-            "flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-border-strong bg-surface px-2.5 text-[14px] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50",
+            "flex h-10 w-full items-center justify-between gap-2 rounded-sm border border-border-strong bg-surface px-2.5 text-[14px] transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface disabled:cursor-not-allowed disabled:opacity-50",
             selected.length === 0 && "text-on-surface-muted",
             className,
           )}
@@ -78,7 +78,7 @@ export function MultiSelect({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
+          className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-raised"
         >
           <div role="listbox" aria-multiselectable="true" className="max-h-64 overflow-y-auto p-1">
             {options.map((option) => {

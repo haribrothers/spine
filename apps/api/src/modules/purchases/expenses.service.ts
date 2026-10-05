@@ -1,11 +1,13 @@
 import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenses, expenseCategories, accounts, invoiceLines, jobs } from "../../db/schema";
+import { expenses, expenseCategories, expenseLabourLines, accounts, invoiceLines, jobs, jobAssignments } from "../../db/schema";
+import type { Transaction } from "../../db/client";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
@@ -43,6 +45,15 @@ export class ExpensesService {
     private readonly notifications: NotificationsService,
     private readonly invoices: InvoicesService,
   ) {}
+
+  /** US-PUR-22 — whether a member is on a job's crew. */
+  async isAssigned(orgId: string, userId: string, jobId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ jobId: jobAssignments.jobId })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.orgId, orgId), eq(jobAssignments.userId, userId), eq(jobAssignments.jobId, jobId)));
+    return !!row;
+  }
 
   async list(orgId: string, options: { status?: string; jobId?: string; submittedByUserId?: string }) {
     const conditions = [eq(expenses.orgId, orgId)];
@@ -84,7 +95,46 @@ export class ExpensesService {
     if (!row) {
       throw new NotFoundException("Expense not found");
     }
-    return { ...row.expense, categoryName: row.categoryName };
+    // US-PUR-23: a labour expense's rows, in order.
+    const labourLines =
+      row.expense.entryMode === "labour"
+        ? await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))
+        : [];
+    return { ...row.expense, categoryName: row.categoryName, labourLines };
+  }
+
+  /**
+   * US-PUR-23 (D-126) — a labour expense needs a job and at least one row,
+   * and its amount must be the rows' total (the server's sum, not the
+   * client's arithmetic).
+   */
+  private checkLabour(input: { labourLines?: LabourLineInput[]; amount: bigint; jobId: string | null; currency: string }) {
+    if (!input.labourLines?.length) throw new BadRequestException(LABOUR_ROW_INCOMPLETE);
+    if (!input.jobId) throw new BadRequestException(LABOUR_NEEDS_JOB);
+    const total = labourTotal(input.labourLines);
+    if (total !== input.amount) {
+      throw new BadRequestException(`The amount must equal the labour rows' total, ${toDecimalString({ amount: total, currency: input.currency })}.`);
+    }
+  }
+
+  private async writeLabourLines(tx: Transaction, orgId: string, expenseId: string, lines: LabourLineInput[]) {
+    await tx.delete(expenseLabourLines).where(eq(expenseLabourLines.expenseId, expenseId));
+    if (!lines.length) return;
+    await tx.insert(expenseLabourLines).values(
+      lines.map((line, i) => ({ orgId, expenseId, sortOrder: i, trade: line.trade.trim(), headcount: line.headcount, dayRateAmount: line.dayRateAmount, lineAmount: labourLineAmount(line) })),
+    );
+  }
+
+  /** US-PUR-23 — trades used before, with the last day rate for each, for the labour form's suggestions. */
+  async labourTrades(orgId: string, query?: string): Promise<{ trade: string; lastDayRateAmount: string }[]> {
+    const q = query?.trim().toLowerCase();
+    const rows = await this.db.execute<{ trade: string; day_rate_amount: string }>(sql`
+      select distinct on (lower(${expenseLabourLines.trade})) ${expenseLabourLines.trade} as trade, ${expenseLabourLines.dayRateAmount}::text as day_rate_amount
+      from ${expenseLabourLines}
+      where ${expenseLabourLines.orgId} = ${orgId} ${q ? sql`and lower(${expenseLabourLines.trade}) like ${`%${q}%`}` : sql``}
+      order by lower(${expenseLabourLines.trade}), ${expenseLabourLines.createdAt} desc
+      limit 20`);
+    return (rows as unknown as { trade: string; day_rate_amount: string }[]).map((r) => ({ trade: r.trade, lastDayRateAmount: r.day_rate_amount }));
   }
 
   /** `GET /expenses/:id/history` — confirms the expense exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
@@ -101,6 +151,8 @@ export class ExpensesService {
     if (!category) {
       throw new BadRequestException("Expense category not found");
     }
+    const labour = input.entryMode === "labour";
+    if (labour) this.checkLabour({ labourLines: input.labourLines, amount: input.amount, jobId: input.jobId ?? null, currency: input.currency });
 
     const created = await this.db.transaction(async (tx) => {
       const [expense] = await tx
@@ -120,9 +172,11 @@ export class ExpensesService {
           status: "submitted",
           submittedByUserId: actorUserId,
           isBillable: input.isBillable,
+          entryMode: labour ? "labour" : "amount",
           isDemo,
         })
         .returning();
+      if (labour) await this.writeLabourLines(tx, orgId, expense!.id, input.labourLines!);
 
       await this.auditLog.record(tx, {
         orgId,
@@ -156,6 +210,24 @@ export class ExpensesService {
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be edited");
     }
+    // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
+    const mode = input.entryMode ?? existing.entryMode;
+    const labourChanged = input.entryMode !== undefined || input.labourLines !== undefined;
+    if (mode === "labour" && (labourChanged || input.amount !== undefined || input.jobId !== undefined)) {
+      const currentLines =
+        input.labourLines ??
+        (await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))).map((l) => ({
+          trade: l.trade,
+          headcount: l.headcount,
+          dayRateAmount: l.dayRateAmount,
+        }));
+      this.checkLabour({
+        labourLines: currentLines,
+        amount: input.amount ?? existing.amount,
+        jobId: input.jobId !== undefined ? input.jobId : existing.jobId,
+        currency: input.currency ?? existing.currency,
+      });
+    }
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -172,12 +244,17 @@ export class ExpensesService {
           ...(input.paidBy !== undefined ? { paidBy: input.paidBy } : {}),
           ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
           ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
+          ...(input.entryMode !== undefined ? { entryMode: input.entryMode } : {}),
           updatedAt: new Date(),
         })
         .where(eq(expenses.id, id))
         .returning();
+      if (mode === "labour" && input.labourLines) await this.writeLabourLines(tx, orgId, id, input.labourLines);
+      if (mode === "amount" && existing.entryMode === "labour") await this.writeLabourLines(tx, orgId, id, []);
 
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      // Labour rows aren't a field; the amount change already says what moved.
+      const { labourLines: _rows, ...fields } = input;
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>);
       if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,
@@ -315,6 +392,37 @@ export class ExpensesService {
   }
 
   /** S-07.4's reject half — a comment is required (per the story's own wording), and a rejected expense never posts. */
+  /**
+   * US-PUR-21 (D-097) — approves or rejects several expenses, one at a
+   * time through `approve`/`reject`, so each is checked, numbered, posted
+   * (its own journal entry) and notified exactly as a single review would
+   * be. Any that can't be reviewed are reported with the reason.
+   */
+  async bulkReview(orgId: string, actorUserId: string, ids: string[], action: { approve: true } | { approve: false; comment: string }): Promise<BulkResult> {
+    const result: BulkResult = { done: [], skipped: [] };
+    for (const id of [...new Set(ids)]) {
+      try {
+        if (action.approve) await this.approve(orgId, id, actorUserId, null);
+        else await this.reject(orgId, id, actorUserId, action.comment);
+        result.done.push(id);
+      } catch (err) {
+        const reason =
+          err instanceof NotFoundException
+            ? "Not found."
+            : err instanceof ForbiddenException
+              ? "It's your own expense — someone else reviews it."
+              : err instanceof BadRequestException && /Only a submitted expense/.test(err.message)
+                ? "It isn't waiting for approval."
+                : err instanceof Error
+                  ? err.message
+                  : "It couldn't be reviewed.";
+        const [row] = await this.db.select({ number: expenses.number }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+        result.skipped.push({ id, label: row?.number ?? null, reason });
+      }
+    }
+    return result;
+  }
+
   async reject(orgId: string, id: string, actorUserId: string, comment: string) {
     const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!existing) {

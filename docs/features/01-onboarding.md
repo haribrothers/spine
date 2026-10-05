@@ -2,7 +2,7 @@
 
 A linear setup wizard that runs after the first owner signs up, configures the business in eight short steps, and can be skipped at any point. Every step stays editable later in Settings, demo data can replace manual setup, and a dashboard checklist guides the first real transaction.
 
-**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1)
+**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1)
 **Depends on:** 02 Sign-in & account (first owner exists), 16 Settings (same panes reused), 15 Team (invitations).
 
 ## Features
@@ -11,7 +11,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 |---|---|---|---|---|
 | F-ONB-01 | Wizard shell: welcome, stepper, skip, revisit in Settings | P1 | 0 | `OnbWelcome`, `OnbBusinessProfile`, `OnbChartOfAccounts` |
 | F-ONB-02 | Setup steps: business, currency and year, tax and numbering, accounts, team | P1 | 0 | `OnbBusinessProfile`, `OnbCurrencyLocale`, `OnbFinancialYear`, `OnbTaxRate`, `OnbNumbering`, `OnbChartOfAccounts`, `OnbInviteTeam`, `OnbInviteTeamSent` |
-| F-ONB-03 | Industry template | P1 | 3 | `OnbIndustryTemplate` |
+| F-ONB-03 | Industry template | P1 | 3 | `OnbIndustryTemplate`, `ExpenseCategoriesConstruction` |
 | F-ONB-04 | Load demo data | P1 | 8 | `OnbWelcome` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 
@@ -238,3 +238,23 @@ Review finding: Stage 5 #8
 **Implementation notes**
 - API: `GET /dashboard/checklist` checks the caller's role.
 - UI: `setup-checklist.tsx` renders nothing when `visible` is false.
+
+### US-ONB-13 · Start a construction business with site cost categories
+**Feature:** F-ONB-03 · **Priority:** P1 · **Phase:** 7 · **Screens:** `OnbIndustryTemplate`, `ExpenseCategoriesConstruction`
+**As** the owner of a construction business, **I want** the usual site cost categories set up for me, **so that** job costs split into materials, labour, subcontractors and plant from day one.
+
+Decision: D-129
+
+**Acceptance criteria**
+- **Given** the Template step, **when** I view "Construction / Contracting", **then** its description adds "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads.".
+- **Given** I choose it and continue (or choose it later in Settings › Industry template), **when** it saves, **then** accounts 5300 "Plant & Equipment Hire", 5400 "Fuel & Freight" and 5500 "Site Overheads & Permits" exist and Expenses › Categories lists "Materials" (5000), "Subcontractors" (5100), "Site labour" (5200), "Plant & equipment hire" (5300), "Fuel & freight" (5400) and "Site overheads & permits" (5500).
+- **Given** an account code or a category name that already exists, **when** the template is applied, **then** it's left as it is and not duplicated; a clash is listed in a note ("Kept your existing account 5300 · Vehicle Lease").
+- **Given** the template is applied twice, **when** I check, **then** nothing is created the second time.
+- **Given** I switch to "General Services" or "Generic", **when** it saves, **then** the categories and accounts stay (they may already be used) and I can archive categories myself.
+- **Given** the seeded categories, **when** I open them, **then** they're ordinary categories: renamed, remapped or archived like any other.
+
+**Implementation notes**
+- API: `PUT /org/settings/industry_template` with `construction` runs the seed in the same transaction; response gains `seeded: { accounts: string[], categories: string[], kept: string[] }`.
+- Data: rows in `accounts` (not system accounts) and `expense_categories` (`created_by_user_id` = the Owner who chose the template).
+- Edge: the seed never deletes or remaps anything; demo data (US-ONB-09) uses the same categories when the template is Construction.
+

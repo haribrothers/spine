@@ -197,7 +197,7 @@ function ActivityRow({
   const overdue = !activity.doneAt && activity.dueAt && new Date(activity.dueAt) < new Date();
 
   return (
-    <li className="flex items-center gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
+    <li className="flex items-center gap-3 rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
       <Checkbox
         checked={Boolean(activity.doneAt)}
         onCheckedChange={() => onToggle(activity)}

@@ -33,7 +33,8 @@ export const auditLog = pgTable(
     actorUserId: text("actor_user_id").references(() => user.id, { onDelete: "set null" }),
     action: text("action").notNull(),
     entityType: text("entity_type").notNull(),
-    entityId: uuid("entity_id").notNull(),
+    /** US-SET-11: text, so member/user ids (Better Auth text ids) fit beside record uuids. */
+    entityId: text("entity_id").notNull(),
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
     changes: jsonb("changes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -42,5 +43,7 @@ export const auditLog = pgTable(
     index("audit_log_org_idx").on(table.orgId),
     index("audit_log_contact_idx").on(table.contactId),
     index("audit_log_entity_idx").on(table.entityType, table.entityId),
+    // US-SET-11: the org-wide log, newest first.
+    index("audit_log_org_created_idx").on(table.orgId, table.createdAt),
   ],
 );

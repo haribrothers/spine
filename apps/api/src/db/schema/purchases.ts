@@ -215,6 +215,8 @@ export const expenses = pgTable(
     /** Required on reject (S-07.4 "approve or reject ... with a comment"). Null while submitted/approved. */
     reviewComment: text("review_comment"),
     isBillable: boolean("is_billable").notNull().default(false),
+    /** US-PUR-23 (D-126) — "amount", or "labour" when entered as headcount × day rate (`expense_labour_lines`). */
+    entryMode: text("entry_mode").notNull().default("amount"),
     /** Set once this expense has been pulled into a customer invoice line (S-07.6) — see this table's own doc comment on why this is a one-shot action. */
     billedOnInvoiceLineId: uuid("billed_on_invoice_line_id").references(() => invoiceLines.id, { onDelete: "set null" }),
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
@@ -231,6 +233,32 @@ export const expenses = pgTable(
     index("expenses_submitted_by_idx").on(table.submittedByUserId),
     index("expenses_org_demo_idx").on(table.orgId, table.isDemo),
   ],
+);
+
+/**
+ * US-PUR-23 (D-126) — a labour expense's rows: a trade, how many worked and
+ * at what day rate. `line_amount` is headcount × day rate; the expense's
+ * `amount` is their sum. No names, attendance or hours — Spine isn't a
+ * payroll or timesheet system.
+ */
+export const expenseLabourLines = pgTable(
+  "expense_labour_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    expenseId: uuid("expense_id")
+      .notNull()
+      .references(() => expenses.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    trade: text("trade").notNull(),
+    headcount: integer("headcount").notNull(),
+    dayRateAmount: bigint("day_rate_amount", { mode: "bigint" }).notNull(),
+    lineAmount: bigint("line_amount", { mode: "bigint" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("expense_labour_lines_expense_idx").on(table.expenseId, table.sortOrder), index("expense_labour_lines_org_trade_idx").on(table.orgId, table.trade)],
 );
 
 /** PRD F6's own wording, reused verbatim for the vendor side per S-07.8. */

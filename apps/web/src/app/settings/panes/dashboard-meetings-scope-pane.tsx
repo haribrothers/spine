@@ -63,7 +63,7 @@ function DashboardMeetingsScopeForm({ initialScope }: { initialScope: DashboardM
       <div className="flex flex-col gap-1">
         <h2 className="text-[15px] font-semibold text-on-surface">Upcoming meetings</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Choose what the dashboard&apos;s &quot;Upcoming meetings&quot; widget shows.
+          Choose which meetings the dashboard&apos;s &quot;Today&quot; card shows.
         </p>
       </div>
 

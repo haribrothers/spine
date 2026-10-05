@@ -285,41 +285,53 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 7 · Product upgrades
 
-- [ ] US-CRM-19 · Rename, reorder and add pipeline stages
-- [ ] US-CRM-20 · Delete a stage and move its leads
-- [ ] US-CAT-06 · Add a new item while building a quote
-- [ ] US-QUO-24 · Duplicate a quote as a new draft
-- [ ] US-QUO-25 · Save quote lines as a reusable bundle
-- [ ] US-QUO-26 · Add a bundle while building a quote
-- [ ] US-INV-18 · Turn on automatic payment reminders
-- [ ] US-INV-19 · Send reminders on schedule without double-sending
-- [ ] US-INV-20 · Set up a recurring invoice
-- [ ] US-INV-21 · Create recurring invoices automatically
-- [ ] US-INV-22 · Pause, edit or stop a recurring invoice
-- [ ] US-INV-23 · Send reminders for several invoices at once
-- [ ] US-INV-24 · Download several invoice PDFs at once
-- [ ] US-PAY-14 · Send a customer a statement
-- [ ] US-PAY-15 · Give customers a clear statement PDF
-- [ ] US-PUR-21 · Approve several expenses at once
-- [ ] US-DASH-12 · See what needs my attention first
-- [ ] US-DASH-13 · Act on an attention item in one click
-- [ ] US-DASH-14 · See key figures with a trend and a comparison
-- [ ] US-DASH-15 · See money in and out by month
-- [ ] US-DASH-16 · See today's schedule beside my tasks
-- [ ] US-DASH-17 · Get a staff dashboard of only what I can act on
-- [ ] US-DASH-18 · Get a field dashboard of my day
-- [ ] US-DASH-19 · Read who did what in the activity feed
-- [ ] US-NTF-13 · Get a daily digest by email
-- [ ] US-NTF-14 · Choose when my digest arrives
-- [ ] US-SET-09 · Pick a theme for the whole organisation
-- [ ] US-SET-10 · Put my brand colour and footer on documents
-- [ ] US-SET-11 · See every change across the organisation
-- [ ] US-SET-12 · Export the audit log
-- [ ] US-SET-15 · Export all my data
-- [ ] US-SET-16 · Keep data exports private
-- [ ] US-OPS-22 · Search everything from anywhere
-- [ ] US-OPS-23 · Use search with the keyboard and a screen reader
-- [ ] US-OPS-26 · Use every new screen in dark mode
+- [x] US-ONB-13 · Start a construction business with site cost categories
+- [x] US-CRM-19 · Rename, reorder and add pipeline stages
+- [x] US-CRM-20 · Delete a stage and move its leads
+- [x] US-CAT-06 · Add a new item while building a quote
+- [x] US-QUO-24 · Duplicate a quote as a new draft
+- [x] US-QUO-25 · Save quote lines as a reusable bundle
+- [x] US-QUO-26 · Add a bundle while building a quote
+- [x] US-JOB-24 · Set a cost budget for a job
+- [x] US-JOB-25 · See budget spent and get warned before going over
+- [x] US-JOB-26 · See a job's cost by category
+- [x] US-JOB-27 · See how much of the contract has been billed
+- [x] US-JOB-28 · Record how complete a job is and compare it with billing
+- [x] US-JOB-29 · Number each progress claim on a job
+- [x] US-INV-18 · Turn on automatic payment reminders
+- [x] US-INV-19 · Send reminders on schedule without double-sending
+- [x] US-INV-20 · Set up a recurring invoice
+- [x] US-INV-21 · Create recurring invoices automatically
+- [x] US-INV-22 · Pause, edit or stop a recurring invoice
+- [x] US-INV-23 · Send reminders for several invoices at once
+- [x] US-INV-24 · Download several invoice PDFs at once
+- [x] US-PAY-14 · Send a customer a statement
+- [x] US-PAY-15 · Give customers a clear statement PDF
+- [x] US-PUR-21 · Approve several expenses at once
+- [x] US-PUR-22 · Filter bills and expenses by job
+- [x] US-PUR-23 · Enter site labour as headcount × day rate
+- [x] US-DASH-12 · See what needs my attention first
+- [x] US-DASH-13 · Act on an attention item in one click
+- [x] US-DASH-14 · See key figures with a trend and a comparison
+- [x] US-DASH-15 · See money in and out by month
+- [x] US-DASH-16 · See today's schedule beside my tasks
+- [x] US-DASH-17 · Get a staff dashboard of only what I can act on
+- [x] US-DASH-18 · Get a field dashboard of my day
+- [x] US-DASH-19 · Read who did what in the activity feed
+- [x] US-DASH-20 · See retention held and job billing on the dashboard
+- [x] US-RPT-15 · Compare contract, billed and cost across jobs
+- [x] US-NTF-13 · Get a daily digest by email
+- [x] US-NTF-14 · Choose when my digest arrives
+- [x] US-SET-09 · Pick a theme for the whole organisation
+- [x] US-SET-10 · Put my brand colour and footer on documents
+- [x] US-SET-11 · See every change across the organisation
+- [x] US-SET-12 · Export the audit log
+- [x] US-SET-15 · Export all my data
+- [x] US-SET-16 · Keep data exports private
+- [x] US-OPS-22 · Search everything from anywhere
+- [x] US-OPS-23 · Use search with the keyboard and a screen reader
+- [x] US-OPS-26 · Use every new screen in dark mode
+- [x] US-OPS-32 · Lift cards off the page in light mode
 
 ## Phase 8 · Packaging & 1.0
 

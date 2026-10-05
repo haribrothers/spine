@@ -58,6 +58,8 @@ export default () => (
             { prop: "segments", type: "DonutChartSegment[]", description: "{ key, label, value, color, formattedValue }" },
             { prop: "centerLabel", type: "ReactNode", description: "Rendered in the donut's empty center — typically a total." },
             { prop: "emptyState", type: "ReactNode", description: 'Shown when every segment is 0. Default: "No data."' },
+            { prop: "legend", type: "boolean", description: "Default true. Set false only when the page lists the same breakdown beside the ring (e.g. a job's cost by category table)." },
+            { prop: "aria-label", type: "string", description: "Names the ring for screen readers when the legend is hidden." },
           ]}
         />
       </DocSection>
@@ -65,7 +67,8 @@ export default () => (
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>
           The legend carries the same information as the ring in text form, so color-blind and screen-reader users
-          aren&apos;t relying on hue alone to read the breakdown.
+          aren&apos;t relying on hue alone to read the breakdown. With <code>legend={"{false}"}</code> the page must show the
+          breakdown in text beside the ring; the ring is then a labelled image.
         </DocLead>
       </DocSection>
     </div>

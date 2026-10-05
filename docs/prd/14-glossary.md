@@ -10,7 +10,9 @@
 | AP (accounts payable) | What the business owes vendors |
 | AR (accounts receivable) | What customers owe the business |
 | Balance Sheet | Assets, liabilities and equity on one date |
+| Billed to date | What has been invoiced on a job so far, tax included and before retention, less credit notes; compared with the contract value (D-127) |
 | Chart of accounts | The list of accounts every journal line is posted to |
+| Cost budget | What a job is expected to cost; a target shown against actual cost, never posted (D-125) |
 | Credit note | A document reducing what a customer owes; used instead of editing an issued invoice |
 | Debit / credit | The two sides of every entry. Debits increase assets and expenses; credits increase liabilities, equity and income |
 | Double-entry | Every transaction touches at least two accounts and debits equal credits |
@@ -20,6 +22,8 @@
 | P&L (profit and loss) | Income minus expenses over a period |
 | Posting rule | The code that turns a business event into a journal entry ([06](06-ledger-posting-rules.md)) |
 | Progress billing | Invoicing part of a contract as milestones complete |
+| Progress claim | One progress invoice on a job, numbered per job at issue ("Progress claim 3"); called an RA (running account) bill in India (D-128) |
+| Labour expense | Site labour entered as workers per trade × day rate and saved as one expense on a job; not payroll or attendance (D-126) |
 | Retention | A percentage of each progress invoice held back by the customer until the defects period ends; posted to 1150 Retention Receivable |
 | Reversal | A mirror-image journal entry that cancels an earlier one, keeping history |
 | Tax group | Several tax rates applied together on one line (e.g. split state and central tax) |
@@ -82,6 +86,9 @@ Seeded for every new organisation (`apps/api/src/db/seed/chart-of-accounts.ts`).
 | 5000 | Cost of Materials | Expense |
 | 5100 | Subcontractor Costs | Expense |
 | 5200 | Direct Labour | Expense |
+| 5300 | Plant & Equipment Hire (Construction template only, US-ONB-13) | Expense |
+| 5400 | Fuel & Freight (Construction template only) | Expense |
+| 5500 | Site Overheads & Permits (Construction template only) | Expense |
 | 6000 | Rent | Expense |
 | 6100 | Utilities | Expense |
 | 6200 | Salaries | Expense |

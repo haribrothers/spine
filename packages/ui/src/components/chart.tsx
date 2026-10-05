@@ -90,7 +90,7 @@ export function ChartTooltipContent({
   if (!active || !payload?.length) return null;
 
   return (
-    <div className={cn("rounded-md border border-border bg-surface p-2.5 shadow-[0_4px_14px_rgba(33,31,26,0.10)]", className)}>
+    <div className={cn("rounded-md border border-border bg-surface p-2.5 shadow-raised", className)}>
       {label !== undefined && <p className="mb-1.5 text-[12px] font-medium text-on-surface">{label}</p>}
       <div className="flex flex-col gap-1">
         {payload.map((item) => {

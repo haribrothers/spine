@@ -1,8 +1,9 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
-import { businessProfileSchema } from "@spine/shared";
+import { brandingSchema, businessProfileSchema, invoiceRemindersSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
+import { IndustryTemplateService } from "./industry-template.service";
 
 /**
  * Org-scoped settings read/write, backing every onboarding-wizard step that
@@ -14,7 +15,10 @@ import { SettingsService } from "./settings.service";
  */
 @Controller("org/settings")
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly industryTemplate: IndustryTemplateService,
+  ) {}
 
   @Get()
   async getAll(@Session() session: UserSession) {
@@ -39,10 +43,22 @@ export class SettingsController {
   @UseInterceptors(IdempotencyInterceptor)
   async setOne(@Session() session: UserSession, @Param("key") key: string, @Body("value") value: unknown) {
     const orgId = requireOrgId(session);
+    // US-ONB-13: Construction sets up its cost accounts and categories in the same transaction.
+    if (key === "industry_template") return this.industryTemplate.set(orgId, session.user.id, value);
     if (key === "business_profile") {
       // US-INV-16: the same rules the Settings form shows.
       const parsed = businessProfileSchema.safeParse(value);
       if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the business profile and try again.");
+    }
+    if (key === "invoice_reminders") {
+      // US-INV-18: the schedule the reminder job follows.
+      const parsed = invoiceRemindersSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the reminder settings and try again.");
+    }
+    if (key === "branding") {
+      // US-SET-09: only the listed theme presets.
+      const parsed = brandingSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the branding settings and try again.");
     }
     await this.settingsService.set(orgId, key, value);
     return { key, value };

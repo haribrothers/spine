@@ -237,7 +237,7 @@ export function ImportContactsDialog({
               </p>
               <div className="flex flex-col gap-2">
                 {headers.map((column) => (
-                  <div key={column} className="flex items-center justify-between gap-4 rounded-md border border-border px-3 py-2">
+                  <div key={column} className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-3 py-2">
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-[13px] font-medium text-on-surface">{column}</p>
                       <p className="truncate text-[12px] text-on-surface-muted">e.g. {parsedRows[0]?.[column] || "—"}</p>
@@ -279,7 +279,7 @@ export function ImportContactsDialog({
                 {errorCount > 0 && <Badge className="bg-overdue/10 text-overdue">{errorCount} with errors</Badge>}
                 {duplicateCount > 0 && <Badge className="bg-due-soon/10 text-due-soon">{duplicateCount} possible duplicates</Badge>}
               </div>
-              <div className="overflow-x-auto rounded-lg border border-border">
+              <div className="overflow-x-auto rounded-lg border border-border bg-surface">
                 <table className="w-full min-w-[720px] border-collapse text-[13px]">
                   <thead className="sticky top-0 bg-surface-sunken">
                     <tr>
@@ -335,7 +335,7 @@ export function ImportContactsDialog({
                 {results.filter((r) => r.status === "created").length} contact{results.filter((r) => r.status === "created").length === 1 ? "" : "s"} created.
               </p>
               {results.some((r) => r.status === "created" && r.duplicateOf?.length) && (
-                <div className="flex flex-col gap-1 rounded-md border border-border p-3">
+                <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-3">
                   <p className="text-[13px] font-medium text-due-soon">Created, but possible duplicates — worth reviewing:</p>
                   {results
                     .filter((r) => r.status === "created" && r.duplicateOf?.length)
@@ -347,7 +347,7 @@ export function ImportContactsDialog({
                 </div>
               )}
               {results.some((r) => r.status === "error") && (
-                <div className="flex flex-col gap-1 rounded-md border border-border p-3">
+                <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-3">
                   <p className="text-[13px] font-medium text-overdue">Rows that failed:</p>
                   {results
                     .filter((r) => r.status === "error")

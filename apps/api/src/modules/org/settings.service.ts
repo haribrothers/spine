@@ -13,6 +13,7 @@ import { organization, settings } from "../../db/schema";
  *
  * - `business_profile`   → { name: string; logoUrl?: string; address?: string; email?: string; phone?: string; industry?: string; paymentInstructions?: string }
  * - `industry_template`  → { template: "construction" | "general_services" | "generic" }
+ * - `branding`           → { themePreset?: "spine-blue" | "harbour-teal" | "plum" | "graphite" } (US-SET-09; GET any member, PUT Owner)
  * - `currency`           → { code: string; locale: string }
  * - `financial_year_start` → { month: number (1-12); day: number (1-31) }
  * - `default_tax_rate`   → { name: string; percentage: number } (percentage as a decimal string, e.g. "7.5")

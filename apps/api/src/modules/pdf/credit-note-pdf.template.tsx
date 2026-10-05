@@ -1,9 +1,12 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { creditNotes, creditNoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
+import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
 export interface CreditNotePdfData {
+  /** US-SET-10 — document colour and footer from Settings › Branding. */
+  branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
   locale?: string;
   creditNote: typeof creditNotes.$inferSelect;
@@ -95,13 +98,15 @@ function formatDate(value: Date | string | null): string {
  * it's against, the reason, the lines and the total credited. Rendered
  * from the credit note's own snapshot only.
  */
-export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri, locale }: CreditNotePdfData) {
+export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri, locale, branding }: CreditNotePdfData) {
+  const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = creditNote.currency;
   const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
 
   return (
     <Document title={creditNote.number ?? "Credit note"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+        <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
             {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
@@ -111,7 +116,7 @@ export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contac
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={styles.docTitle}>CREDIT NOTE</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>CREDIT NOTE</Text>
             <Text style={styles.docNumber}>{creditNote.number ?? "DRAFT"}</Text>
           </View>
         </View>
@@ -170,10 +175,11 @@ export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contac
           </View>
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Total credited</Text>
-            <Text style={styles.grandTotalValue}>{fmt(creditNote.totalAmount)}</Text>
+            <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(creditNote.totalAmount)}</Text>
           </View>
         </View>
 
+        <DocumentFooterLine footer={brand.footer} />
         <Text
           style={styles.pageFooter}
           render={({ pageNumber, totalPages }) => `${creditNote.number ?? "Draft credit note"} · Page ${pageNumber} of ${totalPages}`}

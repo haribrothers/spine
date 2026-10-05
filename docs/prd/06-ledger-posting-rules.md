@@ -34,7 +34,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | 1010 Bank | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
 | P6 | Sitting credit applied to an invoice | `payment_credit_applied` | 2200 Customer Advances | 1100 AR |
 | P7 | Unallocated payment deleted | `payment_delete` | Reverses P4/P5 | |
-| P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (total) |
+| P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (total) — every line tagged with the invoice's `job_id` when it has one (US-JOB-27), so job revenue and billed to date drop by the credit |
 | P9 | Invoice voided (with reason) | `invoice_void` | Reverses P1/P2 exactly | |
 | P10 | Retention released (raises a `retention_release` invoice) | `invoice` | 1100 AR | 1150 Retention Receivable |
 | P11 | Vendor bill recorded | `vendor_bill` | Expense/COGS per line account, 1200 Input Tax | 2000 AP (total) |
@@ -60,3 +60,6 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 - A practising accountant has not yet reviewed this table ([Q-02](13-risks-open-questions.md), [R-01](13-risks-open-questions.md)).
 - An invoice with allocated payments can't be voided (P9 is refused); the correction is a credit note ([D-074](12-decisions.md)).
 - Expenses paid by an employee still credit Bank (P15); an "employee reimbursements payable" account is not modelled ([Q-05](13-risks-open-questions.md)).
+- Labour entered as headcount × day rate (US-PUR-23) is an ordinary expense: it posts P15 to its category's account (5200 Direct Labour by default) with the job's `job_id`. No new posting.
+- Job budgets (US-JOB-24) and percent complete (US-JOB-28) never post. Billed to date (US-JOB-27) is read from `invoice` and `credit_note` lines on 1100 and 1150 tagged to the job, excluding retention-release entries ([D-127](12-decisions.md)).
+- Retention never reduces the taxable value: tax is charged on the full progress claim and retention is held from the total (P2, [D-130](12-decisions.md)).

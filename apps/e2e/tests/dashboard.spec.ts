@@ -40,20 +40,21 @@ test.describe("Dashboard v2", () => {
     // <main> throughout this test since the sidebar nav also has a
     // "Receivables" link (a different page) sharing the exact text.
     const main = page.getByRole("main");
-    await expect(main.getByText("Cash position")).toBeVisible({ timeout: 15_000 });
-    await expect(main.getByText("Receivables", { exact: true })).toBeVisible();
-    await expect(main.getByText("Overdue invoices")).toBeVisible();
-    await expect(main.getByText("Revenue this month")).toBeVisible();
+    // US-DASH-14: the KPI row's cards.
+    const kpis = main.getByTestId("kpi-row");
+    await expect(kpis.getByText("Cash position")).toBeVisible({ timeout: 15_000 });
+    await expect(kpis.getByText("Profit this month")).toBeVisible();
+    await expect(kpis.getByText("Receivables", { exact: true })).toBeVisible();
+    await expect(kpis.getByText("Overdue", { exact: true })).toBeVisible();
 
     // Every widget in WIDGET_LABELS, by its own card heading.
-    await expect(main.getByText("Revenue trend")).toBeVisible();
+    await expect(main.getByText("Money in and out")).toBeVisible();
     await expect(main.getByText("Pipeline by stage")).toBeVisible();
     await expect(main.getByText("Receivables aging")).toBeVisible();
-    await expect(main.getByText("Job profitability")).toBeVisible();
-    await expect(main.getByText("My overdue follow-ups")).toBeVisible();
-    await expect(main.getByText("Upcoming meetings")).toBeVisible();
+    await expect(main.getByText("Job profitability").first()).toBeVisible();
+    // US-DASH-16: one "Today" card replaces the follow-ups, meetings and milestones cards.
+    await expect(main.getByTestId("today-card").getByText("Today", { exact: true })).toBeVisible();
     await expect(main.getByText("Invoices due this week")).toBeVisible();
-    await expect(main.getByText("Job milestones due")).toBeVisible();
     await expect(main.getByText("Recent activity")).toBeVisible();
 
     // Real seeded content within a couple of widgets, not just the
@@ -70,15 +71,13 @@ test.describe("Dashboard v2", () => {
     await logIn(fieldPage, DEMO_FIELD_USER);
     await fieldPage.goto("/dashboard");
 
-    // Field's own composition (visibleKeysForRole): only these 4, no
+    // Field's own composition (visibleKeysForRole): Today and recent activity, no
     // financial widgets, no pinned KPI summary row at all.
-    await expect(fieldPage.getByText("My overdue follow-ups")).toBeVisible({ timeout: 15_000 });
-    await expect(fieldPage.getByText("Upcoming meetings")).toBeVisible();
-    await expect(fieldPage.getByText("Job milestones due")).toBeVisible();
+    await expect(fieldPage.getByTestId("today-card")).toBeVisible({ timeout: 15_000 });
     await expect(fieldPage.getByText("Recent activity")).toBeVisible();
 
     await expect(fieldPage.getByText("Cash position")).toHaveCount(0);
-    await expect(fieldPage.getByText("Revenue trend")).toHaveCount(0);
+    await expect(fieldPage.getByText("Money in and out")).toHaveCount(0);
     await expect(fieldPage.getByText("Receivables aging")).toHaveCount(0);
     await fieldContext.close();
   });
@@ -86,41 +85,41 @@ test.describe("Dashboard v2", () => {
   test("Edit layout: hide a widget, confirm it's gone, then show it again", async ({ page, seededOrg }) => {
     void seededOrg;
     await page.goto("/dashboard");
-    await expect(page.getByText("Revenue trend")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Money in and out")).toBeVisible({ timeout: 15_000 });
 
     await page.getByRole("button", { name: "Edit layout" }).click();
 
-    // The overlay's small widget-label span ("Revenue trend") and its
+    // The overlay's small widget-label span ("Money in and out") and its
     // HideToggle button are siblings inside EditableWidgetCard's own
     // corner bar — this is a more precise anchor than the card's whole
-    // container div (which also contains the widget's OWN "Revenue
+    // container div (which also contains the widget's OWN "Money in
     // trend" heading, plus every other widget sharing the same ancestor
     // grid, so a loose `div` text filter matches far too broadly).
-    await editModeHideToggle(page, "Revenue trend").click();
+    await editModeHideToggle(page, "Money in and out").click();
 
     // Hidden state in edit mode is dimmed (opacity-40), not removed —
     // confirm the toggle flipped to "Show widget" rather than asserting
     // on the class directly (an implementation detail).
-    await expect(editModeHideToggle(page, "Revenue trend")).toHaveAttribute("aria-label", "Show widget");
+    await expect(editModeHideToggle(page, "Money in and out")).toHaveAttribute("aria-label", "Show widget");
 
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText("Revenue trend")).toHaveCount(0);
+    await expect(page.getByText("Money in and out")).toHaveCount(0);
 
     // Re-show it — persisted layout must survive a reload too, since
     // DashboardShell fetches it fresh via GET /users/me/dashboard-layout.
     await page.getByRole("button", { name: "Edit layout" }).click();
-    await editModeHideToggle(page, "Revenue trend").click();
+    await editModeHideToggle(page, "Money in and out").click();
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText("Revenue trend")).toBeVisible();
+    await expect(page.getByText("Money in and out")).toBeVisible();
 
     await page.reload();
-    await expect(page.getByText("Revenue trend")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Money in and out")).toBeVisible({ timeout: 15_000 });
   });
 });
 
 /**
  * Locates a widget's own Hide/Show toggle button in edit mode, scoped by
- * the overlay's small label span (`WIDGET_LABELS[key]`, e.g. "Revenue
+ * the overlay's small label span (`WIDGET_LABELS[key]`, e.g. "Money in
  * trend") — that span and the toggle button are siblings inside
  * `EditableWidgetCard`'s corner bar, both distinct from the widget's own
  * `CardTitle` heading (same text, different element) elsewhere in the

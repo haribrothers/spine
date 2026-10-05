@@ -96,7 +96,7 @@ export function RichTextEditor({
   return (
     <div
       className={cn(
-        "rounded-sm border bg-surface transition-colors focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-background",
+        "rounded-sm border bg-surface transition-colors focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:ring-offset-surface",
         error ? "border-overdue" : "border-border-strong",
         disabled && "cursor-not-allowed opacity-50",
         className,

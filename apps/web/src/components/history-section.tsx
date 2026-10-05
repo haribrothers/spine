@@ -40,13 +40,21 @@ export function HistorySection({
   endpoint,
   subjectLabel,
   ownEntityType,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   endpoint: string;
   subjectLabel: string;
   /** For a history that also lists related records (a contact's invoices, say): which entries are this record's own. */
   ownEntityType?: string;
+  /** Opened from elsewhere (e.g. a "View history" menu item, US-QUO-24): no icon button is rendered. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const open = controlled ? controlledOpen : ownOpen;
+  const setOpen = controlled ? (onOpenChange ?? (() => {})) : setOwnOpen;
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
 
   useEffect(() => {
@@ -56,11 +64,13 @@ export function HistorySection({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
-          <History size={16} />
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
+            <History size={16} />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>History</DialogTitle>
@@ -73,7 +83,7 @@ export function HistorySection({
           ) : entries.length > 0 ? (
             <ul className="flex flex-col gap-2">
               {entries.map((entry) => (
-                <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong px-3 py-2 text-[13px]">
+                <li key={entry.id} className="flex items-start justify-between gap-3 rounded-md border border-border-strong bg-surface px-3 py-2 text-[13px]">
                   <span className="text-on-surface">{describeHistoryEntry(entry, subjectLabel, ownEntityType)}</span>
                   <span className="shrink-0 whitespace-nowrap text-on-surface-muted" title={new Date(entry.createdAt).toLocaleString()}>
                     {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}

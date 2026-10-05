@@ -152,9 +152,10 @@ export class MeetingsService {
    * member's dashboard widget could surface a private meeting they weren't
    * invited to; that gap is closed here, not just for `list`/`getOne`.
    */
-  async upcomingForDashboard(orgId: string, userId: string, options: { withinDays?: number } = {}) {
+  async upcomingForDashboard(orgId: string, userId: string, options: { withinDays?: number; from?: Date } = {}) {
     const withinDays = options.withinDays ?? 7;
-    const from = new Date();
+    // US-NTF-13: the daily digest asks "from the moment it runs".
+    const from = options.from ? new Date(options.from) : new Date();
     const to = new Date(from);
     to.setDate(to.getDate() + withinDays);
 

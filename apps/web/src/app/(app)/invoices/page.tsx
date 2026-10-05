@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { InvoicesExplorer } from "./invoices-explorer";
 
@@ -10,7 +11,10 @@ export default function InvoicesPage() {
         title="Invoices"
         description="Build multi-line invoices, issue them to post to the ledger, and track balances due."
       />
-      <InvoicesExplorer />
+      {/* US-DASH-13: the explorer reads ?status= and ?select= from the URL. */}
+      <Suspense>
+        <InvoicesExplorer />
+      </Suspense>
     </>
   );
 }

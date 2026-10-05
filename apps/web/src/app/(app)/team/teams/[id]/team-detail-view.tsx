@@ -253,7 +253,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
               {teamMembers.length === 0 ? (
                 <p className="text-[13px] text-on-surface-muted">No members yet — add one above.</p>
               ) : (
-                <div className="rounded-md border border-border-strong">
+                <div className="rounded-md border border-border-strong bg-surface">
                   {teamMembers.map((member) => (
                     <div
                       key={member.id}
@@ -284,7 +284,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
               What members of this team can do. A Staff member in multiple teams gets the union of everything any
               of their teams grant.
             </p>
-            <div className="rounded-md border border-border-strong">
+            <div className="rounded-md border border-border-strong bg-surface">
               {privilegeRows.map((row) => {
                 if (row.kind === "single") {
                   const capability = row.capability;

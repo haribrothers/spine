@@ -2347,7 +2347,518 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 4. Settings › Business profile: the Industry helper doesn't mention "the next step".
 5. Invoices: a void invoice's Balance due shows "—".
 
+## 54. Light page behind white cards (US-OPS-32, Phase 7)
+
+1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Refresh", "Columns") are white with a thin border.
+2. Open a dialog (Settings, "Record payment") and a drawer: they are white on a dimmed page.
+3. Tab to a button or input on the page and inside a card: the focus ring is blue with a white gap, in both places.
+4. Open a public quote link (or any `/quote/...` link): the page is white, not grey. Download a quote or invoice PDF and open a customer email: both stay white.
+5. Switch to dark mode: nothing changes from before (near-black page, slightly lighter cards).
+
+Regression: muted grey text, amber "due soon" and red "overdue" text are still easy to read on the grey page (§51); Pipeline columns, the Settings dialog and onboarding look as before apart from the page colour.
+
+## 55. Organisation theme (US-SET-09, Phase 7)
+
+1. As an Owner, open Settings › Branding. "App theme" shows Spine Blue (marked "Default"), Harbour Teal, Plum and Graphite, each with a colour swatch, and the note "Each person still chooses light or dark mode in their own Profile & Preferences."
+2. Pick Harbour Teal and press Save: "Saved" shows and buttons, links, the active sidebar item and focus rings turn teal straight away.
+3. Sign in as a Staff or Field member (another browser): their app is teal too. Switch them to dark mode: still teal (a lighter teal), with dark text on teal buttons.
+4. Paid, due-soon, overdue and draft chips look exactly as before in both modes.
+5. Press "Reset to Spine defaults", then Save: blue returns for everyone after a reload.
+6. As Staff, open Settings: there's no way to change the theme (Settings is Owner-only).
+
+Regression: dashboard charts, the Pipeline board and status chips keep their colours; the public quote page and PDFs are unaffected (US-SET-10 handles document colour).
+
+## 56. Document colour and footer (US-SET-10, Phase 7)
+
+1. Settings › Branding: "Document colour" shows #2954E5 with a blue swatch and "✓ Readable on white (6.0:1, passes AA)".
+2. Type #8FB3FF: a red message says it's too light (2.0:1) and Save is disabled. Type #0D6E6E (or use the swatch picker): the check passes again.
+3. Type a footer such as "Licence 4471 · Payment due within 21 days." The preview shows the bar, "INVOICE" and the total in teal and the footer under it. Switch to dark mode: the preview stays white.
+4. Save, then download a draft invoice, a draft quote, a new receipt and a credit note: each has a teal bar, teal title and total, and the footer above the page number on every page. Send an invoice email: teal bar on top, footer at the bottom.
+5. Open an invoice issued before the change and download its PDF: it is exactly as it was (old colour, no new footer).
+6. Enter more than 300 characters in the footer: "Keep the footer under 300 characters." and Save is disabled.
+
+Regression: PDFs without branding set still use Spine Blue and show no footer line; payment instructions and notes still print (§40); the theme tiles (§55) still work.
+
+## 57. Pipeline stages (US-CRM-19, Phase 7)
+
+1. As an Owner, open Settings › Pipeline stages: New, Qualified and Proposal (Open) then Won and Lost (with a padlock), each with its lead count, and the intro "The columns on your pipeline board…".
+2. Rename Proposal to "Quote sent" and Save. On Pipeline the column is titled "Quote sent" and still has its leads.
+3. "+ Add stage", name it "Site visit booked", drag it above "Quote sent" (or Tab to it and use the arrow buttons) and Save: the board shows it in that place, empty.
+4. Keep adding stages: at 12, "+ Add stage" is disabled and the note reads "Up to 12 stages."
+5. Won and Lost have no drag handle; rename Won to "Signed" and Save — the board, the lead forms and the dashboard's "Pipeline by stage" show "Signed", and open-lead counts on Contacts still leave it out.
+6. Add and edit a lead from the board and from a contact's Leads list: the Stage picker lists your stages in order.
+
+Regression: dragging a card between columns still moves the lead; the dashboard pipeline chart shows every stage in board order; demo data (Settings › Demo data) puts leads into your stages.
+
+## 58. Deleting a pipeline stage (US-CRM-20, Phase 7)
+
+1. Settings › Pipeline stages: add a stage and press its red ✕ — it disappears at once (it has no leads).
+2. Press ✕ on a stage with leads (e.g. Proposal with 3): "Delete “Proposal”?" asks "Move 3 leads to:" and "Delete stage" stays disabled until you choose a stage.
+3. Choose Qualified and press "Delete stage", then Save. On Pipeline, Proposal is gone and its leads are in Qualified.
+4. Won and Lost show a padlock instead of ✕.
+5. As Staff, try `PUT /org/lead-stages` (or open Settings): refused — only Owners change stages.
+
+Regression: Cancel in the delete dialog keeps the stage and its leads; leaving the pane without saving changes nothing.
+
+## 59. New item from the quote line (US-CAT-06, Phase 7)
+
+1. New quote: type in a line's Item field. Matching catalogue items appear under "ITEMS" with price and unit; choosing one fills the name, price and tax.
+2. Type a name that matches nothing (e.g. "Bathroom refit"): the list ends with "Use “Bathroom refit” as a one-off line" and an "Also save to catalogue" tick box.
+3. Tick it and choose the one-off line: under the field, "Added to the catalogue when you save the quote — give it a price first." Enter a price; the note drops the second half. Save as draft: Catalogue lists "Bathroom refit" at that price (unit "each"), and the quote line is linked to it.
+4. "Don't add it" under the field clears the mark; saving then leaves the catalogue unchanged.
+5. As Staff without Catalogue rights: the one-off line still works but there's no "Also save to catalogue".
+6. Keyboard: arrows move through the list, Enter chooses, Escape closes; Tab reaches the tick box.
+
+Regression: saving a quote with only catalogue items creates nothing new; editing a draft keeps its lines; the tax picker on each line still works.
+
+## 60. Duplicate a quote (US-QUO-24, Phase 7)
+
+1. Open a sent quote and press "More ▾": "Duplicate as new draft", "Email again" and "View history" (bundles arrive with US-QUO-25).
+2. "Duplicate as new draft" opens a new Draft with the same contact, lines, notes and terms, no number and a validity date in the future.
+3. Change a catalogue item's price, then duplicate a quote that uses it: the copy keeps the original quote's price.
+4. On the copy, "More ▾" → "View history": the first entry reads "Duplicated from QUO-<number> by <you>".
+5. "Email again" on a sent quote: a toast says it's being emailed again and the email status shows sending, then sent. The customer's earlier link still opens.
+6. As Staff without "create quotes", the menu has no "Duplicate as new draft".
+
+Regression: Revise still creates the next version; the quote's History is still reachable (now from "More ▾").
+
+## 61. Save quote lines as a bundle (US-QUO-25, Phase 7)
+
+1. On a quote with item lines, "More ▾" → "Save lines as a bundle…": the dialog explains bundles, shows "Bundle name", a one-line summary of the lines and total, and "Description".
+2. Press "Save bundle" with no name: "Give the bundle a name." Fill it in and save: a "Bundle saved" toast.
+3. Catalogue › Bundles lists it with its lines and total. Filter by Active/Archived; search by name.
+4. Edit the quote's lines afterwards: the bundle's lines stay as they were.
+5. Row menu: Edit (name and description), Archive/Restore, Delete (with a confirmation). As Staff with "own" catalogue rights, you can change your own bundles but not someone else's.
+6. Staff without catalogue rights don't see "Save lines as a bundle…".
+
+Regression: Catalogue › Items works as before (filters, drawer, archive); the quote's other More ▾ actions still work.
+
+## 62. Add a bundle while building (US-QUO-26, Phase 7)
+
+1. Save a quote's lines as a bundle (§61). On a new quote, type part of its name in a line's Item field: "BUNDLES" comes first, with the bundle's total and "Adds <n> lines: …", then "ITEMS".
+2. Choose the bundle: its lines replace that line, in order, with the bundle's prices and tax. Each line can be edited, moved or removed like any other.
+3. Archive a catalogue item one of the bundle's lines came from, then add the bundle again: that line is still added (as a one-off line).
+4. On a new invoice, the same picker offers the bundle.
+5. On a new vendor bill, there are no bundles (items only, as before).
+6. A bundle saved from a quote in another currency isn't offered.
+
+Regression: picking a single catalogue item still fills one line; "Use … as a one-off line" (§59) still works; invoice totals match their lines.
+
+## 63. Automatic reminders settings (US-INV-18, Phase 7)
+
+1. As an Owner, Settings › Automatic reminders: "Send reminders automatically" is off; the schedule lists 3 days before, on the due date, 7 and 14 days after (the last three ticked) and "Every 14 days after that, up to 3 more times"; "Send at" is 9:00 AM (organisation time — the server's `TZ`).
+2. Turn it on, untick every day and Save: "Pick at least one reminder." Tick one and Save: "Saved".
+3. "Preview email" shows the reminder your most overdue invoice would get ("Reminder: invoice INV-… is N days overdue"), with the payment instructions if set; with nothing overdue, a sample.
+4. As Staff, Settings isn't available and `PUT /org/settings/invoice_reminders` returns 403.
+
+Regression: the manual "Send reminder" on an overdue invoice still sends, now with the subject "Reminder: invoice INV-… is N days overdue".
+
+## 64. Scheduled reminders (US-INV-19, Phase 7)
+
+1. Turn on Settings › Automatic reminders with "Send at" a few minutes from now (organisation time = the server's `TZ`). Make an issued invoice due 7 days ago with a balance, for a customer with an email.
+2. Within 15 minutes of "Send at", the customer gets one email: "Reminder: invoice INV-… is 7 days overdue", showing the balance due, due date and payment instructions, with the PDF attached. The invoice history shows "Automatic reminder sent".
+3. Wait for the next 15-minute run: no second email. Restart the API: still no second email today.
+4. On another invoice due 7 days ago, click "Send reminder" by hand first. The run then sends nothing for it today.
+5. On a customer's contact page, turn on "Pause automatic reminders" ("Reminders paused" toast). Their overdue invoices get no automatic reminders; "Send reminder" by hand still works. A vendor's page has no switch.
+6. A paid, voided or fully credited invoice never gets a reminder.
+
+Regression: the contact page header (name, badges, email, tax ID, Edit/Archive/Delete) looks and works as before in light and dark mode; manual "Send reminder" still sends; Settings › Automatic reminders (§63) saves and previews as before.
+
+## 65. Recurring invoices: set up (US-INV-20, Phase 7)
+
+1. As an Owner, Invoices › "Recurring invoices": the list (empty to begin with) and the note "Runs happen at 6:00 AM organisation time…".
+2. "+ New recurring invoice": Name, Customer, Repeats (Weekly, Monthly, Every 3 months, Yearly), On (Monday–Sunday for weekly, otherwise "1st of the month" … "28th of the month" and "Last day of the month"), Starts, Ends (Never, On a date, After a number of invoices), Payment due, "When it runs" (issue and email is selected) and the lines.
+3. Pick a start date last month and press "Save schedule": "Pick today or a later start date." Pick today and save: the row shows "Active", "Monthly · 1st", the next 1st as "Next invoice", the lines' total and "Issue and email". A schedule ending before its first invoice is refused.
+4. As Staff, with "Manage recurring invoices" turned off on your Team (Teams page), Invoices has no "Recurring invoices" button and `GET /recurring-invoices` returns 403. Turned on, you can set one up. Field users never see it.
+
+Regression: Invoices list toolbar (filters, "New invoice") looks and works as before in light and dark mode; the invoice line editor on New invoice works as before; the Teams page lists "Manage recurring invoices" under Manage Invoices.
+
+## 66. Recurring invoices: automatic run (US-INV-21, Phase 7)
+
+1. Set up a recurring invoice starting today, Weekly on today's weekday, "Issue the invoice and email it to the customer", for a customer with an email. After 6:00 AM organisation time (the server's `TZ`), within 15 minutes, an issued invoice appears for that customer (next number, due after the chosen payment terms, posted to the books) and the customer gets the invoice email. The schedule's "Next invoice" moves on a week.
+2. Restart the API the same day: no second invoice.
+3. Same with "Create a draft for me to review": a draft appears, and Owners get "Recurring invoice ready to review: <name>" in the bell (and by email) linking to it.
+4. With Ends "After a number of invoices" = 1, after the first invoice the schedule shows "Finished" and "—" for the next invoice.
+5. Stop the API over a run date and start it again later: one invoice for the missed date, then the next date is after today.
+
+Regression: manual New invoice → issue → email still works; the Recurring invoices list (§65) looks the same in light and dark mode.
+
+## 67. Recurring invoices: pause, edit, delete (US-INV-22, Phase 7)
+
+1. On Invoices › Recurring invoices, each row shows name, customer, repeats, next invoice, amount, status and when it runs.
+2. Row menu › Pause: the row shows "Paused" and "—" for the next invoice. Leave it over a run date: no invoice is created.
+3. Row menu › Resume: "Active" again, with the next date after today. Nothing is created for dates missed while paused.
+4. Row menu › Edit (or click the name): change the price under "Edit lines" and save. The amount updates. Invoices the schedule already created keep their old price.
+5. Row menu › Delete: "Delete this schedule? Invoices it already created are kept." Confirm: the row goes; its invoices are still on Invoices.
+
+Regression: "+ New recurring invoice" (§65) still opens an empty dialog after editing one; the list looks right in light and dark mode.
+
+## 68. Bulk payment reminders (US-INV-23, Phase 7)
+
+1. On Invoices, tick an unpaid issued invoice, a paid one and a void one. A dark bar shows "3 selected · <amount> outstanding", "Send reminders (1)" and "Clear".
+2. Press "Send reminders (1)": the toast says "1 reminder sent" and lists the paid and void invoices with why they were skipped. The customer gets one reminder email.
+3. Tick the reminded invoice again: "Send reminders (0)" is disabled (already reminded today). "Clear" hides the bar.
+4. As Staff without "Send a payment reminder" on your Team, ticking rows shows the bar without "Send reminders".
+
+Regression: the Invoices table (sorting, search, column picker, row menu) and the one-click "Send reminder" work as before in light and dark mode.
+
+## 69. Bulk PDF download (US-INV-24, Phase 7)
+
+1. On Invoices, tick two issued invoices and a draft, then press "Download PDFs" on the bar. A file "invoices-<today>.zip" downloads. It holds one PDF per issued invoice, named by number and identical to each invoice's own "Download PDF". The toast says "Downloaded 2 PDFs" and that the draft was skipped.
+2. Tick only a draft and press "Download PDFs": "None of these invoices has a PDF yet — drafts are skipped. Issue them first."
+3. More than 100 selected: "Select 100 or fewer invoices." (100 is the limit for every bulk action.)
+
+Regression: the bulk bar's "Send reminders" and "Clear" (§68) still work; single-invoice "Download PDF" serves the same file as before.
+
+## 70. Customer statements (US-PAY-14, Phase 7)
+
+1. Open a customer with invoices. "Send statement" opens "Send a statement" with Period (Last 30 days, Last 90 days, This year, Custom; Custom shows From and To date), Show (Open invoices only, All activity), the summary (Opening balance (<date>), Invoiced, Paid and credited, Balance due), To (their email) and Message ("Hi <name>, …").
+2. Change the period: the summary updates. Check the figures against Reports › Receivables for the customer.
+3. "Download PDF": a PDF downloads and nothing is emailed.
+4. "Send statement": the customer gets the email with the PDF and your message; the toast reads "Statement sent to <email>"; the Timeline shows "Statement sent to <email> for <period>. Balance due <amount>."
+5. A customer with no invoices: "Send statement" is disabled with "No invoices for this customer yet."
+6. As Staff without "View receivables" on your Team, the button isn't shown and the statement routes return 403. Field users never see it. Vendors have no button.
+7. With SMTP not configured, sending says email isn't set up; downloading still works.
+
+Regression: the contact page header (badges, Edit/Archive/Delete, Pause automatic reminders) and Timeline look and work as before in light and dark mode.
+
+## 71. Statement PDF (US-PAY-15, Phase 7)
+
+1. From "Send a statement" (§70) with "All activity", "Download PDF": the header shows your business (logo or initials), "STATEMENT", the period, "Statement for <customer>" with their address and "Balance due".
+2. The table has Date, Reference, Type, Charges, Payments, Balance, starting with "Opening balance", then each invoice, payment, credit note and void with a running balance that ends at the balance due.
+3. The aging strip shows Current, 1–30, 31–60, 61–90 and 90+ days. The amounts add up to what the customer owes on open invoices.
+4. With Settings › Payment instructions set, "How to pay" appears at the bottom; clear them and it disappears.
+5. With "Open invoices only", paid invoices and their payments are gone and there's no opening balance row.
+6. The PDF stays light, whatever the app theme.
+
+Regression: invoice, quote and receipt PDFs look as before.
+
+## 72. Bulk expense approval (US-PUR-21, Phase 7)
+
+1. As an Owner on Expenses, tick two submitted expenses. A dark bar shows "2 selected · <total>", "Approve (2)", "Reject…" and "Clear". Approved and rejected expenses can't be ticked.
+2. "Approve (2)": the toast reads "2 expenses approved". Each has its own number and posts its own journal entry (check Reports › General ledger), and each submitter is notified, the same as approving one at a time.
+3. Tick two more and press "Reject…": one dialog asks for a comment. Leave it blank: "Add a comment — it's sent with every rejected expense." Enter one and confirm: "2 expenses rejected", and both show your comment.
+4. As Staff with approval rights, your own submitted expense's tick box is disabled and the page says "Your own expenses can't be selected for approval — someone else approves them." As an Owner you can tick your own.
+5. As Staff without "Approve expenses", the list has no tick boxes.
+
+Regression: the Expenses list (filters, "My expenses only", row menu, detail drawer approve/reject) works as before in light and dark mode.
+
+## 73. Construction template cost categories (US-ONB-13, Phase 7)
+
+1. In a new organisation, at onboarding's Template step (or Settings › Industry template), "Construction / Contracting" adds "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads."
+2. Choose it and save. Settings › Chart of accounts lists 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits. Expenses › Categories lists Materials (5000), Subcontractors (5100), Site labour (5200), Plant & equipment hire (5300), Fuel & freight (5400) and Site overheads & permits (5500), under a note saying what the template set up.
+3. Save Construction again: nothing new appears.
+4. In another organisation, first rename account 6300 to code 5300 "Vehicle Lease" and add a category "Materials", then choose Construction. Nothing is duplicated, and the note says "Kept your existing account 5300 · Vehicle Lease. Kept your existing category “Materials”".
+5. Switch to General Services: the categories and accounts stay. Rename or archive one: it behaves like any other category.
+6. Load demo data in a Construction organisation: demo expenses use Fuel & freight, Site overheads & permits and Plant & equipment hire.
+
+Regression: onboarding's Template step and Settings › Industry template save General Services and Generic as before; Expenses › Categories (add, rename, remap, archive) works in light and dark mode.
+
+## 74. Job cost budget (US-JOB-24, Phase 7)
+
+1. Open a job, press "Edit job": under "Budget and progress", "Cost budget" says "What you expect this job to cost. Leave blank if you don't budget it."
+2. Enter -5 and save: "Enter a budget of zero or more." and nothing saves. Enter 32,000.00 and save; reopen: 32000.00. The job's History shows the change with your name.
+3. Clear the field and save: the job has no budget.
+4. Apply an accepted variation order: the contract value rises, the budget stays the same.
+5. As a Field user, the job API returns no `costBudgetAmount`, and the job history shows no budget changes.
+
+Regression: Edit job still saves name, site address, status, dates, notes and retention % in light and dark mode.
+
+## 75. Job budget used (US-JOB-25, Phase 7)
+
+1. Give a job with recorded cost a budget about twice its cost. On "Costing", the Budget card shows Cost budget, Spent and Remaining (green) and "50% of budget used", with "Warning at 80% · over at 100%".
+2. Lower the budget so cost is about 85% of it: the bar turns amber and the label reads "Nearing budget — 85% used" with a warning icon.
+3. Lower it below cost: "Over budget by <amount>" in red with an icon; Remaining shows a negative amount; the bar is full.
+4. Clear the budget: "No budget set" and "Set a budget", which opens Edit job. Members without edit rights on the job don't see the button.
+5. Jobs list: "Budget used" shows "50%", "Nearing · 85%" or "Over · 1xx%" (with an icon), and "—" for jobs without a budget. Staff without "View job profitability" don't see the column.
+
+Regression: the Costing tab's contract value, revenue, cost and margin match before; the Jobs list (search, sort, filters) works in light and dark mode; Progress bars elsewhere (onboarding checklist) look the same.
+
+## 76. Job cost by category (US-JOB-26, Phase 7)
+
+1. On a job with bills or approved expenses tagged to it, open "Costing". "Cost by category" lists each expense account ("5000 · Cost of Materials") with its amount and share, largest first, and "Total cost" equal to the Cost figure above. The donut shows the same split with the total in the middle.
+2. With more than six accounts carrying cost, the donut shows the five largest and "Other"; the list shows them all.
+3. As an Owner (or Staff with "View ledger"), click a row: the account drill-down opens with only this job's lines. Without "View ledger" the rows aren't links.
+4. A job with no costs: "No costs yet — bills and approved expenses tagged to this job show up here."
+5. Check the donut and list in dark mode; the colours come from the theme.
+
+Regression: Reports › account drill-down (from the trial balance, P&L, balance sheet) still lists every line for the account; the dashboard's receivables donut still shows its legend.
+
+## 77. Job billed to date (US-JOB-27, Phase 7)
+
+1. On a job with a contract value, issue two progress invoices for it. "Costing" › Billing shows "Contract value", "Billed to date" (their totals, tax included, before retention) with "N% of contract", "Left to bill", and the Billed bar.
+2. Issue a credit note against one of them: "Billed to date" drops by the credit note's total.
+3. An advance invoice or a retention release on the job doesn't change "Billed to date".
+4. Bill past the contract value: "Left to bill" reads "Billed over contract by <amount>" in red.
+5. Jobs list: "Billed" shows each job's percentage (job-profitability viewers only).
+
+Regression: credit notes still post and appear on the invoice; a job's revenue on "Costing" drops by a credit note issued against one of its invoices.
+
+## 78. Percent complete vs billing (US-JOB-28, Phase 7)
+
+1. Edit job › "Percent complete" ("Your estimate of how much of the work is done."). Enter 120 or -5: "Enter a percentage from 0 to 100." Enter a value and save.
+2. On a job billed 40%: at 55% complete, "Costing" › Billing shows "Work complete 55%" and "Billing is 15 points behind the work — check for a milestone to invoice." At 30%: "Billing is 10 points ahead of the work." At 45% or blank: no line.
+3. Mark the job Completed: percent complete stays as it was.
+4. As a Field user, the job shows percent complete through the API, but no costing.
+
+Regression: Edit job's other fields save as before; the Billing card's figures (§77) are unchanged.
+
+## 79. Progress claim numbers (US-JOB-29, Phase 7)
+
+1. On a job, complete a milestone and raise its invoice: the draft's job card says "Claim number is given when the invoice is issued."
+2. Issue it: the card reads "Progress claim N of this job", one more than the job's last claim. The invoice keeps its usual INV number.
+3. Download the PDF: "Progress claim N · JOB-00x" sits under the invoice number. Email it: the email lists "Claim: Progress claim N · JOB-00x".
+4. Void that invoice and issue the next progress invoice: the voided one keeps "Progress claim N (void)"; the new one is N + 1.
+5. Advance, standard and retention-release invoices on the job get no claim number.
+
+Regression: invoice numbers stay gapless across claims; the invoice PDF and email for standard invoices look as before.
+
+## 80. Filter bills and expenses by job (US-PUR-22, Phase 7)
+
+1. On Vendor Bills, the job filter offers "All jobs" and each job as "<number> · <name>". Choose one: only its bills show, the counters count only those, and the URL gains `?jobId=`. Reload: the filter stays.
+2. The note "Showing vendor bills on <job>." links to "See expenses on this job" (Expenses, same filter) and "Open the job's costing".
+3. Filter by a job with nothing tagged: "No vendor bills on this job" / "No expenses on this job" with "Clear filter".
+4. On a job's Costing tab, "View bills and expenses" opens Vendor Bills filtered to that job.
+5. As a Field user on Expenses, the job filter lists only your assigned jobs and shows only your own expenses on them.
+
+Regression: Vendor Bills' status and vendor filters and Expenses' status filter and "My expenses only" work as before, alone and with the job filter, in light and dark mode.
+
+## 81. Labour as headcount × day rate (US-PUR-23, Phase 7)
+
+1. Expenses › "Submit expense": "Enter as" shows "Amount" (selected) and "Headcount × day rate". Choose the second: the Amount field goes; Trade / Workers / Day rate rows appear with "+ Add trade"; Job is required ("Labour is always for a job."); with a 5200 Direct Labour category (e.g. the Construction template's "Site labour"), it's preselected with "Preselected: posts to 5200 Direct Labour."
+2. Enter 4 Mason at 950.00, 3 Carpenter at 900.00 and 8 Helper at 650.00: each row shows its total and "Total for the day · 15 workers" reads 11,700.00.
+3. Leave a trade blank or workers at 0: "Every row needs a trade, at least one worker and a day rate." Leave the job empty: "Labour is always for a job — choose one."
+4. Save with a job. Open the expense: the drawer lists "4 Mason × $950.00 = $3,800.00" and the others; the amount is 11,700.00. Approve it: it posts to the category's account, tagged to the job (Costing tab cost by category shows 5200).
+5. Start another labour expense and type "Mason": it's suggested and its last day rate fills in (you can change it).
+6. Nothing asks for worker names, attendance or hours.
+
+Regression: "Amount" entry, editing a submitted expense, receipts and approval work as before in light and dark mode.
+
+## 82. Job profitability chart (US-RPT-15, Phase 7)
+
+1. Reports › Job Profitability: "Contract, billed and cost by job" shows three bars per active or on-hold job (Contract value, Billed to date, Cost) with a legend naming each, largest contract first. With more than 10 jobs: "Showing 10 of N jobs — the table lists them all."
+2. A job with a budget has a dashed "Cost budget" marker over its cost bar. Hover or focus a job: the tooltip lists contract value, billed to date and %, cost, budget and % used, and margin.
+3. The table adds "Billed to date", "Billed %" and "Budget used" after "Contract value"; the figures match each job's Costing tab.
+4. Switch the filter to Completed, then All: the chart and table follow; "Export CSV" downloads the same jobs with "Billed to date", "Billed %" and "Budget used %" as plain numbers.
+5. With a screen reader the chart is announced as "Contract, billed and cost by job" and points to the table.
+6. Check the chart in dark mode.
+
+Regression: the dashboard's "Job profitability" widget still lists every job; the other report tabs are unchanged.
+
+## 83. Needs your attention (US-DASH-12, Phase 7)
+
+1. Open the dashboard as an Owner: "Good morning|afternoon|evening, <first name>" and "<weekday> <day> <month> · <business> · <n> things need you today".
+2. "Needs your attention" lists one row per kind, in order: overdue invoices, expenses waiting for approval, quotes needing discount approval, milestones ready to invoice, quotes expiring this week, vendor bills due within 3 days, jobs over budget. Each row has a title with its count, a line naming the first record (amount and age), and a button. The chip by the heading equals the number of rows.
+3. Pay the overdue invoice (or approve the expense) elsewhere, then come back: that row is gone.
+4. As Staff without "Approve expenses", there's no expenses row; with it, your own submitted expenses never count. The note reads "Only things you can act on".
+5. In a new organisation: "You're all caught up" with "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you." and the header says "nothing needs you right now".
+
+Regression: the KPI row, setup checklist (Owners) and widgets below still show; "Edit layout" still hides and shows widgets; light and dark mode.
+
+## 84. Attention actions (US-DASH-13, Phase 7)
+
+1. With exactly one overdue invoice, press "Send reminder" on its row: the toast reads "Reminder sent for INV-…" and the customer gets the reminder.
+2. With two or more overdue invoices, "Send reminder" opens Invoices filtered to Overdue with them all ticked and the bulk bar showing.
+3. "Review" (expenses) opens Expenses filtered to Submitted. "Approve" and "Follow up" open the quote. "Raise invoice" opens the milestone's job. "Pay bill" opens "New vendor payment" for that vendor. "Review" on a job over budget opens its Costing tab.
+4. As Staff without "Send a payment reminder", the overdue row's button reads "Open".
+
+Regression: Invoices, Expenses and Vendor Payments opened normally (no query string) look and filter as before.
+
+## 85. Dashboard key figures (US-DASH-14, Phase 7)
+
+1. As an Owner, the KPI row shows Cash position, Profit this month, Receivables and Overdue. Each has its amount, a small 8-week line and "▲/▼ n% vs last month" (or "No data last month" in a new organisation).
+2. The change is green when good (cash or profit up, receivables or overdue down) and red when not, always with the arrow and sign. Check it in dark mode.
+3. Receivables shows "Current … · overdue …"; Overdue shows "n invoice(s)".
+4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Showing overdue invoices only." ("Show all" clears it).
+5. As a Field user there's no KPI row.
+
+Regression: Reports and Receivables opened from the sidebar look as before; the dashboard below the KPI row is unchanged.
+
+## 86. Money in and out (US-DASH-15, Phase 7)
+
+1. As an Owner, the dashboard shows "Money in and out" where "Revenue trend" used to be, with 12M selected.
+2. Above the chart: "In · 12 months", "Out · 12 months" and "Net". Net is green with "+" when positive and red with "−" when negative. Check both themes.
+3. The legend reads "Money in (payments received)" and "Money out (bills, expenses)". Hover a month: the tooltip shows its in, out and net.
+4. Choose 3M and 6M: the bars and totals change, and the labels say "3 months" / "6 months".
+5. Record a payment: this month's "in" goes up by that amount. Pay a vendor bill: "out" goes up. Moving money between Cash and Bank changes neither.
+6. In a new organisation with no payments or bills, the card reads "Money in and out appears after your first payment or bill."
+7. As Staff without "View dashboard summary" the card is absent; as a Field user it's absent.
+
+Regression: Edit layout can still hide, show and reorder the card, and a saved layout that mentioned "Revenue trend" still loads. Reports' own charts are unchanged.
+
+## 87. Today (US-DASH-16, Phase 7)
+
+1. On the dashboard, "Today" sits beside "Needs your attention". If the "Get started" checklist is showing, it sits beside "Money in and out" instead.
+2. Add a follow-up due later today on a contact, assigned to you: it shows "Today", its notes, and "Follow-up · <contact>". Make one overdue from yesterday: it shows "Due <weekday>".
+3. A meeting later today shows its time and "Meeting · <location>". Your next meeting after today shows as "Tomorrow 9:00" or "Wed 10:00".
+4. A pending milestone due within 7 days on a job you can see shows "Due <day>" and "Milestone · <job>". One due in 10 days doesn't show.
+5. Entries are in time order. Clicking one opens the meeting, job or contact.
+6. "Open calendar" opens Meetings in day view on today.
+7. With nothing scheduled, the card reads "Nothing scheduled today."
+8. As a Field user, Today shows only milestones on your assigned jobs and only your own meetings.
+
+Regression: Settings › Upcoming meetings ("Only my meetings" / "Every org meeting") still decides which meetings Staff see in Today. Meetings opened from the sidebar still open in week view. Edit layout still hides, shows and reorders the remaining widgets.
+
+## 88. Staff dashboard (US-DASH-17, Phase 7)
+
+1. As Owner, untick "View dashboard summary" for the Staff user's Team. Log in as that Staff user.
+2. "Needs your attention" says "Only things you can act on". Give the user an overdue follow-up: "1 follow-up is overdue" appears, and "Open" opens that contact.
+3. A sent quote the user created that expires within 7 days reads "Your quote QUO-… expires <day>". The Owner's expiring quotes aren't listed.
+4. Submit an expense as this user (with "Approve expenses" granted): it never appears in their own list.
+5. The KPI row shows Receivables, Overdue, Open pipeline and Quotes won this month ("$… accepted"). Untick "View receivables": only Open pipeline and Quotes won remain. "Quotes won this month" opens Quotes filtered to Accepted.
+6. Give the Team "View dashboard summary" back: the row shows Cash position, Profit this month, Receivables and Overdue, plus "Money in and out".
+7. The sidebar has no Team section.
+
+Regression: the Owner's attention list and KPI row are unchanged, with no follow-ups row. Quotes opened from the sidebar show every status.
+
+## 89. Field dashboard (US-DASH-18, Phase 7)
+
+1. As Owner, assign the Field user to an active job with a site address and a pending milestone due within 7 days. Reject one of the Field user's expenses with a reason.
+2. Log in as the Field user. The header reads "1 job on your list · 2 things need you".
+3. "Needs your attention" shows "Milestone due <day>" with "Mark complete", and "Your expense was rejected" with the category, amount, the reason in quotes, and the reviewer's name, plus "Fix and resubmit". Each button opens the job or the expense.
+4. "My jobs" lists the job with its number, customer, site address and "Next: <milestone> · due <day>". "Directions" opens a map route in a new tab.
+5. "My expenses" shows up to 5 expenses with date, amount and an Approved, Rejected or Submitted chip. "Submit expense" opens the form.
+6. "Recent activity on my jobs" shows only milestone and job events on assigned jobs. No quotes or payments appear.
+7. Nowhere on the page is a contract value, invoice, payment or report figure. Check both themes.
+
+Regression: Owner and Staff dashboards don't show the Field cards. Expenses opened from the sidebar has the "Mine" toggle off and no drawer open.
+
+## 90. Activity feed actors (US-DASH-19, Phase 7)
+
+1. Record a payment: the dashboard's "Recent activity" shows your avatar and "<You> recorded a payment of **$…** from <customer>", with the amount in bold.
+2. Open a sent quote's public link three times within a few minutes: one row reads "<customer> viewed QUO-… · 3 times" with the latest time.
+3. Accept a quote from its public link: "<customer> accepted QUO-… · **$…**".
+4. As Field, complete a milestone: the Owner's feed shows "<Field user> completed <milestone> on <job>".
+5. Submit an expense: "<you> submitted an expense · <category> · **$…**". Clicking it opens the expense on Expenses. Clicking a payment row opens it on Payments.
+6. "View all" opens Activity with the last 100 events. As Field, it shows only events on your jobs, with no money.
+7. Check dark mode: avatars and bold text stay readable.
+
+Regression: Payments and Expenses opened from the sidebar have no drawer open.
+
+## 91. Retention held and jobs in progress (US-DASH-20, Phase 7)
+
+1. In an organisation on the Construction template, with no saved dashboard layout, "Retention held" and "Jobs in progress" show below "Money in and out".
+2. Issue a progress invoice on a job with retention: "Retention held" shows the total, "on 1 job · in Retention Receivable until released", and the job with its amount. "Release" opens the job with the Release retention dialog. Release it: the card reads "No retention held." on one line.
+3. "Jobs in progress" lists active jobs with name, number, contract value, a billed bar and "<n>% billed", and Budget used ("No budget", a percentage, "Nearing · …", or "Over · …" in red with an icon). "Job profitability" opens Reports on that tab.
+4. Switch to a General services organisation (or a new one) with no saved layout: both cards are hidden. Edit layout shows them dimmed, and "Show widget" brings them back.
+5. As Staff without "View receivables" there's no Retention card and no empty slot. Without "View job profitability" there's no Jobs in progress card.
+6. At 1440px and at tablet width, no card leaves a gap in its row or overflows its column. Pipeline by stage shows values after the bars. Check dark mode.
+
+Regression: Pipeline by stage, Receivables aging and Job profitability look as before.
+
+## 92. Daily digest email (US-NTF-13, Phase 7)
+
+Set up SMTP (or the dev mail catcher). Set "Send at" a few minutes ahead in Profile › Notifications (US-NTF-14), or wait for 7:00 AM on a weekday.
+
+1. As an Owner with an overdue invoice and expenses waiting: within 15 minutes of "Send at", one email arrives. The subject reads "Your Spine day: <n> things need you · <Day d Mon>".
+2. It shows "Good morning, <name>", "Here's what needs you at <business> today.", a table of attention counts (with totals for overdue invoices, expenses and bills), "Today" (meetings later today, milestones due within 7 days), "Yesterday" (money received, quotes accepted, quotes viewed) and "Open dashboard", which opens the dashboard.
+3. The footer reads "You get this daily digest because you're an owner of <business>. Turn it off or change the time in Profile › Notifications."
+4. No second email arrives the same day, even after restarting the API.
+5. In an organisation with nothing open and nothing yesterday, no email arrives.
+6. As Field (digest turned on): the email shows counts only, with no amounts anywhere and no "Yesterday". The footer says "a member of".
+7. On a Saturday, with "Monday to Friday", nothing arrives.
+8. Without SMTP configured, nothing is sent and the API keeps running (one warning in the log).
+
+Regression: other emails (quote, invoice, reminders, notifications) look the same. The dashboard's attention rows are unchanged.
+
+## 93. Digest preferences (US-NTF-14, Phase 7)
+
+1. Open Profile & Preferences: tabs Profile, Password, Appearance and Notifications. Each of the first three holds what the page used to show (avatar and name/email; change password; theme).
+2. Notifications shows Browser notifications, Daily digest and Meeting reminders.
+3. As an Owner who never changed it: the switch is on, Send at is 7:00 AM, Days is Monday to Friday. As Staff or Field: the switch is off.
+4. Change Send at to 6:30 AM: "Daily digest on: …" confirms. Tomorrow's digest arrives at about 6:30 AM organisation time (within 15 minutes).
+5. Choose "Every day": a digest arrives on Saturday too.
+6. Turn the switch off: "Daily digest turned off." No digest arrives the next morning. Send at and Days are greyed out while it's off.
+7. Reload `/profile?tab=notifications`: it opens on the Notifications tab with your choices kept.
+8. Check keyboard (tab through switch and selects), dark mode, and phone width.
+
+Regression: changing theme, name, email, avatar and password still works from their tabs. The meeting reminder choice still saves.
+
+## 94. Organisation audit log (US-SET-11, Phase 7)
+
+1. As an Owner, Team › Audit log opens with "Every change to records in <Business>, newest first. Only owners can see this page."
+2. The table shows When, Who, Action, Record and Details for the last month, newest first.
+3. Set Person, Record type and Action: only matching entries remain. Narrow From/To to a day with no changes: "No changes match these filters. Widen the dates or clear a filter."
+4. Click a record (a quote, an invoice, a milestone): it opens that record (a milestone opens its job).
+5. With more than 50 entries: "1–50 of <total> entries". Next shows 51–100, and Previous goes back.
+6. On Team › Users, promote a Staff user, demote them, deactivate and reactivate them. Each appears as "User · <name>" with "Staff → Owner", "Owner → Staff", "Active → Deactivated" and "Deactivated → Active". Transfer primary ownership: "Primary owner transferred" with both names.
+7. As Staff, open `/team/audit-log`: the no-access page. There's no "Audit log" in their sidebar.
+8. On the dashboard, an Owner's Recent activity "View all" opens the audit log.
+9. Check dark mode and phone width (the table scrolls sideways).
+
+Regression: contact and invoice History sections still show their entries. Team › Users actions still work.
+
+## 95. Audit log CSV (US-SET-12, Phase 7)
+
+1. On Team › Audit log, set Record type to Invoice and a date range, then press "Export CSV". `audit-log-<today>.csv` downloads.
+2. Open it in a spreadsheet: the header reads timestamp, actor_name, actor_email, action, record_type, record_id, record, changes. Every row is an Invoice inside the date range. Timestamps are ISO 8601 (UTC), and `changes` holds JSON.
+3. Clear the filters and export again: all entries are there, newest first. A record name with a comma or quote stays in one cell.
+4. In an organisation with a large log (e.g. after demo data and bulk actions), the export starts downloading at once and finishes.
+5. As Staff, `/org/audit-log.csv` returns 403.
+
+Regression: the audit log table and its filters are unchanged.
+
+## 96. Data export (US-SET-15, Phase 7)
+
+1. As an Owner, open Settings › Data export. "Records as CSV" and "Files" are ticked, and "Records as JSON" isn't.
+2. Press "Prepare export": the button shows "Preparing…" and the pane says large exports are prepared in the background. Within a minute, "Last export: <date> by <you> · <size> · Download again (link expires in 7 days)" appears.
+3. With SMTP set up, an email "Your <Business> data export is ready" arrives. Its button opens Spine with Settings on Data export. The email has no attachment and no file link.
+4. "Download again" downloads `spine-export-<date>.zip`. Unzipped, it holds one CSV per table with a header row, `members.csv`, `files/` with your receipts, photos and PDFs, and `README.txt` listing each file with a description and row count.
+5. Tick only JSON (untick CSV and Files) and prepare again: one `.json` per table and no `files/`. Tick both formats: `csv/` and `json/` folders.
+6. Search the export for a password or session token: none. Settings holding secrets aren't in `settings.csv`.
+7. As Staff or Field there's no Settings, and `POST /org/exports` returns 403.
+
+Regression: other Settings panes open as before. Settings › Demo data still works.
+
+## 97. Data export privacy (US-SET-16, Phase 7)
+
+1. Prepare an export as an Owner and copy the "Download again" link.
+2. Open the link in a private window (signed out): "Not found" (404). Signed in as Staff or Field: 404. As an Owner: the ZIP downloads.
+3. Team › Audit log, Record type "Data export": "Prepared" and "Downloaded" entries with who did each.
+4. The "export is ready" email has a button to Settings › Data export and no attachment or file link.
+5. To check expiry, set the export's `expires_at` in the past (or wait 7 days). The link now answers 404, Settings › Data export no longer offers "Download again", and the ZIP is gone from the files volume.
+6. A file id taken from the export (`data_exports.file_id`) answers 404 at `/files/<id>`, even for an Owner.
+
+Regression: other file links (photos, receipts, PDFs) still open for the people allowed to see them.
+
+## 98. Global search (US-OPS-22, Phase 7)
+
+1. On any page, press ⌘K (Mac) or Ctrl+K: the search palette opens with the cursor in the field. The magnifier button in the sidebar footer opens it too.
+2. Type one character: the hint shows. Type "harbor": CONTACTS, QUOTES, JOBS, INVOICES (and VENDOR BILLS, EXPENSES when they match), at most 5 each. Each result has a second line and a status on the right.
+3. Type an invoice number ("INV-0010", or "inv 10"): that invoice is the first result. Do the same with "QUO-4".
+4. Type nonsense: "No results for “…”".
+5. The footer reads "↑↓ to move · Enter to open · Searches contacts, quotes, invoices, jobs, bills and expenses".
+6. Click a result: the record opens and the palette closes.
+7. As Field: searching an invoice number or a customer finds nothing from Invoices, Quotes, Contacts or Bills. Only jobs you're on and your own expenses appear.
+8. Check dark mode and a phone-width window (the palette fits with a margin).
+
+Regression: ⌘K inside the palette doesn't open a second one. The sidebar footer (user menu, help, notifications) still fits when the sidebar is collapsed.
+
+## 99. Search by keyboard and screen reader (US-OPS-23, Phase 7)
+
+1. With VoiceOver (macOS) or NVDA (Windows): press ⌘K / Ctrl+K. It announces a "Search" dialog and a combo box.
+2. Type "harbor": the first result is highlighted. Press Down and Up: each highlighted result is read out (title, second line, status).
+3. Press Enter: that record opens and the palette closes.
+4. Tab to a button (e.g. "Edit layout"), press ⌘K, then Escape: the palette closes and focus is back on that button.
+5. Turn on "Reduce motion" in the operating system: the palette appears without scaling in. Turn it off: a short scale-in.
+6. Without a mouse, everything in steps 1–4 works with the keyboard alone, and the focus ring is visible on the search button in the sidebar.
+
+Regression: other dialogs (Settings, confirmations) still return focus as before. Comboboxes elsewhere (contact pickers) still filter and select as before.
+
+## 100. Dark mode on Phase 7 screens (US-OPS-26, Phase 7)
+
+1. Switch Profile › Appearance to Dark. The sidebar shows the light "spine" wordmark.
+2. Dashboard: cards are a shade lighter than the page. Status colours are the dark ones (green paid, amber due soon, coral overdue, blue primary). In "Money in and out" the money-out bars are dark grey and the money-in bars blue. Sparklines and the aging bar read clearly.
+3. Press ⌘K: the page behind is clearly darkened, and the palette's panel stands off it. Do the same with a Settings dialog, a confirmation dialog, a drawer (an invoice's payment drawer) and a dropdown menu.
+4. Check Invoices with rows ticked, Settings › Automatic reminders and Data export, Team › Audit log, Activity, Profile › Notifications, Recurring invoices, a job's Costing tab and Reports › Job profitability. No text is hard to read, and table headers and the palette footer are legible.
+5. Light mode: the "due soon" chips and amber avatars read clearly on their tints.
+6. Send an invoice email and download a PDF while in dark mode: both are light.
+7. With a screen reader, the setup checklist's ticks and the "All contacts" filters announce their names.
+
+Regression: light mode looks as before apart from the slightly darker amber. Shadows under menus and dialogs look the same in light mode.
+
 ## Known gaps — don't file these as bugs
+
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - No client-side fine-grained capability check exists in the web app —
