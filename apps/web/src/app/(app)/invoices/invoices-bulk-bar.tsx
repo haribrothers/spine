@@ -6,6 +6,7 @@ import { BULK_MAX, type BulkResult } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
+import { filenameFrom, saveBlob } from "../../../lib/save-file";
 import type { Invoice } from "./types";
 
 /** US-INV-23 — an invoice the bulk reminder will act on: issued, with a balance, not reminded today. */
@@ -49,19 +50,14 @@ export function InvoicesBulkBar({
     setBusy(true);
     try {
       const { blob, headers } = await apiClient.download("/invoices/bulk/pdf", { ids: selected.map((i) => i.id) });
-      const filename = /filename="([^"]+)"/.exec(headers.get("Content-Disposition") ?? "")?.[1] ?? "invoices.zip";
+      const filename = filenameFrom(headers, "invoices.zip");
       let skipped: BulkResult["skipped"] = [];
       try {
         skipped = JSON.parse(decodeURIComponent(headers.get("X-Spine-Skipped") ?? "[]"));
       } catch {
         // No list to show; the ZIP still downloaded.
       }
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(url);
+      saveBlob(blob, filename);
       const count = selected.length - skipped.length;
       onFinished(`Downloaded ${count} ${count === 1 ? "PDF" : "PDFs"}`, skipped.length ? `${filename}. Skipped — ${describeSkipped(skipped)}` : filename);
     } catch (err) {

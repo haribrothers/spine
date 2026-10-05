@@ -142,15 +142,16 @@ async function upload<T>(path: string, file: File): Promise<T> {
 }
 
 /**
- * US-INV-24 — a POST whose answer is a file (a ZIP): returns the bytes and
- * the response headers. Errors are reported the same way as `request()`.
+ * US-INV-24 — a request whose answer is a file (a ZIP, a PDF): a POST when
+ * `body` is given, else a GET. Returns the bytes and the response headers.
+ * Errors are reported the same way as `request()`.
  */
-async function download(path: string, body: unknown): Promise<{ blob: Blob; headers: Headers }> {
+async function download(path: string, body?: unknown): Promise<{ blob: Blob; headers: Headers }> {
   const res = await fetch(`${API_URL}${path}`, {
-    method: "POST",
+    method: body === undefined ? "GET" : "POST",
     credentials: "include",
-    headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey() },
-    body: JSON.stringify(body),
+    headers: body === undefined ? {} : { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey() },
+    body: body === undefined ? undefined : JSON.stringify(body),
   });
   if (!res.ok) {
     let message = `Download failed (${res.status})`;
@@ -176,5 +177,5 @@ export const apiClient = {
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
   upload: <T>(path: string, file: File) => upload<T>(path, file),
-  download: (path: string, body: unknown) => download(path, body),
+  download: (path: string, body?: unknown) => download(path, body),
 };

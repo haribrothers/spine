@@ -22,3 +22,4 @@ export * from "./bundles.ts";
 export * from "./reminders.ts";
 export * from "./recurring-invoices.ts";
 export * from "./bulk.ts";
+export * from "./statements.ts";

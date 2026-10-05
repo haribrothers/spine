@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PAY-14: send a customer a statement (Phase 7)
+
+- **"Send statement"** on a customer's contact page opens "Send a statement" (`ContactStatementDialog`): Period (Last 30 days, Last 90 days, This year, Custom), Show (Open invoices only, All activity), a summary ("Opening balance (<date>)", "Invoiced", "Paid and credited", "Balance due"), To (the contact's email) and Message (greeting the main contact person). Needs `reports.view_receivables`; vendors don't get it.
+- **Send statement** emails the statement PDF with the message. The toast says "Statement sent to <email>", and the contact's timeline gets a note. **Download PDF** saves the same PDF without emailing. With no invoices yet, sending is disabled: "No invoices for this customer yet." If email isn't set up, the dialog says so.
+- **Derived, not stored.** The statement is read from the customer's Accounts Receivable journal lines (D-011): the balance before the period, then each invoice, payment, credit and void with a running balance. "Open invoices only" lists the invoices still owing with their payments and credits. New `StatementsModule` (`StatementsService`, `StatementDocumentsService`, the `StatementPdf` template) and the `statementEmail` template. The PDF's aging strip and "How to pay" block are US-PAY-15.
+
+Tests:
+- `packages/shared/src/us-pay-14.test.ts` (4): period choices and dates, send checks, the history line.
+- `apps/api/src/modules/statements/us-pay-14.http.integration.test.ts` (7): summary and rows from the ledger, opening balance, PDF download, send (email, attachment, timeline note, history), no-email 503, no-invoices 400, 403 without the capability.
+- `apps/e2e/tests/us-pay-14.spec.ts` (3): the dialog, download, send with toast and timeline; disabled with no invoices; hidden without the capability.
+
 ### 2026-10-05 — US-INV-24: download several invoice PDFs at once (Phase 7)
 
 - **"Download PDFs"** on the Invoices bulk bar downloads one ZIP, "invoices-<date>.zip", holding each selected invoice's stored PDF (the same bytes as a single download, US-INV-17). Drafts are skipped, and the toast says which. More than 100 selected: "Select 100 or fewer invoices."

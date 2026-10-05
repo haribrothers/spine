@@ -2510,6 +2510,18 @@ Regression: the Invoices table (sorting, search, column picker, row menu) and th
 
 Regression: the bulk bar's "Send reminders" and "Clear" (§68) still work; single-invoice "Download PDF" serves the same file as before.
 
+## 70. Customer statements (US-PAY-14, Phase 7)
+
+1. Open a customer with invoices. "Send statement" opens "Send a statement" with Period (Last 30 days, Last 90 days, This year, Custom; Custom shows From and To date), Show (Open invoices only, All activity), the summary (Opening balance (<date>), Invoiced, Paid and credited, Balance due), To (their email) and Message ("Hi <name>, …").
+2. Change the period: the summary updates. Check the figures against Reports › Receivables for the customer.
+3. "Download PDF": a PDF downloads and nothing is emailed.
+4. "Send statement": the customer gets the email with the PDF and your message; the toast reads "Statement sent to <email>"; the Timeline shows "Statement sent to <email> for <period>. Balance due <amount>."
+5. A customer with no invoices: "Send statement" is disabled with "No invoices for this customer yet."
+6. As Staff without "View receivables" on your Team, the button isn't shown and the statement routes return 403. Field users never see it. Vendors have no button.
+7. With SMTP not configured, sending says email isn't set up; downloading still works.
+
+Regression: the contact page header (badges, Edit/Archive/Delete, Pause automatic reminders) and Timeline look and work as before in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -134,6 +134,12 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
   // US-INV-19: the reminder run has no actor.
   if (entry.action === "automatic_reminder_sent") return own ? "Automatic reminder sent" : `Automatic reminder sent for ${subject}`;
 
+  // US-PAY-14: "Sarah Mendes sent a statement to ap@maple.example".
+  if (entry.action === "statement_sent") {
+    const to = changes.find((c) => c.field === "email")?.to;
+    return `${actor} sent a statement${to ? ` to ${String(to)}` : ""}`;
+  }
+
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".
   if (entry.action === "duplicated") {
     const from = changes.find((c) => c.field === "duplicatedFrom")?.to;

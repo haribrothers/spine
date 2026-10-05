@@ -151,6 +151,32 @@ export function receiptEmail(d: {
   };
 }
 
+/** US-PAY-14 — a customer statement, with the PDF attached and the sender's own message. */
+export function statementEmail(d: {
+  locale?: string;
+  businessName: string;
+  contactName: string | null;
+  period: string;
+  balanceDue: bigint;
+  currency: string;
+  message?: string | null;
+}): EmailTemplate {
+  const balance = emailMoney(d.balanceDue, d.currency, d.locale);
+  return {
+    subject: `Your statement from ${d.businessName} (${d.period})`,
+    content: {
+      heading: "Your statement",
+      greeting: d.message ? undefined : `Hi ${firstName(d.contactName)},`,
+      paragraphs: d.message ? d.message.split(/\n{2,}/) : [`Here's your statement for ${d.period}, attached as a PDF. It lists every invoice, payment and credit in that time.`],
+      facts: [
+        { label: "Period", value: d.period },
+        { label: "Balance due", value: balance },
+      ],
+      note: REPLY_NOTE,
+    },
+  };
+}
+
 const ROLE_LABELS: Record<string, string> = { owner: "an owner", staff: "staff", field: "field crew" };
 
 export function invitationEmail(d: { businessName: string; inviterName: string; role: string; acceptUrl: string }): EmailTemplate {

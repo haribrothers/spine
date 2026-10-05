@@ -15,6 +15,7 @@ import { CatalogModule } from "./modules/catalog/catalog.module";
 import { QuotesModule } from "./modules/quotes/quotes.module";
 import { JobsModule } from "./modules/jobs/jobs.module";
 import { InvoicesModule } from "./modules/invoices/invoices.module";
+import { StatementsModule } from "./modules/statements/statements.module";
 import { CreditNotesModule } from "./modules/credit-notes/credit-notes.module";
 import { PaymentsModule } from "./modules/payments/payments.module";
 import { PurchasesModule } from "./modules/purchases/purchases.module";
@@ -56,6 +57,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     QuotesModule,
     JobsModule,
     InvoicesModule,
+    StatementsModule,
     CreditNotesModule,
     PaymentsModule,
     PurchasesModule,
