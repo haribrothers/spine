@@ -68,6 +68,8 @@ export interface Invoice {
   paymentStatus: "unpaid" | "partially_paid" | "paid";
   /** Computed server-side — totalAmount - retentionAmount - amountPaid - creditedAmount. */
   balanceDue: string;
+  /** US-INV-23 — on the list: whether a reminder (manual or automatic) already went out today, organisation time. */
+  remindedToday?: boolean;
   /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
   job?: { id: string; name: string; number?: string | null } | null;
   milestone?: { id: string; name: string; percent: number | null } | null;

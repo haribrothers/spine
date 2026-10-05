@@ -303,7 +303,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-INV-20 · Set up a recurring invoice
 - [x] US-INV-21 · Create recurring invoices automatically
 - [x] US-INV-22 · Pause, edit or stop a recurring invoice
-- [ ] US-INV-23 · Send reminders for several invoices at once
+- [x] US-INV-23 · Send reminders for several invoices at once
 - [ ] US-INV-24 · Download several invoice PDFs at once
 - [ ] US-PAY-14 · Send a customer a statement
 - [ ] US-PAY-15 · Give customers a clear statement PDF

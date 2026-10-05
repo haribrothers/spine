@@ -21,3 +21,4 @@ export * from "./lead-stages.ts";
 export * from "./bundles.ts";
 export * from "./reminders.ts";
 export * from "./recurring-invoices.ts";
+export * from "./bulk.ts";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, DataTable, type TableColumn } from "@spine/ui";
+import { Badge, Checkbox, DataTable, type TableColumn } from "@spine/ui";
 import Link from "next/link";
 import { InvoiceRowActions } from "./invoice-row-actions";
 import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
@@ -23,13 +23,33 @@ export function InvoicesTable({
   onDeleted,
   onReminderSent,
   onReminderFailed,
+  selected,
+  onToggleSelected,
 }: {
   invoices: Invoice[];
+  /** US-INV-23 — ticked rows, for the bulk bar. */
+  selected?: Set<string>;
+  onToggleSelected?: (invoice: Invoice, selected: boolean) => void;
   onDeleted: (invoice: Invoice) => void;
   onReminderSent?: (invoice: Invoice) => void;
   onReminderFailed?: (invoice: Invoice, message: string) => void;
 }) {
   const columns: TableColumn<Invoice>[] = [
+    ...(selected && onToggleSelected
+      ? [
+          {
+            key: "select",
+            header: "",
+            render: (row: Invoice) => (
+              <Checkbox
+                checked={selected.has(row.id)}
+                onCheckedChange={(v) => onToggleSelected(row, v === true)}
+                aria-label={`Select ${row.number ?? "draft invoice"}`}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       key: "number",
       header: "Number",

@@ -2493,6 +2493,15 @@ Regression: manual New invoice → issue → email still works; the Recurring in
 
 Regression: "+ New recurring invoice" (§65) still opens an empty dialog after editing one; the list looks right in light and dark mode.
 
+## 68. Bulk payment reminders (US-INV-23, Phase 7)
+
+1. On Invoices, tick an unpaid issued invoice, a paid one and a void one. A dark bar shows "3 selected · <amount> outstanding", "Send reminders (1)" and "Clear".
+2. Press "Send reminders (1)": the toast says "1 reminder sent" and lists the paid and void invoices with why they were skipped. The customer gets one reminder email.
+3. Tick the reminded invoice again: "Send reminders (0)" is disabled (already reminded today). "Clear" hides the bar.
+4. As Staff without "Send a payment reminder" on your Team, ticking rows shows the bar without "Send reminders".
+
+Regression: the Invoices table (sorting, search, column picker, row menu) and the one-click "Send reminder" work as before in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-23: send reminders for several invoices at once (Phase 7)
+
+- **Select rows** on the Invoices list (a tick box per row). A bar appears: "<n> selected · <amount> outstanding", "Send reminders (<m>)" and "Clear" (`InvoicesBulkSelect`). The count includes only invoices that are issued, have a balance and weren't reminded today. Without `invoices.send_reminder` the button isn't shown.
+- **Sending** reminds every eligible invoice's customer and toasts "3 reminders sent", listing each skipped invoice with its reason. Overdue isn't required: the email reads "is due in N days" or "is due today" as fits.
+- **API.** `POST /invoices/bulk/send-reminders { ids }` (at most 100, D-097) returns `{ done, skipped }`. Each reminder sent counts as that day's reminder, so the automatic run and a second bulk send skip it. `GET /invoices` rows now carry `remindedToday`. Shared `bulkIdsSchema` / `bulkInvoiceIdsSchema` / `BulkResult` for the bulk stories.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-23.http.integration.test.ts` (4): eligible sent and every skip reason, `remindedToday` on the list, the 100 cap, 403 without the capability.
+- `apps/e2e/tests/us-inv-23.spec.ts` (2): the bar, counting only eligible, toast with skips, reminded-today drops out; hidden button without the capability.
+
 ### 2026-10-05 — US-INV-22: pause, edit or stop a recurring invoice (Phase 7)
 
 - **Row menu** on Invoices › Recurring invoices: Edit (also by clicking the name), Pause / Resume and Delete.

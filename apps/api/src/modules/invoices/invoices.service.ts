@@ -1,12 +1,12 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine, percentageOf } from "@spine/shared";
+import { computeDocumentLine, percentageOf, type BulkResult } from "@spine/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { invoices, invoiceLines, invoiceReminders, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
-import { orgClock } from "../../common/org-clock";
+import { daysBetween, orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -194,15 +194,23 @@ export class InvoicesService {
     if (options.contactId) conditions.push(eq(invoices.contactId, options.contactId));
 
     const rows = await this.db
-      .select({ invoice: invoices, contactName: contacts.name })
+      .select({
+        invoice: invoices,
+        contactName: contacts.name,
+        // US-INV-23 — the last day it was reminded (organisation date), so the bulk bar can count only invoices not reminded today.
+        lastReminderOn: sql<string | null>`(select max(${invoiceReminders.sentOn})::text from ${invoiceReminders} where ${invoiceReminders.invoiceId} = ${invoices.id})`,
+      })
       .from(invoices)
       .leftJoin(contacts, eq(invoices.contactId, contacts.id))
       .where(and(...conditions))
       .orderBy(desc(invoices.createdAt));
 
+    const today = orgClock().date;
     let result = rows.map((r) => ({
       ...r.invoice,
       contactName: r.contactName,
+      lastReminderOn: r.lastReminderOn,
+      remindedToday: r.lastReminderOn === today,
       isOverdue: isOverdue(r.invoice),
       paymentStatus: paymentStatus(r.invoice),
       balanceDue: r.invoice.totalAmount - r.invoice.retentionAmount - r.invoice.amountPaid - r.invoice.creditedAmount,
@@ -918,6 +926,79 @@ export class InvoicesService {
     }
 
     return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-INV-23 (D-097) — reminds the customers of several invoices at once.
+   * Eligible: issued, with a balance, not already reminded today (manual or
+   * automatic), and a customer with an email address. Unlike the one-click
+   * reminder it doesn't need the invoice to be overdue — the email says
+   * "is due in N days" or "is due today" as fits. Every skipped invoice is
+   * reported with the reason.
+   */
+  async bulkSendReminders(orgId: string, actorUserId: string, ids: string[]): Promise<BulkResult> {
+    const unique = [...new Set(ids)];
+    const today = orgClock().date;
+    const rows = await this.db
+      .select({ invoice: invoices, contactEmail: contacts.email })
+      .from(invoices)
+      .leftJoin(contacts, eq(invoices.contactId, contacts.id))
+      .where(and(eq(invoices.orgId, orgId), inArray(invoices.id, unique)));
+    const byId = new Map(rows.map((r) => [r.invoice.id, r]));
+    const result: BulkResult = { done: [], skipped: [] };
+
+    for (const id of unique) {
+      const row = byId.get(id);
+      const inv = row?.invoice;
+      const skip = (reason: string) => result.skipped.push({ id, label: inv?.number ?? null, reason });
+      if (!inv) {
+        skip("Not found.");
+        continue;
+      }
+      if (inv.status === "draft") {
+        skip("It's a draft — issue it first.");
+        continue;
+      }
+      if (inv.status === "void") {
+        skip("It's void.");
+        continue;
+      }
+      if (inv.totalAmount - inv.retentionAmount - inv.amountPaid - inv.creditedAmount <= 0n) {
+        skip("Nothing is owed on it.");
+        continue;
+      }
+      if (!row!.contactEmail) {
+        skip("The customer has no email address.");
+        continue;
+      }
+      const recorded = await this.db.transaction(async (tx) => {
+        const [reminder] = await tx.insert(invoiceReminders).values({ orgId, invoiceId: id, sentOn: today, kind: "manual" }).onConflictDoNothing().returning({ id: invoiceReminders.id });
+        if (!reminder) return false;
+        await tx.update(invoices).set({ emailStatus: "pending", updatedAt: new Date() }).where(eq(invoices.id, id));
+        await this.auditLog.record(tx, {
+          orgId,
+          actorUserId,
+          action: "reminder_queued",
+          entityType: "invoice",
+          entityId: id,
+          contactId: inv.contactId,
+          changes: [{ field: "emailStatus", from: inv.emailStatus, to: "pending" }],
+        });
+        return true;
+      });
+      if (!recorded) {
+        skip("Already reminded today.");
+        continue;
+      }
+      const due = inv.dueDate ? new Date(inv.dueDate).toISOString().slice(0, 10) : null;
+      try {
+        await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(due ? { daysOverdue: daysBetween(due, today) } : {}) });
+      } catch (err) {
+        this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
+      }
+      result.done.push(id);
+    }
+    return result;
   }
 
   /**

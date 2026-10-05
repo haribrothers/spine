@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
+import { bulkInvoiceIdsSchema, createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -110,6 +110,16 @@ export class InvoicesController {
   async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.invoicesService.sendEmail(orgId, id, session.user.id);
+  }
+
+  /** US-INV-23 (D-097) — reminders for up to 100 invoices; reports each skipped one with the reason. */
+  @Post("bulk/send-reminders")
+  @RequireCapability("invoices.send_reminder")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkSendReminders(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkInvoiceIdsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select up to 100 invoices.");
+    return this.invoicesService.bulkSendReminders(requireOrgId(session), session.user.id, parsed.data.ids);
   }
 
   /** S-05.10 — one-click payment reminder for an overdue invoice; reuses sendEmail's own queue/worker with reminder-flavored copy, see InvoicesService.sendReminder's own doc comment. */

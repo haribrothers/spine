@@ -9,6 +9,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
 import { InvoicesSkeleton } from "./invoices-skeleton";
 import { InvoicesTable } from "./invoices-table";
+import { InvoicesBulkBar } from "./invoices-bulk-bar";
 import type { ContactOption, Invoice } from "./types";
 import { useInvoiceStats } from "./use-invoice-stats";
 
@@ -38,6 +39,7 @@ export function InvoicesExplorer() {
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const { show: showToast, toast } = useEntityToast();
 
   const stats = useInvoiceStats(invoices);
@@ -74,6 +76,18 @@ export function InvoicesExplorer() {
     if (!statusFilter.length) return invoices;
     return invoices.filter((inv) => statusFilter.includes(inv.status) || (statusFilter.includes("overdue") && inv.isOverdue));
   }, [invoices, statusFilter]);
+
+  // US-INV-23 — ticked rows still on the list (a deleted invoice drops out).
+  const selectedInvoices = useMemo(() => (invoices ?? []).filter((i) => selectedIds.has(i.id)), [invoices, selectedIds]);
+
+  function toggleSelected(invoice: Invoice, on: boolean) {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (on) next.add(invoice.id);
+      else next.delete(invoice.id);
+      return next;
+    });
+  }
 
   function handleDeleted(invoice: Invoice) {
     loadInvoices();
@@ -138,6 +152,18 @@ export function InvoicesExplorer() {
         </div>
       </div>
 
+      {selectedInvoices.length > 0 && (
+        <InvoicesBulkBar
+          selected={selectedInvoices}
+          onClear={() => setSelectedIds(new Set())}
+          onFinished={(title, description) => {
+            setSelectedIds(new Set());
+            loadInvoices();
+            showToast(title, description);
+          }}
+        />
+      )}
+
       {!filteredInvoices ? (
         <InvoicesSkeleton />
       ) : filteredInvoices.length === 0 ? (
@@ -180,6 +206,8 @@ export function InvoicesExplorer() {
           onDeleted={handleDeleted}
           onReminderSent={handleReminderSent}
           onReminderFailed={handleReminderFailed}
+          selected={selectedIds}
+          onToggleSelected={toggleSelected}
         />
       )}
       {toast}
