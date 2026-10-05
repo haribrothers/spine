@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, boolean, timestamp, index, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, boolean, timestamp, index, numeric, integer, pgEnum } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { accounts } from "./ledger";
@@ -94,3 +94,61 @@ export const catalogItems = pgTable(
     index("catalog_items_created_by_idx").on(table.createdByUserId),
   ],
 );
+
+/** Same three kinds as quote and invoice lines. */
+export const catalogBundleLineTypeEnum = pgEnum("catalog_bundle_line_type", ["item", "heading", "text"]);
+
+/**
+ * US-QUO-25 (D-096) — a saved group of lines ("Bathroom refit — standard")
+ * that the line picker adds to a quote or invoice in one go (US-QUO-26).
+ * Its lines are copied in when it's saved (from a quote) and copied out
+ * when it's added, so a bundle never changes an existing document and a
+ * document never changes a bundle. Own/others rules are the catalogue's
+ * (`catalog.*`), keyed on `created_by_user_id`.
+ */
+export const catalogBundles = pgTable(
+  "catalog_bundles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    /** The currency its prices are in; it's offered on documents in the same currency. */
+    currency: text("currency").notNull(),
+    /** Sum of its lines' totals when it was saved, shown in the picker; its lines are what's copied. */
+    totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("catalog_bundles_org_idx").on(table.orgId), index("catalog_bundles_created_by_idx").on(table.createdByUserId)],
+);
+
+/** One line of a bundle, a snapshot of the line it was saved from. */
+export const catalogBundleLines = pgTable(
+  "catalog_bundle_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    bundleId: uuid("bundle_id")
+      .notNull()
+      .references(() => catalogBundles.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    type: catalogBundleLineTypeEnum("type").notNull().default("item"),
+    /** Provenance only; an archived or deleted item never stops the line being added (as a one-off). */
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
+  },
+  (table) => [index("catalog_bundle_lines_bundle_idx").on(table.bundleId, table.sortOrder)],
+);
+

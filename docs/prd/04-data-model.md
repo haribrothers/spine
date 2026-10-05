@@ -59,8 +59,8 @@ New schema the stories require. Each is created by the story named; until then i
 | `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
 | `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
 | `jobs` | `number text` (unique per org, index `jobs_org_number_unique`), allocated from the `job` number sequence in the creating transaction; migration `0061` numbered existing jobs in creation order. Nullable only for rows written outside `JobsService` | US-JOB-22 |
-| `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `created_by_user_id`, `archived_at`, timestamps | US-QUO-25 |
-| `catalog_bundle_lines` (new) | `bundle_id`, `sort_order`, `catalog_item_id?`, `name`, `description`, `quantity numeric`, `unit_price_amount bigint`, `tax_rate_id?`, `tax_group_id?` | US-QUO-25 |
+| `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `currency` (offered on documents in that currency), `total_amount bigint` (sum of the line totals when saved, for the picker), `created_by_user_id` (own/others), `archived_at`, timestamps (migration `0065`) | US-QUO-25 |
+| `catalog_bundle_lines` (new) | `id`, `bundle_id` → bundles (cascade), `sort_order`, `type` enum `catalog_bundle_line_type` (item/heading/text), `catalog_item_id?` (provenance, set null), `name`, `description`, `quantity numeric(18,4)`, `unit_price_amount bigint`, `discount_percentage`, `tax_rate_percentage`, `tax_rate_id?`, `tax_group_id?`, `is_tax_inclusive` — a snapshot of the quote line it was saved from (D-096) | US-QUO-25 |
 | `settings` key `invoice_reminders` | `{ enabled, offsets: int[], repeatEvery?, repeatMax?, sendAt }` | US-INV-18 |
 | `contacts` | `reminders_paused boolean not null default false` | US-INV-19 |
 | `invoice_reminders` (new) | `id`, `org_id`, `invoice_id`, `sent_at`, `kind` (`auto`/`manual`); unique (`invoice_id`, date of `sent_at`) | US-INV-19 |

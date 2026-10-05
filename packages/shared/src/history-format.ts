@@ -26,6 +26,7 @@ const ENTITY_NAMES: Record<string, string> = {
   activity: "an activity",
   address: "an address",
   catalog_item: "a catalogue item",
+  catalog_bundle: "a bundle",
   contact: "a contact",
   contact_person: "a contact person",
   credit_note: "a credit note",

@@ -1,5 +1,6 @@
 import { AppShellHeader } from "@spine/ui";
-import { CatalogExplorer } from "./catalog-explorer";
+import { Suspense } from "react";
+import { CatalogTabs } from "./catalog-tabs";
 
 /**
  * PRD F2 Catalogue — goods/services with a default price/unit/tax rate for
@@ -20,7 +21,9 @@ export default async function CatalogPage({
         title="Catalogue"
         description="Goods and services you quote, invoice and sell."
       />
-      <CatalogExplorer initialDrawerOpen={newParam === "1"} />
+      <Suspense>
+        <CatalogTabs initialDrawerOpen={newParam === "1"} />
+      </Suspense>
     </>
   );
 }

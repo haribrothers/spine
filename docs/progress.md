@@ -290,7 +290,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-CRM-20 · Delete a stage and move its leads
 - [x] US-CAT-06 · Add a new item while building a quote
 - [x] US-QUO-24 · Duplicate a quote as a new draft
-- [ ] US-QUO-25 · Save quote lines as a reusable bundle
+- [x] US-QUO-25 · Save quote lines as a reusable bundle
 - [ ] US-QUO-26 · Add a bundle while building a quote
 - [ ] US-JOB-24 · Set a cost budget for a job
 - [ ] US-JOB-25 · See budget spent and get warned before going over

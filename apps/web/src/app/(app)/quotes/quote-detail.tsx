@@ -28,6 +28,7 @@ import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { EmailQueueDialog } from "./email-queue-dialog";
+import { SaveBundleDialog } from "./save-bundle-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
 import { formatMoney } from "../../../lib/money";
@@ -109,6 +110,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   // US-QUO-24: anyone who can create quotes may start one from this quote.
   const canDuplicate = useCapability("quotes.edit_own");
   const [historyOpen, setHistoryOpen] = useState(false);
+  // US-QUO-25: saving lines as a bundle creates a catalogue record.
+  const canSaveBundle = useCapability("catalog.edit_own");
+  const [bundleOpen, setBundleOpen] = useState(false);
 
   const load = useCallback(() => {
     apiClient
@@ -363,6 +367,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
           <div className="flex flex-wrap items-center gap-2">
             <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" open={historyOpen} onOpenChange={setHistoryOpen} />
+            <SaveBundleDialog
+              open={bundleOpen}
+              onOpenChange={setBundleOpen}
+              quoteId={quote.id}
+              lines={quote.lines ?? []}
+              currency={quote.currency}
+              onSaved={(bundle) => showToast("Bundle saved", `“${bundle.name}” is in the catalogue under Bundles.`)}
+            />
             {/* PRD S-03.3 / US-INV-17 — a draft previews live; a sent quote downloads the PDF stored when it was sent (see quotes.controller.ts's GET /:id/pdf). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
             <Button variant="secondary" asChild>
               <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
@@ -407,6 +419,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 {canDuplicate && <DropdownMenuItem onSelect={handleDuplicate}>Duplicate as new draft</DropdownMenuItem>}
+                {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
+                  <DropdownMenuItem onSelect={() => setBundleOpen(true)}>Save lines as a bundle…</DropdownMenuItem>
+                )}
                 {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={handleEmailAgain}>Email again</DropdownMenuItem>}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
               </DropdownMenuContent>

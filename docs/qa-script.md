@@ -2422,6 +2422,17 @@ Regression: saving a quote with only catalogue items creates nothing new; editin
 
 Regression: Revise still creates the next version; the quote's History is still reachable (now from "More ▾").
 
+## 61. Save quote lines as a bundle (US-QUO-25, Phase 7)
+
+1. On a quote with item lines, "More ▾" → "Save lines as a bundle…": the dialog explains bundles, shows "Bundle name", a one-line summary of the lines and total, and "Description".
+2. Press "Save bundle" with no name: "Give the bundle a name." Fill it in and save: a "Bundle saved" toast.
+3. Catalogue › Bundles lists it with its lines and total. Filter by Active/Archived; search by name.
+4. Edit the quote's lines afterwards: the bundle's lines stay as they were.
+5. Row menu: Edit (name and description), Archive/Restore, Delete (with a confirmation). As Staff with "own" catalogue rights, you can change your own bundles but not someone else's.
+6. Staff without catalogue rights don't see "Save lines as a bundle…".
+
+Regression: Catalogue › Items works as before (filters, drawer, archive); the quote's other More ▾ actions still work.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

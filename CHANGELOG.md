@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-QUO-25: save quote lines as a reusable bundle (Phase 7)
+
+- **Data.** `catalog_bundles` (name, description, currency, saved total, creator, archived) and `catalog_bundle_lines` (a snapshot of each quote line: type, item link, name, quantity, price, discount, tax) — migration `0065`.
+- **API.** `/catalog-bundles`: list (with lines; archived and currency filters), get, create from a quote (`sourceQuoteId` — the server copies the lines, so a later quote change never reaches the bundle), rename, archive/restore, delete. Catalogue own/others rules: create `catalog.edit_own`, rename `catalog.edit_*`, archive/restore/delete `catalog.delete_*`, by who saved it.
+- **Web.** The quote's "More ▾" gains "Save lines as a bundle…" (the `CatalogBundleDialog` design: name, line summary and total, description, "Give the bundle a name.", "Bundle saved" toast). Catalogue gets Items and Bundles tabs (`?tab=bundles`); Bundles lists name, description, lines, total and status with Edit, Archive/Restore and Delete.
+
+Tests:
+- `apps/api/src/modules/catalog/us-quo-25.http.integration.test.ts` (4): name required; lines and total copied and listed; unchanged after the quote changes; own/others for rename, archive, restore and delete.
+- `apps/e2e/tests/us-quo-25.spec.ts` (1): the dialog, the name error, the toast, and the bundle under Catalogue › Bundles.
+
 ### 2026-10-05 — US-QUO-24: duplicate a quote as a new draft (Phase 7)
 
 - **"More ▾"** on the quote page (the `QuoteActionsMenu` design): "Duplicate as new draft" (members with `quotes.edit_own`), "Email again" (sent quotes, `quotes.send`) and "View history" (the History dialog, which can now be opened from a menu). "Save lines as a bundle…" joins it with US-QUO-25.

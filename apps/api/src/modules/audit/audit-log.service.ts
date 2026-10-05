@@ -13,6 +13,7 @@ export type AuditEntityType =
   | "activity"
   | "meeting"
   | "catalog_item"
+  | "catalog_bundle"
   | "quote"
   | "quote_line"
   | "invoice"
