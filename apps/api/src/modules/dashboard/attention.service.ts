@@ -154,7 +154,7 @@ export class AttentionService {
   /** Recorded bills with a balance, due today or within 3 days. */
   private async vendorBillsDue(orgId: string, today: string, currency: string): Promise<AttentionItem> {
     const rows = await this.db
-      .select({ id: vendorBills.id, number: vendorBills.billNumber, name: contacts.name, balance: sql<string>`(${vendorBills.totalAmount} - ${vendorBills.amountPaid})::text`, dueDate: vendorBills.dueDate })
+      .select({ id: vendorBills.id, contactId: vendorBills.contactId, number: vendorBills.billNumber, name: contacts.name, balance: sql<string>`(${vendorBills.totalAmount} - ${vendorBills.amountPaid})::text`, dueDate: vendorBills.dueDate })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
       .where(
@@ -171,7 +171,7 @@ export class AttentionService {
       "vendor_bills_due",
       rows.length,
       currency,
-      rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.balance, date: isoDate(r.dueDate) })),
+      rows.map((r) => ({ id: r.id, contactId: r.contactId, number: r.number, name: r.name, amount: r.balance, date: isoDate(r.dueDate) })),
     );
   }
 

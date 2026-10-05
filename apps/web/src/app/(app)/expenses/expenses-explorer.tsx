@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard, Switch } from "@spine/ui";
 import { Receipt } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -45,7 +46,9 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const canManageCategories = useCanManageExpenseCategories();
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  // US-DASH-13: "Review" on the dashboard opens ?status=submitted.
+  const searchParams = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => searchParams.get("status")?.split(",").filter(Boolean) ?? []);
   const [mineOnly, setMineOnly] = useState(false);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);

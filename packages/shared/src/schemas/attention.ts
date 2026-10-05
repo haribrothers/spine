@@ -41,6 +41,8 @@ export interface AttentionRecord {
   jobId?: string | null;
   /** Jobs over budget: the budget, minor units. */
   budget?: string | null;
+  /** Vendor bills: the vendor, for "Pay bill". */
+  contactId?: string | null;
 }
 
 export interface AttentionItem {

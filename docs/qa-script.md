@@ -2655,6 +2655,15 @@ Regression: the dashboard's "Job profitability" widget still lists every job; th
 
 Regression: the KPI row, setup checklist (Owners) and widgets below still show; "Edit layout" still hides and shows widgets; light and dark mode.
 
+## 84. Attention actions (US-DASH-13, Phase 7)
+
+1. With exactly one overdue invoice, press "Send reminder" on its row: the toast reads "Reminder sent for INV-…" and the customer gets the reminder.
+2. With two or more overdue invoices, "Send reminder" opens Invoices filtered to Overdue with them all ticked and the bulk bar showing.
+3. "Review" (expenses) opens Expenses filtered to Submitted. "Approve" and "Follow up" open the quote. "Raise invoice" opens the milestone's job. "Pay bill" opens "New vendor payment" for that vendor. "Review" on a job over budget opens its Costing tab.
+4. As Staff without "Send a payment reminder", the overdue row's button reads "Open".
+
+Regression: Invoices, Expenses and Vendor Payments opened normally (no query string) look and filter as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

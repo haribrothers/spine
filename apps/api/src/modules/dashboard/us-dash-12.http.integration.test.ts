@@ -122,7 +122,7 @@ describe("US-DASH-12 · see what needs my attention first (requires local Postgr
     expect(rows[2]!.items[0]).toMatchObject({ name: "Maple Ridge Developments", amount: "1280000", note: "25% discount" });
     expect(rows[3]!.items[0]).toMatchObject({ name: "Mobilisation & site setup", party: "Marina office fit-out", note: "Marcus Webb" });
     expect(rows[4]!.items[0]).toMatchObject({ number: "QUO-0004" });
-    expect(rows[5]!.items[0]).toMatchObject({ number: "BILL-2231", name: "Ace Timber Supply", amount: "216000" });
+    expect(rows[5]!.items[0]).toMatchObject({ number: "BILL-2231", name: "Ace Timber Supply", amount: "216000", contactId: expect.any(String) });
   });
 
   it("leaves out kinds the member can't act on, and Staff's own expenses (D-085)", async () => {

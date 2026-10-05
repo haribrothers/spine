@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-13: act on an attention item in one click (Phase 7)
+
+- **Send reminder.** With one overdue invoice, the dashboard sends its reminder straight away; the toast reads "Reminder sent for INV-0002". With several, it opens Invoices filtered to overdue with those invoices ticked, ready for "Send reminders" (US-INV-23).
+- **Other buttons go straight to the record:**
+  - "Review": expenses filtered to submitted.
+  - "Approve" and "Follow up": the quote.
+  - "Raise invoice": the completed milestone's job.
+  - "Pay bill": the vendor payment dialog, opened on that bill's vendor.
+  - "Review" on a job over budget: its Costing tab.
+- **No capability, no action.** Without the capability for an action (e.g. `invoices.send_reminder`), the button reads "Open" and just opens the record.
+- **Deep links.** Invoices and Expenses read `?status=` (and Invoices `?select=overdue`). Vendor Payments reads `?contactId=&pay=1` to open "New vendor payment" on that vendor. No new endpoints.
+
+Tests:
+- `apps/e2e/tests/us-dash-13.spec.ts` (5): one-click reminder with toast; Review to submitted expenses; several overdue to the filtered, ticked list; Pay bill's payment dialog; "Open" without the capability.
+- `apps/api/src/modules/dashboard/us-dash-12.http.integration.test.ts`: vendor bill rows carry the vendor.
+
 ### 2026-10-05 — US-DASH-12: see what needs my attention first (Phase 7)
 
 - **Header.** The dashboard now opens with "Good morning|afternoon|evening, <first name>" and "<weekday> <day> <month> · <business> · <n> things need you today" (or "nothing needs you right now"), with "Edit layout" beside it (`DashboardOwnerRedesign`).

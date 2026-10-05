@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
 import { Receipt } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { useEntityToast } from "./entity-toast";
@@ -36,7 +37,10 @@ export function InvoicesExplorer() {
   const canManageRecurring = useCapability("invoices.manage_recurring");
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  // US-DASH-13: "Send reminder" for several overdue invoices opens ?status=overdue&select=overdue — filtered, with them ticked.
+  const searchParams = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => searchParams.get("status")?.split(",").filter(Boolean) ?? []);
+  const selectOverdue = searchParams.get("select") === "overdue";
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -76,6 +80,13 @@ export function InvoicesExplorer() {
     if (!statusFilter.length) return invoices;
     return invoices.filter((inv) => statusFilter.includes(inv.status) || (statusFilter.includes("overdue") && inv.isOverdue));
   }, [invoices, statusFilter]);
+
+  const [preselected, setPreselected] = useState(false);
+  useEffect(() => {
+    if (!selectOverdue || preselected || !invoices) return;
+    setSelectedIds(new Set(invoices.filter((i) => i.isOverdue).map((i) => i.id)));
+    setPreselected(true);
+  }, [selectOverdue, preselected, invoices]);
 
   // US-INV-23 — ticked rows still on the list (a deleted invoice drops out).
   const selectedInvoices = useMemo(() => (invoices ?? []).filter((i) => selectedIds.has(i.id)), [invoices, selectedIds]);

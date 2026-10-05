@@ -25,7 +25,7 @@ export function attentionHref(item: AttentionItem): string {
   const one = item.count === 1 && first;
   switch (item.kind) {
     case "invoices_overdue":
-      return one ? `/invoices/${first.id}` : "/invoices?status=overdue";
+      return one ? `/invoices/${first.id}` : "/invoices?status=overdue&select=overdue";
     case "expenses_awaiting_approval":
       return "/expenses?status=submitted";
     case "quotes_discount_approval":
@@ -35,7 +35,8 @@ export function attentionHref(item: AttentionItem): string {
     case "milestones_due":
       return first?.jobId ? `/jobs/${first.jobId}` : "/jobs";
     case "vendor_bills_due":
-      return one ? `/vendor-bills/${first.id}` : "/vendor-bills";
+      // US-DASH-13: straight to the payment dialog for the first bill's vendor.
+      return first?.contactId ? `/vendor-payments?contactId=${first.contactId}&pay=1` : "/vendor-bills";
     case "jobs_over_budget":
       return first?.jobId ? `/jobs/${first.jobId}?tab=costing` : "/jobs";
     case "followups_overdue":

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { VendorPaymentsExplorer } from "./vendor-payments-explorer";
 
@@ -10,7 +11,10 @@ export default function VendorPaymentsPage() {
         title="Vendor Payments"
         description="Record a payment to a vendor, fully allocated across their recorded bills."
       />
-      <VendorPaymentsExplorer />
+      {/* US-DASH-13: the explorer reads ?contactId=&pay=1 from the URL. */}
+      <Suspense>
+        <VendorPaymentsExplorer />
+      </Suspense>
     </>
   );
 }

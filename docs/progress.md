@@ -311,7 +311,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-22 · Filter bills and expenses by job
 - [x] US-PUR-23 · Enter site labour as headcount × day rate
 - [x] US-DASH-12 · See what needs my attention first
-- [ ] US-DASH-13 · Act on an attention item in one click
+- [x] US-DASH-13 · Act on an attention item in one click
 - [ ] US-DASH-14 · See key figures with a trend and a comparison
 - [ ] US-DASH-15 · See money in and out by month
 - [ ] US-DASH-16 · See today's schedule beside my tasks

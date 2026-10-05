@@ -10,7 +10,9 @@ import { SetupChecklist } from "./setup-checklist";
 import { LedgerIntegrityAlert } from "./ledger-integrity-alert";
 import { StorageIntegrityAlert } from "./storage-integrity-alert";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
-import { AttentionCard } from "./attention-card";
+import { AttentionCard, attentionHref, type AttentionRowAction } from "./attention-card";
+import { useCapability } from "../../../lib/capabilities-context";
+import { useEntityToast } from "../invoices/entity-toast";
 
 /** `YYYY-MM-DD` in the browser's own calendar. */
 function localToday(): string {
@@ -68,12 +70,50 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   const [attention, setAttention] = useState<AttentionItem[] | null>(null);
   const [business, setBusiness] = useState<string | null>(null);
   const [now] = useState(() => new Date());
+  const canSendReminder = useCapability("invoices.send_reminder");
+  const [reminding, setReminding] = useState(false);
+  const { show: showToast, toast } = useEntityToast();
 
-  useEffect(() => {
+  function loadAttention() {
     apiClient
       .get<AttentionItem[]>("/dashboard/attention")
       .then(setAttention)
       .catch(() => setAttention([]));
+  }
+
+  /**
+   * US-DASH-13 (D-088) — each row's button. One overdue invoice: the
+   * reminder goes straight away. Several: the Invoices list, filtered to
+   * overdue with them ticked. Without the capability: "Open".
+   */
+  function actionFor(item: AttentionItem, label: string): AttentionRowAction {
+    if (item.kind === "invoices_overdue") {
+      const first = item.items[0];
+      if (!canSendReminder) return { label: "Open", href: item.count === 1 && first ? `/invoices/${first.id}` : "/invoices?status=overdue" };
+      if (item.count === 1 && first) {
+        return {
+          label,
+          busy: reminding,
+          onClick: async () => {
+            setReminding(true);
+            try {
+              await apiClient.post(`/invoices/${first.id}/send-reminder`);
+              showToast(`Reminder sent for ${first.number ?? "the invoice"}`, "The customer gets the reminder email with the invoice attached.");
+              loadAttention();
+            } catch (err) {
+              showToast("Couldn't send the reminder", err instanceof Error ? err.message : "Try again.");
+            } finally {
+              setReminding(false);
+            }
+          },
+        };
+      }
+    }
+    return { label, href: attentionHref(item) };
+  }
+
+  useEffect(() => {
+    loadAttention();
     apiClient
       .get<{ value: { name?: string } | null }>("/org/settings/business_profile")
       .then((res) => setBusiness(res.value?.name?.trim() || null))
@@ -138,7 +178,15 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
       {role === "owner" && <StorageIntegrityAlert />}
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-        {role !== "field" && <AttentionCard className="lg:col-span-2" items={attention} today={localToday()} note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"} />}
+        {role !== "field" && (
+          <AttentionCard
+            className="lg:col-span-2"
+            items={attention}
+            today={localToday()}
+            note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"}
+            actionFor={actionFor}
+          />
+        )}
         {role === "owner" && <SetupChecklist />}
       </div>
       {role !== "field" && <DashboardSummary />}
@@ -170,6 +218,7 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
           );
         })}
       </ReorderableList>
+      {toast}
     </div>
   );
 }
