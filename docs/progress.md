@@ -324,7 +324,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-NTF-14 · Choose when my digest arrives
 - [x] US-SET-09 · Pick a theme for the whole organisation
 - [x] US-SET-10 · Put my brand colour and footer on documents
-- [ ] US-SET-11 · See every change across the organisation
+- [x] US-SET-11 · See every change across the organisation
 - [ ] US-SET-12 · Export the audit log
 - [ ] US-SET-15 · Export all my data
 - [ ] US-SET-16 · Keep data exports private

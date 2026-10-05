@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ActivityFeedEntry } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { ActivityFeedList } from "../../../../components/activity-feed-list";
+import { useMyRole } from "../../../../lib/role-context";
 
 /**
  * S-09.14 (dashboard v2) — org-wide "what just happened" feed. US-DASH-19:
@@ -20,6 +21,8 @@ import { ActivityFeedList } from "../../../../components/activity-feed-list";
  * only "nothing to show" case.
  */
 export function ActivityFeed({ title = "Recent activity" }: { title?: string } = {}) {
+  // US-DASH-19/US-SET-11: Owners' "View all" opens the organisation audit log; everyone else the full feed.
+  const viewAllHref = useMyRole() === "owner" ? "/team/audit-log" : "/activity";
   const [entries, setEntries] = useState<ActivityFeedEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -39,7 +42,7 @@ export function ActivityFeed({ title = "Recent activity" }: { title?: string } =
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           {title}
-          <Link href="/activity" className="text-[13px] font-normal text-primary hover:underline">
+          <Link href={viewAllHref} className="text-[13px] font-normal text-primary hover:underline">
             View all
           </Link>
         </CardTitle>

@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { member, user } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 
 export interface MemberRow {
   id: string;
@@ -25,7 +26,15 @@ export interface MemberRow {
  */
 @Injectable()
 export class MembersService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly audit: AuditLogService,
+  ) {}
+
+  /** US-SET-11 — role and access changes land in the audit log as record type "User", the member's user id as the record. */
+  private async recordUserChange(orgId: string, actorUserId: string | null, targetUserId: string, action: string, field: string, from: string, to: string) {
+    await this.audit.record(this.db, { orgId, actorUserId, action, entityType: "user", entityId: targetUserId, contactId: null, changes: [{ field, from, to }] });
+  }
 
   private readonly memberRowSelection = {
     id: member.id,
@@ -92,7 +101,7 @@ export class MembersService {
     return existing;
   }
 
-  async setActive(orgId: string, memberId: string, isActive: boolean): Promise<MemberRow> {
+  async setActive(orgId: string, memberId: string, isActive: boolean, actorUserId: string | null = null): Promise<MemberRow> {
     const existing = await this.requireMember(orgId, memberId);
 
     if (existing.role === "owner" && !isActive) {
@@ -117,17 +126,21 @@ export class MembersService {
       .set({ isActive, deactivatedAt: isActive ? null : new Date() })
       .where(eq(member.id, memberId))
       .returning();
+    if (existing.isActive !== isActive) {
+      await this.recordUserChange(orgId, actorUserId, existing.userId, isActive ? "reactivated" : "deactivated", "status", existing.isActive ? "Active" : "Deactivated", isActive ? "Active" : "Deactivated");
+    }
 
     return this.getRow(updated!.id);
   }
 
   /** Staff -> Owner. No Team involvement — Owner is never Team-configurable. */
-  async promote(orgId: string, memberId: string): Promise<MemberRow> {
+  async promote(orgId: string, memberId: string, actorUserId: string | null = null): Promise<MemberRow> {
     const existing = await this.requireMember(orgId, memberId);
     if (existing.role !== "staff") {
       throw new BadRequestException("Only a Staff member can be promoted to Owner");
     }
     const [updated] = await this.db.update(member).set({ role: "owner" }).where(eq(member.id, memberId)).returning();
+    await this.recordUserChange(orgId, actorUserId, existing.userId, "role_changed", "role", "Staff", "Owner");
     return this.getRow(updated!.id);
   }
 
@@ -138,7 +151,7 @@ export class MembersService {
    * Does not auto-assign any Team — matches "no Team = no capabilities
    * until reassigned" (PRD §2.1).
    */
-  async demote(orgId: string, memberId: string): Promise<MemberRow> {
+  async demote(orgId: string, memberId: string, actorUserId: string | null = null): Promise<MemberRow> {
     const existing = await this.requireMember(orgId, memberId);
     if (existing.role !== "owner") {
       throw new BadRequestException("Only an Owner can be demoted to Staff");
@@ -155,6 +168,7 @@ export class MembersService {
     }
 
     const [updated] = await this.db.update(member).set({ role: "staff" }).where(eq(member.id, memberId)).returning();
+    await this.recordUserChange(orgId, actorUserId, existing.userId, "role_changed", "role", "Owner", "Staff");
     return this.getRow(updated!.id);
   }
 
@@ -181,9 +195,21 @@ export class MembersService {
       throw new BadRequestException("Cannot transfer primary ownership to yourself");
     }
 
+    const names = new Map(
+      (await this.db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, [caller.userId, target.userId]))).map((u) => [u.id, u.name]),
+    );
     await this.db.transaction(async (tx) => {
       await tx.update(member).set({ isPrimaryOwner: false }).where(eq(member.id, caller.id));
       await tx.update(member).set({ isPrimaryOwner: true }).where(eq(member.id, target.id));
+      await this.audit.record(tx, {
+        orgId,
+        actorUserId: callerUserId,
+        action: "primary_owner_transferred",
+        entityType: "user",
+        entityId: target.userId,
+        contactId: null,
+        changes: [{ field: "primaryOwner", from: names.get(caller.userId) ?? "", to: names.get(target.userId) ?? "" }],
+      });
     });
   }
 }

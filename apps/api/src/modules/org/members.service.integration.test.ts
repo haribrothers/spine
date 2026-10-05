@@ -4,6 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
 import { member, user } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 import { MembersService } from "./members.service";
 
 /**
@@ -29,7 +30,7 @@ describe("MembersService promote/demote/transferPrimaryOwner (requires local Pos
 
   beforeEach(async () => {
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
-    membersService = new MembersService(db);
+    membersService = new MembersService(db, new AuditLogService(db));
 
     const ownerEmail = `members-test-owner-${randomUUID()}@example.com`;
     const staffEmail = `members-test-staff-${randomUUID()}@example.com`;

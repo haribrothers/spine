@@ -2774,9 +2774,22 @@ Regression: other emails (quote, invoice, reminders, notifications) look the sam
 
 Regression: changing theme, name, email, avatar and password still works from their tabs. The meeting reminder choice still saves.
 
+## 94. Organisation audit log (US-SET-11, Phase 7)
+
+1. As an Owner, Team › Audit log opens with "Every change to records in <Business>, newest first. Only owners can see this page."
+2. The table shows When, Who, Action, Record and Details for the last month, newest first.
+3. Set Person, Record type and Action: only matching entries remain. Narrow From/To to a day with no changes: "No changes match these filters. Widen the dates or clear a filter."
+4. Click a record (a quote, an invoice, a milestone): it opens that record (a milestone opens its job).
+5. With more than 50 entries: "1–50 of <total> entries". Next shows 51–100, and Previous goes back.
+6. On Team › Users, promote a Staff user, demote them, deactivate and reactivate them. Each appears as "User · <name>" with "Staff → Owner", "Owner → Staff", "Active → Deactivated" and "Deactivated → Active". Transfer primary ownership: "Primary owner transferred" with both names.
+7. As Staff, open `/team/audit-log`: the no-access page. There's no "Audit log" in their sidebar.
+8. On the dashboard, an Owner's Recent activity "View all" opens the audit log.
+9. Check dark mode and phone width (the table scrolls sideways).
+
+Regression: contact and invoice History sections still show their entries. Team › Users actions still work.
+
 ## Known gaps — don't file these as bugs
 
-- Owners' "View all" on the dashboard feed opens the full Activity page, not the audit log; it moves to the audit log with US-SET-11 (Phase 7 step 7).
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - No client-side fine-grained capability check exists in the web app —

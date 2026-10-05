@@ -1,3 +1,4 @@
+import { AuditModule } from "../audit/audit.module";
 import { Module } from "@nestjs/common";
 import { TeamsModule } from "../teams/teams.module";
 import { AccountsController } from "./accounts.controller";
@@ -14,7 +15,7 @@ import { SettingsService } from "./settings.service";
 import { QuoteConversionGuardService } from "./quote-conversion-guard.service";
 
 @Module({
-  imports: [TeamsModule],
+  imports: [TeamsModule, AuditModule],
   controllers: [SettingsController, AccountsController, InvitationsController, PublicInvitationsController, PublicSignupController, PublicPasswordResetController, MembersController],
   providers: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService],
   exports: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService],

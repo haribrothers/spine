@@ -29,3 +29,4 @@ export * from "./kpis.ts";
 export * from "./today.ts";
 export * from "./activity-feed.ts";
 export * from "./digest.ts";
+export * from "./audit-log.ts";

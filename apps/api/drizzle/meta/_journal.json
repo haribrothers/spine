@@ -519,6 +519,13 @@
       "when": 1791218343737,
       "tag": "0073_user_daily_digest",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1791219540644,
+      "tag": "0074_audit_log_entity_text",
+      "breakpoints": true
     }
   ]
 }

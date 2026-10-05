@@ -69,7 +69,7 @@ export class MembersController {
   @UseInterceptors(IdempotencyInterceptor)
   async deactivate(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.membersService.setActive(orgId, id, false);
+    return this.membersService.setActive(orgId, id, false, session.user.id);
   }
 
   @Put(":id/reactivate")
@@ -77,7 +77,7 @@ export class MembersController {
   @UseInterceptors(IdempotencyInterceptor)
   async reactivate(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.membersService.setActive(orgId, id, true);
+    return this.membersService.setActive(orgId, id, true, session.user.id);
   }
 
   @Put(":id/promote")
@@ -85,7 +85,7 @@ export class MembersController {
   @UseInterceptors(IdempotencyInterceptor)
   async promote(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.membersService.promote(orgId, id);
+    return this.membersService.promote(orgId, id, session.user.id);
   }
 
   @Put(":id/demote")
@@ -93,7 +93,7 @@ export class MembersController {
   @UseInterceptors(IdempotencyInterceptor)
   async demote(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.membersService.demote(orgId, id);
+    return this.membersService.demote(orgId, id, session.user.id);
   }
 
   @Post("transfer-primary-owner")

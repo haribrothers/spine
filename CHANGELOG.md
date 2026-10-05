@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-11: see every change across the organisation (Phase 7)
+
+- **Team › Audit log** (`/team/audit-log`, Owners only): "Every change to records in <Business>, newest first. Only owners can see this page." The table has When ("Today, 10:42 AM"), Who, Action (a chip with its name, e.g. "Accepted in person", "Voided"), Record ("Quote · QUO-0004", opening the record) and Details ("Owner → Staff", "Phone: … → …", "Title: Site walk").
+- **Filters**: From and To (default: the last month), Person, Record type and Action, built from what's in the log. Changing a filter goes back to the first page. "1–50 of 1,284 entries" with Previous and Next.
+- **Role and access changes are recorded**: promote, demote, deactivate, reactivate and primary-ownership transfer each write an entry with record type "User", the member's name and the old and new role or state.
+- **Staff and Field** get the no-access page; the API returns 403.
+- **Dashboard**: Owners' "View all" on Recent activity now opens the audit log (Staff and Field keep the full feed page).
+- **Data**: `audit_log.entity_id` is now text, so user ids fit. There's a new index for the org-wide list (migration 0074).
+- **API.** `GET /org/audit-log` with filters, a 50-entry page from `cursor`, the total, filter options, and each record's name and link.
+
+Tests:
+- `packages/shared/src/us-set-11.test.ts` (3): action and type names, tones, the Details summary.
+- `apps/api/src/modules/audit/us-set-11.http.integration.test.ts` (5): entries with records and links; the four member changes as "User"; filters and bad dates; paging; Owner-only.
+- `apps/e2e/tests/us-set-11.spec.ts` (1): heading, columns, filtering to role changes, a record link, paging, and Staff refused.
+- `apps/e2e/tests/us-dash-19.spec.ts`: Owners' "View all" opens the audit log.
+
 ### 2026-10-05 — US-NTF-14: choose when my digest arrives (Phase 7)
 
 - **Profile & Preferences has tabs**: Profile, Password, Appearance and Notifications. `?tab=notifications` opens the last one directly. The header reads "Your personal account settings. Only you can change these."

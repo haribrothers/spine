@@ -55,7 +55,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `business_profile` | gains `paymentInstructions` (text) | US-INV-15 |
 | `invoices.payment_instructions` | text, nullable — the payment instructions copied at issue; the PDF and every later email use this copy. Null on drafts and when none were set (migration `0059`) | US-INV-15 |
 | `settings` key `business_profile` | gains `email` and `phone` (text), shown on the expired-quote-link page | US-QUO-21 |
-| `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes | US-SET-11 |
+| `audit_log` | `entity_id` changes from `uuid` to `text` (member/user ids are text); entity type `user` for role and access changes (`role_changed`, `deactivated`, `reactivated`, `primary_owner_transferred`; entity id = the member's user id; `changes` `[{ field: role\|status\|primaryOwner, from, to }]`); new index `audit_log_org_created_idx (org_id, created_at)` — migration `0074_audit_log_entity_text` | US-SET-11 |
 | `ledger_integrity_checks` (new) | `org_id` PK → organization, `checked_at`, `difference bigint` (debits − credits), `last_balanced_at` — the latest daily check, one row per org | US-RPT-12 |
 | `files` | No owner columns: the record a file belongs to is found from the columns and settings that point at it (D-117) | US-OPS-20 |
 | `jobs` | `number text` (unique per org, index `jobs_org_number_unique`), allocated from the `job` number sequence in the creating transaction; migration `0061` numbered existing jobs in creation order. Nullable only for rows written outside `JobsService` | US-JOB-22 |
@@ -157,7 +157,7 @@ One row per (org, document type). Allocating the next number requires a row lock
 
 One entry per create/update/issue/void/delete on any financial document, per §10.4/S-10.6. Written alongside the mutation, never edited afterward. First real write instrumentation lands scoped to Contacts (see apps/api/src/modules/audit/audit-log.service.ts) — `entityType` is one of…
 
-`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `actor_user_id` text (→ user (set null)) · `action` text (not null) · `entity_type` text (not null) · `entity_id` uuid (not null) · `contact_id` uuid (→ contacts (cascade)) · `changes` jsonb · `created_at` timestamp (not null, default now)
+`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `actor_user_id` text (→ user (set null)) · `action` text (not null) · `entity_type` text (not null) · `entity_id` text (not null; uuid of the record, or a user id for `user`) · `contact_id` uuid (→ contacts (cascade)) · `changes` jsonb · `created_at` timestamp (not null, default now)
 
 #### `idempotency_keys`
 
