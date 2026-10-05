@@ -53,6 +53,13 @@ export class ExpensesController {
     return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
   }
 
+  /** US-PUR-23 — trades used on earlier labour expenses, with their last day rate. Declared before `:id`. */
+  @Get("labour-trades")
+  @OrgRoles(["owner", "staff", "field"])
+  async labourTrades(@Session() session: UserSession, @Query("q") q?: string) {
+    return this.expensesService.labourTrades(requireOrgId(session), q);
+  }
+
   @Get(":id")
   @OrgRoles(["owner", "staff", "field"])
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
@@ -75,8 +82,9 @@ export class ExpensesController {
   @ApiBody({ type: CreateExpenseDto })
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const input = createExpenseSchema.parse(body);
-    return this.expensesService.create(orgId, session.user.id, input);
+    const parsed = createExpenseSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the expense and try again.");
+    return this.expensesService.create(orgId, session.user.id, parsed.data);
   }
 
   @Put(":id")
@@ -84,8 +92,9 @@ export class ExpensesController {
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const input = updateExpenseSchema.parse(body);
-    return this.expensesService.update(orgId, id, session.user.id, input);
+    const parsed = updateExpenseSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the expense and try again.");
+    return this.expensesService.update(orgId, id, session.user.id, parsed.data);
   }
 
   /** US-PUR-21 (D-097) — approve up to 100 submitted expenses; each posts its own journal entry. */

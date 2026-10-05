@@ -49,6 +49,28 @@ export const updateExpenseCategorySchema = createExpenseCategorySchema.partial()
 
 export const expensePaidBySchema = z.enum(["company", "employee"]);
 
+/** US-PUR-23 (D-126) — one row of a labour expense: a trade, how many worked, at what day rate. No names, attendance or hours. */
+export const LABOUR_ROW_INCOMPLETE = "Every row needs a trade, at least one worker and a day rate.";
+export const LABOUR_NEEDS_JOB = "Labour is always for a job — choose one.";
+export const LABOUR_MAX_ROWS = 20;
+
+export const labourLineSchema = z.object({
+  trade: z.string({ error: LABOUR_ROW_INCOMPLETE }).trim().min(1, LABOUR_ROW_INCOMPLETE).max(60, "Keep each trade under 60 characters."),
+  headcount: z.coerce.number({ error: LABOUR_ROW_INCOMPLETE }).int(LABOUR_ROW_INCOMPLETE).min(1, LABOUR_ROW_INCOMPLETE).max(1000),
+  dayRateAmount: z.coerce.bigint({ error: LABOUR_ROW_INCOMPLETE }).positive(LABOUR_ROW_INCOMPLETE),
+});
+export type LabourLineInput = z.infer<typeof labourLineSchema>;
+
+/** Headcount × day rate, in minor units — exact, no rounding. */
+export function labourLineAmount(line: { headcount: number; dayRateAmount: bigint }): bigint {
+  return BigInt(line.headcount) * line.dayRateAmount;
+}
+
+/** The day's total for a labour expense. */
+export function labourTotal(lines: readonly { headcount: number; dayRateAmount: bigint }[]): bigint {
+  return lines.reduce((sum, line) => sum + labourLineAmount(line), 0n);
+}
+
 /** PRD F7 (S-07.2/S-07.3) — a field/staff-submitted expense. No total/tax computation trusted from the client beyond the raw amount/taxAmount themselves (there's no multi-line breakdown to sum here, unlike quotes/invoices — an expense is a single amount). */
 export const createExpenseSchema = z.object({
   categoryId: uuidSchema,
@@ -62,6 +84,9 @@ export const createExpenseSchema = z.object({
   paidBy: expensePaidBySchema.default("company"),
   receiptFileId: uuidSchema.optional().nullable(),
   isBillable: z.boolean().default(false),
+  /** US-PUR-23 — "amount" (the default when absent) or "labour", where `amount` must equal the labour rows' total. */
+  entryMode: z.enum(["amount", "labour"]).optional(),
+  labourLines: z.array(labourLineSchema).max(LABOUR_MAX_ROWS, `Enter up to ${LABOUR_MAX_ROWS} trades.`).optional(),
 });
 
 /** A submitted-only update — see ExpensesService.update's own guard against editing a reviewed expense. */

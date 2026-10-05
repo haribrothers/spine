@@ -1,11 +1,13 @@
 import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenses, expenseCategories, accounts, invoiceLines, jobs, jobAssignments } from "../../db/schema";
+import { expenses, expenseCategories, expenseLabourLines, accounts, invoiceLines, jobs, jobAssignments } from "../../db/schema";
+import type { Transaction } from "../../db/client";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
@@ -93,7 +95,46 @@ export class ExpensesService {
     if (!row) {
       throw new NotFoundException("Expense not found");
     }
-    return { ...row.expense, categoryName: row.categoryName };
+    // US-PUR-23: a labour expense's rows, in order.
+    const labourLines =
+      row.expense.entryMode === "labour"
+        ? await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))
+        : [];
+    return { ...row.expense, categoryName: row.categoryName, labourLines };
+  }
+
+  /**
+   * US-PUR-23 (D-126) — a labour expense needs a job and at least one row,
+   * and its amount must be the rows' total (the server's sum, not the
+   * client's arithmetic).
+   */
+  private checkLabour(input: { labourLines?: LabourLineInput[]; amount: bigint; jobId: string | null; currency: string }) {
+    if (!input.labourLines?.length) throw new BadRequestException(LABOUR_ROW_INCOMPLETE);
+    if (!input.jobId) throw new BadRequestException(LABOUR_NEEDS_JOB);
+    const total = labourTotal(input.labourLines);
+    if (total !== input.amount) {
+      throw new BadRequestException(`The amount must equal the labour rows' total, ${toDecimalString({ amount: total, currency: input.currency })}.`);
+    }
+  }
+
+  private async writeLabourLines(tx: Transaction, orgId: string, expenseId: string, lines: LabourLineInput[]) {
+    await tx.delete(expenseLabourLines).where(eq(expenseLabourLines.expenseId, expenseId));
+    if (!lines.length) return;
+    await tx.insert(expenseLabourLines).values(
+      lines.map((line, i) => ({ orgId, expenseId, sortOrder: i, trade: line.trade.trim(), headcount: line.headcount, dayRateAmount: line.dayRateAmount, lineAmount: labourLineAmount(line) })),
+    );
+  }
+
+  /** US-PUR-23 — trades used before, with the last day rate for each, for the labour form's suggestions. */
+  async labourTrades(orgId: string, query?: string): Promise<{ trade: string; lastDayRateAmount: string }[]> {
+    const q = query?.trim().toLowerCase();
+    const rows = await this.db.execute<{ trade: string; day_rate_amount: string }>(sql`
+      select distinct on (lower(${expenseLabourLines.trade})) ${expenseLabourLines.trade} as trade, ${expenseLabourLines.dayRateAmount}::text as day_rate_amount
+      from ${expenseLabourLines}
+      where ${expenseLabourLines.orgId} = ${orgId} ${q ? sql`and lower(${expenseLabourLines.trade}) like ${`%${q}%`}` : sql``}
+      order by lower(${expenseLabourLines.trade}), ${expenseLabourLines.createdAt} desc
+      limit 20`);
+    return (rows as unknown as { trade: string; day_rate_amount: string }[]).map((r) => ({ trade: r.trade, lastDayRateAmount: r.day_rate_amount }));
   }
 
   /** `GET /expenses/:id/history` — confirms the expense exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. */
@@ -110,6 +151,8 @@ export class ExpensesService {
     if (!category) {
       throw new BadRequestException("Expense category not found");
     }
+    const labour = input.entryMode === "labour";
+    if (labour) this.checkLabour({ labourLines: input.labourLines, amount: input.amount, jobId: input.jobId ?? null, currency: input.currency });
 
     const created = await this.db.transaction(async (tx) => {
       const [expense] = await tx
@@ -129,9 +172,11 @@ export class ExpensesService {
           status: "submitted",
           submittedByUserId: actorUserId,
           isBillable: input.isBillable,
+          entryMode: labour ? "labour" : "amount",
           isDemo,
         })
         .returning();
+      if (labour) await this.writeLabourLines(tx, orgId, expense!.id, input.labourLines!);
 
       await this.auditLog.record(tx, {
         orgId,
@@ -165,6 +210,24 @@ export class ExpensesService {
     if (existing.status !== "submitted") {
       throw new BadRequestException("Only a submitted expense can be edited");
     }
+    // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
+    const mode = input.entryMode ?? existing.entryMode;
+    const labourChanged = input.entryMode !== undefined || input.labourLines !== undefined;
+    if (mode === "labour" && (labourChanged || input.amount !== undefined || input.jobId !== undefined)) {
+      const currentLines =
+        input.labourLines ??
+        (await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))).map((l) => ({
+          trade: l.trade,
+          headcount: l.headcount,
+          dayRateAmount: l.dayRateAmount,
+        }));
+      this.checkLabour({
+        labourLines: currentLines,
+        amount: input.amount ?? existing.amount,
+        jobId: input.jobId !== undefined ? input.jobId : existing.jobId,
+        currency: input.currency ?? existing.currency,
+      });
+    }
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -181,12 +244,17 @@ export class ExpensesService {
           ...(input.paidBy !== undefined ? { paidBy: input.paidBy } : {}),
           ...(input.receiptFileId !== undefined ? { receiptFileId: input.receiptFileId } : {}),
           ...(input.isBillable !== undefined ? { isBillable: input.isBillable } : {}),
+          ...(input.entryMode !== undefined ? { entryMode: input.entryMode } : {}),
           updatedAt: new Date(),
         })
         .where(eq(expenses.id, id))
         .returning();
+      if (mode === "labour" && input.labourLines) await this.writeLabourLines(tx, orgId, id, input.labourLines);
+      if (mode === "amount" && existing.entryMode === "labour") await this.writeLabourLines(tx, orgId, id, []);
 
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      // Labour rows aren't a field; the amount change already says what moved.
+      const { labourLines: _rows, ...fields } = input;
+      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, fields as Record<string, unknown>);
       if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,

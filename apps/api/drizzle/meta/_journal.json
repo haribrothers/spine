@@ -505,6 +505,13 @@
       "when": 1791205740324,
       "tag": "0071_invoice_progress_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1791207543855,
+      "tag": "0072_expense_labour_lines",
+      "breakpoints": true
     }
   ]
 }

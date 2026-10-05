@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PUR-23: enter site labour as headcount × day rate (Phase 7)
+
+- **"Enter as"** on "Submit an expense": "Amount" (as before, the default) or "Headcount × day rate" (`ExpenseDialogLabour`). The second swaps the Amount field for rows of Trade ("e.g. Mason"), Workers and Day rate, each with its total, "+ Add trade" and "Total for the day · N workers". Job becomes required ("Labour is always for a job.").
+- **Helpful defaults.** A category posting to 5200 Direct Labour is preselected ("Preselected: posts to 5200 Direct Labour."). A trade used before is suggested and fills in its last day rate. A note says "Only headcounts and day rates are recorded — no names, attendance or hours." (D-126).
+- **Checks.** An incomplete row: "Every row needs a trade, at least one worker and a day rate."; no job: "Labour is always for a job — choose one.". The server works out each row (headcount × day rate, exact) and refuses an amount that disagrees.
+- **Posting** is unchanged: an approved labour expense posts like any expense to its category's account, tagged to the job. The expense drawer lists each row ("4 Mason × $950.00 = $3,800.00").
+- **Data and API.** `expenses.entry_mode` and `expense_labour_lines` (migration `0072`); `entryMode` / `labourLines` on `POST/PUT /expenses`; `GET /expenses/labour-trades?q=`. Expense categories now include their posting account's code and name. Invalid expense bodies get a 400 with the reason instead of a server error. The phone form keeps the amount entry for now.
+
+Tests:
+- `packages/shared/src/us-pur-23.test.ts` (2): the 11,700.00 example, row checks.
+- `apps/api/src/modules/purchases/us-pur-23.http.integration.test.ts` (5): rows and amount saved, mismatched amount refused, job and row checks, trade suggestions with the last rate, posting on approval.
+- `apps/e2e/tests/us-pur-23.spec.ts` (2): the form (preselected category, rows, total, job required) and the drawer's rows; trade suggestion fills the day rate.
+
 ### 2026-10-05 — US-PUR-22: filter bills and expenses by job (Phase 7)
 
 - **Job filter** on Vendor Bills and Expenses ("All jobs", then "JOB-001 · Marina office fit-out"), beside the existing filters (`ExpensesJobFilter`). It's kept in the URL (`?jobId=`) so it can be shared and survives a reload, and the counters above the table count only that job.

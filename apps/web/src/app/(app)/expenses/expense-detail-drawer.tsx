@@ -224,6 +224,20 @@ export function ExpenseDetailDrawer({
                   <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />
                 </div>
 
+                {/* US-PUR-23: a labour expense lists its rows ("4 Mason × $950.00 = $3,800.00"). */}
+                {expense.entryMode === "labour" && expense.labourLines && expense.labourLines.length > 0 && (
+                  <div>
+                    <h3 className="mb-1 text-[13px] font-semibold text-on-surface-muted">Labour</h3>
+                    <ul className="flex flex-col gap-0.5 text-[13px] text-on-surface">
+                      {expense.labourLines.map((line) => (
+                        <li key={line.id} className="tabular-nums">
+                          {line.headcount} {line.trade} × {formatMoney(BigInt(line.dayRateAmount), expense.currency)} = {formatMoney(BigInt(line.lineAmount), expense.currency)}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {billableNoJob && (
                   <Alert variant="info">
                     <AlertDescription>

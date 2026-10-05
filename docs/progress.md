@@ -309,7 +309,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-15 · Give customers a clear statement PDF
 - [x] US-PUR-21 · Approve several expenses at once
 - [x] US-PUR-22 · Filter bills and expenses by job
-- [ ] US-PUR-23 · Enter site labour as headcount × day rate
+- [x] US-PUR-23 · Enter site labour as headcount × day rate
 - [ ] US-DASH-12 · See what needs my attention first
 - [ ] US-DASH-13 · Act on an attention item in one click
 - [ ] US-DASH-14 · See key figures with a trend and a comparison

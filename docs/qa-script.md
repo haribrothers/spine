@@ -2623,6 +2623,17 @@ Regression: invoice numbers stay gapless across claims; the invoice PDF and emai
 
 Regression: Vendor Bills' status and vendor filters and Expenses' status filter and "My expenses only" work as before, alone and with the job filter, in light and dark mode.
 
+## 81. Labour as headcount × day rate (US-PUR-23, Phase 7)
+
+1. Expenses › "Submit expense": "Enter as" shows "Amount" (selected) and "Headcount × day rate". Choose the second: the Amount field goes; Trade / Workers / Day rate rows appear with "+ Add trade"; Job is required ("Labour is always for a job."); with a 5200 Direct Labour category (e.g. the Construction template's "Site labour"), it's preselected with "Preselected: posts to 5200 Direct Labour."
+2. Enter 4 Mason at 950.00, 3 Carpenter at 900.00 and 8 Helper at 650.00: each row shows its total and "Total for the day · 15 workers" reads 11,700.00.
+3. Leave a trade blank or workers at 0: "Every row needs a trade, at least one worker and a day rate." Leave the job empty: "Labour is always for a job — choose one."
+4. Save with a job. Open the expense: the drawer lists "4 Mason × $950.00 = $3,800.00" and the others; the amount is 11,700.00. Approve it: it posts to the category's account, tagged to the job (Costing tab cost by category shows 5200).
+5. Start another labour expense and type "Mason": it's suggested and its last day rate fills in (you can change it).
+6. Nothing asks for worker names, attendance or hours.
+
+Regression: "Amount" entry, editing a submitted expense, receipts and approval work as before in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
