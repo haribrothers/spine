@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createCreditNoteSchema, createInvoiceSchema } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
@@ -78,7 +78,8 @@ describe("US-JOB-27 · see how much of the contract has been billed (requires lo
   });
 
   it("a credit note against one of them takes its total off", async () => {
-    const [claim] = await db.select().from(invoices).where(eq(invoices.jobId, jobId)).limit(1);
+    // The first progress claim, by creation — never "any invoice on the job" (an advance can't be credited).
+    const [claim] = await db.select().from(invoices).where(and(eq(invoices.jobId, jobId), eq(invoices.type, "progress"))).orderBy(asc(invoices.createdAt), asc(invoices.id)).limit(1);
     const credit = await testApp.app.get(CreditNotesService).create(orgId, userId, createCreditNoteSchema.parse({ invoiceId: claim!.id, reason: "Rate correction", lines: [{ name: "Correction", quantity: 1, unitPriceAmount: "40000" }] }));
     await testApp.app.get(CreditNotesService).issue(orgId, credit.id, userId);
     expect(await billing()).toMatchObject({ billedToDate: "1900000", billedPct: 39 });
