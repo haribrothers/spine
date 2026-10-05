@@ -290,7 +290,15 @@ export class InvoicesService {
    * client-settable, exists solely for a future DemoDataService hook to
    * reuse this same totals/audit-log logic instead of hand-inserting rows.
    */
-  async create(orgId: string, actorUserId: string, input: CreateInvoiceInput, isDemo = false, sourceQuoteId?: string) {
+  async create(
+    orgId: string,
+    actorUserId: string,
+    input: CreateInvoiceInput,
+    isDemo = false,
+    sourceQuoteId?: string,
+    /** US-INV-21 — set by the recurring run; unique per schedule and date. */
+    recurring?: { recurringInvoiceId: string; recurringRunOn: string },
+  ) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -318,6 +326,8 @@ export class InvoicesService {
           termsAndConditions: input.termsAndConditions ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          recurringInvoiceId: recurring?.recurringInvoiceId ?? null,
+          recurringRunOn: recurring?.recurringRunOn ?? null,
         })
         .returning();
 

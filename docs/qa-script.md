@@ -2473,6 +2473,16 @@ Regression: the contact page header (name, badges, email, tax ID, Edit/Archive/D
 
 Regression: Invoices list toolbar (filters, "New invoice") looks and works as before in light and dark mode; the invoice line editor on New invoice works as before; the Teams page lists "Manage recurring invoices" under Manage Invoices.
 
+## 66. Recurring invoices: automatic run (US-INV-21, Phase 7)
+
+1. Set up a recurring invoice starting today, Weekly on today's weekday, "Issue the invoice and email it to the customer", for a customer with an email. After 6:00 AM organisation time (the server's `TZ`), within 15 minutes, an issued invoice appears for that customer (next number, due after the chosen payment terms, posted to the books) and the customer gets the invoice email. The schedule's "Next invoice" moves on a week.
+2. Restart the API the same day: no second invoice.
+3. Same with "Create a draft for me to review": a draft appears, and Owners get "Recurring invoice ready to review: <name>" in the bell (and by email) linking to it.
+4. With Ends "After a number of invoices" = 1, after the first invoice the schedule shows "Finished" and "—" for the next invoice.
+5. Stop the API over a run date and start it again later: one invoice for the missed date, then the next date is after today.
+
+Regression: manual New invoice → issue → email still works; the Recurring invoices list (§65) looks the same in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

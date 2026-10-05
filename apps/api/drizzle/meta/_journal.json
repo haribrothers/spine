@@ -477,6 +477,13 @@
       "when": 1791193793321,
       "tag": "0067_recurring_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1791194703205,
+      "tag": "0068_recurring_invoice_runs",
+      "breakpoints": true
     }
   ]
 }

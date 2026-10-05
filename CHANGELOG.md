@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-21: create recurring invoices automatically (Phase 7)
+
+- **Run.** The `recurring-invoice-run` queue fires every 15 minutes. From 6:00 AM organisation time it gives each active schedule that's due one invoice, built from its lines with that day's tax (issue date today, due after the schedule's payment terms). It goes through the same create/issue/email code as a manual invoice, so the number, ledger posting and email are identical.
+- **"Issue and email"** issues and emails the invoice. **"Create a draft"** leaves a draft, and Owners get "Recurring invoice ready to review: <name>" (in-app, email, push) linking to it. If issuing fails, the invoice stays a draft for an Owner to finish.
+- **Never twice.** Invoices record `recurring_invoice_id` and `recurring_run_on`, unique together (migration `0068`), so a late, repeated or racing run can't make a second invoice for the same date. A run missed while the server was off catches up once; missed dates aren't back-filled.
+- **Finished.** Once the end date or number of invoices is reached, the schedule shows "Finished" and has no next date.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-21.http.integration.test.ts` (5): issue and email (number, posting, email, next date), draft plus notification, not before 6:00 and never twice (including a race), missed-run catch-up, finished by count and by date.
+
 ### 2026-10-05 — US-INV-20: set up a recurring invoice (Phase 7)
 
 - **Invoices › Recurring invoices** (`RecurringInvoicesList`): name, customer, repeats ("Monthly · 1st", "Every 3 months · 15th"), next invoice, amount, status and when it runs, with the note on how runs work. "Recurring invoices" on the Invoices page opens it.

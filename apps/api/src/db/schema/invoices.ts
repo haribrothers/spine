@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, uniqueIndex, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -145,10 +145,19 @@ export const invoices = pgTable(
     emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
     /** Same demo-data marker convention as quotes.isDemo — see contacts.ts's isDemo comment. */
     isDemo: boolean("is_demo").notNull().default(false),
+    /**
+     * US-INV-21 (D-092) — the recurring invoice that created this one, and
+     * the schedule date it was created for. Unique together, so a run that
+     * is late, repeated or racing itself never makes a second invoice for
+     * the same date.
+     */
+    recurringInvoiceId: uuid("recurring_invoice_id").references((): AnyPgColumn => recurringInvoices.id, { onDelete: "set null" }),
+    recurringRunOn: date("recurring_run_on", { mode: "string" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex("invoices_recurring_run_uidx").on(table.recurringInvoiceId, table.recurringRunOn),
     index("invoices_org_idx").on(table.orgId),
     index("invoices_org_status_idx").on(table.orgId, table.status),
     index("invoices_org_demo_idx").on(table.orgId, table.isDemo),
