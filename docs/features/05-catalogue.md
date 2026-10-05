@@ -105,7 +105,7 @@ Legacy: S-02.4
 
 **Implementation notes**
 - API: `POST /catalog-items` from the line editor.
-- Status: one-off lines are built; "save to catalogue" is not, so this story moved to Phase 6.
+- Built in Phase 7: the item field is one picker (`apps/web/src/components/line-item-picker.tsx`) — catalogue matches with price and unit, then the one-off footer. A marked line becomes an item when the quote is saved and it has a price (unit "each", tax from the line), and the quote line links to it; a line without a price stays one-off.
 - UI: `quote-line-editor.tsx` item `Combobox`.
 
 ### US-CAT-07 · Let a Team edit only the items it created

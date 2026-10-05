@@ -53,6 +53,36 @@ function toEditableLines(quote: Quote): EditableQuoteLine[] {
  * re-fetches the server-computed quote afterward, since the server is the
  * sole source of truth for stored totals per CLAUDE.md.
  */
+/**
+ * US-CAT-06 — creates a catalogue item for each one-off line marked "Also
+ * save to catalogue" that has a price (name, price and tax from the line;
+ * unit "each", editable in the catalogue later) and links the line to it.
+ * Lines without a price stay one-off. Returns the same array when nothing
+ * was created.
+ */
+async function saveOneOffLinesToCatalogue(lines: EditableQuoteLine[], currency: string): Promise<EditableQuoteLine[]> {
+  if (!lines.some((l) => l.saveToCatalogue && !l.catalogItemId && l.unitPriceAmount > 0n)) return lines;
+  const next: EditableQuoteLine[] = [];
+  for (const line of lines) {
+    if (!line.saveToCatalogue || line.catalogItemId || line.unitPriceAmount <= 0n) {
+      next.push(line);
+      continue;
+    }
+    const item = await apiClient.post<{ id: string }>("/catalog-items", {
+      name: line.name.trim(),
+      description: line.description || null,
+      unit: "each",
+      defaultPriceAmount: line.unitPriceAmount.toString(),
+      defaultPriceCurrency: currency,
+      defaultTaxRatePercentage: line.taxRateId || line.taxGroupId ? 0 : line.taxRatePercentage,
+      defaultTaxRateId: line.taxRateId,
+      defaultTaxGroupId: line.taxGroupId,
+    });
+    next.push({ ...line, catalogItemId: item.id, saveToCatalogue: false });
+  }
+  return next;
+}
+
 export function QuoteBuilder({ quote }: { quote?: Quote }) {
   const router = useRouter();
   const [contactId, setContactId] = useState(quote?.contactId ?? "");
@@ -99,7 +129,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
     return codes.map((code) => ({ value: code, label: code }));
   }, [currency]);
 
-  function buildPayload() {
+  function buildPayload(lines: EditableQuoteLine[]) {
     return {
       contactId,
       currency,
@@ -132,7 +162,10 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
     }
     setSaving(true);
     try {
-      const payload = buildPayload();
+      // US-CAT-06: one-off lines marked "Also save to catalogue" become items first, so the quote links to them.
+      const withItems = await saveOneOffLinesToCatalogue(lines, currency);
+      if (withItems !== lines) setLines(withItems);
+      const payload = buildPayload(withItems);
       const saved = quote
         ? await apiClient.put<Quote>(`/quotes/${quote.id}`, payload)
         : await apiClient.post<Quote>("/quotes", payload);

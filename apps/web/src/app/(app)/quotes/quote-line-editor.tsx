@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import { LineItemPicker } from "../../../components/line-item-picker";
+import { useCapability } from "../../../lib/capabilities-context";
 import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -23,6 +25,8 @@ export interface EditableQuoteLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-CAT-06 — a one-off line to add to the catalogue when the quote is saved (it needs a price). Never sent to the server. */
+  saveToCatalogue?: boolean;
 }
 
 let keySeq = 0;
@@ -130,10 +134,7 @@ export function QuoteLineEditor({
       .catch(() => {});
   }, []);
 
-  const catalogOptions = useMemo(
-    () => catalogItems.filter((i) => !i.archivedAt).map((i) => ({ value: i.id, label: i.name })),
-    [catalogItems],
-  );
+  const canSaveToCatalogue = useCapability("catalog.edit_own");
 
   const taxOptions = useMemo(
     () => [
@@ -180,6 +181,7 @@ export function QuoteLineEditor({
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
       taxRateId: item.defaultTaxRateId,
       taxGroupId: item.defaultTaxGroupId,
+      saveToCatalogue: false,
     });
   }
 
@@ -215,7 +217,8 @@ export function QuoteLineEditor({
                   <ItemLineFields
                     line={line}
                     currency={currency}
-                    catalogOptions={catalogOptions}
+                    catalogItems={catalogItems}
+                    canSaveToCatalogue={canSaveToCatalogue}
                     taxOptions={taxOptions}
                     taxRates={taxRates}
                     taxGroups={taxGroups}
@@ -258,7 +261,8 @@ export function QuoteLineEditor({
 function ItemLineFields({
   line,
   currency,
-  catalogOptions,
+  catalogItems,
+  canSaveToCatalogue,
   taxOptions,
   taxRates,
   taxGroups,
@@ -267,7 +271,8 @@ function ItemLineFields({
 }: {
   line: EditableQuoteLine;
   currency: string;
-  catalogOptions: { value: string; label: string }[];
+  catalogItems: CatalogItemOption[];
+  canSaveToCatalogue: boolean;
   taxOptions: { value: string; label: string }[];
   taxRates: TaxRateOption[];
   taxGroups: TaxGroupOption[];
@@ -289,17 +294,24 @@ function ItemLineFields({
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="grid grid-cols-[1fr_auto] gap-2">
-        <Input value={line.name} onChange={(e) => onChange({ name: e.target.value })} placeholder="Item name" required />
-        <div className="w-48">
-          <Combobox
-            options={catalogOptions}
-            value={line.catalogItemId ?? undefined}
-            onValueChange={onApplyCatalogItem}
-            placeholder="Prefill from catalogue…"
-          />
-        </div>
-      </div>
+      <LineItemPicker
+        name={line.name}
+        onNameChange={(name) => onChange({ name })}
+        items={catalogItems}
+        currency={currency}
+        canSaveToCatalogue={canSaveToCatalogue}
+        saveToCatalogue={!!line.saveToCatalogue}
+        onPickItem={onApplyCatalogItem}
+        onOneOff={(save) => onChange({ catalogItemId: null, saveToCatalogue: save })}
+      />
+      {line.saveToCatalogue && (
+        <p className="text-[12px] text-on-surface-muted">
+          Added to the catalogue when you save the quote{line.unitPriceAmount > 0n ? "." : " — give it a price first."}{" "}
+          <button type="button" className="text-primary hover:underline" onClick={() => onChange({ saveToCatalogue: false })}>
+            Don&apos;t add it
+          </button>
+        </p>
+      )}
       <Input
         value={line.description}
         onChange={(e) => onChange({ description: e.target.value })}

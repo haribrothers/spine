@@ -288,7 +288,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-ONB-13 · Start a construction business with site cost categories
 - [x] US-CRM-19 · Rename, reorder and add pipeline stages
 - [x] US-CRM-20 · Delete a stage and move its leads
-- [ ] US-CAT-06 · Add a new item while building a quote
+- [x] US-CAT-06 · Add a new item while building a quote
 - [ ] US-QUO-24 · Duplicate a quote as a new draft
 - [ ] US-QUO-25 · Save quote lines as a reusable bundle
 - [ ] US-QUO-26 · Add a bundle while building a quote

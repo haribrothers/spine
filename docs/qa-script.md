@@ -2400,6 +2400,17 @@ Regression: dragging a card between columns still moves the lead; the dashboard 
 
 Regression: Cancel in the delete dialog keeps the stage and its leads; leaving the pane without saving changes nothing.
 
+## 59. New item from the quote line (US-CAT-06, Phase 7)
+
+1. New quote: type in a line's Item field. Matching catalogue items appear under "ITEMS" with price and unit; choosing one fills the name, price and tax.
+2. Type a name that matches nothing (e.g. "Bathroom refit"): the list ends with "Use “Bathroom refit” as a one-off line" and an "Also save to catalogue" tick box.
+3. Tick it and choose the one-off line: under the field, "Added to the catalogue when you save the quote — give it a price first." Enter a price; the note drops the second half. Save as draft: Catalogue lists "Bathroom refit" at that price (unit "each"), and the quote line is linked to it.
+4. "Don't add it" under the field clears the mark; saving then leaves the catalogue unchanged.
+5. As Staff without Catalogue rights: the one-off line still works but there's no "Also save to catalogue".
+6. Keyboard: arrows move through the list, Enter chooses, Escape closes; Tab reaches the tick box.
+
+Regression: saving a quote with only catalogue items creates nothing new; editing a draft keeps its lines; the tax picker on each line still works.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

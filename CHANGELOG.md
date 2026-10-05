@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-CAT-06: add a new item while building a quote (Phase 7)
+
+- **One item field.** The quote line's separate name box and "Prefill from catalogue…" dropdown are replaced by `LineItemPicker` (`apps/web/src/components/line-item-picker.tsx`), laid out as the `QuoteLinePicker` design: type a name and an ARIA combobox list shows matching catalogue items with price and unit; when nothing matches exactly it ends with "Use “<name>” as a one-off line" and, for members with `catalog.edit_own`, "Also save to catalogue". Arrows, Enter and Escape work; focus leaving closes the list.
+- **Saving to the catalogue.** A marked one-off line shows a note under the field ("Added to the catalogue when you save the quote — give it a price first." / "Don't add it"). Saving the quote first creates an item for each marked line with a price (name, description, price and tax from the line; unit "each") through the existing `POST /catalog-items`, then saves the quote linked to it. Lines without a price stay one-off. No API change. The picker is built to take bundles next (US-QUO-26).
+
+Tests:
+- `apps/e2e/tests/us-cat-06.spec.ts` (3): one-off with "Also save to catalogue" creates the item at the line's price and links the quote line; typing finds an existing item and fills the line; Staff without catalogue rights get the one-off line but no tick box.
+
 ### 2026-10-05 — US-CRM-20: delete a stage and move its leads (Phase 7)
 
 - **Settings › Pipeline stages** gains a red ✕ on every open stage. A stage with no leads is removed at once; one with leads opens "Delete “<stage>”?" with "Move <n> leads to:" and a stage picker, and "Delete stage" stays disabled until a stage is chosen. Moves wait until Save and are sent with the stages (`moves`), so nothing changes if you leave without saving; a stage that was itself a move target passes its incoming leads on.
