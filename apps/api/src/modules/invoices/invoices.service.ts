@@ -848,6 +848,17 @@ export class InvoicesService {
         .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
       const paymentInstructions = (profile?.value as { paymentInstructions?: string } | undefined)?.paymentInstructions?.trim() || null;
 
+      // US-JOB-29 (D-128): a progress invoice on a job gets the job's next claim number, under the job row lock.
+      let progressClaimNo: number | null = null;
+      if (existing.type === "progress" && existing.jobId) {
+        await tx.select({ id: jobs.id }).from(jobs).where(eq(jobs.id, existing.jobId)).for("update");
+        const [last] = await tx
+          .select({ max: sql<number | null>`max(${invoices.progressClaimNo})` })
+          .from(invoices)
+          .where(eq(invoices.jobId, existing.jobId));
+        progressClaimNo = Number(last?.max ?? 0) + 1;
+      }
+
       const [row] = await tx
         .update(invoices)
         .set({
@@ -857,6 +868,7 @@ export class InvoicesService {
           issueDate: existing.issueDate ?? issuedAt,
           journalEntryId,
           paymentInstructions,
+          progressClaimNo,
           updatedAt: issuedAt,
         })
         .where(eq(invoices.id, id))

@@ -1,8 +1,9 @@
 import { Inject, Injectable, Logger, OnModuleInit } from "@nestjs/common";
+import { progressClaimLabel } from "@spine/shared";
 import { and, eq } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { invoices, contacts } from "../../db/schema";
+import { invoices, contacts, jobs } from "../../db/schema";
 import { QueueService } from "../queue/queue.service";
 import { EmailService } from "../email/email.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
@@ -107,7 +108,14 @@ export class InvoiceEmailWorker implements OnModuleInit {
       scheduledDaysOverdue ??
       (invoice.dueDate ? Math.max(0, Math.floor((Date.now() - new Date(invoice.dueDate).getTime()) / (24 * 60 * 60 * 1000))) : null);
 
+    // US-JOB-29: "Progress claim 3 · JOB-002" for a numbered progress claim.
+    let claimLabel: string | null = null;
+    if (invoice.progressClaimNo && invoice.jobId) {
+      const [job] = await this.db.select({ number: jobs.number }).from(jobs).where(eq(jobs.id, invoice.jobId));
+      claimLabel = progressClaimLabel(invoice.progressClaimNo, { jobNumber: job?.number, voided: invoice.status === "void" });
+    }
     const template = invoiceEmail({
+      claimLabel,
       businessName: brand.name,
       locale: brand.locale,
       contactName: row.contactName,

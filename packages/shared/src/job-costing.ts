@@ -81,3 +81,8 @@ export function billingGapMessage(gapPts: number | null): string | null {
   if (gapPts === null || Math.abs(gapPts) < BILLING_GAP_PTS) return null;
   return gapPts < 0 ? `Billing is ${-gapPts} points behind the work — check for a milestone to invoice.` : `Billing is ${gapPts} points ahead of the work.`;
 }
+
+/** US-JOB-29 (D-128) — "Progress claim 3 · JOB-002", "Progress claim 2 (void)". */
+export function progressClaimLabel(claimNo: number, opts: { jobNumber?: string | null; voided?: boolean } = {}): string {
+  return `Progress claim ${claimNo}${opts.voided ? " (void)" : ""}${opts.jobNumber ? ` · ${opts.jobNumber}` : ""}`;
+}

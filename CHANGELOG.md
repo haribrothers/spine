@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-29: number each progress claim on a job (Phase 7)
+
+- **Claim numbers.** Issuing a progress invoice on a job gives it the job's next claim number (`invoices.progress_claim_no`, migration `0071`, unique per job). The number is the job's highest + 1 under the job row lock, kept when voided and never reused (D-128). Advance, standard and retention-release invoices get none. The invoice keeps its own organisation-wide number.
+- **Invoice page.** The job card reads "Progress claim 2 of this job" ("(void)" when voided). A draft progress invoice says "Claim number is given when the invoice is issued."
+- **PDF and email.** The invoice PDF prints "Progress claim 3 · JOB-002" under the invoice number (in the PDF stored at issue), and the invoice email adds it as "Claim". `progressClaimLabel` (`@spine/shared`) words it.
+
+Tests:
+- `packages/shared/src/us-job-29.test.ts` (2): the label, voided and without a job number.
+- `apps/api/src/modules/jobs/us-job-29.http.integration.test.ts` (4): draft none then 1, 2; void keeps 2 and the next is 3; other types none; PDF and email text.
+- `apps/e2e/tests/us-job-29.spec.ts` (1): a milestone's draft progress invoice, then its claim number once issued.
+
 ### 2026-10-05 — US-JOB-28: record how complete a job is and compare it with billing (Phase 7)
 
 - **"Percent complete"** in Edit job's "Budget and progress" ("Your estimate of how much of the work is done."), 0–100 or blank. Anything else gets "Enter a percentage from 0 to 100." and nothing saves. `jobs.percent_complete` (migration `0070`). It isn't money, so Field users see it; marking a job Completed doesn't change it.

@@ -27,6 +27,8 @@ export interface InvoicePdfData {
   branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
   locale?: string;
+  /** US-JOB-29 — "Progress claim 3 · JOB-002", under the invoice number. */
+  claimLabel?: string;
   invoice: typeof invoices.$inferSelect;
   lines: (typeof invoiceLines.$inferSelect)[];
   contactName: string | null;
@@ -127,7 +129,7 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel }: InvoicePdfData) {
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
   const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
@@ -151,6 +153,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           <View style={styles.docTitleBlock}>
             <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : "INVOICE"}</Text>
             <Text style={styles.docNumber}>{invoice.number ?? "DRAFT"}</Text>
+            {claimLabel && <Text style={styles.docNumber}>{claimLabel}</Text>}
           </View>
         </View>
 

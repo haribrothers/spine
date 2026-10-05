@@ -297,7 +297,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-JOB-26 · See a job's cost by category
 - [x] US-JOB-27 · See how much of the contract has been billed
 - [x] US-JOB-28 · Record how complete a job is and compare it with billing
-- [ ] US-JOB-29 · Number each progress claim on a job
+- [x] US-JOB-29 · Number each progress claim on a job
 - [x] US-INV-18 · Turn on automatic payment reminders
 - [x] US-INV-19 · Send reminders on schedule without double-sending
 - [x] US-INV-20 · Set up a recurring invoice

@@ -498,6 +498,13 @@
       "when": 1791204721536,
       "tag": "0070_job_percent_complete",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1791205740324,
+      "tag": "0071_invoice_progress_claim",
+      "breakpoints": true
     }
   ]
 }

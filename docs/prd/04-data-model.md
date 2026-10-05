@@ -75,7 +75,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
 | `jobs` | `cost_budget_amount bigint` (nullable; a target, never posted; migration `0069`). Omitted from Field responses with the other money fields (`JOB_MONEY_FIELDS`), including job history | US-JOB-24 |
 | `jobs` | `percent_complete numeric(5,2)` (nullable, 0–100; migration `0070`). Not money: Field responses keep it | US-JOB-28 |
-| `invoices` | `progress_claim_no integer` (nullable; progress invoices only, set at issue as the job's max + 1 under the job row lock, never reused); unique (`job_id`, `progress_claim_no`) | US-JOB-29 |
+| `invoices` | `progress_claim_no integer` (nullable; progress invoices only, set at issue as the job's max + 1 under the job row lock, never reused); unique (`job_id`, `progress_claim_no`) `invoices_job_progress_claim_uidx` (migration `0071`) | US-JOB-29 |
 | `expenses` | `entry_mode text not null default 'amount'` (`amount`/`labour`) | US-PUR-23 |
 | `expense_labour_lines` (new) | `id`, `org_id`, `expense_id` → expenses (cascade), `sort_order`, `trade text`, `headcount integer` (> 0), `day_rate_amount bigint` (> 0), `line_amount bigint` (= headcount × day rate); max 20 per expense; the expense `amount` is their sum. No worker names or hours (D-126) | US-PUR-23 |
 | `accounts`, `expense_categories` | Rows seeded when the Construction template is chosen: accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight, 5500 Site Overheads & Permits; six expense categories mapped to 5000–5500. Existing codes and names are kept, never duplicated (D-129) | US-ONB-13 |

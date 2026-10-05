@@ -2603,6 +2603,16 @@ Regression: credit notes still post and appear on the invoice; a job's revenue o
 
 Regression: Edit job's other fields save as before; the Billing card's figures (§77) are unchanged.
 
+## 79. Progress claim numbers (US-JOB-29, Phase 7)
+
+1. On a job, complete a milestone and raise its invoice: the draft's job card says "Claim number is given when the invoice is issued."
+2. Issue it: the card reads "Progress claim N of this job", one more than the job's last claim. The invoice keeps its usual INV number.
+3. Download the PDF: "Progress claim N · JOB-00x" sits under the invoice number. Email it: the email lists "Claim: Progress claim N · JOB-00x".
+4. Void that invoice and issue the next progress invoice: the voided one keeps "Progress claim N (void)"; the new one is N + 1.
+5. Advance, standard and retention-release invoices on the job get no claim number.
+
+Regression: invoice numbers stay gapless across claims; the invoice PDF and email for standard invoices look as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

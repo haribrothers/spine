@@ -153,11 +153,19 @@ export const invoices = pgTable(
      */
     recurringInvoiceId: uuid("recurring_invoice_id").references((): AnyPgColumn => recurringInvoices.id, { onDelete: "set null" }),
     recurringRunOn: date("recurring_run_on", { mode: "string" }),
+    /**
+     * US-JOB-29 (D-128) — "Progress claim 3": a per-job label on progress
+     * invoices, given at issue as the job's highest + 1 under the job row
+     * lock, kept when voided and never reused. Not a document number (the
+     * gapless `number` is, D-007).
+     */
+    progressClaimNo: integer("progress_claim_no"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("invoices_recurring_run_uidx").on(table.recurringInvoiceId, table.recurringRunOn),
+    uniqueIndex("invoices_job_progress_claim_uidx").on(table.jobId, table.progressClaimNo),
     index("invoices_org_idx").on(table.orgId),
     index("invoices_org_status_idx").on(table.orgId, table.status),
     index("invoices_org_demo_idx").on(table.orgId, table.isDemo),

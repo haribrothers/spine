@@ -61,6 +61,8 @@ export function invoiceEmail(d: {
    */
   reminder?: { daysOverdue: number | null };
   paymentInstructions?: string | null;
+  /** US-JOB-29 — "Progress claim 3 · JOB-002". */
+  claimLabel?: string | null;
 }): EmailTemplate {
   const paid = d.balanceDue <= 0n;
   const instructions = d.paymentInstructions?.trim();
@@ -90,6 +92,7 @@ export function invoiceEmail(d: {
       ],
       facts: [
         { label: "Invoice", value: d.number },
+        ...(d.claimLabel ? [{ label: "Claim", value: d.claimLabel }] : []),
         { label: "Total", value: emailMoney(d.total, d.currency, d.locale) },
         ...(d.retention > 0n ? [{ label: "Retention held", value: emailMoney(-d.retention, d.currency, d.locale) }] : []),
         { label: "Balance due", value: emailMoney(paid ? 0n : d.balanceDue, d.currency, d.locale) },

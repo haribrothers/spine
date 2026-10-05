@@ -72,6 +72,8 @@ export interface Invoice {
   remindedToday?: boolean;
   /** US-JOB-21 — present on the detail response for an invoice raised from a job. */
   job?: { id: string; name: string; number?: string | null } | null;
+  /** US-JOB-29 — "Progress claim 3" on an issued progress invoice; null on drafts and other types. */
+  progressClaimNo?: number | null;
   milestone?: { id: string; name: string; percent: number | null } | null;
   /** Retention as a percentage of the net amount ("10"), and retention held on the whole job so far. */
   retention?: { percent: string; heldOnJob: string } | null;
