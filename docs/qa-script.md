@@ -2788,6 +2788,16 @@ Regression: changing theme, name, email, avatar and password still works from th
 
 Regression: contact and invoice History sections still show their entries. Team › Users actions still work.
 
+## 95. Audit log CSV (US-SET-12, Phase 7)
+
+1. On Team › Audit log, set Record type to Invoice and a date range, then press "Export CSV". `audit-log-<today>.csv` downloads.
+2. Open it in a spreadsheet: the header reads timestamp, actor_name, actor_email, action, record_type, record_id, record, changes. Every row is an Invoice inside the date range. Timestamps are ISO 8601 (UTC), and `changes` holds JSON.
+3. Clear the filters and export again: all entries are there, newest first. A record name with a comma or quote stays in one cell.
+4. In an organisation with a large log (e.g. after demo data and bulk actions), the export starts downloading at once and finishes.
+5. As Staff, `/org/audit-log.csv` returns 403.
+
+Regression: the audit log table and its filters are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

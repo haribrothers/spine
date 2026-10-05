@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AppShellHeader, Button, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, cn } from "@spine/ui";
 import { auditActionLabel, auditActionTone, auditDetails, auditEntityLabel, AUDIT_PAGE_SIZE, type AuditLogPage } from "@spine/shared";
+import { Download } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const ALL = "all";
 
 const TONE: Record<ReturnType<typeof auditActionTone>, string> = {
@@ -101,6 +103,12 @@ export function AuditLogExplorer() {
           <FilterSelect id="audit-person" label="Person" value={person} onChange={setPerson} allLabel="Everyone" options={(facets?.people ?? []).map((p) => ({ value: p.userId, label: p.name }))} />
           <FilterSelect id="audit-type" label="Record type" value={entityType} onChange={setEntityType} allLabel="All types" options={(facets?.entityTypes ?? []).map((t) => ({ value: t, label: auditEntityLabel(t) }))} />
           <FilterSelect id="audit-action" label="Action" value={action} onChange={setAction} allLabel="All actions" options={(facets?.actions ?? []).map((a) => ({ value: a, label: auditActionLabel(a) }))} />
+          <Button asChild variant="secondary" className="ml-auto">
+            <a href={`${API_URL}/org/audit-log.csv?${query}`} data-testid="audit-export">
+              <Download size={14} aria-hidden="true" />
+              Export CSV
+            </a>
+          </Button>
         </div>
 
         {error ? (

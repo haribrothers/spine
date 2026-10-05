@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-12: export the audit log (Phase 7)
+
+- **Export CSV** on Team › Audit log downloads the entries matching the current filters, as `audit-log-<date>.csv`.
+- **Columns**: timestamp (ISO 8601), actor name, actor email, action, record type, record id, the record's name, and the changes as JSON.
+- **Large logs** stream in batches of 1,000, so an export of more than 10,000 entries never times out.
+- **API.** `GET /org/audit-log.csv` (Owner only), with the same filters as the page.
+
+Tests:
+- `apps/api/src/modules/audit/us-set-12.http.integration.test.ts` (2): a filtered export with every column, quoting and a JSON diff; 10,500 entries streamed, each exactly once.
+- `apps/e2e/tests/us-set-12.spec.ts` (1): the export follows a filter and downloads a CSV with the expected header and rows.
+
 ### 2026-10-05 — US-SET-11: see every change across the organisation (Phase 7)
 
 - **Team › Audit log** (`/team/audit-log`, Owners only): "Every change to records in <Business>, newest first. Only owners can see this page." The table has When ("Today, 10:42 AM"), Who, Action (a chip with its name, e.g. "Accepted in person", "Voided"), Record ("Quote · QUO-0004", opening the record) and Details ("Owner → Staff", "Phone: … → …", "Title: Site walk").
