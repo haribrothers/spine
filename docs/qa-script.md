@@ -2810,6 +2810,17 @@ Regression: the audit log table and its filters are unchanged.
 
 Regression: other Settings panes open as before. Settings › Demo data still works.
 
+## 97. Data export privacy (US-SET-16, Phase 7)
+
+1. Prepare an export as an Owner and copy the "Download again" link.
+2. Open the link in a private window (signed out): "Not found" (404). Signed in as Staff or Field: 404. As an Owner: the ZIP downloads.
+3. Team › Audit log, Record type "Data export": "Prepared" and "Downloaded" entries with who did each.
+4. The "export is ready" email has a button to Settings › Data export and no attachment or file link.
+5. To check expiry, set the export's `expires_at` in the past (or wait 7 days). The link now answers 404, Settings › Data export no longer offers "Download again", and the ZIP is gone from the files volume.
+6. A file id taken from the export (`data_exports.file_id`) answers 404 at `/files/<id>`, even for an Owner.
+
+Regression: other file links (photos, receipts, PDFs) still open for the people allowed to see them.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

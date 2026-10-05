@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post, Res, UseInterceptors } from "@nestjs/common";
-import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
+import { OptionalAuth, OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createDataExportSchema } from "@spine/shared";
 import type { Response } from "express";
 import type { z } from "zod";
@@ -27,14 +27,15 @@ export class DataExportController {
   }
 
   /**
-   * US-SET-16 — no role guard here on purpose: anyone who isn't an Owner of
-   * the organisation (or once the link has expired) gets 404, not 403, so
-   * the link reveals nothing.
+   * US-SET-16 — no role guard and optional sign-in on purpose: anyone who
+   * isn't an Owner of the organisation (signed out included), or once the
+   * link has expired, gets 404 — not 401 or 403 — so the link reveals nothing.
    */
   @Get(":id/download")
-  async download(@Session() session: UserSession, @Param("id") id: string, @Res() res: Response) {
-    const orgId = (session.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
-    const file = await this.exports.download(orgId, session.user.id, id);
+  @OptionalAuth()
+  async download(@Session() session: UserSession | null | undefined, @Param("id") id: string, @Res() res: Response) {
+    const orgId = (session?.session as { activeOrganizationId?: string | null } | undefined)?.activeOrganizationId ?? null;
+    const file = await this.exports.download(orgId, session?.user.id ?? null, id);
     res.setHeader("Content-Type", "application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${file.filename}"`);
     res.setHeader("Cache-Control", "no-store");

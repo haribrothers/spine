@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-16: keep data exports private (Phase 7)
+
+- **Owner-only link**: an export's download link answers 404 to everyone but an Owner of the organisation: Staff, Field, someone signed out, or an Owner of another organisation. It's never 401 or 403, so the link reveals nothing. The ZIP is never served through `/files/:id`, even to Owners, and the response isn't cached.
+- **7-day expiry**: after 7 days the link answers 404 and the file is deleted from storage. That happens when someone uses the link or opens Settings › Data export, and otherwise on an hourly sweep (`data-export-cleanup`).
+- **Audit log**: preparing and downloading an export appear as "Data export" entries with the person ("Prepared", "Downloaded").
+- **The ready email** links to Settings › Data export only; the file is never attached or linked.
+
+Tests:
+- `apps/api/src/modules/data-export/us-set-16.http.integration.test.ts` (6): only Owners download (everyone else 404); never via `/files/:id`; audit entries with the person; the email's link; expiry deletes the file from storage; the hourly sweep.
+- `apps/e2e/tests/us-set-16.spec.ts` (1): the link for an Owner, Staff and a signed-out visitor; both actions in the audit log.
+
 ### 2026-10-05 — US-SET-15: export all my data (Phase 7)
 
 - **Settings › Data export** (Owners): "Records as CSV" (on by default), "Records as JSON" and "Files", then "Prepare export". The button shows "Preparing…" and the pane says "Large exports are prepared in the background. We'll email you when the file is ready." It checks back every few seconds.
