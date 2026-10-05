@@ -3,6 +3,7 @@
 import { NoAccess } from "../../../components/no-access";
 import { useMyRole } from "../../../lib/role-context";
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -80,8 +81,11 @@ function ownerOnlyMessage(err: unknown): string {
 export function ReportsExplorer() {
   // US-OPS-12: P&L and Balance Sheet are Owner-only; others see why, and nothing is fetched.
   const isOwner = useMyRole() === "owner";
+  // US-DASH-14: KPI cards open ?tab=pl / ?tab=bs.
+  const requested = useSearchParams().get("tab");
+  const start = requested && ["pl", "bs", "tb", "tax", "jobs"].includes(requested) ? requested : isOwner ? "pl" : "jobs";
   return (
-    <Tabs defaultValue={isOwner ? "pl" : "jobs"}>
+    <Tabs defaultValue={start}>
       <TabsList>
         <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
         <TabsTrigger value="bs">Balance Sheet</TabsTrigger>

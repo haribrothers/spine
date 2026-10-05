@@ -40,10 +40,12 @@ test.describe("Dashboard v2", () => {
     // <main> throughout this test since the sidebar nav also has a
     // "Receivables" link (a different page) sharing the exact text.
     const main = page.getByRole("main");
-    await expect(main.getByText("Cash position")).toBeVisible({ timeout: 15_000 });
-    await expect(main.getByText("Receivables", { exact: true })).toBeVisible();
-    await expect(main.getByText("Overdue invoices")).toBeVisible();
-    await expect(main.getByText("Revenue this month")).toBeVisible();
+    // US-DASH-14: the KPI row's cards.
+    const kpis = main.getByTestId("kpi-row");
+    await expect(kpis.getByText("Cash position")).toBeVisible({ timeout: 15_000 });
+    await expect(kpis.getByText("Profit this month")).toBeVisible();
+    await expect(kpis.getByText("Receivables", { exact: true })).toBeVisible();
+    await expect(kpis.getByText("Overdue", { exact: true })).toBeVisible();
 
     // Every widget in WIDGET_LABELS, by its own card heading.
     await expect(main.getByText("Revenue trend")).toBeVisible();

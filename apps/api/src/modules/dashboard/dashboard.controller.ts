@@ -7,6 +7,7 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { DashboardService } from "./dashboard.service";
 import { AttentionService } from "./attention.service";
+import { KpiService } from "./kpi.service";
 
 /**
  * No `@OrgRoles` restriction on either route — every authenticated org
@@ -20,6 +21,7 @@ export class DashboardController {
   constructor(
     private readonly dashboardService: DashboardService,
     private readonly attention: AttentionService,
+    private readonly kpis: KpiService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
@@ -38,6 +40,12 @@ export class DashboardController {
   @Get("attention")
   async getAttention(@Session() session: UserSession) {
     return this.attention.list(requireOrgId(session), session.user.id);
+  }
+
+  /** US-DASH-14 — the key figures this member may see, each with 8 weeks and last month. */
+  @Get("kpis")
+  async getKpis(@Session() session: UserSession) {
+    return this.kpis.list(requireOrgId(session), session.user.id);
   }
 
   /** Dismissing hides the card for every Owner in the organisation, so only Owners can do it (US-ONB-12). */

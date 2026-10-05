@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { ReceivablesExplorer } from "./receivables-explorer";
 
@@ -10,7 +11,10 @@ export default function ReceivablesPage() {
         title="Receivables"
         description="Outstanding invoice balances, bucketed by how overdue they are."
       />
-      <ReceivablesExplorer />
+      {/* US-DASH-14: reads its starting view from the URL. */}
+      <Suspense>
+        <ReceivablesExplorer />
+      </Suspense>
     </>
   );
 }

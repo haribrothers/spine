@@ -2664,6 +2664,16 @@ Regression: the KPI row, setup checklist (Owners) and widgets below still show; 
 
 Regression: Invoices, Expenses and Vendor Payments opened normally (no query string) look and filter as before.
 
+## 85. Dashboard key figures (US-DASH-14, Phase 7)
+
+1. As an Owner, the KPI row shows Cash position, Profit this month, Receivables and Overdue. Each has its amount, a small 8-week line and "▲/▼ n% vs last month" (or "No data last month" in a new organisation).
+2. The change is green when good (cash or profit up, receivables or overdue down) and red when not, always with the arrow and sign. Check it in dark mode.
+3. Receivables shows "Current … · overdue …"; Overdue shows "n invoice(s)".
+4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Showing overdue invoices only." ("Show all" clears it).
+5. As a Field user there's no KPI row.
+
+Regression: Reports and Receivables opened from the sidebar look as before; the dashboard below the KPI row is unchanged.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

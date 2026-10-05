@@ -5,7 +5,7 @@ import { AppShellHeader, Button, DragHandle, HideToggle, ReorderableItem, Reorde
 import { DASHBOARD_WIDGETS, attentionSummary, greetingFor, mergeDashboardLayout, type AttentionItem, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { DashboardSummary } from "./dashboard-summary";
+import { KpiRow } from "./kpi-row";
 import { SetupChecklist } from "./setup-checklist";
 import { LedgerIntegrityAlert } from "./ledger-integrity-alert";
 import { StorageIntegrityAlert } from "./storage-integrity-alert";
@@ -189,7 +189,7 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
         )}
         {role === "owner" && <SetupChecklist />}
       </div>
-      {role !== "field" && <DashboardSummary />}
+      {role !== "field" && <KpiRow />}
 
       <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
         {displayed.map((entry) => {

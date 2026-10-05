@@ -25,3 +25,4 @@ export * from "./bulk.ts";
 export * from "./statements.ts";
 export * from "./industry-template.ts";
 export * from "./attention.ts";
+export * from "./kpis.ts";

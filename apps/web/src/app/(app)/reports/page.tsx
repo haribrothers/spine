@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { ReportsExplorer } from "./reports-explorer";
 
@@ -10,7 +11,10 @@ export default function ReportsPage() {
         title="Reports"
         description="Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and job profitability, derived from the ledger."
       />
-      <ReportsExplorer />
+      {/* US-DASH-14: reads its starting view from the URL. */}
+      <Suspense>
+        <ReportsExplorer />
+      </Suspense>
     </>
   );
 }

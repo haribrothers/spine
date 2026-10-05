@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-14: see key figures with a trend and a comparison (Phase 7)
+
+- **KPI row** (pinned, as before): "Cash position", "Profit this month", "Receivables" and "Overdue". Each card has the amount, a line of the last 8 weeks and "▲/▼ n% vs last month". The change is green when it's good for the business (cash and profit up; receivables and overdue down) and red otherwise, always with the arrow and sign. Receivables adds "Current … · overdue …"; Overdue adds "n invoice(s)". With nothing a month ago: "No data last month"; with no data at all: "No data yet".
+- **Cards open their report**: cash → Balance Sheet, profit → P&L, receivables → Receivables, overdue → Receivables filtered to overdue (new `?overdue=1`, with "Show all"). Reports opens the tab named in `?tab=`.
+- **API.** `GET /dashboard/kpis` works the figures out from journal lines (D-011), with overdue rebuilt from invoices, payments and credit notes as they stood on each date. It returns only the figures the member may see (US-DASH-17 adds the Staff set). The old summary card row is replaced.
+- **Sparkline** (`@spine/ui`): a small decorative trend line in positive, negative and neutral tones, with its design-system page and a11y test.
+
+Tests:
+- `packages/shared/src/us-dash-14.test.ts` (3): good and bad tones with arrows, count differences, no data.
+- `apps/api/src/modules/dashboard/us-dash-14.http.integration.test.ts` (3): the four figures with 8 points, previous and detail; Field gets none; a month earlier.
+- `apps/e2e/tests/us-dash-14.spec.ts` (1): cards, comparison lines, details, and the overdue and cash links.
+- `packages/ui/src/components/sparkline.a11y.test.tsx` (4).
+
 ### 2026-10-05 — US-DASH-13: act on an attention item in one click (Phase 7)
 
 - **Send reminder.** With one overdue invoice, the dashboard sends its reminder straight away; the toast reads "Reminder sent for INV-0002". With several, it opens Invoices filtered to overdue with those invoices ticked, ready for "Send reminders" (US-INV-23).
