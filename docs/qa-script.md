@@ -2533,6 +2533,16 @@ Regression: the contact page header (badges, Edit/Archive/Delete, Pause automati
 
 Regression: invoice, quote and receipt PDFs look as before.
 
+## 72. Bulk expense approval (US-PUR-21, Phase 7)
+
+1. As an Owner on Expenses, tick two submitted expenses. A dark bar shows "2 selected · <total>", "Approve (2)", "Reject…" and "Clear". Approved and rejected expenses can't be ticked.
+2. "Approve (2)": the toast reads "2 expenses approved". Each has its own number and posts its own journal entry (check Reports › General ledger), and each submitter is notified, the same as approving one at a time.
+3. Tick two more and press "Reject…": one dialog asks for a comment. Leave it blank: "Add a comment — it's sent with every rejected expense." Enter one and confirm: "2 expenses rejected", and both show your comment.
+4. As Staff with approval rights, your own submitted expense's tick box is disabled and the page says "Your own expenses can't be selected for approval — someone else approves them." As an Owner you can tick your own.
+5. As Staff without "Approve expenses", the list has no tick boxes.
+
+Regression: the Expenses list (filters, "My expenses only", row menu, detail drawer approve/reject) works as before in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -1,7 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createExpenseSchema, rejectExpenseSchema, reviewExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import { bulkIdsSchema, bulkRejectSchema, createExpenseSchema, rejectExpenseSchema, reviewExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -84,6 +84,28 @@ export class ExpensesController {
     const orgId = requireOrgId(session);
     const input = updateExpenseSchema.parse(body);
     return this.expensesService.update(orgId, id, session.user.id, input);
+  }
+
+  /** US-PUR-21 (D-097) — approve up to 100 submitted expenses; each posts its own journal entry. */
+  @Post("bulk/approve")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("expenses.approve")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkApprove(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkIdsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select 100 or fewer.");
+    return this.expensesService.bulkReview(requireOrgId(session), session.user.id, parsed.data.ids, { approve: true });
+  }
+
+  /** US-PUR-21 — reject up to 100 submitted expenses with one comment. */
+  @Post("bulk/reject")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("expenses.reject")
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulkReject(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkRejectSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select 100 or fewer.");
+    return this.expensesService.bulkReview(requireOrgId(session), session.user.id, parsed.data.ids, { approve: false, comment: parsed.data.comment });
   }
 
   @Post(":id/approve")

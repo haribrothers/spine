@@ -1,6 +1,6 @@
 import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createExpenseSchema, updateExpenseSchema } from "@spine/shared";
+import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -315,6 +315,37 @@ export class ExpensesService {
   }
 
   /** S-07.4's reject half — a comment is required (per the story's own wording), and a rejected expense never posts. */
+  /**
+   * US-PUR-21 (D-097) — approves or rejects several expenses, one at a
+   * time through `approve`/`reject`, so each is checked, numbered, posted
+   * (its own journal entry) and notified exactly as a single review would
+   * be. Any that can't be reviewed are reported with the reason.
+   */
+  async bulkReview(orgId: string, actorUserId: string, ids: string[], action: { approve: true } | { approve: false; comment: string }): Promise<BulkResult> {
+    const result: BulkResult = { done: [], skipped: [] };
+    for (const id of [...new Set(ids)]) {
+      try {
+        if (action.approve) await this.approve(orgId, id, actorUserId, null);
+        else await this.reject(orgId, id, actorUserId, action.comment);
+        result.done.push(id);
+      } catch (err) {
+        const reason =
+          err instanceof NotFoundException
+            ? "Not found."
+            : err instanceof ForbiddenException
+              ? "It's your own expense — someone else reviews it."
+              : err instanceof BadRequestException && /Only a submitted expense/.test(err.message)
+                ? "It isn't waiting for approval."
+                : err instanceof Error
+                  ? err.message
+                  : "It couldn't be reviewed.";
+        const [row] = await this.db.select({ number: expenses.number }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
+        result.skipped.push({ id, label: row?.number ?? null, reason });
+      }
+    }
+    return result;
+  }
+
   async reject(orgId: string, id: string, actorUserId: string, comment: string) {
     const [existing] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!existing) {

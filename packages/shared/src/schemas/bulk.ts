@@ -14,6 +14,11 @@ export const bulkInvoiceIdsSchema = z.object({
   ids: z.array(uuidSchema).min(1, "Select at least one invoice.").max(BULK_MAX, `Select ${BULK_MAX} or fewer invoices.`),
 });
 
+/** US-PUR-21 — rejecting several expenses: one comment for all of them. */
+export const bulkRejectSchema = bulkIdsSchema.extend({
+  comment: z.string().trim().min(1, "Add a comment — it's sent with every rejected expense."),
+});
+
 /** D-097 — every bulk action reports what it did and every record it skipped, with the reason. */
 export interface BulkResult {
   done: string[];

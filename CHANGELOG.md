@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PUR-21: approve several expenses at once (Phase 7)
+
+- **Tick submitted expenses** on the Expenses list. A bar shows "<n> selected · <amount>" with "Approve (<n>)", "Reject…" and "Clear" (`ExpensesBulkSelect`). Without `expenses.approve` there are no tick boxes.
+- **Staff can't tick their own** expenses (the box is disabled), and the page notes "Your own expenses can't be selected for approval — someone else approves them." Owners may select their own (D-085).
+- **Approve** reviews each expense through the same code as a single approval, with its own number and its own journal entry. Toast: "2 expenses approved", listing any skipped with the reason. **Reject…** asks for one comment, applied to every selected expense.
+- **API.** `POST /expenses/bulk/approve { ids }` and `/expenses/bulk/reject { ids, comment }` (at most 100, D-097) return `{ done, skipped }`.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-21.http.integration.test.ts` (4): approve and post each, own/not-submitted skipped with reasons, Owner's own allowed, one comment for all rejections, the 100 cap and 403s.
+- `apps/e2e/tests/us-pur-21.spec.ts` (2): the bar, Approve (2) with toast, Reject… with one comment; Staff's own expense disabled with the note, no tick boxes without approval rights.
+
 ### 2026-10-05 — US-PAY-15: give customers a clear statement PDF (Phase 7)
 
 - **Statement PDF** (`StatementPdf`), same fonts and colours as invoices: the business (logo, or its initials), "STATEMENT" and the period ("Jul 6 – Oct 4, 2026"), "Statement for <customer>" with their billing address, and "Balance due".

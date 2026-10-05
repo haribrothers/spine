@@ -11,6 +11,8 @@ import { ExpenseDetailDrawer } from "./expense-detail-drawer";
 import { ExpenseForm } from "./expense-form";
 import { ExpensesSkeleton } from "./expenses-skeleton";
 import { ExpensesTable } from "./expenses-table";
+import { ExpensesBulkBar } from "./expenses-bulk-bar";
+import { useMyRole } from "../../../lib/role-context";
 import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
 import type { Expense, JobOption } from "./types";
 import { useExpenseStats } from "./use-expense-stats";
@@ -49,6 +51,12 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const [formOpen, setFormOpen] = useState(false);
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
   const { show: showToast, toast } = useEntityToast();
+  // US-PUR-21 — bulk approval. Staff can't review their own expenses (D-085); Owners can.
+  const role = useMyRole();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const canSelect = useCallback((e: Expense) => e.status === "submitted" && (role === "owner" || e.submittedByUserId !== currentUserId), [role, currentUserId]);
+  const selectedExpenses = useMemo(() => (expenses ?? []).filter((e) => selectedIds.has(e.id) && canSelect(e)), [expenses, selectedIds, canSelect]);
+  const hasOwnSubmitted = role !== "owner" && (expenses ?? []).some((e) => e.status === "submitted" && e.submittedByUserId === currentUserId);
 
   const stats = useExpenseStats(expenses);
 
@@ -127,6 +135,18 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         {canCreate && <Button onClick={() => setFormOpen(true)}>Submit expense</Button>}
       </div>
 
+      {selectedExpenses.length > 0 && (
+        <ExpensesBulkBar
+          selected={selectedExpenses}
+          onClear={() => setSelectedIds(new Set())}
+          onFinished={(title, description) => {
+            setSelectedIds(new Set());
+            loadExpenses();
+            showToast(title, description);
+          }}
+        />
+      )}
+
       {!filteredExpenses ? (
         <ExpensesSkeleton />
       ) : filteredExpenses.length === 0 ? (
@@ -164,8 +184,24 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           members={members}
           onDeleted={handleDeleted}
           onOpen={(expense) => setSelectedExpenseId(expense.id)}
+          selection={
+            canApprove
+              ? {
+                  selected: selectedIds,
+                  canSelect,
+                  onToggle: (expense, on) =>
+                    setSelectedIds((current) => {
+                      const next = new Set(current);
+                      if (on) next.add(expense.id);
+                      else next.delete(expense.id);
+                      return next;
+                    }),
+                }
+              : undefined
+          }
         />
       )}
+      {canApprove && hasOwnSubmitted && <p className="text-[13px] text-on-surface-muted">Your own expenses can&apos;t be selected for approval — someone else approves them.</p>}
 
       <ExpenseForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleSaved} />
       <ExpenseDetailDrawer
