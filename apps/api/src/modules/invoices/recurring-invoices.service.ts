@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { occurrenceOnOrAfter, scheduleFinished, START_IN_PAST, type CreateRecurringInvoiceInput, type RecurringInvoice } from "@spine/shared";
+import { occurrenceAfter, occurrenceOnOrAfter, scheduleFinished, START_IN_PAST, type CreateRecurringInvoiceInput, type RecurringInvoice } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
@@ -214,5 +214,54 @@ export class RecurringInvoicesService {
       await this.auditLog.record(tx, { orgId, actorUserId, action: "updated", entityType: "recurring_invoice", entityId: id, contactId: input.contactId, changes });
     });
     return this.getOne(orgId, id);
+  }
+
+  /** US-INV-22 — a paused schedule creates nothing; its next date is empty until it's resumed. */
+  async pause(orgId: string, id: string, actorUserId: string): Promise<RecurringInvoice> {
+    const existing = await this.find(orgId, id);
+    if (existing.status !== "active") throw new BadRequestException("Only an active schedule can be paused.");
+    await this.db.transaction(async (tx) => {
+      await tx.update(recurringInvoices).set({ status: "paused", nextRunOn: null, updatedAt: new Date() }).where(eq(recurringInvoices.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "paused", entityType: "recurring_invoice", entityId: id, contactId: existing.contactId });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-INV-22 — resumes from the next occurrence after today; dates missed
+   * while paused aren't back-filled. A schedule whose end has passed in the
+   * meantime is finished instead.
+   */
+  async resume(orgId: string, id: string, actorUserId: string): Promise<RecurringInvoice> {
+    const existing = await this.find(orgId, id);
+    if (existing.status !== "paused") throw new BadRequestException("Only a paused schedule can be resumed.");
+    const next = occurrenceAfter(existing, orgClock().date);
+    const finished = scheduleFinished(next, existing, existing.createdCount);
+    await this.db.transaction(async (tx) => {
+      await tx
+        .update(recurringInvoices)
+        .set({ status: finished ? "finished" : "active", nextRunOn: finished ? null : next, updatedAt: new Date() })
+        .where(eq(recurringInvoices.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "resumed", entityType: "recurring_invoice", entityId: id, contactId: existing.contactId });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /** US-INV-22 — removes the schedule; invoices it already created are kept (their link to it is cleared). */
+  async delete(orgId: string, id: string, actorUserId: string): Promise<{ id: string }> {
+    const existing = await this.find(orgId, id);
+    await this.db.transaction(async (tx) => {
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "deleted",
+        entityType: "recurring_invoice",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "name", from: existing.name, to: null }],
+      });
+      await tx.delete(recurringInvoices).where(eq(recurringInvoices.id, id));
+    });
+    return { id };
   }
 }

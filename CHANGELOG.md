@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-22: pause, edit or stop a recurring invoice (Phase 7)
+
+- **Row menu** on Invoices › Recurring invoices: Edit (also by clicking the name), Pause / Resume and Delete.
+- **Pause** stops the schedule creating invoices; "Next invoice" shows "—". **Resume** picks the next occurrence after today. Dates missed while paused aren't back-filled, and a schedule whose end passed while paused becomes Finished.
+- **Edit** opens the same dialog with the schedule filled in ("Changes apply to invoices it creates from now on."). Invoices already created never change.
+- **Delete** asks "Delete this schedule? Invoices it already created are kept." The invoices stay and lose their link to the schedule.
+- **API.** `POST /recurring-invoices/:id/pause`, `/resume`, `DELETE /recurring-invoices/:id` (`invoices.manage_recurring`). History names "a recurring invoice" and the paused/resumed actions.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-22.http.integration.test.ts` (5): list fields, paused creates nothing, resume to the next future date, editing leaves created invoices alone, delete keeps invoices.
+- `apps/e2e/tests/us-inv-22.spec.ts` (1): pause, resume, edit, delete with its confirmation.
+
 ### 2026-10-05 — US-INV-21: create recurring invoices automatically (Phase 7)
 
 - **Run.** The `recurring-invoice-run` queue fires every 15 minutes. From 6:00 AM organisation time it gives each active schedule that's due one invoice, built from its lines with that day's tax (issue date today, due after the schedule's payment terms). It goes through the same create/issue/email code as a manual invoice, so the number, ledger posting and email are identical.

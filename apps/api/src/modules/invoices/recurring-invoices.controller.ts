@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Put, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createRecurringInvoiceSchema, updateRecurringInvoiceSchema, type CreateRecurringInvoiceInput } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
@@ -43,5 +43,23 @@ export class RecurringInvoicesController {
   @UseInterceptors(IdempotencyInterceptor)
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     return this.recurring.update(requireOrgId(session), id, session.user.id, parse(updateRecurringInvoiceSchema, body));
+  }
+
+  @Post(":id/pause")
+  @UseInterceptors(IdempotencyInterceptor)
+  async pause(@Session() session: UserSession, @Param("id") id: string) {
+    return this.recurring.pause(requireOrgId(session), id, session.user.id);
+  }
+
+  @Post(":id/resume")
+  @UseInterceptors(IdempotencyInterceptor)
+  async resume(@Session() session: UserSession, @Param("id") id: string) {
+    return this.recurring.resume(requireOrgId(session), id, session.user.id);
+  }
+
+  @Delete(":id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async delete(@Session() session: UserSession, @Param("id") id: string) {
+    return this.recurring.delete(requireOrgId(session), id, session.user.id);
   }
 }

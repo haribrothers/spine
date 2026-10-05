@@ -9,6 +9,7 @@ import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
 import { useEntityToast } from "../entity-toast";
 import { RecurringInvoiceDialog } from "./recurring-invoice-dialog";
+import { RecurringRowActions } from "./recurring-row-actions";
 
 const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
   active: "bg-paid-bg text-paid",
@@ -36,6 +37,7 @@ export function RecurringInvoicesView() {
   const [schedules, setSchedules] = useState<RecurringInvoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<RecurringInvoice | null>(null);
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -73,7 +75,11 @@ export function RecurringInvoicesView() {
     {
       key: "name",
       header: "Name",
-      render: (row) => <span className="font-medium text-on-surface">{row.name}</span>,
+      render: (row) => (
+        <button type="button" onClick={() => setEditing(row)} className="text-left font-medium text-on-surface hover:text-primary hover:underline">
+          {row.name}
+        </button>
+      ),
       sortValue: (row) => row.name,
     },
     {
@@ -110,6 +116,30 @@ export function RecurringInvoicesView() {
       header: "When it runs",
       render: (row) => RECURRING_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode,
     },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          <RecurringRowActions
+            schedule={row}
+            onEdit={setEditing}
+            onChanged={(saved, action) => {
+              load();
+              showToast(
+                action === "paused" ? "Schedule paused" : "Schedule resumed",
+                action === "paused" ? `${saved.name} won't create invoices until you resume it.` : `${saved.name}'s next invoice is on ${formatRunDate(saved.nextRunOn)}.`,
+              );
+            }}
+            onDeleted={(deleted) => {
+              load();
+              showToast("Schedule deleted", `${deleted.name} is deleted. Invoices it already created are kept.`);
+            }}
+            onError={(message) => showToast("Couldn't change the schedule", message)}
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -134,12 +164,24 @@ export function RecurringInvoicesView() {
           starts.
         </p>
         <RecurringInvoiceDialog
-          open={creating}
-          onOpenChange={setCreating}
-          onSaved={(saved) => {
+          open={creating || !!editing}
+          onOpenChange={(open) => {
+            if (open) return;
             setCreating(false);
+            setEditing(null);
+          }}
+          schedule={editing}
+          onSaved={(saved) => {
+            const wasEditing = !!editing;
+            setCreating(false);
+            setEditing(null);
             load();
-            showToast("Schedule saved", `${saved.name} is active. The first invoice is on ${formatRunDate(saved.nextRunOn)}.`);
+            showToast(
+              "Schedule saved",
+              wasEditing
+                ? `${saved.name} is updated. Invoices it already created stay as they are.`
+                : `${saved.name} is active. The first invoice is on ${formatRunDate(saved.nextRunOn)}.`,
+            );
           }}
         />
         {toast}

@@ -2483,6 +2483,16 @@ Regression: Invoices list toolbar (filters, "New invoice") looks and works as be
 
 Regression: manual New invoice → issue → email still works; the Recurring invoices list (§65) looks the same in light and dark mode.
 
+## 67. Recurring invoices: pause, edit, delete (US-INV-22, Phase 7)
+
+1. On Invoices › Recurring invoices, each row shows name, customer, repeats, next invoice, amount, status and when it runs.
+2. Row menu › Pause: the row shows "Paused" and "—" for the next invoice. Leave it over a run date: no invoice is created.
+3. Row menu › Resume: "Active" again, with the next date after today. Nothing is created for dates missed while paused.
+4. Row menu › Edit (or click the name): change the price under "Edit lines" and save. The amount updates. Invoices the schedule already created keep their old price.
+5. Row menu › Delete: "Delete this schedule? Invoices it already created are kept." Confirm: the row goes; its invoices are still on Invoices.
+
+Regression: "+ New recurring invoice" (§65) still opens an empty dialog after editing one; the list looks right in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
