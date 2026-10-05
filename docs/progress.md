@@ -326,7 +326,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-10 · Put my brand colour and footer on documents
 - [x] US-SET-11 · See every change across the organisation
 - [x] US-SET-12 · Export the audit log
-- [ ] US-SET-15 · Export all my data
+- [x] US-SET-15 · Export all my data
 - [ ] US-SET-16 · Keep data exports private
 - [ ] US-OPS-22 · Search everything from anywhere
 - [ ] US-OPS-23 · Use search with the keyboard and a screen reader

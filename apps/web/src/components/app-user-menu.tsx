@@ -57,6 +57,17 @@ export function AppUserMenu({
   const { theme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // US-SET-15: `?settings=<pane>` anywhere in the app opens Settings on that pane (the data-export email links here).
+  const [settingsPane, setSettingsPane] = useState<string | null>(null);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const pane = url.searchParams.get("settings");
+    if (!pane) return;
+    setSettingsPane(pane);
+    setSettingsOpen(true);
+    url.searchParams.delete("settings");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -147,7 +158,7 @@ export function AppUserMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} isOwner={isOwner} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} isOwner={isOwner} initialKey={settingsPane} />
     </>
   );
 }

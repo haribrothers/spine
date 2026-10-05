@@ -28,6 +28,7 @@ import { NotificationsModule } from "./modules/notifications/notifications.modul
 import { AuditModule } from "./modules/audit/audit.module";
 import { DemoDataModule } from "./modules/demo-data/demo-data.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
+import { DataExportModule } from "./modules/data-export/data-export.module";
 import { QueueModule } from "./modules/queue/queue.module";
 import { EmailModule } from "./modules/email/email.module";
 import { PdfModule } from "./modules/pdf/pdf.module";
@@ -70,6 +71,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     AuditModule,
     DemoDataModule,
     DashboardModule,
+    DataExportModule,
   ],
   providers: [
     // Signed-in requests count per session, public ones per IP.

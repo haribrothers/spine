@@ -1,24 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import {
-  AlarmClock,
-  BellRing,
-  Landmark,
-  Building2,
-  Calendar,
-  CalendarClock,
-  Coins,
-  Columns3,
-  Database,
-  ListOrdered,
-  Palette,
-  Percent,
-  Search,
-  ShieldAlert,
-  Sparkles,
-  Wallet,
-} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { AlarmClock, BellRing, Building2, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
 import { BrandingPane } from "../app/settings/panes/branding-pane";
@@ -32,6 +15,7 @@ import { PaymentInstructionsPane } from "../app/settings/panes/payment-instructi
 import { LeadStagesPane } from "../app/settings/panes/lead-stages-pane";
 import { RemindersPane } from "../app/settings/panes/reminders-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
+import { DataExportPane } from "../app/settings/panes/data-export-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
 import { DashboardMeetingsScopePane } from "../app/settings/panes/dashboard-meetings-scope-pane";
 import { MeetingReminderLeadTimePane } from "../app/settings/panes/meeting-reminder-lead-time-pane";
@@ -73,6 +57,8 @@ const SECTIONS: SettingsSection[] = [
     icon: <AlarmClock size={16} />,
     render: () => <MeetingReminderLeadTimePane />,
   },
+  // US-SET-15/16 (D-094)
+  { key: "data-export", label: "Data export", icon: <Download size={16} />, render: () => <DataExportPane /> },
   { key: "data", label: "Demo data", icon: <Database size={16} />, render: () => <DataPane /> },
 ];
 
@@ -103,13 +89,19 @@ export function SettingsDialog({
   open,
   onOpenChange,
   isOwner,
+  initialKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   isOwner: boolean;
+  /** US-SET-15: open on this pane (e.g. "data-export" from the export-ready email's `?settings=` link). */
+  initialKey?: string | null;
 }) {
   const [query, setQuery] = useState("");
   const [activeKey, setActiveKey] = useState("business");
+  useEffect(() => {
+    if (open && initialKey && SECTIONS.some((s) => s.key === initialKey)) setActiveKey(initialKey);
+  }, [open, initialKey]);
 
   if (!isOwner) return null;
 

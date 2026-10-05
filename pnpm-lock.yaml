@@ -322,6 +322,9 @@ importers:
       dotenv-cli:
         specifier: ^7.4.0
         version: 7.4.4
+      fflate:
+        specifier: ^0.8.3
+        version: 0.8.3
       typescript:
         specifier: ^5.7.0
         version: 5.9.3

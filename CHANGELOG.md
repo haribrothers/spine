@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-15: export all my data (Phase 7)
+
+- **Settings › Data export** (Owners): "Records as CSV" (on by default), "Records as JSON" and "Files", then "Prepare export". The button shows "Preparing…" and the pane says "Large exports are prepared in the background. We'll email you when the file is ready." It checks back every few seconds.
+- **Last export**: "Oct 5, 2026 by Alex Morgan · 59.8 KB · Download again (link expires in 7 days)".
+- **The ZIP** (`spine-export-<date>.zip`) contains:
+  - one CSV with a header row (or JSON) per table, from contacts to journal lines; in `csv/` and `json/` folders when both are chosen;
+  - `members` with names, emails and roles;
+  - `files/` with receipts, photos, logos and issued PDFs when chosen;
+  - a `README.txt` describing each file and its row count.
+
+  It's built in the background (`data-export` queue) and streamed straight to private storage. Secrets are never exported: passwords, sessions, sign-in and quote tokens, push keys, and secret settings.
+- **Email when ready**: "Your <Business> data export is ready", with a button to Settings › Data export (new `?settings=<pane>` link). The email never contains the file or a link to it.
+- **Staff and Field** get 403 from `POST /org/exports`.
+- **API.** `POST /org/exports`, `GET /org/exports`, `GET /org/exports/:id/download`. New `data_exports` table (migration 0075). Preparing an export is audit-logged.
+
+Tests:
+- `apps/api/src/modules/data-export/us-set-15.http.integration.test.ts` (5): no export yet; CSV ZIP with header rows, files and README; no secrets; JSON and both formats; Owner-only and audit-logged.
+- `apps/e2e/tests/us-set-15.spec.ts` (1): opened from the email link, defaults, prepared in the background, downloaded and unzipped; Staff refused.
+
 ### 2026-10-05 — US-SET-12: export the audit log (Phase 7)
 
 - **Export CSV** on Team › Audit log downloads the entries matching the current filters, as `audit-log-<date>.csv`.

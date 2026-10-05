@@ -2798,6 +2798,18 @@ Regression: contact and invoice History sections still show their entries. Team 
 
 Regression: the audit log table and its filters are unchanged.
 
+## 96. Data export (US-SET-15, Phase 7)
+
+1. As an Owner, open Settings › Data export. "Records as CSV" and "Files" are ticked, and "Records as JSON" isn't.
+2. Press "Prepare export": the button shows "Preparing…" and the pane says large exports are prepared in the background. Within a minute, "Last export: <date> by <you> · <size> · Download again (link expires in 7 days)" appears.
+3. With SMTP set up, an email "Your <Business> data export is ready" arrives. Its button opens Spine with Settings on Data export. The email has no attachment and no file link.
+4. "Download again" downloads `spine-export-<date>.zip`. Unzipped, it holds one CSV per table with a header row, `members.csv`, `files/` with your receipts, photos and PDFs, and `README.txt` listing each file with a description and row count.
+5. Tick only JSON (untick CSV and Files) and prepare again: one `.json` per table and no `files/`. Tick both formats: `csv/` and `json/` folders.
+6. Search the export for a password or session token: none. Settings holding secrets aren't in `settings.csv`.
+7. As Staff or Field there's no Settings, and `POST /org/exports` returns 403.
+
+Regression: other Settings panes open as before. Settings › Demo data still works.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

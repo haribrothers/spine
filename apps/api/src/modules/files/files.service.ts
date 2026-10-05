@@ -13,10 +13,11 @@ import { and, asc, eq, gt, inArray, isNotNull, isNull, like } from "drizzle-orm"
 import { createHash, randomUUID } from "node:crypto";
 import { statfs } from "node:fs/promises";
 import { STORAGE_FULL_MESSAGE, type StorageStatus } from "@spine/shared";
-import type { Readable } from "node:stream";
+import { Transform, type Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
+  dataExports,
   contactPersons,
   contacts,
   creditNotes,
@@ -192,6 +193,52 @@ export class FilesService {
     }
   }
 
+  /**
+   * US-SET-15 — stores a file the server built itself (a data export ZIP),
+   * streamed straight to the storage driver with its size and checksum
+   * worked out on the way. No type sniffing: the server chose the type.
+   */
+  async storeGenerated(orgId: string, source: Readable, input: { originalFilename: string; mimeType: string; uploadedByUserId: string | null }): Promise<FileRow> {
+    const driver = this.drivers.primary;
+    if (!driver) throw new ServiceUnavailableException("File storage isn't set up on this server. Ask the owner to check the storage settings.");
+    const id = randomUUID();
+    const key = fileKey(orgId, id);
+    const hash = createHash("sha256");
+    let size = 0;
+    const meter = new Transform({
+      transform(chunk: Buffer, _enc, done) {
+        hash.update(chunk);
+        size += chunk.length;
+        done(null, chunk);
+      },
+    });
+    source.on("error", (err) => meter.destroy(err));
+    await driver.save(key, source.pipe(meter), input.mimeType);
+    try {
+      const [row] = await this.db
+        .insert(files)
+        .values({ id, orgId, key, storageDriver: driver.name, checksumSha256: hash.digest("hex"), originalFilename: input.originalFilename, mimeType: input.mimeType, sizeBytes: size, uploadedByUserId: input.uploadedByUserId })
+        .returning();
+      return row!;
+    } catch (err) {
+      await driver.delete(key).catch(() => undefined);
+      throw err;
+    }
+  }
+
+  /** The stored bytes as a stream, for the server's own use (exports, data-export downloads). */
+  async openStored(file: FileRow): Promise<Readable> {
+    return this.open(this.readerFor(file), file);
+  }
+
+  /** US-SET-16 — deletes a file's bytes from storage and its row (an expired data export). */
+  async deleteStored(orgId: string, id: string): Promise<void> {
+    const [file] = await this.db.select().from(files).where(and(eq(files.orgId, orgId), eq(files.id, id)));
+    if (!file) return;
+    await this.readerFor(file).delete(file.key).catch((err) => this.logger.warn(`Could not delete stored file ${id}: ${(err as Error).message}`));
+    await this.db.delete(files).where(eq(files.id, id));
+  }
+
   /** Removes a file nothing points at yet (a duplicate made by a lost race). */
   async removeUnreferenced(orgId: string, id: string): Promise<void> {
     const file = await this.getMetadata(orgId, id);
@@ -228,6 +275,9 @@ export class FilesService {
   async assertReadableBy(orgId: string, userId: string, file: FileRow): Promise<void> {
     const role = await getMemberRole(this.db, orgId, userId);
     if (!role) throw new NotFoundException("File not found");
+    // US-SET-16: a data export is only ever served by its own Owner-checked, expiring download route.
+    const [exportRow] = await this.db.select({ id: dataExports.id }).from(dataExports).where(eq(dataExports.fileId, file.id)).limit(1);
+    if (exportRow) throw new NotFoundException("File not found");
     if (role === "owner") return;
 
     const owners = await this.owningRecords(orgId, file.id);
