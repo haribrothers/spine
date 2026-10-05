@@ -10,6 +10,7 @@ import {
   Coins,
   Database,
   ListOrdered,
+  Palette,
   Percent,
   Search,
   ShieldAlert,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
+import { BrandingPane } from "../app/settings/panes/branding-pane";
 import { TemplatePane } from "../app/settings/panes/template-pane";
 import { CurrencyPane } from "../app/settings/panes/currency-pane";
 import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
@@ -39,6 +41,7 @@ interface SettingsSection {
 
 const SECTIONS: SettingsSection[] = [
   { key: "business", label: "Business profile", icon: <Building2 size={16} />, render: () => <BusinessPane /> },
+  { key: "branding", label: "Branding", icon: <Palette size={16} />, render: () => <BrandingPane /> },
   { key: "template", label: "Industry template", icon: <Sparkles size={16} />, render: () => <TemplatePane /> },
   { key: "currency", label: "Currency & locale", icon: <Coins size={16} />, render: () => <CurrencyPane /> },
   { key: "fiscal-year", label: "Financial year", icon: <Calendar size={16} />, render: () => <FiscalYearPane /> },

@@ -23,7 +23,10 @@ function contrast(a: string, b: string): number {
   return (hi! + 0.05) / (lo! + 0.05);
 }
 
-const tokens = JSON.parse(readFileSync(path.join(root, "docs/design/tokens.json"), "utf8")) as { color: Record<"light" | "dark", Record<string, string>> };
+const tokens = JSON.parse(readFileSync(path.join(root, "docs/design/tokens.json"), "utf8")) as {
+  color: Record<"light" | "dark", Record<string, string>>;
+  cssVariables: Record<"light" | "dark", Record<string, string>>;
+};
 const css = readFileSync(path.join(root, "packages/config/tailwind-preset.css"), "utf8");
 const cssLight = css.slice(css.indexOf(":root {"), css.indexOf(':root[data-theme="dark"]'));
 const cssDark = css.slice(css.indexOf(':root[data-theme="dark"]'), css.indexOf("@media (prefers-color-scheme: dark)"));
@@ -46,6 +49,7 @@ describe("US-OPS-32 · cards lift off the page in light mode", () => {
   it("light background is #F7F6F3 and surface stays white in tokens, web CSS and native", () => {
     expect(tokens.color.light.background).toBe("#F7F6F3");
     expect(tokens.color.light.surface).toBe("#FFFFFF");
+    expect(tokens.cssVariables.light["--color-background"]).toBe("#f7f6f3");
     expect(cssValue(cssLight, "background")).toBe("#F7F6F3");
     expect(cssValue(cssLight, "surface")).toBe("#FFFFFF");
     expect(nativeColor("lightColors", "background")).toBe("#F7F6F3");

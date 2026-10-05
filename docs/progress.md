@@ -322,7 +322,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-RPT-15 · Compare contract, billed and cost across jobs
 - [ ] US-NTF-13 · Get a daily digest by email
 - [ ] US-NTF-14 · Choose when my digest arrives
-- [ ] US-SET-09 · Pick a theme for the whole organisation
+- [x] US-SET-09 · Pick a theme for the whole organisation
 - [ ] US-SET-10 · Put my brand colour and footer on documents
 - [ ] US-SET-11 · See every change across the organisation
 - [ ] US-SET-12 · Export the audit log

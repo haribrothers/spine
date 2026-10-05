@@ -37,6 +37,10 @@ A warm-leaning stone scale rather than a cool blue-grey, so dense tables and for
   { name: "Border strong", variable: "--color-border-strong" },
 ]} />
 
+## Theme presets
+
+An Owner can switch the whole organisation to Harbour Teal, Plum or Graphite in Settings › Branding (US-SET-09). A preset replaces only Primary and Primary hover, through `[data-brand]` rules in the preset CSS; neutrals and the financial status colours below never change. Values for both modes are in `docs/DESIGN.md` and `tokens.json` (`themePresets`).
+
 ## Financial status (reserved)
 
 These four map directly to invoice/quote/job status everywhere they appear — dashboards, the invoice list, AR aging, the PDF itself — and are never used for anything else. A re-themed `primary` color must never collide with these.

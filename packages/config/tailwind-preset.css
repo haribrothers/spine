@@ -232,6 +232,74 @@
   }
 }
 
+/* US-SET-09 (D-063) — organisation theme presets. Each replaces only the
+   primary pair (buttons, links, active navigation, focus rings); status and
+   neutral colours are never themeable. The app sets `data-brand` on <html>;
+   any element may carry it too (the Settings swatches do), so the rules
+   aren't tied to :root. Every light value passes 4.5:1 with white text and
+   on the page; every dark value passes 4.5:1 with dark on-primary text and
+   on the dark surface. Kept after the dark blocks so they win on order. */
+[data-brand="spine-blue"] {
+  --color-primary: #2954e5;
+  --color-primary-hover: #2044c4;
+}
+[data-brand="harbour-teal"] {
+  --color-primary: #0d6e6e;
+  --color-primary-hover: #0a5858;
+}
+[data-brand="plum"] {
+  --color-primary: #7c3aed;
+  --color-primary-hover: #6a2bd4;
+}
+[data-brand="graphite"] {
+  --color-primary: #4b473e;
+  --color-primary-hover: #37342d;
+}
+
+[data-theme="dark"] [data-brand="spine-blue"],
+[data-theme="dark"][data-brand="spine-blue"] {
+  --color-primary: #6b8aff;
+  --color-primary-hover: #88a1ff;
+}
+[data-theme="dark"] [data-brand="harbour-teal"],
+[data-theme="dark"][data-brand="harbour-teal"] {
+  --color-primary: #4fd1d1;
+  --color-primary-hover: #7adede;
+}
+[data-theme="dark"] [data-brand="plum"],
+[data-theme="dark"][data-brand="plum"] {
+  --color-primary: #b79cfb;
+  --color-primary-hover: #c9b4fc;
+}
+[data-theme="dark"] [data-brand="graphite"],
+[data-theme="dark"][data-brand="graphite"] {
+  --color-primary: #c7c4b8;
+  --color-primary-hover: #dad8cf;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"])[data-brand="spine-blue"],
+  :root:not([data-theme="light"]) [data-brand="spine-blue"] {
+    --color-primary: #6b8aff;
+    --color-primary-hover: #88a1ff;
+  }
+  :root:not([data-theme="light"])[data-brand="harbour-teal"],
+  :root:not([data-theme="light"]) [data-brand="harbour-teal"] {
+    --color-primary: #4fd1d1;
+    --color-primary-hover: #7adede;
+  }
+  :root:not([data-theme="light"])[data-brand="plum"],
+  :root:not([data-theme="light"]) [data-brand="plum"] {
+    --color-primary: #b79cfb;
+    --color-primary-hover: #c9b4fc;
+  }
+  :root:not([data-theme="light"])[data-brand="graphite"],
+  :root:not([data-theme="light"]) [data-brand="graphite"] {
+    --color-primary: #c7c4b8;
+    --color-primary-hover: #dad8cf;
+  }
+}
+
 @theme inline {
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);

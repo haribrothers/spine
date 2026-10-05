@@ -2357,6 +2357,17 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 
 Regression: muted grey text, amber "due soon" and red "overdue" text are still easy to read on the grey page (§51); Pipeline columns, the Settings dialog and onboarding look as before apart from the page colour.
 
+## 55. Organisation theme (US-SET-09, Phase 7)
+
+1. As an Owner, open Settings › Branding. "App theme" shows Spine Blue (marked "Default"), Harbour Teal, Plum and Graphite, each with a colour swatch, and the note "Each person still chooses light or dark mode in their own Profile & Preferences."
+2. Pick Harbour Teal and press Save: "Saved" shows and buttons, links, the active sidebar item and focus rings turn teal straight away.
+3. Sign in as a Staff or Field member (another browser): their app is teal too. Switch them to dark mode: still teal (a lighter teal), with dark text on teal buttons.
+4. Paid, due-soon, overdue and draft chips look exactly as before in both modes.
+5. Press "Reset to Spine defaults", then Save: blue returns for everyone after a reload.
+6. As Staff, open Settings: there's no way to change the theme (Settings is Owner-only).
+
+Regression: dashboard charts, the Pipeline board and status chips keep their colours; the public quote page and PDFs are unaffected (US-SET-10 handles document colour).
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

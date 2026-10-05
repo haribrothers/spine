@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
-import { businessProfileSchema } from "@spine/shared";
+import { brandingSchema, businessProfileSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
@@ -43,6 +43,11 @@ export class SettingsController {
       // US-INV-16: the same rules the Settings form shows.
       const parsed = businessProfileSchema.safeParse(value);
       if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the business profile and try again.");
+    }
+    if (key === "branding") {
+      // US-SET-09: only the listed theme presets.
+      const parsed = brandingSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the branding settings and try again.");
     }
     await this.settingsService.set(orgId, key, value);
     return { key, value };

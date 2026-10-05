@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-09: pick a theme for the whole organisation (Phase 7)
+
+- **Settings › Branding** (Owner-only, after Business profile): "App theme" cards for Spine Blue (Default), Harbour Teal, Plum and Graphite, each with a swatch that shows that preset in the viewer's own mode, the note about personal light/dark mode, "Reset to Spine defaults" and "Save". Saving applies the theme straight away.
+- **Storage.** `branding.themePreset` through the generic settings route; `brandingSchema` (`@spine/shared`) refuses anything else with "Choose one of the listed themes." and keeps other branding fields.
+- **Applying it.** The authenticated layout reads the preset server-side and sets `data-brand` on `<html>` with an inline script, so a themed organisation never flashes blue; `[data-brand]` rules in the Tailwind preset replace only `--color-primary`/`--color-primary-hover`, with dark-mode values. Status and neutral colours are untouched. Presets are recorded in `DESIGN.md` and `tokens.json` (`themePresets`), which also gets the light `--color-background` that US-OPS-32 missed in its `cssVariables` mirror.
+
+Tests:
+- `packages/shared/src/us-set-09.test.ts` (4): the four presets, Spine Blue default, refusal message, fallback for unknown values.
+- `packages/ui/src/test/us-set-09.test.ts` (9): each preset's light and dark rules set only the primary pair and match `tokens.json`; white/on-primary text and primary-on-page pass 4.5:1 in both modes; Spine Blue equals the default primary.
+- `apps/api/src/modules/org/us-set-09.http.integration.test.ts` (6): Owner saves and every member reads; other fields kept; unknown preset 400 with the saved value kept; reset; Staff 403.
+- `apps/e2e/tests/us-set-09.spec.ts` (1): the pane's cards and note; Harbour Teal after reload (`#0d6e6e`), status colours unchanged; the Field member in dark mode gets `#4fd1d1`; reset returns `#2954e5`.
+
 ### 2026-10-05 — US-OPS-32: lift cards off the page in light mode (Phase 7)
 
 - **Tokens (D-131).** Light `background` is `#F7F6F3` in `docs/design/tokens.json`, `docs/DESIGN.md`, `packages/config/tailwind-preset.css` and the native `lightColors`; `surface` stays `#FFFFFF`. Dark mode is unchanged.

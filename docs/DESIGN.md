@@ -312,3 +312,16 @@ components:
 The token values above are the authored source for Spine's design tokens (read by `packages/config/tailwind-preset.css`, `packages/ui-native/src/tokens/`, and the generator that writes `docs/design/tokens.json`).
 
 The brand book — voice, colour, type, layout, platforms, motion, accessibility and every component — lives in [docs/design/README.md](design/README.md).
+
+## Theme presets (US-SET-09, D-063)
+
+An Owner picks one app theme for the organisation in Settings › Branding. A preset replaces only `primary` and `primary-hover`; neutrals and the four status colours never change.
+
+| Preset | Light primary / hover | Dark primary / hover |
+|---|---|---|
+| Spine Blue (default) | `#2954E5` / `#2044C4` | `#6B8AFF` / `#88A1FF` |
+| Harbour Teal | `#0D6E6E` / `#0A5858` | `#4FD1D1` / `#7ADEDE` |
+| Plum | `#7C3AED` / `#6A2BD4` | `#B79CFB` / `#C9B4FC` |
+| Graphite | `#4B473E` / `#37342D` | `#C7C4B8` / `#DAD8CF` |
+
+Every light value passes 4.5:1 with white text and on the page; every dark value passes 4.5:1 with the dark `on-primary` text and on the dark surface. On the web the presets are `[data-brand="<id>"]` rules in `packages/config/tailwind-preset.css`.

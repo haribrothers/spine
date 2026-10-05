@@ -16,3 +16,4 @@ export * from "./reports.ts";
 export * from "./dashboard-widgets.ts";
 export * from "./storage.ts";
 export * from "./business-profile.ts";
+export * from "./branding.ts";

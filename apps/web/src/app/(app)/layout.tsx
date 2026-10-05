@@ -3,6 +3,8 @@ import { getMyMembership } from "../../lib/get-my-membership";
 import { getSession } from "../../lib/get-session";
 import { getOrgLocale } from "../../lib/get-org-locale";
 import { MoneyLocaleProvider } from "../../components/money-locale-provider";
+import { OrgThemePreset } from "../../components/org-theme-preset";
+import { getOrgThemePreset } from "../../lib/get-org-theme-preset";
 
 /**
  * Shared chrome for every authenticated page (dashboard, quotes, contacts,
@@ -16,9 +18,10 @@ import { MoneyLocaleProvider } from "../../components/money-locale-provider";
  * here rather than duplicated in every page.tsx.
  */
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
-  const [session, membership, locale] = await Promise.all([getSession(), getMyMembership(), getOrgLocale()]);
+  const [session, membership, locale, themePreset] = await Promise.all([getSession(), getMyMembership(), getOrgLocale(), getOrgThemePreset()]);
   return (
     <MoneyLocaleProvider locale={locale}>
+      <OrgThemePreset preset={themePreset} />
       <AppLayout
         role={membership?.role ?? null}
         userName={session?.user?.name ?? "Signed in"}
