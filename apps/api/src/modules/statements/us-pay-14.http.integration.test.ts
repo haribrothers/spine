@@ -140,7 +140,8 @@ describe("US-PAY-14 · send a customer a statement (requires local Postgres)", (
     const res = await send(contactId, { email: "accounts@mapleridge.example", message: "Hi Daniel, please find your statement attached." });
     expect(res.status).toBeLessThan(300);
     expect(await res.json()).toEqual({ sentTo: "accounts@mapleridge.example" });
-    const mail = sent.mock.calls[0]![0];
+    // Queue workers in this app may send other emails meanwhile; find this one by recipient.
+    const mail = sent.mock.calls.map(([m]) => m).find((m) => m.to === "accounts@mapleridge.example")!;
     expect(mail.to).toBe("accounts@mapleridge.example");
     expect(mail.subject).toMatch(/^Your statement from .+ \([A-Z][a-z]{2} \d{1,2}(, \d{4})? – [A-Z][a-z]{2} \d{1,2}, \d{4}\)$/);
     expect(mail.html).toContain("Hi Daniel, please find your statement attached.");

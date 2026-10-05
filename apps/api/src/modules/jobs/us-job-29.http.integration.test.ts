@@ -115,7 +115,9 @@ describe("US-JOB-29 · number each progress claim on a job (requires local Postg
     vi.spyOn(emailService, "isConfigured").mockReturnValue(true);
     const send = vi.spyOn(emailService, "send").mockResolvedValue();
     await testApp.app.get(InvoiceEmailWorker).process({ orgId, invoiceId: claim3!.id });
-    expect(send.mock.calls[0]![0].text).toContain(`Progress claim 3 · ${jobNumber}`);
+    // Queue workers in this app may send other emails meanwhile; find this invoice's.
+    const mail = send.mock.calls.map(([m]) => m).find((m) => m.subject?.includes(claim3!.number!));
+    expect(mail?.text).toContain(`Progress claim 3 · ${jobNumber}`);
 
     const [voided] = await db.select().from(invoices).where(and(eq(invoices.jobId, jobId), eq(invoices.progressClaimNo, 2)));
     expect(await testApp.app.get(InvoicePdfService).claimLabel(voided!)).toBe(`Progress claim 2 (void) · ${jobNumber}`);

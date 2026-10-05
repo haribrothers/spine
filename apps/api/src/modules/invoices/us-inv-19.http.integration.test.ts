@@ -196,12 +196,14 @@ describe("US-INV-19 · send reminders on schedule without double-sending (requir
     await worker.process({ orgId, invoiceId: invoice, isReminder: true, daysOverdue: 7 });
     await worker.process({ orgId, invoiceId: invoice, isReminder: true, daysOverdue: 0 });
     await worker.process({ orgId, invoiceId: invoice, isReminder: true, daysOverdue: -3 });
-    expect(send.mock.calls.map(([m]) => m.subject)).toEqual([
+    // Only this invoice's emails: queue workers in this app may send others meanwhile.
+    const mine = send.mock.calls.map(([m]) => m).filter((m) => m.subject?.includes(row!.number!));
+    expect(mine.map((m) => m.subject)).toEqual([
       `Reminder: invoice ${row!.number} is 7 days overdue`,
       `Reminder: invoice ${row!.number} is due today`,
       `Reminder: invoice ${row!.number} is due in 3 days`,
     ]);
-    const html = send.mock.calls[0]![0].html!;
+    const html = mine[0]!.html!;
     expect(html).toContain("Balance due");
     expect(html).toContain("$2,200.00");
     expect(html).toContain("Bank transfer to Riverstone Builders LLC");
