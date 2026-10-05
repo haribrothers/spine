@@ -113,7 +113,7 @@ export function CreditNotesExplorer() {
           aria-label="Filter by status"
           className="w-40"
         />
-        <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" className="w-48" />
+        <Combobox options={contactOptions} value={contactFilter} onValueChange={setContactFilter} placeholder="All contacts" aria-label="Filter by contact" className="w-48" />
       </div>
 
       {!filteredCreditNotes ? (

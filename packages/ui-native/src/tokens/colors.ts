@@ -42,7 +42,7 @@ export const lightColors = {
 
   paid: "#177044",
   paidBg: "#E4F5EB",
-  dueSoon: "#9A6300",
+  dueSoon: "#946000",
   dueSoonBg: "#FCF0D4",
   overdue: "#B3261E",
   overdueBg: "#FBE6E4",
@@ -63,7 +63,7 @@ export const lightColors = {
   gradients: {
     primary: { from: "#2954E5", to: "#2144BB" },
     paid: { from: "#177044", to: "#125B37" },
-    dueSoon: { from: "#9A6300", to: "#7E5100" },
+    dueSoon: { from: "#946000", to: "#7E5100" },
     overdue: { from: "#B3261E", to: "#921F18" },
   },
 
@@ -79,7 +79,7 @@ export const darkColors = {
   neutral100: "#201F1B",
   neutral200: "#2C2B26",
   neutral300: "#3B392F",
-  neutral500: "#93907F",
+  neutral500: "#9A9786",
   neutral700: "#C7C4B8",
   neutral900: "#F3F2EE",
 
@@ -87,7 +87,7 @@ export const darkColors = {
   surface: "#191815",
   surfaceSunken: "#2C2B26",
   onSurface: "#F3F2EE",
-  onSurfaceMuted: "#93907F",
+  onSurfaceMuted: "#9A9786",
   onPrimary: "#121110",
   onDanger: "#121110",
   border: "#2C2B26",
@@ -99,7 +99,7 @@ export const darkColors = {
   dueSoonBg: "#332506",
   overdue: "#F17B72",
   overdueBg: "#3A1512",
-  draft: "#93907F",
+  draft: "#9A9786",
   draftBg: "#201F1B",
 
   info: "#6B8AFF",

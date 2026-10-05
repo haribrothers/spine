@@ -19,7 +19,7 @@ export const ContextMenuContent = forwardRef<
     <ContextMenuPrimitive.Content
       ref={ref}
       className={cn(
-        "z-[var(--z-popover)] min-w-[10rem] overflow-hidden rounded-md border border-border bg-surface p-1 shadow-[0_4px_14px_rgba(33,31,26,0.10)]",
+        "z-[var(--z-popover)] min-w-[10rem] overflow-hidden rounded-md border border-border bg-surface p-1 shadow-raised",
         className,
       )}
       {...props}
@@ -134,7 +134,7 @@ export const ContextMenuSubContent = forwardRef<
     <ContextMenuPrimitive.SubContent
       ref={ref}
       className={cn(
-        "z-[var(--z-popover)] min-w-[8rem] overflow-hidden rounded-md border border-border bg-surface p-1 shadow-[0_4px_14px_rgba(33,31,26,0.10)]",
+        "z-[var(--z-popover)] min-w-[8rem] overflow-hidden rounded-md border border-border bg-surface p-1 shadow-raised",
         className,
       )}
       {...props}

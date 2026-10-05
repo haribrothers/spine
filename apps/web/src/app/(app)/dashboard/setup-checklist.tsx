@@ -99,7 +99,7 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
             const done = status[item.key];
             return (
               <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
-                <Checkbox checked={done} disabled />
+                <Checkbox checked={done} disabled aria-label={`${item.label}${done ? " (done)" : ""}`} />
                 {done ? <span className="text-on-surface-muted line-through">{item.label}</span> : <Link href={item.href}>{item.label}</Link>}
               </li>
             );

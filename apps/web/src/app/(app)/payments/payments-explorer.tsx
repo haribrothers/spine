@@ -106,6 +106,7 @@ export function PaymentsExplorer() {
           value={contactFilter}
           onValueChange={setContactFilter}
           placeholder="All contacts"
+          aria-label="Filter by contact"
           className="w-48"
         />
         {canCreate && <Button onClick={() => setNewPaymentOpen(true)}>Record payment</Button>}

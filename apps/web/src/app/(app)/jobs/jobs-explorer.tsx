@@ -90,6 +90,7 @@ export function JobsExplorer() {
             value={contactFilter}
             onValueChange={setContactFilter}
             placeholder="All contacts"
+            aria-label="Filter by contact"
             className="w-48"
           />
         </div>

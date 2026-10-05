@@ -87,7 +87,7 @@ export function GroupedBarChart({ data, series, marker, formatTick, renderToolti
             content={({ active, payload }) => {
               const row = payload?.[0]?.payload as GroupedBarChartRow | undefined;
               if (!active || !row) return null;
-              return <div className="rounded-md border border-border bg-surface p-2.5 text-[12px] text-on-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]">{renderTooltip(row)}</div>;
+              return <div className="rounded-md border border-border bg-surface p-2.5 text-[12px] text-on-surface shadow-raised">{renderTooltip(row)}</div>;
             }}
           />
           {series.map((s) => (

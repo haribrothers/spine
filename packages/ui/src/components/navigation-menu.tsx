@@ -73,7 +73,7 @@ export const NavigationMenuViewport = forwardRef<
     <NavigationMenuPrimitive.Viewport
       ref={ref}
       className={cn(
-        "relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full origin-top-center overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)] md:w-[var(--radix-navigation-menu-viewport-width)]",
+        "relative mt-1.5 h-[var(--radix-navigation-menu-viewport-height)] w-full origin-top-center overflow-hidden rounded-md border border-border bg-surface shadow-raised md:w-[var(--radix-navigation-menu-viewport-width)]",
         className,
       )}
       {...props}

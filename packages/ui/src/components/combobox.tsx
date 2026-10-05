@@ -86,7 +86,7 @@ export function Combobox({
         <Popover.Content
           align="start"
           sideOffset={4}
-          className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-[0_4px_14px_rgba(33,31,26,0.10)]"
+          className="z-[var(--z-popover)] w-[var(--radix-popover-trigger-width)] overflow-hidden rounded-md border border-border bg-surface shadow-raised"
         >
           <CommandPrimitive shouldFilter className="w-full">
             <CommandPrimitive.Input

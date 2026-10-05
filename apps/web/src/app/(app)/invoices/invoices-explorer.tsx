@@ -145,6 +145,7 @@ export function InvoicesExplorer() {
             value={contactFilter}
             onValueChange={setContactFilter}
             placeholder="All contacts"
+            aria-label="Filter by contact"
             className="w-48"
           />
         </div>

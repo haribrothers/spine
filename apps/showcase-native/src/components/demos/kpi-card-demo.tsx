@@ -27,7 +27,7 @@ export function KpiCardDemo() {
               value="6"
               trend="2 due this week"
               icon={ClipboardList}
-              gradient={{ from: "#9A6300", to: "#7E5100" }}
+              gradient={{ from: "#946000", to: "#7E5100" }}
               gradientId="demo-due-soon"
             />
           </View>

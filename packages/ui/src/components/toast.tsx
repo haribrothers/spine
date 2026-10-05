@@ -39,7 +39,7 @@ export const Toast = forwardRef<
   <ToastPrimitive.Root
     ref={ref}
     className={cn(
-      "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-[0_4px_14px_rgba(33,31,26,0.16)] transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
+      "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-toast transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
       className,
     )}
     {...props}

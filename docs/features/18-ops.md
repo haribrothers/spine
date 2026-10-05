@@ -389,7 +389,7 @@ Decision: D-099
 - **Given** dark mode, **when** a danger button, filled status chip, avatar or notification badge renders, **then** its text uses the matching `on-*` token and meets 4.5:1.
 - **Given** light mode, **when** the same controls render, **then** they keep white text on the light-mode fills.
 - **Given** the token contrast test, **when** it runs, **then** it fails if any `on-*`/fill pair is below 4.5:1 in either mode.
-- **Given** a native text field in dark mode, **when** it's empty, **then** its placeholder uses `on-surface-muted` for the current mode (`#93907F`), not the fixed light value `#726C5A` (3.4:1 on the dark surface).
+- **Given** a native text field in dark mode, **when** it's empty, **then** its placeholder uses `on-surface-muted` for the current mode (`#9A9786`), not the fixed light value `#726C5A` (3.4:1 on the dark surface).
 
 **Implementation notes**
 - Tokens: add `on-primary`, `on-danger` (light `#FFFFFF`, dark `#121110`) to `docs/DESIGN.md` front matter → `packages/config/tailwind-preset.css` and `packages/ui-native/src/tokens`; replace `text-white` on filled variants in `@spine/ui` (`button.tsx`, `badge.tsx`, `avatar.tsx` and others found by grep).

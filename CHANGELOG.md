@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-26: use every new screen in dark mode (Phase 7)
+
+- **Sweep**: every Phase 7 screen is checked in light and dark mode, with a screenshot of each attached to the test report and axe (WCAG 2.1 A/AA, contrast included) passing in both. The screens are the Owner and Field dashboards, the search palette, invoices with bulk selection, Settings › Automatic reminders and Data export, the audit log, Activity, Profile › Notifications, recurring invoices, job costing and the job profitability report.
+- **What the sweep caught and fixed**:
+  - Light `due-soon` and `category-amber` text (`#9A6300`) was 4.46:1 on its tint. It's now `#946000` (4.72:1).
+  - Dark muted text (`#93907F`) was 4.41:1 on sunken surfaces such as table headers and the palette footer. It's now `#9A9786` (4.83:1).
+  - Both values are updated in `tokens.json`, the web preset, the native tokens and the design docs.
+  - The setup checklist's checkboxes and the contact filter on Invoices, Quotes, Payments, Jobs and Credit notes had no accessible name. They're labelled now.
+- **Overlays and elevation as tokens**: dialogs, alert dialogs, drawers and the search palette sit on a new `scrim` token, darkened to 62% in dark mode. Menus, popovers, dialogs and toasts use new `shadow-raised`, `shadow-overlay` and `shadow-toast` tokens, which are stronger in dark mode, so surfaces stay distinct from the page. These replace the raw `bg-black/30` and `rgba(...)` shadows in 16 `@spine/ui` components.
+- **Dashboard**: money-out bars use `border-strong`, as in the dark design. The sidebar shows the light wordmark in dark mode (already in place; now tested).
+- **Emails and PDFs**: emails declare a light colour scheme and carry only light values (tested). PDFs have no theme.
+- **E2E**: a shared axe helper (`tests/axe.ts`) injects `axe-core` (new dev dependency, already used by `@spine/ui`).
+
+Tests:
+- `apps/e2e/tests/us-ops-26.spec.ts` (25): 12 screens in each theme (page colours from tokens, a screenshot, axe), plus dark-mode wordmark, scrim, palette surface and money-out bar colour.
+- `apps/api/src/modules/email/us-ops-26.test.ts` (2): emails are light only.
+
 ### 2026-10-05 — US-OPS-23: use search with the keyboard and a screen reader (Phase 7)
 
 - **Screen readers**: the palette is announced as a dialog named "Search". The field is a combobox controlling a listbox of options.

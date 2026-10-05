@@ -99,7 +99,7 @@ export function MoneyInOutChart() {
               data={rows}
               series={[
                 { key: "in", label: "Money in (payments received)", color: "var(--color-primary)" },
-                { key: "out", label: "Money out (bills, expenses)", color: "var(--color-on-surface-muted)" },
+                { key: "out", label: "Money out (bills, expenses)", color: "var(--color-border-strong)" },
               ]}
               formatTick={(v) => compact.format(v / scale)}
               renderTooltip={(row) => {

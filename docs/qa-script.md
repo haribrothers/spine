@@ -2845,6 +2845,18 @@ Regression: ⌘K inside the palette doesn't open a second one. The sidebar foote
 
 Regression: other dialogs (Settings, confirmations) still return focus as before. Comboboxes elsewhere (contact pickers) still filter and select as before.
 
+## 100. Dark mode on Phase 7 screens (US-OPS-26, Phase 7)
+
+1. Switch Profile › Appearance to Dark. The sidebar shows the light "spine" wordmark.
+2. Dashboard: cards are a shade lighter than the page. Status colours are the dark ones (green paid, amber due soon, coral overdue, blue primary). In "Money in and out" the money-out bars are dark grey and the money-in bars blue. Sparklines and the aging bar read clearly.
+3. Press ⌘K: the page behind is clearly darkened, and the palette's panel stands off it. Do the same with a Settings dialog, a confirmation dialog, a drawer (an invoice's payment drawer) and a dropdown menu.
+4. Check Invoices with rows ticked, Settings › Automatic reminders and Data export, Team › Audit log, Activity, Profile › Notifications, Recurring invoices, a job's Costing tab and Reports › Job profitability. No text is hard to read, and table headers and the palette footer are legible.
+5. Light mode: the "due soon" chips and amber avatars read clearly on their tints.
+6. Send an invoice email and download a PDF while in dark mode: both are light.
+7. With a screen reader, the setup checklist's ticks and the "All contacts" filters announce their names.
+
+Regression: light mode looks as before apart from the slightly darker amber. Shadows under menus and dialogs look the same in light mode.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -22,8 +22,11 @@
      4.5:1 body-text minimum) to #726c5a, which clears 4.5:1 against every
      surface this token is composited over (--color-surface,
      --color-surface-sunken, --color-draft-bg) since it backs both
-     --color-on-surface-muted and --color-draft. Dark mode's #93907f already
-     passed and is unchanged. */
+     --color-on-surface-muted and --color-draft. Dark mode's value was #93907f
+     until US-OPS-26 (2026-10-05) measured it at 4.41:1 on dark
+     --color-surface-sunken; it's now #9a9786 (4.83:1 there, more elsewhere).
+     The same sweep moved light --color-due-soon/--color-category-amber from
+     #9a6300 (4.46:1 on --color-due-soon-bg) to #946000 (4.72:1). */
   --color-neutral-500: #726c5a;
   --color-neutral-700: #4b473e;
   --color-neutral-900: #211f1a;
@@ -54,7 +57,7 @@
      paid-bg — fails 4.5:1 at the 12px chip text size) to #177044 (5.40:1). */
   --color-paid: #177044;
   --color-paid-bg: #e4f5eb;
-  --color-due-soon: #9a6300;
+  --color-due-soon: #946000;
   --color-due-soon-bg: #fcf0d4;
   --color-overdue: #b3261e;
   --color-overdue-bg: #fbe6e4;
@@ -71,7 +74,7 @@
   --color-category-blue-bg: #eaeffd;
   --color-category-green: #1a7f4b;
   --color-category-green-bg: #e4f5eb;
-  --color-category-amber: #9a6300;
+  --color-category-amber: #946000;
   --color-category-amber-bg: #fcf0d4;
   --color-category-red: #b3261e;
   --color-category-red-bg: #fbe6e4;
@@ -88,6 +91,13 @@
   --color-category-pink-bg: #fbe4f1;
   --color-category-slate: var(--color-neutral-700);
   --color-category-slate-bg: var(--color-neutral-100);
+
+  /* US-OPS-26 (D-100) — the dimmed backdrop behind dialogs, drawers and the search palette, and the shadows that lift
+     menus and dialogs off the page. Dark mode darkens both so surfaces stay distinct from the background. */
+  --color-scrim: rgba(18, 17, 16, 0.32);
+  --shadow-raised: 0 4px 14px rgba(33, 31, 26, 0.1);
+  --shadow-overlay: 0 10px 30px rgba(33, 31, 26, 0.14);
+  --shadow-toast: 0 4px 14px rgba(33, 31, 26, 0.16);
 
   --radius-none: 0px;
   --radius-sm: 6px;
@@ -134,7 +144,7 @@
   --color-neutral-100: #201f1b;
   --color-neutral-200: #2c2b26;
   --color-neutral-300: #3b392f;
-  --color-neutral-500: #93907f;
+  --color-neutral-500: #9a9786;
   --color-neutral-700: #c7c4b8;
   --color-neutral-900: #f3f2ee;
 
@@ -176,6 +186,11 @@
   --color-category-pink-bg: #3a1b2c;
   --color-category-slate: var(--color-neutral-700);
   --color-category-slate-bg: var(--color-neutral-100);
+
+  --color-scrim: rgba(0, 0, 0, 0.62);
+  --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
+  --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
+  --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -187,7 +202,7 @@
     --color-neutral-100: #201f1b;
     --color-neutral-200: #2c2b26;
     --color-neutral-300: #3b392f;
-    --color-neutral-500: #93907f;
+    --color-neutral-500: #9a9786;
     --color-neutral-700: #c7c4b8;
     --color-neutral-900: #f3f2ee;
 
@@ -229,6 +244,11 @@
     --color-category-pink-bg: #3a1b2c;
     --color-category-slate: var(--color-neutral-700);
     --color-category-slate-bg: var(--color-neutral-100);
+
+    --color-scrim: rgba(0, 0, 0, 0.62);
+    --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
+    --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
+    --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
   }
 }
 
@@ -363,6 +383,11 @@
   --color-category-pink-bg: var(--color-category-pink-bg);
   --color-category-slate: var(--color-category-slate);
   --color-category-slate-bg: var(--color-category-slate-bg);
+
+  --color-scrim: var(--color-scrim);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+  --shadow-toast: var(--shadow-toast);
 
   --radius-none: var(--radius-none);
   --radius-sm: var(--radius-sm);

@@ -104,7 +104,7 @@ export function CommandPalette({
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[var(--z-overlay)] bg-black/30" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[var(--z-overlay)] bg-scrim" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
           onCloseAutoFocus={(e) => {
@@ -116,7 +116,7 @@ export function CommandPalette({
             returnTo.current = null;
           }}
           className={cn(
-            "fixed left-1/2 top-[8vh] z-[var(--z-modal)] flex max-h-[80vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_10px_30px_rgba(33,31,26,0.14)] focus:outline-none motion-safe:animate-palette-in",
+            "fixed left-1/2 top-[8vh] z-[var(--z-modal)] flex max-h-[80vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-overlay focus:outline-none motion-safe:animate-palette-in",
             className,
           )}
           data-testid="command-palette"
