@@ -43,7 +43,7 @@ export function attentionHref(item: AttentionItem): string {
       // The oldest one's contact, where its Activities live; a lead without a contact opens the pipeline.
       return first?.contactId ? `/contacts/${first.contactId}` : "/leads";
     case "expenses_rejected":
-      return "/expenses?mine=true";
+      return one ? `/expenses?id=${first.id}` : "/expenses?mine=true&status=rejected";
   }
 }
 
@@ -65,6 +65,7 @@ export function AttentionCard({
   note,
   today,
   actionFor,
+  emptyText = "Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you.",
   className,
 }: {
   /** Null while loading. */
@@ -74,6 +75,8 @@ export function AttentionCard({
   today: string;
   /** The button for a row; defaults to a link. */
   actionFor?: (item: AttentionItem, label: string) => AttentionRowAction;
+  /** The caught-up line; Field's never mentions money (US-DASH-18). */
+  emptyText?: string;
   className?: string;
 }) {
   if (items !== null && items.length === 0) {
@@ -83,7 +86,7 @@ export function AttentionCard({
           <Check size={20} aria-hidden />
         </span>
         <h2 className="text-[16px] font-semibold text-on-surface">You&apos;re all caught up</h2>
-        <p className="max-w-sm text-[13px] text-on-surface-muted">Overdue invoices, approvals, expiring quotes and bills due will show up here when they need you.</p>
+        <p className="max-w-sm text-[13px] text-on-surface-muted">{emptyText}</p>
       </Card>
     );
   }

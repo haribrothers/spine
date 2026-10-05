@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-18: a field dashboard of my day (Phase 7)
+
+- **Header**: "<n> jobs on your list · <n> things need you" (or "nothing needs you right now").
+- **Needs your attention, for Field**: milestones due within 7 days on their assigned jobs ("Mark complete" opens the job), and their rejected expenses with the reviewer's reason and name ("Fix and resubmit" opens the expense). The caught-up message never mentions money.
+- **My jobs**: each assigned active job with its name, number, customer, site address, next milestone, and "Directions" (opens a map route). There are no money fields.
+- **My expenses**: the last 5 with category, date, amount and an "Approved", "Rejected" or "Submitted" chip. "Submit expense" opens the form.
+- **Recent activity on my jobs**: job and milestone events on assigned jobs only. There are no quote, payment or expense events.
+- **Layout**: [attention | Today] on top, [My jobs | My expenses] below, then the feed. These cards are Field-only, and Edit layout works on them.
+- **API.** `GET /dashboard/attention` adds the Field kinds. `GET /jobs?include=next_milestone` adds `nextMilestone`, and `include` now takes a comma list. The feed filters Field to assigned jobs. Expenses opens `?id=`, `?new=1` and `?mine=true` from links. The feed's expense links now open the expense; they pointed at a page that didn't exist.
+
+Tests:
+- `apps/api/src/modules/dashboard/us-dash-18.http.integration.test.ts` (3): Field attention rows and wording; my jobs with next milestone and no money; the feed limited to assigned jobs.
+- `apps/e2e/tests/us-dash-18.spec.ts` (1): header, cards, Directions, the 5-expense cap, and no money anywhere.
+
 ### 2026-10-05 — US-DASH-17: a staff dashboard of only what I can act on (Phase 7)
 
 - **Needs your attention, for Staff**: "Only things you can act on". Kinds come from their Team's grants as before, plus "<n> follow-ups are overdue" for their own follow-ups. "Open" goes to the oldest one's contact. Expiring quotes are their own and read "Your quote QUO-0004 expires Friday". Their own submitted expense never appears (D-085).

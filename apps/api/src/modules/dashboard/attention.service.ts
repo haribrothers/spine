@@ -4,7 +4,7 @@ import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "dri
 import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, contacts, expenseCategories, expenses, invoices, jobs, leads, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
+import { activities, contacts, expenseCategories, expenses, invoices, jobAssignments, jobs, leads, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { costByJob } from "../jobs/job-costing.service";
 
@@ -32,6 +32,10 @@ function addDays(date: string, days: number): string {
  *
  * US-DASH-17 — Staff also get their own overdue follow-ups, and expiring
  * quotes are only their own ("Your quote …").
+ *
+ * US-DASH-18 — Field get only milestones due within 7 days on their
+ * assigned jobs and their own rejected expenses; nothing with money
+ * belonging to anyone else.
  */
 @Injectable()
 export class AttentionService {
@@ -39,10 +43,14 @@ export class AttentionService {
 
   async list(orgId: string, userId: string): Promise<AttentionItem[]> {
     const role = await getMemberRole(this.db, orgId, userId);
-    if (role !== "owner" && role !== "staff") return [];
-    const can = await getEffectiveCapabilities(this.db, { orgId, userId });
+    if (role !== "owner" && role !== "staff" && role !== "field") return [];
     const currency = await this.currency(orgId);
     const today = orgClock().date;
+    if (role === "field") {
+      const fieldRows = [await this.milestonesDue(orgId, userId, today, currency), await this.expensesRejected(orgId, userId, currency)];
+      return fieldRows.filter((r) => r.count > 0);
+    }
+    const can = await getEffectiveCapabilities(this.db, { orgId, userId });
 
     const rows: (AttentionItem | null)[] = [
       await this.invoicesOverdue(orgId, today, currency),
@@ -173,6 +181,40 @@ export class AttentionService {
       rows.length,
       currency,
       rows.map((r) => ({ id: r.id, name: r.notes?.trim() || TYPE[r.type] || "Follow-up", party: r.contactId ? (names.get(r.contactId) ?? null) : null, contactId: r.contactId, date: isoDate(r.dueAt) })),
+    );
+  }
+
+  /** US-DASH-18 — pending milestones due within 7 days (or already late) on jobs the member is assigned to. */
+  private async milestonesDue(orgId: string, userId: string, today: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: milestones.id, name: milestones.name, jobId: jobs.id, jobName: jobs.name, dueDate: milestones.dueDate })
+      .from(milestones)
+      .innerJoin(jobs, eq(milestones.jobId, jobs.id))
+      .innerJoin(jobAssignments, and(eq(jobAssignments.jobId, jobs.id), eq(jobAssignments.userId, userId)))
+      .where(and(eq(milestones.orgId, orgId), eq(milestones.status, "pending"), isNotNull(milestones.dueDate), lte(milestones.dueDate, new Date(`${addDays(today, 7)}T00:00:00Z`))))
+      .orderBy(asc(milestones.dueDate), asc(milestones.sequence));
+    return this.item(
+      "milestones_due",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, name: r.name, party: r.jobName, jobId: r.jobId, date: isoDate(r.dueDate) })),
+    );
+  }
+
+  /** US-DASH-18 — the member's own expenses sent back, with the reviewer's reason and name. */
+  private async expensesRejected(orgId: string, userId: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: expenses.id, category: expenseCategories.name, amount: expenses.amount, comment: expenses.reviewComment, reviewer: user.name, rejectedAt: expenses.rejectedAt })
+      .from(expenses)
+      .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      .leftJoin(user, eq(expenses.rejectedByUserId, user.id))
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.status, "rejected"), eq(expenses.submittedByUserId, userId)))
+      .orderBy(sql`${expenses.rejectedAt} desc nulls last`);
+    return this.item(
+      "expenses_rejected",
+      rows.length,
+      currency,
+      rows.map((r) => ({ id: r.id, party: r.category, amount: r.amount.toString(), note: r.comment, name: r.reviewer, date: isoDate(r.rejectedAt) })),
     );
   }
 

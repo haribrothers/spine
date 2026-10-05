@@ -28,13 +28,17 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
-  { key: "money-in-out", capability: "reports.view_dashboard_summary" as Capability, ownerOnly: false },
-  { key: "pipeline-by-stage", capability: null, ownerOnly: false },
-  { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false },
-  { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false },
-  { key: "activity-feed", capability: null, ownerOnly: false },
-  { key: "invoices-due", capability: null, ownerOnly: false },
-] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean }[];
+  { key: "money-in-out", capability: "reports.view_dashboard_summary" as Capability, ownerOnly: false, fieldOnly: false },
+  { key: "pipeline-by-stage", capability: null, ownerOnly: false, fieldOnly: false },
+  { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false, fieldOnly: false },
+  { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false, fieldOnly: false },
+  { key: "activity-feed", capability: null, ownerOnly: false, fieldOnly: false },
+  { key: "invoices-due", capability: null, ownerOnly: false, fieldOnly: false },
+  // US-DASH-18 — a Field user's own cards.
+  { key: "my-jobs", capability: null, ownerOnly: false, fieldOnly: true },
+  { key: "my-expenses", capability: null, ownerOnly: false, fieldOnly: true },
+  { key: "my-activity", capability: null, ownerOnly: false, fieldOnly: true },
+] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean; fieldOnly: boolean }[];
 
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGETS)[number]["key"];
 

@@ -166,7 +166,7 @@ export function describeAttention(item: AttentionItem, money: (minor: string) =>
     case "expenses_rejected":
       return {
         title: n === 1 ? "Your expense was rejected" : `${n} of your expenses were rejected`,
-        detail: join([first.party, amount, first.note && `“${first.note}”`, more]),
+        detail: join([first.party, amount, first.note && `“${first.note}”${first.name ? ` — ${first.name}` : ""}`, more]),
         action: "Fix and resubmit",
       };
   }
@@ -175,6 +175,11 @@ export function describeAttention(item: AttentionItem, money: (minor: string) =>
 /** The header's "<n> things need you today", or "nothing needs you right now". */
 export function attentionSummary(rows: number): string {
   return rows === 0 ? "nothing needs you right now" : `${rows} ${rows === 1 ? "thing needs" : "things need"} you today`;
+}
+
+/** US-DASH-18 — a Field user's header: "2 jobs on your list · 2 things need you". */
+export function fieldSummary(jobs: number, rows: number): string {
+  return `${jobs} ${jobs === 1 ? "job" : "jobs"} on your list · ${rows === 0 ? "nothing needs you right now" : `${rows} ${rows === 1 ? "thing needs" : "things need"} you`}`;
 }
 
 /** "Good morning|afternoon|evening" for an hour 0–23. */

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AppShellHeader, Button, DragHandle, HideToggle, ReorderableItem, ReorderableList, useReorderableItemDragState } from "@spine/ui";
-import { DASHBOARD_WIDGETS, attentionSummary, greetingFor, mergeDashboardLayout, type AttentionItem, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
+import { DASHBOARD_WIDGETS, attentionSummary, fieldSummary, greetingFor, mergeDashboardLayout, type AttentionItem, type DashboardLayout, type DashboardWidgetKey } from "@spine/shared";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { KpiRow } from "./kpi-row";
@@ -30,28 +30,27 @@ function localToday(): string {
  * sees only the 4 widgets that have no financial capability attached.
  */
 function visibleKeysForRole(role: string | null): DashboardWidgetKey[] {
-  if (role === "field") {
-    return ["activity-feed"];
-  }
-  return DASHBOARD_WIDGETS.filter((w) => role === "owner" || !w.ownerOnly).map((w) => w.key);
+  // US-DASH-18: Field get their own cards; nobody else sees them.
+  if (role === "field") return DASHBOARD_WIDGETS.filter((w) => w.fieldOnly).map((w) => w.key);
+  return DASHBOARD_WIDGETS.filter((w) => !w.fieldOnly && (role === "owner" || !w.ownerOnly)).map((w) => w.key);
 }
 
 /** Widgets two columns wide on a large screen (US-DASH-15); the rest are one. */
 const WIDE_KEYS = new Set<string>(["money-in-out"]);
 /** Widgets that fill whatever is left of their row. */
-const FILL_KEYS = new Set<string>(["activity-feed"]);
+const FILL_KEYS = new Set<string>(["activity-feed", "my-activity"]);
 const SPAN_CLASS: Record<number, string> = { 1: "", 2: "lg:col-span-2", 3: "lg:col-span-3" };
 
-/** Each cell's column span in the 3-column grid, walking the cells in order. */
-function columnSpans(keys: string[]): Map<string, number> {
+/** Each cell's column span in a grid of `columns`, walking the cells in order. */
+function columnSpans(keys: string[], columns: number): Map<string, number> {
   const spans = new Map<string, number>();
   let col = 0;
   for (const key of keys) {
-    let span = WIDE_KEYS.has(key) ? 2 : 1;
-    if (col + span > 3) col = 0;
-    if (FILL_KEYS.has(key)) span = 3 - col;
+    let span = Math.min(WIDE_KEYS.has(key) ? 2 : 1, columns);
+    if (col + span > columns) col = 0;
+    if (FILL_KEYS.has(key)) span = columns - col;
     spans.set(key, span);
-    col = (col + span) % 3;
+    col = (col + span) % columns;
   }
   return spans;
 }
@@ -95,6 +94,8 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   // US-DASH-16: Today sits beside "Needs your attention", or — while the
   // setup checklist takes that row — beside the first widget.
   const [checklistShown, setChecklistShown] = useState(false);
+  // US-DASH-18: a Field user's header counts their active jobs.
+  const [fieldJobs, setFieldJobs] = useState<number | null>(null);
   const canSendReminder = useCapability("invoices.send_reminder");
   const [reminding, setReminding] = useState(false);
   const { show: showToast, toast } = useEntityToast();
@@ -138,6 +139,14 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   }
 
   useEffect(() => {
+    if (role !== "field") return;
+    apiClient
+      .get<unknown[]>("/jobs?assignedToMe=true&status=active")
+      .then((rows) => setFieldJobs(rows.length))
+      .catch(() => setFieldJobs(0));
+  }, [role]);
+
+  useEffect(() => {
     loadAttention();
     apiClient
       .get<{ value: { name?: string } | null }>("/org/settings/business_profile")
@@ -176,11 +185,15 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   const todayInGrid = role === "owner" && checklistShown;
   const cells = displayed.map((e) => e.widgetKey);
   if (todayInGrid) cells.splice(Math.min(1, cells.length), 0, TODAY_CELL);
-  const spans = columnSpans(cells);
+  const columns = role === "field" ? 2 : 3;
+  const spans = columnSpans(cells, columns);
 
   const firstName = userName?.trim().split(/\s+/)[0];
   const dateLine = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
-  const subtitle = [dateLine, business, attention ? attentionSummary(attention.length) : null].filter(Boolean).join(" · ");
+  const subtitle =
+    role === "field"
+      ? [dateLine, attention && fieldJobs !== null ? fieldSummary(fieldJobs, attention.length) : null].filter(Boolean).join(" · ")
+      : [dateLine, business, attention ? attentionSummary(attention.length) : null].filter(Boolean).join(" · ");
 
   return (
     <div className="flex flex-col gap-6">
@@ -208,20 +221,19 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
 
       <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
         {role === "owner" && <SetupChecklist className="lg:col-span-2" onVisibleChange={setChecklistShown} />}
-        {role !== "field" && (
-          <AttentionCard
-            className={checklistShown ? undefined : "lg:col-span-2"}
-            items={attention}
-            today={localToday()}
-            note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"}
-            actionFor={actionFor}
-          />
-        )}
+        <AttentionCard
+          className={checklistShown ? undefined : "lg:col-span-2"}
+          items={attention}
+          today={localToday()}
+          note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"}
+          actionFor={actionFor}
+          emptyText={role === "field" ? "Milestones due on your jobs and expenses sent back to you will show up here." : undefined}
+        />
         {!todayInGrid && <TodayCard />}
       </div>
       {role !== "field" && <KpiRow />}
 
-      <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
+      <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className={`grid grid-cols-1 items-stretch gap-4 ${columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}>
         {cells.map((key) => {
           const spanClass = SPAN_CLASS[spans.get(key) ?? 1] ?? "";
           if (key === TODAY_CELL) {

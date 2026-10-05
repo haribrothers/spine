@@ -2711,6 +2711,18 @@ Regression: Settings › Upcoming meetings ("Only my meetings" / "Every org meet
 
 Regression: the Owner's attention list and KPI row are unchanged, with no follow-ups row. Quotes opened from the sidebar show every status.
 
+## 89. Field dashboard (US-DASH-18, Phase 7)
+
+1. As Owner, assign the Field user to an active job with a site address and a pending milestone due within 7 days. Reject one of the Field user's expenses with a reason.
+2. Log in as the Field user. The header reads "1 job on your list · 2 things need you".
+3. "Needs your attention" shows "Milestone due <day>" with "Mark complete", and "Your expense was rejected" with the category, amount, the reason in quotes, and the reviewer's name, plus "Fix and resubmit". Each button opens the job or the expense.
+4. "My jobs" lists the job with its number, customer, site address and "Next: <milestone> · due <day>". "Directions" opens a map route in a new tab.
+5. "My expenses" shows up to 5 expenses with date, amount and an Approved, Rejected or Submitted chip. "Submit expense" opens the form.
+6. "Recent activity on my jobs" shows only milestone and job events on assigned jobs. No quotes or payments appear.
+7. Nowhere on the page is a contract value, invoice, payment or report figure. Check both themes.
+
+Regression: Owner and Staff dashboards don't show the Field cards. Expenses opened from the sidebar has the "Mine" toggle off and no drawer open.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

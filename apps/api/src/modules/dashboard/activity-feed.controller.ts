@@ -29,6 +29,6 @@ export class ActivityFeedController {
       .select({ role: member.role })
       .from(member)
       .where(and(eq(member.organizationId, orgId), eq(member.userId, session.user.id)));
-    return this.activityFeedService.list(orgId, membership?.role ?? null);
+    return this.activityFeedService.list(orgId, membership?.role ?? null, session.user.id);
   }
 }

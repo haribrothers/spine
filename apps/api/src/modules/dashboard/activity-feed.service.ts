@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, desc, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { formatMoney } from "@spine/shared";
@@ -11,6 +11,7 @@ import {
   contacts,
   expenses,
   expenseCategories,
+  jobAssignments,
   jobs,
   milestones,
 } from "../../db/schema";
@@ -47,15 +48,20 @@ export class ActivityFeedService {
    * PRD's "financial-events-excluded activity feed" requirement for
    * Field's dashboard layout.
    */
-  async list(orgId: string, role: string | null): Promise<ActivityFeedEntry[]> {
+  async list(orgId: string, role: string | null, userId?: string): Promise<ActivityFeedEntry[]> {
     const includeFinancial = role !== "field";
+    // US-DASH-18: Field see events on their assigned jobs only — no quotes, no money.
+    const onlyJobs =
+      role === "field" && userId
+        ? (await this.db.select({ jobId: jobAssignments.jobId }).from(jobAssignments).where(eq(jobAssignments.userId, userId))).map((r) => r.jobId)
+        : null;
 
     const [quoteEntries, paymentEntries, expenseEntries, jobEntries, milestoneEntries] = await Promise.all([
-      this.quoteEventEntries(orgId),
+      includeFinancial ? this.quoteEventEntries(orgId) : Promise.resolve([]),
       includeFinancial ? this.paymentEntries(orgId) : Promise.resolve([]),
       includeFinancial ? this.expenseEntries(orgId) : Promise.resolve([]),
-      this.jobEntries(orgId),
-      this.milestoneEntries(orgId),
+      onlyJobs?.length === 0 ? Promise.resolve([]) : this.jobEntries(orgId, onlyJobs),
+      onlyJobs?.length === 0 ? Promise.resolve([]) : this.milestoneEntries(orgId, onlyJobs),
     ]);
 
     return [...quoteEntries, ...paymentEntries, ...expenseEntries, ...jobEntries, ...milestoneEntries]
@@ -119,16 +125,16 @@ export class ActivityFeedService {
       .map((row) => ({
         type: "expense_approved",
         message: `Expense approved — ${row.categoryName}, ${formatMoney(row.expense.amount, row.expense.currency, locale)}`,
-        link: `/expenses/${row.expense.id}`,
+        link: `/expenses?id=${row.expense.id}`,
         occurredAt: row.expense.approvedAt!.toISOString(),
       }));
   }
 
-  private async jobEntries(orgId: string): Promise<ActivityFeedEntry[]> {
+  private async jobEntries(orgId: string, onlyJobs: string[] | null): Promise<ActivityFeedEntry[]> {
     const rows = await this.db
       .select()
       .from(jobs)
-      .where(and(eq(jobs.orgId, orgId), eq(jobs.status, "completed")))
+      .where(and(eq(jobs.orgId, orgId), eq(jobs.status, "completed"), onlyJobs ? inArray(jobs.id, onlyJobs) : undefined))
       .orderBy(desc(jobs.updatedAt))
       .limit(PER_SOURCE_LIMIT);
 
@@ -148,12 +154,12 @@ export class ActivityFeedService {
    * cleared — so this is the real "did a completion event occur" signal,
    * not just "is it currently sitting in the completed state."
    */
-  private async milestoneEntries(orgId: string): Promise<ActivityFeedEntry[]> {
+  private async milestoneEntries(orgId: string, onlyJobs: string[] | null): Promise<ActivityFeedEntry[]> {
     const rows = await this.db
       .select({ milestone: milestones, jobName: jobs.name, jobId: jobs.id })
       .from(milestones)
       .innerJoin(jobs, eq(milestones.jobId, jobs.id))
-      .where(and(eq(milestones.orgId, orgId), isNotNull(milestones.completedAt)))
+      .where(and(eq(milestones.orgId, orgId), isNotNull(milestones.completedAt), onlyJobs ? inArray(milestones.jobId, onlyJobs) : undefined))
       .orderBy(desc(milestones.completedAt))
       .limit(PER_SOURCE_LIMIT);
 

@@ -5,6 +5,13 @@ import { ArAgingDonut } from "./widgets/ar-aging-donut";
 import { JobProfitabilityRanked } from "./widgets/job-profitability-ranked";
 import { InvoicesDue } from "./widgets/invoices-due";
 import { ActivityFeed } from "./widgets/activity-feed";
+import { MyJobs } from "./widgets/my-jobs";
+import { MyExpenses } from "./widgets/my-expenses";
+
+/** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
+function MyActivity() {
+  return <ActivityFeed title="Recent activity on my jobs" />;
+}
 
 /**
  * S-09.13 — maps each `DashboardWidgetKey` (from the shared registry) to
@@ -23,6 +30,9 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   "job-profitability": "Job profitability",
   "invoices-due": "Invoices due this week",
   "activity-feed": "Recent activity",
+  "my-jobs": "My jobs",
+  "my-expenses": "My expenses",
+  "my-activity": "Recent activity on my jobs",
 };
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
@@ -32,4 +42,7 @@ export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> 
   "job-profitability": JobProfitabilityRanked,
   "invoices-due": InvoicesDue,
   "activity-feed": ActivityFeed,
+  "my-jobs": MyJobs,
+  "my-expenses": MyExpenses,
+  "my-activity": MyActivity,
 };

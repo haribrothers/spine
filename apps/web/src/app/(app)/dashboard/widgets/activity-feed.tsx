@@ -36,7 +36,7 @@ function formatWhen(occurredAt: string): string {
  * widget this one never renders nothing on a 403 — an empty array is the
  * only "nothing to show" case.
  */
-export function ActivityFeed() {
+export function ActivityFeed({ title = "Recent activity" }: { title?: string } = {}) {
   const [entries, setEntries] = useState<ActivityFeedEntry[] | null>(null);
   const [failed, setFailed] = useState(false);
 
@@ -54,7 +54,7 @@ export function ActivityFeed() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-[15px]">Recent activity</CardTitle>
+        <CardTitle className="text-[15px]">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {!entries ? (
@@ -73,7 +73,7 @@ export function ActivityFeed() {
                 </div>
               );
               return entry.link ? (
-                <Link key={`${entry.type}-${i}`} href={entry.link} className="hover:bg-surface-secondary rounded-sm">
+                <Link key={`${entry.type}-${i}`} href={entry.link} className="rounded-sm hover:bg-surface-sunken">
                   {row}
                 </Link>
               ) : (

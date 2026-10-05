@@ -69,9 +69,12 @@ export class JobsController {
       contactId,
       assignedToUserId: field || assignedToMe === "true" ? session.user.id : undefined,
     });
-    if (field) return rows.map(withoutMoney);
+    const includes = new Set((include ?? "").split(",").filter(Boolean));
+    // US-DASH-18: each job's next pending milestone, for the dashboard's "My jobs".
+    const withNext = includes.has("next_milestone") ? await this.jobsService.withNextMilestone(rows) : rows;
+    if (field) return withNext.map(withoutMoney);
     // US-JOB-25: budget used per job, only for members who may see job profitability.
-    return include === "costing" ? this.jobCostingService.withCosting(orgId, session.user.id, rows) : rows;
+    return includes.has("costing") ? this.jobCostingService.withCosting(orgId, session.user.id, withNext) : withNext;
   }
 
   /**

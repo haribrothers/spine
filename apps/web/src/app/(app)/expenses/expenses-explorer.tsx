@@ -49,11 +49,12 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   // US-DASH-13: "Review" on the dashboard opens ?status=submitted.
   const searchParams = useSearchParams();
   const [statusFilter, setStatusFilter] = useState<string[]>(() => searchParams.get("status")?.split(",").filter(Boolean) ?? []);
-  const [mineOnly, setMineOnly] = useState(false);
+  // US-DASH-18: the dashboard links here with ?mine=true, ?id=<expense> (open it) or ?new=1 (the submit form).
+  const [mineOnly, setMineOnly] = useState(() => searchParams.get("mine") === "true");
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
-  const [formOpen, setFormOpen] = useState(false);
-  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(() => searchParams.get("new") === "1");
+  const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(() => searchParams.get("id"));
   const { show: showToast, toast } = useEntityToast();
   // US-PUR-21 — bulk approval. Staff can't review their own expenses (D-085); Owners can.
   const role = useMyRole();

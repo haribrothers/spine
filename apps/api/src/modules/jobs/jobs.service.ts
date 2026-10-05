@@ -1,10 +1,10 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, updateJobSchema } from "@spine/shared";
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines } from "../../db/schema";
+import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines, milestones } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -46,6 +46,24 @@ export class JobsService {
    * "narrow to the requesting user" shape, applied here to job assignment
    * instead of expense submission.
    */
+  /**
+   * US-DASH-18 — each job's next pending milestone (earliest due date, then
+   * board order), for `GET /jobs?include=next_milestone`.
+   */
+  async withNextMilestone<T extends { id: string }>(rows: T[]): Promise<(T & { nextMilestone: { id: string; name: string; dueDate: string | null } | null })[]> {
+    if (rows.length === 0) return [];
+    const pending = await this.db
+      .select({ id: milestones.id, jobId: milestones.jobId, name: milestones.name, dueDate: milestones.dueDate })
+      .from(milestones)
+      .where(and(inArray(milestones.jobId, rows.map((r) => r.id)), eq(milestones.status, "pending")))
+      .orderBy(sql`${milestones.dueDate} asc nulls last`, asc(milestones.sequence));
+    const next = new Map<string, { id: string; name: string; dueDate: string | null }>();
+    for (const m of pending) {
+      if (!next.has(m.jobId)) next.set(m.jobId, { id: m.id, name: m.name, dueDate: m.dueDate ? m.dueDate.toISOString().slice(0, 10) : null });
+    }
+    return rows.map((r) => ({ ...r, nextMilestone: next.get(r.id) ?? null }));
+  }
+
   async list(orgId: string, options: { status?: string; contactId?: string; assignedToUserId?: string }) {
     const conditions = [eq(jobs.orgId, orgId)];
     if (options.contactId) conditions.push(eq(jobs.contactId, options.contactId));

@@ -144,6 +144,7 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 - Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs, their own expenses and contacts.
 - Bulk endpoints run each item through the same capability and ownership checks as the single-item route.
 - Statements require `reports.view_receivables`.
+- The Field dashboard (US-DASH-18) reads only Field-scoped data: `GET /dashboard/attention` gives Field milestones due on their assigned jobs and their own rejected expenses, and nothing else. `GET /dashboard/activity-feed` gives Field job and milestone events on their assigned jobs only, with no quote, payment or expense events. `GET /jobs?include=next_milestone` still strips money fields for Field. `GET /dashboard/kpis` returns `[]` for Field.
 
 ## Added with the construction costing stories (D-125–D-130)
 
