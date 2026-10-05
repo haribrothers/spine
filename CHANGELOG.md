@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-24: set a cost budget for a job (Phase 7)
+
+- **"Edit job"** gains a "Budget and progress" section with "Cost budget" ("What you expect this job to cost. Leave blank if you don't budget it."). A negative amount is refused with "Enter a budget of zero or more."; leaving it blank removes the budget.
+- **Data and API.** `jobs.cost_budget_amount` (migration `0069`, nullable, a target that never posts). `PUT /jobs/:id` takes `costBudgetAmount` (minor units or null) and now answers bad input with a 400 and the first problem, not a server error. Each change is recorded in the job's history ("set the cost budget amount to 32000.00"). Field users never get the budget, in job responses or in history. Applying a variation order doesn't change it (D-125).
+
+Tests:
+- `packages/shared/src/us-job-24.test.ts` (2): minor units or null; negative refused.
+- `apps/api/src/modules/jobs/us-job-24.http.integration.test.ts` (5): save and history, negative refused, variation order leaves it, hidden from Field, cleared.
+- `apps/e2e/tests/us-job-24.spec.ts` (1): the field, its error, saving and clearing.
+
 ### 2026-10-05 — US-ONB-13: start a construction business with site cost categories (Phase 7)
 
 - **Construction / Contracting** (onboarding Template step and Settings › Industry template) now says it "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads." Choosing it adds accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits, plus six expense categories: Materials (5000), Subcontractors (5100), Site labour (5200), Plant & equipment hire (5300), Fuel & freight (5400) and Site overheads & permits (5500). It runs in the same transaction as saving the template (D-129).

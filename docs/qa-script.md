@@ -2554,6 +2554,16 @@ Regression: the Expenses list (filters, "My expenses only", row menu, detail dra
 
 Regression: onboarding's Template step and Settings › Industry template save General Services and Generic as before; Expenses › Categories (add, rename, remap, archive) works in light and dark mode.
 
+## 74. Job cost budget (US-JOB-24, Phase 7)
+
+1. Open a job, press "Edit job": under "Budget and progress", "Cost budget" says "What you expect this job to cost. Leave blank if you don't budget it."
+2. Enter -5 and save: "Enter a budget of zero or more." and nothing saves. Enter 32,000.00 and save; reopen: 32000.00. The job's History shows the change with your name.
+3. Clear the field and save: the job has no budget.
+4. Apply an accepted variation order: the contract value rises, the budget stays the same.
+5. As a Field user, the job API returns no `costBudgetAmount`, and the job history shows no budget changes.
+
+Regression: Edit job still saves name, site address, status, dates, notes and retention % in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

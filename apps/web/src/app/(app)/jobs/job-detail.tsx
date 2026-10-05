@@ -54,6 +54,7 @@ import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { BUDGET_NOT_NEGATIVE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
@@ -317,6 +318,8 @@ function EditJobDialog({
   const [endDate, setEndDate] = useState<Date | undefined>(job.endDate ? new Date(job.endDate) : undefined);
   const [retentionPct, setRetentionPct] = useState(job.retentionPct ?? 0);
   const [notes, setNotes] = useState(job.notes ?? "");
+  const [budget, setBudget] = useState(budgetText(job));
+  const [budgetError, setBudgetError] = useState<string | undefined>();
   const [advancedOpen, setAdvancedOpen] = useState((job.retentionPct ?? 0) > 0 || defaultShowRetention);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -330,6 +333,8 @@ function EditJobDialog({
     setEndDate(job.endDate ? new Date(job.endDate) : undefined);
     setRetentionPct(job.retentionPct ?? 0);
     setNotes(job.notes ?? "");
+    setBudget(budgetText(job));
+    setBudgetError(undefined);
     setAdvancedOpen((job.retentionPct ?? 0) > 0 || defaultShowRetention);
     setError(null);
   }, [open, job, defaultShowRetention]);
@@ -339,10 +344,18 @@ function EditJobDialog({
       setError("Job name is required.");
       return;
     }
+    // US-JOB-24 — blank means "not budgeted".
+    const budgetAmount = budget.trim() ? fromDecimalString(budget.replace(/,/g, "").trim(), job.currency) : null;
+    if (budget.trim() && (budgetAmount === null || budgetAmount < 0n)) {
+      setBudgetError(BUDGET_NOT_NEGATIVE);
+      return;
+    }
+    setBudgetError(undefined);
     setSaving(true);
     setError(null);
     try {
       const updated = await apiClient.put<Job>(`/jobs/${job.id}`, {
+        ...(job.costBudgetAmount !== undefined ? { costBudgetAmount: budgetAmount === null ? null : budgetAmount.toString() } : {}),
         name: name.trim(),
         siteAddress: siteAddress || null,
         status,
@@ -428,6 +441,15 @@ function EditJobDialog({
               </FormField>
             </CollapsibleContent>
           </Collapsible>
+
+          {job.costBudgetAmount !== undefined && (
+            <div className="flex flex-col gap-3 border-t border-border pt-4">
+              <h3 className="text-[13px] font-semibold text-on-surface">Budget and progress</h3>
+              <FormField label="Cost budget" helperText="What you expect this job to cost. Leave blank if you don't budget it." errorText={budgetError}>
+                {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="—" />}
+              </FormField>
+            </div>
+          )}
         </DialogBody>
         <DialogFooter>
           <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
@@ -440,4 +462,13 @@ function EditJobDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+/** The budget as the field shows it ("32000.00"), or blank when the job has none. */
+function budgetText(job: Job): string {
+  if (!job.costBudgetAmount) return "";
+  // An editable number, not a display amount: digits and a decimal point only.
+  const exp = minorUnitExponent(job.currency);
+  const digits = job.costBudgetAmount.padStart(exp + 1, "0");
+  return exp ? `${digits.slice(0, -exp)}.${digits.slice(-exp)}` : digits;
 }

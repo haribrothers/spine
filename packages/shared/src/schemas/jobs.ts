@@ -25,6 +25,8 @@ export const createJobSchema = z.object({
   notes: z.string().optional().nullable(),
 });
 
+export const BUDGET_NOT_NEGATIVE = "Enter a budget of zero or more.";
+
 export const updateJobSchema = z.object({
   name: z.string().min(1).optional(),
   siteAddress: z.string().optional().nullable(),
@@ -32,6 +34,8 @@ export const updateJobSchema = z.object({
   startDate: z.coerce.date().optional().nullable(),
   endDate: z.coerce.date().optional().nullable(),
   retentionPct: z.coerce.number().min(0).max(100).optional(),
+  /** US-JOB-24 — minor units; null clears the budget. */
+  costBudgetAmount: z.union([z.null(), z.coerce.bigint().refine((v) => v >= 0n, BUDGET_NOT_NEGATIVE)]).optional(),
   notes: z.string().optional().nullable(),
 });
 

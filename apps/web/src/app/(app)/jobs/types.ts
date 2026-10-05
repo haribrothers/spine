@@ -20,6 +20,8 @@ export interface Job {
   /** Absent for Field users: the API never sends them a job's money (US-JOB-19). */
   contractValueAmount?: string;
   retentionPct?: number;
+  /** US-JOB-24 — minor units; null when not budgeted; absent for Field users. */
+  costBudgetAmount?: string | null;
   notes: string | null;
   createdByUserId: string | null;
   isDemo: boolean;

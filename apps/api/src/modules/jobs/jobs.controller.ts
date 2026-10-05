@@ -1,5 +1,5 @@
 import { JobAccessService, historyWithoutMoney, withoutMoney } from "./job-access.service";
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import {
@@ -139,8 +139,9 @@ export class JobsController {
   @OrgRoles(["owner", "staff"])
   async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const input = updateJobSchema.parse(body);
-    return this.jobsService.update(orgId, id, session.user.id, input);
+    const parsed = updateJobSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the job and try again.");
+    return this.jobsService.update(orgId, id, session.user.id, parsed.data);
   }
 
   /** Phase 5 (Mobile) — who's on a job's crew. Read is unconditional, same as every other GET on this controller. */

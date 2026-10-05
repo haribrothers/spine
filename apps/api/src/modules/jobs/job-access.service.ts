@@ -6,7 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import { jobAssignments, jobs } from "../../db/schema";
 
 /** Fields Field users never receive on a job, a milestone or their history (D-072). */
-export const JOB_MONEY_FIELDS = ["contractValueAmount", "retentionPct", "amount", "resolvedAmount"] as const;
+export const JOB_MONEY_FIELDS = ["contractValueAmount", "retentionPct", "amount", "resolvedAmount", "costBudgetAmount"] as const;
 
 type MoneyField = (typeof JOB_MONEY_FIELDS)[number];
 type Redacted<T> = Omit<T, Extract<keyof T, MoneyField>>;

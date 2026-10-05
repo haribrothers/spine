@@ -1,0 +1,1 @@
+ALTER TABLE "jobs" ADD COLUMN "cost_budget_amount" bigint;

@@ -214,13 +214,19 @@ export class JobsService {
           ...(input.startDate !== undefined ? { startDate: input.startDate } : {}),
           ...(input.endDate !== undefined ? { endDate: input.endDate } : {}),
           ...(input.retentionPct !== undefined ? { retentionPct: input.retentionPct } : {}),
+          ...(input.costBudgetAmount !== undefined ? { costBudgetAmount: input.costBudgetAmount } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           updatedAt: new Date(),
         })
         .where(eq(jobs.id, id))
         .returning();
 
-      const changes = AuditLogService.diffFields(existing as unknown as Record<string, unknown>, input as Record<string, unknown>);
+      // Money compared and recorded as strings (US-JOB-24's budget is a bigint).
+      const asText = (v: unknown) => (typeof v === "bigint" ? v.toString() : v);
+      const changes = AuditLogService.diffFields(
+        { ...existing, costBudgetAmount: asText(existing.costBudgetAmount) } as unknown as Record<string, unknown>,
+        { ...input, ...(input.costBudgetAmount !== undefined ? { costBudgetAmount: asText(input.costBudgetAmount) } : {}) } as Record<string, unknown>,
+      ).filter((c) => !(c.field === "costBudgetAmount" && c.from === null && c.to === null));
       if (changes.length) {
         await this.auditLog.record(tx, {
           orgId,

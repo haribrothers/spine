@@ -62,6 +62,8 @@ export const jobs = pgTable(
     contractValueAmount: bigint("contract_value_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** 0-100. See this table's own doc comment for why 0 is a safe default across every industry template. */
     retentionPct: numeric("retention_pct", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-JOB-24 (D-125) — what the job should cost, minor units; null when it isn't budgeted. A target, never posted. */
+    costBudgetAmount: bigint("cost_budget_amount", { mode: "bigint" }),
     notes: text("notes"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Same demo-data marker convention as contacts.isDemo/quotes.isDemo. */
