@@ -15,6 +15,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | NFR-PERF-07 | General ledger, day book, cash flow and sales/purchase analysis over 12 months at 50,000 journal lines return in < 3 s; their Excel and PDF exports finish in < 10 s | 8 | Load test (US-RPT-24–US-RPT-33) |
 | NFR-PERF-08 | A 5,000-line bank statement imports in < 10 s and the reconciliation page opens with suggestions in < 2 s | 8 | Load test (US-BANK-07, US-BANK-08) |
 | NFR-PERF-09 | A quarter's GSTR-1 and Tally exports for 5,000 invoices finish in < 30 s | 9 | Load test (US-TAX-16, US-RPT-38) |
+| NFR-PERF-10 | AI requests never block a form: the form stays usable while a suggestion runs, and Spine gives up after 30 s | 9 | E2E with a slow fake provider (US-AI-07) |
 
 ## Reliability and data integrity
 
@@ -31,6 +32,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 | NFR-REL-09 | The trial balance balances after every new posting path (P17–P27), and money-account balances equal the Balance Sheet | 8 | `ledger-integrity` integration test extended per story |
 | NFR-REL-10 | GSTR-1 and Tax Summary totals for a period are equal to the ledger's tax accounts | 9 | Integration test (US-TAX-17, US-RPT-37) |
 | NFR-REL-11 | A switched-off module exposes nothing through any API route, page, search, notification or digest | 9 | Route-introspection test against the module map (US-SET-24) |
+| NFR-REL-12 | With AI off no request reaches any AI provider; with the provider down every form still saves by hand; no `/ai/*` route writes business data | 9 | Network test, fake-provider integration tests, route-introspection test (US-AI-01, US-AI-07) |
 
 ## Compatibility
 
@@ -72,7 +74,7 @@ Each requirement is measurable and names the phase by which it must hold. "Verif
 |---|---|---|---|
 | NFR-OBS-01 | JSON logs with request id, method, path, status, duration; no secrets in logs | 10 | Log snapshot test (US-OPS-07) |
 | NFR-OBS-02 | `/health` (liveness) and `/health/ready` (database + queue) | 10 | Integration test (US-OPS-05) |
-| NFR-OBS-03 | Telemetry is off by default; the only outbound call is the optional daily update check | 10 | Code review + network test |
+| NFR-OBS-03 | Telemetry is off by default; the only outbound calls are the optional daily update check and, only while an Owner has switched AI on, requests to the AI provider they configured (D-164) | 10 | Code review + network test |
 | NFR-OBS-04 | A daily ledger-integrity check warns Owners if the books stop balancing | 6 | US-RPT-12 test |
 
 ## Maintainability

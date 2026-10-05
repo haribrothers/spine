@@ -128,6 +128,10 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `modules` | `{ leadsMeetings, jobsField, approvals, recurring }` booleans, all true when absent; `modules_changed_at` per module for the "missed dates" message | US-SET-23 |
 | `settings` key `setup_hidden` | `string[]` of setup-card keys marked "not needed" | US-ONB-15 |
 | Member dashboard layout | gains `reportFavourites: string[]` and `profitBasis: "accrual"\|"cash"` | US-RPT-23, US-DASH-26 |
+| `settings` key `ai` | `{ enabled, driver: "none"\|"openai-compatible"\|"anthropic", baseUrl?, model?, apiKeyEncrypted?, apiKeyHint?, supportsImages?, features: { readDocuments, draftEmails, draftQuoteLines, bankSuggestions }, monthlyTokenBudget?, acknowledgedAt?, acknowledgedByUserId? }` — the key is never returned by the API | US-AI-01–US-AI-04 |
+| `ai_requests` (new) | `id`, `org_id`, `user_id`, `feature` (`read_document`/`draft_email`/`draft_quote_lines`/`bank_suggestions`), `entity_type?`, `entity_id?`, `provider`, `model`, `input_tokens`, `output_tokens`, `duration_ms`, `outcome` (`ok`/`error`/`timeout`/`budget`/`rate_limited`), `error_code?`, `created_at`; index (`org_id`, `created_at`). No prompt or reply text | US-AI-04, US-AI-06 |
+| `vendor_bills`, `expenses`, `quotes` | `ai_assisted boolean not null default false` (saved after AI filled fields) | US-AI-08, US-AI-09, US-AI-13 |
+| `bank_statement_line_matches` | `suggested_by` (`rules`/`ai`/`person`, default `person`) | US-AI-14 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).
 

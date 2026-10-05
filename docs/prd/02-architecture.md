@@ -139,6 +139,10 @@ Details and the capability matrix: [07-security](07-security.md).
 
 Four optional groups — Leads & meetings, Jobs & field, Approvals, Recurring documents — can be switched off per business ([D-154](12-decisions.md)). One map in `packages/shared/src/modules.ts` lists each module's routes, capabilities, navigation items, widgets, search types, notification types and queues. The API's `ModuleGuard` refuses a switched-off module's routes with 403 `MODULE_OFF` before capability checks; the web reads the same map to hide everything; queues skip a switched-off module's work. Switching off never deletes data or Team grants. These are runtime settings, unlike the build-time phase flags in `feature-flags.ts` ([D-068](12-decisions.md)).
 
+## AI assistant (Phase 9)
+
+Optional and off by default ([D-162](12-decisions.md)). `AiService` in the API calls one configured `AiDriver` — `none`, `openai-compatible` (local Ollama/vLLM/LM Studio or any compatible cloud endpoint) or `anthropic` — with the Owner's own endpoint and key ([D-163](12-decisions.md)). Each feature is a small read-only route that gathers what it needs through the module's own services with the caller's permissions, redacts it ([D-165](12-decisions.md)), asks the model for a fixed JSON shape, validates every field and returns a suggestion the web or mobile form pre-fills ([D-166](12-decisions.md)). AI never writes: the person saves through the normal route. Totals and tax are computed by `@spine/shared`, never taken from the model. Every request is metered and logged in `ai_requests` ([D-168](12-decisions.md), [D-169](12-decisions.md)); with the AI module off, nothing in this path runs.
+
 ## Background jobs and events
 
 | Queue / event | Trigger | Effect |

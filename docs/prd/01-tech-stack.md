@@ -28,6 +28,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Spreadsheets | `exceljs` for `.xlsx` report, GSTR-1 review and export files (Phase 8, [D-144](12-decisions.md)); `papaparse` for CSV imports | MIT, CommonJS, streams large sheets |
 | QR codes | `qrcode` for UPI QR codes on invoices (Phase 9, [D-150](12-decisions.md)) | MIT, no network |
 | ZIP | `fflate` ([D-132](12-decisions.md)) — bulk PDFs, data export, Tally export | Small, dependency-free |
+| AI (optional, Phase 9) | `AiDriver`: `openai-compatible` and `anthropic` drivers over `fetch` (no SDK dependency); `unpdf` (MIT) for PDF text before sending ([D-163](12-decisions.md), [D-170](12-decisions.md)) | Owner's own local or cloud model; nothing runs when AI is off |
 | Browser push | `web-push` 3 (VAPID) | Optional; disabled without keys |
 | Rate limiting | `@nestjs/throttler` 6 (in-memory) | Public quote endpoints |
 | Tests | Vitest 2 (unit + integration against a real `spine_test` database) | |

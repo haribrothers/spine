@@ -12,7 +12,7 @@ NestJS REST API in `apps/api`. OpenAPI document at `/api/docs` (Swagger UI) — 
 | Validation | Bodies are parsed with the Zod schemas in `@spine/shared`; failures return 400 with Zod `issues` |
 | Money | `bigint` minor units serialised as **decimal strings** (`"51000"` = 510.00) to avoid precision loss; currency is a separate field |
 | Dates | ISO 8601 strings; date-only fields as `YYYY-MM-DD` |
-| Idempotency | Every mutating route requires `Idempotency-Key` (UUID). First call executes and stores the response; a replay with the same key returns the stored response; a concurrent duplicate gets 409 ([D-009](12-decisions.md)). Keys are scoped per user and per actual path; a route-introspection test enforces this on every non-GET route (US-OPS-08). The 2 public quote routes are protected by state checks instead |
+| Idempotency | Every mutating route requires `Idempotency-Key` (UUID); the read-only `/ai/*` suggestion routes are POST only because of their bodies and are exempt (they write nothing but an `ai_requests` row). First call executes and stores the response; a replay with the same key returns the stored response; a concurrent duplicate gets 409 ([D-009](12-decisions.md)). Keys are scoped per user and per actual path; a route-introspection test enforces this on every non-GET route (US-OPS-08). The 2 public quote routes are protected by state checks instead |
 | Files | Two-step: `POST /files` (multipart, ≤ 10 MB) returns `{ id }`; other endpoints reference the id ([D-053](12-decisions.md)) |
 | Long work | PDFs and emails run on pg-boss queues; the request returns immediately with the document, and email status (`pending`/`sent`/`failed`) is a field on it. Failures retry; the Email queue view lists unresolved jobs |
 | Pagination | List endpoints return arrays filtered server-side by query parameters (`search`, `status`, `contactId`, `includeArchived`…); tables page client-side at 10/25/50. Target scale is 10,000 records per list (NFR-PERF-01) |
@@ -38,7 +38,7 @@ NestJS REST API in `apps/api`. OpenAPI document at `/api/docs` (Swagger UI) — 
 |---|---|---|
 | 400 | Validation failed; business rule broken (e.g. "This quote's discount requires owner approval before it can be sent", "falls within a closed fiscal period", percentages ≠ 100) | `{ statusCode, message, error }` or Zod `issues` |
 | 401 | No or expired session | `{ statusCode: 401 }` |
-| 403 | Role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) | `{ statusCode: 403, message, error? }` |
+| 403 | Role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) or an AI feature is off (`AI_FEATURE_OFF`, US-AI-03) | `{ statusCode: 403, message, error? }` |
 | 404 | Record not in this organisation | `{ statusCode: 404 }` |
 | 409 | Idempotency key in flight; repeat quote conversion in `warn` mode (body lists existing jobs/invoices; retry with `confirm: true`); unique conflict | `{ statusCode: 409, message, existing? }` |
 | 413 | Upload over 10 MB | |
@@ -548,6 +548,14 @@ Routes the stories add. Each is created by the story named.
 | SET | — | Every route of a switched-off module answers 403 `{ statusCode: 403, error: "MODULE_OFF", message: "<Module> is switched off. An owner can switch it on in Settings › Modules." }` before capability checks (`ModuleGuard`, `packages/shared/src/modules.ts`) | — | US-SET-24 |
 | ONB | GET/PUT | `/org/setup-status` → `[{ key, done, hidden }]`; `PUT /org/setup-status/:key/hidden { hidden }` | roles: owner | US-ONB-15 |
 | ONB | — | `PUT /org/settings/industry_template` also sets `modules` (Generic: Jobs & field off) when modules were never saved | roles: owner | US-ONB-14 |
+| AI | GET/PUT | `/org/ai` → `AiSettings` (key masked); PUT validates with `aiSettingsSchema`; turning on with a non-local `baseUrl` requires `acknowledged: true` (400 "Confirm what will be sent to <host> first."); no provider → 400 "Connect a provider first." | roles: owner | US-AI-01–US-AI-04 |
+| AI | POST | `/org/ai/test` → `{ ok, model, supportsImages, error? }` | roles: owner | US-AI-02 |
+| AI | GET | `/org/ai/usage?month=YYYY-MM` → `{ budget, used, requests, byFeature, byUser }` | roles: owner | US-AI-04 |
+| AI | POST | `/ai/read-document { fileId, target: vendor_bill\|expense }` → `DocumentSuggestion` `{ vendor: { contactId?, name }, number?, date?, dueDate?, currency?, lines: [{ description, quantity, unitPrice, taxRateId?, accountId?, categoryId? }], documentTotal?, computedTotal, warnings[] }` — the file must belong to a record the caller may edit, or be newly uploaded by them | `ai.use` (Field: `ai.read_own_receipt` with `target: expense`) | US-AI-08–US-AI-10 |
+| AI | POST | `/ai/draft-email { type, documentId, tone?: friendly\|formal\|firm }` → `{ subject, body }` (placeholders kept) | `ai.use` + the document's send capability | US-AI-11, US-AI-12 |
+| AI | POST | `/ai/draft-quote-lines { text (≤ 4,000 chars), currency }` → `{ lines: [{ catalogItemId?, bundleId?, name, description, quantity }] }` | `ai.use` + `quotes.edit_own` | US-AI-13 |
+| AI | POST | `/ai/bank-suggestions { reconciliationId }` → `[{ statementLineId, rankedJournalLineIds, reason, create?: { kind, accountId?, contactId?, reason } }]` | `ai.use` + `banking.reconcile` | US-AI-14 |
+| AI | — | Every `/ai/*` route: 403 `MODULE_OFF` when AI is off, 403 `AI_FEATURE_OFF` when the feature is off, 429 `AI_RATE_LIMIT` ("Too many AI requests. Try again in a few minutes."), 409 `AI_BUDGET_USED` ("AI is paused until <date> — this month's budget is used up."), 503 `AI_UNAVAILABLE`, 504 on a 30-second timeout. All are read-only and don't take `Idempotency-Key` (no writes) | — | US-AI-07 |
 
 ### Events added by the feature files
 
@@ -561,6 +569,8 @@ Routes the stories add. Each is created by the story named.
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |
 | `recurring_bill_draft` | Owners | "Recurring bill ready to review: <name>" | US-PUR-30 |
 | `customer_refund_sent` (email to the customer, optional) | The customer | "We've refunded <amount>" with the refund details | US-PAY-17 |
+| `ai_budget_warning` | Owners | "AI has used 80% of this month's budget." | US-AI-04 |
+| `ai_budget_reached` | Owners | "AI is paused until <date> — this month's budget is used up." | US-AI-04 |
 
 Queues added: `recurring-bill-run` (every 15 min, from 6:00 AM organisation time, same rules as `recurring-invoice-run`; skipped while Recurring documents is switched off, US-PUR-30, US-SET-24), `file-integrity-check` (weekly), `invoice-reminder-run` (every 15 min, runs each organisation's day once after "Send at"), `recurring-invoice-run` (every 15 min, from 6:00 AM organisation time), `daily-digest` (every 15 min; US-NTF-13: each active member whose digest is on — `digestEnabledFor` — gets it on the first run at or after "Send at" on a chosen day, within 3 hours, once a day via `digest_last_sent_on`; content from `AttentionService.list`, today's meetings and milestones due within 7 days, and yesterday's payments received (with `reports.view_receivables`), quotes accepted and quotes viewed; nothing to report sends nothing; Field get counts only and no yesterday; SMTP missing logs and skips), `data-export`, `store-issued-pdf`.
 

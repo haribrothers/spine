@@ -23,6 +23,10 @@
 | R-17 | Phases 8–9 add 81 stories before 1.0 | 1.0 ships much later | High | Phase 8 first (books), Phase 9 items independent of each other; anything slipping moves to v1.1 by decision, never quietly ([D-133](12-decisions.md)) |
 | R-18 | New posting paths (P17–P27) introduce accounting errors | Wrong books, lost trust | Medium | Each rule gets a ledger-integrity test and the daily balance check covers it; accountant review before build (Q-02); manual journals can't touch control accounts (D-134) |
 | R-19 | Bank CSV layouts vary between banks and change without notice | Imports fail or misread amounts | Medium | Column mapping saved per account (D-157), preview before import, duplicate detection, failed rows listed; presets for common banks (Q-17) |
+| R-20 | AI reads a bill wrongly or drafts something misleading | Wrong amounts saved, awkward emails sent | Medium | AI only fills forms and marks every field; people save (D-166); totals and tax computed by Spine; document-vs-computed total warning (D-170); placeholders filled by Spine, not the model (US-AI-12) |
+| R-21 | Business data reaches a cloud AI provider the business didn't mean to use, or the provider keeps it | Privacy breach, loss of trust | Medium | Off by default; Owner acknowledgement for non-local providers (D-164); redaction and per-feature "What's sent" (D-165); local-model option; no prompt or reply stored in Spine (D-169) |
+| R-22 | AI costs run away or the provider is down | Unexpected bills, blocked work | Medium | Monthly budget with 80% warning and hard stop, per-person rate limit (D-168); forms never depend on AI (US-AI-07) |
+| R-23 | Text inside a document or enquiry tries to instruct the model (prompt injection) | Misleading suggestions | Low | Fixed JSON schema, every field validated, AI routes are read-only ([07-security](07-security.md)) |
 
 ## Open questions
 

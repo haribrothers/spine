@@ -13,10 +13,10 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–10 follow (
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
-| 9 | Tax, documents and setup | 26 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant |
+| 9 | Tax, documents and setup | 40 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; an owner can switch on an AI assistant that fills in forms |
 | 10 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 408 stories.
+Total: 422 stories.
 
 ## Phase 0 · Foundation
 
@@ -691,7 +691,7 @@ Total: 408 stories.
 
 **Goal:** An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails and modules that fit it.
 
-**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155).
+**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); and the optional AI assistant — Settings › AI with a local or cloud provider, per-feature switches, a monthly budget, `ai.use`, AI audit — with four features: reading bills and receipts, drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173).
 
 **Done when:**
 - An India-preset organisation issues intra-state, inter-state, export and bill-of-supply invoices whose PDFs pass a GST checklist review, and the GSTR-1 JSON for the month validates in the GST offline tool with totals equal to the Tax Summary.
@@ -699,6 +699,7 @@ Total: 408 stories.
 - A UPI app scanning a test invoice's QR code opens with the right payee, amount and note.
 - With each module switched off, its pages, widgets, search results, notifications and API routes are gone (403 `MODULE_OFF`), and switching it back on restores everything (tested per module).
 - A new owner completes every card on the Set up Spine page using only the page and its links.
+- With AI off, a network test sees no AI request and no AI control renders on any screen; with AI on against a local model and a cloud model, a sample bill fills the bill form with totals matching Spine's computation, and nothing is saved until a person saves.
 
 **Stories:**
 
@@ -742,6 +743,23 @@ Total: 408 stories.
 - US-SET-23 · Switch optional modules on or off (P1)
 - US-SET-24 · Hide everything a switched-off module owns (P1)
 - US-SET-25 · Switch a module back on with nothing lost (P1)
+
+*AI assistant*
+
+- US-AI-01 · Switch the AI assistant on or off (P1)
+- US-AI-02 · Connect a local or cloud AI provider (P1)
+- US-AI-03 · Choose which AI features are on (P1)
+- US-AI-04 · Set a monthly AI budget and see usage (P2)
+- US-AI-05 · Let a Team use AI (P1)
+- US-AI-06 · See every AI request in the audit log (P2)
+- US-AI-07 · Keep working when AI is unavailable (P1)
+- US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo (P1)
+- US-AI-09 · Fill in an expense from a receipt (P1)
+- US-AI-10 · Fill in my expense from a receipt on the phone (P1)
+- US-AI-11 · Draft a quote or invoice email with AI (P1)
+- US-AI-12 · Draft a payment reminder or statement email in a chosen tone (P2)
+- US-AI-13 · Draft quote lines from an enquiry (P1)
+- US-AI-14 · Get AI suggestions while reconciling (P1)
 
 ## Phase 10 · Packaging & 1.0
 

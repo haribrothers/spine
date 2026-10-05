@@ -81,6 +81,10 @@
 | Tally export | A ZIP of Tally XML masters and vouchers an accountant imports into TallyPrime (D-149) |
 | Set up Spine | The Owner's page of setup cards showing what's done and what's left (D-155) |
 | Attachment | A file kept with a record, e.g. the vendor's bill PDF on a vendor bill (D-156) |
+| AI assistant | The optional module that fills in forms with suggestions — reading bills and receipts, drafting emails and quote lines, suggesting bank matches; off by default, never saves by itself (D-162) |
+| AI provider | Where the AI model runs: a local OpenAI-compatible server (e.g. Ollama) or a cloud service, with the business's own key (D-163) |
+| Suggested by AI | The marker on every field AI filled in; the person checks it before saving (D-166) |
+| Token budget | The Owner's monthly cap on AI usage; AI pauses when it's used up (D-168) |
 
 ## Default chart of accounts
 

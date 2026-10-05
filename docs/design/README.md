@@ -147,6 +147,14 @@ Screens that extend an existing one reuse that screen's layout exactly; only the
 - **`AttachmentList`**: file rows with a type tile, name, size, who added it, and Download/Remove; Remove becomes Owner-only with a reason on locked records (US-OPS-33–US-OPS-35).
 - **UPI QR**: rendered in the API by `qrcode` into the PDF ([D-150](../prd/12-decisions.md)). It's a document element, not an `@spine/ui` component.
 
+**AI assistant (Phase 9).** AI never gets its own page outside Settings › AI; it appears inside the forms it fills:
+
+- **The AI control** is a secondary button with a sparkle icon and a verb: "Read from document", "Read receipt", "Draft with AI", "Draft lines with AI". It's only rendered when AI is on, the feature is on and the person may use it (D-162, D-167).
+- **"Suggested by AI"** marks every field AI filled: an `info` tint on the field and a small text label, so it never relies on colour alone. The mark goes when the person edits the field. A banner above the form says what was filled and what to check ("Check the lines before saving").
+- **Working and failure states** use the existing `Spinner` and `Banner`: the form stays usable while AI works, and failures say what to do ("AI didn't answer. Fill this in by hand or try again.").
+- **Review lists** (quote lines, bank suggestions) show suggestions with a reason and a tick box. Only "Add to quote", "Match" or the normal save acts on them.
+- Settings › AI follows the Settings dialog pattern: master switch card, provider fields with "Test connection", feature switches with "What's sent", and the budget with a usage bar.
+
 **Sample data.** Phase 8 screens use the demo business, Riverstone Builders (USD). Phase 9's GST, GSTR-1, Tally and UPI screens use a sample Indian business, Kaveri Interiors (₹, Karnataka), so the Indian formats show: lakh grouping, GSTINs and state codes.
 
 ## Platforms

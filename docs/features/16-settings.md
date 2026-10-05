@@ -345,7 +345,7 @@ Decision: D-153
 Decision: D-154
 
 **Acceptance criteria**
-- **Given** Settings › Modules, **when** it opens, **then** it lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents", each with a switch, a one-line description and what it includes; a note says "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on.".
+- **Given** Settings › Modules, **when** it opens, **then** it lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents", each with a switch, a one-line description and what it includes; a note says "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on."; an "AI assistant" row shows its state and links to Settings › AI, where it's switched on and set up (US-AI-01).
 - **Given** I switch one off, **when** the confirmation opens, **then** it says what disappears and "Nothing is deleted. Switch it back on any time and everything is where you left it." with "Switch off".
 - **Given** "Jobs & field" while active Field users exist, **when** I try to switch it off, **then** I see "<n> people use the field app. Change their role or deactivate them first." and the switch stays on.
 - **Given** "Approvals" off, **when** someone submits an expense, **then** it's approved and posted at once, and discount approval on quotes is skipped.

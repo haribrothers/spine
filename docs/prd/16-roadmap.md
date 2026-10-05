@@ -33,6 +33,27 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 | Notifications | Notification email preferences | Let each member choose which notification emails they get | Footer explains why they get them in 1.0 | US-NTF-11 |
 | Notifications | Discount approval notification | Notify Owners when a quote needs discount approval, besides the banner | The banner is the signal in 1.0 | US-QUO-12 |
 
+## v1.1 — AI features
+
+V1 ships the AI foundation and four form-filling features (D-162–D-173). These build on it in v1.1, under the same rules: off unless the Owner switches them on, the Owner's own provider, redaction, permission-scoped, people confirm.
+
+| Item | What it is | Why it waits | Source |
+|---|---|---|---|
+| Ask your books | Plain-English questions ("Which jobs lost money this quarter?") answered by calling the report services, quoting their figures and linking to them | Needs the V1 safeguards proven first; figures must come from reports, never the model | D-162 |
+| Natural-language search | "Unpaid invoices for Maple Ridge over 30 days" turned into a search with filters | Global search (US-OPS-22) covers names and numbers in 1.0 | D-162 |
+| Contact and job summaries | A short summary of a contact's timeline or a job's state, risks and next steps | Nice-to-have once people trust AI suggestions | D-162 |
+| HSN/SAC suggestions | Suggest HSN or SAC codes for catalogue items from their names | Needs care: a wrong code changes GST reporting | US-TAX-14 |
+| Voice and site notes | Turn a field voice memo or note into a milestone note or variation-order description on the phone | Mobile AI starts with receipts in 1.0 | US-AI-10 |
+| Onboarding helper | "I'm a kitchen fit-out firm in Bengaluru" proposes template, tax preset, accounts and modules | Setup page arrives in 1.0 | US-ONB-15 |
+| Collections assistant | Flag customers likely to pay late and suggest who to chase first | Needs payment history across a few months | D-162 |
+| AI-created drafts | AI may create draft bills, expenses or quotes that wait in lists for review (e.g. from the documents inbox), still never issued, recorded, sent or posted by AI | V1 only fills forms a person has open (D-166) | D-166 |
+| Read the documents inbox | Read bills and receipts arriving in the documents inbox and prepare drafts | Needs the inbox (v1.1) and AI-created drafts | 16-roadmap (Documents inbox) |
+| Expense review help | Suggest category and flag unusual amounts when approving expenses | Approval flow first | US-PUR-08 |
+| Learned bank rules | Turn accepted AI bank suggestions into rules ("Bank rules" above) | Bank rules arrive in v1.1 | D-173 |
+| More languages | AI replies in Hindi and other languages, following the person's language | English only in 1.0 (D-168); i18n extraction in Phase 10 | D-168 |
+| More email drafts | AI drafts for lead and activity follow-ups and meeting invitations | Customer document emails first | US-AI-11 |
+| Per-Team budgets and troubleshooting retention | Budgets per Team; an Owner option to keep AI request text for 30 days for troubleshooting | V1 keeps one organisation budget and stores no text (D-168, D-169) | D-168, D-169 |
+
 ## Later — v1.2 and beyond
 
 Valuable, but bigger, or wanted by fewer of Spine's users.

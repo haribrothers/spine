@@ -2,7 +2,7 @@
 
 ## What Spine is
 
-Spine is a self-hosted business app for service and project businesses of 1–20 people — contractors, fabricators, fit-out firms, design studios. It follows the way these businesses actually work, **enquiry → quote → job → invoice → payment → books**, and derives correct double-entry accounting from those events so nobody types a journal entry. One Docker install serves one business. Owners, office staff and field crew sign in; customers act on quotes through a public link with no account. A native mobile app (iOS and Android) lets field crew see their jobs, capture photos and receipts offline, complete milestones and take a customer's signature on a quote on site.
+Spine is a self-hosted business app for service and project businesses of 1–20 people — contractors, fabricators, fit-out firms, design studios. It follows the way these businesses actually work, **enquiry → quote → job → invoice → payment → books**, and derives correct double-entry accounting from those events so nobody types a journal entry. One Docker install serves one business. Owners, office staff and field crew sign in; customers act on quotes through a public link with no account. A native mobile app (iOS and Android) lets field crew see their jobs, capture photos and receipts offline, complete milestones and take a customer's signature on a quote on site. An optional AI assistant, off until an Owner connects their own local or cloud model, fills in forms — reading bills and receipts, drafting emails and quote lines, suggesting bank matches — and never saves anything by itself.
 
 ## The problem
 
