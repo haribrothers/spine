@@ -2,7 +2,7 @@
 
 One dashboard that adapts to who's looking: a pinned row of key figures, charts for owners and permitted staff, "my day" widgets for everyone, an organisation-wide activity feed, and per-user layout that follows the person across devices. Every widget is gated server-side by the same right as its full report, so the dashboard adds no new access.
 
-**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1)
+**Screens:** `DashboardOwner` (P1), `DashboardStaff` (P1), `DashboardField` (P2), `DashboardEditLayout` (P3), `SettingsUpcomingMeetings` (P2), `DashboardOwnerRedesign` (P1), `DashboardStaffRedesign` (P1), `DashboardFieldRedesign` (P2), `DashboardCaughtUp` (P1), `DashboardOwnerConstruction` (P1), `DashboardOwnerBooks` (P1)
 **Depends on:** 12 Reports, 03 Contacts (activities, leads), 04 Meetings, 07 Jobs, 08 Invoicing, 15 Team (capabilities).
 
 ## Features
@@ -17,6 +17,7 @@ One dashboard that adapts to who's looking: a pinned row of key figures, charts 
 | F-DASH-06 | Attention list and today (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardCaughtUp`, `DashboardStaffRedesign`, `DashboardFieldRedesign` |
 | F-DASH-07 | Key figures, money chart and activity (redesign A) | P1 | 7 | `DashboardOwnerRedesign`, `DashboardStaffRedesign`, `DashboardOwnerConstruction` |
 | F-DASH-08 | Staff and field layouts (redesign A) | P1 | 7 | `DashboardStaffRedesign`, `DashboardFieldRedesign` |
+| F-DASH-09 | Books cards: payables, top expenses, account balances, ready to bill, tax, cash basis | P1 | 8 | `DashboardOwnerBooks` |
 
 ## User stories
 
@@ -323,3 +324,78 @@ Decision: D-089
 - API: `GET /dashboard/retention` → `{ total, jobCount, jobs: [{ id, number, name, held }] }` (`reports.view_receivables`), from `journal_lines` on 1150 grouped by `job_id`; the jobs card reuses `GET /jobs?include=costing&status=active` (`reports.view_job_profitability`).
 - The budget attention row (`job_over_budget`) is part of US-JOB-25.
 
+
+### US-DASH-21 · See what I owe vendors on the dashboard
+**Feature:** F-DASH-09 · **Priority:** P2 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** payables beside receivables, **so that** I see both sides of cash at once.
+
+Decision: D-160
+
+**Acceptance criteria**
+- **Given** the dashboard, **when** the "Payables" card renders, **then** it shows "Total payables", split "Current <amount> · Overdue <amount>", with a bar of current vs overdue.
+- **Given** I click "Overdue", **when** it opens, **then** Payables opens filtered to overdue.
+- **Given** a member without `reports.view_payables`, **when** the dashboard loads, **then** the card isn't there.
+
+**Implementation notes**
+- API: `GET /dashboard/kpis` gains key `payables` (`reports.view_payables`).
+
+### US-DASH-22 · See where money goes
+**Feature:** F-DASH-09 · **Priority:** P2 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** my top expense categories this year, **so that** I spot what's growing.
+
+**Acceptance criteria**
+- **Given** the "Top expenses" card, **when** it renders, **then** it shows the five largest expense accounts for the chosen period ("This month", "This quarter", "This financial year") as labelled bars with amount and %, and "Other".
+- **Given** a bar, **when** I click it, **then** the account drill-down opens for that period.
+- **Given** no expenses, **when** it renders, **then** it reads "No expenses in this period.".
+
+**Implementation notes**
+- API: `GET /dashboard/top-expenses?period=` (`reports.view_financial_statements`); bars use chart tokens with text labels (no colour-only meaning).
+
+### US-DASH-23 · See each bank, cash and card balance
+**Feature:** F-DASH-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** every account's balance on the dashboard, **so that** I know where my cash is without opening Banking.
+
+**Acceptance criteria**
+- **Given** the "Accounts" card, **when** it renders, **then** each active money account shows its name, type icon, balance and "Reconciled to <date>" or "Not reconciled".
+- **Given** a card account, **when** it renders, **then** its balance shows as owed.
+- **Given** I click an account, **when** it opens, **then** its register opens.
+- **Given** a member without `banking.view`, **when** the dashboard loads, **then** the card isn't there.
+
+**Implementation notes**
+- API: `GET /money-accounts` with balances (`banking.view`).
+
+### US-DASH-24 · See work not yet billed
+**Feature:** F-DASH-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** to see what I could invoice today, **so that** I don't leave money unbilled.
+
+**Acceptance criteria**
+- **Given** the "Ready to bill" card, **when** it renders, **then** it shows "Completed milestones not invoiced <n> · <amount>" and "Approved billable expenses not billed <n> · <amount>", each linking to the filtered list.
+- **Given** nothing to bill, **when** it renders, **then** it reads "Nothing waiting to be billed.".
+- **Given** Jobs & field is switched off (US-SET-23), **when** it renders, **then** only billable expenses show.
+
+**Implementation notes**
+- API: `GET /dashboard/unbilled` (`reports.view_receivables`).
+
+### US-DASH-25 · See tax owed this period
+**Feature:** F-DASH-09 · **Priority:** P2 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** the tax I'll owe for the current period, **so that** the payment doesn't surprise me.
+
+**Acceptance criteria**
+- **Given** the "Tax this period" card, **when** it renders, **then** it shows "Collected", "Input tax" and "Net payable" for the current month or quarter (Settings › Tax › "Return period"), and "Paid <amount>" when a tax payment is recorded.
+- **Given** I click it, **when** it opens, **then** the Tax Summary opens for that period.
+
+**Implementation notes**
+- API: `GET /dashboard/tax-period` (`reports.view_financial_statements`); `settings.tax_profile.returnPeriod` (`monthly`/`quarterly`, default monthly).
+
+### US-DASH-26 · Switch dashboard profit between accrual and cash
+**Feature:** F-DASH-09 · **Priority:** P2 · **Phase:** 8 · **Screens:** `DashboardOwnerBooks`
+**As** an owner, **I want** profit on the dashboard on a cash basis when I prefer, **so that** it matches my bank.
+
+Decision: D-138
+
+**Acceptance criteria**
+- **Given** the "Profit this month" KPI and the money chart, **when** I switch "Accrual / Cash", **then** both recompute on that basis and the KPI says "cash basis" under the figure.
+- **Given** I choose a basis, **when** I come back on any device, **then** my choice is kept.
+
+**Implementation notes**
+- API: `GET /dashboard/kpis?basis=cash`; basis stored with the member's dashboard layout (US-DASH-11).

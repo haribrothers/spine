@@ -2,7 +2,7 @@
 
 A linear setup wizard that runs after the first owner signs up, configures the business in eight short steps, and can be skipped at any point. Every step stays editable later in Settings, demo data can replace manual setup, and a dashboard checklist guides the first real transaction.
 
-**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1)
+**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1), `OnbTaxCountry` (P1), `SettingsModules` (P1), `SetupSpine` (P1)
 **Depends on:** 02 Sign-in & account (first owner exists), 16 Settings (same panes reused), 15 Team (invitations).
 
 ## Features
@@ -12,8 +12,9 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-01 | Wizard shell: welcome, stepper, skip, revisit in Settings | P1 | 0 | `OnbWelcome`, `OnbBusinessProfile`, `OnbChartOfAccounts` |
 | F-ONB-02 | Setup steps: business, currency and year, tax and numbering, accounts, team | P1 | 0 | `OnbBusinessProfile`, `OnbCurrencyLocale`, `OnbFinancialYear`, `OnbTaxRate`, `OnbNumbering`, `OnbChartOfAccounts`, `OnbInviteTeam`, `OnbInviteTeamSent` |
 | F-ONB-03 | Industry template | P1 | 3 | `OnbIndustryTemplate`, `ExpenseCategoriesConstruction` |
-| F-ONB-04 | Load demo data | P1 | 8 | `OnbWelcome` |
+| F-ONB-04 | Load demo data | P1 | 10 | `OnbWelcome` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
+| F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 
 ## User stories
 
@@ -35,7 +36,7 @@ Legacy: S-12.1
 - Data: `settings` keys written by each step (see 04-data-model conventions).
 - UI: `apps/web/src/app/onboarding/page.tsx`, `Stepper`, `Card`, `Button` from `@spine/ui`.
 - Edge: refreshing mid-wizard resumes at the first unsaved step.
-- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 8; the button itself is built.
+- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 10; the button itself is built.
 
 ### US-ONB-02 · Skip setup at any step
 **Feature:** F-ONB-01 · **Priority:** P1 · **Phase:** 0 · **Screens:** `OnbWelcome`, `OnbBusinessProfile`
@@ -165,7 +166,7 @@ Legacy: S-12.7
 - Edge: Owner is never offered as a role at invite time (D-020).
 
 ### US-ONB-09 · Load demo data to explore
-**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 8 · **Screens:** `OnbWelcome`
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 10 · **Screens:** `OnbWelcome`
 **As** an evaluator, **I want** to load a realistic sample business with one click, **so that** I can see every screen working before I commit real data.
 
 Legacy: S-12.8
@@ -258,3 +259,45 @@ Decision: D-129
 - Data: rows in `accounts` (not system accounts) and `expense_categories` (`created_by_user_id` = the Owner who chose the template).
 - Edge: the seed never deletes or remaps anything; demo data (US-ONB-09) uses the same categories when the template is Construction.
 
+
+### US-ONB-14 · Start with the modules my industry needs
+**Feature:** F-ONB-03 · **Priority:** P2 · **Phase:** 9 · **Screens:** `OnbIndustryTemplate`, `SettingsModules`
+**As** a new owner, **I want** the template to switch on what my kind of business uses, **so that** Spine starts simple.
+
+Decision: D-154
+
+**Acceptance criteria**
+- **Given** the Template step, **when** I pick "Construction / Contracting" or "General Services", **then** every module is on.
+- **Given** "Generic", **when** I continue, **then** Jobs & field is off and the step says "Jobs are switched off — turn them on in Settings › Modules if you need them.".
+- **Given** I change the template later in Settings, **when** I save, **then** modules aren't changed ("Modules stay as they are. Change them in Settings › Modules.").
+
+**Implementation notes**
+- `PUT /org/settings/industry_template` sets `settings.modules` only when the organisation has never saved modules.
+
+### US-ONB-15 · Open a setup page that shows what's left
+**Feature:** F-ONB-06 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SetupSpine`
+**As** a new owner, **I want** one page showing every setup step and whether it's done, **so that** I finish setting up without guessing.
+
+Decision: D-155
+
+**Acceptance criteria**
+- **Given** the user menu › "Set up Spine" (Owners only), **when** it opens, **then** cards show "Business details and logo", "Tax", "Chart of accounts", "Opening balances", "Bank and cash accounts", "Payment instructions", "Documents and emails", "Numbering", "Payment reminders", "Modules", "Invite your team", "Email sending", "Backups" and "Field app", each "Done" or "To do" with one line on why it matters.
+- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done".
+- **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick; "Mark as not needed" hides a card for this organisation.
+- **Given** the dashboard's setup checklist, **when** its three steps are done, **then** it shows "Finish setting up Spine — <n> left" linking here until every card is done or hidden.
+- **Given** a Staff or Field user, **when** they open the page, **then** they see the no-access page.
+
+**Implementation notes**
+- API: `GET /org/setup-status` (roles: owner) → `[{ key, done, hidden }]`; `PUT /org/setup-status/:key/hidden`.
+
+### US-ONB-16 · Go from each setup card to its setting and its guide
+**Feature:** F-ONB-06 · **Priority:** P2 · **Phase:** 9 · **Screens:** `SetupSpine`
+**As** a new owner, **I want** each card to take me to the right place, **so that** setup is a few clicks.
+
+**Acceptance criteria**
+- **Given** a card, **when** I press "Set up" (or "Review" when done), **then** the matching Settings pane, Banking page or Opening balances opens, and closing it returns me to the setup page.
+- **Given** "How it works" on a card, **when** I press it, **then** the user-guide page for that topic opens (bundled help, US-SITE-11; hidden until Phase 10 ships).
+- **Given** "Email sending" or "Backups", **when** they're not configured, **then** the card explains it's set by whoever runs the server and links to the self-hosting guide.
+
+**Implementation notes**
+- Card targets are routes in the web app; guide links come from the help map (US-SITE-11), behind a feature flag until Phase 10.

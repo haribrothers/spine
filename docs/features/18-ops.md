@@ -1,28 +1,29 @@
 # 18 · Self-hosting & system states
 
-What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 8 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
+What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 10 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
 
 | ID | Feature | Priority | Phase | Screens |
 |---|---|---|---|---|
-| F-OPS-01 | Install and demo | P1 | 8 | — |
-| F-OPS-02 | Backup, restore and upgrade | P1 | 8 | — |
-| F-OPS-03 | Health, logs and update notice | P2 | 8 | `UpgradeNotice` |
+| F-OPS-01 | Install and demo | P1 | 10 | — |
+| F-OPS-02 | Backup, restore and upgrade | P1 | 10 | — |
+| F-OPS-03 | Health, logs and update notice | P2 | 10 | `UpgradeNotice` |
 | F-OPS-04 | Cross-cutting correctness and consistency | P1 | 6 | `MeetingScopeChoice`, `ExpenseBillToCustomer` |
 | F-OPS-05 | System pages | P2 | 6 | `NotFound`, `NoAccess`, `ServerError` |
-| F-OPS-06 | Web app at phone width | P1 | 8 | `AppShellPhone`, `AppShellPhoneNav` |
-| F-OPS-07 | Release readiness | P1 | 8 | — |
+| F-OPS-06 | Web app at phone width | P1 | 10 | `AppShellPhone`, `AppShellPhoneNav` |
+| F-OPS-07 | Release readiness | P1 | 10 | — |
 | F-OPS-08 | Global search | P1 | 7 | `SearchPalette` |
 | F-OPS-09 | File storage | P1 | 6 | `UpgradeNotice` |
+| F-OPS-10 | Attachments on records | P1 | 8 | `VendorBillAttachments` |
 
 ## User stories
 
 ### US-OPS-01 · Install Spine with one command
-**Feature:** F-OPS-01 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-01 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster, **I want** a single command that installs and starts Spine, **so that** I don't need help.
 
 Legacy: S-10.7
@@ -38,7 +39,7 @@ Legacy: S-10.7
 - New `scripts/install.sh` (POSIX shell, shellcheck-clean); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
 
 ### US-OPS-02 · Start with demo data from an environment flag
-**Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
 **As** an evaluator, **I want** `SEED_DEMO=true` to load the demo business on first start, **so that** I see Spine working without clicking through setup.
 
 Legacy: S-10.10
@@ -53,7 +54,7 @@ Legacy: S-10.10
 - Today `SEED_DEMO` is in `.env.example` but not read by any code.
 
 ### US-OPS-03 · Back up everything into one file
-**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster, **I want** one command that produces a single restorable archive, **so that** my data is safe.
 
 Legacy: S-10.8
@@ -70,7 +71,7 @@ Legacy: S-10.8
 - New `scripts/backup.sh`; uploads via the S3 API (no extra tool); last-success time written to `settings.last_backup_at` (04 "Columns added").
 
 ### US-OPS-04 · Restore a backup into a clean install
-**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster, **I want** to restore a backup onto a fresh machine, **so that** I can recover from a dead server.
 
 **Acceptance criteria**
@@ -82,7 +83,7 @@ Legacy: S-10.8
 - New `scripts/restore.sh`; CI job "restore-verify".
 
 ### US-OPS-05 · Report health and readiness
-**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster, **I want** health and readiness endpoints, **so that** Docker and monitors know when Spine is really up.
 
 **Acceptance criteria**
@@ -94,7 +95,7 @@ Legacy: S-10.8
 - API: `GET /health/ready` (contract addition).
 
 ### US-OPS-06 · Tell owners a new version is available
-**Feature:** F-OPS-03 · **Priority:** P3 · **Phase:** 8 · **Screens:** `UpgradeNotice`
+**Feature:** F-OPS-03 · **Priority:** P3 · **Phase:** 10 · **Screens:** `UpgradeNotice`
 **As** an owner, **I want** to know when an update exists, **so that** I stay current.
 
 Legacy: PRD F10 · Decision: D-055
@@ -110,7 +111,7 @@ Legacy: PRD F10 · Decision: D-055
 - API: `GET /org/update-status` (contract addition); `settings.update_check`.
 
 ### US-OPS-07 · Log every request with an id
-**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster, **I want** structured logs with a request id, **so that** I can trace an error a user reports.
 
 **Acceptance criteria**
@@ -138,7 +139,7 @@ Finding: C26 · Decision: D-009
 - Data: `idempotency_keys` gains `user_id`; keys are unique per org + user + endpoint + key (04 invariant I12), so two devices can't collide.
 
 ### US-OPS-09 · Respect reduced-motion settings everywhere
-**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
 **As** a member sensitive to motion, **I want** Spine to stop animating when I ask my device for less motion, **so that** it's comfortable to use.
 
 Finding: C25
@@ -167,7 +168,7 @@ Findings: C4, C15 · Decision: D-058
 - `@spine/ui` `AlertDialog` default variant; audit every `AlertDialogAction`.
 
 ### US-OPS-11 · Show a helpful page for a missing page
-**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 8 · **Screens:** `NotFound`
+**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 10 · **Screens:** `NotFound`
 **As** a member, **I want** a clear page when a link is wrong, **so that** I can get back to work.
 
 Finding: G8
@@ -196,7 +197,7 @@ Finding: G8
 - Shared `NoAccess` component used by route guards and `apiClient`.
 
 ### US-OPS-13 · Recover from an unexpected error
-**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 8 · **Screens:** `ServerError`
+**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 10 · **Screens:** `ServerError`
 **As** a member, **I want** a calm error page with a reference, **so that** I know my saved work is safe and how to report it.
 
 Finding: G8
@@ -210,7 +211,7 @@ Finding: G8
 - Next.js `error.tsx`; request id from US-OPS-07.
 
 ### US-OPS-14 · Use the web app on a phone
-**Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 8 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`
+**Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 10 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`
 **As** an owner checking something between jobs, **I want** the web app to work on my phone's browser, **so that** I can see if an invoice got paid.
 
 Finding: C19 · Decision: D-066
@@ -225,7 +226,7 @@ Finding: C19 · Decision: D-066
 - `@spine/ui` `AppShell` responsive mode.
 
 ### US-OPS-15 · Keep wide tables usable on small screens
-**Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 8 · **Screens:** `AppShellPhone`
+**Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 10 · **Screens:** `AppShellPhone`
 **As** a member on a phone or small tablet, **I want** tables to scroll inside their own box, **so that** the page doesn't break.
 
 **Acceptance criteria**
@@ -237,7 +238,7 @@ Finding: C19 · Decision: D-066
 - Playwright checks at 390×844 for every route (NFR-COMP-02).
 
 ### US-OPS-16 · Move every user-facing string into translation files
-**Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
 **As** a self-hoster in another country, **I want** strings externalised, **so that** a translation can be added without changing code.
 
 PRD §10.8 · Decision: D-069
@@ -251,7 +252,7 @@ PRD §10.8 · Decision: D-069
 - English only ships in v1.
 
 ### US-OPS-17 · Pass an accessibility audit of every screen
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** a member who uses a keyboard or screen reader, **I want** every screen to meet WCAG 2.1 AA, **so that** I can use Spine fully.
 
 PRD §10.8
@@ -265,7 +266,7 @@ PRD §10.8
 - Extends `apps/e2e`; results recorded in `docs/qa-script.md`.
 
 ### US-OPS-18 · Complete a security review before 1.0
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** an owner trusting Spine with my books, **I want** a documented security review, **so that** obvious holes are closed before release.
 
 PRD §10.3
@@ -279,7 +280,7 @@ PRD §10.3
 - NFR-SEC-04, NFR-SEC-05.
 
 ### US-OPS-19 · Ship the README, licence and contributor guide
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 8 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
 **As** a stranger finding the repository, **I want** a README with screenshots, a licence and contribution rules, **so that** I can decide to use or help with Spine.
 
 PRD §10.9
@@ -287,7 +288,7 @@ PRD §10.9
 **Acceptance criteria**
 - **Given** the repository root, **when** I open it, **then** I find `README.md` (what it is, screenshots, install in 5 minutes, backup, upgrade), `LICENSE` (as decided in Q-01), `CONTRIBUTING.md`, a code of conduct and issue templates.
 - **Given** the release process, **when** I read `docs/release.md`, **then** it lists versioning, changelog and image publishing steps.
-- **Given** a new user follows only the README on a clean machine, **when** they finish, **then** they issue their first invoice (Phase 8 exit criterion).
+- **Given** a new user follows only the README on a clean machine, **when** they finish, **then** they issue their first invoice (Phase 10 exit criterion).
 
 **Implementation notes**
 - Licence is blocked on Q-01.
@@ -514,3 +515,45 @@ Decision: D-131
 - Native: `packages/ui-native/src/tokens` gets the same light `background`; screens that use the system grouped background keep it ([native notes](../design/native-notes.md)).
 - Design: drawn screens on the canvas use the new page colour from Phase 7 on; captured screens are retaken as each one is next touched.
 
+
+### US-OPS-33 · Attach files to bills, invoices and other records
+**Feature:** F-OPS-10 · **Priority:** P1 · **Phase:** 8 · **Screens:** `VendorBillAttachments`
+**As** office staff, **I want** to keep the vendor's bill, the signed contract or the bank slip with its record, **so that** my accountant finds the evidence in one click.
+
+Decision: D-156
+
+**Acceptance criteria**
+- **Given** a quote, invoice, credit note, payment, refund, vendor bill, vendor credit, vendor payment, expense, journal, bank transaction, opening document or contact, **when** it opens, **then** it has an "Attachments" section with "Add files" and a drop zone.
+- **Given** I add files, **when** they upload, **then** each shows name, size, who added it and when, with a thumbnail for images and an icon for PDFs.
+- **Given** an 11th file, **when** I add it, **then** I see "A record can hold up to 10 files. Remove one first.".
+- **Given** a file over 10 MB or of another type, **when** I add it, **then** I see the messages from US-OPS-29.
+- **Given** a vendor bill created from the dashboard's quick add, **when** I drop the vendor's PDF on the "New bill" form, **then** it's attached on save.
+- **Given** the list views of bills and expenses, **when** a record has attachments, **then** a paperclip with the count shows (with an accessible label "3 attachments").
+
+**Implementation notes**
+- API: `GET/POST /attachments?entityType=&entityId=`, `POST` body `{ entityType, entityId, fileId }` after `POST /files` (capability of editing the record).
+- Data: `attachments` (new: `org_id`, `entity_type`, `entity_id`, `file_id`, `created_by_user_id`, `created_at`); D-117's file-owner lookup gains this table.
+
+### US-OPS-34 · Open attachments only when I can open the record
+**Feature:** F-OPS-10 · **Priority:** P1 · **Phase:** 8 · **Screens:** `VendorBillAttachments`
+**As** an owner, **I want** attachments protected like their records, **so that** a contract doesn't leak to someone who can't see the invoice.
+
+**Acceptance criteria**
+- **Given** a member who can open the record, **when** they open an attachment, **then** it previews in the browser (images and PDFs) and can be downloaded.
+- **Given** a member who can't open the record, **when** they request the file by id, **then** the API returns 404.
+- **Given** a Field user, **when** they open their own expense, **then** they see its attachments; they never see attachments on money documents.
+- **Given** a data export with "Include files" (US-SET-15), **when** it's built, **then** attachments are included under `attachments/<entity>/<id>/`.
+
+**Implementation notes**
+- `GET /files/:id` resolves the owning record through `attachments` (D-117); tests per entity type.
+
+### US-OPS-35 · Remove an attachment added by mistake
+**Feature:** F-OPS-10 · **Priority:** P2 · **Phase:** 8 · **Screens:** `VendorBillAttachments`
+**As** office staff, **I want** to remove a wrong file, **so that** the record shows only what belongs to it.
+
+**Acceptance criteria**
+- **Given** a draft or unissued record I can edit, **when** I choose "Remove" on a file and confirm, **then** it's gone and the stored file is deleted when nothing else uses it.
+- **Given** an issued invoice, recorded bill or other locked record, **when** a Staff user looks for "Remove", **then** it isn't there; an Owner can remove it with a reason, and the record's history shows "Removed attachment <name> — <reason>".
+
+**Implementation notes**
+- API: `DELETE /attachments/:id { reason? }` (edit capability; Owner-only on locked records; audited).

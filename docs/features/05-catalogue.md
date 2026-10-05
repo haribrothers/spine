@@ -2,7 +2,7 @@
 
 The goods and services a business quotes and invoices, each with a unit, default price, default tax and the income and expense accounts it posts to. Items speed up document lines; documents copy the item's values at the time so later catalogue changes never alter them.
 
-**Screens:** `CatalogList` (P1), `CatalogEmpty` (P1), `CatalogItemDrawer` (P1), `CatalogDeleteConfirm` (P2), `QuoteBuilder` (P1), `TeamPrivilegesExpanded` (P1), `QuoteLinePicker` (P2)
+**Screens:** `CatalogList` (P1), `CatalogEmpty` (P1), `CatalogItemDrawer` (P1), `CatalogDeleteConfirm` (P2), `QuoteBuilder` (P1), `TeamPrivilegesExpanded` (P1), `QuoteLinePicker` (P2), `ImportCatalogDialog` (P2)
 **Depends on:** 11 Tax (rates and groups), 12 Reports (accounts), 06 Quotes / 08 Invoicing (line editors).
 
 ## Features
@@ -12,6 +12,7 @@ The goods and services a business quotes and invoices, each with a unit, default
 | F-CAT-01 | Catalogue items | P1 | 1 | `CatalogList`, `CatalogEmpty`, `CatalogItemDrawer`, `CatalogDeleteConfirm` |
 | F-CAT-02 | Items on document lines | P1 | 1 | `QuoteBuilder` |
 | F-CAT-03 | Own/others catalogue rights | P1 | 4 | `CatalogList`, `TeamPrivilegesExpanded` |
+| F-CAT-04 | Import items from CSV | P2 | 8 | `ImportCatalogDialog` |
 
 ## User stories
 
@@ -134,3 +135,18 @@ Legacy: S-02.5
 
 **Implementation notes**
 - Data: `team_privileges`; groups from `CAPABILITY_LABELS[*].group`.
+
+### US-CAT-09 · Import catalogue items from a spreadsheet
+**Feature:** F-CAT-04 · **Priority:** P2 · **Phase:** 8 · **Screens:** `ImportCatalogDialog`
+**As** an owner moving from other software, **I want** to import my items, **so that** I don't type hundreds of them.
+
+Decision: D-161
+
+**Acceptance criteria**
+- **Given** Catalogue › "Import", **when** I choose a CSV file, **then** I map "Name", "Description", "Unit", "Price", "Tax", "Income account", "Expense account" (and "HSN/SAC" from Phase 9) and see a preview of the first rows.
+- **Given** a tax or account that doesn't match one in Spine by name or code, **when** I preview, **then** the row is flagged "Unknown tax <name>" or "Unknown account <code>" and I can skip it or fix the file.
+- **Given** an item name already in the catalogue, **when** I import, **then** it's skipped as a duplicate and listed.
+- **Given** the import finishes, **when** the summary shows, **then** it reads "Imported <n> items · skipped <m> duplicates · <k> rows failed" with a download of the failed rows.
+
+**Implementation notes**
+- API: `POST /catalog-items/import` (`catalog.edit_own`), same pattern as `POST /contacts/import` (US-CRM-14).

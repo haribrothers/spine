@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 10 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 
@@ -333,7 +333,94 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-OPS-26 · Use every new screen in dark mode
 - [x] US-OPS-32 · Lift cards off the page in light mode
 
-## Phase 8 · Packaging & 1.0
+## Phase 8 · Books completeness
+
+- [ ] US-BANK-01 · Add my bank, cash and card accounts
+- [ ] US-BANK-02 · See every account's balance and what moved through it
+- [ ] US-BANK-03 · Choose the account money went into or came out of
+- [ ] US-BANK-04 · Move money between my accounts
+- [ ] US-BANK-05 · Record money in or out that has no invoice or bill
+- [ ] US-BANK-06 · Archive an account I no longer use
+- [ ] US-BANK-07 · Import a bank statement
+- [ ] US-BANK-08 · Match statement lines to what's in Spine
+- [ ] US-BANK-09 · Create what's missing from a statement line
+- [ ] US-BANK-10 · Finish a reconciliation when it balances
+- [ ] US-BANK-11 · Review or undo a reconciliation
+- [ ] US-BANK-12 · Let a Team see balances, record money and reconcile
+- [ ] US-CAT-09 · Import catalogue items from a spreadsheet
+- [ ] US-PAY-16 · Keep a credit note's extra as customer credit
+- [ ] US-PAY-17 · Refund a customer
+- [ ] US-PAY-18 · Let a Team refund customers
+- [ ] US-PUR-24 · Record a credit from a vendor
+- [ ] US-PUR-25 · Apply a vendor credit to bills
+- [ ] US-PUR-26 · Record a refund from a vendor
+- [ ] US-PUR-27 · Void a vendor credit
+- [ ] US-PUR-28 · Let a Team manage vendor credits
+- [ ] US-PUR-29 · Set up a recurring bill
+- [ ] US-PUR-30 · Create recurring bills automatically
+- [ ] US-PUR-31 · Pause, edit or stop a recurring bill
+- [ ] US-TAX-08 · Record paying tax and using input tax credit
+- [ ] US-RPT-16 · Set a cutover date and enter opening account balances
+- [ ] US-RPT-17 · Bring in unpaid customer invoices, retention and credit
+- [ ] US-RPT-18 · Bring in unpaid vendor bills and vendor credits
+- [ ] US-RPT-19 · Check and lock my opening balances
+- [ ] US-RPT-20 · Post an adjusting journal
+- [ ] US-RPT-21 · Reverse a journal posted by mistake
+- [ ] US-RPT-22 · See every manual journal
+- [ ] US-RPT-23 · Find every report in one place
+- [ ] US-RPT-24 · See the general ledger
+- [ ] US-RPT-25 · See the day book
+- [ ] US-RPT-26 · See where cash came from and where it went
+- [ ] US-RPT-27 · Compare profit and loss across periods
+- [ ] US-RPT-28 · See sales by customer and by item
+- [ ] US-RPT-29 · See expenses by category and purchases by vendor
+- [ ] US-RPT-30 · See payments received and made in a period
+- [ ] US-RPT-31 · See credit notes, vendor credits and refunds in a period
+- [ ] US-RPT-32 · Export every report to CSV and Excel
+- [ ] US-RPT-33 · Download any report as a PDF
+- [ ] US-RPT-34 · Print any report
+- [ ] US-RPT-35 · See profit and loss on a cash basis
+- [ ] US-RPT-36 · Let my accountant's Team see the financial statements
+- [ ] US-DASH-21 · See what I owe vendors on the dashboard
+- [ ] US-DASH-22 · See where money goes
+- [ ] US-DASH-23 · See each bank, cash and card balance
+- [ ] US-DASH-24 · See work not yet billed
+- [ ] US-DASH-25 · See tax owed this period
+- [ ] US-DASH-26 · Switch dashboard profit between accrual and cash
+- [ ] US-OPS-33 · Attach files to bills, invoices and other records
+- [ ] US-OPS-34 · Open attachments only when I can open the record
+- [ ] US-OPS-35 · Remove an attachment added by mistake
+
+## Phase 9 · Tax, documents and setup
+
+- [ ] US-ONB-14 · Start with the modules my industry needs
+- [ ] US-ONB-15 · Open a setup page that shows what's left
+- [ ] US-ONB-16 · Go from each setup card to its setting and its guide
+- [ ] US-INV-25 · Set my UPI ID for payments
+- [ ] US-INV-26 · Show a UPI QR code on invoices
+- [ ] US-TAX-09 · Start with my country's tax rates
+- [ ] US-TAX-10 · Give each rate a tax type
+- [ ] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
+- [ ] US-TAX-12 · Record my GSTIN and state, and each customer's
+- [ ] US-TAX-13 · Pick intra- or inter-state GST automatically
+- [ ] US-TAX-14 · Add HSN or SAC codes to items and lines
+- [ ] US-TAX-15 · Print GST details on invoices and credit notes
+- [ ] US-TAX-16 · Export GSTR-1 for the GST portal
+- [ ] US-TAX-17 · Check GSTR-1 figures before uploading
+- [ ] US-RPT-37 · See tax collected and paid by rate and tax type
+- [ ] US-RPT-38 · Export my books for Tally
+- [ ] US-RPT-39 · Map my accounts to Tally groups
+- [ ] US-SET-17 · Choose paper size and columns for each document
+- [ ] US-SET-18 · Set each document's title, terms and notes
+- [ ] US-SET-19 · Add a signature and the amount in words
+- [ ] US-SET-20 · Show every character on PDFs
+- [ ] US-SET-21 · Edit the text of each customer email
+- [ ] US-SET-22 · Preview an email and reset it to the default
+- [ ] US-SET-23 · Switch optional modules on or off
+- [ ] US-SET-24 · Hide everything a switched-off module owns
+- [ ] US-SET-25 · Switch a module back on with nothing lost
+
+## Phase 10 · Packaging & 1.0
 
 - [ ] US-ONB-09 · Load demo data to explore
 - [ ] US-SET-08 · Remove demo data and keep my real data

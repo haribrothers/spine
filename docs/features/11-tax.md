@@ -1,9 +1,9 @@
 # 11 · Tax
 
-Named tax rates an owner defines for their country, groups of rates applied together (e.g. CGST + SGST, or a state surcharge compounded on a sales tax), and tax-inclusive or tax-exclusive pricing by default with a per-line override. Tax is computed per line. The Tax Summary report is in 12 Reports. Spine produces the numbers; it never files returns.
+Named tax rates an owner defines for their country, groups of rates applied together (e.g. CGST + SGST, or a state surcharge compounded on a sales tax), and tax-inclusive or tax-exclusive pricing by default with a per-line override. Tax is computed per line. The Tax Summary report is in 12 Reports. Phase 8 adds recording tax payments; Phase 9 adds country presets, tax types, supply classes and, for India, GST registration, place of supply, HSN/SAC, GST invoices and a GSTR-1 export. Spine produces the numbers and files to upload; it never files returns or connects to a tax portal (D-148).
 
-**Screens:** `SettingsTax` (P1), `TaxRateDialog` (P1), `TaxGroupDialog` (P1), `QuoteBuilder` (P1)
-**Depends on:** 16 Settings (pane), 06 Quotes / 08 Invoicing / 10 Purchases (line editors), `@spine/shared` tax engine.
+**Screens:** `SettingsTax` (P1), `TaxRateDialog` (P1), `TaxGroupDialog` (P1), `QuoteBuilder` (P1), `TaxPaymentDialog` (P1), `OnbTaxCountry` (P1), `SettingsTaxCountry` (P1), `TaxRateDialogType` (P1), `SettingsTaxGst` (P1), `ContactGstDialog` (P1), `CatalogItemDrawerGst` (P1), `InvoiceBuilderGst` (P1), `InvoicePdfGst` (P1), `Gstr1Export` (P1)
+**Depends on:** 16 Settings (pane), 06 Quotes / 08 Invoicing / 10 Purchases (line editors), `@spine/shared` tax engine, 20 Banking (tax payments), 03 CRM (contact GST details), 05 Catalogue (HSN/SAC).
 
 ## Features
 
@@ -12,6 +12,12 @@ Named tax rates an owner defines for their country, groups of rates applied toge
 | F-TAX-01 | Named tax rates | P1 | 4 | `SettingsTax`, `TaxRateDialog` |
 | F-TAX-02 | Tax groups | P1 | 4 | `TaxGroupDialog`, `QuoteBuilder` |
 | F-TAX-03 | Tax-inclusive and tax-exclusive pricing | P1 | 4 | `SettingsTax`, `QuoteBuilder` |
+| F-TAX-04 | Paying tax | P1 | 8 | `TaxPaymentDialog` |
+| F-TAX-05 | Country tax presets | P1 | 9 | `OnbTaxCountry`, `SettingsTaxCountry` |
+| F-TAX-06 | Tax types and supply classes | P1 | 9 | `TaxRateDialogType`, `InvoiceBuilderGst`, `CatalogItemDrawerGst` |
+| F-TAX-07 | GST registration and place of supply | P1 | 9 | `SettingsTaxGst`, `ContactGstDialog`, `InvoiceBuilderGst` |
+| F-TAX-08 | HSN/SAC and GST documents | P1 | 9 | `CatalogItemDrawerGst`, `InvoiceBuilderGst`, `InvoicePdfGst` |
+| F-TAX-09 | GSTR-1 export | P1 | 9 | `Gstr1Export` |
 
 ## User stories
 
@@ -31,7 +37,7 @@ Legacy: S-08.1
 **Implementation notes**
 - API: `POST /tax-rates`, `PUT /tax-rates/:id` (Owner).
 - Data: `tax_rates` (`rate` is `real` today; `numeric(9,4)` after US-TAX-07, `is_compound`).
-- Edge: a 0% rate is how zero-rated sales are entered; exempt vs zero-rated reporting is open (Q-09).
+- Edge: a 0% rate is how zero-rated sales are entered; from Phase 9 each line also carries a supply class (US-TAX-11, D-147, closes Q-09).
 
 ### US-TAX-02 · Change or retire a tax rate safely
 **Feature:** F-TAX-01 · **Priority:** P1 · **Phase:** 4 · **Screens:** `SettingsTax`
@@ -118,3 +124,155 @@ Review finding: Stage 5 #22 · Decision: D-004
 **Implementation notes**
 - Data: `tax_rates.rate`, `*_lines.quantity`, `*_lines.discount_percentage`, `*_lines.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount` → `numeric(18,4)` (04 "Columns added"). Drizzle returns `numeric` as string; parse with the shared decimal helper.
 - Totals already stored in minor units (`bigint`) are not recomputed.
+
+### US-TAX-08 · Record paying tax and using input tax credit
+**Feature:** F-TAX-04 · **Priority:** P1 · **Phase:** 8 · **Screens:** `TaxPaymentDialog`
+**As** an owner, **I want** to record the tax I pay to the authority, **so that** Output Tax Payable goes back to zero after I file.
+
+Decision: D-143
+
+**Acceptance criteria**
+- **Given** Reports › Tax Summary › "Record tax payment", **when** the dialog opens, **then** it shows the period's "Tax collected", "Input tax available" and "Net payable", and asks for "Period", "Input tax used" (default: the smaller of input tax available and tax collected), "Amount paid" (default: net payable), "Paid from" (money account), "Date" and "Reference" (e.g. the challan number).
+- **Given** I save, **when** it posts, **then** P26 debits Output Tax Payable by paid + input tax used, credits Input Tax Receivable by input tax used and the money account by the amount paid.
+- **Given** input tax used larger than input tax available, **when** I save, **then** I see "You have <amount> of input tax to use. Lower the amount.".
+- **Given** "Record tax refund", **when** I enter an amount and the money account, **then** P27 posts.
+- **Given** a tax payment, **when** it's not reconciled, **then** an Owner can delete it and a reversing entry posts.
+- **Given** a Staff user, **when** they call the route, **then** the API returns 403.
+
+**Implementation notes**
+- API: `POST /tax-payments`, `GET /tax-payments`, `DELETE /tax-payments/:id` (roles: owner); `POST /tax-refunds` (roles: owner).
+- Data: `tax_payments` (new; `kind` payment/refund, period, input_used, amount, money account, reference, entry_id).
+
+### US-TAX-09 · Start with my country's tax rates
+**Feature:** F-TAX-05 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbTaxCountry`, `SettingsTaxCountry`
+**As** a new owner, **I want** to pick my country and get its taxes set up, **so that** I don't type rates I don't understand.
+
+Decision: D-145
+
+**Acceptance criteria**
+- **Given** the setup wizard's Tax step, **when** it opens, **then** it asks "Where is your business registered for tax?" with "India (GST)", "United Kingdom (VAT)", "Australia (GST)", "New Zealand (GST)", "United Arab Emirates (VAT)", "Saudi Arabia (VAT)" and "Another country — I'll add my own rates".
+- **Given** India, **when** I continue, **then** GST rates at 0, 0.25, 3, 5, 12, 18, 28 and 40% are created as CGST and SGST halves (and UTGST), grouped as "GST 5%", "GST 18%"… with inter-state counterparts "IGST 5%", "IGST 18%"…, plus a cess type with no rates; the 12% and 28% groups are created archived when the law no longer uses them; GST settings open next (US-TAX-12).
+- **Given** the UK, **when** I continue, **then** "VAT 20%", "VAT 5%", "VAT 0%" (zero-rated) and "Exempt" are created and the document title becomes "VAT invoice".
+- **Given** Australia, New Zealand, the UAE or Saudi Arabia, **when** I continue, **then** their standard rate (10%, 15%, 5%, 15%), a zero rate and an exempt class are created and the title becomes "Tax invoice".
+- **Given** "Another country", **when** I continue, **then** the step works as today (US-ONB-06).
+- **Given** Settings › Tax › "Country", **when** I change the country later, **then** the new preset's rates are added (existing rates are kept, never deleted) and I'm told "Added <n> rates. Your existing rates are unchanged — archive the ones you no longer use.".
+
+**Implementation notes**
+- API: `PUT /org/tax/profile { country }` (roles: owner) seeds idempotently from `packages/shared/src/tax/presets/*.ts`.
+- Data: `settings` key `tax_profile` `{ country, registrationNumber?, legalName?, stateCode?, registeredOn? }`.
+- Rates follow the law current when the story is built; a preset never edits an existing rate.
+
+### US-TAX-10 · Give each rate a tax type
+**Feature:** F-TAX-06 · **Priority:** P1 · **Phase:** 9 · **Screens:** `TaxRateDialogType`
+**As** an owner, **I want** each rate to say what kind of tax it is, **so that** reports and returns split CGST, SGST and IGST.
+
+**Acceptance criteria**
+- **Given** "Add rate" or "Edit rate", **when** the dialog opens, **then** it has "Tax type": for India "CGST", "SGST", "UTGST", "IGST", "Cess"; elsewhere "VAT", "GST", "Sales tax" or "Other".
+- **Given** existing rates from before the upgrade, **when** the migration runs, **then** they get type "Other" and keep working.
+- **Given** a group, **when** it's saved for India, **then** it may combine CGST with SGST or UTGST of equal rates (plus cess), or be a single IGST rate; any other mix shows "A GST group is CGST + SGST (or UTGST) at the same rate, optionally with cess.".
+
+**Implementation notes**
+- Data: `tax_rates.tax_type` enum `tax_type`; `tax_groups.scope` (`intra`/`inter`/`any`). API: `POST/PUT /tax-rates` and `/tax-groups` accept them.
+
+### US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
+**Feature:** F-TAX-06 · **Priority:** P1 · **Phase:** 9 · **Screens:** `InvoiceBuilderGst`, `CatalogItemDrawerGst`
+**As** an owner, **I want** to say why a line has no tax, **so that** my return reports exempt and zero-rated sales correctly.
+
+Decision: D-147 · Closes: Q-09
+
+**Acceptance criteria**
+- **Given** a catalogue item, **when** I edit it, **then** "Supply type" offers "Taxable", "Zero-rated", "Exempt" and "Non-taxable (outside GST/VAT)".
+- **Given** a document line, **when** its tax is 0%, **then** it shows the supply type from the item (else "Zero-rated") and I can change it.
+- **Given** an exempt or non-taxable line, **when** I pick a non-zero rate, **then** I see "An exempt line has no tax. Change the supply type to Taxable to add tax.".
+- **Given** issued documents, **when** the supply type is shown later, **then** it's the one snapshotted at issue.
+
+**Implementation notes**
+- Data: `catalog_items.supply_class`, `*_lines.supply_class` enum `supply_class` (`taxable`, `zero_rated`, `exempt`, `non_taxable`); migration sets `taxable` where tax > 0, else `zero_rated`.
+
+### US-TAX-12 · Record my GSTIN and state, and each customer's
+**Feature:** F-TAX-07 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsTaxGst`, `ContactGstDialog`
+**As** an owner in India, **I want** my GST registration and my customers' details recorded, **so that** Spine knows which GST applies.
+
+Decision: D-146
+
+**Acceptance criteria**
+- **Given** Settings › Tax › "GST", **when** it opens, **then** it asks for "GSTIN", "Legal name", "Trade name", "State" and "Registered on".
+- **Given** a GSTIN, **when** I enter it, **then** it's checked for format and checksum ("This GSTIN isn't valid — check the 15 characters.") and its first two digits must match the state ("This GSTIN belongs to <state>.").
+- **Given** a contact, **when** I edit it, **then** "GST treatment" offers "Registered business", "Unregistered business", "Consumer", "Overseas" and "Special economic zone", with "GSTIN" required for registered and SEZ, and "State" on each address.
+- **Given** contact import, **when** a file has GSTIN and state columns, **then** they're mapped too.
+- **Given** a registered contact with a GSTIN, **when** it's saved, **then** the state is filled from the GSTIN when blank.
+
+**Implementation notes**
+- Data: `settings.tax_profile` (as US-TAX-09), `contacts.gst_treatment`, `contacts.tax_id` (exists, used as GSTIN), `addresses.state_code` (two-digit GST state code). API: `PUT /org/tax/profile`, `PUT /contacts/:id`.
+
+### US-TAX-13 · Pick intra- or inter-state GST automatically
+**Feature:** F-TAX-07 · **Priority:** P1 · **Phase:** 9 · **Screens:** `InvoiceBuilderGst`, `CatalogItemDrawerGst`
+**As** office staff, **I want** the right GST chosen from where the customer is, **so that** I never pick CGST + SGST for an out-of-state sale.
+
+Decision: D-146
+
+**Acceptance criteria**
+- **Given** a catalogue item, **when** GST is on, **then** it has "Intra-state tax" and "Inter-state tax" (e.g. "GST 18%" and "IGST 18%"), defaulting from Settings › Tax › "Default tax preference".
+- **Given** a quote, invoice or credit note, **when** the customer and address are chosen, **then** "Place of supply" shows the state (from the site or shipping address, else billing) and can be changed.
+- **Given** place of supply in my state, **when** I add an item, **then** its intra-state tax is used; in another state, overseas or SEZ, its inter-state tax.
+- **Given** I change the place of supply on a draft, **when** it changes between intra and inter, **then** every line that still uses the item's default switches, and lines I changed by hand stay and show a warning icon ("Check this line's tax — the place of supply changed.").
+- **Given** vendor bills, **when** a vendor's state differs from mine, **then** the same rule picks inter-state tax.
+- **Given** an issued document, **when** I open it, **then** its place of supply and supply type are the ones snapshotted at issue.
+
+**Implementation notes**
+- Data: `catalog_items.inter_tax_rate_id` / `inter_tax_group_id` (the existing default becomes intra); `quotes`/`invoices`/`credit_notes`/`vendor_bills` gain `place_of_supply` (state code) and `supply_type` (`intra`/`inter`/`export`). `TaxResolverService` picks per line; unit tests in `@spine/shared`.
+
+### US-TAX-14 · Add HSN or SAC codes to items and lines
+**Feature:** F-TAX-08 · **Priority:** P1 · **Phase:** 9 · **Screens:** `CatalogItemDrawerGst`, `InvoiceBuilderGst`
+**As** an owner in India, **I want** HSN and SAC codes on what I sell and buy, **so that** invoices and GSTR-1 have them.
+
+**Acceptance criteria**
+- **Given** a catalogue item, **when** GST is on, **then** it has "HSN/SAC code" (4, 6 or 8 digits; "Enter 4, 6 or 8 digits.").
+- **Given** a line from that item, **when** it's added, **then** it copies the code and I can change it on the line.
+- **Given** a line without a code on an invoice for a registered business, **when** I issue it, **then** I'm warned "<n> lines have no HSN/SAC code. GSTR-1 needs them." and can issue anyway.
+- **Given** catalogue import (US-CAT-09), **when** the file has an HSN/SAC column, **then** it's mapped.
+
+**Implementation notes**
+- Data: `catalog_items.hsn_sac`, `*_lines.hsn_sac` (snapshot).
+
+### US-TAX-15 · Print GST details on invoices and credit notes
+**Feature:** F-TAX-08 · **Priority:** P1 · **Phase:** 9 · **Screens:** `InvoicePdfGst`
+**As** an owner in India, **I want** my invoices to meet GST rules, **so that** customers can claim input tax.
+
+**Acceptance criteria**
+- **Given** GST is on, **when** an invoice PDF renders, **then** it's titled "Tax Invoice" (or "Bill of Supply" when every line is exempt or non-taxable), and shows my GSTIN and state, the customer's GSTIN (when registered), "Place of supply: <state> (<code>)", HSN/SAC per line, and tax split as CGST and SGST (or IGST) per line with rates.
+- **Given** an export invoice, **when** it renders, **then** it shows "Supply meant for export" and the overseas address.
+- **Given** a credit note, **when** it renders, **then** it shows the same GST details and the original invoice's number and date.
+- **Given** a total, **when** it renders, **then** an HSN-wise tax summary table follows the lines (when the layout option is on, US-SET-17).
+- **Given** no GST profile, **when** a PDF renders, **then** none of this shows and documents look as before.
+
+**Implementation notes**
+- `invoice-pdf.template.tsx` and `credit-note-pdf.template.tsx` read the snapshot fields; PDF snapshot tests for intra, inter, export and bill-of-supply cases.
+
+### US-TAX-16 · Export GSTR-1 for the GST portal
+**Feature:** F-TAX-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `Gstr1Export`
+**As** an owner or my accountant, **I want** a GSTR-1 file I can upload, **so that** filing doesn't mean retyping every invoice.
+
+Decision: D-148
+
+**Acceptance criteria**
+- **Given** Reports › Tax › "GSTR-1", **when** I choose "Monthly" or "Quarterly" and the period, **then** I see counts and values for B2B, B2CL, B2CS, CDNR, CDNUR, Exports, Nil/exempt/non-GST, HSN summary and Documents issued.
+- **Given** "Download JSON", **when** it downloads, **then** the file follows the GST portal's GSTR-1 upload format with my GSTIN and the period, and its schema version is written in it.
+- **Given** a credit note in the period against an invoice from an earlier period, **when** the file is built, **then** it's in CDNR/CDNUR with the original invoice's number and date.
+- **Given** "Documents issued", **when** it's built, **then** it lists invoice and credit note number ranges with totals and voided counts.
+- **Given** the export, **when** I read the footer, **then** it says "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal.".
+
+**Implementation notes**
+- API: `GET /exports/gstr1?period=YYYY-MM|YYYY-Qn&format=json|xlsx` (`reports.view_financial_statements`). Mapping lives in one module (`apps/api/src/modules/tax/gstr1/`) with fixture tests per table.
+
+### US-TAX-17 · Check GSTR-1 figures before uploading
+**Feature:** F-TAX-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `Gstr1Export`
+**As** an accountant, **I want** to see problems before I upload, **so that** the portal doesn't reject the file.
+
+**Acceptance criteria**
+- **Given** the GSTR-1 page, **when** problems exist, **then** they're listed before the download buttons: registered customers with no GSTIN, lines with no HSN/SAC, invoices with no place of supply, and totals that don't match the Tax Summary — each with a link to fix it.
+- **Given** "Download Excel", **when** it opens, **then** it has one sheet per GSTR-1 table plus "Problems", with the same figures as the JSON.
+- **Given** the totals, **when** they're compared, **then** total tax in the file equals the Tax Summary's tax collected for the period (tested).
+
+**Implementation notes**
+- Same route with `format=xlsx` (`exceljs`, D-144).

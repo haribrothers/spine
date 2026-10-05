@@ -1,8 +1,8 @@
 # Screens
 
-Every screen in the product: 293 in total. **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
+Every screen in the product: 353 in total (60 added for Phases 8–9 on 2026-10-06, D-133). **Captured** screens are screenshots of the running app (demo data, Riverstone Builders); **Drawn** screens are designed on the canvas and not built yet. Names are the screen ids used in stories. Desktop is 1440×900; phone is 390×844. Drawn iOS screens show a floating tab bar with line icons for illustration only — the app uses the system tab bar with SF Symbols (US-MOB-19, D-022, D-029).
 
-The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY).
+The design canvas with every drawn screen: [Spine — New screens](https://claude.ai/artifact/Arg4jSKaDS9KDyiMtUwRYY). Phase 8–9 screens are on its pages "Phase 8 · Books completeness" and "Phase 9 · Tax, documents and setup"; they share one sidebar component (`V1Sidebar`) that adds Banking, Vendor Credits and Journals to the navigation.
 
 ## Onboarding & first run
 
@@ -122,6 +122,25 @@ Shows: "Overview" · "Dashboard" · "Good morning, Alex" · "Sunday 4 October ·
 Links to: `DashboardOwnerRedesign`, `DashboardFieldRedesign`, `DashboardCaughtUp`, `NoAccess`
 
 Shows: "Overview" · "Dashboard" · "Good afternoon, Sarah" · "Sunday 4 October · Riverstone Builders · 4 things need you today" · "Edit layout" · "+ New" · "Needs your attention" · "Only things you can act on" · "1 expense waiting for your approval" · "Marcus Webb · Fuel · $64.00 · submitted yesterday" · "Review" · "Your quote QUO-0004 expires Friday" · "Harborview Construction Co. · $510.00 · viewed 3 times, no answer" · "Follow up" · "2 follow-ups are overdue" · "Call back Priya Nair · Send revised drawings to Maple Ridge" · "Open" · "Milestone ready to invoice" · "Mobilisation & site setup · Marina office fit-out · completed by Marcus Webb" · "Raise invoice" · "Today" · "Open calendar" · "2:30 PM" · "Weekly crew scheduling" · "Meeting · office" · "Due Sat" · "Mobilisation & site setup" · "Milestone · Marina office fit-out" · "Call back Priya Nair" · "Follow-up · Harborview Construction Co." · "Mon 8:00" · "Monday site stand-up" · "Meeting · Marina office fit-out" · "Receivables" · "$35,165.50" · "▲ +12.4%" · "vs last month" · "Current $30,623.00 · overdue $4,542.50" · "Overdue" · "$4,542.50" · "▼ −22.0%" · "1 invoice" · "Open pipeline" · "$96,465.00" · "▲ +9.1%" · …
+
+### OnbTaxCountry — Setup wizard — pick a tax country
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-09 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Setup — tax country — Spine" · "1 Business" · "2 Template" · "3 Currency" · "4 Financial year" · "5 Tax" · "6 Numbering" · "7 Accounts" · "8 Team" · "Where is your business registered for tax?" · "Spine sets up your country's rates. You can add, change or archive them later in Settings › Tax." · "India (GST)" · "CGST, SGST, IGST and cess at the current slabs; GST details next." · "United Kingdom (VAT)" · "20%, 5%, zero-rated and exempt; \"VAT invoice\" title." · "Australia (GST)" · "10%, GST-free and exempt." · "New Zealand (GST)" · "15%, zero-rated and exempt." · "United Arab Emirates (VAT)" · "5%, zero-rated and exempt." · "Saudi Arabia (VAT)" · "Another country — I'll add my own rates" · "Skip to dashboard" · "Continue"
+
+### SetupSpine — Set up Spine page
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-ONB-15, US-ONB-16 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Set up Spine — Spine" · "Set up Spine" · "8 of 14 done · Owners only" · "Business details and logo" · "Done" · "Shown on every quote, invoice and email." · "Review" · "How it works" · "Mark as not needed" · "Tax" · "Your country's rates, and GST details in India." · "Chart of accounts" · "Add the income and expense accounts you report on." · "Opening balances" · "To do" · "What you had on the day you started — so the Balance Sheet is right." · "Set up" · "Bank and cash accounts" · "Record money where it really is, then reconcile." · "Payment instructions" · "How customers pay you — bank details and UPI ID." · "Documents and emails" · "Paper size, terms, signature and the words in your emails." · "Numbering" · "Continue your existing invoice numbers." · "Payment reminders" · "Chase overdue invoices automatically." · "Modules" · "Switch off what you don't use." · "Invite your team" · "Office staff and field crew sign in with their own accounts." · "Email sending" · "Set by whoever runs the server — see the self-hosting guide." · "Read the guide" · "Backups" · "Off-site backups protect your books if the server dies." · "Field app" · "Crews see their jobs and send photos and expenses."
+
 
 ## Sign-in & account
 
@@ -397,6 +416,16 @@ Links to: `LeadsBoard`
 
 Shows: "Overview › Dashboard" · "Welcome, Alex Morgan" · "Search settings" · "ORGANISATION" · "Business profile" · "Branding" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "Numbering" · "Chart of accounts" · "Purchases" · "Pipeline stages" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Browser notifications" · "Demo data" · "The columns on your pipeline board. Rename, reorder or add stages. Won and Lost always stay last so reports can tell a closed lead from an open one." · "⋮⋮" · "Open" · "3 leads" · "4 leads" · "0 leads" · "Won" · "2 leads" · "Lost" · "+ Add stage" · "Deleting a stage that still has leads asks which stage to move them to first. Up to 12 stages." · "Save"
 
+### ContactGstDialog — Contact GST treatment, GSTIN and state
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-12 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Edit contact — Spine" · "Sales" · "Contacts" · "Lakeview Homes LLP" · "Edit contact" · "GST treatment" · "Registered business" · "GSTIN" · "29AABFL0000B1Z2" · "State filled from the GSTIN: Karnataka (29)." · "State" · "Karnataka (29)" · "Each address also has a state — the site or shipping address decides the place of supply." · "Cancel" · "Save contact"
+
+
 ## Meetings & calendar
 
 ### MeetingsWeek — Calendar — week view + mini-calendar sidebar
@@ -553,6 +582,25 @@ Shows: "Team > Teams > Detail" · "Team" · "< Back to teams" · "SALES" · "Tea
 Links to: —
 
 Shows: "Quotes" · "New" · "New quote" · "Build a multi-line quote. It saves as a draft until you send it." · "Save as draft" · "Send" · "Contact" · "Harborview Construction Co." · "Valid until" · "Nov 3, 2026" · "Lines" · "Item" · "Qty" · "Unit price" · "Tax" · "Amount" · "Bathroom refit" · "$0.00" · "15%" · "BUNDLES" · "Bathroom refit — standard" · "$6,480.00" · "Adds 5 lines: demolition, plumbing rough-in, tiling, fixtures, clean-up" · "ITEMS" · "Bathroom fixtures supply" · "$1,850.00 / set" · "Use “Bathroom refit” as a one-off line" · "Also save to catalogue"
+
+### ImportCatalogDialog — Import catalogue items from CSV
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-CAT-09 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Import items — Spine" · "Sales" · "Catalogue" · "Import catalogue items" · "Bring in items from a spreadsheet. Map the columns, check the preview, then import." · "items-from-old-system.csv · 186 rows" · "Name" · "Item name" · "Price" · "Rate" · "Tax" · "Tax code" · "Income account" · "Sales ledger" · "Row" · "Check" · "2" · "Site supervision (day)" · "$680.00" · "Sales Tax 8.875%" · "4100" · "Ready" · "3" · "Plasterboard 12.5mm sheet" · "$18.40" · "4000" · "4" · "Skip hire (week)" · "$420.00" · "VAT 20%" · "Unknown tax VAT 20%" · "5" · "Kitchen fit-out labour" · "$95.00" · "Duplicate — skipped" · "Imported 181 items · skipped 4 duplicates · 1 row failed" · "Download the failed rows" · "Cancel" · "Import 181 items"
+
+### CatalogItemDrawerGst — Catalogue item with HSN/SAC, supply type, intra- and inter-state tax
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-11, US-TAX-13, US-TAX-14 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Edit item — Spine" · "Sales" · "Catalogue" · "Edit item" · "Modular kitchen — carcass and shutters" · "Name" · "Unit" · "set" · "Price" · "₹1,80,000.00" · "HSN/SAC code" · "9403" · "4, 6 or 8 digits. Copied to each line; change it there if needed." · "Supply type" · "Taxable" · "Intra-state tax" · "GST 18%" · "Inter-state tax" · "IGST 18%" · "Income account" · "4000 · Sales — Goods" · "Expense account" · "5000 · Cost of Materials" · "Cancel" · "Save item"
+
 
 ## Quotes
 
@@ -1160,6 +1208,25 @@ Links to: —
 
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "Numbering" · "Chart of accounts" · "Payment instructions" · "Automatic reminders" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Printed under the totals on every invoice and in invoice emails, so customers know how to pay." · "How customers can pay" · "Bank transfer to Riverstone Builders LLC Bank: First Coastal Bank · Account 0042 1188 0193 · Routing 211 274 450 Please use the invoice number as the reference. Cheques payable to Riverstone Builders LLC." · "Up to 600 characters. Leave empty to hide the block." · "Issued invoices keep the instructions they were issued with — changing this only affects invoices issued from now on." · "Save"
 
+### InvoiceBuilderGst — Invoice builder with place of supply, HSN/SAC and supply type
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-11, US-TAX-13, US-TAX-14 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "New invoice — Spine" · "Billing" · "Invoices" · "New" · "New invoice" · "Save draft" · "Issue" · "Customer" · "Lakeview Homes LLP" · "Address" · "Site — Hosur Road, Tamil Nadu" · "Place of supply" · "Tamil Nadu (33)" · "Inter-state: items use their IGST rate." · "Invoice date" · "5 Oct 2026" · "Due date" · "20 Oct 2026" · "GSTIN" · "29AABFL0000B1Z2 · registered business" · "Item" · "HSN/SAC" · "Supply type" · "Qty" · "Rate" · "Tax" · "Amount" · "Modular kitchen — carcass and shutters" · "9403" · "Taxable" · "1" · "₹1,80,000.00" · "IGST 18%" · "₹2,12,400.00" · "Installation and site supervision" · "995472" · "₹25,000.00" · "⚠" · "₹29,500.00" · "Design consultation (exempt under notification)" · "998391" · "Exempt" · "₹5,000.00" · "The place of supply changed to Tamil Nadu: 2 lines switched to IGST; 1 line you changed by hand keeps its tax — check it." · "Taxable value"
+
+### InvoicePdfGst — GST tax invoice PDF with HSN, CGST/SGST, UPI QR and signature
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-INV-26, US-SET-20, US-TAX-15 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Tax Invoice PDF — Spine" · "Kaveri Interiors Pvt Ltd" · "14 Residency Road, Bengaluru 560025" · "GSTIN 29AAACK0000A1Z5 · Karnataka (29)" · "Tax Invoice" · "INV-0142 · 5 Oct 2026" · "Due 20 Oct 2026" · "Bill to" · "Lakeview Homes LLP" · "8 Indiranagar 2nd Stage, Bengaluru 560038" · "GSTIN 29AABFL0000B1Z2" · "Place of supply" · "Karnataka (29)" · "Intra-state supply" · "Item" · "HSN/SAC" · "Qty" · "Taxable value" · "CGST 9%" · "SGST 9%" · "Total" · "Modular kitchen — carcass and shutters" · "9403" · "1" · "₹1,80,000.00" · "₹16,200.00" · "₹2,12,400.00" · "Installation and site supervision" · "995472" · "₹25,000.00" · "₹2,250.00" · "₹29,500.00" · "₹2,05,000.00" · "₹18,450.00" · "₹2,41,900.00" · "Amount in words:" · "Rupees Two Lakh Forty-One Thousand Nine Hundred Only" · "CGST" · "SGST" · "Total tax" · "₹32,400.00" · "₹4,500.00" · "Scan to pay ₹2,41,900.00 with any UPI app" · "kaveriinteriors@okhdfc · note INV-0142" · "Bank transfer"
+
+
 ## Payments & receivables
 
 ### PaymentsList — Payments list
@@ -1287,6 +1354,25 @@ Shows: "Contacts" · "Detail" · "Maple Ridge Developments" · "Customer · Dani
 Links to: —
 
 Shows: "RB" · "Riverstone Builders" · "12 Quarry Lane, Portland, ME 04101" · "STATEMENT" · "Jul 6 – Oct 4, 2026" · "Statement for" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Balance due" · "$4,542.50" · "Date" · "Reference" · "Type" · "Charges" · "Payments" · "Balance" · "Opening balance" · "$0.00" · "Aug 1" · "INV-0006" · "Invoice" · "$8,750.00" · "Aug 23" · "INV-0011" · "$13,292.50" · "Sep 2" · "RCP-0004" · "Payment" · "Current" · "1–30 days" · "31–60 days" · "61–90 days" · "90+ days" · "How to pay" · "Bank transfer to Riverstone Builders LLC · First Coastal Bank · Account 0042 1188 0193 · Routing 211 274 450. Please use the invoice number as the reference."
+
+### CreditNoteDialogExcess — Credit note larger than the invoice's balance
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PAY-16 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `CustomerRefundDialog`
+
+Shows: "Credit note — Spine" · "Billing" · "Invoices" · "INV-0009" · "Issue credit note — INV-0009" · "Sunstone Retail Fitouts · invoice total $12,400.00 · paid in full" · "Reason" · "Joinery package removed from scope after payment" · "Item" · "Qty" · "Amount" · "Custom reception joinery" · "1" · "$3,200.00" · "Sales Tax 8.875%" · "$284.00" · "Credit total" · "$3,484.00" · "$0.00 reduces what's owed on INV-0009; $3,484.00 becomes credit for Sunstone Retail Fitouts." · "The customer can use the credit on another invoice, or you can refund it." · "Cancel" · "Issue credit note"
+
+### CustomerRefundDialog — Refund a customer's credit
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PAY-17 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Refund — Spine" · "Billing" · "Payments" · "Refund Sunstone Retail Fitouts" · "Credit available: $3,484.00 from credit note CN-0004" · "Amount" · "$3,484.00" · "Date" · "Oct 5, 2026" · "Paid from" · "First Coastal — Operating" · "Method" · "Bank transfer" · "Reference" · "Refund CN-0004" · "Send refund confirmation" · "Emails \"We've refunded $3,484.00\" to accounts@sunstoneretail.com" · "Cancel" · "Refund $3,484.00"
+
 
 ## Purchases & expenses
 
@@ -1557,6 +1643,70 @@ Links to: `ExpenseApproveConfirm`
 
 Shows: "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "+ Submit expense" · "Categories" · "Date" · "Submitted by" · "Category" · "Job" · "Amount" · "Status" · "Oct 2, 2026" · "Marcus Webb" · "Fuel" · "Marina office fit-out" · "$64.00" · "Submitted" · "Oct 1, 2026" · "Materials" · "Phase 2 townhomes" · "$192.00" · "Sep 30, 2026" · "Sarah Mendes" · "Travel" · "$85.00" · "Sep 28, 2026" · "Alex Morgan" · "Tools" · "$310.00" · "Approved" · "Expense · Travel" · "Sarah Mendes (you)" · "Paid by" · "Personal card" · "Description" · "Mileage to Burlington site visit" · "Receipt photo" · "Someone else needs to approve your own expense." · "Delete expense" · "Edit"
 
+### VendorCreditsList — Vendor credits list
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-24 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `VendorCreditBuilder`, `VendorCreditDetail`
+
+Shows: "Vendor credits — Spine" · "Purchases" · "Vendor credits" · "Credit notes from vendors — for returns, overcharges and discounts after the bill." · "+ New vendor credit" · "Status" · "All" · "Vendor" · "All vendors" · "Number" · "Vendor's number" · "Date" · "Amount" · "Balance" · "VCR-0003" · "CN-4471" · "Coastal Timber Supply" · "Oct 3, 2026" · "$412.00" · "Open" · "VCR-0002" · "RTN-0912" · "Portland Electrical Wholesale" · "Sep 18, 2026" · "$96.40" · "$0.00" · "Used" · "VCR-0001" · "CR-77" · "Harbor Plant Hire" · "Aug 30, 2026" · "$250.00" · "Void" · "Oct 5, 2026" · "$58.00" · "Draft"
+
+### VendorCreditBuilder — New vendor credit
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-24 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "New vendor credit — Spine" · "Purchases" · "Vendor credits" · "New" · "New vendor credit" · "Save draft" · "Record" · "Vendor" · "Coastal Timber Supply" · "Vendor's credit note number" · "CN-4471" · "Date" · "Oct 3, 2026" · "Against bill" · "Bill 88213 · Sep 28 · $2,160.00" · "Copy lines from the bill" · "Account" · "Description" · "Qty" · "Price" · "Tax" · "Job" · "Amount" · "5000 · Cost of Materials" · "Returned: 20 × treated pine 90×45" · "20" · "$18.92" · "Sales Tax 8.875%" · "J-0012" · "$378.40" · "Subtotal" · "$33.60" · "Total credit" · "$412.00" · "Recording posts Dr Accounts Payable / Cr Cost of Materials and Input Tax. Lines tagged to a job lower that job's cost."
+
+### VendorCreditDetail — Vendor credit detail, with void
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-27 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `ApplyVendorCreditDialog`, `VendorRefundDialog`
+
+Shows: "VCR-0003 — Spine" · "Purchases" · "Vendor credits" · "VCR-0003" · "Coastal Timber Supply · their CN-4471 · Oct 3, 2026" · "Apply to bills" · "Record refund" · "Void" · "Credit" · "$412.00" · "Applied" · "$0.00" · "Refunded" · "Balance" · "Open" · "Account" · "Description" · "Qty" · "Amount" · "5000 · Cost of Materials" · "Returned: 20 × treated pine 90×45" · "20" · "$378.40" · "1200 · Input Tax Receivable" · "Sales Tax 8.875%" · "$33.60" · "Void vendor credit" · "Void VCR-0003? A reversing entry posts. Give a reason so the history explains it." · "Reason" · "Entered twice — duplicate of VCR-0002" · "Cancel" · "Void credit" · "A credit with applications or refunds can't be voided: remove them first."
+
+### ApplyVendorCreditDialog — Apply a vendor credit to open bills
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-25 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Apply vendor credit — Spine" · "Purchases" · "Vendor credits" · "VCR-0003" · "Apply VCR-0003 to bills" · "Coastal Timber Supply · credit balance $412.00" · "Bill" · "Date" · "Due" · "Balance" · "Amount to apply" · "88213" · "Sep 28, 2026" · "Oct 28, 2026" · "$2,160.00" · "412.00" · "88240" · "Oct 2, 2026" · "Nov 1, 2026" · "$865.30" · "0.00" · "Applying" · "$412.00 of $412.00" · "Nothing posts — the credit and the bills both sit in Accounts Payable. The bills' balances drop." · "Cancel" · "Apply credit"
+
+### VendorRefundDialog — Record a refund received from a vendor
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-PUR-26 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Vendor refund — Spine" · "Purchases" · "Vendor credits" · "VCR-0003" · "Record refund from Coastal Timber Supply" · "VCR-0003 · balance $412.00" · "Amount" · "$412.00" · "Date" · "Oct 6, 2026" · "Paid into" · "First Coastal — Operating" · "Method" · "Bank transfer" · "Reference" · "CTS refund 4471" · "Cancel" · "Record refund"
+
+### RecurringBillsList — Recurring bills list
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-PUR-29, US-PUR-30, US-PUR-31 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `RecurringBillDialog`
+
+Shows: "Recurring bills — Spine" · "Purchases" · "Vendor bills" · "Recurring" · "Recurring bills" · "Bills Spine enters for you on a schedule — rent, subscriptions, retainers." · "+ New recurring bill" · "Name" · "Vendor" · "Repeats" · "Next bill" · "Amount" · "Status" · "When it runs" · "Yard rent" · "Harbor Properties LLC" · "Monthly · 1st" · "Nov 1, 2026" · "$2,400.00" · "Active" · "Record the bill" · "Accounting software" · "LedgerCloud Inc." · "Monthly · 15th" · "Oct 15, 2026" · "$49.00" · "Plant insurance" · "Northeast Mutual" · "Yearly · Jan 10" · "$3,860.00" · "Paused" · "Save as a draft" · "Skip hire — Harbour Lofts" · "Portland Waste Co." · "Weekly · Monday" · "$420.00" · "Finished" · "Runs happen at 6:00 AM organisation time. A missed day (server off) is created once when Spine starts again. Pausing then resuming starts from the next future date."
+
+### RecurringBillDialog — New recurring bill
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-PUR-29 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "New recurring bill — Spine" · "Purchases" · "Vendor bills" · "Recurring" · "Recurring bills" · "Name" · "Vendor" · "Repeats" · "Next bill" · "Amount" · "Status" · "When it runs" · "Yard rent" · "Harbor Properties LLC" · "Monthly · 1st" · "Nov 1, 2026" · "$2,400.00" · "Active" · "Record the bill" · "Accounting software" · "LedgerCloud Inc." · "Monthly · 15th" · "Oct 15, 2026" · "$49.00" · "Plant insurance" · "Northeast Mutual" · "Yearly · Jan 10" · "$3,860.00" · "Paused" · "Save as a draft" · "Skip hire — Harbour Lofts" · "Portland Waste Co." · "Weekly · Monday" · "$420.00" · "Finished" · "New recurring bill" · "Spine creates this bill automatically. You can pause or stop it at any time." · "Monthly" · "On" · "1st of the month" · "Starts" · "Ends" · "Never" · "Due" · "7 days after the bill date"
+
+
 ## Tax
 
 ### SettingsTax — Tax rates & groups
@@ -1585,6 +1735,52 @@ Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" �
 Links to: —
 
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "Q Search settings" · "Tax" · "Named tax rates, combined into groups for split taxes (e.g. CGST + SGST). A quote, invoice," · "ORGANISATION" · "or catalogue item picks one rate or one group per line." · "El Business profile" · "* Industry template" · "Prices include tax by default" · "New quote/invoice lines default to tax-inclusive pricing. Each line can still override" · "O, Currency & locale" · "Financial year" · "% Tax" · "+ Add rate" · "Add tax group" · "# Numbering" · "Name" · "•.." · "• Chart of accounts" · "e.g. CGST + SGST" · "evenue this month" · "Purchases" · "Rates" · "15265.00 USD" · "• Repeat quote conversion" · "to Upcoming meetings" · "Select rates..." · "+ Add group" · "@ Meeting reminders" · "• Edit layout" · "Cancel" · "Save" · "..." · "A Browser notifications" · "E Demo data" · "View board" · "TAX SUMMARY" · "Tax collected from customers vs. tax paid to vendors, for filing." · "From" · "To" · "1/1/2026 B" · "10/4/2026 0" · "Refresh" · "Collected" · …
+
+### TaxPaymentDialog — Record paying tax and using input tax
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-TAX-08 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Tax payment — Spine" · "Reports" · "Tax Summary" · "Record tax payment" · "July – September 2026" · "Tax collected" · "$4,019.40" · "Input tax available" · "$1,212.75" · "Net payable" · "$2,806.65" · "Period" · "Jul 1 – Sep 30, 2026" · "Date" · "Oct 20, 2026" · "Input tax used" · "You have $1,212.75 to use." · "Amount paid" · "Paid from" · "First Coastal — Tax reserve" · "Reference" · "Q3 sales tax return" · "Posts Dr Output Tax Payable $4,019.40 / Cr Input Tax Receivable $1,212.75 / Cr First Coastal — Tax reserve $2,806.65." · "Record tax refund instead" · "Cancel" · "Record payment"
+
+### SettingsTaxCountry — Settings › Tax — country preset and defaults
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-09 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Settings — Tax — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Named tax rates, combined into groups for split taxes. A line picks one rate or one group." · "Country" · "India (GST)" · "Changing country adds that country's rates. Existing rates are never changed or deleted." · "Added 24 rates. Your existing rates are unchanged — archive the ones you no longer use." · "Rate" · "Tax type" · "Rate (%)" · "Scope" · "GST 18%" · "CGST 9% + SGST 9%" · "18" · "Intra-state" · "IGST 18%" · "IGST" · "Inter-state" · "GST 5%" · "CGST 2.5% + SGST 2.5%" · "5" · "IGST 5%"
+
+### TaxRateDialogType — Tax rate with a tax type
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-10 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Add rate — Spine" · "Overview" · "Dashboard" · "Add rate" · "Name" · "SGST 9%" · "Rate (%)" · "9" · "Tax type" · "SGST" · "Reports and GSTR-1 split tax by type: CGST, SGST, UTGST, IGST, cess." · "Compound" · "Calculated on the subtotal plus earlier rates in a group." · "Cancel" · "Save rate"
+
+### SettingsTaxGst — Settings › GST registration
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-12 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Settings — GST — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Your GST registration. Spine uses your state to pick intra- or inter-state tax." · "GSTIN" · "29AAACK0000A1Z5" · "State" · "Karnataka (29)" · "Legal name" · "Kaveri Interiors Private Limited" · "Trade name" · "Kaveri Interiors" · "Registered on" · "1 Jul 2017" · "GSTIN check" · "29AAACK0000A1Z6" · "This GSTIN isn't valid — check the 15 characters." · "Spine prepares GST invoices and a GSTR-1 file to upload. It never files your return or connects to the GST portal." · "Save"
+
+### Gstr1Export — GSTR-1 export with checks
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-TAX-16, US-TAX-17 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "GSTR-1 — Spine" · "Reports" · "Tax" · "GSTR-1" · "September 2026 · GSTIN 29AAACK0000A1Z5" · "Download Excel" · "Download JSON" · "Filing" · "Monthly" · "Period" · "September 2026" · "Fix these before you upload" · "Registered customer with no GSTIN — Harbour Café LLP" · "Open contact" · "2 lines with no HSN/SAC — INV-0131" · "Open invoice" · "Table" · "Documents" · "Taxable value" · "B2B — registered customers" · "18" · "₹14,82,400.00" · "₹2,66,832.00" · "B2CL — large unregistered inter-state" · "1" · "₹2,40,000.00" · "₹43,200.00" · "B2CS — other unregistered" · "9" · "₹1,12,500.00" · "₹13,850.00" · "CDNR — credit notes, registered" · "2" · "−₹30,000.00" · "−₹5,400.00" · "Exports" · "₹3,10,000.00" · "₹55,800.00" · "Nil, exempt and non-GST" · "4" · "₹45,000.00" · "₹0.00" · "HSN summary" · "11 codes" · "₹21,59,900.00"
+
 
 ## Accounting & reports
 
@@ -1698,6 +1894,196 @@ Links to: `DashboardStaff`, `DashboardField`, `SettingsUpcomingMeetings`
 
 Shows: "Overview › Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Get started" · "A few things to do before your first real transaction." · "Add your first customer" · "Create your first item" · "] Send your first quote" · "Dismiss" · "Cash position" · "Receivables" · "Overdue Invoices" · "Revenue this month" · "12024.75 USD" · "35165.50 USD" · "45265.00 USD" · "@ Edit layout" · "Revenue trend" · "3M" · "6M" · "12M" · "Pipeline by stage" · "View board" · "New @960.00 USD. 2" · "Qualified 34105,00 USD -4" · "Proposal (61400.00 USD-3" · "Won 422.00 USD • 4" · "Lost 155.00 USD • 1" · "Dec" · "Feb" · "Apr" · "Jun" · "Aug" · "Oct" · "Receivables aging" · "View all" · "Job profitability" · "TOP PERFORMERS" · "• Current" · "30623.00 USD" · "Hotel lobby renovation" · "21000.00 USD" · "• 1-30 days" · "4542.50 USD" · "35165.50 USD'" · …
 
+### OpeningBalances — Opening balances — cutover date and account balances
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-16 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `OpeningBalancesDocuments`, `OpeningBalancesReview`
+
+Shows: "Opening balances — Spine" · "Settings" · "Opening balances" · "Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need." · "Save balances" · "Account balances" · "Customer invoices" · "Customer credit" · "Vendor bills" · "Vendor credits" · "Review" · "Cutover date" · "Jul 1, 2026" · "Balances are as of Jun 30, 2026." · "Draft — not locked" · "Code" · "Account" · "Debit" · "Credit" · "1000" · "Cash in Hand" · "350.00" · "1010" · "First Coastal — Operating" · "21,480.20" · "1100" · "Accounts Receivable" · "From opening invoices · 18,240.00" · "1150" · "Retention Receivable" · "From opening invoices · 4,100.00" · "1500" · "Fixed Assets" · "36,000.00" · "1510" · "Accumulated Depreciation" · "9,600.00" · "2000" · "Accounts Payable" · "From opening bills · 6,915.40" · "2100" · "Output Tax Payable" · "1,940.10" · "2500" · "Loans Payable"
+
+### OpeningBalancesDocuments — Opening balances — unpaid invoices, bills and credits
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-17, US-RPT-18 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Opening balances — Spine" · "Settings" · "Opening balances" · "Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need." · "Import from CSV" · "+ Add invoice" · "Account balances" · "Customer invoices" · "Customer credit" · "Vendor bills" · "Vendor credits" · "Review" · "Customer" · "Invoice number" · "Invoice date" · "Due date" · "Amount due" · "Retention held" · "Job" · "Maple Ridge Developments" · "RB-2291" · "May 28, 2026" · "Jun 27, 2026" · "$8,750.00" · "Bluewater Hospitality Group" · "RB-2304" · "Jun 12, 2026" · "Jul 12, 2026" · "$6,040.00" · "$2,600.00" · "J-0007 · Hotel lobby refurb" · "Sunstone Retail Fitouts" · "RB-2310" · "Jun 20, 2026" · "Jul 20, 2026" · "$3,450.00" · "$1,500.00" · "J-0009 · Store 14 fit-out" · "Totals" · "$18,240.00" · "$4,100.00" · "Map customer name, number, dates, amount due and retention. 2 customer names didn't match anyone in Spine:" · "Harbour View Strata" · "K. Patel & Sons" · "Create these customers"
+
+### OpeningBalancesReview — Opening balances — check and lock
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-19 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Opening balances — Spine" · "Settings" · "Opening balances" · "Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need." · "Lock opening balances" · "Account balances" · "Customer invoices" · "Customer credit" · "Vendor bills" · "Vendor credits" · "Review" · "Opening invoices" · "$18,240.00" · "3 invoices · $4,100.00 retention" · "Opening bills" · "$6,915.40" · "5 bills" · "$600.00" · "1 customer" · "Opening Balance Adjustments" · "$0.00" · "Nothing left to explain" · "Code" · "Account" · "Debit" · "Credit" · "1010" · "First Coastal — Operating" · "21,480.20" · "1100" · "Accounts Receivable" · "18,240.00" · "1150" · "Retention Receivable" · "4,100.00" · "1500" · "Fixed Assets" · "36,000.00" · "1510" · "Accumulated Depreciation" · "9,600.00" · "2000" · "Accounts Payable" · "6,915.40" · "2200"
+
+### ManualJournalsList — Journals list
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-RPT-22 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `ManualJournalDialog`, `ManualJournalDetail`
+
+Shows: "Journals — Spine" · "Reports" · "Journals" · "Adjustments posted by hand. Most businesses only need one for year-end adjustments." · "+ New journal" · "Number" · "Date" · "Reason" · "Total" · "Status" · "Posted by" · "JNL-0005" · "Sep 30, 2026" · "Depreciation for September" · "$1,050.00" · "Posted" · "Alex Morgan" · "JNL-0004" · "$650.00" · "Reversed" · "JNL-0003" · "Jun 30, 2026" · "Year-end accruals (from accountant)" · "$4,820.00" · "Members with \"View ledger / journals\" can read journals; only owners post or reverse them."
+
+### ManualJournalDialog — New adjusting journal
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-20 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "New journal — Spine" · "Reports" · "Journals" · "New journal" · "For adjustments no document covers. Journals are never edited — a mistake is reversed." · "Date" · "Sep 30, 2026" · "Reason" · "Depreciation and audit accrual for September" · "Account" · "Description" · "Debit" · "Credit" · "Job" · "6500 · Depreciation" · "Vehicles — September" · "400.00" · "1510 · Accumulated Depreciation" · "6400 · Professional Fees" · "Accrued audit fee" · "1,200.00" · "2400 · Wages Payable" · "1,150.00" · "Totals" · "1,600.00" · "1,550.00" · "+ Add line" · "Out by 50.00 — debits and credits must be equal." · "Accounts Receivable, Retention Receivable, Input Tax, Accounts Payable, Output Tax, Customer Advances and Opening Balance Adjustments aren't offered: use invoices, bills, payments or Record tax payment for those." · "Cancel" · "Post journal"
+
+### ManualJournalDetail — Journal detail with reverse
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-21 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "JNL-0004 — Spine" · "Reports" · "Journals" · "JNL-0004" · "Sep 30, 2026 · Depreciation for September · posted by Alex Morgan" · "Copy to new journal" · "Reverse" · "Reversed on Oct 3, 2026 — wrong account: should have been 1510." · "Account" · "Description" · "Debit" · "Credit" · "Job" · "6500 · Depreciation" · "Plant — September" · "650.00" · "1500 · Fixed Assets" · "Totals" · "Reverse JNL-0004" · "Reversal date" · "Oct 3, 2026" · "Reason" · "Wrong account: should have been 1510" · "A reversing entry mirrors every line. The journal stays in the history as Reversed." · "Cancel" · "Reverse journal"
+
+### ReportsCenter — Reports centre
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-23 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `ReportsGeneralLedger`, `ReportsDayBook`, `ReportsCashFlow`, `ReportsPLCompare`
+
+Shows: "Reports — Spine" · "Reports" · "Every report you can open, derived from the ledger." · "Search reports" · "e.g. ledger" · "Favourites" · "★ Profit & Loss" · "★ Balance Sheet" · "★ Receivables" · "★ Tax Summary" · "Business overview" · "Profit & Loss" · "★" · "Balance Sheet" · "Cash Flow" · "☆" · "Trial Balance" · "Sales" · "Sales by customer" · "Sales by item" · "Receivables" · "Payments received" · "Credit notes and refunds" · "Purchases" · "Payables" · "Expenses by category" · "Purchases by vendor" · "Payments made" · "Vendor credits" · "Tax" · "Tax Summary" · "GSTR-1 (India GST only)" · "Jobs" · "Job profitability" · "Accountant" · "General ledger" · "Day book" · "Journals" · "Export to Tally"
+
+### ReportsGeneralLedger — General ledger
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-24 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "General ledger — Spine" · "Reports" · "General ledger" · "Every account's opening balance, entries and closing balance." · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Accounts" · "All accounts with activity" · "Hide accounts with no activity" · "Refresh" · "Export ▾" · "Date" · "Source" · "Contact · description" · "Job" · "Debit" · "Credit" · "Balance" · "1010 — First Coastal — Operating" · "Opening balance 28,511.90 Dr" · "Sep 22" · "Expense EXP-0031" · "Marcus Webb · Fuel" · "J-0012" · "64.00" · "28,447.90 Dr" · "Sep 25" · "Money in" · "Alex Morgan · Owner's capital" · "10,000.00" · "38,447.90 Dr" · "Sep 26" · "Payment RCT-0016" · "Sunstone Retail Fitouts" · "12,400.00" · "50,847.90 Dr" · "Closing balance 45,829.90 Dr" · "4100 — Sales — Services" · "Opening balance 31,240.00 Cr" · "Sep 12" · "Invoice INV-0009" · "J-0009" · "11,389.53"
+
+### ReportsDayBook — Day book
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-25 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Day book — Spine" · "Reports" · "Day book" · "Every journal entry in date order." · "From" · "Oct 1, 2026" · "To" · "Oct 2, 2026" · "Source" · "All sources" · "Refresh" · "Export ▾" · "Oct 1" · "Vendor payment VP-0009" · "Coastal Timber Supply · Bill 88213" · "2000 · Accounts Payable" · "2,160.00" · "1010 · First Coastal — Operating" · "Oct 2" · "Invoice INV-0014" · "Bluewater Hospitality Group" · "1100 · Accounts Receivable" · "6,532.50" · "4100 · Sales — Services" · "6,000.00" · "2100 · Output Tax Payable" · "532.50" · "Payment RCT-0018" · "Maple Ridge Developments" · "4,542.50"
+
+### ReportsCashFlow — Cash flow statement
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-26 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Cash Flow — Spine" · "Reports" · "Cash Flow" · "Where cash came from and where it went." · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Refresh" · "Export ▾" · "Cash at start (Jul 1, 2026)" · "21,830.20" · "OPERATING ACTIVITIES" · "Net profit" · "14,212.80" · "Increase in receivables and retention" · "−9,315.50" · "Increase in payables" · "2,050.00" · "Tax collected less paid" · "1,394.25" · "Customer advances received" · "5,000.00" · "Net cash from operating activities" · "13,341.55" · "INVESTING ACTIVITIES" · "Equipment bought" · "−4,800.00" · "Net cash from investing activities" · "FINANCING ACTIVITIES" · "Owner's capital" · "10,000.00" · "Owner's drawings" · "−3,000.00" · "Loan repayments" · "−1,500.00" · "Net cash from financing activities" · "5,500.00" · "Net change in cash" · "14,041.55" · "Cash at end (Sep 30, 2026)" · "35,871.75" · "Cash at end equals the total of your bank and cash accounts on Sep 30, 2026. Card accounts are liabilities, not cash."
+
+### ReportsPLCompare — Profit & Loss compared with the previous period
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-27 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Profit & Loss — Spine" · "Reports" · "Profit & Loss" · "Jul 1 – Sep 30, 2026 compared with Apr 1 – Jun 30, 2026 · Accrual basis" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Compare with" · "Previous period" · "Basis" · "Accrual" · "Refresh" · "Export ▾" · "Account" · "Jul – Sep 2026" · "Apr – Jun 2026" · "Change" · "Change %" · "4100 · Sales — Services" · "42,179.53" · "36,120.00" · "▲ 6,059.53" · "▲ 16.8%" · "4000 · Sales — Goods" · "3,085.47" · "4,410.00" · "▼ 1,324.53" · "▼ 30.0%" · "5000 · Cost of Materials" · "12,380.00" · "10,912.40" · "▲ 1,467.60" · "▲ 13.4%" · "5200 · Direct Labour" · "9,875.00" · "8,600.00" · "▲ 1,275.00" · "▲ 14.8%" · "6000 · Rent" · "7,200.00" · "0.00" · "0.0%" · "6500 · Depreciation" · "1,050.00"
+
+### ReportsPLCashBasis — Profit & Loss on a cash basis
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-35 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Profit & Loss — Spine" · "Reports" · "Profit & Loss" · "Jul 1 – Sep 30, 2026 · Cash basis" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Accrual" · "Cash" · "Refresh" · "Export ▾" · "Account" · "Cash basis" · "4100 · Sales — Services" · "31,805.20" · "4000 · Sales — Goods" · "2,140.00" · "5000 · Cost of Materials" · "10,212.40" · "5200 · Direct Labour" · "9,875.00" · "6000 · Rent" · "7,200.00" · "Net profit (cash basis)" · "6,657.80" · "Payments on invoices from before Jul 1, 2026 aren't counted — that income was in your old books." · "Income counts what customers paid in the range and costs what was paid, split across accounts in proportion to each invoice's or bill's lines. The Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis."
+
+### ReportsSalesByCustomer — Sales by customer and by item
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-28 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Sales by customer — Spine" · "Reports" · "Sales by customer" · "Net of credit notes · Jul 1 – Sep 30, 2026" · "Sales by item" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Refresh" · "Export ▾" · "Customer" · "Invoices" · "Sales before tax" · "Tax" · "Total" · "% of sales" · "Sunstone Retail Fitouts" · "4" · "$19,834.00" · "$1,760.27" · "$21,594.27" · "43.8%" · "Bluewater Hospitality Group" · "3" · "$12,600.00" · "$1,118.25" · "$13,718.25" · "27.8%" · "Maple Ridge Developments" · "$8,331.00" · "$739.38" · "$9,070.38" · "18.4%" · "Harbour View Strata" · "2" · "$4,500.00" · "$399.38" · "$4,899.38" · "9.9%" · "12" · "$45,265.00" · "$4,017.28" · "$49,282.28" · "100%"
+
+### ReportsExpensesByCategory — Expenses by category and purchases by vendor
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-29 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Expenses by category — Spine" · "Reports" · "Expenses by category" · "From bills, expenses, journals and money out · Jul 1 – Sep 30, 2026" · "Purchases by vendor" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Refresh" · "Export ▾" · "5000 · Cost of Materials" · "$12,380.00" · "39%" · "5200 · Direct Labour" · "$9,875.00" · "31%" · "6000 · Rent" · "$7,200.00" · "23%" · "6500 · Depreciation" · "$1,050.00" · "3%" · "6300 · Travel & Vehicle" · "$812.40" · "6900 · Other Expenses" · "$228.00" · "1%"
+
+### ReportsPaymentsRegister — Payments received and made
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-RPT-30 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Payments received — Spine" · "Reports" · "Payments received" · "Jul 1 – Sep 30, 2026" · "Payments made" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Account" · "All accounts" · "Refresh" · "Export ▾" · "Date" · "Number" · "Customer" · "Method" · "Amount" · "Allocated to" · "Sep 26" · "RCT-0016" · "Sunstone Retail Fitouts" · "Bank transfer" · "First Coastal — Operating" · "$12,400.00" · "INV-0009" · "Sep 2" · "RCT-0014" · "Maple Ridge Developments" · "$8,750.00" · "RB-2291 (opening)" · "Aug 14" · "RCT-0011" · "Bluewater Hospitality Group" · "Cheque" · "$5,000.00" · "Held as credit"
+
+### ReportsCreditsRegister — Credit notes, refunds and vendor credits
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-RPT-31 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Credit notes and refunds — Spine" · "Reports" · "Credit notes and refunds" · "Jul 1 – Sep 30, 2026" · "Vendor credits" · "From" · "Jul 1, 2026" · "To" · "Sep 30, 2026" · "Refresh" · "Export ▾" · "Date" · "Number" · "Customer" · "Invoice" · "Amount" · "Applied" · "Refunded" · "Still held" · "Sep 29" · "CN-0004" · "Sunstone Retail Fitouts" · "INV-0009" · "$3,484.00" · "$0.00" · "Sep 19" · "CN-0003" · "Maple Ridge Developments" · "INV-0006" · "$489.94" · "Aug 3" · "CN-0002" · "Harbour View Strata" · "INV-0004" · "$1,200.00" · "$600.00"
+
+### ReportExportMenu — Report export menu — CSV, Excel, PDF, print
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-32, US-RPT-34 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Export — Spine" · "Reports" · "Trial Balance" · "As of Sep 30, 2026" · "As of" · "Sep 30, 2026" · "Refresh" · "Export ▴" · "Code" · "Account" · "Debit" · "Credit" · "1010" · "First Coastal — Operating" · "45,829.90" · "1100" · "Accounts Receivable" · "35,165.50" · "2100" · "Output Tax Payable" · "2,327.25" · "CSV" · "Excel (.xlsx)" · "PDF" · "Print" · "Exports carry exactly what's on screen — filters and comparison columns included. Excel files have real numbers, bold headings and a frozen first row."
+
+### ReportPdf — Report as a PDF
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-RPT-33 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Profit & Loss PDF — Spine" · "RB" · "Riverstone Builders" · "12 Quarry Lane, Portland, ME 04101" · "Profit & Loss" · "Jul 1 – Sep 30, 2026 · Accrual basis" · "Income" · "4100 Sales — Services" · "42,179.53" · "4000 Sales — Goods" · "3,085.47" · "Total income" · "45,265.00" · "Expenses" · "5000 Cost of Materials" · "12,380.00" · "5200 Direct Labour" · "9,875.00" · "6000 Rent" · "7,200.00" · "6500 Depreciation" · "1,050.00" · "Total expenses" · "30,505.00" · "Net profit" · "14,760.00" · "Prepared Oct 5, 2026 · Amounts in USD" · "Page 1 of 1"
+
+### ReportsTaxSummaryByType — Tax Summary by rate, tax type and supply class
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-RPT-37 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Tax Summary — Spine" · "Reports" · "Tax Summary" · "Jul 1 – Sep 30, 2026" · "Record tax payment" · "Export ▾" · "Tax collected" · "₹7,52,140.00" · "Input tax" · "₹2,18,660.00" · "Net payable" · "₹5,33,480.00" · "Paid to the tax authority" · "₹3,61,200.00" · "Still to pay ₹1,72,280.00" · "Tax type" · "Collected" · "Paid" · "Net" · "CGST" · "₹2,91,070.00" · "₹96,330.00" · "₹1,94,740.00" · "SGST" · "IGST" · "₹1,70,000.00" · "₹26,000.00" · "₹1,44,000.00" · "Cess" · "₹0.00" · "Collected by rate" · "Taxable" · "Tax" · "GST 18%" · "₹32,34,000.00" · "₹5,82,140.00" · "IGST 18%" · "₹9,44,444.00" · "Paid by rate" · "₹10,70,333.00" · "₹1,92,660.00" · "₹1,44,444.00" · "Supply class" · "Sales" · "Purchases"
+
+### ReportsTallyExport — Export to Tally
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-RPT-38 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: `TallyGroupMapping`
+
+Shows: "Export to Tally — Spine" · "Reports" · "Export to Tally" · "A file your accountant imports into TallyPrime or Tally.ERP 9." · "Account mapping" · "Export" · "From" · "1 Apr 2026" · "To" · "30 Sep 2026" · "Ledgers" · "64" · "Vouchers" · "1,218" · "Accounts on default groups" · "3" · "Spine document" · "Tally voucher type" · "Count" · "Invoices" · "Sales" · "412" · "Vendor bills" · "Purchase" · "286" · "Customer payments" · "Receipt" · "301" · "Vendor payments and refunds" · "Payment" · "174" · "Transfers" · "Contra" · "12" · "Journals and opening balances" · "Journal" · "9" · "Credit notes" · "Credit Note" · "14" · "Vendor credits" · "Debit Note" · "10" · "The ZIP holds masters.xml, vouchers.xml and a README: in Tally, go to Gateway of Tally › Import › Masters, then Transactions."
+
+### TallyGroupMapping — Tally account mapping
+**Priority:** P2 · **Phase:** 9 · **Stories:** US-RPT-39 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Account mapping — Spine" · "Reports" · "Export to Tally" · "Account mapping" · "Choose the Tally group each account lands in." · "Save mapping" · "Code" · "Account" · "Spine type" · "Tally group" · "1000" · "Cash in Hand" · "Asset" · "Cash-in-Hand" · "1010" · "HDFC Current" · "Bank Accounts" · "1200" · "Input Tax Receivable" · "Duties & Taxes" · "1500" · "Fixed Assets" · "2100" · "Output Tax Payable" · "Liability" · "2500" · "Loans Payable" · "Loans (Liability)" · "3000" · "Owner's Capital" · "Equity" · "Capital Account" · "4100" · "Sales — Services" · "Income" · "Sales Accounts" · "5000" · "Cost of Materials" · "Expense" · "Direct Expenses" · "6000" · "Rent" · "Indirect Expenses" · "Defaults come from each account's type and code. Customers go under Sundry Debtors and vendors under Sundry Creditors."
+
+
 ## Dashboard
 
 ### DashboardStaff — Staff dashboard
@@ -1764,6 +2150,16 @@ Everything else is `DashboardOwnerRedesign` unchanged. The two cards show by def
 Links to: `DashboardStaffRedesign`, `DashboardOwnerRedesign`, `NoAccess`
 
 Shows: "Overview" · "Dashboard" · "Good morning, Marcus" · "Sunday 4 October · 2 jobs on your list · 2 things need you" · "Edit layout" · "Needs your attention" · "Only things you can act on" · "Milestone due Saturday" · "Mobilisation & site setup · Marina office fit-out" · "Mark complete" · "Your expense was rejected" · "Fuel · $64.00 · “Receipt is unreadable — please retake the photo.” — Sarah Mendes" · "Fix and resubmit" · "Today" · "Open calendar" · "2:30 PM" · "Weekly crew scheduling" · "Meeting · office" · "Due Sat" · "Mobilisation & site setup" · "Milestone · Marina office fit-out" · "Call back Priya Nair" · "Follow-up · Harborview Construction Co." · "Mon 8:00" · "Monday site stand-up" · "Meeting · Marina office fit-out" · "My jobs" · "All my jobs" · "Marina office fit-out" · "JOB-001" · "Directions" · "Harborview Construction Co. · 48 Harbor Way, Portland, ME 04101" · "Next: Mobilisation & site setup · due Sat" · "Phase 2 townhomes — foundations" · "JOB-002" · "Maple Ridge Developments · 220 Ridge Rd, Burlington, VT 05401" · "Next: Backfill & inspection sign-off · due today" · "My expenses" · "Submit expense" · "Materials" · "Thu 1 Oct" · "$192.00" · "Approved" · "Fuel" · "Wed 30 Sep" · …
+
+### DashboardOwnerBooks — Dashboard — books cards (accounts, payables, top expenses, ready to bill, tax) and cash basis
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-DASH-21, US-DASH-22, US-DASH-23, US-DASH-24, US-DASH-25, US-DASH-26 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Dashboard — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Monday 5 October · Riverstone Builders · 3 things need you today" · "Accrual" · "Cash" · "+ New" · "Cash position" · "$58,124.40" · "▲ 12% vs last month" · "Profit this month" · "$4,920.00" · "cash basis · ▲ 6% vs last month" · "Receivables" · "$35,165.50" · "Current $26,415.50 · overdue $8,750.00" · "Overdue" · "$8,750.00" · "2 invoices" · "Accounts" · "Banking" · "First Coastal — Operating" · "Reconciled to Sep 30" · "$48,212.40" · "First Coastal — Tax reserve" · "$9,500.00" · "Cash in Hand" · "Not reconciled" · "$412.00" · "Business Visa" · "Reconciled to Sep 25" · "$1,284.60 owed" · "Payables" · "Current" · "$5,836.79" · "$1,078.61" · "Total payables $6,915.40" · "Top expenses · this quarter" · "Expenses by category" · "Cost of Materials" · "$12,380" · "Direct Labour" · "$9,875" · "Rent"
+
 
 ## Notifications
 
@@ -1940,6 +2336,16 @@ Links to: —
 
 Shows: "Team › Users" · "Users" · "Everyone with access to this organisation." · "AM" · "Alex Morgan" · "Primary Owner" · "alex.morgan@riverstone.test" · "Owner" · "SM" · "Sarah Mendes" · "sarah.mendes@riverstone.test" · "Staff" · "Deactivate" · "MW" · "Marcus Webb" · "marcus.webb@riverstone.test" · "Field" · "Make Sarah Mendes an owner?" · "Owners have full access to everything in Riverstone Builders — every record and report, plus Users, Teams and Settings. Team permissions no longer apply to Sarah. Any owner can change her back to Staff later." · "Cancel" · "Make owner"
 
+### TeamPrivilegesBooks — Team privileges — accountant access, banking, refunds, vendor credits
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-12, US-PAY-18, US-PUR-28, US-RPT-36 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Team privileges — Spine" · "Team" · "Teams" · "Bookkeeping" · "2 members · Privileges" · "Save privileges" · "Members" · "Privileges" · "Reports & Ledger" · "View financial statements" · "reports.view_financial_statements" · "View ledger / journals" · "ledger.view" · "View receivables" · "reports.view_receivables" · "View payables" · "reports.view_payables" · "Banking" · "View bank balances and registers" · "banking.view" · "Record transfers and other money in or out" · "banking.record" · "Reconcile accounts" · "banking.reconcile" · "Payments" · "Refund customers" · "payments.refund" · "Vendor credits" · "Record vendor credits" · "vendor_credits.record" · "Apply and refund vendor credits" · "vendor_credits.apply" · "Void vendor credits" · "vendor_credits.void" · "Financial statements are read-only: posting journals, opening balances, closing periods and Settings stay with owners."
+
+
 ## Settings & administration
 
 ### SettingsSearch — Settings — search
@@ -2049,6 +2455,52 @@ Shows: "Team › Audit log" · "Audit log" · "Every change to records in Rivers
 Links to: —
 
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "Numbering" · "Chart of accounts" · "Payment instructions" · "Automatic reminders" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Download everything in your Spine as one file. Your data is yours — use this to keep your own copy or move to another system." · "Records as CSV" · "One CSV per table: contacts, quotes, invoices, payments, jobs, bills, expenses, journal entries and more." · "Records as JSON" · "The same data as JSON, for importing into other software." · "Files" · "Receipts, photos, signatures, logos and issued PDFs, in their original format." · "Last export:" · "Sep 30, 2026 by Alex Morgan · 48.2 MB ·" · "Download again" · "(link expires in 7 days)" · "Large exports are prepared in the background. We'll email you when the file is ready." · "Prepare export"
+
+### SettingsModules — Settings › Modules
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-ONB-14, US-SET-23, US-SET-24, US-SET-25 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: `ModuleOffConfirm`
+
+Shows: "Settings — Modules — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Switch off what your business doesn't use. Everyone sees a simpler Spine; nothing is deleted." · "Leads & meetings" · "Pipeline board, lead stages, the meetings calendar and their dashboard widgets." · "Jobs & field" · "Jobs, milestones, retention, variation orders, job costing, crew and the field app." · "Approvals" · "Expense approval and quote discount approval. Off: expenses post when submitted and discounts need no approval." · "Recurring documents" · "Recurring invoices and recurring bills. Switched off Oct 1, 2026 — schedules are paused." · "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on." · "Save"
+
+### ModuleOffConfirm — Confirm switching a module off
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-SET-23 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Switch off module — Spine" · "Overview" · "Dashboard" · "Switch off Jobs & field?" · "These disappear for everyone: Jobs, milestones, retention and variation orders, job costing and job profitability, crew, the field app, and their dashboard cards, search results and notifications." · "Nothing is deleted. Switch it back on any time and everything is where you left it." · "2 people use the field app. Change their role or deactivate them first." · "Cancel" · "Switch off"
+
+### SettingsPaymentInstructionsUpi — Settings › Payment instructions with UPI
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-INV-25 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Settings — Payment instructions — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Printed under the totals on every invoice and in invoice emails, so customers know how to pay." · "How customers can pay" · "Bank transfer to Kaveri Interiors Pvt Ltd HDFC Bank · A/c 50200012345678 · IFSC HDFC0001234 Please use the invoice number as the reference." · "Up to 600 characters. Leave empty to hide the block." · "UPI ID" · "kaveriinteriors@okhdfc" · "Payee name" · "Kaveri Interiors Pvt Ltd" · "Show a UPI QR code on invoices" · "Each issued invoice gets a QR code for its balance due. Payments still need recording — or find them when you reconcile." · "Issued invoices keep the instructions and QR code they were issued with." · "Save"
+
+### SettingsDocumentLayout — Settings › Documents — layout options with preview
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-SET-17, US-SET-18, US-SET-19 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Settings — Documents — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Choose what each document shows. The preview updates as you change options." · "Quotes" · "Invoices" · "Credit notes" · "Receipts" · "Statements" · "Paper size" · "A4" · "Title" · "Tax Invoice" · "Columns" · "Quantity and unit" · "Discount" · "HSN/SAC" · "Tax per line" · "Tax summary table" · "Amount in words" · "Signature" · "signature.png · shown above \"Authorised signatory — Riverstone Builders\"" · "Default terms"
+
+### SettingsEmailTemplates — Settings › Emails — edit customer email text
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-SET-21, US-SET-22 · **Source:** Drawn
+
+On the design canvas, page "Phase 9 · Tax, documents and setup" (image not exported yet).
+
+Links to: —
+
+Shows: "Settings — Emails — Spine" · "Overview" · "Dashboard" · "Settings" · "Search settings" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Your own words in the emails customers get. The branded layout around them stays the same." · "Quote" · "Quote {document_number} from {business_name}" · "Invoice" · "Invoice {document_number} from {business_name}" · "Payment reminder" · "Reminder: {document_number} is overdue" · "Receipt" · "Receipt for your payment of {amount}" · "Credit note" · "Credit note {document_number}" · "Statement" · "Your statement from {business_name}" · "Subject" · "Message" · "Hi {customer_name}, Your invoice {document_number} for {amount} is attached. It's due on {due_date}. Thanks for choosing us, {business_name}" · "Insert" · "{customer_name}" · "{document_number}" · "{amount}"
+
 
 ## Mobile field companion
 
@@ -2612,6 +3064,16 @@ Links to: `DashboardOwnerRedesignDark`, `InvoicesBulkSelectDark`, `SettingsRemin
 
 Shows: "Good afternoon, Alex" · "Sunday 4 October · Riverstone Builders" · "harbor" · "Esc" · "CONTACTS" · "Harborview Construction Co." · "Customer · Priya Nair · Portland, ME" · "Contact" · "QUOTES" · "QUO-0004 · Additional electrical outlets" · "Harborview Construction Co. · $510.00" · "Sent" · "QUO-0001 · Marina office fit-out" · "Harborview Construction Co. · $48,500.00" · "Accepted" · "JOBS" · "JOB-001 · Marina office fit-out" · "48 Harbor Way, Portland, ME 04101" · "Active" · "INVOICES" · "INV-0010" · "Harborview Construction Co. · $9,700.00 due" · "Overdue" · "↑↓ to move" · "Enter to open" · "Searches contacts, quotes, invoices, jobs, bills and expenses"
 
+### VendorBillAttachments — Attachments on a vendor bill
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-OPS-33, US-OPS-34, US-OPS-35 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Bill 88213 — Spine" · "Purchases" · "Vendor bills" · "Bill 88213" · "Coastal Timber Supply · recorded Sep 28, 2026 · due Oct 28, 2026" · "Pay bill" · "Total" · "$2,160.00" · "Paid" · "Credits applied" · "$412.00" · "Balance" · "$0.00" · "Attachments" · "2 files" · "PDF" · "coastal-timber-88213.pdf" · "184 KB · added by Sarah Chen · Sep 28" · "Download" · "Remove" · "JPG" · "delivery-docket-site.jpg" · "1.2 MB · added by Marcus Webb · Sep 27" · "Drop files here or" · "add files" · "· PDF, JPEG, PNG, WebP or HEIC, up to 10 MB each, 10 per record" · "Remove delivery-docket-site.jpg" · "This bill is recorded, so only an owner can remove its files, with a reason. The bill's history records it." · "Reason" · "Wrong docket — belongs to bill 88240" · "Cancel" · "Remove attachment"
+
+
 ## Website and help
 
 ### SiteHome — Website — home page
@@ -2694,3 +3156,95 @@ Shows: "Invoices" · "Every invoice you've raised, newest first." · "Recurring 
 Links to: —
 
 Shows: "Help" · "Search" · "Ctrl K" · "Online docs ↗" · "Auto ▾" · "You're reading the guide for" · "Spine 1.2.0" · ", served by your own server — it works without internet." · "See the latest online docs ↗" · "Get started" · "What is Spine?" · "Install in 5 minutes" · "First steps after install" · "User guide" · "Setting up your business" · "Contacts and pipeline" · "Quotes" · "Build a quote" · "Send a quote to a customer" · "Revise a sent quote" · "Turn a quote into a job or invoice" · "Jobs and milestones" · "Invoices and credit notes" · "Payments and receivables" · "Purchases and expenses" · "Tax" · "Reports" · "Team and permissions" · "The field app" · "Self-hosting" · "Install" · "Configuration" · "File storage" · "Backups and restore" · "Upgrades" · "HTTPS and domains" · "Troubleshooting" · "Developers" · "Architecture" · "Local setup" · "How the ledger works" · "Testing" · "Contributing" · "API reference" · "User guide › Quotes" · …
+
+## Banking
+
+### BankingAccounts — Banking — accounts and balances
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-01, US-BANK-02, US-BANK-06 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `AccountRegister`, `MoneyAccountDialog`, `TransferDialog`, `MoneyInOutDialog`, `ReconcileAccount`
+
+Shows: "Banking — Spine" · "Money" · "Banking" · "Bank, cash and card accounts, what moved through them, and reconciliation." · "Transfer" · "Money in" · "Money out" · "+ Add account" · "Bank and cash" · "$58,124.40" · "3 accounts" · "Owed on cards" · "$1,284.60" · "1 card" · "Not yet reconciled" · "13 entries" · "across 3 accounts" · "Account" · "Type" · "Bank" · "Balance in Spine" · "Reconciliation" · "Unreconciled" · "First Coastal — Operating" · "Default" · "Bank account" · "First Coastal Bank · ••0193" · "$48,212.40" · "Reconciled to Sep 30, 2026" · "6 entries" · "First Coastal — Tax reserve" · "First Coastal Bank · ••7741" · "$9,500.00" · "0 entries" · "Cash in Hand" · "Cash" · "Site petty cash" · "$412.00" · "Never reconciled" · "3 entries" · "Business Visa" · "Credit card" · "First Coastal Bank · ••4410" · "$1,284.60 owed" · "Reconciled to Sep 25, 2026"
+
+### AccountRegister — Account register — one money account
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-02 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `ReconcileAccount`, `StatementImportDialog`
+
+Shows: "Account register — Spine" · "Banking" · "First Coastal — Operating" · "First Coastal Bank · ••0193 · Bank account · ledger 1010" · "Import statement" · "Reconcile" · "Balance in Spine" · "$48,212.40" · "Last reconciled" · "Sep 30, 2026" · "closing $45,829.90" · "Unreconciled" · "6 entries" · "From" · "Sep 1, 2026" · "To" · "Oct 5, 2026" · "Unreconciled only" · "Export" · "Date" · "What" · "Contact" · "Reference" · "Money in" · "Money out" · "Balance" · "Reconciled" · "Oct 2" · "Payment RCT-0018" · "Maple Ridge Developments" · "INV-0011" · "$4,542.50" · "Not reconciled" · "Oct 1" · "Vendor payment VP-0009" · "Coastal Timber Supply" · "Bill 88213" · "$2,160.00" · "$43,669.90" · "Sep 30" · "Money out — Bank charges" · "First Coastal Bank" · "Sep fees" · "$18.00" · "$45,829.90"
+
+### MoneyAccountDialog — Add a bank, cash or card account
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-01 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Add account — Spine" · "Money" · "Banking" · "Bank, cash and card accounts." · "Add account" · "A new bank account, cash box or business card. Spine creates its ledger account for you." · "Type" · "Bank account" · "Cash" · "Credit card" · "Name" · "First Coastal — Tax reserve" · "Bank name" · "First Coastal Bank" · "Last 4 digits" · "7741" · "Use as default for new payments" · "Payments and expenses start with this account. You can change it on each one." · "Ledger account: 1011 · Asset. Enter its balance on your cutover date in Opening balances, not here." · "Cancel"
+
+### NewPaymentDialogAccount — Record payment — choose the account it went into
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-03 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Record payment — Spine" · "Billing" · "Payments" · "Record payment" · "Maple Ridge Developments · INV-0011 · balance $4,542.50" · "Amount" · "$4,542.50" · "Date" · "Oct 2, 2026" · "Method" · "Bank transfer" · "Paid into" · "First Coastal — Operating" · "Last used by you. Change it if the money went elsewhere." · "Reference" · "FT26100248" · "Allocated to INV-0011" · "Email a receipt to the customer" · "Cancel"
+
+### TransferDialog — Transfer between money accounts
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-04 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Transfer — Spine" · "Money" · "Banking" · "Bank, cash and card accounts." · "Transfer between accounts" · "Move money between your own accounts — a deposit, a top-up or paying off a card." · "From" · "First Coastal — Operating" · "To" · "Business Visa" · "Amount" · "$1,284.60" · "Date" · "Oct 5, 2026" · "Reference" · "Visa statement Sep 2026" · "Posts Dr Business Visa / Cr First Coastal — Operating. Both registers show it." · "Cancel" · "Move money"
+
+### MoneyInOutDialog — Other money in or out
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-05 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Money out — Spine" · "Money" · "Banking" · "Bank, cash and card accounts." · "Money out" · "Money that left an account without a bill or expense." · "From account" · "First Coastal — Operating" · "Date" · "Sep 30, 2026" · "Category" · "Owner's capital" · "Owner's drawings" · "Loan received" · "Loan repayment" · "Interest received" · "Bank charges" · "Or pick an account" · "6900 · Other Expenses — Bank charges" · "Amount" · "$18.00" · "Tax" · "No tax" · "Contact" · "First Coastal Bank" · "Description" · "September account fees" · "Receivables, payables, tax and customer advances aren't offered here. Use a payment, bill or tax payment for those." · "Cancel" · "Record money out"
+
+### StatementImportDialog — Import a bank statement (CSV) with column mapping
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-07 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Import statement — Spine" · "Money" · "Banking" · "Bank, cash and card accounts." · "Import statement — First Coastal — Operating" · "Export the statement from your bank as CSV, then choose it here. Spine remembers how its columns map." · "statement-oct-2026.csv · 214 rows" · "Choose another file" · "One amount column (money in positive)" · "Separate money in and money out columns" · "Date" · "Txn date · DD/MM/YYYY" · "Description" · "Narration" · "Reference" · "Ref no." · "Money out" · "Withdrawal" · "Money in" · "Deposit" · "Balance (optional)" · "Balance" · "First rows" · "Txn date" · "01/10/2026" · "NEFT-MAPLE RIDGE DEV" · "FT26100248" · "4,542.50" · "48,230.40" · "CHQ 000214 COASTAL TIMBER" · "000214" · "2,160.00" · "43,687.90" · "30/09/2026" · "ACCOUNT FEES SEP" · "18.00" · "45,829.90" · "Imported 211 lines · skipped 3 already imported · 0 rows couldn't be read" · "Cancel" · "Import 211 lines"
+
+### ReconcileAccount — Reconcile an account against its statement
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-08, US-BANK-10 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: `ReconcileCreateDrawer`, `ReconciliationsHistory`
+
+Shows: "Reconcile — Spine" · "Banking" · "First Coastal — Operating" · "Reconcile" · "Reconcile First Coastal — Operating" · "Import statement" · "Statement end date" · "Oct 4, 2026" · "Closing balance on the statement" · "$50,566.42" · "Cleared in Spine" · "$50,618.50" · "Difference" · "−$52.08" · "Statement lines" · "From statement-oct-2026.csv" · "Oct 1" · "NEFT-MAPLE RIDGE DEV · FT26100248" · "Suggested match" · "+4,542.50" · "Match" · "Not this one" · "CHQ 000214 COASTAL TIMBER" · "Matched" · "−2,160.00" · "Oct 3" · "INTEREST CREDIT" · "Unmatched" · "+6.12" · "Create" · "Exclude" · "Oct 4" · "POS 4410 SHELL PORTLAND" · "−58.20" · "Unreconciled in Spine" · "Entries on this account up to Oct 4" · "Oct 2" · "Payment RCT-0018 · Maple Ridge Developments" · "Vendor payment VP-0009 · Coastal Timber Supply" · "Expense EXP-0034 · Marcus Webb · Fuel" · "Difference −$52.08 — match or create entries until it's zero." · "Finish reconciliation"
+
+### ReconcileCreateDrawer — Create a missing entry from a statement line
+**Priority:** P1 · **Phase:** 8 · **Stories:** US-BANK-09 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Reconcile — Spine" · "Banking" · "Reconcile" · "Reconcile First Coastal — Operating" · "Create from statement line" · "Oct 4 · POS 4410 SHELL PORTLAND · −$58.20" · "Record it as" · "Vendor payment" · "Expense" · "Transfer to another account" · "Other money out" · "Tax payment" · "Amount" · "$58.20" · "Date" · "Oct 4, 2026" · "Category" · "Fuel" · "Job" · "J-0012 · Harbour Lofts fit-out" · "Paid from" · "First Coastal — Operating" · "When you save, the statement line is matched to the new expense automatically." · "Cancel" · "Save and match"
+
+### ReconciliationsHistory — Past reconciliations and undo
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-BANK-11 · **Source:** Drawn
+
+On the design canvas, page "Phase 8 · Books completeness" (image not exported yet).
+
+Links to: —
+
+Shows: "Reconciliations — Spine" · "Banking" · "First Coastal — Operating" · "Reconciliations" · "First Coastal — Operating · ••0193" · "Statement end date" · "Closing balance" · "Entries matched" · "Finished by" · "Finished" · "Sep 30, 2026" · "$45,829.90" · "41" · "Sarah Chen" · "Oct 2, 2026 4:12 PM" · "Undo" · "Aug 31, 2026" · "$31,204.15" · "38" · "Sep 3, 2026 10:05 AM" · "Undo the later reconciliations first." · "Jul 31, 2026" · "$22,918.70" · "35" · "Alex Morgan" · "Aug 4, 2026 9:41 AM" · "Undo this reconciliation?" · "Its 41 entries go back to unreconciled and the statement lines to unmatched. Nothing is deleted." · "Cancel" · "Undo reconciliation"

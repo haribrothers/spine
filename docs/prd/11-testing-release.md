@@ -20,8 +20,8 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 |---|---|---|---|
 | `test` ("Unit and integration") | PR into `main`, manual | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · install (frozen lockfile) → lint → typecheck → unit → migrate → integration (files run one at a time: they share one database) | Yes |
 | `e2e` ("E2E") | after `test` passes; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
-| `a11y-routes` | PR (Phase 8) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
-| `restore-verify` | nightly and on `v*` tags (Phase 8) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `a11y-routes` | PR (Phase 10) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
+| `restore-verify` | nightly and on `v*` tags (Phase 10) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
 | `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
@@ -47,7 +47,7 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 | One production build (in E2E), timeouts of 25 and 30 minutes | Duplicate builds, runaway jobs |
 | Failure-only Playwright report, kept 3 days | Artifact storage |
 
-Phase 8 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
+Phase 10 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
 
 ## Release artifacts
 
@@ -72,7 +72,7 @@ Phase 8 adds the nightly `restore-verify` job; keep it to one run a day, and con
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 8, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 10, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 
