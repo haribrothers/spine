@@ -7,6 +7,7 @@ import { createDb, type Database } from "../../db/client";
 import { activities, contacts, leads, member, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
 import { ContactsService } from "./contacts.service";
 import { LeadsService } from "./leads.service";
+import { LeadStagesService } from "./lead-stages.service";
 import { ActivitiesService } from "./activities.service";
 import { AuditLogService } from "../audit/audit-log.service";
 
@@ -31,6 +32,7 @@ describe("Leads/Activities ownership split (requires local Postgres)", () => {
   let otherUserId: string;
   let otherMemberId: string;
   let leadsService: LeadsService;
+  let leadStagesService: LeadStagesService;
   let activitiesService: ActivitiesService;
 
   afterAll(async () => {
@@ -55,7 +57,8 @@ describe("Leads/Activities ownership split (requires local Postgres)", () => {
   beforeEach(async () => {
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const auditLog = new AuditLogService(db);
-    leadsService = new LeadsService(db, auditLog);
+    leadStagesService = new LeadStagesService(db, auditLog);
+    leadsService = new LeadsService(db, auditLog, leadStagesService);
     activitiesService = new ActivitiesService(db, auditLog);
 
     const ownerEmail = `lead-act-owner-${randomUUID()}@example.com`;
@@ -123,7 +126,7 @@ describe("Leads/Activities ownership split (requires local Postgres)", () => {
     it("a legacy lead with no createdByUserId can only be touched via the _others capability, never _own", async () => {
       const [legacyLead] = await db
         .insert(leads)
-        .values({ orgId, contactId, valueCurrency: "USD", title: "Legacy Unowned Lead", createdByUserId: null })
+        .values({ orgId, contactId, stageId: await leadStagesService.defaultStageId(orgId), valueCurrency: "USD", title: "Legacy Unowned Lead", createdByUserId: null })
         .returning();
 
       await grantTeam(creatorMemberId, { "leads.edit_own": true });

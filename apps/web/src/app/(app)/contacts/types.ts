@@ -1,7 +1,9 @@
+import type { LeadStage, LeadStageKind } from "@spine/shared";
+
 /** Mirrors apps/api/src/db/schema/contacts.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape. */
 export type ContactType = "customer" | "vendor" | "both";
 export type AddressType = "billing" | "shipping" | "site" | "other";
-export type LeadStage = "new" | "qualified" | "proposal" | "won" | "lost";
+export type { LeadStage, LeadStageKind };
 export type ActivityType = "call" | "meeting" | "note" | "task";
 
 export interface ContactPerson {
@@ -64,7 +66,10 @@ export interface Lead {
   id: string;
   orgId: string;
   contactId: string;
-  stage: LeadStage;
+  /** US-CRM-19 — one of the organisation's pipeline stages. */
+  stageId: string;
+  stageName: string;
+  stageKind: LeadStageKind;
   valueAmount: string;
   valueCurrency: string;
   source: string | null;
@@ -90,11 +95,3 @@ export interface Activity {
   updatedAt: string;
 }
 
-export const LEAD_STAGES: LeadStage[] = ["new", "qualified", "proposal", "won", "lost"];
-export const LEAD_STAGE_LABELS: Record<LeadStage, string> = {
-  new: "New",
-  qualified: "Qualified",
-  proposal: "Proposal",
-  won: "Won",
-  lost: "Lost",
-};

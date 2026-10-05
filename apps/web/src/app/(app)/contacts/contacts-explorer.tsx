@@ -108,7 +108,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
   }, []);
 
   const activeLeadCount = useMemo(
-    () => (leads ? leads.filter((l) => l.stage !== "won" && l.stage !== "lost").length : null),
+    () => (leads ? leads.filter((l) => l.stageKind === "open").length : null),
     [leads],
   );
   const stats = useContactStats(contacts, activeLeadCount);

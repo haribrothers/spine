@@ -9,6 +9,7 @@ export type AuditEntityType =
   | "contact_person"
   | "address"
   | "lead"
+  | "lead_stage"
   | "activity"
   | "meeting"
   | "catalog_item"

@@ -2379,6 +2379,17 @@ Regression: dashboard charts, the Pipeline board and status chips keep their col
 
 Regression: PDFs without branding set still use Spine Blue and show no footer line; payment instructions and notes still print (§40); the theme tiles (§55) still work.
 
+## 57. Pipeline stages (US-CRM-19, Phase 7)
+
+1. As an Owner, open Settings › Pipeline stages: New, Qualified and Proposal (Open) then Won and Lost (with a padlock), each with its lead count, and the intro "The columns on your pipeline board…".
+2. Rename Proposal to "Quote sent" and Save. On Pipeline the column is titled "Quote sent" and still has its leads.
+3. "+ Add stage", name it "Site visit booked", drag it above "Quote sent" (or Tab to it and use the arrow buttons) and Save: the board shows it in that place, empty.
+4. Keep adding stages: at 12, "+ Add stage" is disabled and the note reads "Up to 12 stages."
+5. Won and Lost have no drag handle; rename Won to "Signed" and Save — the board, the lead forms and the dashboard's "Pipeline by stage" show "Signed", and open-lead counts on Contacts still leave it out.
+6. Add and edit a lead from the board and from a contact's Leads list: the Stage picker lists your stages in order.
+
+Regression: dragging a card between columns still moves the lead; the dashboard pipeline chart shows every stage in board order; demo data (Settings › Demo data) puts leads into your stages.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -43,8 +43,8 @@ New schema the stories require. Each is created by the story named; until then i
 
 | Table / key | Change | Story |
 |---|---|---|
-| `lead_stages` (new) | `id`, `org_id`, `name`, `kind` enum(`open`,`won`,`lost`), `sort_order`, `color`; seeded with New / Qualified / Proposal / Won / Lost; max 12 per org | US-CRM-19 |
-| `leads` | `stage_id uuid → lead_stages` replaces the `lead_stage` enum column (backfill migration maps old values) | US-CRM-19 |
+| `lead_stages` (new) | `id`, `org_id`, `name`, `kind` enum `lead_stage_kind` (`open`,`won`,`lost`), `sort_order`, `color` (a design-token category name — slate, blue, teal, amber, purple, pink, green, red — never hex), timestamps; index (`org_id`, `sort_order`). Seeded with New / Qualified / Proposal / Won / Lost for every organisation (migration `0063`, sign-up, and `LeadStagesService.ensureSeeded` for orgs made any other way); max 12 per org; exactly one `won` and one `lost`, always last (service + `putLeadStagesSchema`) | US-CRM-19 |
+| `leads` | `stage_id uuid not null → lead_stages (restrict)` replaces the `lead_stage` enum column: migration `0063` maps new/qualified/proposal/won/lost to the seeded stages at the same position, `0064` makes it not null and drops the old column and enum; index (`org_id`, `stage_id`) | US-CRM-19 |
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files` and `accepted_signer_name text` (on-site acceptance stores what it captured) | US-QUO-19 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |

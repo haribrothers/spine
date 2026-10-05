@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-CRM-19: rename, reorder and add pipeline stages (Phase 7)
+
+- **Data.** New `lead_stages` table (name, kind open/won/lost, position, token colour) replaces the fixed `lead_stage` enum. Migration `0063` seeds New / Qualified / Proposal / Won / Lost for every organisation and maps each lead to the stage at its old position; `0064` drops the enum column. New organisations get the same stages at sign-up, and `LeadStagesService.ensureSeeded` covers any organisation without them.
+- **API.** `GET/PUT /org/lead-stages` (read: any member; replace: Owner, idempotent). Rules live in `putLeadStagesSchema` (`@spine/shared`) so the form and API refuse the same things: up to 12, exactly one Won and one Lost, always last, distinct names; Won/Lost keep their kind and can't be removed. Each stage change is audited. Leads now carry `stageId`, `stageName`, `stageKind`; `summary-by-stage` returns one row per stage with its kind. The service already accepts `moves` for deleting a stage with leads; the delete control arrives with US-CRM-20.
+- **Web.** Settings › Pipeline stages, laid out as the `LeadStagesSettings` design: drag handle (plus keyboard Move up/down buttons), colour dot, name field, kind, lead count, padlock on Won/Lost, "+ Add stage" (disabled at 12). The board's columns, filter and "Add lead", both lead forms, the contact Leads list, the Contacts open-lead count and the dashboard pipeline chart all read the organisation's stages.
+
+Tests:
+- `packages/shared/src/us-crm-19.test.ts` (5): defaults, accepted set, 12 limit, Won/Lost last and once, names.
+- `apps/api/src/modules/contacts/us-crm-19.http.integration.test.ts` (8): seeded stages with counts; default stage on create; rename keeps leads; new stage at its position; 12 limit; Won/Lost rename only; another organisation's stage refused; summary by stage.
+- `apps/e2e/tests/us-crm-19.spec.ts` (1): rename, add, keyboard reorder, board columns and counts, padlocks, the 12-stage limit.
+
 ### 2026-10-05 — US-SET-10: put my brand colour and footer on documents (Phase 7)
 
 - **Settings › Branding** gains "Document colour" (swatch picker plus `#RRGGBB` field) with a live check ("✓ Readable on white (6.0:1, passes AA)" or "Too light to read on white (2.0:1). Pick a darker colour — documents need at least 4.5:1."), "Document footer" (up to 300 characters), and a preview of an invoice that stays light in dark mode (`[data-surface="document"]`). Save is disabled while either field is invalid; "Reset to Spine defaults" resets the theme and the colour, not the footer. The layout now matches the `SettingsBranding` design.

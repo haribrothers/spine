@@ -6,19 +6,14 @@ import Link from "next/link";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 
+/** One row per pipeline stage, in board order (US-CRM-19: the organisation's own stages). */
 interface StageSummaryRow {
-  stage: "new" | "qualified" | "proposal" | "won" | "lost";
+  stageId: string;
+  name: string;
+  kind: "open" | "won" | "lost";
   count: number;
   totalValue: string;
 }
-
-const STAGE_LABELS: Record<StageSummaryRow["stage"], string> = {
-  new: "New",
-  qualified: "Qualified",
-  proposal: "Proposal",
-  won: "Won",
-  lost: "Lost",
-};
 
 /**
  * S-09.11 (dashboard v2) — pipeline by stage. Bar length is deal value
@@ -52,8 +47,8 @@ export function PipelineByStageChart() {
   const chartData = (rows ?? []).map((r) => {
     const amount = r.totalValue === "0" ? 0n : BigInt(r.totalValue);
     return {
-      key: r.stage,
-      label: STAGE_LABELS[r.stage],
+      key: r.stageId,
+      label: r.name,
       value: Number(amount) / 100,
       formattedValue: `${formatMoney(amount, currency)} · ${r.count}`,
     };

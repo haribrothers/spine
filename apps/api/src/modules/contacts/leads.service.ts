@@ -1,87 +1,81 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createLeadSchema, updateLeadSchema } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { leads, leadStageEnum } from "../../db/schema";
+import { leads, leadStages } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+import { LeadStagesService } from "./lead-stages.service";
 
 export type CreateLeadInput = z.infer<typeof createLeadSchema>;
 export type UpdateLeadInput = z.infer<typeof updateLeadSchema>;
-export type LeadStage = (typeof leadStageEnum.enumValues)[number];
 
 /**
- * Leads CRUD. Stage is the fixed enum from db/schema/contacts.ts (see that
- * file's comment on why true per-org configurable stages are deferred).
- * `list(orgId)` with no stage filter returns every lead in the org, which
- * is what the /leads kanban board (S-01.5, apps/web's leads-board.tsx)
- * groups into columns client-side.
+ * Leads CRUD. A lead sits in one of the organisation's pipeline stages
+ * (US-CRM-19, `lead_stages`); every read adds the stage's `stageName` and
+ * `stageKind` so lists and reports can tell open leads from won and lost
+ * ones without a second request. `list(orgId)` with no stage filter
+ * returns every lead in the org, which the /leads board groups into
+ * columns client-side.
  */
 @Injectable()
 export class LeadsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly leadStages: LeadStagesService,
   ) {}
 
-  async list(orgId: string, stage?: LeadStage) {
+  /** Lead columns plus the stage's name and kind. */
+  private readonly columns = { ...getTableColumns(leads), stageName: leadStages.name, stageKind: leadStages.kind };
+
+  async list(orgId: string, stageId?: string) {
     const conditions = [eq(leads.orgId, orgId)];
-    if (stage) conditions.push(eq(leads.stage, stage));
+    if (stageId) conditions.push(eq(leads.stageId, stageId));
     return this.db
-      .select()
+      .select(this.columns)
       .from(leads)
+      .innerJoin(leadStages, eq(leads.stageId, leadStages.id))
       .where(and(...conditions))
       .orderBy(desc(leads.createdAt));
   }
 
   /**
-   * S-09.11 (dashboard v2) — "pipeline by stage" chart. A server-side
-   * GROUP BY, unlike the /leads kanban board (S-01.5), which groups its
-   * own `list(orgId)` client-side — that board already has every lead's
-   * full row in memory for drag-and-drop, so a second aggregate query
-   * would be redundant there; the dashboard widget wants only the totals,
-   * not every lead row, so a real GROUP BY is the right shape here.
-   * Zero-filled for every `leadStageEnum` value so the chart always
-   * renders all 5 stages, even ones with no leads yet, rather than a
-   * shifting set of bars.
+   * S-09.11 (dashboard v2) — "pipeline by stage" chart, one row per stage in
+   * board order (zero-filled, so the chart always shows every stage), with
+   * the stage's kind so won and lost are told apart whatever they're called.
    */
   async summaryByStage(orgId: string) {
-    const rows = await this.db
-      .select({ stage: leads.stage, valueAmount: leads.valueAmount })
-      .from(leads)
-      .where(eq(leads.orgId, orgId));
-
-    const byStage = new Map<string, { count: number; totalValue: bigint }>();
-    for (const stage of leadStageEnum.enumValues) {
-      byStage.set(stage, { count: 0, totalValue: 0n });
-    }
-    for (const row of rows) {
-      const existing = byStage.get(row.stage)!;
-      existing.count += 1;
-      existing.totalValue += row.valueAmount;
-    }
-
-    return leadStageEnum.enumValues.map((stage) => ({
-      stage,
-      count: byStage.get(stage)!.count,
-      totalValue: byStage.get(stage)!.totalValue.toString(),
+    const stages = await this.leadStages.list(orgId);
+    const rows = await this.db.select({ stageId: leads.stageId, valueAmount: leads.valueAmount }).from(leads).where(eq(leads.orgId, orgId));
+    const totals = new Map<string, bigint>();
+    for (const row of rows) totals.set(row.stageId, (totals.get(row.stageId) ?? 0n) + row.valueAmount);
+    return stages.map((stage) => ({
+      stageId: stage.id,
+      name: stage.name,
+      kind: stage.kind,
+      color: stage.color,
+      count: stage.leadCount,
+      totalValue: (totals.get(stage.id) ?? 0n).toString(),
     }));
   }
 
   async listByContact(orgId: string, contactId: string) {
     return this.db
-      .select()
+      .select(this.columns)
       .from(leads)
+      .innerJoin(leadStages, eq(leads.stageId, leadStages.id))
       .where(and(eq(leads.orgId, orgId), eq(leads.contactId, contactId)))
-      .orderBy(desc(leads.createdAt));
+      .orderBy(desc(leads.createdAt), asc(leads.id));
   }
 
   async getOne(orgId: string, id: string) {
     const [lead] = await this.db
-      .select()
+      .select(this.columns)
       .from(leads)
+      .innerJoin(leadStages, eq(leads.stageId, leadStages.id))
       .where(and(eq(leads.orgId, orgId), eq(leads.id, id)));
     if (!lead) {
       throw new NotFoundException("Lead not found");
@@ -91,12 +85,14 @@ export class LeadsService {
 
   async create(orgId: string, actorUserId: string, input: CreateLeadInput) {
     const created = await this.db.transaction(async (tx) => {
+      const stageId = input.stageId ?? (await this.leadStages.defaultStageId(orgId, tx));
+      if (input.stageId) await this.leadStages.requireStage(orgId, input.stageId, tx);
       const [lead] = await tx
         .insert(leads)
         .values({
           orgId,
           contactId: input.contactId,
-          stage: input.stage ?? "new",
+          stageId,
           valueAmount: input.valueAmount ?? 0n,
           valueCurrency: input.valueCurrency,
           source: input.source ?? null,
@@ -118,7 +114,7 @@ export class LeadsService {
       }
       return lead;
     });
-    return created;
+    return created ? this.getOne(orgId, created.id) : created;
   }
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateLeadInput) {
@@ -127,12 +123,13 @@ export class LeadsService {
       own: "leads.edit_own",
       others: "leads.edit_others",
     });
+    if (input.stageId !== undefined) await this.leadStages.requireStage(orgId, input.stageId);
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(leads)
         .set({
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
-          ...(input.stage !== undefined ? { stage: input.stage } : {}),
+          ...(input.stageId !== undefined ? { stageId: input.stageId } : {}),
           ...(input.valueAmount !== undefined ? { valueAmount: input.valueAmount } : {}),
           ...(input.valueCurrency !== undefined ? { valueCurrency: input.valueCurrency } : {}),
           ...(input.source !== undefined ? { source: input.source } : {}),
@@ -156,7 +153,7 @@ export class LeadsService {
       }
       return row;
     });
-    return updated;
+    return updated ? this.getOne(orgId, updated.id) : updated;
   }
 
   async delete(orgId: string, id: string, actorUserId: string) {
