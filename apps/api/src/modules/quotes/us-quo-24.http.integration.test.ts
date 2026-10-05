@@ -18,7 +18,7 @@ interface QuoteRow {
   notes: string | null;
   termsAndConditions: string | null;
   emailStatus: string | null;
-  lines: { name: string; unitPriceAmount: string; taxRateId: string | null; taxRatePercentage: number }[];
+  lines: { name: string; sortOrder: number; unitPriceAmount: string; taxRateId: string | null; taxRatePercentage: number }[];
 }
 
 /**
@@ -85,7 +85,8 @@ describe("US-QUO-24 · duplicate a quote as a new draft (requires local Postgres
     expect(line, "a demo quote line comes from the catalogue").toBeTruthy();
     await db.update(catalogItems).set({ defaultPriceAmount: 999_999n }).where(eq(catalogItems.id, line!.catalogItemId!));
     const copy = (await (await call("POST", `/quotes/${original.id}/duplicate`)).json()) as QuoteRow;
-    expect(copy.lines.find((l) => l.name === line!.name)?.unitPriceAmount).toBe(line!.unitPriceAmount.toString());
+    // Matched by position: a quote can repeat a line name.
+    expect(copy.lines.find((l) => l.sortOrder === line!.sortOrder)?.unitPriceAmount).toBe(line!.unitPriceAmount.toString());
   });
 
   it("the copy's history opens with 'Duplicated from <number>'", async () => {
