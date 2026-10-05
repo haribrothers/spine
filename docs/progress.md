@@ -321,7 +321,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-DASH-20 · See retention held and job billing on the dashboard
 - [x] US-RPT-15 · Compare contract, billed and cost across jobs
 - [x] US-NTF-13 · Get a daily digest by email
-- [ ] US-NTF-14 · Choose when my digest arrives
+- [x] US-NTF-14 · Choose when my digest arrives
 - [x] US-SET-09 · Pick a theme for the whole organisation
 - [x] US-SET-10 · Put my brand colour and footer on documents
 - [ ] US-SET-11 · See every change across the organisation

@@ -12,12 +12,19 @@ import {
   FormField,
   Input,
   Spinner,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
   ToggleGroup,
   ToggleGroupItem,
 } from "@spine/ui";
+import { useSearchParams } from "next/navigation";
+import type { DigestDays } from "@spine/shared";
 import { AlarmClock, Camera, Laptop, Moon, Sun } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { BrowserNotificationsSection } from "../../../components/browser-notifications-section";
+import { DailyDigestSection } from "../../../components/daily-digest-section";
 import { LogoCropDialog } from "../../../lib/logo-crop-dialog";
 import { PHOTO_ACCEPT } from "../../../lib/upload-types";
 
@@ -30,7 +37,12 @@ interface Profile {
   image: string | null;
   themePreference: "system" | "light" | "dark" | string;
   meetingReminderLeadMinutes: number | null;
+  digestEnabled: boolean;
+  digestTime: string;
+  digestDays: DigestDays;
 }
+
+const PROFILE_TABS = ["profile", "password", "appearance", "notifications"] as const;
 
 const THEME_OPTIONS = [
   { value: "light", label: "Light", icon: Sun },
@@ -56,6 +68,9 @@ function initials(name: string): string {
 
 export function ProfileView() {
   const { setTheme } = useTheme();
+  // US-NTF-14: tabs, with ?tab=notifications opening the digest settings.
+  const requestedTab = useSearchParams().get("tab");
+  const initialTab = PROFILE_TABS.includes(requestedTab as (typeof PROFILE_TABS)[number]) ? requestedTab! : "profile";
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -198,8 +213,8 @@ export function ProfileView() {
     );
   }
 
-  return (
-    <div className="mx-auto flex w-full max-w-xl flex-col gap-8">
+  const alerts = (
+    <>
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
@@ -210,55 +225,73 @@ export function ProfileView() {
           <AlertDescription>{success}</AlertDescription>
         </Alert>
       )}
+    </>
+  );
 
-      <div className="flex flex-col gap-3">
-        <h2 className="text-[15px] font-semibold text-on-surface">Avatar</h2>
-        <button
-          type="button"
-          disabled={uploadingAvatar}
-          onClick={() => inputRef.current?.click()}
-          aria-label="Upload avatar"
-          className="group relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-full"
-        >
-          <Avatar size="lg" className="h-16 w-16">
-            {profile.image && <AvatarImage src={profile.image} alt={profile.name} />}
-            <AvatarFallback className="text-[17px]">{initials(profile.name)}</AvatarFallback>
-          </Avatar>
-          <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
-            {uploadingAvatar ? <Spinner size="sm" /> : <Camera size={16} className="text-white" />}
-          </span>
-        </button>
-        <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleFileSelected} />
-        <LogoCropDialog open={pickedImageSrc !== null} imageSrc={pickedImageSrc} cropShape="round" onCancel={closeCropDialog} onConfirm={handleAvatarCropConfirm} />
-      </div>
+  return (
+    <Tabs defaultValue={initialTab} className="flex w-full flex-col gap-6">
+      <TabsList>
+        <TabsTrigger value="profile">Profile</TabsTrigger>
+        <TabsTrigger value="password">Password</TabsTrigger>
+        <TabsTrigger value="appearance">Appearance</TabsTrigger>
+        <TabsTrigger value="notifications">Notifications</TabsTrigger>
+      </TabsList>
 
-      <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold text-on-surface">Name & email</h2>
-        <FormField label="Name">{(field) => <Input {...field} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} required />}</FormField>
-        <FormField label="Email">{(field) => <Input {...field} type="email" value={emailDraft} onChange={(e) => setEmailDraft(e.target.value)} required />}</FormField>
-        <div>
-          <Button type="submit" disabled={savingProfile}>
-            {savingProfile ? <Spinner size="sm" /> : "Save"}
-          </Button>
+      <TabsContent value="profile" className="flex max-w-xl flex-col gap-8">
+        {alerts}
+        <div className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold text-on-surface">Avatar</h2>
+          <button
+            type="button"
+            disabled={uploadingAvatar}
+            onClick={() => inputRef.current?.click()}
+            aria-label="Upload avatar"
+            className="group relative h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-full"
+          >
+            <Avatar size="lg" className="h-16 w-16">
+              {profile.image && <AvatarImage src={profile.image} alt={profile.name} />}
+              <AvatarFallback className="text-[17px]">{initials(profile.name)}</AvatarFallback>
+            </Avatar>
+            <span className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
+              {uploadingAvatar ? <Spinner size="sm" /> : <Camera size={16} className="text-white" />}
+            </span>
+          </button>
+          <input ref={inputRef} type="file" accept={PHOTO_ACCEPT} className="hidden" onChange={handleFileSelected} />
+          <LogoCropDialog open={pickedImageSrc !== null} imageSrc={pickedImageSrc} cropShape="round" onCancel={closeCropDialog} onConfirm={handleAvatarCropConfirm} />
         </div>
-      </form>
 
-      <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold text-on-surface">Change password</h2>
-        <FormField label="Current password">
-          {(field) => <Input {...field} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />}
-        </FormField>
-        <FormField label="New password">
-          {(field) => <Input {...field} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />}
-        </FormField>
-        <div>
-          <Button type="submit" disabled={savingPassword || !currentPassword || newPassword.length < 8}>
-            {savingPassword ? <Spinner size="sm" /> : "Change password"}
-          </Button>
-        </div>
-      </form>
+        <form onSubmit={handleSaveProfile} className="flex flex-col gap-4">
+          <h2 className="text-[15px] font-semibold text-on-surface">Name & email</h2>
+          <FormField label="Name">{(field) => <Input {...field} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} required />}</FormField>
+          <FormField label="Email">{(field) => <Input {...field} type="email" value={emailDraft} onChange={(e) => setEmailDraft(e.target.value)} required />}</FormField>
+          <div>
+            <Button type="submit" disabled={savingProfile}>
+              {savingProfile ? <Spinner size="sm" /> : "Save"}
+            </Button>
+          </div>
+        </form>
+      </TabsContent>
 
-      <div className="flex flex-col gap-3">
+      <TabsContent value="password" className="flex max-w-xl flex-col gap-4">
+        {alerts}
+        <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
+          <h2 className="text-[15px] font-semibold text-on-surface">Change password</h2>
+          <FormField label="Current password">
+            {(field) => <Input {...field} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />}
+          </FormField>
+          <FormField label="New password">
+            {(field) => <Input {...field} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />}
+          </FormField>
+          <div>
+            <Button type="submit" disabled={savingPassword || !currentPassword || newPassword.length < 8}>
+              {savingPassword ? <Spinner size="sm" /> : "Change password"}
+            </Button>
+          </div>
+        </form>
+      </TabsContent>
+
+      <TabsContent value="appearance" className="flex max-w-xl flex-col gap-3">
+        {alerts}
         <h2 className="text-[15px] font-semibold text-on-surface">Theme</h2>
         <ToggleGroup type="single" value={profile.themePreference} onValueChange={(v) => v && handleThemeChange(v)} className="w-fit rounded-sm bg-surface-sunken p-0.5">
           {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
@@ -268,14 +301,24 @@ export function ProfileView() {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-      </div>
+      </TabsContent>
 
-      {/* US-NTF-12 — this member's notification preferences. */}
-      <div className="flex flex-col gap-5">
-        <h2 className="text-[15px] font-semibold text-on-surface">Notifications</h2>
-        <BrowserNotificationsSection />
-        <div className="flex flex-col gap-3">
-          <h3 className="text-[14px] font-semibold text-on-surface">Meeting reminders</h3>
+      {/* US-NTF-12/14 — this member's notification preferences. */}
+      <TabsContent value="notifications" className="flex flex-col gap-4">
+        {alerts}
+        <div className="rounded-lg border border-border bg-surface p-5">
+          <BrowserNotificationsSection />
+        </div>
+        <DailyDigestSection
+          value={{ digestEnabled: profile.digestEnabled, digestTime: profile.digestTime, digestDays: profile.digestDays }}
+          onSaved={(next) => {
+            setProfile({ ...profile, ...next });
+            flash(next.digestEnabled ? `Daily digest on: ${next.digestDays === "daily" ? "every day" : "Monday to Friday"}.` : "Daily digest turned off.");
+          }}
+          onError={setError}
+        />
+        <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface p-5">
+          <h3 className="text-[15px] font-semibold text-on-surface">Meeting reminders</h3>
           <p className="text-[13px] text-on-surface-muted">
             How long before a meeting you&apos;re attending starts should we remind you? Overrides your org&apos;s default.
           </p>
@@ -293,7 +336,7 @@ export function ProfileView() {
             ))}
           </ToggleGroup>
         </div>
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   );
 }

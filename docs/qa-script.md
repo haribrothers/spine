@@ -2761,6 +2761,19 @@ Set up SMTP (or the dev mail catcher). Set "Send at" a few minutes ahead in Prof
 
 Regression: other emails (quote, invoice, reminders, notifications) look the same. The dashboard's attention rows are unchanged.
 
+## 93. Digest preferences (US-NTF-14, Phase 7)
+
+1. Open Profile & Preferences: tabs Profile, Password, Appearance and Notifications. Each of the first three holds what the page used to show (avatar and name/email; change password; theme).
+2. Notifications shows Browser notifications, Daily digest and Meeting reminders.
+3. As an Owner who never changed it: the switch is on, Send at is 7:00 AM, Days is Monday to Friday. As Staff or Field: the switch is off.
+4. Change Send at to 6:30 AM: "Daily digest on: …" confirms. Tomorrow's digest arrives at about 6:30 AM organisation time (within 15 minutes).
+5. Choose "Every day": a digest arrives on Saturday too.
+6. Turn the switch off: "Daily digest turned off." No digest arrives the next morning. Send at and Days are greyed out while it's off.
+7. Reload `/profile?tab=notifications`: it opens on the Notifications tab with your choices kept.
+8. Check keyboard (tab through switch and selects), dark mode, and phone width.
+
+Regression: changing theme, name, email, avatar and password still works from their tabs. The meeting reminder choice still saves.
+
 ## Known gaps — don't file these as bugs
 
 - Owners' "View all" on the dashboard feed opens the full Activity page, not the audit log; it moves to the audit log with US-SET-11 (Phase 7 step 7).

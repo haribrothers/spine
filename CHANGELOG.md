@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-NTF-14: choose when my digest arrives (Phase 7)
+
+- **Profile & Preferences has tabs**: Profile, Password, Appearance and Notifications. `?tab=notifications` opens the last one directly. The header reads "Your personal account settings. Only you can change these."
+- **Notifications tab**: "Browser notifications" (US-NTF-12), "Daily digest" and "Meeting reminders" (US-NTF-09). Daily digest has "Email me a summary each morning" with a switch, plus "Send at" (5:00 AM to 11:00 AM, every half hour) and "Days" ("Every day" or "Monday to Friday"). Each change saves straight away and confirms it ("Daily digest turned off."). Times are in the organisation's time zone.
+- **API.** `PUT /users/me/notification-preferences { digestEnabled, digestTime, digestDays }` changes only your own row. `GET /users/me` reports the digest settings, resolved against your role's default.
+
+Tests:
+- `apps/api/src/modules/users/us-ntf-14.http.integration.test.ts` (4): role defaults; saving and reading back your own choice only; validation; turned off sends nothing, moved to 6:30 arrives at 6:30.
+- `apps/e2e/tests/us-ntf-14.spec.ts` (1): the tab, defaults, changing Send at and Days, turning it off, and the choices kept after a reload.
+- `apps/e2e/tests/us-ntf-12.spec.ts`: opens the Notifications tab.
+
 ### 2026-10-05 — US-NTF-13: get a daily digest by email (Phase 7)
 
 - **One email each morning** at the member's "Send at", on their chosen days. The subject reads "Your Spine day: <n> things need you · Mon 5 Oct". The email opens "Good morning, Alex" and lists:
