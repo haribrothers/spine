@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-19: read who did what in the activity feed (Phase 7)
+
+- **Who did it**: each row starts with an avatar (initials, soft category colour) and the actor's name in bold. Members' rows read "Alex Morgan recorded a payment of **$5,000.00** from Maple Ridge Developments", "Marcus Webb completed Mobilisation & site setup on Marina office fit-out", "Sarah Mendes submitted an expense · Travel · **$85.00**". Customer actions name the customer: "Harborview Construction Co. viewed QUO-0004", "Sunstone Retail Fitouts accepted QUO-0002 · **$14,250.00**".
+- **Grouping**: when a customer views the same quote several times within 24 hours, it's one row ending "· n times" with the latest time.
+- **Amounts** are bold, in the shared money format.
+- **View all** opens a new full feed page, `/activity` (last 100 events, Field included and filtered as on the dashboard). Owners' "View all" moves to the organisation audit log when that ships (US-SET-11, step 7).
+- **Feed sources**: expense submissions are now listed as well as approvals. Payment and expense rows open the record (Payments and Expenses read `?id=`). They used to point at pages that didn't exist.
+- **API.** `GET /dashboard/activity-feed` rows gain `actor`, `parts` and `groupCount`, plus `?limit=`. Field still get no financial events.
+
+Tests:
+- `packages/shared/src/us-dash-19.test.ts` (3): sentences, 24-hour grouping, initials.
+- `apps/api/src/modules/dashboard/us-dash-19.http.integration.test.ts` (3): actors and bold amounts per source; three views as one row; no money for Field; limit.
+- `apps/e2e/tests/us-dash-19.spec.ts` (1): bold names and amounts, "View all" to the full feed.
+
 ### 2026-10-05 — US-DASH-18: a field dashboard of my day (Phase 7)
 
 - **Header**: "<n> jobs on your list · <n> things need you" (or "nothing needs you right now").

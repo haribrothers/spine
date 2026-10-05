@@ -1,8 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, desc, eq, inArray, isNotNull } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { formatMoney } from "@spine/shared";
+import { activityMessage, formatMoney, groupQuoteViews, type ActivityFeedActor, type ActivityFeedEntry, type ActivityFeedPart } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import {
   quoteEvents,
@@ -14,18 +15,20 @@ import {
   jobAssignments,
   jobs,
   milestones,
+  user,
 } from "../../db/schema";
 
-export interface ActivityFeedEntry {
-  type: string;
-  message: string;
-  link: string | null;
-  occurredAt: string;
+export type { ActivityFeedEntry };
+
+function entry(type: string, actor: ActivityFeedActor | null, parts: ActivityFeedPart[], link: string | null, at: Date, groupCount?: number): ActivityFeedEntry {
+  return { type, actor, parts, message: activityMessage(actor, parts, groupCount), ...(groupCount && groupCount > 1 ? { groupCount } : {}), link, occurredAt: at.toISOString() };
 }
+
+const member = (name: string | null): ActivityFeedActor | null => (name ? { name, kind: "member" } : null);
 
 const FEED_LIMIT = 30;
 /** Per-source fetch cap before merging — generous enough that a busy org's most recent 30 overall entries are never missed just because one source alone had >30 rows in between. */
-const PER_SOURCE_LIMIT = 30;
+const PER_SOURCE_LIMIT = 100;
 
 /**
  * S-09.14 (dashboard v2) — an org-wide "what just happened" feed, distinct
@@ -48,7 +51,7 @@ export class ActivityFeedService {
    * PRD's "financial-events-excluded activity feed" requirement for
    * Field's dashboard layout.
    */
-  async list(orgId: string, role: string | null, userId?: string): Promise<ActivityFeedEntry[]> {
+  async list(orgId: string, role: string | null, userId?: string, limit = FEED_LIMIT): Promise<ActivityFeedEntry[]> {
     const includeFinancial = role !== "field";
     // US-DASH-18: Field see events on their assigned jobs only — no quotes, no money.
     const onlyJobs =
@@ -66,68 +69,83 @@ export class ActivityFeedService {
 
     return [...quoteEntries, ...paymentEntries, ...expenseEntries, ...jobEntries, ...milestoneEntries]
       .sort((a, b) => b.occurredAt.localeCompare(a.occurredAt))
-      .slice(0, FEED_LIMIT);
+      .slice(0, limit);
   }
 
+  /** US-DASH-19 — the customer viewed (grouped within 24 hours) or accepted a quote. */
   private async quoteEventEntries(orgId: string): Promise<ActivityFeedEntry[]> {
     const rows = await this.db
-      .select({ event: quoteEvents, quoteNumber: quotes.number, quoteId: quotes.id })
+      .select({ event: quoteEvents, quoteNumber: quotes.number, quoteId: quotes.id, total: quotes.totalAmount, currency: quotes.currency, customer: contacts.name })
       .from(quoteEvents)
       .innerJoin(quotes, eq(quoteEvents.quoteId, quotes.id))
-      .where(and(eq(quoteEvents.orgId, orgId)))
+      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
+      .where(and(eq(quoteEvents.orgId, orgId), inArray(quoteEvents.type, ["viewed", "accepted"])))
       .orderBy(desc(quoteEvents.createdAt))
-      .limit(PER_SOURCE_LIMIT);
+      .limit(PER_SOURCE_LIMIT * 3);
 
-    return rows
-      .filter((row) => row.event.type === "viewed" || row.event.type === "accepted")
-      .map((row) => {
-        const label = row.quoteNumber ?? "Draft quote";
-        const message = row.event.type === "viewed" ? `Quote ${label} was viewed` : `Quote ${label} was accepted`;
-        return {
-          type: row.event.type === "viewed" ? "quote_viewed" : "quote_accepted",
-          message,
-          link: `/quotes/${row.quoteId}`,
-          occurredAt: row.event.createdAt.toISOString(),
-        };
-      });
+    const locale = await orgLocale(this.db, orgId);
+    const customer = (name: string | null): ActivityFeedActor | null => (name ? { name, kind: "customer" } : null);
+    const views = groupQuoteViews(rows.filter((r) => r.event.type === "viewed").map((r) => ({ ...r, at: r.event.createdAt })));
+    const accepted = rows.filter((r) => r.event.type === "accepted");
+    return [
+      ...views.map((r) => entry("quote_viewed", customer(r.customer), [{ text: `viewed ${r.quoteNumber ?? "a draft quote"}` }], `/quotes/${r.quoteId}`, r.at, r.count)),
+      ...accepted.map((r) =>
+        entry(
+          "quote_accepted",
+          customer(r.customer),
+          [{ text: `accepted ${r.quoteNumber ?? "a quote"} · ` }, { text: formatMoney(r.total, r.currency, locale), strong: true }],
+          `/quotes/${r.quoteId}`,
+          r.event.createdAt,
+        ),
+      ),
+    ].slice(0, PER_SOURCE_LIMIT);
   }
 
   private async paymentEntries(orgId: string): Promise<ActivityFeedEntry[]> {
     const rows = await this.db
-      .select({ payment: payments, contactName: contacts.name })
+      .select({ payment: payments, contactName: contacts.name, recordedBy: user.name })
       .from(payments)
       .innerJoin(contacts, eq(payments.contactId, contacts.id))
+      .leftJoin(user, eq(payments.createdByUserId, user.id))
       .where(eq(payments.orgId, orgId))
       .orderBy(desc(payments.createdAt))
       .limit(PER_SOURCE_LIMIT);
 
     const locale = await orgLocale(this.db, orgId);
-    return rows.map((row) => ({
-      type: "payment_received",
-      message: `Payment of ${formatMoney(row.payment.amount, row.payment.currency, locale)} received from ${row.contactName}`,
-      link: `/payments/${row.payment.id}`,
-      occurredAt: row.payment.createdAt.toISOString(),
-    }));
+    return rows.map((row) => {
+      const amount = { text: formatMoney(row.payment.amount, row.payment.currency, locale), strong: true };
+      const parts = row.recordedBy
+        ? [{ text: "recorded a payment of " }, amount, { text: ` from ${row.contactName}` }]
+        : [{ text: "Payment of " }, amount, { text: ` received from ${row.contactName}` }];
+      return entry("payment_received", member(row.recordedBy), parts, `/payments?id=${row.payment.id}`, row.payment.createdAt);
+    });
   }
 
+  /** US-DASH-19 — "Sarah Mendes submitted an expense · Travel · $85.00", and who approved it. */
   private async expenseEntries(orgId: string): Promise<ActivityFeedEntry[]> {
+    const submitter = alias(user, "submitter");
+    const approver = alias(user, "approver");
     const rows = await this.db
-      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .select({ expense: expenses, categoryName: expenseCategories.name, submittedBy: submitter.name, approvedBy: approver.name })
       .from(expenses)
       .innerJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
-      .where(and(eq(expenses.orgId, orgId), eq(expenses.status, "approved")))
-      .orderBy(desc(expenses.approvedAt))
+      .leftJoin(submitter, eq(expenses.submittedByUserId, submitter.id))
+      .leftJoin(approver, eq(expenses.approvedByUserId, approver.id))
+      .where(eq(expenses.orgId, orgId))
+      .orderBy(desc(expenses.createdAt))
       .limit(PER_SOURCE_LIMIT);
 
     const locale = await orgLocale(this.db, orgId);
-    return rows
-      .filter((row) => row.expense.approvedAt !== null)
-      .map((row) => ({
-        type: "expense_approved",
-        message: `Expense approved — ${row.categoryName}, ${formatMoney(row.expense.amount, row.expense.currency, locale)}`,
-        link: `/expenses?id=${row.expense.id}`,
-        occurredAt: row.expense.approvedAt!.toISOString(),
-      }));
+    const out: ActivityFeedEntry[] = [];
+    for (const row of rows) {
+      const amount = { text: formatMoney(row.expense.amount, row.expense.currency, locale), strong: true };
+      const link = `/expenses?id=${row.expense.id}`;
+      out.push(entry("expense_submitted", member(row.submittedBy), [{ text: `${row.submittedBy ? "submitted an expense" : "Expense submitted"} · ${row.categoryName} · ` }, amount], link, row.expense.createdAt));
+      if (row.expense.status === "approved" && row.expense.approvedAt) {
+        out.push(entry("expense_approved", member(row.approvedBy), [{ text: `${row.approvedBy ? "approved an expense" : "Expense approved"} · ${row.categoryName} · ` }, amount], link, row.expense.approvedAt));
+      }
+    }
+    return out;
   }
 
   private async jobEntries(orgId: string, onlyJobs: string[] | null): Promise<ActivityFeedEntry[]> {
@@ -138,12 +156,7 @@ export class ActivityFeedService {
       .orderBy(desc(jobs.updatedAt))
       .limit(PER_SOURCE_LIMIT);
 
-    return rows.map((row) => ({
-      type: "job_completed",
-      message: `Job "${row.name}" marked completed`,
-      link: `/jobs/${row.id}`,
-      occurredAt: row.updatedAt.toISOString(),
-    }));
+    return rows.map((row) => entry("job_completed", null, [{ text: `${row.name} was marked completed` }], `/jobs/${row.id}`, row.updatedAt));
   }
 
   /**
@@ -156,20 +169,24 @@ export class ActivityFeedService {
    */
   private async milestoneEntries(orgId: string, onlyJobs: string[] | null): Promise<ActivityFeedEntry[]> {
     const rows = await this.db
-      .select({ milestone: milestones, jobName: jobs.name, jobId: jobs.id })
+      .select({ milestone: milestones, jobName: jobs.name, jobId: jobs.id, completedBy: user.name })
       .from(milestones)
       .innerJoin(jobs, eq(milestones.jobId, jobs.id))
+      .leftJoin(user, eq(milestones.completedByUserId, user.id))
       .where(and(eq(milestones.orgId, orgId), isNotNull(milestones.completedAt), onlyJobs ? inArray(milestones.jobId, onlyJobs) : undefined))
       .orderBy(desc(milestones.completedAt))
       .limit(PER_SOURCE_LIMIT);
 
     return rows
       .filter((row) => row.milestone.completedAt !== null)
-      .map((row) => ({
-        type: "milestone_completed",
-        message: `Milestone "${row.milestone.name}" completed on ${row.jobName}`,
-        link: `/jobs/${row.jobId}`,
-        occurredAt: row.milestone.completedAt!.toISOString(),
-      }));
+      .map((row) =>
+        entry(
+          "milestone_completed",
+          member(row.completedBy),
+          [{ text: row.completedBy ? `completed ${row.milestone.name} on ${row.jobName}` : `Milestone ${row.milestone.name} completed on ${row.jobName}` }],
+          `/jobs/${row.jobId}`,
+          row.milestone.completedAt!,
+        ),
+      );
   }
 }

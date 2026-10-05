@@ -2723,7 +2723,21 @@ Regression: the Owner's attention list and KPI row are unchanged, with no follow
 
 Regression: Owner and Staff dashboards don't show the Field cards. Expenses opened from the sidebar has the "Mine" toggle off and no drawer open.
 
+## 90. Activity feed actors (US-DASH-19, Phase 7)
+
+1. Record a payment: the dashboard's "Recent activity" shows your avatar and "<You> recorded a payment of **$…** from <customer>", with the amount in bold.
+2. Open a sent quote's public link three times within a few minutes: one row reads "<customer> viewed QUO-… · 3 times" with the latest time.
+3. Accept a quote from its public link: "<customer> accepted QUO-… · **$…**".
+4. As Field, complete a milestone: the Owner's feed shows "<Field user> completed <milestone> on <job>".
+5. Submit an expense: "<you> submitted an expense · <category> · **$…**". Clicking it opens the expense on Expenses. Clicking a payment row opens it on Payments.
+6. "View all" opens Activity with the last 100 events. As Field, it shows only events on your jobs, with no money.
+7. Check dark mode: avatars and bold text stay readable.
+
+Regression: Payments and Expenses opened from the sidebar have no drawer open.
+
 ## Known gaps — don't file these as bugs
+
+- Owners' "View all" on the dashboard feed opens the full Activity page, not the audit log; it moves to the audit log with US-SET-11 (Phase 7 step 7).
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
 - No client-side fine-grained capability check exists in the web app —

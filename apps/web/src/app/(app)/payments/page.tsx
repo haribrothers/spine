@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { PaymentsExplorer } from "./payments-explorer";
 
@@ -10,7 +11,10 @@ export default function PaymentsPage() {
         title="Payments"
         description="Record payments against invoices, or hold unallocated credit for a customer."
       />
-      <PaymentsExplorer />
+      {/* PaymentsExplorer reads ?id= via useSearchParams, which needs a Suspense boundary. */}
+      <Suspense>
+        <PaymentsExplorer />
+      </Suspense>
     </>
   );
 }

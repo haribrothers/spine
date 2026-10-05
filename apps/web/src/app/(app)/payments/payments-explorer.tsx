@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, StatCard } from "@spine/ui";
 import { Banknote } from "lucide-react";
@@ -31,7 +32,9 @@ export function PaymentsExplorer() {
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [newPaymentOpen, setNewPaymentOpen] = useState(false);
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  // US-DASH-19: the activity feed opens a payment with ?id=.
+  const searchParams = useSearchParams();
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(() => searchParams.get("id"));
   const { show: showToast, toast } = useEntityToast();
 
   const stats = usePaymentStats(payments);
