@@ -2368,6 +2368,17 @@ Regression: muted grey text, amber "due soon" and red "overdue" text are still e
 
 Regression: dashboard charts, the Pipeline board and status chips keep their colours; the public quote page and PDFs are unaffected (US-SET-10 handles document colour).
 
+## 56. Document colour and footer (US-SET-10, Phase 7)
+
+1. Settings › Branding: "Document colour" shows #2954E5 with a blue swatch and "✓ Readable on white (6.0:1, passes AA)".
+2. Type #8FB3FF: a red message says it's too light (2.0:1) and Save is disabled. Type #0D6E6E (or use the swatch picker): the check passes again.
+3. Type a footer such as "Licence 4471 · Payment due within 21 days." The preview shows the bar, "INVOICE" and the total in teal and the footer under it. Switch to dark mode: the preview stays white.
+4. Save, then download a draft invoice, a draft quote, a new receipt and a credit note: each has a teal bar, teal title and total, and the footer above the page number on every page. Send an invoice email: teal bar on top, footer at the bottom.
+5. Open an invoice issued before the change and download its PDF: it is exactly as it was (old colour, no new footer).
+6. Enter more than 300 characters in the footer: "Keep the footer under 300 characters." and Save is disabled.
+
+Regression: PDFs without branding set still use Spine Blue and show no footer line; payment instructions and notes still print (§40); the theme tiles (§55) still work.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -6,6 +6,7 @@ import type { Database } from "../../db/client";
 import { payments, paymentAllocations, invoices, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { resolveDocumentBranding } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { PaymentPdfDocument, type PaymentPdfBusinessProfile } from "./payment-pdf.template";
 
@@ -43,6 +44,10 @@ export class PaymentPdfService {
       .where(eq(paymentAllocations.paymentId, paymentId));
 
     const business = await this.settings.get<PaymentPdfBusinessProfile>(orgId, "business_profile");
+
+    // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
+
+    const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
     const buffer = await renderToBuffer(
@@ -54,6 +59,7 @@ export class PaymentPdfService {
         business,
         logoDataUri,
         locale: await orgLocale(this.db, orgId),
+        branding,
       }),
     );
 

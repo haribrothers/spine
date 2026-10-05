@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-SET-10: put my brand colour and footer on documents (Phase 7)
+
+- **Settings › Branding** gains "Document colour" (swatch picker plus `#RRGGBB` field) with a live check ("✓ Readable on white (6.0:1, passes AA)" or "Too light to read on white (2.0:1). Pick a darker colour — documents need at least 4.5:1."), "Document footer" (up to 300 characters), and a preview of an invoice that stays light in dark mode (`[data-surface="document"]`). Save is disabled while either field is invalid; "Reset to Spine defaults" resets the theme and the colour, not the footer. The layout now matches the `SettingsBranding` design.
+- **API.** `brandingSchema` checks `documentColor` (format and 4.5:1 on white) and `documentFooter`; `resolveDocumentBranding` (`@spine/shared`) gives Spine Blue and no footer when nothing valid is saved.
+- **PDFs.** Quote, invoice, credit-note and receipt PDFs draw a bar in the document colour, colour the title and total, and print the footer above the page number on every page (`pdf/document-branding.tsx`). Emails use the same resolver for colour and footer. Issued documents are served from the PDF stored at issue, so they don't change.
+
+Tests:
+- `packages/shared/src/us-set-10.test.ts` (6): contrast maths and messages, format, footer length, fallback.
+- `apps/api/src/modules/pdf/us-set-10.http.integration.test.ts` (6): too-light, malformed and too-long values refused with the saved value kept; an issued invoice's PDF is byte-identical after a branding change; draft invoice and quote, and first-download credit note and receipt, contain the footer and the document colour (read from the PDF's content streams); Spine Blue fallback; email brand.
+- `apps/e2e/tests/us-set-10.spec.ts` (1): the contrast check, Save disabled for #8FB3FF, preview footer and colour, values kept after reload.
+
 ### 2026-10-05 — US-SET-09: pick a theme for the whole organisation (Phase 7)
 
 - **Settings › Branding** (Owner-only, after Business profile): "App theme" cards for Spine Blue (Default), Harbour Teal, Plum and Graphite, each with a swatch that shows that preset in the viewer's own mode, the note about personal light/dark mode, "Reset to Spine defaults" and "Save". Saving applies the theme straight away.

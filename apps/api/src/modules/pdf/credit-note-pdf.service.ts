@@ -7,6 +7,7 @@ import { contacts, creditNoteLines, creditNotes, invoices } from "../../db/schem
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
+import { resolveDocumentBranding } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -39,6 +40,10 @@ export class CreditNotePdfService {
       .orderBy(creditNoteLines.sortOrder);
 
     const business = await this.settings.get<InvoicePdfBusinessProfile>(orgId, "business_profile");
+
+    // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
+
+    const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
     const buffer = await renderToBuffer(
@@ -51,6 +56,7 @@ export class CreditNotePdfService {
         business,
         logoDataUri,
         locale: await orgLocale(this.db, orgId),
+        branding,
       }),
     );
     return { buffer, filename: `${row.creditNote.number ?? "credit-note-draft"}.pdf` };

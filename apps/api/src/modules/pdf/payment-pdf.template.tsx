@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { formatMoneyForPdf } from "../../common/money-format";
+import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { payments, paymentAllocations } from "../../db/schema";
 
 export interface PaymentPdfBusinessProfile {
@@ -15,6 +16,8 @@ export interface PaymentPdfAllocationRow {
 }
 
 export interface PaymentPdfData {
+  /** US-SET-10 — document colour and footer from Settings › Branding. */
+  branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
   locale?: string;
   payment: typeof payments.$inferSelect;
@@ -113,14 +116,16 @@ function formatDate(value: Date | string | null): string {
  * to (if any), not catalogue lines, since that's the information a
  * recipient actually needs from a receipt.
  */
-export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale }: PaymentPdfData) {
+export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale, branding }: PaymentPdfData) {
+  const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = payment.currency;
   const fmt = (amount: bigint) => formatMoneyForPdf(amount, currency, locale);
   const unallocated = payment.amount - payment.allocatedAmount;
 
   return (
     <Document title={payment.number ?? "Receipt"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+        <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
             {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
@@ -130,7 +135,7 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={styles.docTitle}>RECEIPT</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>RECEIPT</Text>
             <Text style={styles.docNumber}>{payment.number ?? "—"}</Text>
           </View>
         </View>
@@ -170,7 +175,7 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
         <View style={styles.totalsBlock}>
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Amount received</Text>
-            <Text style={styles.grandTotalValue}>{fmt(payment.amount)}</Text>
+            <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(payment.amount)}</Text>
           </View>
           {unallocated > 0n && (
             <View style={styles.creditRow}>
@@ -187,6 +192,7 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
           </View>
         )}
 
+        <DocumentFooterLine footer={brand.footer} />
         <Text
           style={styles.pageFooter}
           render={({ pageNumber, totalPages }) => `${payment.number ?? "Receipt"} · Page ${pageNumber} of ${totalPages}`}
