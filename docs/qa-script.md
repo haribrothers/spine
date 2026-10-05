@@ -2674,6 +2674,18 @@ Regression: Invoices, Expenses and Vendor Payments opened normally (no query str
 
 Regression: Reports and Receivables opened from the sidebar look as before; the dashboard below the KPI row is unchanged.
 
+## 86. Money in and out (US-DASH-15, Phase 7)
+
+1. As an Owner, the dashboard shows "Money in and out" where "Revenue trend" used to be, with 12M selected.
+2. Above the chart: "In · 12 months", "Out · 12 months" and "Net". Net is green with "+" when positive and red with "−" when negative. Check both themes.
+3. The legend reads "Money in (payments received)" and "Money out (bills, expenses)". Hover a month: the tooltip shows its in, out and net.
+4. Choose 3M and 6M: the bars and totals change, and the labels say "3 months" / "6 months".
+5. Record a payment: this month's "in" goes up by that amount. Pay a vendor bill: "out" goes up. Moving money between Cash and Bank changes neither.
+6. In a new organisation with no payments or bills, the card reads "Money in and out appears after your first payment or bill."
+7. As Staff without "View dashboard summary" the card is absent; as a Field user it's absent.
+
+Regression: Edit layout can still hide, show and reorder the card, and a saved layout that mentioned "Revenue trend" still loads. Reports' own charts are unchanged.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

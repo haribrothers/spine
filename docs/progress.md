@@ -313,7 +313,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-DASH-12 · See what needs my attention first
 - [x] US-DASH-13 · Act on an attention item in one click
 - [x] US-DASH-14 · See key figures with a trend and a comparison
-- [ ] US-DASH-15 · See money in and out by month
+- [x] US-DASH-15 · See money in and out by month
 - [ ] US-DASH-16 · See today's schedule beside my tasks
 - [ ] US-DASH-17 · Get a staff dashboard of only what I can act on
 - [ ] US-DASH-18 · Get a field dashboard of my day

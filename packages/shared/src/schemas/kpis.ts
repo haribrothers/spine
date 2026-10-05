@@ -57,3 +57,13 @@ export function kpiChange(kpi: Pick<Kpi, "key" | "value" | "previous" | "format"
   const tenths = Number(((diff < 0n ? -diff : diff) * 1000n + base / 2n) / base);
   return { text: `${arrow} ${up ? "+" : "−"}${(tenths / 10).toFixed(1)}% vs last month`, tone };
 }
+
+/** US-DASH-15 — `GET /reports/money-in-out`: cash received and spent per month. Minor units as strings. */
+export interface MoneyInOutReport {
+  months: { month: string; in: string; out: string }[];
+  totalIn: string;
+  totalOut: string;
+  net: string;
+  /** False until the first payment, bill payment or expense touches cash. */
+  hasActivity: boolean;
+}

@@ -1,5 +1,5 @@
 import type { DashboardWidgetKey } from "@spine/shared";
-import { RevenueTrendChart } from "./widgets/revenue-trend-chart";
+import { MoneyInOutChart } from "./widgets/money-in-out-chart";
 import { PipelineByStageChart } from "./widgets/pipeline-by-stage-chart";
 import { ArAgingDonut } from "./widgets/ar-aging-donut";
 import { JobProfitabilityRanked } from "./widgets/job-profitability-ranked";
@@ -20,7 +20,7 @@ import { ActivityFeed } from "./widgets/activity-feed";
  * kept out of the registry itself, not just filtered from these maps.
  */
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
-  "revenue-trend": "Revenue trend",
+  "money-in-out": "Money in and out",
   "pipeline-by-stage": "Pipeline by stage",
   "ar-aging": "Receivables aging",
   "job-profitability": "Job profitability",
@@ -32,7 +32,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 };
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
-  "revenue-trend": RevenueTrendChart,
+  "money-in-out": MoneyInOutChart,
   "pipeline-by-stage": PipelineByStageChart,
   "ar-aging": ArAgingDonut,
   "job-profitability": JobProfitabilityRanked,

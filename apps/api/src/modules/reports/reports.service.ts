@@ -1,7 +1,8 @@
-import { billingFigures, budgetFigures } from "@spine/shared";
+import { billingFigures, budgetFigures, type MoneyInOutReport } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { billedByJob, costByJob } from "../jobs/job-costing.service";
+import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
@@ -692,6 +693,54 @@ export class ReportsService {
    * date-range queries, and a year of journal activity is small enough
    * that grouping in JS costs nothing meaningful.
    */
+  /**
+   * US-DASH-15 — money received and money spent per month, from the cash
+   * and bank accounts' journal lines (1000, 1010; D-011), never from
+   * documents. Each entry counts once by its net effect on cash: in when
+   * it adds cash, out when it takes it, so a transfer between the two
+   * accounts counts as neither.
+   */
+  async moneyInOut(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
+    const today = orgClock().date;
+    const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
+    const startStr = start.toISOString().slice(0, 10);
+    const rows = await this.db
+      .select({ entryId: journalEntries.id, date: journalEntries.date, debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+
+    const byEntry = new Map<string, { month: string; net: bigint }>();
+    for (const row of rows) {
+      const entry = byEntry.get(row.entryId) ?? { month: row.date.slice(0, 7), net: 0n };
+      entry.net += row.debit - row.credit;
+      byEntry.set(row.entryId, entry);
+    }
+    const byMonth = new Map<string, { in: bigint; out: bigint }>();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
+      byMonth.set(d.toISOString().slice(0, 7), { in: 0n, out: 0n });
+    }
+    for (const entry of byEntry.values()) {
+      const month = byMonth.get(entry.month);
+      if (!month) continue;
+      if (entry.net > 0n) month.in += entry.net;
+      else month.out -= entry.net;
+    }
+    const list = [...byMonth.entries()].map(([month, v]) => ({ month, in: v.in.toString(), out: v.out.toString() }));
+    const totalIn = [...byMonth.values()].reduce((s, v) => s + v.in, 0n);
+    const totalOut = [...byMonth.values()].reduce((s, v) => s + v.out, 0n);
+    const [anyCash] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"])))
+      .limit(1);
+    return { months: list, totalIn: totalIn.toString(), totalOut: totalOut.toString(), net: (totalIn - totalOut).toString(), hasActivity: Boolean(anyCash) };
+  }
+
   async revenueTrend(orgId: string, months: 3 | 6 | 12): Promise<RevenueTrendReport> {
     const now = new Date();
     const windowStart = new Date(now.getFullYear(), now.getMonth() - (months - 1), 1);

@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-15: see money in and out by month (Phase 7)
+
+- **"Money in and out"** replaces the revenue trend chart on the dashboard. Each month has a bar pair: "Money in (payments received)" and "Money out (bills, expenses)". The range is 3M, 6M or 12M (default 12M).
+- **Totals above the chart**: "In · <range>", "Out · <range>" and "Net". Net is green with "+" when positive and red with "−" when negative. Hovering or focusing a month shows its in, out and net.
+- **Empty state**: before any payment or bill, the card reads "Money in and out appears after your first payment or bill."
+- **API.** `GET /reports/money-in-out?months=3|6|12` (`reports.view_dashboard_summary`) works from journal lines on the cash and bank accounts (1000, 1010), never from documents (D-011). A transfer between them counts as neither in nor out. The widget is in the layout under the key `money-in-out`, and Staff with the dashboard-summary grant see it too. `/reports/revenue-trend` is unchanged.
+
+Tests:
+- `apps/api/src/modules/reports/us-dash-15.http.integration.test.ts` (3): zero months before any activity; in, out, totals and net per range with a transfer ignored; Field refused.
+- `apps/e2e/tests/us-dash-15.spec.ts` (1): range default, totals, net sign, legend, month tooltip, switching to 3M.
+- `apps/e2e/tests/dashboard.spec.ts`: widget heading and edit-layout checks now use "Money in and out".
+
 ### 2026-10-05 — US-DASH-14: see key figures with a trend and a comparison (Phase 7)
 
 - **KPI row** (pinned, as before): "Cash position", "Profit this month", "Receivables" and "Overdue". Each card has the amount, a line of the last 8 weeks and "▲/▼ n% vs last month". The change is green when it's good for the business (cash and profit up; receivables and overdue down) and red otherwise, always with the arrow and sign. Receivables adds "Current … · overdue …"; Overdue adds "n invoice(s)". With nothing a month ago: "No data last month"; with no data at all: "No data yet".

@@ -40,6 +40,14 @@ export class ReportsController {
     return this.reportsService.dashboardSummary(orgId);
   }
 
+  /** US-DASH-15 — money received and spent per month, from the cash and bank accounts. */
+  @Get("money-in-out")
+  @RequireCapability("reports.view_dashboard_summary")
+  async moneyInOut(@Session() session: UserSession, @Query("months") months?: string) {
+    const n = months === "3" ? 3 : months === "6" ? 6 : 12;
+    return this.reportsService.moneyInOut(requireOrgId(session), n);
+  }
+
   /** S-09.11 (dashboard v2) — revenue trend chart. Owner-only, no capability bypass — same gate as P&L/Balance Sheet, since this is derived from the same income-account journal history those reports summarize. */
   @Get("revenue-trend")
   @OrgRoles(["owner"])
