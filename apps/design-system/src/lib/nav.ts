@@ -82,6 +82,7 @@ export const nav: TopLevelSection[] = [
           { title: "NativeSelect", href: "/components/native-select" },
           { title: "Combobox", href: "/components/combobox" },
           { title: "Command", href: "/components/command" },
+          { title: "CommandPalette", href: "/components/command-palette" },
           { title: "DatePicker", href: "/components/date-picker" },
           { title: "Checkbox", href: "/components/checkbox" },
           { title: "RadioGroup", href: "/components/radio-group" },

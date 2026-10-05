@@ -22,6 +22,7 @@ export * from "./components/checkbox";
 export * from "./components/collapsible";
 export * from "./components/combobox";
 export * from "./components/command";
+export * from "./components/command-palette";
 export * from "./components/context-menu";
 export * from "./components/data-list";
 export * from "./components/data-table";

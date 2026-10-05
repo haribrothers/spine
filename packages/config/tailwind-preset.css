@@ -389,4 +389,13 @@
   --z-popover: var(--z-popover);
   --z-toast: var(--z-toast);
   --z-tooltip: var(--z-tooltip);
+
+  /* US-OPS-23 — the search palette's entrance; used only with motion-safe:, so reduced motion shows it at once. */
+  --animate-palette-in: palette-in var(--duration-base) var(--easing-decelerate);
+  @keyframes palette-in {
+    from {
+      opacity: 0;
+      scale: 0.97;
+    }
+  }
 }

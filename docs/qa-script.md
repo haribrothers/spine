@@ -2821,6 +2821,19 @@ Regression: other Settings panes open as before. Settings › Demo data still wo
 
 Regression: other file links (photos, receipts, PDFs) still open for the people allowed to see them.
 
+## 98. Global search (US-OPS-22, Phase 7)
+
+1. On any page, press ⌘K (Mac) or Ctrl+K: the search palette opens with the cursor in the field. The magnifier button in the sidebar footer opens it too.
+2. Type one character: the hint shows. Type "harbor": CONTACTS, QUOTES, JOBS, INVOICES (and VENDOR BILLS, EXPENSES when they match), at most 5 each. Each result has a second line and a status on the right.
+3. Type an invoice number ("INV-0010", or "inv 10"): that invoice is the first result. Do the same with "QUO-4".
+4. Type nonsense: "No results for “…”".
+5. The footer reads "↑↓ to move · Enter to open · Searches contacts, quotes, invoices, jobs, bills and expenses".
+6. Click a result: the record opens and the palette closes.
+7. As Field: searching an invoice number or a customer finds nothing from Invoices, Quotes, Contacts or Bills. Only jobs you're on and your own expenses appear.
+8. Check dark mode and a phone-width window (the palette fits with a margin).
+
+Regression: ⌘K inside the palette doesn't open a second one. The sidebar footer (user menu, help, notifications) still fits when the sidebar is collapsed.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

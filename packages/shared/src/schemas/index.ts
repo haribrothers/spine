@@ -31,3 +31,4 @@ export * from "./activity-feed.ts";
 export * from "./digest.ts";
 export * from "./audit-log.ts";
 export * from "./data-export.ts";
+export * from "./search.ts";

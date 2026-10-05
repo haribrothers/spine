@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-22: search everything from anywhere (Phase 7)
+
+- **Search palette**: ⌘K (Mac) or Ctrl+K on any page, or the new search button in the sidebar footer beside Help and Notifications (the app has no top bar), opens it with focus in the field.
+- **Results** from 2 characters: CONTACTS, QUOTES, JOBS, INVOICES, VENDOR BILLS and EXPENSES, up to 5 each. Each result has a second line ("Harborview Construction Co. · $9,700.00 due", "48 Harbor Way, Portland, ME 04101") and a status on the right ("Overdue", "Sent", "Active", "Contact"). Opening a result goes to the record.
+- **Document numbers**: "INV-0010", "QUO-4" or "inv 10" puts that document first.
+- **Nothing found**: "No results for “<query>”". The footer reads "↑↓ to move", "Enter to open" and "Searches contacts, quotes, invoices, jobs, bills and expenses".
+- **Read rules**: results follow each module's own rules. Field users only see jobs they're on and their own expenses.
+- **Speed**: Postgres trigram indexes (migration 0076, `pg_trgm`), no external service. Answers stay under 500 ms with 10,000 contacts.
+- **`@spine/ui` `CommandPalette`** (new, on `cmdk`): grouped results with a second line and status, an Esc chip, a footer, and a scale-in only when motion is allowed. It has its design-system page and an a11y test.
+- **API.** `GET /search?q=&limit=5`.
+
+Tests:
+- `packages/shared/src/us-ops-22.test.ts` (2): reading and matching document numbers.
+- `apps/api/src/modules/search/us-ops-22.http.integration.test.ts` (5): groups, second lines and statuses; numbers first; Field's limits; the minimum length and no matches; under 500 ms at 10,000 contacts.
+- `packages/ui/src/components/command-palette.a11y.test.tsx` (5): axe with results and empty; dialog, combobox and listbox roles; arrows and Enter; motion-safe only.
+- `apps/e2e/tests/us-ops-22.spec.ts` (1): shortcut and button, groups, number first, no results, opening a record, Field's limits.
+
 ### 2026-10-05 — US-SET-16: keep data exports private (Phase 7)
 
 - **Owner-only link**: an export's download link answers 404 to everyone but an Owner of the organisation: Staff, Field, someone signed out, or an Owner of another organisation. It's never 401 or 403, so the link reveals nothing. The ZIP is never served through `/files/:id`, even to Owners, and the response isn't cached.
