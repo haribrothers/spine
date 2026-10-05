@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-18: turn on automatic payment reminders (Phase 7)
+
+- **Settings › Automatic reminders** (Owner-only, the `SettingsReminders` design): "Send reminders automatically" (off), the schedule (3 days before, on the due date, 7 and 14 days after, and every 14 days after that up to 3 more times), "Send at" in half-hour steps (organisation time = the server's `TZ`), "Save" and "Preview email" (the email in a sandboxed frame with its subject).
+- **Setting.** `invoice_reminders` `{ enabled, offsets, repeatEvery, repeatMax, sendAt }`, checked by `invoiceRemindersSchema` ("Pick at least one reminder."); D-091's defaults (due date, +7, +14 at 9:00) when unset; `reminderDays` works out every day a reminder is due.
+- **Reminder email.** Subject and heading now read "Reminder: invoice INV-… is 7 days overdue" / "is due today" / "is due in 3 days", with "If you've already paid, thank you — please ignore this email." (manual reminders too). No "View invoice" button: customers have no invoice page, so the PDF is attached (D-121 overrides the story here).
+- **API.** `GET /invoice-reminders/preview` (Owner): the most overdue unpaid invoice's reminder, or a sample. The daily sending run is US-INV-19.
+
+Tests:
+- `packages/shared/src/us-inv-18.test.ts` (4): options, defaults, the at-least-one rule, repeats.
+- `apps/api/src/modules/invoices/us-inv-18.http.integration.test.ts` (5): saving, refusal, Staff 403, preview for the most overdue invoice, sample.
+- `apps/e2e/tests/us-inv-18.spec.ts` (1): defaults, the at-least-one error, save, preview.
+
 ### 2026-10-05 — US-QUO-26: add a bundle while building a quote (Phase 7)
 
 - **Picker.** `LineItemPicker` lists matching bundles under "BUNDLES" (name, total, "Adds <n> lines: …") above "ITEMS". Choosing one replaces the line it was picked on with the bundle's lines, in order, with the bundle's prices and tax; each is an ordinary editable line. A line whose catalogue item has been archived is added without the item link (a one-off line). Only bundles in the document's currency are offered (`GET /catalog-bundles?currency=`).

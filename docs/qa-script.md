@@ -2444,6 +2444,15 @@ Regression: Catalogue › Items works as before (filters, drawer, archive); the 
 
 Regression: picking a single catalogue item still fills one line; "Use … as a one-off line" (§59) still works; invoice totals match their lines.
 
+## 63. Automatic reminders settings (US-INV-18, Phase 7)
+
+1. As an Owner, Settings › Automatic reminders: "Send reminders automatically" is off; the schedule lists 3 days before, on the due date, 7 and 14 days after (the last three ticked) and "Every 14 days after that, up to 3 more times"; "Send at" is 9:00 AM (organisation time — the server's `TZ`).
+2. Turn it on, untick every day and Save: "Pick at least one reminder." Tick one and Save: "Saved".
+3. "Preview email" shows the reminder your most overdue invoice would get ("Reminder: invoice INV-… is N days overdue"), with the payment instructions if set; with nothing overdue, a sample.
+4. As Staff, Settings isn't available and `PUT /org/settings/invoice_reminders` returns 403.
+
+Regression: the manual "Send reminder" on an overdue invoice still sends, now with the subject "Reminder: invoice INV-… is N days overdue".
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

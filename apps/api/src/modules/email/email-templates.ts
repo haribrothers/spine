@@ -55,25 +55,36 @@ export function invoiceEmail(d: {
   retention: bigint;
   balanceDue: bigint;
   dueDate: Date | string | null;
+  /**
+   * A reminder (manual S-05.10 or automatic US-INV-19). `daysOverdue` is
+   * days past the due date: negative means due in that many days, 0 due today.
+   */
   reminder?: { daysOverdue: number | null };
   paymentInstructions?: string | null;
 }): EmailTemplate {
-  const overdue = d.reminder
-    ? d.reminder.daysOverdue !== null
-      ? `${d.reminder.daysOverdue} day${d.reminder.daysOverdue === 1 ? "" : "s"} overdue`
-      : "overdue"
-    : null;
   const paid = d.balanceDue <= 0n;
   const instructions = d.paymentInstructions?.trim();
+  const days = d.reminder?.daysOverdue ?? null;
+  // US-INV-19: "is 7 days overdue", "is due today", "is due in 3 days".
+  const state = !d.reminder
+    ? null
+    : days === null
+      ? "is overdue"
+      : days > 0
+        ? `is ${days} day${days === 1 ? "" : "s"} overdue`
+        : days === 0
+          ? "is due today"
+          : `is due in ${-days} day${days === -1 ? "" : "s"}`;
+  const dueOn = d.dueDate ? emailDate(d.dueDate) : null;
   return {
-    subject: overdue ? `Reminder: ${d.number} is now ${overdue}` : `${d.businessName} sent you an invoice (${d.number})`,
+    subject: state ? `Reminder: invoice ${d.number} ${state}` : `${d.businessName} sent you an invoice (${d.number})`,
     content: {
-      preheader: overdue ? `Invoice ${d.number} is ${overdue}.` : `${d.businessName} sent you an invoice (${d.number}).`,
-      heading: overdue ? "Your invoice is overdue" : "Your invoice is ready",
+      preheader: state ? `Invoice ${d.number} ${state}.` : `${d.businessName} sent you an invoice (${d.number}).`,
+      heading: state ? `Invoice ${d.number} ${state}` : "Your invoice is ready",
       greeting: `Hi ${firstName(d.contactName)},`,
       paragraphs: [
-        overdue
-          ? `This is a friendly reminder that invoice ${d.number} from ${d.businessName} is now overdue.`
+        state
+          ? `This is a friendly reminder that invoice ${d.number} ${days !== null && days > 0 ? "was due" : "is due"}${dueOn ? ` on ${dueOn}` : ""}. If you've already paid, thank you — please ignore this email.`
           : `Here's invoice ${d.number} from ${d.businessName}, attached as a PDF.`,
         ...(paid ? ["This invoice is already paid in full — nothing is owing."] : []),
       ],

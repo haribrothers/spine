@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   AlarmClock,
+  BellRing,
   Landmark,
   Building2,
   Calendar,
@@ -29,6 +30,7 @@ import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { PaymentInstructionsPane } from "../app/settings/panes/payment-instructions-pane";
 import { LeadStagesPane } from "../app/settings/panes/lead-stages-pane";
+import { RemindersPane } from "../app/settings/panes/reminders-pane";
 import { DataPane } from "../app/settings/panes/data-pane";
 import { QuoteConversionGuardPane } from "../app/settings/panes/quote-conversion-guard-pane";
 import { DashboardMeetingsScopePane } from "../app/settings/panes/dashboard-meetings-scope-pane";
@@ -51,6 +53,7 @@ const SECTIONS: SettingsSection[] = [
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
   { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
+  { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
   { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
   {
     key: "quote-conversion-guard",

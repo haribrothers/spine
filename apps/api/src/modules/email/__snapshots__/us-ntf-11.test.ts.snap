@@ -442,13 +442,13 @@ exports[`US-NTF-11 · every email type uses the branded layout > receipt: matche
 
 exports[`US-NTF-11 · every email type uses the branded layout > reminder: matches its snapshot 1`] = `
 {
-  "subject": "Reminder: INV-0007 is now 3 days overdue",
+  "subject": "Reminder: invoice INV-0007 is 3 days overdue",
   "text": "Riverstone Builders
 
-Your invoice is overdue
+Invoice INV-0007 is 3 days overdue
 
 Hi Alan,
-This is a friendly reminder that invoice INV-0007 from Riverstone Builders is now overdue.
+This is a friendly reminder that invoice INV-0007 was due on 17 Oct 2026. If you've already paid, thank you — please ignore this email.
 
 Invoice: INV-0007
 Total: $2,200.00
@@ -464,16 +464,16 @@ Riverstone Builders · 14 Harbour Road, Marina District",
 
 exports[`US-NTF-11 · every email type uses the branded layout > reminder: matches its snapshot 2`] = `
 "<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your invoice is overdue</title></head>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Invoice INV-0007 is 3 days overdue</title></head>
 <body style="margin:0;padding:0;background:#F2F1EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
 <div style="display:none;max-height:0;overflow:hidden;">Invoice INV-0007 is 3 days overdue.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F2F1EE;"><tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#FFFFFF;border:1px solid #E7E5E0;border-radius:8px;border-top:6px solid #2954E5;">
 <tr><td style="padding:28px 32px 8px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="vertical-align:middle;color:#211F1A;font-size:18px;font-weight:600;">Riverstone Builders</td></tr></table>
-<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Your invoice is overdue</h1>
+<h1 style="margin:0 0 16px;color:#211F1A;font-size:24px;line-height:1.3;">Invoice INV-0007 is 3 days overdue</h1>
 <p style="margin:0 0 4px;color:#211F1A;font-size:15px;line-height:1.6;">Hi Alan,</p>
-<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">This is a friendly reminder that invoice INV-0007 from Riverstone Builders is now overdue.</p>
+<p style="margin:0 0 16px;color:#211F1A;font-size:15px;line-height:1.6;">This is a friendly reminder that invoice INV-0007 was due on 17 Oct 2026. If you&#39;ve already paid, thank you — please ignore this email.</p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E7E5E0;border-radius:8px;margin:0 0 20px;"><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Invoice</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">INV-0007</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Total</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Balance due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">$2,200.00</td></tr><tr><td style="padding:6px 16px;color:#726C5A;font-size:14px;">Due</td><td align="right" style="padding:6px 16px;color:#211F1A;font-size:14px;font-weight:600;">17 Oct 2026</td></tr></table>
 <p style="margin:0 0 20px;color:#726C5A;font-size:13px;line-height:1.5;">The invoice is attached as a PDF. Questions? Reply to this email.</p>
 </td></tr>
