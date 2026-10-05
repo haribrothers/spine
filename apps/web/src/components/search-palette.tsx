@@ -70,10 +70,10 @@ export function SearchPalette({ open, onOpenChange }: { open: boolean; onOpenCha
     return () => clearTimeout(timer);
   }, [query]);
 
-  hrefs.current = new Map((result?.groups ?? []).flatMap((g) => g.items.map((i) => [`${g.type}:${i.id}`, i.href] as const)));
+  hrefs.current = new Map((result?.groups ?? []).flatMap((g) => g.items.map((i) => [`${g.type}-${i.id}`, i.href] as const)));
   const groups: CommandPaletteGroup[] = (result?.groups ?? []).map((g) => ({
     heading: g.label,
-    items: g.items.map((i) => ({ id: `${g.type}:${i.id}`, title: i.title, subtitle: i.subtitle, meta: i.status })),
+    items: g.items.map((i) => ({ id: `${g.type}-${i.id}`, title: i.title, subtitle: i.subtitle, meta: i.status })),
   }));
   const q = query.trim();
 

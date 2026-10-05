@@ -23,6 +23,8 @@ export default function CommandPalettePage() {
             "Arrow keys move the highlight (announced through aria-activedescendant), Enter picks, Escape closes and returns focus.",
             "Group headings, a second line and a status per result; an empty message or hint when there's nothing to show.",
             "Scales in only when the person allows motion (motion-safe).",
+            "The first result is highlighted as soon as results arrive, and the palette keeps aria-activedescendant in step itself (cmdk works it out only once).",
+            "Focus goes back to the element that had it before opening — also when opened by a shortcut with no trigger.",
           ]}
         />
       </DocSection>

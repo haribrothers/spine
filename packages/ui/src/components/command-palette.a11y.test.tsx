@@ -1,3 +1,4 @@
+import * as React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -82,5 +83,41 @@ describe("CommandPalette a11y", () => {
     const dialog = screen.getByRole("dialog", { name: "Search" });
     expect(dialog.className).toContain("motion-safe:animate-palette-in");
     expect(dialog.className).not.toMatch(/(^|\s)animate-/);
+  });
+});
+
+describe("CommandPalette selection", () => {
+  it("highlights the first result as soon as results arrive", async () => {
+    const { rerender } = render(palette({ groups: [] }));
+    rerender(palette());
+    const box = screen.getByRole("combobox", { name: "Search" });
+    await vi.waitFor(() => {
+      const active = document.getElementById(box.getAttribute("aria-activedescendant") ?? "");
+      expect(active?.textContent).toContain("Harborview Construction Co.");
+    });
+  });
+});
+
+describe("CommandPalette focus", () => {
+  it("Escape closes it and returns focus to where it was", async () => {
+    const user = userEvent.setup();
+    function Harness() {
+      const [open, setOpen] = React.useState(false);
+      return (
+        <>
+          <button type="button" onClick={() => setOpen(true)}>
+            Before
+          </button>
+          <CommandPalette open={open} onOpenChange={setOpen} label="Search" query="" onQueryChange={() => {}} groups={[]} onSelect={() => {}} />
+        </>
+      );
+    }
+    render(<Harness />);
+    const before = screen.getByRole("button", { name: "Before" });
+    await user.click(before);
+    expect(screen.getByRole("dialog", { name: "Search" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog", { name: "Search" })).toBeNull();
+    expect(document.activeElement).toBe(before);
   });
 });

@@ -329,7 +329,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-15 · Export all my data
 - [x] US-SET-16 · Keep data exports private
 - [x] US-OPS-22 · Search everything from anywhere
-- [ ] US-OPS-23 · Use search with the keyboard and a screen reader
+- [x] US-OPS-23 · Use search with the keyboard and a screen reader
 - [ ] US-OPS-26 · Use every new screen in dark mode
 - [x] US-OPS-32 · Lift cards off the page in light mode
 

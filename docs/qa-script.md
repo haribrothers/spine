@@ -2834,6 +2834,17 @@ Regression: other file links (photos, receipts, PDFs) still open for the people 
 
 Regression: ⌘K inside the palette doesn't open a second one. The sidebar footer (user menu, help, notifications) still fits when the sidebar is collapsed.
 
+## 99. Search by keyboard and screen reader (US-OPS-23, Phase 7)
+
+1. With VoiceOver (macOS) or NVDA (Windows): press ⌘K / Ctrl+K. It announces a "Search" dialog and a combo box.
+2. Type "harbor": the first result is highlighted. Press Down and Up: each highlighted result is read out (title, second line, status).
+3. Press Enter: that record opens and the palette closes.
+4. Tab to a button (e.g. "Edit layout"), press ⌘K, then Escape: the palette closes and focus is back on that button.
+5. Turn on "Reduce motion" in the operating system: the palette appears without scaling in. Turn it off: a short scale-in.
+6. Without a mouse, everything in steps 1–4 works with the keyboard alone, and the focus ring is visible on the search button in the sidebar.
+
+Regression: other dialogs (Settings, confirmations) still return focus as before. Comboboxes elsewhere (contact pickers) still filter and select as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

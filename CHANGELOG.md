@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-OPS-23: use search with the keyboard and a screen reader (Phase 7)
+
+- **Screen readers**: the palette is announced as a dialog named "Search". The field is a combobox controlling a listbox of options.
+- **Keyboard**: the first result is highlighted as soon as results arrive. Up and Down move the highlight, and the active option is announced through `aria-activedescendant`, which the palette now keeps in step itself (`cmdk` only worked it out once, before late results existed, and its id lookup failed for values with ":"). Enter opens the highlighted record and closes the palette. Escape closes it and puts focus back where it was, even when it was opened with ⌘K and no button.
+- **Reduced motion**: the palette appears at once with no scale-in. Otherwise it scales in over the base duration (`palette-in` keyframes in the shared theme).
+
+Tests:
+- `packages/ui/src/components/command-palette.a11y.test.tsx` (now 7): first result highlighted on arrival; Escape returns focus.
+- `apps/e2e/tests/us-ops-23.spec.ts` (2): roles and `aria-controls`; arrows move and announce the highlight; Enter opens and closes; Escape returns focus; no animation with reduced motion, `palette-in` without.
+
 ### 2026-10-05 — US-OPS-22: search everything from anywhere (Phase 7)
 
 - **Search palette**: ⌘K (Mac) or Ctrl+K on any page, or the new search button in the sidebar footer beside Help and Notifications (the app has no top bar), opens it with focus in the field.

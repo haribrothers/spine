@@ -3,6 +3,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import { Kbd } from "./kbd";
 import { Spinner } from "./spinner";
@@ -66,12 +67,54 @@ export function CommandPalette({
   className,
 }: CommandPaletteProps) {
   const hasResults = groups.some((g) => g.items.length > 0);
+  // The highlighted option. When results change, the first one is highlighted
+  // (and announced through aria-activedescendant) unless the current one is still there.
+  const ids = groups.flatMap((g) => g.items.map((i) => i.id));
+  const idsKey = ids.join("\u0000");
+  const [selected, setSelected] = useState("");
+  useEffect(() => {
+    // `idsKey` stands for `ids`: re-pick only when the set of results changes.
+    setSelected((current) => {
+      const now = idsKey ? idsKey.split("\u0000") : [];
+      return now.includes(current) ? current : (now[0] ?? "");
+    });
+  }, [idsKey]);
+
+  // Escape (or any close) puts focus back where it was before the palette
+  // opened — also when it was opened by a keyboard shortcut, with no trigger.
+  const returnTo = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (open && document.activeElement instanceof HTMLElement && !document.activeElement.closest("[data-testid='command-palette']")) {
+      returnTo.current = document.activeElement;
+    }
+  }, [open]);
+
+  // Screen readers follow the highlight through aria-activedescendant. cmdk
+  // works it out once, before results that arrive later exist, so the
+  // palette keeps it in step with the highlighted option itself.
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    const option = Array.from(listRef.current?.querySelectorAll<HTMLElement>("[cmdk-item]") ?? []).find((el) => el.getAttribute("data-value") === selected);
+    if (option?.id) input.setAttribute("aria-activedescendant", option.id);
+    else input.removeAttribute("aria-activedescendant");
+  });
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="fixed inset-0 z-[var(--z-overlay)] bg-black/30" />
         <DialogPrimitive.Content
           aria-describedby={undefined}
+          onCloseAutoFocus={(e) => {
+            const target = returnTo.current;
+            if (target && target.isConnected) {
+              e.preventDefault();
+              target.focus();
+            }
+            returnTo.current = null;
+          }}
           className={cn(
             "fixed left-1/2 top-[8vh] z-[var(--z-modal)] flex max-h-[80vh] w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_10px_30px_rgba(33,31,26,0.14)] focus:outline-none motion-safe:animate-palette-in",
             className,
@@ -79,10 +122,11 @@ export function CommandPalette({
           data-testid="command-palette"
         >
           <DialogPrimitive.Title className="sr-only">{label}</DialogPrimitive.Title>
-          <CommandPrimitive label={label} shouldFilter={false} loop className="flex min-h-0 flex-1 flex-col">
+          <CommandPrimitive label={label} shouldFilter={false} loop value={selected} onValueChange={setSelected} className="flex min-h-0 flex-1 flex-col">
             <div className="flex items-center gap-2 border-b border-border px-4">
               <Search size={16} className="shrink-0 text-on-surface-muted" aria-hidden />
               <CommandPrimitive.Input
+                ref={inputRef}
                 value={query}
                 onValueChange={onQueryChange}
                 placeholder={placeholder}
@@ -101,7 +145,7 @@ export function CommandPalette({
                 {emptyMessage ?? hint}
               </div>
             )}
-            <CommandPrimitive.List className={cn("min-h-0 flex-1 overflow-y-auto", hasResults && "p-2")}>
+            <CommandPrimitive.List ref={listRef} className={cn("min-h-0 flex-1 overflow-y-auto", hasResults && "p-2")}>
               {groups
                 .filter((g) => g.items.length > 0)
                 .map((group) => (
