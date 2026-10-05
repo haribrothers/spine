@@ -247,7 +247,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </TabsContent>
         {canViewCosting && (
           <TabsContent value="costing">
-            <CostingSection job={job} />
+            <CostingSection job={job} onEditJob={canEditJob ? () => setEditOpen(true) : undefined} />
           </TabsContent>
         )}
       </Tabs>

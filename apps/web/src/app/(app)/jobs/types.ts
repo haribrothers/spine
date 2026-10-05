@@ -1,3 +1,4 @@
+import type { BudgetFigures, BudgetState } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/jobs.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/quotes' own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type JobStatus = "active" | "on_hold" | "completed" | "cancelled";
 export type MilestoneAmountType = "fixed" | "percent";
@@ -22,6 +23,9 @@ export interface Job {
   retentionPct?: number;
   /** US-JOB-24 — minor units; null when not budgeted; absent for Field users. */
   costBudgetAmount?: string | null;
+  /** US-JOB-25 — `GET /jobs?include=costing`, only for members with `reports.view_job_profitability`. */
+  budgetUsedPct?: number | null;
+  budgetState?: BudgetState;
   notes: string | null;
   createdByUserId: string | null;
   isDemo: boolean;
@@ -128,6 +132,8 @@ export interface JobCostingReport {
   cost: string;
   margin: string;
   marginPct: number | null;
+  /** US-JOB-25 */
+  budget: BudgetFigures;
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {

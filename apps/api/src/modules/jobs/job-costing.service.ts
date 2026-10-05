@@ -1,5 +1,7 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { and, eq } from "drizzle-orm";
+import { budgetFigures, type BudgetFigures, type BudgetState } from "@spine/shared";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { jobs, journalLines, accounts } from "../../db/schema";
@@ -12,6 +14,14 @@ export interface JobCostingReport {
   cost: string;
   margin: string;
   marginPct: number | null;
+  /** US-JOB-25 — cost against the job's budget. */
+  budget: BudgetFigures;
+}
+
+/** US-JOB-25 — what the Jobs list adds per job for members who may see job profitability. */
+export interface JobCostingSummary {
+  budgetUsedPct: number | null;
+  budgetState: BudgetState;
 }
 
 /**
@@ -68,6 +78,33 @@ export class JobCostingService {
       cost: cost.toString(),
       margin: margin.toString(),
       marginPct,
+      budget: budgetFigures(job.costBudgetAmount, cost),
     };
+  }
+
+  /** Cost per job (expense debits tagged to it), for many jobs in one query. */
+  private async costByJob(jobIds: string[]): Promise<Map<string, bigint>> {
+    if (!jobIds.length) return new Map();
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, cost: sql<string>`coalesce(sum(${journalLines.debit}), 0)` })
+      .from(journalLines)
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(inArray(journalLines.jobId, jobIds), eq(accounts.type, "expense")))
+      .groupBy(journalLines.jobId);
+    return new Map(rows.map((r) => [r.jobId!, BigInt(r.cost)]));
+  }
+
+  /**
+   * `GET /jobs?include=costing` — adds `budgetUsedPct` and `budgetState` to
+   * each job, only for members with `reports.view_job_profitability`;
+   * everyone else gets the rows unchanged.
+   */
+  async withCosting<T extends { id: string; costBudgetAmount?: bigint | null }>(orgId: string, userId: string, rows: T[]): Promise<(T | (T & JobCostingSummary))[]> {
+    if (!(await hasCapability(this.db, { orgId, userId }, "reports.view_job_profitability"))) return rows;
+    const costs = await this.costByJob(rows.map((r) => r.id));
+    return rows.map((row) => {
+      const budget = budgetFigures(row.costBudgetAmount ?? null, costs.get(row.id) ?? 0n);
+      return { ...row, budgetUsedPct: budget.usedPct, budgetState: budget.state };
+    });
   }
 }

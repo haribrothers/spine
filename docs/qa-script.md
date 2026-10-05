@@ -2564,6 +2564,16 @@ Regression: onboarding's Template step and Settings › Industry template save G
 
 Regression: Edit job still saves name, site address, status, dates, notes and retention % in light and dark mode.
 
+## 75. Job budget used (US-JOB-25, Phase 7)
+
+1. Give a job with recorded cost a budget about twice its cost. On "Costing", the Budget card shows Cost budget, Spent and Remaining (green) and "50% of budget used", with "Warning at 80% · over at 100%".
+2. Lower the budget so cost is about 85% of it: the bar turns amber and the label reads "Nearing budget — 85% used" with a warning icon.
+3. Lower it below cost: "Over budget by <amount>" in red with an icon; Remaining shows a negative amount; the bar is full.
+4. Clear the budget: "No budget set" and "Set a budget", which opens Edit job. Members without edit rights on the job don't see the button.
+5. Jobs list: "Budget used" shows "50%", "Nearing · 85%" or "Over · 1xx%" (with an icon), and "—" for jobs without a budget. Staff without "View job profitability" don't see the column.
+
+Regression: the Costing tab's contract value, revenue, cost and margin match before; the Jobs list (search, sort, filters) works in light and dark mode; Progress bars elsewhere (onboarding checklist) look the same.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

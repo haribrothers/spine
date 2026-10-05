@@ -4,6 +4,8 @@ import { Badge, DataTable, type TableColumn } from "@spine/ui";
 import Link from "next/link";
 import { JOB_STATUS_LABELS, type Job } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { budgetUsedLabel } from "@spine/shared";
+import { AlertTriangle, OctagonAlert } from "lucide-react";
 
 const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
@@ -64,6 +66,24 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
         sortValue: (row) => row.retentionPct ?? 0,
       },
     );
+  }
+  // US-JOB-25: only present for members with reports.view_job_profitability.
+  if (jobs.some((job) => job.budgetState !== undefined)) {
+    columns.push({
+      key: "budgetUsed",
+      header: "Budget used",
+      align: "right",
+      render: (row) => (
+        <span
+          className={`inline-flex items-center gap-1 tabular-nums ${row.budgetState === "over" ? "text-overdue" : row.budgetState === "near" ? "text-due-soon" : "text-on-surface"}`}
+        >
+          {row.budgetState === "over" && <OctagonAlert size={13} aria-hidden />}
+          {row.budgetState === "near" && <AlertTriangle size={13} aria-hidden />}
+          {budgetUsedLabel(row.budgetState, row.budgetUsedPct)}
+        </span>
+      ),
+      sortValue: (row) => row.budgetUsedPct ?? -1,
+    });
   }
 
   return (

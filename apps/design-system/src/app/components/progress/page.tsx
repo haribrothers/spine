@@ -27,13 +27,31 @@ export default () => <Progress value={72} />;`} />
       </DocSection>
 
       <DocSection id="api-reference" title="API Reference">
-        <ApiTable rows={[{ prop: "value", type: "number" }, { prop: "max", type: "number", defaultValue: "100" }]} />
+        <ApiTable
+          rows={[
+            { prop: "value", type: "number" },
+            { prop: "max", type: "number", defaultValue: "100" },
+            { prop: "tone", type: '"default" | "warning" | "danger" | "neutral"', defaultValue: '"default"' },
+          ]}
+        />
       </DocSection>
 
       <DocSection id="examples" title="Examples">
         <DocLead>Default</DocLead>
         <ComponentPreview code={`<Progress value={72} className="w-64" />`}>
           <Progress value={72} className="w-64" />
+        </ComponentPreview>
+        <DocLead>Tones — a job nearing or over its budget, and a neutral second measure (work complete beside billed). Always pair a warning or danger tone with text and an icon; colour is never the only signal.</DocLead>
+        <ComponentPreview
+          code={`<Progress value={85} tone="warning" aria-label="Budget used" />
+<Progress value={100} tone="danger" aria-label="Budget used" />
+<Progress value={55} tone="neutral" aria-label="Work complete" />`}
+        >
+          <div className="flex w-64 flex-col gap-3">
+            <Progress value={85} tone="warning" aria-label="Budget used" />
+            <Progress value={100} tone="danger" aria-label="Budget used" />
+            <Progress value={55} tone="neutral" aria-label="Work complete" />
+          </div>
         </ComponentPreview>
       </DocSection>
 

@@ -25,7 +25,8 @@ export function JobsExplorer() {
   const stats = useJobStats(jobs);
 
   const loadJobs = useCallback(() => {
-    const query = contactFilter !== ALL_CONTACTS ? `?contactId=${contactFilter}` : "";
+    // US-JOB-25: include=costing adds budget used per job for members who may see job profitability.
+    const query = contactFilter !== ALL_CONTACTS ? `?include=costing&contactId=${contactFilter}` : "?include=costing";
     apiClient
       .get<Job[]>(`/jobs${query}`)
       .then(setJobs)

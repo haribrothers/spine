@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-25: see budget spent and get warned before going over (Phase 7)
+
+- **Costing tab** (`JobCostingBudget`) is laid out as cards: "Job costing" (contract value, revenue recognised, cost, margin, margin % — a negative margin reads "Cost is ahead of billing" in the danger colour) and a new **Budget** card. The Budget card shows "Cost budget", "Spent" and "Remaining", with a bar labelled "78% of budget used". From 80% it turns to the warning colour with an icon and "Nearing budget — 85% used". Past the budget it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" goes negative and the bar is full. With no budget: "No budget set" and "Set a budget" (only with edit rights on the job), which opens Edit job. The old "cost tracking goes live later" note is gone.
+- **Jobs list** gains "Budget used" ("78%", "Nearing · 85%", "Over · 104%", or "—") for members with `reports.view_job_profitability`, through `GET /jobs?include=costing`.
+- **API.** `GET /jobs/:id/costing` gains `budget { amount, spent, remaining, usedPct, state }`, where spent is the job's cost from journal lines (D-011). The thresholds live in `budgetFigures` (`@spine/shared`), so every screen agrees.
+- **Progress** (`@spine/ui`) gains `tone` (`default`, `warning`, `danger`, `neutral`), with its design-system page and a11y test.
+- The dashboard's "job(s) over budget" attention row arrives with the attention list itself (US-DASH-12, step 5).
+
+Tests:
+- `packages/shared/src/us-job-25.test.ts` (5): figures, near and over, no or zero budget, list text, rounding.
+- `apps/api/src/modules/jobs/us-job-25.http.integration.test.ts` (4): no budget, 78% used, near and over, list figures only for job-profitability viewers.
+- `apps/e2e/tests/us-job-25.spec.ts` (1): used, nearing and over states, the list column, "No budget set" → "Set a budget".
+- `packages/ui/src/components/progress.a11y.test.tsx`: the new tones.
+
 ### 2026-10-05 — US-JOB-24: set a cost budget for a job (Phase 7)
 
 - **"Edit job"** gains a "Budget and progress" section with "Cost budget" ("What you expect this job to cost. Leave blank if you don't budget it."). A negative amount is refused with "Enter a budget of zero or more."; leaving it blank removes the budget.
