@@ -48,6 +48,8 @@ export class ExpensesController {
     const orgId = requireOrgId(session);
     // Field always sees only their own expenses, whatever `mine` says (US-OPS-20).
     const scope = await this.expensesService.readScope(orgId, session.user.id);
+    // US-PUR-22: Field can only filter by a job they're assigned to.
+    if (scope && jobId && !(await this.expensesService.isAssigned(orgId, session.user.id, jobId))) return [];
     return this.expensesService.list(orgId, { status, jobId, submittedByUserId: scope ?? (mine === "true" ? session.user.id : undefined) });
   }
 

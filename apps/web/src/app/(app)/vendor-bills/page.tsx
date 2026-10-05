@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { VendorBillsExplorer } from "./vendor-bills-explorer";
 
@@ -10,7 +11,10 @@ export default function VendorBillsPage() {
         title="Vendor Bills"
         description="Record what you owe a vendor. Save as a draft, then record it to post to the ledger."
       />
-      <VendorBillsExplorer />
+      {/* US-PUR-22: the job filter reads the URL. */}
+      <Suspense>
+        <VendorBillsExplorer />
+      </Suspense>
     </>
   );
 }

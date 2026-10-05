@@ -5,7 +5,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenses, expenseCategories, accounts, invoiceLines, jobs } from "../../db/schema";
+import { expenses, expenseCategories, accounts, invoiceLines, jobs, jobAssignments } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
@@ -43,6 +43,15 @@ export class ExpensesService {
     private readonly notifications: NotificationsService,
     private readonly invoices: InvoicesService,
   ) {}
+
+  /** US-PUR-22 — whether a member is on a job's crew. */
+  async isAssigned(orgId: string, userId: string, jobId: string): Promise<boolean> {
+    const [row] = await this.db
+      .select({ jobId: jobAssignments.jobId })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.orgId, orgId), eq(jobAssignments.userId, userId), eq(jobAssignments.jobId, jobId)));
+    return !!row;
+  }
 
   async list(orgId: string, options: { status?: string; jobId?: string; submittedByUserId?: string }) {
     const conditions = [eq(expenses.orgId, orgId)];

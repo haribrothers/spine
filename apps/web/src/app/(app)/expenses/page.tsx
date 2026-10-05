@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { getSession } from "../../../lib/get-session";
 import { ExpensesExplorer } from "./expenses-explorer";
 import { ExpensesHeader } from "./expenses-header";
@@ -17,7 +18,10 @@ export default async function ExpensesPage() {
   return (
     <>
       <ExpensesHeader active="expenses" />
-      <ExpensesExplorer currentUserId={session?.user?.id ?? null} />
+      {/* US-PUR-22: the job filter reads the URL. */}
+      <Suspense>
+        <ExpensesExplorer currentUserId={session?.user?.id ?? null} />
+      </Suspense>
     </>
   );
 }

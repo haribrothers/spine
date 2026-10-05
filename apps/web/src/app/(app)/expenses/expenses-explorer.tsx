@@ -13,6 +13,7 @@ import { ExpensesSkeleton } from "./expenses-skeleton";
 import { ExpensesTable } from "./expenses-table";
 import { ExpensesBulkBar } from "./expenses-bulk-bar";
 import { useMyRole } from "../../../lib/role-context";
+import { JobFilter, JobFilterNote, useJobFilter } from "../../../components/job-filter";
 import { expensesDescription, useCanManageExpenseCategories } from "./expenses-header";
 import type { Expense, JobOption } from "./types";
 import { useExpenseStats } from "./use-expense-stats";
@@ -58,15 +59,21 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const selectedExpenses = useMemo(() => (expenses ?? []).filter((e) => selectedIds.has(e.id) && canSelect(e)), [expenses, selectedIds, canSelect]);
   const hasOwnSubmitted = role !== "owner" && (expenses ?? []).some((e) => e.status === "submitted" && e.submittedByUserId === currentUserId);
 
+  // US-PUR-22 — filter by job, kept in the URL.
+  const job = useJobFilter();
+  const canViewCosting = useCapability("reports.view_job_profitability");
   const stats = useExpenseStats(expenses);
 
   const loadExpenses = useCallback(() => {
-    const query = mineOnly ? "?mine=true" : "";
+    const params = new URLSearchParams();
+    if (mineOnly) params.set("mine", "true");
+    if (job.filtering) params.set("jobId", job.jobId);
+    const query = params.toString() ? `?${params}` : "";
     apiClient
       .get<Expense[]>(`/expenses${query}`)
       .then(setExpenses)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load expenses."));
-  }, [mineOnly]);
+  }, [mineOnly, job.filtering, job.jobId]);
 
   useEffect(() => {
     loadExpenses();
@@ -127,6 +134,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             aria-label="Filter by status"
             className="w-40"
           />
+          <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />
           <label className="flex items-center gap-2 text-[13px] text-on-surface">
             <Switch checked={mineOnly} onCheckedChange={setMineOnly} />
             My expenses only
@@ -147,11 +155,24 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         />
       )}
 
+      {job.filtering && job.selectedLabel && <JobFilterNote kind="expenses" jobId={job.jobId} label={job.selectedLabel} canViewCosting={canViewCosting} />}
+
       {!filteredExpenses ? (
         <ExpensesSkeleton />
       ) : filteredExpenses.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
-          {statusFilter.length || mineOnly ? (
+          {job.filtering && !statusFilter.length && !mineOnly ? (
+            <EmptyState
+              icon={<Receipt />}
+              title="No expenses on this job"
+              description="Expenses tagged to this job show up here."
+              action={
+                <Button variant="secondary" onClick={() => job.setJobId("__all__")}>
+                  Clear filter
+                </Button>
+              }
+            />
+          ) : statusFilter.length || mineOnly || job.filtering ? (
             <EmptyState
               icon={<Receipt />}
               title="No expenses match these filters"
@@ -162,6 +183,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
                   onClick={() => {
                     setStatusFilter([]);
                     setMineOnly(false);
+                    job.setJobId("__all__");
                   }}
                 >
                   Clear filters

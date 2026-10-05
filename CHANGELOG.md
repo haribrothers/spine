@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PUR-22: filter bills and expenses by job (Phase 7)
+
+- **Job filter** on Vendor Bills and Expenses ("All jobs", then "JOB-001 · Marina office fit-out"), beside the existing filters (`ExpensesJobFilter`). It's kept in the URL (`?jobId=`) so it can be shared and survives a reload, and the counters above the table count only that job.
+- **While filtered**, a note reads "Showing expenses on JOB-001 · Marina office fit-out." with links to the same job on the other list and to the job's costing (with job-profitability rights). A job with nothing tagged shows "No vendor bills on this job" / "No expenses on this job" with "Clear filter".
+- **Costing tab**: "View bills and expenses" opens Vendor Bills filtered to the job.
+- **Field users** pick from their assigned jobs only, and `GET /expenses?jobId=` returns nothing for a job they aren't assigned to.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-22.http.integration.test.ts` (3): bills by job, expenses by job, Field limited to assigned jobs.
+- `apps/e2e/tests/us-pur-22.spec.ts` (2): filter, URL, reload, note and link across; empty state with Clear filter; Costing link.
+
 ### 2026-10-05 — US-JOB-29: number each progress claim on a job (Phase 7)
 
 - **Claim numbers.** Issuing a progress invoice on a job gives it the job's next claim number (`invoices.progress_claim_no`, migration `0071`, unique per job). The number is the job's highest + 1 under the job row lock, kept when voided and never reused (D-128). Advance, standard and retention-release invoices get none. The invoice keeps its own organisation-wide number.

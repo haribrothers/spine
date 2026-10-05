@@ -138,6 +138,7 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 ## Added with the Phase 7 feature round (D-087–D-097)
 
 - New Team-configurable capability `invoices.manage_recurring` (group "Manage Invoices"; General Staff default: granted). Gates every `/recurring-invoices` route, reads included, and the "Recurring invoices" link on Invoices. In `CAPABILITIES`, `CAPABILITY_LABELS` ("Manage recurring invoices") and `DEFAULT_TEAM_GRANTS`; migration `0067` backfills it onto every Team with the same grant as its `invoices.edit_own` (US-INV-20).
+- Field users filtering their expenses by job (`GET /expenses?jobId=`) get nothing for a job they aren't assigned to (US-PUR-22); the job list they pick from is their assigned jobs.
 - Customer statements (`/contacts/:id/statement*`, US-PAY-14) show what a customer owes, so every statement route needs `reports.view_receivables`; the "Send statement" button is hidden without it.
 - Data export is Owner-only, never Team-configurable (it copies everything). Export links are authorised per request and expire after 7 days; secrets are never exported.
 - Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs, their own expenses and contacts.

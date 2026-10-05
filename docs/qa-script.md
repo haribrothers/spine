@@ -2613,6 +2613,16 @@ Regression: Edit job's other fields save as before; the Billing card's figures (
 
 Regression: invoice numbers stay gapless across claims; the invoice PDF and email for standard invoices look as before.
 
+## 80. Filter bills and expenses by job (US-PUR-22, Phase 7)
+
+1. On Vendor Bills, the job filter offers "All jobs" and each job as "<number> · <name>". Choose one: only its bills show, the counters count only those, and the URL gains `?jobId=`. Reload: the filter stays.
+2. The note "Showing vendor bills on <job>." links to "See expenses on this job" (Expenses, same filter) and "Open the job's costing".
+3. Filter by a job with nothing tagged: "No vendor bills on this job" / "No expenses on this job" with "Clear filter".
+4. On a job's Costing tab, "View bills and expenses" opens Vendor Bills filtered to that job.
+5. As a Field user on Expenses, the job filter lists only your assigned jobs and shows only your own expenses on them.
+
+Regression: Vendor Bills' status and vendor filters and Expenses' status filter and "My expenses only" work as before, alone and with the job filter, in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
