@@ -14,7 +14,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  GroupedBarChart,
   Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Tabs,
   TabsContent,
@@ -34,6 +40,8 @@ import {
   type TrialBalanceReport,
 } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { budgetUsedLabel } from "@spine/shared";
+import { AlertTriangle, OctagonAlert } from "lucide-react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -363,16 +371,33 @@ function BalanceSheetTab() {
   );
 }
 
+const JOB_STATUS_FILTERS = [
+  { value: "active_on_hold", label: "Active and on hold" },
+  { value: "active", label: "Active" },
+  { value: "on_hold", label: "On hold" },
+  { value: "completed", label: "Completed" },
+  { value: "all", label: "All" },
+] as const;
+
+const CHART_JOBS = 10;
+
+/**
+ * S-09.6 + US-RPT-15 (D-127) — job profitability: a chart of each job's
+ * contract value, billed to date and cost (with its budget marked), then
+ * the table of every job. The figures are the job Costing tab's own.
+ */
 function JobProfitabilityTab() {
   const [report, setReport] = useState<JobProfitabilityReport | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string>("active_on_hold");
 
   useEffect(() => {
+    setReport(null);
     apiClient
-      .get<JobProfitabilityReport>("/reports/job-profitability")
+      .get<JobProfitabilityReport>(`/reports/job-profitability?status=${status}`)
       .then(setReport)
       .catch((err) => setError(ownerOnlyMessage(err)));
-  }, []);
+  }, [status]);
 
   if (error) {
     return (
@@ -384,58 +409,131 @@ function JobProfitabilityTab() {
     );
   }
 
-  if (!report) {
-    return (
-      <div className="flex items-center justify-center py-16">
-        <Spinner />
-      </div>
-    );
-  }
+  const charted = report ? [...report.jobs].sort((a, b) => (BigInt(b.contractValueAmount) > BigInt(a.contractValueAmount) ? 1 : -1)).slice(0, CHART_JOBS) : [];
+  const currency = report?.jobs[0]?.currency ?? "USD";
+  const money = (minor: string | null) => (minor === null ? "—" : formatMoney(BigInt(minor), currency));
+  const compact = new Intl.NumberFormat(undefined, { style: "currency", currency, notation: "compact", maximumFractionDigits: 0 });
 
   return (
     <div className="flex flex-col gap-4 pt-4">
-      <div className="flex justify-end">
-        <a href={`${API_URL}/reports/job-profitability/export.csv`} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-primary hover:underline">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Select value={status} onValueChange={setStatus}>
+          <SelectTrigger className="w-56" aria-label="Which jobs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {JOB_STATUS_FILTERS.map((f) => (
+              <SelectItem key={f.value} value={f.value}>
+                {f.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <a href={`${API_URL}/reports/job-profitability/export.csv?status=${status}`} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-primary hover:underline">
           Export CSV
         </a>
       </div>
-      {report.jobs.length === 0 ? (
-        <p className="text-[13px] text-on-surface-muted">No jobs yet.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr className="border-b border-border bg-surface-secondary text-left text-on-surface-muted">
-                <th className="px-3 py-2 font-medium">Job</th>
-                <th className="px-3 py-2 font-medium">Status</th>
-                <th className="px-3 py-2 text-right font-medium">Contract value</th>
-                <th className="px-3 py-2 text-right font-medium">Revenue</th>
-                <th className="px-3 py-2 text-right font-medium">Cost</th>
-                <th className="px-3 py-2 text-right font-medium">Margin</th>
-                <th className="px-3 py-2 text-right font-medium">Margin %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {report.jobs.map((job) => (
-                <tr key={job.jobId} className="border-b border-border last:border-b-0">
-                  <td className="px-3 py-2">
-                    <Link href={`/jobs/${job.jobId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
-                      {job.name}
-                    </Link>
-                  </td>
-                  <td className="px-3 py-2 text-on-surface-muted">{job.status}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">
-                    {formatMoney(BigInt(job.contractValueAmount), job.currency)}
-                  </td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.revenue), job.currency)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.cost), job.currency)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{formatMoney(BigInt(job.margin), job.currency)}</td>
-                  <td className="px-3 py-2 text-right tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {!report ? (
+        <div className="flex items-center justify-center py-16">
+          <Spinner />
         </div>
+      ) : report.jobs.length === 0 ? (
+        <p className="text-[13px] text-on-surface-muted">No jobs here.</p>
+      ) : (
+        <>
+          <div className="flex flex-col gap-2 rounded-md border border-border-strong bg-surface p-4">
+            <h3 className="text-[15px] font-semibold text-on-surface">Contract, billed and cost by job</h3>
+            <GroupedBarChart
+              data={charted.map((job) => ({
+                key: job.jobId,
+                label: job.name,
+                contract: Number(job.contractValueAmount),
+                billed: Number(job.billedToDate),
+                cost: Number(job.cost),
+                budget: job.costBudget === null ? null : Number(job.costBudget),
+              }))}
+              series={[
+                { key: "contract", label: "Contract value", color: "var(--color-on-surface-muted)" },
+                { key: "billed", label: "Billed to date", color: "var(--color-primary)" },
+                { key: "cost", label: "Cost", color: "var(--color-due-soon)" },
+              ]}
+              marker={{ key: "budget", label: "Cost budget", seriesKey: "cost" }}
+              formatTick={(v) => compact.format(v / 100)}
+              renderTooltip={(row) => {
+                const job = charted.find((j) => j.jobId === row.key)!;
+                return (
+                  <dl className="grid grid-cols-[auto_auto] gap-x-4 gap-y-0.5">
+                    <dt className="col-span-2 mb-1 font-semibold">{job.name}</dt>
+                    <dt className="text-on-surface-muted">Contract value</dt>
+                    <dd className="text-right tabular-nums">{money(job.contractValueAmount)}</dd>
+                    <dt className="text-on-surface-muted">Billed to date</dt>
+                    <dd className="text-right tabular-nums">
+                      {money(job.billedToDate)}
+                      {job.billedPct !== null && ` · ${job.billedPct}%`}
+                    </dd>
+                    <dt className="text-on-surface-muted">Cost</dt>
+                    <dd className="text-right tabular-nums">{money(job.cost)}</dd>
+                    <dt className="text-on-surface-muted">Budget</dt>
+                    <dd className="text-right tabular-nums">{job.costBudget === null ? "—" : `${money(job.costBudget)} · ${job.budgetUsedPct ?? 0}% used`}</dd>
+                    <dt className="text-on-surface-muted">Margin</dt>
+                    <dd className="text-right tabular-nums">{money(job.margin)}</dd>
+                  </dl>
+                );
+              }}
+              aria-label="Contract, billed and cost by job"
+              description="The table below lists the same figures for every job."
+            />
+            {report.jobs.length > CHART_JOBS && (
+              <p className="text-[12px] text-on-surface-muted">
+                Showing {CHART_JOBS} of {report.jobs.length} jobs — the table lists them all.
+              </p>
+            )}
+          </div>
+          <div className="overflow-x-auto rounded-md border border-border-strong bg-surface">
+            <table className="w-full text-[13px]">
+              <thead>
+                <tr className="border-b border-border bg-surface-secondary text-left text-on-surface-muted">
+                  <th className="px-3 py-2 font-medium">Job</th>
+                  <th className="px-3 py-2 font-medium">Status</th>
+                  <th className="px-3 py-2 text-right font-medium">Contract value</th>
+                  <th className="px-3 py-2 text-right font-medium">Billed to date</th>
+                  <th className="px-3 py-2 text-right font-medium">Billed %</th>
+                  <th className="px-3 py-2 font-medium">Budget used</th>
+                  <th className="px-3 py-2 text-right font-medium">Revenue</th>
+                  <th className="px-3 py-2 text-right font-medium">Cost</th>
+                  <th className="px-3 py-2 text-right font-medium">Margin</th>
+                  <th className="px-3 py-2 text-right font-medium">Margin %</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.jobs.map((job) => (
+                  <tr key={job.jobId} className="border-b border-border last:border-b-0">
+                    <td className="px-3 py-2">
+                      <Link href={`/jobs/${job.jobId}`} className="font-medium text-on-surface hover:text-primary hover:underline">
+                        {job.name}
+                      </Link>
+                    </td>
+                    <td className="px-3 py-2 text-on-surface-muted">{job.status}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{money(job.contractValueAmount)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{money(job.billedToDate)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{job.billedPct === null ? "—" : `${job.billedPct}%`}</td>
+                    <td className={`px-3 py-2 tabular-nums ${job.budgetState === "over" ? "text-overdue" : job.budgetState === "near" ? "text-due-soon" : ""}`}>
+                      <span className="inline-flex items-center gap-1">
+                        {job.budgetState === "over" && <OctagonAlert size={13} aria-hidden />}
+                        {job.budgetState === "near" && <AlertTriangle size={13} aria-hidden />}
+                        {budgetUsedLabel(job.budgetState, job.budgetUsedPct)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{money(job.revenue)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{money(job.cost)}</td>
+                    <td className={`px-3 py-2 text-right tabular-nums ${BigInt(job.margin) < 0n ? "text-overdue" : ""}`}>{money(job.margin)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{job.marginPct === null ? "—" : `${job.marginPct}%`}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

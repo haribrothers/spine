@@ -2634,6 +2634,17 @@ Regression: Vendor Bills' status and vendor filters and Expenses' status filter 
 
 Regression: "Amount" entry, editing a submitted expense, receipts and approval work as before in light and dark mode.
 
+## 82. Job profitability chart (US-RPT-15, Phase 7)
+
+1. Reports › Job Profitability: "Contract, billed and cost by job" shows three bars per active or on-hold job (Contract value, Billed to date, Cost) with a legend naming each, largest contract first. With more than 10 jobs: "Showing 10 of N jobs — the table lists them all."
+2. A job with a budget has a dashed "Cost budget" marker over its cost bar. Hover or focus a job: the tooltip lists contract value, billed to date and %, cost, budget and % used, and margin.
+3. The table adds "Billed to date", "Billed %" and "Budget used" after "Contract value"; the figures match each job's Costing tab.
+4. Switch the filter to Completed, then All: the chart and table follow; "Export CSV" downloads the same jobs with "Billed to date", "Billed %" and "Budget used %" as plain numbers.
+5. With a screen reader the chart is announced as "Contract, billed and cost by job" and points to the table.
+6. Check the chart in dark mode.
+
+Regression: the dashboard's "Job profitability" widget still lists every job; the other report tabs are unchanged.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

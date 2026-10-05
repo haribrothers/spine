@@ -50,7 +50,7 @@ export function JobProfitabilityRanked() {
 
   useEffect(() => {
     apiClient
-      .get<JobProfitabilityReport>("/reports/job-profitability")
+      .get<JobProfitabilityReport>("/reports/job-profitability?status=all")
       .then(setReport)
       .catch(() => setFailed(true));
   }, []);

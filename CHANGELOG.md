@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-RPT-15: compare contract, billed and cost across jobs (Phase 7)
+
+- **Job Profitability** (`ReportsJobProfitabilityChart`) opens with "Contract, billed and cost by job". It shows three bars per job (contract value, billed to date, cost) for up to 10 jobs, largest contract first, with "Showing 10 of N jobs — the table lists them all." when there are more. A dashed marker over the cost bar shows the job's budget. The tooltip lists contract value, billed to date and %, cost, budget and % used, and margin.
+- **Status filter**: "Active and on hold" (default), "Active", "On hold", "Completed", "All". The chart, table and CSV follow it.
+- **Table** gains "Billed to date", "Billed %" and "Budget used" (with "Nearing" / "Over" text and icons); negative margins read in red. **CSV** gains the same columns as plain numbers, and its money columns are now decimals ("48500.00") like every other export, not minor units.
+- **One source.** The report reads the same `billedByJob` / `costByJob` / `budgetFigures` as each job's Costing tab, so the figures always agree. The dashboard's job profitability widget keeps showing all jobs.
+- **GroupedBarChart** (`@spine/ui`): grouped bars with a text legend, even ticks, a custom tooltip and an optional dashed marker over one series. It ships with its design-system page and a11y test. For screen readers the chart is a labelled image pointing to the table.
+
+Tests:
+- `apps/api/src/modules/reports/us-rpt-15.http.integration.test.ts` (3): new row fields equal the Costing tab, status filter, CSV columns.
+- `apps/e2e/tests/us-rpt-15.spec.ts` (1): the chart, legend, columns and status filter.
+- `packages/ui/src/components/grouped-bar-chart.a11y.test.tsx` (3): with and without a marker, empty.
+
 ### 2026-10-05 — US-PUR-23: enter site labour as headcount × day rate (Phase 7)
 
 - **"Enter as"** on "Submit an expense": "Amount" (as before, the default) or "Headcount × day rate" (`ExpenseDialogLabour`). The second swaps the Amount field for rows of Trade ("e.g. Mason"), Workers and Day rate, each with its total, "+ Add trade" and "Total for the day · N workers". Job becomes required ("Labour is always for a job.").

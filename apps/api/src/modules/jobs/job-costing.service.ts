@@ -32,6 +32,50 @@ export interface JobCostingSummary {
 }
 
 /**
+ * US-JOB-27 (D-127) — billed to date per job: the net of 1100 AR and 1150
+ * Retention Receivable lines tagged to the job from invoice, invoice-void
+ * and credit-note entries, leaving out retention-release invoices (and
+ * credits against them). Advance invoices post nothing at issue, so a
+ * deposit only counts once it's offset on a progress invoice.
+ */
+export async function billedByJob(db: Database, orgId: string, jobIds: string[]): Promise<Map<string, bigint>> {
+  if (!jobIds.length) return new Map();
+  const sourceInvoice = alias(invoices, "source_invoice");
+  const creditedInvoice = alias(invoices, "credited_invoice");
+  const rows = await db
+    .select({ jobId: journalLines.jobId, billed: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .leftJoin(sourceInvoice, and(inArray(journalEntries.sourceType, ["invoice", "invoice_void"]), eq(sourceInvoice.id, journalEntries.sourceId)))
+    .leftJoin(creditNotes, and(eq(journalEntries.sourceType, "credit_note"), eq(creditNotes.id, journalEntries.sourceId)))
+    .leftJoin(creditedInvoice, eq(creditedInvoice.id, creditNotes.invoiceId))
+    .where(
+      and(
+        eq(journalEntries.orgId, orgId),
+        inArray(journalLines.jobId, jobIds),
+        inArray(accounts.code, ["1100", "1150"]),
+        inArray(journalEntries.sourceType, ["invoice", "invoice_void", "credit_note"]),
+        or(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type}) is null`, ne(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type})`, "retention_release")),
+      ),
+    )
+    .groupBy(journalLines.jobId);
+  return new Map(rows.map((r) => [r.jobId!, BigInt(r.billed)]));
+}
+
+/** Cost per job (expense debits tagged to it), for many jobs in one query. */
+export async function costByJob(db: Database, jobIds: string[]): Promise<Map<string, bigint>> {
+  if (!jobIds.length) return new Map();
+  const rows = await db
+    .select({ jobId: journalLines.jobId, cost: sql<string>`coalesce(sum(${journalLines.debit}), 0)` })
+    .from(journalLines)
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .where(and(inArray(journalLines.jobId, jobIds), eq(accounts.type, "expense")))
+    .groupBy(journalLines.jobId);
+  return new Map(rows.map((r) => [r.jobId!, BigInt(r.cost)]));
+}
+
+/**
  * S-04.8 — "see cost, revenue and margin for a job as it runs." Per
  * CLAUDE.md's non-negotiable "job costing pulls from journal lines tagged
  * with job_id — don't build a shadow costing system" rule, this reads
@@ -96,52 +140,8 @@ export class JobCostingService {
       marginPct,
       budget: budgetFigures(job.costBudgetAmount, cost),
       byCategory,
-      billing: billingFigures(job.contractValueAmount, (await this.billedByJob(orgId, [jobId])).get(jobId) ?? 0n, job.percentComplete),
+      billing: billingFigures(job.contractValueAmount, (await billedByJob(this.db, orgId, [jobId])).get(jobId) ?? 0n, job.percentComplete),
     };
-  }
-
-  /**
-   * US-JOB-27 (D-127) — billed to date per job: the net of 1100 AR and 1150
-   * Retention Receivable lines tagged to the job from invoice, invoice-void
-   * and credit-note entries, leaving out retention-release invoices (and
-   * credits against them). Advance invoices post nothing at issue, so a
-   * deposit only counts once it's offset on a progress invoice.
-   */
-  private async billedByJob(orgId: string, jobIds: string[]): Promise<Map<string, bigint>> {
-    if (!jobIds.length) return new Map();
-    const sourceInvoice = alias(invoices, "source_invoice");
-    const creditedInvoice = alias(invoices, "credited_invoice");
-    const rows = await this.db
-      .select({ jobId: journalLines.jobId, billed: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
-      .from(journalLines)
-      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
-      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .leftJoin(sourceInvoice, and(inArray(journalEntries.sourceType, ["invoice", "invoice_void"]), eq(sourceInvoice.id, journalEntries.sourceId)))
-      .leftJoin(creditNotes, and(eq(journalEntries.sourceType, "credit_note"), eq(creditNotes.id, journalEntries.sourceId)))
-      .leftJoin(creditedInvoice, eq(creditedInvoice.id, creditNotes.invoiceId))
-      .where(
-        and(
-          eq(journalEntries.orgId, orgId),
-          inArray(journalLines.jobId, jobIds),
-          inArray(accounts.code, ["1100", "1150"]),
-          inArray(journalEntries.sourceType, ["invoice", "invoice_void", "credit_note"]),
-          or(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type}) is null`, ne(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type})`, "retention_release")),
-        ),
-      )
-      .groupBy(journalLines.jobId);
-    return new Map(rows.map((r) => [r.jobId!, BigInt(r.billed)]));
-  }
-
-  /** Cost per job (expense debits tagged to it), for many jobs in one query. */
-  private async costByJob(jobIds: string[]): Promise<Map<string, bigint>> {
-    if (!jobIds.length) return new Map();
-    const rows = await this.db
-      .select({ jobId: journalLines.jobId, cost: sql<string>`coalesce(sum(${journalLines.debit}), 0)` })
-      .from(journalLines)
-      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .where(and(inArray(journalLines.jobId, jobIds), eq(accounts.type, "expense")))
-      .groupBy(journalLines.jobId);
-    return new Map(rows.map((r) => [r.jobId!, BigInt(r.cost)]));
   }
 
   /**
@@ -152,7 +152,7 @@ export class JobCostingService {
   async withCosting<T extends { id: string; costBudgetAmount?: bigint | null; contractValueAmount: bigint }>(orgId: string, userId: string, rows: T[]): Promise<(T | (T & JobCostingSummary))[]> {
     if (!(await hasCapability(this.db, { orgId, userId }, "reports.view_job_profitability"))) return rows;
     const ids = rows.map((r) => r.id);
-    const [costs, billed] = await Promise.all([this.costByJob(ids), this.billedByJob(orgId, ids)]);
+    const [costs, billed] = await Promise.all([costByJob(this.db, ids), billedByJob(this.db, orgId, ids)]);
     return rows.map((row) => {
       const budget = budgetFigures(row.costBudgetAmount ?? null, costs.get(row.id) ?? 0n);
       const billing = billingFigures(row.contractValueAmount, billed.get(row.id) ?? 0n);

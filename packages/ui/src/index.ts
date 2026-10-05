@@ -16,6 +16,7 @@ export * from "./components/carousel";
 export * from "./components/chart";
 export * from "./components/donut-chart";
 export * from "./components/trend-bar-chart";
+export * from "./components/grouped-bar-chart";
 export * from "./components/checkbox";
 export * from "./components/collapsible";
 export * from "./components/combobox";

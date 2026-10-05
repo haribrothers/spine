@@ -146,6 +146,7 @@ export const nav: TopLevelSection[] = [
           { title: "Chart", href: "/components/chart" },
           { title: "DonutChart", href: "/components/donut-chart" },
           { title: "TrendBarChart", href: "/components/trend-bar-chart" },
+          { title: "GroupedBarChart", href: "/components/grouped-bar-chart" },
           { title: "Carousel", href: "/components/carousel" },
           { title: "Avatar", href: "/components/avatar" },
           { title: "Breadcrumb", href: "/components/breadcrumb" },

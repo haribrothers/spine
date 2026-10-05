@@ -55,6 +55,12 @@ export interface JobProfitabilityRow {
   cost: string;
   margin: string;
   marginPct: number | null;
+  /** US-RPT-15 — the same figures as the job's Costing tab. */
+  billedToDate: string;
+  billedPct: number | null;
+  costBudget: string | null;
+  budgetUsedPct: number | null;
+  budgetState: "none" | "ok" | "near" | "over";
 }
 
 export interface JobProfitabilityReport {

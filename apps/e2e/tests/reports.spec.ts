@@ -55,9 +55,10 @@ test.describe("Reports", () => {
     await expect(page.getByRole("tab", { name: "Profit & Loss" })).toBeVisible({ timeout: 15_000 });
     await page.getByRole("tab", { name: "Job Profitability" }).click();
 
-    const main = page.getByRole("main");
-    await expect(main.getByText("Hotel lobby renovation")).toBeVisible();
-    await expect(main.getByText("Margin %")).toBeVisible();
+    // The chart (US-RPT-15) names jobs too; the table is what this checks.
+    const table = page.getByRole("main").getByRole("table");
+    await expect(table.getByText("Hotel lobby renovation")).toBeVisible();
+    await expect(table.getByText("Margin %")).toBeVisible();
   });
 
   test("CSV export links exist and point at the right endpoints", async ({ page, seededOrg }) => {

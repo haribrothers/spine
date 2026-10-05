@@ -1,5 +1,7 @@
+import { billingFigures, budgetFigures } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { billedByJob, costByJob } from "../jobs/job-costing.service";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
@@ -584,8 +586,15 @@ export class ReportsService {
    * `jobId` in one query instead of N — never a shadow costing table, same
    * as that service's own doc comment.
    */
-  async jobProfitability(orgId: string): Promise<JobProfitabilityReport> {
-    const jobRows = await this.db.select().from(jobs).where(eq(jobs.orgId, orgId));
+  async jobProfitability(orgId: string, status: JobProfitabilityStatus = "active_on_hold"): Promise<JobProfitabilityReport> {
+    const statuses: (typeof jobs.$inferSelect.status)[] | null =
+      status === "all" ? null : status === "active_on_hold" ? ["active", "on_hold"] : [status];
+    const jobRows = await this.db
+      .select()
+      .from(jobs)
+      .where(and(eq(jobs.orgId, orgId), statuses ? inArray(jobs.status, statuses) : undefined));
+    const ids = jobRows.map((j) => j.id);
+    const [costs, billed] = await Promise.all([costByJob(this.db, ids), billedByJob(this.db, orgId, ids)]);
     const rows = await this.db
       .select({ jobId: journalLines.jobId, debit: journalLines.debit, credit: journalLines.credit, accountType: accounts.type })
       .from(journalLines)
@@ -603,8 +612,10 @@ export class ReportsService {
     }
 
     const jobRowsReport: JobProfitabilityRow[] = jobRows.map((job) => {
-      const totals = byJob.get(job.id) ?? { revenue: 0n, cost: 0n };
+      const totals = { revenue: byJob.get(job.id)?.revenue ?? 0n, cost: costs.get(job.id) ?? 0n };
       const margin = totals.revenue - totals.cost;
+      const billing = billingFigures(job.contractValueAmount, billed.get(job.id) ?? 0n);
+      const budget = budgetFigures(job.costBudgetAmount, totals.cost);
       const marginPct = totals.revenue > 0n ? Number((margin * 10000n) / totals.revenue) / 100 : null;
       return {
         jobId: job.id,
@@ -616,6 +627,11 @@ export class ReportsService {
         cost: totals.cost.toString(),
         margin: margin.toString(),
         marginPct,
+        billedToDate: billing.billedToDate,
+        billedPct: billing.billedPct,
+        costBudget: budget.amount,
+        budgetUsedPct: budget.usedPct,
+        budgetState: budget.state,
       };
     });
 
@@ -921,7 +937,16 @@ export interface JobProfitabilityRow {
   cost: string;
   margin: string;
   marginPct: number | null;
+  /** US-RPT-15 — the same figures as the job's Costing tab (`billedByJob`, `budgetFigures`). */
+  billedToDate: string;
+  billedPct: number | null;
+  costBudget: string | null;
+  budgetUsedPct: number | null;
+  budgetState: "none" | "ok" | "near" | "over";
 }
+
+/** US-RPT-15 — which jobs the report covers; the default is active and on hold. */
+export type JobProfitabilityStatus = "active_on_hold" | "active" | "on_hold" | "completed" | "all";
 
 export interface JobProfitabilityReport {
   jobs: JobProfitabilityRow[];
