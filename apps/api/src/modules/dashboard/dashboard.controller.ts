@@ -5,6 +5,7 @@ import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { DashboardService } from "./dashboard.service";
 import { AttentionService } from "./attention.service";
 import { KpiService } from "./kpi.service";
@@ -49,6 +50,14 @@ export class DashboardController {
   }
 
   /** Dismissing hides the card for every Owner in the organisation, so only Owners can do it (US-ONB-12). */
+  /** US-DASH-20 — retention held, by job (1150 Retention Receivable). */
+  @Get("retention")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_receivables")
+  async getRetention(@Session() session: UserSession) {
+    return this.dashboardService.retentionHeld(requireOrgId(session));
+  }
+
   @Post("checklist/dismiss")
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)

@@ -67,3 +67,10 @@ export interface MoneyInOutReport {
   /** False until the first payment, bill payment or expense touches cash. */
   hasActivity: boolean;
 }
+
+/** US-DASH-20 — `GET /dashboard/retention`: the balance of 1150 Retention Receivable and the three jobs holding the most. Minor units as strings. */
+export interface RetentionHeld {
+  total: string;
+  jobCount: number;
+  jobs: { id: string; number: string | null; name: string; held: string }[];
+}

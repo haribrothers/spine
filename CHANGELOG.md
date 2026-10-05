@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-20: see retention held and job billing on the dashboard (Phase 7)
+
+- **Retention held** (Owner, or Staff with "View receivables"): the total in 1150 Retention Receivable, "on <n> jobs · in Retention Receivable until released", and the three jobs holding the most. Each has its amount and "Release", which opens the job with the release dialog. With nothing held, the card is a single line: "No retention held."
+- **Jobs in progress** (with "View job profitability"): each active job's name, number and contract value, a bar of billed % of contract, and "Budget used" with its state ("No budget", "78%", "Nearing · 92%", "Over · 104%" with an icon). The card links to Job Profitability.
+- **Defaults**: with the Construction template both cards show below "Money in and out" when there's no saved layout. With any other template they start hidden and can be shown from Edit layout. A member without a card's capability never gets the card or an empty slot; the shell now leaves out every widget the member lacks the capability for.
+- **Layout fixes**: a wide card that won't fit its row now widens the card before it instead of leaving a hole. Cards can shrink to their column (Receivables aging overflowed it). `TrendBarChart` (horizontal) draws value labels after the bar, not over it, which Pipeline by stage showed in a narrow column.
+- **API.** New `GET /dashboard/retention` (`reports.view_receivables`), from journal lines. Jobs reads `?release=1`.
+
+Tests:
+- `packages/shared/src/us-dash-20.test.ts` (3): Construction defaults, other templates start hidden, a saved choice wins.
+- `apps/api/src/modules/dashboard/us-dash-20.http.integration.test.ts` (3): nothing held, totals by job with a released job at zero and the top three, capability gating.
+- `apps/e2e/tests/us-dash-20.spec.ts` (1): both cards shown (from Edit layout when not Construction), Release links, billed bars, link to Job Profitability.
+
 ### 2026-10-05 — US-DASH-19: read who did what in the activity feed (Phase 7)
 
 - **Who did it**: each row starts with an avatar (initials, soft category colour) and the actor's name in bold. Members' rows read "Alex Morgan recorded a payment of **$5,000.00** from Maple Ridge Developments", "Marcus Webb completed Mobilisation & site setup on Marina office fit-out", "Sarah Mendes submitted an expense · Travel · **$85.00**". Customer actions name the customer: "Harborview Construction Co. viewed QUO-0004", "Sunstone Retail Fitouts accepted QUO-0002 · **$14,250.00**".

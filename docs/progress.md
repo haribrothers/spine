@@ -318,7 +318,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-DASH-17 · Get a staff dashboard of only what I can act on
 - [x] US-DASH-18 · Get a field dashboard of my day
 - [x] US-DASH-19 · Read who did what in the activity feed
-- [ ] US-DASH-20 · See retention held and job billing on the dashboard
+- [x] US-DASH-20 · See retention held and job billing on the dashboard
 - [x] US-RPT-15 · Compare contract, billed and cost across jobs
 - [ ] US-NTF-13 · Get a daily digest by email
 - [ ] US-NTF-14 · Choose when my digest arrives

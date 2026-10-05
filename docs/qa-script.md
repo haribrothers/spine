@@ -2735,6 +2735,17 @@ Regression: Owner and Staff dashboards don't show the Field cards. Expenses open
 
 Regression: Payments and Expenses opened from the sidebar have no drawer open.
 
+## 91. Retention held and jobs in progress (US-DASH-20, Phase 7)
+
+1. In an organisation on the Construction template, with no saved dashboard layout, "Retention held" and "Jobs in progress" show below "Money in and out".
+2. Issue a progress invoice on a job with retention: "Retention held" shows the total, "on 1 job · in Retention Receivable until released", and the job with its amount. "Release" opens the job with the Release retention dialog. Release it: the card reads "No retention held." on one line.
+3. "Jobs in progress" lists active jobs with name, number, contract value, a billed bar and "<n>% billed", and Budget used ("No budget", a percentage, "Nearing · …", or "Over · …" in red with an icon). "Job profitability" opens Reports on that tab.
+4. Switch to a General services organisation (or a new one) with no saved layout: both cards are hidden. Edit layout shows them dimmed, and "Show widget" brings them back.
+5. As Staff without "View receivables" there's no Retention card and no empty slot. Without "View job profitability" there's no Jobs in progress card.
+6. At 1440px and at tablet width, no card leaves a gap in its row or overflows its column. Pipeline by stage shows values after the bars. Check dark mode.
+
+Regression: Pipeline by stage, Receivables aging and Job profitability look as before.
+
 ## Known gaps — don't file these as bugs
 
 - Owners' "View all" on the dashboard feed opens the full Activity page, not the audit log; it moves to the audit log with US-SET-11 (Phase 7 step 7).

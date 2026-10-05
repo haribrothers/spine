@@ -6,6 +6,8 @@ import { JobProfitabilityRanked } from "./widgets/job-profitability-ranked";
 import { InvoicesDue } from "./widgets/invoices-due";
 import { ActivityFeed } from "./widgets/activity-feed";
 import { MyJobs } from "./widgets/my-jobs";
+import { RetentionHeldCard } from "./widgets/retention-held";
+import { JobsInProgress } from "./widgets/jobs-in-progress";
 import { MyExpenses } from "./widgets/my-expenses";
 
 /** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
@@ -26,6 +28,8 @@ function MyActivity() {
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   "money-in-out": "Money in and out",
   "pipeline-by-stage": "Pipeline by stage",
+  "retention-held": "Retention held",
+  "jobs-in-progress": "Jobs in progress",
   "ar-aging": "Receivables aging",
   "job-profitability": "Job profitability",
   "invoices-due": "Invoices due this week",
@@ -38,6 +42,8 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
   "money-in-out": MoneyInOutChart,
   "pipeline-by-stage": PipelineByStageChart,
+  "retention-held": RetentionHeldCard,
+  "jobs-in-progress": JobsInProgress,
   "ar-aging": ArAgingDonut,
   "job-profitability": JobProfitabilityRanked,
   "invoices-due": InvoicesDue,

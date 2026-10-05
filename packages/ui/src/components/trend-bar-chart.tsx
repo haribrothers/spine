@@ -58,7 +58,7 @@ export function TrendBarChart({ data, orientation = "vertical", color = "var(--c
   if (orientation === "horizontal") {
     return (
       <ChartContainer config={config} className={cn("h-40", className)}>
-        <RechartsPrimitive.BarChart data={data} layout="vertical" margin={{ left: 4, right: 48 }}>
+        <RechartsPrimitive.BarChart data={data} layout="vertical" margin={{ left: 4, right: 104 }}>
           <RechartsPrimitive.CartesianGrid horizontal={false} />
           <RechartsPrimitive.XAxis type="number" hide />
           <RechartsPrimitive.YAxis dataKey="label" type="category" tickLine={false} axisLine={false} width={76} />
@@ -67,10 +67,11 @@ export function TrendBarChart({ data, orientation = "vertical", color = "var(--c
             <RechartsPrimitive.LabelList
               dataKey="formattedValue"
               position="right"
-              content={(props: { x?: string | number; y?: string | number; height?: string | number; index?: number }) => {
+              content={(props: { x?: string | number; y?: string | number; width?: string | number; height?: string | number; index?: number }) => {
                 const point = props.index !== undefined ? data[props.index] : undefined;
                 if (!point || props.x === undefined || props.y === undefined || props.height === undefined) return null;
-                const x = Number(props.x);
+                // After the bar's end, never over it.
+                const x = Number(props.x) + Number(props.width ?? 0);
                 const y = Number(props.y);
                 const height = Number(props.height);
                 return (

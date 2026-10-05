@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -88,6 +88,8 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
   const [isConstruction, setIsConstruction] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  // US-DASH-20: the dashboard's "Release" opens ?release=1 — the dialog, once the job shows it can be released.
+  const wantsRelease = searchParams.get("release") === "1";
   const { show: showToast, toast } = useEntityToast();
 
   const load = useCallback(() => {
@@ -117,6 +119,13 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
 
   const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
   const canReleaseRetention = useCapability("jobs.release_retention");
+  const releaseAsked = useRef(false);
+  useEffect(() => {
+    if (wantsRelease && !releaseAsked.current && job && canReleaseRetention && (job.retentionPct ?? 0) > 0) {
+      releaseAsked.current = true;
+      setReleaseOpen(true);
+    }
+  }, [wantsRelease, job, canReleaseRetention]);
   // US-JOB-19: job costing is financial reporting; Field never has this grant.
   const canViewCosting = useCapability("reports.view_job_profitability");
 
