@@ -2433,6 +2433,17 @@ Regression: Revise still creates the next version; the quote's History is still 
 
 Regression: Catalogue › Items works as before (filters, drawer, archive); the quote's other More ▾ actions still work.
 
+## 62. Add a bundle while building (US-QUO-26, Phase 7)
+
+1. Save a quote's lines as a bundle (§61). On a new quote, type part of its name in a line's Item field: "BUNDLES" comes first, with the bundle's total and "Adds <n> lines: …", then "ITEMS".
+2. Choose the bundle: its lines replace that line, in order, with the bundle's prices and tax. Each line can be edited, moved or removed like any other.
+3. Archive a catalogue item one of the bundle's lines came from, then add the bundle again: that line is still added (as a one-off line).
+4. On a new invoice, the same picker offers the bundle.
+5. On a new vendor bill, there are no bundles (items only, as before).
+6. A bundle saved from a quote in another currency isn't offered.
+
+Regression: picking a single catalogue item still fills one line; "Use … as a one-off line" (§59) still works; invoice totals match their lines.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

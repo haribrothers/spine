@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-QUO-26: add a bundle while building a quote (Phase 7)
+
+- **Picker.** `LineItemPicker` lists matching bundles under "BUNDLES" (name, total, "Adds <n> lines: …") above "ITEMS". Choosing one replaces the line it was picked on with the bundle's lines, in order, with the bundle's prices and tax; each is an ordinary editable line. A line whose catalogue item has been archived is added without the item link (a one-off line). Only bundles in the document's currency are offered (`GET /catalog-bundles?currency=`).
+- **Invoices** now use the same picker (with bundles; "Also save to catalogue" stays a quote feature), replacing the name box and "Prefill from catalogue…" dropdown. Vendor bills keep their items-only prefill.
+- Shared helpers in `apps/web/src/lib/bundles.ts` (`useBundles`, `bundleLines`). No API change beyond US-QUO-25.
+
+Tests:
+- `apps/e2e/tests/us-quo-26.spec.ts` (2): on a quote the bundle comes first with its summary, adds its lines in order with the bundle's prices, lines stay editable, and an archived item's line is saved without its item link; invoices offer the bundle; vendor bills show no bundles.
+
 ### 2026-10-05 — US-QUO-25: save quote lines as a reusable bundle (Phase 7)
 
 - **Data.** `catalog_bundles` (name, description, currency, saved total, creator, archived) and `catalog_bundle_lines` (a snapshot of each quote line: type, item link, name, quantity, price, discount, tax) — migration `0065`.

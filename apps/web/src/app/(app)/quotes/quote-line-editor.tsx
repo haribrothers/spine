@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
-import { LineItemPicker } from "../../../components/line-item-picker";
+import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
+import { bundleLines, useBundles } from "../../../lib/bundles";
 import { useCapability } from "../../../lib/capabilities-context";
 import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
@@ -135,6 +136,8 @@ export function QuoteLineEditor({
   }, []);
 
   const canSaveToCatalogue = useCapability("catalog.edit_own");
+  // US-QUO-26: bundles in this quote's currency, offered above the items.
+  const { bundles, pickerBundles } = useBundles(currency);
 
   const taxOptions = useMemo(
     () => [
@@ -168,6 +171,15 @@ export function QuoteLineEditor({
 
   function addLine(type: QuoteLineType) {
     onChange([...lines, blankLine(type)]);
+  }
+
+  /** Replaces the line the bundle was picked on with the bundle's lines, in order. */
+  function insertBundle(index: number, bundleId: string) {
+    const bundle = bundles.find((b) => b.id === bundleId);
+    if (!bundle) return;
+    const activeIds = new Set(catalogItems.filter((i) => !i.archivedAt).map((i) => i.id));
+    const added = bundleLines(bundle, activeIds).map((fields) => ({ ...blankLine(fields.type), ...fields }));
+    onChange([...lines.slice(0, index), ...added, ...lines.slice(index + 1)]);
   }
 
   function applyCatalogItem(index: number, catalogItemId: string) {
@@ -218,6 +230,8 @@ export function QuoteLineEditor({
                     line={line}
                     currency={currency}
                     catalogItems={catalogItems}
+                    bundles={pickerBundles}
+                    onPickBundle={(id) => insertBundle(index, id)}
                     canSaveToCatalogue={canSaveToCatalogue}
                     taxOptions={taxOptions}
                     taxRates={taxRates}
@@ -262,6 +276,8 @@ function ItemLineFields({
   line,
   currency,
   catalogItems,
+  bundles,
+  onPickBundle,
   canSaveToCatalogue,
   taxOptions,
   taxRates,
@@ -272,6 +288,8 @@ function ItemLineFields({
   line: EditableQuoteLine;
   currency: string;
   catalogItems: CatalogItemOption[];
+  bundles: PickerBundle[];
+  onPickBundle: (id: string) => void;
   canSaveToCatalogue: boolean;
   taxOptions: { value: string; label: string }[];
   taxRates: TaxRateOption[];
@@ -298,6 +316,8 @@ function ItemLineFields({
         name={line.name}
         onNameChange={(name) => onChange({ name })}
         items={catalogItems}
+        bundles={bundles}
+        onPickBundle={onPickBundle}
         currency={currency}
         canSaveToCatalogue={canSaveToCatalogue}
         saveToCatalogue={!!line.saveToCatalogue}

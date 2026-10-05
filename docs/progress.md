@@ -291,7 +291,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-CAT-06 · Add a new item while building a quote
 - [x] US-QUO-24 · Duplicate a quote as a new draft
 - [x] US-QUO-25 · Save quote lines as a reusable bundle
-- [ ] US-QUO-26 · Add a bundle while building a quote
+- [x] US-QUO-26 · Add a bundle while building a quote
 - [ ] US-JOB-24 · Set a cost budget for a job
 - [ ] US-JOB-25 · See budget spent and get warned before going over
 - [ ] US-JOB-26 · See a job's cost by category
