@@ -9,6 +9,7 @@ import { OrgModule } from "../org/org.module";
 import { TaxModule } from "../tax/tax.module";
 import { InvoicesController } from "./invoices.controller";
 import { InvoicesService } from "./invoices.service";
+import { InvoiceBulkPdfService } from "./invoice-bulk-pdf.service";
 import { InvoiceEmailWorker } from "./invoice-email.worker";
 import { InvoiceRemindersController } from "./invoice-reminders.controller";
 import { InvoiceRemindersService } from "./invoice-reminders.service";
@@ -40,7 +41,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 @Module({
   imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule, NotificationsModule],
   controllers: [InvoicesController, InvoiceRemindersController, RecurringInvoicesController],
-  providers: [InvoicesService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker, RecurringInvoicesService, RecurringInvoiceRunService, RecurringInvoiceRunWorker],
+  providers: [InvoicesService, InvoiceBulkPdfService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker, RecurringInvoicesService, RecurringInvoiceRunService, RecurringInvoiceRunWorker],
   exports: [InvoicesService],
 })
 export class InvoicesModule {}

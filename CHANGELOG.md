@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-24: download several invoice PDFs at once (Phase 7)
+
+- **"Download PDFs"** on the Invoices bulk bar downloads one ZIP, "invoices-<date>.zip", holding each selected invoice's stored PDF (the same bytes as a single download, US-INV-17). Drafts are skipped, and the toast says which. More than 100 selected: "Select 100 or fewer invoices."
+- **API.** `POST /invoices/bulk/pdf { ids }` returns the ZIP. Skipped invoices are listed in the `X-Spine-Skipped` header. ZIPs are built with `fflate` (D-132), PDFs stored as they are. `apiClient.download` fetches a file from a POST.
+
+Tests:
+- `apps/api/src/modules/invoices/us-inv-24.http.integration.test.ts` (3): ZIP name and contents match the stored PDFs, draft skipped and reported, only-drafts refused, the 100 cap.
+- `apps/e2e/tests/us-inv-24.spec.ts` (1): the download's file name and the toast naming the skipped draft.
+
 ### 2026-10-05 — US-INV-23: send reminders for several invoices at once (Phase 7)
 
 - **Select rows** on the Invoices list (a tick box per row). A bar appears: "<n> selected · <amount> outstanding", "Send reminders (<m>)" and "Clear" (`InvoicesBulkSelect`). The count includes only invoices that are issued, have a balance and weren't reminded today. Without `invoices.send_reminder` the button isn't shown.

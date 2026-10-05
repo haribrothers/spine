@@ -2502,6 +2502,14 @@ Regression: "+ New recurring invoice" (§65) still opens an empty dialog after e
 
 Regression: the Invoices table (sorting, search, column picker, row menu) and the one-click "Send reminder" work as before in light and dark mode.
 
+## 69. Bulk PDF download (US-INV-24, Phase 7)
+
+1. On Invoices, tick two issued invoices and a draft, then press "Download PDFs" on the bar. A file "invoices-<today>.zip" downloads. It holds one PDF per issued invoice, named by number and identical to each invoice's own "Download PDF". The toast says "Downloaded 2 PDFs" and that the draft was skipped.
+2. Tick only a draft and press "Download PDFs": "None of these invoices has a PDF yet — drafts are skipped. Issue them first."
+3. More than 100 selected: "Select 100 or fewer invoices." (100 is the limit for every bulk action.)
+
+Regression: the bulk bar's "Send reminders" and "Clear" (§68) still work; single-invoice "Download PDF" serves the same file as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

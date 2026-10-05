@@ -141,10 +141,40 @@ async function upload<T>(path: string, file: File): Promise<T> {
   return (await res.json()) as T;
 }
 
+/**
+ * US-INV-24 — a POST whose answer is a file (a ZIP): returns the bytes and
+ * the response headers. Errors are reported the same way as `request()`.
+ */
+async function download(path: string, body: unknown): Promise<{ blob: Blob; headers: Headers }> {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey() },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let message = `Download failed (${res.status})`;
+    try {
+      const data = await res.json();
+      message = data?.message ?? message;
+    } catch {
+      // response wasn't JSON — keep the generic message
+    }
+    if (res.status === 403) message = FORBIDDEN_MESSAGE;
+    if (res.status === 401) {
+      message = SESSION_EXPIRED_MESSAGE;
+      signalSessionExpired(true);
+    }
+    throw new ApiError(message, res.status, undefined);
+  }
+  return { blob: await res.blob(), headers: res.headers };
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>("GET", path),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
   delete: <T>(path: string) => request<T>("DELETE", path),
   upload: <T>(path: string, file: File) => upload<T>(path, file),
+  download: (path: string, body: unknown) => download(path, body),
 };

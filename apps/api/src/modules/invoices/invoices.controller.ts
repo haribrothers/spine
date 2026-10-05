@@ -7,6 +7,7 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
+import { InvoiceBulkPdfService } from "./invoice-bulk-pdf.service";
 
 /**
  * PRD §2.1/§9 — Invoices use the own/others capability split:
@@ -29,6 +30,7 @@ export class InvoicesController {
   constructor(
     private readonly invoicesService: InvoicesService,
     private readonly issuedPdf: IssuedPdfService,
+    private readonly bulkPdfs: InvoiceBulkPdfService,
   ) {}
 
   @Get()
@@ -110,6 +112,25 @@ export class InvoicesController {
   async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.invoicesService.sendEmail(orgId, id, session.user.id);
+  }
+
+  /**
+   * US-INV-24 (D-097) — up to 100 invoices' stored PDFs as one ZIP. A read,
+   * like `GET /invoices/:id/pdf`, so no capability beyond Owner/Staff and
+   * no Idempotency-Key replay (it changes nothing). Drafts are skipped; the
+   * skipped list rides in the `X-Spine-Skipped` header (URI-encoded JSON).
+   */
+  @Post("bulk/pdf")
+  async bulkPdf(@Session() session: UserSession, @Body() body: unknown, @Res() res: Response) {
+    const parsed = bulkInvoiceIdsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Select 100 or fewer invoices.");
+    const { zip, filename, result } = await this.bulkPdfs.build(requireOrgId(session), parsed.data.ids);
+    res.status(200);
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("X-Spine-Skipped", encodeURIComponent(JSON.stringify(result.skipped)));
+    res.setHeader("Access-Control-Expose-Headers", "Content-Disposition, X-Spine-Skipped");
+    res.send(zip);
   }
 
   /** US-INV-23 (D-097) — reminders for up to 100 invoices; reports each skipped one with the reason. */

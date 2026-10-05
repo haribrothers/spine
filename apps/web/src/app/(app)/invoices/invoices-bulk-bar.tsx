@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button, Spinner } from "@spine/ui";
-import type { BulkResult } from "@spine/shared";
+import { BULK_MAX, type BulkResult } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
@@ -22,7 +22,8 @@ export function describeSkipped(skipped: BulkResult["skipped"]): string {
  * US-INV-23/24 (D-097) — the bar over the Invoices list while rows are
  * ticked (`InvoicesBulkSelect`): "<n> selected · <amount> outstanding",
  * "Send reminders (<m>)" counting only eligible invoices (hidden without
- * `invoices.send_reminder`), and "Clear".
+ * `invoices.send_reminder`), "Download PDFs" (a ZIP of the stored PDFs,
+ * drafts skipped) and "Clear".
  */
 export function InvoicesBulkBar({
   selected,
@@ -39,6 +40,36 @@ export function InvoicesBulkBar({
   const eligible = selected.filter(canBulkRemind);
   const currency = selected[0]?.currency ?? "USD";
   const outstanding = selected.filter((i) => i.status === "issued").reduce((sum, i) => sum + BigInt(i.balanceDue), 0n);
+
+  async function downloadPdfs() {
+    if (selected.length > BULK_MAX) {
+      onFinished("Too many invoices", `Select ${BULK_MAX} or fewer invoices.`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const { blob, headers } = await apiClient.download("/invoices/bulk/pdf", { ids: selected.map((i) => i.id) });
+      const filename = /filename="([^"]+)"/.exec(headers.get("Content-Disposition") ?? "")?.[1] ?? "invoices.zip";
+      let skipped: BulkResult["skipped"] = [];
+      try {
+        skipped = JSON.parse(decodeURIComponent(headers.get("X-Spine-Skipped") ?? "[]"));
+      } catch {
+        // No list to show; the ZIP still downloaded.
+      }
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+      const count = selected.length - skipped.length;
+      onFinished(`Downloaded ${count} ${count === 1 ? "PDF" : "PDFs"}`, skipped.length ? `${filename}. Skipped — ${describeSkipped(skipped)}` : filename);
+    } catch (err) {
+      onFinished("Couldn't download the PDFs", err instanceof Error ? err.message : "Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function sendReminders() {
     setBusy(true);
@@ -65,6 +96,9 @@ export function InvoicesBulkBar({
             {busy ? <Spinner size="sm" /> : `Send reminders (${eligible.length})`}
           </Button>
         )}
+        <Button variant="secondary" onClick={downloadPdfs} disabled={busy}>
+          Download PDFs
+        </Button>
         <Button variant="ghost" onClick={onClear} className="text-inverse-on-surface hover:bg-inverse-on-surface/10">
           Clear
         </Button>
