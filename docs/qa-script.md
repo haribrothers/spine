@@ -2686,6 +2686,19 @@ Regression: Reports and Receivables opened from the sidebar look as before; the 
 
 Regression: Edit layout can still hide, show and reorder the card, and a saved layout that mentioned "Revenue trend" still loads. Reports' own charts are unchanged.
 
+## 87. Today (US-DASH-16, Phase 7)
+
+1. On the dashboard, "Today" sits beside "Needs your attention". If the "Get started" checklist is showing, it sits beside "Money in and out" instead.
+2. Add a follow-up due later today on a contact, assigned to you: it shows "Today", its notes, and "Follow-up · <contact>". Make one overdue from yesterday: it shows "Due <weekday>".
+3. A meeting later today shows its time and "Meeting · <location>". Your next meeting after today shows as "Tomorrow 9:00" or "Wed 10:00".
+4. A pending milestone due within 7 days on a job you can see shows "Due <day>" and "Milestone · <job>". One due in 10 days doesn't show.
+5. Entries are in time order. Clicking one opens the meeting, job or contact.
+6. "Open calendar" opens Meetings in day view on today.
+7. With nothing scheduled, the card reads "Nothing scheduled today."
+8. As a Field user, Today shows only milestones on your assigned jobs and only your own meetings.
+
+Regression: Settings › Upcoming meetings ("Only my meetings" / "Every org meeting") still decides which meetings Staff see in Today. Meetings opened from the sidebar still open in week view. Edit layout still hides, shows and reorders the remaining widgets.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

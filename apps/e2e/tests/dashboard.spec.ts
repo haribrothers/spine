@@ -52,10 +52,9 @@ test.describe("Dashboard v2", () => {
     await expect(main.getByText("Pipeline by stage")).toBeVisible();
     await expect(main.getByText("Receivables aging")).toBeVisible();
     await expect(main.getByText("Job profitability")).toBeVisible();
-    await expect(main.getByText("My overdue follow-ups")).toBeVisible();
-    await expect(main.getByText("Upcoming meetings")).toBeVisible();
+    // US-DASH-16: one "Today" card replaces the follow-ups, meetings and milestones cards.
+    await expect(main.getByTestId("today-card").getByText("Today", { exact: true })).toBeVisible();
     await expect(main.getByText("Invoices due this week")).toBeVisible();
-    await expect(main.getByText("Job milestones due")).toBeVisible();
     await expect(main.getByText("Recent activity")).toBeVisible();
 
     // Real seeded content within a couple of widgets, not just the
@@ -72,11 +71,9 @@ test.describe("Dashboard v2", () => {
     await logIn(fieldPage, DEMO_FIELD_USER);
     await fieldPage.goto("/dashboard");
 
-    // Field's own composition (visibleKeysForRole): only these 4, no
+    // Field's own composition (visibleKeysForRole): Today and recent activity, no
     // financial widgets, no pinned KPI summary row at all.
-    await expect(fieldPage.getByText("My overdue follow-ups")).toBeVisible({ timeout: 15_000 });
-    await expect(fieldPage.getByText("Upcoming meetings")).toBeVisible();
-    await expect(fieldPage.getByText("Job milestones due")).toBeVisible();
+    await expect(fieldPage.getByTestId("today-card")).toBeVisible({ timeout: 15_000 });
     await expect(fieldPage.getByText("Recent activity")).toBeVisible();
 
     await expect(fieldPage.getByText("Cash position")).toHaveCount(0);

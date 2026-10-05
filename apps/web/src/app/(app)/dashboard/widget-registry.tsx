@@ -3,10 +3,7 @@ import { MoneyInOutChart } from "./widgets/money-in-out-chart";
 import { PipelineByStageChart } from "./widgets/pipeline-by-stage-chart";
 import { ArAgingDonut } from "./widgets/ar-aging-donut";
 import { JobProfitabilityRanked } from "./widgets/job-profitability-ranked";
-import { OverdueFollowups } from "./widgets/overdue-followups";
-import { UpcomingMeetings } from "./widgets/upcoming-meetings";
 import { InvoicesDue } from "./widgets/invoices-due";
-import { MilestonesDue } from "./widgets/milestones-due";
 import { ActivityFeed } from "./widgets/activity-feed";
 
 /**
@@ -24,10 +21,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   "pipeline-by-stage": "Pipeline by stage",
   "ar-aging": "Receivables aging",
   "job-profitability": "Job profitability",
-  "overdue-followups": "My overdue follow-ups",
-  "upcoming-meetings": "Upcoming meetings",
   "invoices-due": "Invoices due this week",
-  "milestones-due": "Job milestones due",
   "activity-feed": "Recent activity",
 };
 
@@ -36,9 +30,6 @@ export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> 
   "pipeline-by-stage": PipelineByStageChart,
   "ar-aging": ArAgingDonut,
   "job-profitability": JobProfitabilityRanked,
-  "overdue-followups": OverdueFollowups,
-  "upcoming-meetings": UpcomingMeetings,
   "invoices-due": InvoicesDue,
-  "milestones-due": MilestonesDue,
   "activity-feed": ActivityFeed,
 };

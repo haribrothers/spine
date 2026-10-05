@@ -1,10 +1,10 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createActivitySchema, updateActivitySchema } from "@spine/shared";
-import { and, asc, desc, eq, isNull, lt } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, isNull, lt, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, leads } from "../../db/schema";
+import { activities, contacts, leads } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
@@ -201,16 +201,28 @@ export class ActivitiesService {
   }
 
   /** S-01.7: activities with `dueAt` in the past and `doneAt` null, scoped to the requesting user. */
-  async overdueForUser(orgId: string, userId: string) {
+  /**
+   * The member's open follow-ups due before now — or, with `includeToday`
+   * (US-DASH-16), due any time before the end of today in organisation
+   * time. Each row carries the contact's name (the lead's contact for a
+   * lead's follow-up) so the dashboard can say who it's about.
+   */
+  async overdueForUser(orgId: string, userId: string, options: { includeToday?: boolean } = {}) {
+    const cutoff = new Date();
+    // The process runs in the organisation's time zone (`TZ`), so local midnight is the org's.
+    if (options.includeToday) cutoff.setHours(24, 0, 0, 0);
+    const leadContacts = this.db.select({ leadId: leads.id, contactId: leads.contactId }).from(leads).as("lead_contacts");
     return this.db
-      .select()
+      .select({ ...getTableColumns(activities), contactName: contacts.name })
       .from(activities)
+      .leftJoin(leadContacts, eq(activities.leadId, leadContacts.leadId))
+      .leftJoin(contacts, eq(contacts.id, sql`coalesce(${activities.contactId}, ${leadContacts.contactId})`))
       .where(
         and(
           eq(activities.orgId, orgId),
           eq(activities.assignedToUserId, userId),
           isNull(activities.doneAt),
-          lt(activities.dueAt, new Date()),
+          lt(activities.dueAt, cutoff),
         ),
       )
       .orderBy(asc(activities.dueAt));

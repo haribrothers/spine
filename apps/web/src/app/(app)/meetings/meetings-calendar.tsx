@@ -259,6 +259,8 @@ export function MeetingsCalendar() {
     // regardless of that root cause: the calendar now only ever renders
     // using a client-computed "now," never a possibly-stale SSR one.
     setDate(new Date());
+    // US-DASH-16: the dashboard's "Open calendar" opens on today's day view.
+    if (new URLSearchParams(window.location.search).get("view") === "day") setView("day");
     setHydrated(true);
   }, []);
 

@@ -32,11 +32,8 @@ export const DASHBOARD_WIDGETS = [
   { key: "pipeline-by-stage", capability: null, ownerOnly: false },
   { key: "ar-aging", capability: "reports.view_receivables" as Capability, ownerOnly: false },
   { key: "job-profitability", capability: "reports.view_job_profitability" as Capability, ownerOnly: false },
-  { key: "overdue-followups", capability: null, ownerOnly: false },
-  { key: "upcoming-meetings", capability: null, ownerOnly: false },
-  { key: "invoices-due", capability: null, ownerOnly: false },
-  { key: "milestones-due", capability: null, ownerOnly: false },
   { key: "activity-feed", capability: null, ownerOnly: false },
+  { key: "invoices-due", capability: null, ownerOnly: false },
 ] as const satisfies readonly { key: string; capability: Capability | null; ownerOnly: boolean }[];
 
 export type DashboardWidgetKey = (typeof DASHBOARD_WIDGETS)[number]["key"];

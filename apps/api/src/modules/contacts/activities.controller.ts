@@ -30,9 +30,9 @@ export class ActivitiesController {
    * registered before `:id` so "overdue" isn't swallowed as a path param.
    */
   @Get("overdue")
-  async overdue(@Session() session: UserSession) {
+  async overdue(@Session() session: UserSession, @Query("includeToday") includeToday?: string) {
     const orgId = requireOrgId(session);
-    return this.activitiesService.overdueForUser(orgId, session.user.id);
+    return this.activitiesService.overdueForUser(orgId, session.user.id, { includeToday: includeToday === "true" });
   }
 
   @Get(":id")

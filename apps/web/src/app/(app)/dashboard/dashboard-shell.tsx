@@ -7,6 +7,7 @@ import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { KpiRow } from "./kpi-row";
 import { SetupChecklist } from "./setup-checklist";
+import { TodayCard } from "./today-card";
 import { LedgerIntegrityAlert } from "./ledger-integrity-alert";
 import { StorageIntegrityAlert } from "./storage-integrity-alert";
 import { WIDGET_COMPONENTS, WIDGET_LABELS } from "./widget-registry";
@@ -30,12 +31,33 @@ function localToday(): string {
  */
 function visibleKeysForRole(role: string | null): DashboardWidgetKey[] {
   if (role === "field") {
-    return ["overdue-followups", "upcoming-meetings", "milestones-due", "activity-feed"];
+    return ["activity-feed"];
   }
   return DASHBOARD_WIDGETS.filter((w) => role === "owner" || !w.ownerOnly).map((w) => w.key);
 }
 
-const FULL_WIDTH_KEYS = new Set<string>(["activity-feed"]);
+/** Widgets two columns wide on a large screen (US-DASH-15); the rest are one. */
+const WIDE_KEYS = new Set<string>(["money-in-out"]);
+/** Widgets that fill whatever is left of their row. */
+const FILL_KEYS = new Set<string>(["activity-feed"]);
+const SPAN_CLASS: Record<number, string> = { 1: "", 2: "lg:col-span-2", 3: "lg:col-span-3" };
+
+/** Each cell's column span in the 3-column grid, walking the cells in order. */
+function columnSpans(keys: string[]): Map<string, number> {
+  const spans = new Map<string, number>();
+  let col = 0;
+  for (const key of keys) {
+    let span = WIDE_KEYS.has(key) ? 2 : 1;
+    if (col + span > 3) col = 0;
+    if (FILL_KEYS.has(key)) span = 3 - col;
+    spans.set(key, span);
+    col = (col + span) % 3;
+  }
+  return spans;
+}
+
+/** The Today card's place in the grid while the setup checklist holds its spot in the top row. */
+const TODAY_CELL = "today";
 
 /**
  * S-09.12/S-09.13 (dashboard v2) — the role-adaptive, per-user-
@@ -70,6 +92,9 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   const [attention, setAttention] = useState<AttentionItem[] | null>(null);
   const [business, setBusiness] = useState<string | null>(null);
   const [now] = useState(() => new Date());
+  // US-DASH-16: Today sits beside "Needs your attention", or — while the
+  // setup checklist takes that row — beside the first widget.
+  const [checklistShown, setChecklistShown] = useState(false);
   const canSendReminder = useCapability("invoices.send_reminder");
   const [reminding, setReminding] = useState(false);
   const { show: showToast, toast } = useEntityToast();
@@ -148,6 +173,10 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
   // Editing shows every widget (dimmed if hidden, so a user can find and
   // re-show one) — the normal view shows only what's actually visible.
   const displayed = editing ? merged : merged.filter((entry) => !entry.hidden);
+  const todayInGrid = role === "owner" && checklistShown;
+  const cells = displayed.map((e) => e.widgetKey);
+  if (todayInGrid) cells.splice(Math.min(1, cells.length), 0, TODAY_CELL);
+  const spans = columnSpans(cells);
 
   const firstName = userName?.trim().split(/\s+/)[0];
   const dateLine = now.toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" });
@@ -177,29 +206,38 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
       {role === "owner" && <LedgerIntegrityAlert />}
       {role === "owner" && <StorageIntegrityAlert />}
 
-      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
+      <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
+        {role === "owner" && <SetupChecklist className="lg:col-span-2" onVisibleChange={setChecklistShown} />}
         {role !== "field" && (
           <AttentionCard
-            className="lg:col-span-2"
+            className={checklistShown ? undefined : "lg:col-span-2"}
             items={attention}
             today={localToday()}
             note={role === "owner" ? "Cleared items disappear automatically" : "Only things you can act on"}
             actionFor={actionFor}
           />
         )}
-        {role === "owner" && <SetupChecklist />}
+        {!todayInGrid && <TodayCard />}
       </div>
       {role !== "field" && <KpiRow />}
 
-      <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-2">
-        {displayed.map((entry) => {
+      <ReorderableList itemIds={displayed.map((e) => e.widgetKey)} onReorder={handleReorder} className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
+        {cells.map((key) => {
+          const spanClass = SPAN_CLASS[spans.get(key) ?? 1] ?? "";
+          if (key === TODAY_CELL) {
+            return (
+              <div key={TODAY_CELL} className={`flex [&>*]:flex-1 ${spanClass}`}>
+                <TodayCard />
+              </div>
+            );
+          }
+          const entry = displayed.find((e) => e.widgetKey === key)!;
           const Widget = WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
           if (!Widget) return null;
-          const fullWidth = FULL_WIDTH_KEYS.has(entry.widgetKey);
 
           if (!editing) {
             return (
-              <div key={entry.widgetKey} className={`flex [&>*]:flex-1 ${fullWidth ? "lg:col-span-2" : ""}`}>
+              <div key={entry.widgetKey} className={`flex [&>*]:flex-1 ${spanClass}`}>
                 <Widget />
               </div>
             );
@@ -209,7 +247,7 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
             <EditableWidgetCard
               key={entry.widgetKey}
               widgetKey={entry.widgetKey}
-              fullWidth={fullWidth}
+              spanClass={spanClass}
               hidden={entry.hidden}
               onToggleHidden={() => toggleHidden(entry.widgetKey)}
             >
@@ -225,13 +263,13 @@ export function DashboardShell({ role, userName }: { role: string | null; userNa
 
 function EditableWidgetCard({
   widgetKey,
-  fullWidth,
+  spanClass,
   hidden,
   onToggleHidden,
   children,
 }: {
   widgetKey: string;
-  fullWidth: boolean;
+  spanClass: string;
   hidden: boolean;
   onToggleHidden: () => void;
   children: React.ReactNode;
@@ -239,7 +277,7 @@ function EditableWidgetCard({
   const { isOver } = useReorderableItemDragState(widgetKey);
 
   return (
-    <ReorderableItem id={widgetKey} className={`flex ${fullWidth ? "lg:col-span-2" : ""}`}>
+    <ReorderableItem id={widgetKey} className={`flex ${spanClass}`}>
       <div className={`relative flex flex-1 flex-col rounded-lg ${isOver ? "ring-2 ring-primary ring-offset-2" : ""}`}>
         <div className={`flex flex-1 flex-col [&>*]:flex-1 ${hidden ? "opacity-40" : ""}`}>{children}</div>
         <div className="absolute right-3 top-3 flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1 shadow-sm">

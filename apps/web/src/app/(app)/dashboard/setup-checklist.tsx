@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, Spinner } from "@spine/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, cn } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 
 interface ChecklistStatus {
@@ -41,7 +41,7 @@ const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed" | "visible
  * write is still in flight (or already succeeded but the fetched
  * `dismissed` hasn't caught up yet) doesn't fire a redundant PUT per visit.
  */
-export function SetupChecklist() {
+export function SetupChecklist({ className, onVisibleChange }: { className?: string; /** US-DASH-16: the dashboard moves Today when the checklist takes its spot. */ onVisibleChange?: (visible: boolean) => void } = {}) {
   const [status, setStatus] = useState<ChecklistStatus | null>(null);
   const [error, setError] = useState(false);
   const autoDismissSent = useRef(false);
@@ -79,33 +79,32 @@ export function SetupChecklist() {
     }
   }
 
-  if (error) return null;
-  if (status && (!status.visible || status.dismissed)) return null;
+  const shown = !error && status !== null && status.visible && !status.dismissed;
+  useEffect(() => {
+    onVisibleChange?.(shown);
+  }, [shown, onVisibleChange]);
+
+  // Nothing until the status is known, so the dashboard doesn't shuffle cards.
+  if (!shown || !status) return null;
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className={cn("w-full", className)}>
       <CardHeader>
         <CardTitle>Get started</CardTitle>
         <CardDescription>A few things to do before your first real transaction.</CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
-        {!status ? (
-          <div className="flex justify-center py-4">
-            <Spinner size="sm" />
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {CHECKLIST_ITEMS.map((item) => {
-              const done = status[item.key];
-              return (
-                <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
-                  <Checkbox checked={done} disabled />
-                  {done ? <span className="text-on-surface-muted line-through">{item.label}</span> : <Link href={item.href}>{item.label}</Link>}
-                </li>
-              );
-            })}
-          </ul>
-        )}
+        <ul className="flex flex-col gap-2">
+          {CHECKLIST_ITEMS.map((item) => {
+            const done = status[item.key];
+            return (
+              <li key={item.key} className="flex items-center gap-2 text-[13px] text-on-surface">
+                <Checkbox checked={done} disabled />
+                {done ? <span className="text-on-surface-muted line-through">{item.label}</span> : <Link href={item.href}>{item.label}</Link>}
+              </li>
+            );
+          })}
+        </ul>
         <Button variant="ghost" size="sm" className="self-start" onClick={handleDismiss}>
           Dismiss
         </Button>

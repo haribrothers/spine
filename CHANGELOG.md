@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-16: see today's schedule beside my tasks (Phase 7)
+
+- **"Today" card**: my meetings today, milestones due within 7 days on jobs I can see, my follow-ups due today or overdue, and my next meeting after today, in time order. Each entry shows a time or "Due <day>", the title, and the kind and record ("Meeting · office", "Milestone · Marina office fit-out", "Follow-up · Harborview Construction Co."). A coloured bar marks the kind, and the kind is also written out. "Open calendar" opens Meetings in day view on today. With nothing scheduled it reads "Nothing scheduled today."
+- **Layout**: the dashboard grid is now three columns. Today sits beside "Needs your attention". While the setup checklist is showing, the checklist and attention share the top row and Today moves beside "Money in and out". Field users see Today above their recent activity.
+- **Replaced**: the separate "My overdue follow-ups", "Upcoming meetings" and "Job milestones due" cards are gone. A saved layout that mentions them still loads. The meetings-scope setting now describes the Today card.
+- **API.** `GET /activities/overdue?includeToday=true` also includes follow-ups due later today. Each row now carries `contactName`, which is the lead's contact for a lead's follow-up.
+
+Tests:
+- `packages/shared/src/us-dash-16.test.ts` (3): merging and time order, labels for each kind, past and future days, the empty list.
+- `apps/api/src/modules/contacts/us-dash-16.http.integration.test.ts` (2): the cutoff with and without `includeToday`; contact names, including a lead's.
+- `apps/e2e/tests/us-dash-16.spec.ts` (1): a follow-up due today, the next meeting after it, "Open calendar".
+- `apps/e2e/tests/dashboard.spec.ts`: Owner and Field checks now look for the Today card.
+
 ### 2026-10-05 — US-DASH-15: see money in and out by month (Phase 7)
 
 - **"Money in and out"** replaces the revenue trend chart on the dashboard. Each month has a bar pair: "Money in (payments received)" and "Money out (bills, expenses)". The range is 3M, 6M or 12M (default 12M).

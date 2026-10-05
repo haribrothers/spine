@@ -26,3 +26,4 @@ export * from "./statements.ts";
 export * from "./industry-template.ts";
 export * from "./attention.ts";
 export * from "./kpis.ts";
+export * from "./today.ts";
