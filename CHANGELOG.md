@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-ONB-13: start a construction business with site cost categories (Phase 7)
+
+- **Construction / Contracting** (onboarding Template step and Settings › Industry template) now says it "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads." Choosing it adds accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits, plus six expense categories: Materials (5000), Subcontractors (5100), Site labour (5200), Plant & equipment hire (5300), Fuel & freight (5400) and Site overheads & permits (5500). It runs in the same transaction as saving the template (D-129).
+- **Never duplicates or removes.** An existing code or category name is kept and listed ("Kept your existing account 5300 · Vehicle Lease"). A second run creates nothing. Switching to another template leaves everything in place. The categories are ordinary ones, so they can be renamed, remapped or archived.
+- **Expenses › Categories** shows a note saying what the template set up (`industry_template_seed`).
+- **Demo data** for a Construction organisation now files its expenses under these categories (fuel → Fuel & freight, site meals → Site overheads & permits, tools → Plant & equipment hire). Other templates keep the old three demo categories.
+
+Tests:
+- `packages/shared/src/us-onb-13.test.ts` (2): what's seeded, the note's wording.
+- `apps/api/src/modules/org/us-onb-13.http.integration.test.ts` (5): accounts and categories created, existing ones kept and reported, idempotent and kept on switching, ordinary categories, unknown template refused.
+- `apps/e2e/tests/us-onb-13.spec.ts` (1): description, save, the categories with their accounts and the note.
+
 ### 2026-10-05 — US-PUR-21: approve several expenses at once (Phase 7)
 
 - **Tick submitted expenses** on the Expenses list. A bar shows "<n> selected · <amount>" with "Approve (<n>)", "Reject…" and "Clear" (`ExpensesBulkSelect`). Without `expenses.approve` there are no tick boxes.

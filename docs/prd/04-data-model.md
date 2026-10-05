@@ -9,7 +9,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums)
 - Ownership: the stable creator column is `created_by_user_id` (`submitted_by_user_id` for expenses, `organizer_user_id` for meetings). It is set once and never reassigned ([D-018](12-decisions.md)). Reassignable people fields (`leads.owner_user_id`, `activities.assigned_to_user_id`) never decide edit rights.
 - Demo data: `is_demo boolean` marks seeded rows so "Delete all demo data" removes exactly them.
 - Soft states over deletes: master data is archived (`archived_at`); financial documents are never deleted once issued — only voided or credited.
-- Settings are key/value rows in `settings` (`org_id`, `key`, `value jsonb`). Keys in use: `business_profile`, `industry_template`, `currency`, `default_tax_rate`, `prices_include_tax`, `discount_approval_threshold`, `quote_conversion_guard`, `dashboard_meetings_scope`, `meeting_reminder_lead_minutes`, plus onboarding/checklist state.
+- Settings are key/value rows in `settings` (`org_id`, `key`, `value jsonb`). Keys in use: `business_profile`, `industry_template`, `currency`, `default_tax_rate`, `prices_include_tax`, `discount_approval_threshold`, `quote_conversion_guard`, `dashboard_meetings_scope`, `meeting_reminder_lead_minutes`, `industry_template_seed` (US-ONB-13: what the Construction template last set up, `{ accounts, categories, kept }`), plus onboarding/checklist state.
 
 ## Invariants (enforced in the database unless noted)
 

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
+import { CONSTRUCTION_TEMPLATE_NOTE } from "@spine/shared";
 
 export type IndustryTemplate = "construction" | "general_services" | "generic";
 
@@ -9,7 +10,8 @@ const TEMPLATES: { value: IndustryTemplate; title: string; description: string }
   {
     value: "construction",
     title: "Construction / Contracting",
-    description: "Pre-enables milestones and retention on jobs, and job-costing defaults suited to site work.",
+    // US-ONB-13: choosing it also seeds the site cost accounts and categories.
+    description: `Pre-enables milestones and retention on jobs, and job-costing defaults suited to site work. ${CONSTRUCTION_TEMPLATE_NOTE}`,
   },
   {
     value: "general_services",

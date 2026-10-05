@@ -3,6 +3,7 @@ import { brandingSchema, businessProfileSchema, invoiceRemindersSchema } from "@
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
+import { IndustryTemplateService } from "./industry-template.service";
 
 /**
  * Org-scoped settings read/write, backing every onboarding-wizard step that
@@ -14,7 +15,10 @@ import { SettingsService } from "./settings.service";
  */
 @Controller("org/settings")
 export class SettingsController {
-  constructor(private readonly settingsService: SettingsService) {}
+  constructor(
+    private readonly settingsService: SettingsService,
+    private readonly industryTemplate: IndustryTemplateService,
+  ) {}
 
   @Get()
   async getAll(@Session() session: UserSession) {
@@ -39,6 +43,8 @@ export class SettingsController {
   @UseInterceptors(IdempotencyInterceptor)
   async setOne(@Session() session: UserSession, @Param("key") key: string, @Body("value") value: unknown) {
     const orgId = requireOrgId(session);
+    // US-ONB-13: Construction sets up its cost accounts and categories in the same transaction.
+    if (key === "industry_template") return this.industryTemplate.set(orgId, session.user.id, value);
     if (key === "business_profile") {
       // US-INV-16: the same rules the Settings form shows.
       const parsed = businessProfileSchema.safeParse(value);

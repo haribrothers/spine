@@ -9,6 +9,7 @@ import { InvoicesService } from "../invoices/invoices.service";
 import { PaymentsService } from "../payments/payments.service";
 import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
+import { IndustryTemplateService } from "../org/industry-template.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxRatesService } from "../tax/tax-rates.service";
 import { TaxGroupsService } from "../tax/tax-groups.service";
@@ -606,6 +607,7 @@ export class DemoDataService {
     private readonly filesService: FilesService,
     private readonly teamsService: TeamsService,
     private readonly leadStagesService: LeadStagesService,
+    private readonly industryTemplate: IndustryTemplateService,
   ) {}
 
   /**
@@ -1599,21 +1601,35 @@ export class DemoDataService {
       .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
     const currencyCode = (currencySetting?.value as { code?: string } | undefined)?.code ?? "USD";
 
-    const [expenseAccountRow] = await this.db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6300"))); // Travel & Vehicle
-    const fuelCategory = await this.expenseCategoriesService.create(orgId, actorUserId, {
-      name: "Fuel & Vehicle",
-      accountId: expenseAccountRow?.id ?? null,
-    });
-    const mealsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Site Meals" });
-    const toolsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Tools & Small Equipment" });
-    const categoryByName = new Map([
-      [fuelCategory.name, fuelCategory.id],
-      [mealsCategory.name, mealsCategory.id],
-      [toolsCategory.name, toolsCategory.id],
-    ]);
+    // US-ONB-13: a Construction organisation's demo expenses use the template's own site cost categories.
+    const template = (await this.settingsService.get<{ template?: string }>(orgId, "industry_template"))?.template;
+    let categoryByName: Map<string, string>;
+    if (template === "construction") {
+      await this.industryTemplate.seedConstruction(this.db, orgId, actorUserId);
+      const rows = await this.db.select({ id: expenseCategories.id, name: expenseCategories.name }).from(expenseCategories).where(eq(expenseCategories.orgId, orgId));
+      const idOf = (name: string) => rows.find((r) => r.name.toLowerCase() === name.toLowerCase())?.id ?? "";
+      categoryByName = new Map([
+        ["Fuel & Vehicle", idOf("Fuel & freight")],
+        ["Site Meals", idOf("Site overheads & permits")],
+        ["Tools & Small Equipment", idOf("Plant & equipment hire")],
+      ]);
+    } else {
+      const [expenseAccountRow] = await this.db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "6300"))); // Travel & Vehicle
+      const fuelCategory = await this.expenseCategoriesService.create(orgId, actorUserId, {
+        name: "Fuel & Vehicle",
+        accountId: expenseAccountRow?.id ?? null,
+      });
+      const mealsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Site Meals" });
+      const toolsCategory = await this.expenseCategoriesService.create(orgId, actorUserId, { name: "Tools & Small Equipment" });
+      categoryByName = new Map([
+        [fuelCategory.name, fuelCategory.id],
+        [mealsCategory.name, mealsCategory.id],
+        [toolsCategory.name, toolsCategory.id],
+      ]);
+    }
 
     let vendorBillsCreated = 0;
     let vendorBillsRecorded = 0;

@@ -285,7 +285,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 7 · Product upgrades
 
-- [ ] US-ONB-13 · Start a construction business with site cost categories
+- [x] US-ONB-13 · Start a construction business with site cost categories
 - [x] US-CRM-19 · Rename, reorder and add pipeline stages
 - [x] US-CRM-20 · Delete a stage and move its leads
 - [x] US-CAT-06 · Add a new item while building a quote

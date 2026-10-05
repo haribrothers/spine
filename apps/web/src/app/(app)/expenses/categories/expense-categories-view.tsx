@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import {
+  Alert,
+  AlertDescription,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -25,6 +27,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { MoreHorizontal, Plus } from "lucide-react";
+import { templateSeedNote, type TemplateSeedResult } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../../lib/capabilities-context";
 import { HistorySection } from "../../../../components/history-section";
@@ -68,6 +71,15 @@ export function ExpenseCategoriesView() {
   const [categories, setCategories] = useState<ExpenseCategory[] | null>(null);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
   const [saved, setSaved] = useState(false);
+  // US-ONB-13 — what the Construction template set up, if it ran.
+  const [seedNote, setSeedNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ value: TemplateSeedResult | null }>("/org/settings/industry_template_seed")
+      .then((res) => setSeedNote(res.value ? templateSeedNote(res.value) : null))
+      .catch(() => {});
+  }, []);
 
   async function reload() {
     const [categoriesRes, accountsRes] = await Promise.all([
@@ -94,6 +106,11 @@ export function ExpenseCategoriesView() {
 
   return (
     <div className="flex flex-col gap-6">
+      {seedNote && (
+        <Alert variant="info">
+          <AlertDescription>{seedNote}</AlertDescription>
+        </Alert>
+      )}
       <CategoriesSection categories={categories} accounts={expenseAccounts} onChanged={reload} onSaved={() => setSaved(true)} />
       <p className="text-[13px] text-on-surface-muted">
         Archived categories disappear from the expense form; old expenses keep them. A category no expense uses can be deleted.

@@ -2543,6 +2543,17 @@ Regression: invoice, quote and receipt PDFs look as before.
 
 Regression: the Expenses list (filters, "My expenses only", row menu, detail drawer approve/reject) works as before in light and dark mode.
 
+## 73. Construction template cost categories (US-ONB-13, Phase 7)
+
+1. In a new organisation, at onboarding's Template step (or Settings › Industry template), "Construction / Contracting" adds "Sets up cost categories for materials, labour, subcontractors, plant hire, fuel and freight, and site overheads."
+2. Choose it and save. Settings › Chart of accounts lists 5300 Plant & Equipment Hire, 5400 Fuel & Freight and 5500 Site Overheads & Permits. Expenses › Categories lists Materials (5000), Subcontractors (5100), Site labour (5200), Plant & equipment hire (5300), Fuel & freight (5400) and Site overheads & permits (5500), under a note saying what the template set up.
+3. Save Construction again: nothing new appears.
+4. In another organisation, first rename account 6300 to code 5300 "Vehicle Lease" and add a category "Materials", then choose Construction. Nothing is duplicated, and the note says "Kept your existing account 5300 · Vehicle Lease. Kept your existing category “Materials”".
+5. Switch to General Services: the categories and accounts stay. Rename or archive one: it behaves like any other category.
+6. Load demo data in a Construction organisation: demo expenses use Fuel & freight, Site overheads & permits and Plant & equipment hire.
+
+Regression: onboarding's Template step and Settings › Industry template save General Services and Generic as before; Expenses › Categories (add, rename, remap, archive) works in light and dark mode.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
