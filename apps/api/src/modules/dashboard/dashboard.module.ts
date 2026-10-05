@@ -5,6 +5,11 @@ import { KpiService } from "./kpi.service";
 import { DashboardService } from "./dashboard.service";
 import { ActivityFeedController } from "./activity-feed.controller";
 import { ActivityFeedService } from "./activity-feed.service";
+import { DigestService } from "./digest.service";
+import { DailyDigestWorker } from "./daily-digest.worker";
+import { ContactsModule } from "../contacts/contacts.module";
+import { JobsModule } from "../jobs/jobs.module";
+import { EmailModule } from "../email/email.module";
 
 /**
  * PRD S-12.9's setup checklist (`DashboardController`/`DashboardService`)
@@ -19,7 +24,9 @@ import { ActivityFeedService } from "./activity-feed.service";
  * than route-gating).
  */
 @Module({
+  imports: [ContactsModule, JobsModule, EmailModule],
   controllers: [DashboardController, ActivityFeedController],
-  providers: [DashboardService, ActivityFeedService, AttentionService, KpiService],
+  // US-NTF-13: the daily digest reuses the attention list and Today's sources.
+  providers: [DashboardService, ActivityFeedService, AttentionService, KpiService, DigestService, DailyDigestWorker],
 })
 export class DashboardModule {}

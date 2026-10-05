@@ -8,6 +8,8 @@ import {
   uniqueIndex,
   jsonb,
   integer,
+  time,
+  date,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -60,6 +62,17 @@ export const user = pgTable("user", {
    * MeetingReminderWorker for the full three-tier resolution order.
    */
   meetingReminderLeadMinutes: integer("meeting_reminder_lead_minutes"),
+  /**
+   * US-NTF-13/14 (D-093) — the daily digest email. `digestEnabled` null
+   * means "the role's default": on for Owners, off for everyone else.
+   * `digestTime` is organisation time; `digestDays` is "weekdays" or
+   * "daily". `digestLastSentOn` (organisation date) makes sure a member
+   * gets at most one digest a day, whatever the worker's timing.
+   */
+  digestEnabled: boolean("digest_enabled"),
+  digestTime: time("digest_time").default("07:00").notNull(),
+  digestDays: text("digest_days").default("weekdays").notNull(),
+  digestLastSentOn: date("digest_last_sent_on", { mode: "string" }),
 });
 
 export const session = pgTable(

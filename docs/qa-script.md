@@ -2746,6 +2746,21 @@ Regression: Payments and Expenses opened from the sidebar have no drawer open.
 
 Regression: Pipeline by stage, Receivables aging and Job profitability look as before.
 
+## 92. Daily digest email (US-NTF-13, Phase 7)
+
+Set up SMTP (or the dev mail catcher). Set "Send at" a few minutes ahead in Profile › Notifications (US-NTF-14), or wait for 7:00 AM on a weekday.
+
+1. As an Owner with an overdue invoice and expenses waiting: within 15 minutes of "Send at", one email arrives. The subject reads "Your Spine day: <n> things need you · <Day d Mon>".
+2. It shows "Good morning, <name>", "Here's what needs you at <business> today.", a table of attention counts (with totals for overdue invoices, expenses and bills), "Today" (meetings later today, milestones due within 7 days), "Yesterday" (money received, quotes accepted, quotes viewed) and "Open dashboard", which opens the dashboard.
+3. The footer reads "You get this daily digest because you're an owner of <business>. Turn it off or change the time in Profile › Notifications."
+4. No second email arrives the same day, even after restarting the API.
+5. In an organisation with nothing open and nothing yesterday, no email arrives.
+6. As Field (digest turned on): the email shows counts only, with no amounts anywhere and no "Yesterday". The footer says "a member of".
+7. On a Saturday, with "Monday to Friday", nothing arrives.
+8. Without SMTP configured, nothing is sent and the API keeps running (one warning in the log).
+
+Regression: other emails (quote, invoice, reminders, notifications) look the same. The dashboard's attention rows are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Owners' "View all" on the dashboard feed opens the full Activity page, not the audit log; it moves to the audit log with US-SET-11 (Phase 7 step 7).

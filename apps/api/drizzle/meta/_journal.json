@@ -512,6 +512,13 @@
       "when": 1791207543855,
       "tag": "0072_expense_labour_lines",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1791218343737,
+      "tag": "0073_user_daily_digest",
+      "breakpoints": true
     }
   ]
 }

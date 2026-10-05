@@ -51,6 +51,8 @@ export interface AttentionItem {
   currency: string;
   /** The first few records, most urgent first; `items[0]` is the one named. */
   items: AttentionRecord[];
+  /** US-NTF-13: the sum of every record's amount (not just the sample), for money kinds — overdue invoices, expenses to approve, bills due. Minor units. */
+  total?: string;
   /** US-DASH-17: the records are the member's own (a Staff user's quotes), so the row says "Your quote …". */
   mine?: boolean;
 }

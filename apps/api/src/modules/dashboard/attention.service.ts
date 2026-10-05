@@ -8,6 +8,9 @@ import { activities, contacts, expenseCategories, expenses, invoices, jobAssignm
 import { orgClock } from "../../common/org-clock";
 import { costByJob } from "../jobs/job-costing.service";
 
+/** Kinds whose rows also carry the total of every record (US-NTF-13's digest shows it). */
+const MONEY_KINDS = new Set<AttentionKind>(["invoices_overdue", "expenses_awaiting_approval", "vendor_bills_due"]);
+
 /** How many records each row carries (the first is the one it names). */
 const SAMPLE = 3;
 
@@ -66,7 +69,8 @@ export class AttentionService {
   }
 
   private item(kind: AttentionKind, count: number, currency: string, items: AttentionRecord[]): AttentionItem {
-    return { kind, count, currency, items: items.slice(0, SAMPLE) };
+    const total = MONEY_KINDS.has(kind) ? items.reduce((sum, r) => sum + BigInt(r.amount ?? "0"), 0n).toString() : undefined;
+    return { kind, count, currency, items: items.slice(0, SAMPLE), ...(total !== undefined ? { total } : {}) };
   }
 
   private async invoicesOverdue(orgId: string, today: string, currency: string): Promise<AttentionItem> {

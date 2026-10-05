@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-NTF-13: get a daily digest by email (Phase 7)
+
+- **One email each morning** at the member's "Send at", on their chosen days. The subject reads "Your Spine day: <n> things need you · Mon 5 Oct". The email opens "Good morning, Alex" and lists:
+  - the dashboard's attention rows as counts, with totals for overdue invoices, expenses to approve and bills due ("1 · $4,542.50");
+  - **Today**: meetings later today and milestones due within 7 days ("Due Sat · Mobilisation & site setup (Marina office fit-out)");
+  - **Yesterday**: "$5,000.00 received · 1 quote accepted ($14,250.00) · 3 quotes viewed".
+
+  It ends with "Open dashboard" and the footer "You get this daily digest because you're an owner of <business>. Turn it off or change the time in Profile › Notifications." ("a member of" for others).
+- **Nothing to report, no email.** It goes out once a day at most, even if the worker runs late or twice. A run more than 3 hours after "Send at" skips the day. Without SMTP the worker logs and skips.
+- **Field users** get counts only, with no money anywhere and no "Yesterday" section (D-048).
+- **Defaults (D-093)**: on for Owners at 7:00 AM Monday to Friday, off for others (US-NTF-14 adds the controls).
+- **Under the hood**: new `daily-digest` queue (every 15 minutes) and `DigestService`. New `user` columns `digest_enabled`, `digest_time`, `digest_days`, `digest_last_sent_on` (migration 0073). Money attention rows carry `total`. The email layout gains titled sections. `GET /meetings/upcoming`'s service takes a start time.
+
+Tests:
+- `packages/shared/src/us-ntf-13.test.ts` (5): due window, weekdays, role defaults, subject and footer, the time format.
+- `apps/api/src/modules/dashboard/us-ntf-13.http.integration.test.ts` (5): not before "Send at"; the Owner's email content; once a day; Field without money; Staff off by default; nothing to report.
+
 ### 2026-10-05 — US-DASH-20: see retention held and job billing on the dashboard (Phase 7)
 
 - **Retention held** (Owner, or Staff with "View receivables"): the total in 1150 Retention Receivable, "on <n> jobs · in Retention Receivable until released", and the three jobs holding the most. Each has its amount and "Release", which opens the job with the release dialog. With nothing held, the card is a single line: "No retention held."

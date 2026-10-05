@@ -41,6 +41,8 @@ export interface EmailContent {
   greeting?: string;
   paragraphs: string[];
   facts?: { label: string; value: string }[];
+  /** Short titled lists under the facts, e.g. the digest's "Today" and "Yesterday" (US-NTF-13). */
+  sections?: { title: string; lines: string[] }[];
   /** A block shown above the button, e.g. payment instructions. Line breaks are kept. */
   callout?: { title: string; body: string };
   button?: { label: string; url: string };
@@ -87,6 +89,13 @@ export function renderEmail(brand: EmailBrand, content: EmailContent): RenderedE
         )
         .join("")}</table>`
     : "";
+  const sections = (content.sections ?? [])
+    .filter((s) => s.lines.length > 0)
+    .map(
+      (s) =>
+        `<p style="margin:0 0 4px;color:${c.text};font-size:15px;font-weight:600;">${escapeHtml(s.title)}</p><p style="margin:0 0 16px;color:${c.text};font-size:15px;line-height:1.6;">${s.lines.map(escapeHtml).join("<br>")}</p>`,
+    )
+    .join("\n");
   const callout = content.callout
     ? `<div style="background:${c.sunken};border:1px solid ${c.border};border-radius:8px;padding:12px 16px;margin:0 0 20px;"><p style="margin:0 0 4px;color:${c.text};font-size:14px;font-weight:600;">${escapeHtml(content.callout.title)}</p><p style="margin:0;color:${c.text};font-size:14px;line-height:1.5;">${multiline(content.callout.body)}</p></div>`
     : "";
@@ -105,7 +114,7 @@ ${content.preheader ? `<div style="display:none;max-height:0;overflow:hidden;">$
 <h1 style="margin:0 0 16px;color:${c.text};font-size:24px;line-height:1.3;">${escapeHtml(content.heading)}</h1>
 ${content.greeting ? `<p style="margin:0 0 4px;color:${c.text};font-size:15px;line-height:1.6;">${escapeHtml(content.greeting)}</p>` : ""}
 ${content.paragraphs.map((p) => `<p style="margin:0 0 16px;color:${c.text};font-size:15px;line-height:1.6;">${multiline(p)}</p>`).join("\n")}
-${facts}${callout}${button}
+${facts}${sections}${callout}${button}
 ${content.note ? `<p style="margin:0 0 20px;color:${c.muted};font-size:13px;line-height:1.5;">${multiline(content.note)}</p>` : ""}
 </td></tr>
 <tr><td style="padding:16px 32px;background:${c.sunken};border-top:1px solid ${c.border};border-radius:0 0 8px 8px;color:${c.muted};font-size:12px;line-height:1.5;">${escapeHtml(brand.footer)}${content.footerNote ? `<br>${escapeHtml(content.footerNote)}` : ""}</td></tr>
@@ -121,6 +130,7 @@ ${content.note ? `<p style="margin:0 0 20px;color:${c.muted};font-size:13px;line
     ...(content.greeting ? [content.greeting] : []),
     ...content.paragraphs.flatMap((p) => [p, ""]),
     ...(content.facts?.length ? [...content.facts.map((f) => `${f.label}: ${f.value}`), ""] : []),
+    ...(content.sections ?? []).filter((s) => s.lines.length > 0).flatMap((s) => [`${s.title}:`, ...s.lines, ""]),
     ...(content.callout ? [`${content.callout.title}:`, content.callout.body, ""] : []),
     ...(content.button ? [`${content.button.label}: ${content.button.url}`, ""] : []),
     ...(content.note ? [content.note, ""] : []),
