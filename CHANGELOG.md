@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-20: set up a recurring invoice (Phase 7)
+
+- **Invoices › Recurring invoices** (`RecurringInvoicesList`): name, customer, repeats ("Monthly · 1st", "Every 3 months · 15th"), next invoice, amount, status and when it runs, with the note on how runs work. "Recurring invoices" on the Invoices page opens it.
+- **"+ New recurring invoice"** (`RecurringInvoiceDialog`): Name, Customer, Repeats (Weekly, Monthly, Every 3 months, Yearly), On (a weekday, the 1st–28th or the last day), Starts, Ends (Never, On a date, After a number of invoices), Payment due, "When it runs" (issue and email, or create a draft for review) and the lines (the invoice line editor, with a one-line summary). A start date in the past is refused: "Pick today or a later start date." A saved schedule is listed "Active" with its first invoice date.
+- **Data.** `recurring_invoices` and `recurring_invoice_lines` (migration `0067`). The schedule maths (`occurrenceOnOrAfter`, `occurrenceAfter`, `scheduleFinished`) lives in `@spine/shared`. Nothing creates invoices yet; that's US-INV-21.
+- **Permission.** New Team-configurable capability `invoices.manage_recurring` ("Manage recurring invoices", granted to General Staff by default; backfilled from `invoices.edit_own`). Without it the link is hidden and every `/recurring-invoices` route returns 403.
+
+Tests:
+- `packages/shared/src/us-inv-20.test.ts` (6): options, day choices, descriptions, run dates, end conditions, form checks.
+- `apps/api/src/modules/invoices/us-inv-20.http.integration.test.ts` (5): Active with next date and amount, past start refused, needs a line / ends too early, Staff with the grant, 403 without.
+- `apps/e2e/tests/us-inv-20.spec.ts` (2): the dialog's fields, past start error, saved row; link hidden and 403 without the grant.
+
 ### 2026-10-05 — US-INV-19: send reminders on schedule without double-sending (Phase 7)
 
 - **Daily run.** The `invoice-reminder-run` queue fires every 15 minutes. For each organisation with automatic reminders on, once organisation time (the server's `TZ`) passes "Send at", it runs the day once: every issued invoice with a balance whose due date is a scheduled number of days away gets one reminder email ("Reminder: invoice INV-… is 7 days overdue" / "is due today" / "is due in 3 days"). If the server was off at send time, the day runs once when it comes back. Missed days aren't caught up.

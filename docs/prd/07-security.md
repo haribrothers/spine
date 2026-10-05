@@ -61,7 +61,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | Quotes | `quotes.edit_own`, `quotes.edit_others`, `quotes.delete_own`, `quotes.delete_others`, `quotes.send`, `quotes.revise` | ✓ | — |
 | | `quotes.approve_discount` | ✗ | — |
 | | `quotes.accept_in_person` | ✓ | ✓F |
-| Invoices | `invoices.edit_own`, `invoices.edit_others`, `invoices.delete_own`, `invoices.delete_others`, `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder` | ✓ | — |
+| Invoices | `invoices.edit_own`, `invoices.edit_others`, `invoices.delete_own`, `invoices.delete_others`, `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder`, `invoices.manage_recurring` | ✓ | — |
 | Payments | `payments.edit_own` (create), `payments.edit_others` (reserved), `payments.delete_own`, `payments.delete_others`, `payments.apply_credit`, `payments.send_receipt` | ✓ | — |
 | Credit notes | `credit_notes.edit_own`, `credit_notes.edit_others`, `credit_notes.delete_own`, `credit_notes.delete_others`, `credit_notes.issue` | ✓ | — |
 | Expenses | `expenses.edit_own`, `expenses.delete_own` | ✓ | ✓F (own only) |
@@ -137,7 +137,7 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 
 ## Added with the Phase 7 feature round (D-087–D-097)
 
-- New Team-configurable capability `invoices.manage_recurring` (group "Manage Invoices"; General Staff default: granted). Gates every `/recurring-invoices` route. Add it to `CAPABILITIES`, `CAPABILITY_LABELS` and `DEFAULT_TEAM_GRANTS` with a backfill migration, like the other capabilities.
+- New Team-configurable capability `invoices.manage_recurring` (group "Manage Invoices"; General Staff default: granted). Gates every `/recurring-invoices` route, reads included, and the "Recurring invoices" link on Invoices. In `CAPABILITIES`, `CAPABILITY_LABELS` ("Manage recurring invoices") and `DEFAULT_TEAM_GRANTS`; migration `0067` backfills it onto every Team with the same grant as its `invoices.edit_own` (US-INV-20).
 - Data export is Owner-only, never Team-configurable (it copies everything). Export links are authorised per request and expire after 7 days; secrets are never exported.
 - Global search returns only records the caller could open on their module's own pages; Field results are limited to assigned jobs, their own expenses and contacts.
 - Bulk endpoints run each item through the same capability and ownership checks as the single-item route.

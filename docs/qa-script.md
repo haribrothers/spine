@@ -2464,6 +2464,15 @@ Regression: the manual "Send reminder" on an overdue invoice still sends, now wi
 
 Regression: the contact page header (name, badges, email, tax ID, Edit/Archive/Delete) looks and works as before in light and dark mode; manual "Send reminder" still sends; Settings › Automatic reminders (§63) saves and previews as before.
 
+## 65. Recurring invoices: set up (US-INV-20, Phase 7)
+
+1. As an Owner, Invoices › "Recurring invoices": the list (empty to begin with) and the note "Runs happen at 6:00 AM organisation time…".
+2. "+ New recurring invoice": Name, Customer, Repeats (Weekly, Monthly, Every 3 months, Yearly), On (Monday–Sunday for weekly, otherwise "1st of the month" … "28th of the month" and "Last day of the month"), Starts, Ends (Never, On a date, After a number of invoices), Payment due, "When it runs" (issue and email is selected) and the lines.
+3. Pick a start date last month and press "Save schedule": "Pick today or a later start date." Pick today and save: the row shows "Active", "Monthly · 1st", the next 1st as "Next invoice", the lines' total and "Issue and email". A schedule ending before its first invoice is refused.
+4. As Staff, with "Manage recurring invoices" turned off on your Team (Teams page), Invoices has no "Recurring invoices" button and `GET /recurring-invoices` returns 403. Turned on, you can set one up. Field users never see it.
+
+Regression: Invoices list toolbar (filters, "New invoice") looks and works as before in light and dark mode; the invoice line editor on New invoice works as before; the Teams page lists "Manage recurring invoices" under Manage Invoices.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

@@ -50,6 +50,7 @@ export const CAPABILITIES = [
   "invoices.void",
   "invoices.send",
   "invoices.send_reminder",
+  "invoices.manage_recurring",
   "payments.edit_own",
   "payments.edit_others",
   "payments.delete_own",
@@ -316,6 +317,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   "invoices.send_reminder": {
     label: "Send a payment reminder",
     description: "Send a one-click payment reminder email for an overdue invoice.",
+    group: "Manage Invoices",
+  },
+  "invoices.manage_recurring": {
+    label: "Manage recurring invoices",
+    description: "See, set up, change, pause and delete recurring invoices — schedules that create and can issue invoices automatically.",
     group: "Manage Invoices",
   },
   "payments.edit_own": {
@@ -626,6 +632,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "invoices.void": true,
   "invoices.send": true,
   "invoices.send_reminder": true,
+  "invoices.manage_recurring": true,
   "payments.edit_own": true,
   "payments.edit_others": true,
   "payments.delete_own": true,

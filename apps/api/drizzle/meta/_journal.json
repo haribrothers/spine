@@ -470,6 +470,13 @@
       "when": 1791192759526,
       "tag": "0066_invoice_reminders",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1791193793321,
+      "tag": "0067_recurring_invoices",
+      "breakpoints": true
     }
   ]
 }

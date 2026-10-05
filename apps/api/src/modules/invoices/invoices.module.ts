@@ -13,6 +13,8 @@ import { InvoiceEmailWorker } from "./invoice-email.worker";
 import { InvoiceRemindersController } from "./invoice-reminders.controller";
 import { InvoiceRemindersService } from "./invoice-reminders.service";
 import { InvoiceReminderRunWorker } from "./invoice-reminder-run.worker";
+import { RecurringInvoicesController } from "./recurring-invoices.controller";
+import { RecurringInvoicesService } from "./recurring-invoices.service";
 
 /**
  * PRD F5 Stage 1 (Phase 2 · Money In) — invoice CRUD, issue with ledger
@@ -34,8 +36,8 @@ import { InvoiceReminderRunWorker } from "./invoice-reminder-run.worker";
  */
 @Module({
   imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule],
-  controllers: [InvoicesController, InvoiceRemindersController],
-  providers: [InvoicesService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker],
+  controllers: [InvoicesController, InvoiceRemindersController, RecurringInvoicesController],
+  providers: [InvoicesService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker, RecurringInvoicesService],
   exports: [InvoicesService],
 })
 export class InvoicesModule {}

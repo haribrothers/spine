@@ -32,6 +32,7 @@ const ALL_CONTACTS = "__all__";
  */
 export function InvoicesExplorer() {
   const canCreate = useCapability("invoices.edit_own");
+  const canManageRecurring = useCapability("invoices.manage_recurring");
   const [invoices, setInvoices] = useState<Invoice[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -122,11 +123,19 @@ export function InvoicesExplorer() {
             className="w-48"
           />
         </div>
-        {canCreate && (
-          <Button asChild>
-            <Link href="/invoices/new">New invoice</Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* US-INV-20 — hidden without invoices.manage_recurring, which every /recurring-invoices route also checks. */}
+          {canManageRecurring && (
+            <Button asChild variant="secondary">
+              <Link href="/invoices/recurring">Recurring invoices</Link>
+            </Button>
+          )}
+          {canCreate && (
+            <Button asChild>
+              <Link href="/invoices/new">New invoice</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {!filteredInvoices ? (

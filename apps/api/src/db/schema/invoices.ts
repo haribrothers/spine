@@ -228,3 +228,70 @@ export const invoiceReminders = pgTable(
   (table) => [uniqueIndex("invoice_reminders_invoice_day_uidx").on(table.invoiceId, table.sentOn), index("invoice_reminders_org_idx").on(table.orgId)],
 );
 
+
+export const recurringFrequencyEnum = pgEnum("recurring_frequency", ["weekly", "monthly", "quarterly", "yearly"]);
+export const recurringModeEnum = pgEnum("recurring_mode", ["issue_and_email", "draft"]);
+export const recurringStatusEnum = pgEnum("recurring_status", ["active", "paused", "finished"]);
+
+/**
+ * US-INV-20–22 (D-092) — a recurring invoice: a schedule and template
+ * lines that the 6:00 AM run (US-INV-21) turns into an invoice on each
+ * `next_run_on`. `day_rule` is an ISO weekday "1"–"7" for weekly schedules,
+ * otherwise a day of the month "1"–"28" or "last"; monthly, every-3-months
+ * and yearly schedules count months from `starts_on`. `next_run_on` is
+ * null while paused or finished. `total_amount` is the lines' total when
+ * last saved, for the list; each run recomputes from the lines.
+ */
+export const recurringInvoices = pgTable(
+  "recurring_invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    currency: text("currency").notNull(),
+    frequency: recurringFrequencyEnum("frequency").notNull(),
+    dayRule: text("day_rule").notNull(),
+    startsOn: date("starts_on", { mode: "string" }).notNull(),
+    endsOn: date("ends_on", { mode: "string" }),
+    maxCount: integer("max_count"),
+    createdCount: integer("created_count").notNull().default(0),
+    dueDays: integer("due_days").notNull().default(14),
+    mode: recurringModeEnum("mode").notNull(),
+    status: recurringStatusEnum("status").notNull().default("active"),
+    nextRunOn: date("next_run_on", { mode: "string" }),
+    totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("recurring_invoices_org_idx").on(table.orgId), index("recurring_invoices_next_run_idx").on(table.status, table.nextRunOn)],
+);
+
+/** A template line, the same shape as a catalogue bundle line; prices and tax are recomputed on each run. */
+export const recurringInvoiceLines = pgTable(
+  "recurring_invoice_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recurringInvoiceId: uuid("recurring_invoice_id")
+      .notNull()
+      .references(() => recurringInvoices.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    type: invoiceLineTypeEnum("type").notNull().default("item"),
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
+  },
+  (table) => [index("recurring_invoice_lines_schedule_idx").on(table.recurringInvoiceId, table.sortOrder)],
+);

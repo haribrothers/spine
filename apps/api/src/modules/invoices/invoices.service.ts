@@ -83,7 +83,7 @@ function withoutTaxIfAdvance<T extends InvoiceLineTotalInput>(lines: readonly T[
   return lines.map((line) => ({ ...line, taxRatePercentage: 0, taxRateId: null, taxGroupId: null, isTaxInclusive: false }));
 }
 
-async function computeInvoiceTotals(
+export async function computeInvoiceTotals(
   orgId: string,
   currency: string,
   lines: readonly InvoiceLineTotalInput[],

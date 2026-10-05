@@ -30,7 +30,8 @@ export type AuditEntityType =
   | "vendor_bill_line"
   | "expense_category"
   | "expense"
-  | "vendor_payment";
+  | "vendor_payment"
+  | "recurring_invoice";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see
