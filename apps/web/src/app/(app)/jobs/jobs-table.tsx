@@ -67,8 +67,15 @@ export function JobsTable({ jobs }: { jobs: Job[] }) {
       },
     );
   }
-  // US-JOB-25: only present for members with reports.view_job_profitability.
+  // US-JOB-25/27: only present for members with reports.view_job_profitability.
   if (jobs.some((job) => job.budgetState !== undefined)) {
+    columns.push({
+      key: "billed",
+      header: "Billed",
+      align: "right",
+      render: (row) => <span className="tabular-nums">{row.billedPct === null || row.billedPct === undefined ? "—" : `${row.billedPct}%`}</span>,
+      sortValue: (row) => row.billedPct ?? -1,
+    });
     columns.push({
       key: "budgetUsed",
       header: "Budget used",

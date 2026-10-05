@@ -2584,6 +2584,16 @@ Regression: the Costing tab's contract value, revenue, cost and margin match bef
 
 Regression: Reports › account drill-down (from the trial balance, P&L, balance sheet) still lists every line for the account; the dashboard's receivables donut still shows its legend.
 
+## 77. Job billed to date (US-JOB-27, Phase 7)
+
+1. On a job with a contract value, issue two progress invoices for it. "Costing" › Billing shows "Contract value", "Billed to date" (their totals, tax included, before retention) with "N% of contract", "Left to bill", and the Billed bar.
+2. Issue a credit note against one of them: "Billed to date" drops by the credit note's total.
+3. An advance invoice or a retention release on the job doesn't change "Billed to date".
+4. Bill past the contract value: "Left to bill" reads "Billed over contract by <amount>" in red.
+5. Jobs list: "Billed" shows each job's percentage (job-profitability viewers only).
+
+Regression: credit notes still post and appear on the invoice; a job's revenue on "Costing" drops by a credit note issued against one of its invoices.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

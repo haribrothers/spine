@@ -34,7 +34,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | 1010 Bank | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
 | P6 | Sitting credit applied to an invoice | `payment_credit_applied` | 2200 Customer Advances | 1100 AR |
 | P7 | Unallocated payment deleted | `payment_delete` | Reverses P4/P5 | |
-| P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (total) |
+| P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (total) — every line tagged with the invoice's `job_id` when it has one (US-JOB-27), so job revenue and billed to date drop by the credit |
 | P9 | Invoice voided (with reason) | `invoice_void` | Reverses P1/P2 exactly | |
 | P10 | Retention released (raises a `retention_release` invoice) | `invoice` | 1100 AR | 1150 Retention Receivable |
 | P11 | Vendor bill recorded | `vendor_bill` | Expense/COGS per line account, 1200 Input Tax | 2000 AP (total) |

@@ -1,10 +1,11 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { budgetFigures, wholePercent, type BudgetFigures, type BudgetState } from "@spine/shared";
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { billingFigures, budgetFigures, wholePercent, type BillingFigures, type BudgetFigures, type BudgetState } from "@spine/shared";
+import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, journalLines, accounts } from "../../db/schema";
+import { creditNotes, invoices, jobs, journalEntries, journalLines, accounts } from "../../db/schema";
 
 export interface JobCostingReport {
   jobId: string;
@@ -18,12 +19,16 @@ export interface JobCostingReport {
   budget: BudgetFigures;
   /** US-JOB-26 — the cost split by the expense account it posted to, largest first; amounts add up to `cost` exactly. */
   byCategory: { accountId: string; code: string; name: string; amount: string; sharePct: number }[];
+  /** US-JOB-27 — billed to date against the contract value. */
+  billing: BillingFigures;
 }
 
 /** US-JOB-25 — what the Jobs list adds per job for members who may see job profitability. */
 export interface JobCostingSummary {
   budgetUsedPct: number | null;
   budgetState: BudgetState;
+  /** US-JOB-27 */
+  billedPct: number | null;
 }
 
 /**
@@ -91,7 +96,40 @@ export class JobCostingService {
       marginPct,
       budget: budgetFigures(job.costBudgetAmount, cost),
       byCategory,
+      billing: billingFigures(job.contractValueAmount, (await this.billedByJob(orgId, [jobId])).get(jobId) ?? 0n),
     };
+  }
+
+  /**
+   * US-JOB-27 (D-127) — billed to date per job: the net of 1100 AR and 1150
+   * Retention Receivable lines tagged to the job from invoice, invoice-void
+   * and credit-note entries, leaving out retention-release invoices (and
+   * credits against them). Advance invoices post nothing at issue, so a
+   * deposit only counts once it's offset on a progress invoice.
+   */
+  private async billedByJob(orgId: string, jobIds: string[]): Promise<Map<string, bigint>> {
+    if (!jobIds.length) return new Map();
+    const sourceInvoice = alias(invoices, "source_invoice");
+    const creditedInvoice = alias(invoices, "credited_invoice");
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, billed: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .leftJoin(sourceInvoice, and(inArray(journalEntries.sourceType, ["invoice", "invoice_void"]), eq(sourceInvoice.id, journalEntries.sourceId)))
+      .leftJoin(creditNotes, and(eq(journalEntries.sourceType, "credit_note"), eq(creditNotes.id, journalEntries.sourceId)))
+      .leftJoin(creditedInvoice, eq(creditedInvoice.id, creditNotes.invoiceId))
+      .where(
+        and(
+          eq(journalEntries.orgId, orgId),
+          inArray(journalLines.jobId, jobIds),
+          inArray(accounts.code, ["1100", "1150"]),
+          inArray(journalEntries.sourceType, ["invoice", "invoice_void", "credit_note"]),
+          or(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type}) is null`, ne(sql`coalesce(${sourceInvoice.type}, ${creditedInvoice.type})`, "retention_release")),
+        ),
+      )
+      .groupBy(journalLines.jobId);
+    return new Map(rows.map((r) => [r.jobId!, BigInt(r.billed)]));
   }
 
   /** Cost per job (expense debits tagged to it), for many jobs in one query. */
@@ -111,12 +149,14 @@ export class JobCostingService {
    * each job, only for members with `reports.view_job_profitability`;
    * everyone else gets the rows unchanged.
    */
-  async withCosting<T extends { id: string; costBudgetAmount?: bigint | null }>(orgId: string, userId: string, rows: T[]): Promise<(T | (T & JobCostingSummary))[]> {
+  async withCosting<T extends { id: string; costBudgetAmount?: bigint | null; contractValueAmount: bigint }>(orgId: string, userId: string, rows: T[]): Promise<(T | (T & JobCostingSummary))[]> {
     if (!(await hasCapability(this.db, { orgId, userId }, "reports.view_job_profitability"))) return rows;
-    const costs = await this.costByJob(rows.map((r) => r.id));
+    const ids = rows.map((r) => r.id);
+    const [costs, billed] = await Promise.all([this.costByJob(ids), this.billedByJob(orgId, ids)]);
     return rows.map((row) => {
       const budget = budgetFigures(row.costBudgetAmount ?? null, costs.get(row.id) ?? 0n);
-      return { ...row, budgetUsedPct: budget.usedPct, budgetState: budget.state };
+      const billing = billingFigures(row.contractValueAmount, billed.get(row.id) ?? 0n);
+      return { ...row, budgetUsedPct: budget.usedPct, budgetState: budget.state, billedPct: billing.billedPct };
     });
   }
 }

@@ -327,12 +327,14 @@ export class CreditNotesService {
       const arAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable");
       const taxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "outputTaxPayable");
 
+      // US-JOB-27 (D-127): tagged with the invoice's job, so the job's revenue and billed to date drop by the credit.
+      const jobId = invoice.jobId;
       const postingLines = [
-        { accountId: resolvedRevenueAccountId, debit: existing.totalAmount - existing.taxAmount, credit: 0n, contactId: existing.contactId },
-        { accountId: arAccountId, debit: 0n, credit: existing.totalAmount, contactId: existing.contactId },
+        { accountId: resolvedRevenueAccountId, debit: existing.totalAmount - existing.taxAmount, credit: 0n, contactId: existing.contactId, jobId },
+        { accountId: arAccountId, debit: 0n, credit: existing.totalAmount, contactId: existing.contactId, jobId },
       ];
       if (existing.taxAmount > 0n) {
-        postingLines.push({ accountId: taxAccountId, debit: existing.taxAmount, credit: 0n, contactId: existing.contactId });
+        postingLines.push({ accountId: taxAccountId, debit: existing.taxAmount, credit: 0n, contactId: existing.contactId, jobId });
       }
 
       const journalEntryId = await this.ledger.postEntry(tx, {

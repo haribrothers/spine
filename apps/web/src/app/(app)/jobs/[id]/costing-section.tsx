@@ -61,6 +61,7 @@ export function CostingSection({ job, onEditJob }: { job: Job; onEditJob?: () =>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BudgetCard report={report} onEditJob={onEditJob} />
+        <BillingCard report={report} />
       </div>
 
       <CostByCategoryCard report={report} jobId={job.id} />
@@ -129,6 +130,34 @@ function BudgetCard({ report, onEditJob }: { report: JobCostingReport; onEditJob
           </span>
           <span className="text-on-surface-muted">Warning at {BUDGET_NEAR_PCT}% · over at 100%</span>
         </div>
+      </div>
+    </Card>
+  );
+}
+
+/** US-JOB-27 (D-127) — billed to date (gross, before retention) against the contract value. */
+function BillingCard({ report }: { report: JobCostingReport }) {
+  const { billing } = report;
+  const fmt = (amount: string | bigint) => formatMoney(BigInt(amount), report.currency);
+  const left = BigInt(billing.leftToBill);
+  const billedPct = billing.billedPct ?? 0;
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <h3 className="text-[15px] font-semibold text-on-surface">Billing</h3>
+      <dl className="grid grid-cols-3 gap-4">
+        <Figure label="Contract value" value={fmt(billing.contractValue)} />
+        <Figure label="Billed to date" value={fmt(billing.billedToDate)} note={billing.billedPct === null ? undefined : `${billing.billedPct}% of contract`} />
+        {left < 0n ? (
+          <Figure label="Left to bill" value={`Billed over contract by ${fmt(-left)}`} tone="danger" />
+        ) : (
+          <Figure label="Left to bill" value={fmt(left)} />
+        )}
+      </dl>
+      <div className="grid grid-cols-[6rem_1fr_3rem] items-center gap-x-3 gap-y-2 text-[13px]">
+        <span className="text-on-surface-muted">Billed</span>
+        <Progress value={Math.min(100, billedPct)} aria-label={`Billed ${billedPct}% of the contract`} />
+        <span className="text-right font-semibold tabular-nums text-on-surface">{billedPct}%</span>
       </div>
     </Card>
   );

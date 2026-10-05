@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-27: see how much of the contract has been billed (Phase 7)
+
+- **Billing card** on the Costing tab: "Contract value", "Billed to date" with "40% of contract", "Left to bill" and a "Billed" bar. When billing passes the contract, "Left to bill" reads "Billed over contract by <amount>" in the danger colour, so a missing variation order gets noticed.
+- **Jobs list** gains "Billed" (e.g. "40%") beside "Budget used", for job-profitability viewers.
+- **From the ledger (D-127).** Billed to date is the net of 1100 AR and 1150 Retention Receivable lines tagged to the job from invoices, voids and credit notes. That makes it gross (tax included, before retention). Advance invoices post nothing at issue, so a deposit counts once a progress invoice offsets it; retention-release invoices are left out. `billingFigures` (`@spine/shared`) shares the maths.
+- **Posting fix.** Credit notes now tag their journal lines with the credited invoice's job (P8 in doc 06), so a credit lowers the job's revenue and billed to date. Credit notes issued before this change aren't tagged; journal entries are immutable.
+
+Tests:
+- `packages/shared/src/us-job-27.test.ts` (3): 40% and left to bill, billed over, zero contract.
+- `apps/api/src/modules/jobs/us-job-27.http.integration.test.ts` (6): nothing billed, gross progress invoices, advance and retention release excluded, credit note subtracted, billed over, list `billedPct`.
+- `apps/e2e/tests/us-job-27.spec.ts` (1): the card's figures and bar, the list column.
+
 ### 2026-10-05 — US-JOB-26: see a job's cost by category (Phase 7)
 
 - **"Cost by category"** card on the Costing tab ("From bills and approved expenses tagged to this job") lists each expense account carrying cost for the job, largest first, with its amount and share ("5000 · Cost of Materials · $11,200.00 · 45%") and a "Total cost" row that equals Cost exactly. A donut sits beside it with the cost in the middle, showing the five largest accounts plus "Other" once there are more than six (the list always shows every account). With `ledger.view` each row opens the account drill-down filtered to this job; without it the rows aren't links. A job with no cost reads "No costs yet — bills and approved expenses tagged to this job show up here."

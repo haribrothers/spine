@@ -42,3 +42,26 @@ export function budgetUsedLabel(state: BudgetState | undefined, usedPct: number 
   if (state === "near") return `Nearing · ${pct}`;
   return pct || "—";
 }
+
+/**
+ * US-JOB-27 (D-127) — how much of the contract has been billed. Billed to
+ * date is gross (tax included, before retention); the contract value is
+ * the tax-inclusive quote total plus applied variations.
+ */
+export interface BillingFigures {
+  contractValue: string;
+  billedToDate: string;
+  /** Whole percent of the contract; null for a zero contract. */
+  billedPct: number | null;
+  /** Negative when billed over the contract. */
+  leftToBill: string;
+}
+
+export function billingFigures(contractValue: bigint, billedToDate: bigint): BillingFigures {
+  return {
+    contractValue: contractValue.toString(),
+    billedToDate: billedToDate.toString(),
+    billedPct: wholePercent(billedToDate, contractValue),
+    leftToBill: (contractValue - billedToDate).toString(),
+  };
+}
