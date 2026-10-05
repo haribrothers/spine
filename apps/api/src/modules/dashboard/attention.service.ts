@@ -4,7 +4,7 @@ import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "dri
 import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contacts, expenseCategories, expenses, invoices, jobs, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
+import { activities, contacts, expenseCategories, expenses, invoices, jobs, leads, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { costByJob } from "../jobs/job-costing.service";
 
@@ -29,6 +29,9 @@ function addDays(date: string, days: number): string {
  * within 7 days, vendor bills due within 3 days, jobs over budget. A kind
  * the member has no capability for is left out, never shown locked. Rows
  * are worked out on every request, so a resolved item simply disappears.
+ *
+ * US-DASH-17 — Staff also get their own overdue follow-ups, and expiring
+ * quotes are only their own ("Your quote …").
  */
 @Injectable()
 export class AttentionService {
@@ -49,6 +52,7 @@ export class AttentionService {
       await this.quotesExpiring(orgId, today, role === "owner" ? null : userId, currency),
       can["vendor_payments.edit_own"] ? await this.vendorBillsDue(orgId, today, currency) : null,
       can["reports.view_job_profitability"] ? await this.jobsOverBudget(orgId, currency) : null,
+      role === "staff" ? await this.followupsOverdue(orgId, userId, currency) : null,
     ];
     return rows.filter((r): r is AttentionItem => r !== null && r.count > 0);
   }
@@ -143,12 +147,39 @@ export class AttentionService {
         ),
       )
       .orderBy(asc(quotes.validUntil));
+    return {
+      ...this.item(
+        "quotes_expiring",
+        rows.length,
+        currency,
+        rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.total.toString(), date: isoDate(r.validUntil) })),
+      ),
+      ...(onlyCreatedBy ? { mine: true } : {}),
+    };
+  }
+
+  /** US-DASH-17 — the member's open follow-ups past their due time, oldest first. */
+  private async followupsOverdue(orgId: string, userId: string, currency: string): Promise<AttentionItem> {
+    const rows = await this.db
+      .select({ id: activities.id, type: activities.type, notes: activities.notes, dueAt: activities.dueAt, contactId: sql<string | null>`coalesce(${activities.contactId}, ${leads.contactId})` })
+      .from(activities)
+      .leftJoin(leads, eq(activities.leadId, leads.id))
+      .where(and(eq(activities.orgId, orgId), eq(activities.assignedToUserId, userId), isNull(activities.doneAt), lt(activities.dueAt, new Date())))
+      .orderBy(asc(activities.dueAt));
+    const names = await this.contactNames(rows.map((r) => r.contactId).filter((id): id is string => Boolean(id)));
+    const TYPE: Record<string, string> = { call: "Call", meeting: "Meeting", note: "Note", task: "Task" };
     return this.item(
-      "quotes_expiring",
+      "followups_overdue",
       rows.length,
       currency,
-      rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.total.toString(), date: isoDate(r.validUntil) })),
+      rows.map((r) => ({ id: r.id, name: r.notes?.trim() || TYPE[r.type] || "Follow-up", party: r.contactId ? (names.get(r.contactId) ?? null) : null, contactId: r.contactId, date: isoDate(r.dueAt) })),
     );
+  }
+
+  private async contactNames(ids: string[]): Promise<Map<string, string>> {
+    if (ids.length === 0) return new Map();
+    const rows = await this.db.select({ id: contacts.id, name: contacts.name }).from(contacts).where(inArray(contacts.id, ids));
+    return new Map(rows.map((r) => [r.id, r.name]));
   }
 
   /** Recorded bills with a balance, due today or within 3 days. */

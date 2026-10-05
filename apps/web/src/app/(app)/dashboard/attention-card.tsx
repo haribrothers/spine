@@ -40,7 +40,8 @@ export function attentionHref(item: AttentionItem): string {
     case "jobs_over_budget":
       return first?.jobId ? `/jobs/${first.jobId}?tab=costing` : "/jobs";
     case "followups_overdue":
-      return "/activities";
+      // The oldest one's contact, where its Activities live; a lead without a contact opens the pipeline.
+      return first?.contactId ? `/contacts/${first.contactId}` : "/leads";
     case "expenses_rejected":
       return "/expenses?mine=true";
   }

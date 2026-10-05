@@ -2699,6 +2699,18 @@ Regression: Edit layout can still hide, show and reorder the card, and a saved l
 
 Regression: Settings › Upcoming meetings ("Only my meetings" / "Every org meeting") still decides which meetings Staff see in Today. Meetings opened from the sidebar still open in week view. Edit layout still hides, shows and reorders the remaining widgets.
 
+## 88. Staff dashboard (US-DASH-17, Phase 7)
+
+1. As Owner, untick "View dashboard summary" for the Staff user's Team. Log in as that Staff user.
+2. "Needs your attention" says "Only things you can act on". Give the user an overdue follow-up: "1 follow-up is overdue" appears, and "Open" opens that contact.
+3. A sent quote the user created that expires within 7 days reads "Your quote QUO-… expires <day>". The Owner's expiring quotes aren't listed.
+4. Submit an expense as this user (with "Approve expenses" granted): it never appears in their own list.
+5. The KPI row shows Receivables, Overdue, Open pipeline and Quotes won this month ("$… accepted"). Untick "View receivables": only Open pipeline and Quotes won remain. "Quotes won this month" opens Quotes filtered to Accepted.
+6. Give the Team "View dashboard summary" back: the row shows Cash position, Profit this month, Receivables and Overdue, plus "Money in and out".
+7. The sidebar has no Team section.
+
+Regression: the Owner's attention list and KPI row are unchanged, with no follow-ups row. Quotes opened from the sidebar show every status.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

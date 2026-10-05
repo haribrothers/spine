@@ -64,6 +64,9 @@ export function KpiRow() {
                   Current {money(kpi.detail.current ?? "0")} · overdue {money(kpi.detail.overdue ?? "0")}
                 </span>
               )}
+              {kpi.key === "quotes_won" && kpi.detail?.amount !== undefined && BigInt(kpi.detail.amount) > 0n && (
+                <span className="text-[12px] text-on-surface-muted">{money(kpi.detail.amount)} accepted</span>
+              )}
               {kpi.key === "overdue" && kpi.detail?.count !== undefined && kpi.detail.count > 0 && (
                 <span className="text-[12px] text-on-surface-muted">
                   {kpi.detail.count} {kpi.detail.count === 1 ? "invoice" : "invoices"}

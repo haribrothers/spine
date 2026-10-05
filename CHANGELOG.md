@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-DASH-17: a staff dashboard of only what I can act on (Phase 7)
+
+- **Needs your attention, for Staff**: "Only things you can act on". Kinds come from their Team's grants as before, plus "<n> follow-ups are overdue" for their own follow-ups. "Open" goes to the oldest one's contact. Expiring quotes are their own and read "Your quote QUO-0004 expires Friday". Their own submitted expense never appears (D-085).
+- **KPI row, for Staff without "View dashboard summary"**: "Receivables" and "Overdue" (with "View receivables"), "Open pipeline" and "Quotes won this month" (with "$… accepted"). Staff with the summary grant see the Owner's four. "Quotes won this month" opens Quotes filtered to accepted; Quotes now reads `?status=`.
+- **API.** `GET /dashboard/attention` adds `followups_overdue` for Staff and `mine` on their expiring quotes. `GET /dashboard/kpis` returns the Staff set.
+- **Fix**: the follow-ups row linked to `/activities`, which doesn't exist.
+
+Tests:
+- `apps/api/src/modules/dashboard/us-dash-17.http.integration.test.ts` (4): Staff attention (own follow-ups and quotes, no own expense); the Staff KPI set and its values; KPIs follow grants; a closed lead leaves the pipeline.
+- `apps/e2e/tests/us-dash-17.spec.ts` (1): note, follow-ups row, the four Staff KPIs, no Team links, "Open" to the contact.
+
 ### 2026-10-05 — US-DASH-16: see today's schedule beside my tasks (Phase 7)
 
 - **"Today" card**: my meetings today, milestones due within 7 days on jobs I can see, my follow-ups due today or overdue, and my next meeting after today, in time order. Each entry shows a time or "Due <day>", the title, and the kind and record ("Meeting · office", "Milestone · Marina office fit-out", "Follow-up · Harborview Construction Co."). A coloured bar marks the kind, and the kind is also written out. "Open calendar" opens Meetings in day view on today. With nothing scheduled it reads "Nothing scheduled today."

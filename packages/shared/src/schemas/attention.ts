@@ -51,6 +51,8 @@ export interface AttentionItem {
   currency: string;
   /** The first few records, most urgent first; `items[0]` is the one named. */
   items: AttentionRecord[];
+  /** US-DASH-17: the records are the member's own (a Staff user's quotes), so the row says "Your quote …". */
+  mine?: boolean;
 }
 
 export interface AttentionText {
@@ -126,7 +128,10 @@ export function describeAttention(item: AttentionItem, money: (minor: string) =>
       };
     case "quotes_expiring":
       return {
-        title: n === 1 ? `${first.number ?? "A quote"} expires ${first.date ? dayName(first.date, today) : "soon"}` : `${n} quotes expire this week`,
+        title:
+          n === 1
+            ? `${item.mine ? "Your quote " : ""}${first.number ?? (item.mine ? "" : "A quote")}`.trim() + ` expires ${first.date ? dayName(first.date, today) : "soon"}`
+            : `${item.mine ? "Your " : ""}${n} quotes expire this week`,
         detail: join([n > 1 ? first.number : null, first.name, amount, first.date && shortDay(first.date), more]),
         action: "Follow up",
       };

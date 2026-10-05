@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
 import { FileText } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { EmailQueueButton } from "./email-queue-dialog";
@@ -34,7 +35,9 @@ export function QuotesExplorer() {
   const canCreate = useCapability("quotes.edit_own");
   const [quotes, setQuotes] = useState<Quote[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  // US-DASH-17: the "Quotes won this month" figure opens ?status=accepted.
+  const searchParams = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => searchParams.get("status")?.split(",").filter(Boolean) ?? []);
   const [contactFilter, setContactFilter] = useState<string>(ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const { show: showToast, toast } = useEntityToast();
