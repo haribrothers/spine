@@ -54,7 +54,7 @@ import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
 import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
 import { formatMoney } from "../../../lib/money";
-import { BUDGET_NOT_NEGATIVE, fromDecimalString, minorUnitExponent } from "@spine/shared";
+import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
@@ -320,6 +320,8 @@ function EditJobDialog({
   const [notes, setNotes] = useState(job.notes ?? "");
   const [budget, setBudget] = useState(budgetText(job));
   const [budgetError, setBudgetError] = useState<string | undefined>();
+  const [percentComplete, setPercentComplete] = useState(job.percentComplete == null ? "" : String(job.percentComplete));
+  const [percentError, setPercentError] = useState<string | undefined>();
   const [advancedOpen, setAdvancedOpen] = useState((job.retentionPct ?? 0) > 0 || defaultShowRetention);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -335,6 +337,8 @@ function EditJobDialog({
     setNotes(job.notes ?? "");
     setBudget(budgetText(job));
     setBudgetError(undefined);
+    setPercentComplete(job.percentComplete == null ? "" : String(job.percentComplete));
+    setPercentError(undefined);
     setAdvancedOpen((job.retentionPct ?? 0) > 0 || defaultShowRetention);
     setError(null);
   }, [open, job, defaultShowRetention]);
@@ -351,11 +355,19 @@ function EditJobDialog({
       return;
     }
     setBudgetError(undefined);
+    // US-JOB-28 — blank means "not set".
+    const percent = percentComplete.trim() === "" ? null : Number(percentComplete);
+    if (percent !== null && (!Number.isFinite(percent) || percent < 0 || percent > 100)) {
+      setPercentError(PERCENT_COMPLETE_RANGE);
+      return;
+    }
+    setPercentError(undefined);
     setSaving(true);
     setError(null);
     try {
       const updated = await apiClient.put<Job>(`/jobs/${job.id}`, {
         ...(job.costBudgetAmount !== undefined ? { costBudgetAmount: budgetAmount === null ? null : budgetAmount.toString() } : {}),
+        percentComplete: percent,
         name: name.trim(),
         siteAddress: siteAddress || null,
         status,
@@ -445,9 +457,16 @@ function EditJobDialog({
           {job.costBudgetAmount !== undefined && (
             <div className="flex flex-col gap-3 border-t border-border pt-4">
               <h3 className="text-[13px] font-semibold text-on-surface">Budget and progress</h3>
-              <FormField label="Cost budget" helperText="What you expect this job to cost. Leave blank if you don't budget it." errorText={budgetError}>
-                {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="—" />}
-              </FormField>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label="Cost budget" helperText="What you expect this job to cost. Leave blank if you don't budget it." errorText={budgetError}>
+                  {(field) => <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={budget} onChange={(e) => setBudget(e.target.value)} placeholder="—" />}
+                </FormField>
+                <FormField label="Percent complete" helperText="Your estimate of how much of the work is done." errorText={percentError}>
+                  {(field) => (
+                    <Input {...field} inputMode="decimal" className="text-right tabular-nums" value={percentComplete} onChange={(e) => setPercentComplete(e.target.value)} placeholder="—" />
+                  )}
+                </FormField>
+              </div>
             </div>
           )}
         </DialogBody>

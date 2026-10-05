@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, Button, Card, DonutChart, Progress, Spinner, cn } from "@spine/ui";
-import { BUDGET_NEAR_PCT } from "@spine/shared";
+import { BUDGET_NEAR_PCT, billingGapMessage } from "@spine/shared";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
@@ -141,6 +141,8 @@ function BillingCard({ report }: { report: JobCostingReport }) {
   const fmt = (amount: string | bigint) => formatMoney(BigInt(amount), report.currency);
   const left = BigInt(billing.leftToBill);
   const billedPct = billing.billedPct ?? 0;
+  // US-JOB-28 — only when the owner has set percent complete and the gap is 10 points or more.
+  const gapMessage = billingGapMessage(billing.gapPts);
 
   return (
     <Card className="flex flex-col gap-4">
@@ -158,7 +160,19 @@ function BillingCard({ report }: { report: JobCostingReport }) {
         <span className="text-on-surface-muted">Billed</span>
         <Progress value={Math.min(100, billedPct)} aria-label={`Billed ${billedPct}% of the contract`} />
         <span className="text-right font-semibold tabular-nums text-on-surface">{billedPct}%</span>
+        {billing.percentComplete !== null && (
+          <>
+            <span className="text-on-surface-muted">Work complete</span>
+            <Progress value={billing.percentComplete} tone="neutral" aria-label={`Work complete ${billing.percentComplete}%`} />
+            <span className="text-right font-semibold tabular-nums text-on-surface">{billing.percentComplete}%</span>
+          </>
+        )}
       </div>
+      {gapMessage && (
+        <Alert variant="warning">
+          <AlertDescription>{gapMessage}</AlertDescription>
+        </Alert>
+      )}
     </Card>
   );
 }

@@ -96,7 +96,7 @@ export class JobCostingService {
       marginPct,
       budget: budgetFigures(job.costBudgetAmount, cost),
       byCategory,
-      billing: billingFigures(job.contractValueAmount, (await this.billedByJob(orgId, [jobId])).get(jobId) ?? 0n),
+      billing: billingFigures(job.contractValueAmount, (await this.billedByJob(orgId, [jobId])).get(jobId) ?? 0n, job.percentComplete),
     };
   }
 

@@ -62,13 +62,13 @@ describe("US-JOB-27 · see how much of the contract has been billed (requires lo
   });
 
   it("nothing billed yet: 0%, everything left to bill", async () => {
-    expect(await billing()).toEqual({ contractValue: "4850000", billedToDate: "0", billedPct: 0, leftToBill: "4850000" });
+    expect(await billing()).toEqual({ contractValue: "4850000", billedToDate: "0", billedPct: 0, leftToBill: "4850000", percentComplete: null, gapPts: null });
   });
 
   it("issued progress invoices count gross (before retention): 19,400.00 is 40%, 29,100.00 left", async () => {
     await issued("progress", "970000", 48500n);
     await issued("progress", "970000");
-    expect(await billing()).toEqual({ contractValue: "4850000", billedToDate: "1940000", billedPct: 40, leftToBill: "2910000" });
+    expect(await billing()).toEqual({ contractValue: "4850000", billedToDate: "1940000", billedPct: 40, leftToBill: "2910000", percentComplete: null, gapPts: null });
   });
 
   it("advance and retention-release invoices don't count", async () => {

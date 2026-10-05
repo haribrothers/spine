@@ -215,6 +215,7 @@ export class JobsService {
           ...(input.endDate !== undefined ? { endDate: input.endDate } : {}),
           ...(input.retentionPct !== undefined ? { retentionPct: input.retentionPct } : {}),
           ...(input.costBudgetAmount !== undefined ? { costBudgetAmount: input.costBudgetAmount } : {}),
+          ...(input.percentComplete !== undefined ? { percentComplete: input.percentComplete } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
           updatedAt: new Date(),
         })

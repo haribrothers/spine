@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-28: record how complete a job is and compare it with billing (Phase 7)
+
+- **"Percent complete"** in Edit job's "Budget and progress" ("Your estimate of how much of the work is done."), 0–100 or blank. Anything else gets "Enter a percentage from 0 to 100." and nothing saves. `jobs.percent_complete` (migration `0070`). It isn't money, so Field users see it; marking a job Completed doesn't change it.
+- **Billing card** adds a "Work complete" bar beside "Billed". When the gap is 10 points or more it says "Billing is 15 points behind the work — check for a milestone to invoice." or "Billing is 10 points ahead of the work." Smaller gaps, or no percent complete, show no line. `billing` gains `percentComplete` and `gapPts`; `billingGapMessage` (`@spine/shared`) words it.
+
+Tests:
+- `packages/shared/src/us-job-28.test.ts` (4): behind, ahead, no line, the 0–100 rule.
+- `apps/api/src/modules/jobs/us-job-28.http.integration.test.ts` (5): gap, refusals, Completed leaves it, Field sees it but not costing, clearing.
+- `apps/e2e/tests/us-job-28.spec.ts` (1): the field, its error, the Work complete bar and the comparison line.
+
 ### 2026-10-05 — US-JOB-27: see how much of the contract has been billed (Phase 7)
 
 - **Billing card** on the Costing tab: "Contract value", "Billed to date" with "40% of contract", "Left to bill" and a "Billed" bar. When billing passes the contract, "Left to bill" reads "Billed over contract by <amount>" in the danger colour, so a missing variation order gets noticed.

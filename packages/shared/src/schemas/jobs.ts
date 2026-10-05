@@ -26,6 +26,7 @@ export const createJobSchema = z.object({
 });
 
 export const BUDGET_NOT_NEGATIVE = "Enter a budget of zero or more.";
+export const PERCENT_COMPLETE_RANGE = "Enter a percentage from 0 to 100.";
 
 export const updateJobSchema = z.object({
   name: z.string().min(1).optional(),
@@ -36,6 +37,8 @@ export const updateJobSchema = z.object({
   retentionPct: z.coerce.number().min(0).max(100).optional(),
   /** US-JOB-24 — minor units; null clears the budget. */
   costBudgetAmount: z.union([z.null(), z.coerce.bigint().refine((v) => v >= 0n, BUDGET_NOT_NEGATIVE)]).optional(),
+  /** US-JOB-28 — 0–100; null clears it. */
+  percentComplete: z.union([z.null(), z.coerce.number({ error: PERCENT_COMPLETE_RANGE }).min(0, PERCENT_COMPLETE_RANGE).max(100, PERCENT_COMPLETE_RANGE)]).optional(),
   notes: z.string().optional().nullable(),
 });
 

@@ -23,6 +23,8 @@ export interface Job {
   retentionPct?: number;
   /** US-JOB-24 — minor units; null when not budgeted; absent for Field users. */
   costBudgetAmount?: string | null;
+  /** US-JOB-28 — 0–100, null when not set. Not money, so Field gets it too. */
+  percentComplete?: number | null;
   /** US-JOB-25 — `GET /jobs?include=costing`, only for members with `reports.view_job_profitability`. */
   budgetUsedPct?: number | null;
   budgetState?: BudgetState;

@@ -55,13 +55,29 @@ export interface BillingFigures {
   billedPct: number | null;
   /** Negative when billed over the contract. */
   leftToBill: string;
+  /** US-JOB-28 — the owner's estimate, 0–100; null when not set. */
+  percentComplete: number | null;
+  /** US-JOB-28 — billed % − complete %, in points; null without both. */
+  gapPts: number | null;
 }
 
-export function billingFigures(contractValue: bigint, billedToDate: bigint): BillingFigures {
+/** US-JOB-28 — the billing-vs-work comparison shows from a gap of this many points. */
+export const BILLING_GAP_PTS = 10;
+
+export function billingFigures(contractValue: bigint, billedToDate: bigint, percentComplete: number | null = null): BillingFigures {
+  const billedPct = wholePercent(billedToDate, contractValue);
   return {
     contractValue: contractValue.toString(),
     billedToDate: billedToDate.toString(),
-    billedPct: wholePercent(billedToDate, contractValue),
+    billedPct,
     leftToBill: (contractValue - billedToDate).toString(),
+    percentComplete,
+    gapPts: billedPct === null || percentComplete === null ? null : Math.round(billedPct - percentComplete),
   };
+}
+
+/** "Billing is 15 points behind the work — check for a milestone to invoice." / "Billing is 10 points ahead of the work.", or null under 10 points. */
+export function billingGapMessage(gapPts: number | null): string | null {
+  if (gapPts === null || Math.abs(gapPts) < BILLING_GAP_PTS) return null;
+  return gapPts < 0 ? `Billing is ${-gapPts} points behind the work — check for a milestone to invoice.` : `Billing is ${gapPts} points ahead of the work.`;
 }

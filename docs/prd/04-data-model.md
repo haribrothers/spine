@@ -74,7 +74,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `files` | `storage_driver text not null default 'local'` (`local`/`s3`), `checksum_sha256 text` (backfilled by the first `file-integrity-check` run), `integrity_problem text` (`damaged`/`missing`, null when intact), `integrity_checked_at timestamptz`; index `(org_id, integrity_problem)` | US-OPS-27, US-OPS-28 |
 | `settings` key `last_backup_at` | ISO timestamp of the last successful `backup.sh` run | US-OPS-03 |
 | `jobs` | `cost_budget_amount bigint` (nullable; a target, never posted; migration `0069`). Omitted from Field responses with the other money fields (`JOB_MONEY_FIELDS`), including job history | US-JOB-24 |
-| `jobs` | `percent_complete numeric(5,2)` (nullable, 0–100) | US-JOB-28 |
+| `jobs` | `percent_complete numeric(5,2)` (nullable, 0–100; migration `0070`). Not money: Field responses keep it | US-JOB-28 |
 | `invoices` | `progress_claim_no integer` (nullable; progress invoices only, set at issue as the job's max + 1 under the job row lock, never reused); unique (`job_id`, `progress_claim_no`) | US-JOB-29 |
 | `expenses` | `entry_mode text not null default 'amount'` (`amount`/`labour`) | US-PUR-23 |
 | `expense_labour_lines` (new) | `id`, `org_id`, `expense_id` → expenses (cascade), `sort_order`, `trade text`, `headcount integer` (> 0), `day_rate_amount bigint` (> 0), `line_amount bigint` (= headcount × day rate); max 20 per expense; the expense `amount` is their sum. No worker names or hours (D-126) | US-PUR-23 |

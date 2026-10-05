@@ -2594,6 +2594,15 @@ Regression: Reports › account drill-down (from the trial balance, P&L, balance
 
 Regression: credit notes still post and appear on the invoice; a job's revenue on "Costing" drops by a credit note issued against one of its invoices.
 
+## 78. Percent complete vs billing (US-JOB-28, Phase 7)
+
+1. Edit job › "Percent complete" ("Your estimate of how much of the work is done."). Enter 120 or -5: "Enter a percentage from 0 to 100." Enter a value and save.
+2. On a job billed 40%: at 55% complete, "Costing" › Billing shows "Work complete 55%" and "Billing is 15 points behind the work — check for a milestone to invoice." At 30%: "Billing is 10 points ahead of the work." At 45% or blank: no line.
+3. Mark the job Completed: percent complete stays as it was.
+4. As a Field user, the job shows percent complete through the API, but no costing.
+
+Regression: Edit job's other fields save as before; the Billing card's figures (§77) are unchanged.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.
