@@ -22,6 +22,11 @@ describe("DonutChart a11y", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("has no violations without its legend (the page lists the breakdown beside it)", async () => {
+    const { container } = render(<DonutChart segments={segments} centerLabel="$6,900.00" legend={false} aria-label="Cost by category" />);
+    await expectNoA11yViolations(container);
+  });
+
   it("has no violations with no center label", async () => {
     const { container } = render(<DonutChart segments={segments} />);
     await expectNoA11yViolations(container);

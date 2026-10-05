@@ -442,13 +442,15 @@ function JobProfitabilityTab() {
 }
 
 /** S-09.4 — the click-through-to-source-documents dialog behind any P&L/Balance Sheet figure. */
-function DrilldownDialog({
+/** The account drill-down — also opened from a job's cost by category (US-JOB-26) with `jobId`. */
+export function DrilldownDialog({
   accountId,
   accountLabel,
   from,
   to,
   currency,
   onClose,
+  jobId,
 }: {
   accountId: string;
   accountLabel: string;
@@ -456,16 +458,18 @@ function DrilldownDialog({
   to: string;
   currency: string;
   onClose: () => void;
+  /** Only this job's lines. */
+  jobId?: string;
 }) {
   const [report, setReport] = useState<AccountDrilldownReport | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     apiClient
-      .get<AccountDrilldownReport>(`/reports/account-drilldown?accountId=${accountId}&from=${from}&to=${to}`)
+      .get<AccountDrilldownReport>(`/reports/account-drilldown?accountId=${accountId}&from=${from}&to=${to}${jobId ? `&jobId=${jobId}` : ""}`)
       .then(setReport)
       .catch((err) => setError(ownerOnlyMessage(err)));
-  }, [accountId, from, to]);
+  }, [accountId, from, to, jobId]);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

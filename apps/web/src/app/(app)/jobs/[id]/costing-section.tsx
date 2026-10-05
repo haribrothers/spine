@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, AlertDescription, Button, Card, Progress, Spinner, cn } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, DonutChart, Progress, Spinner, cn } from "@spine/ui";
 import { BUDGET_NEAR_PCT } from "@spine/shared";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
+import { useCapability } from "../../../../lib/capabilities-context";
+import { DrilldownDialog } from "../../reports/reports-explorer";
 import type { Job, JobCostingReport } from "../types";
 import { formatMoney } from "../../../../lib/money";
 
@@ -60,6 +62,8 @@ export function CostingSection({ job, onEditJob }: { job: Job; onEditJob?: () =>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <BudgetCard report={report} onEditJob={onEditJob} />
       </div>
+
+      <CostByCategoryCard report={report} jobId={job.id} />
     </div>
   );
 }
@@ -126,6 +130,94 @@ function BudgetCard({ report, onEditJob }: { report: JobCostingReport; onEditJob
           <span className="text-on-surface-muted">Warning at {BUDGET_NEAR_PCT}% · over at 100%</span>
         </div>
       </div>
+    </Card>
+  );
+}
+
+/** Categorical colours from the theme tokens: primary first, then the semantic and neutral tones; "Other" is always the faintest. */
+const CATEGORY_COLORS = ["var(--color-primary)", "var(--color-paid)", "var(--color-due-soon)", "var(--color-on-surface)", "var(--color-on-surface-muted)"];
+const OTHER_COLOR = "var(--color-border-strong)";
+
+/**
+ * US-JOB-26 — the job's cost by the expense account it posted to (from
+ * journal lines, D-011), largest first, with a donut of the five largest
+ * and "Other" past six. Rows open the account drill-down for this job
+ * with `ledger.view`.
+ */
+function CostByCategoryCard({ report, jobId }: { report: JobCostingReport; jobId: string }) {
+  const canDrill = useCapability("ledger.view");
+  const [drill, setDrill] = useState<{ accountId: string; label: string } | null>(null);
+  const fmt = (amount: string | bigint) => formatMoney(BigInt(amount), report.currency);
+  const rows = report.byCategory;
+
+  if (!rows.length) {
+    return (
+      <Card className="flex flex-col gap-2">
+        <h3 className="text-[15px] font-semibold text-on-surface">Cost by category</h3>
+        <p className="text-[14px] text-on-surface-muted">No costs yet — bills and approved expenses tagged to this job show up here.</p>
+      </Card>
+    );
+  }
+
+  const colorOf = new Map<string, string>();
+  const ringRows = rows.length > 6 ? rows.slice(0, 5) : rows;
+  ringRows.forEach((r, i) => colorOf.set(r.accountId, CATEGORY_COLORS[i] ?? OTHER_COLOR));
+  const otherAmount = rows.length > 6 ? rows.slice(5).reduce((sum, r) => sum + BigInt(r.amount), 0n) : 0n;
+  const segments = [
+    ...ringRows.map((r) => ({ key: r.accountId, label: `${r.code} · ${r.name}`, value: Number(BigInt(r.amount)), color: colorOf.get(r.accountId)!, formattedValue: fmt(r.amount) })),
+    ...(otherAmount > 0n ? [{ key: "other", label: "Other", value: Number(otherAmount), color: OTHER_COLOR, formattedValue: fmt(otherAmount) }] : []),
+  ];
+
+  return (
+    <Card className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-[15px] font-semibold text-on-surface">Cost by category</h3>
+        <span className="text-[13px] text-on-surface-muted">From bills and approved expenses tagged to this job</span>
+      </div>
+      <div className="flex flex-col gap-6 md:flex-row md:items-center">
+        <DonutChart segments={segments} legend={false} aria-label="Cost by category" centerLabel={fmt(report.cost)} className="shrink-0" />
+        <table className="w-full text-[14px]">
+          <caption className="sr-only">Cost by category</caption>
+          <thead className="sr-only">
+            <tr>
+              <th scope="col">Account</th>
+              <th scope="col">Amount</th>
+              <th scope="col">Share</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => {
+              const label = `${r.code} · ${r.name}`;
+              return (
+                <tr key={r.accountId} className="border-t border-border">
+                  <td className="py-2">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: colorOf.get(r.accountId) ?? OTHER_COLOR }} aria-hidden />
+                      {canDrill ? (
+                        <button type="button" onClick={() => setDrill({ accountId: r.accountId, label })} className="text-left text-on-surface hover:text-primary hover:underline">
+                          {label}
+                        </button>
+                      ) : (
+                        <span className="text-on-surface">{label}</span>
+                      )}
+                    </span>
+                  </td>
+                  <td className="py-2 text-right tabular-nums text-on-surface">{fmt(r.amount)}</td>
+                  <td className="w-16 py-2 text-right tabular-nums text-on-surface-muted">{r.sharePct}%</td>
+                </tr>
+              );
+            })}
+            <tr className="border-t border-border font-semibold">
+              <td className="py-2 text-on-surface">Total cost</td>
+              <td className="py-2 text-right tabular-nums text-on-surface">{fmt(report.cost)}</td>
+              <td className="py-2 text-right tabular-nums text-on-surface">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      {drill && (
+        <DrilldownDialog accountId={drill.accountId} accountLabel={drill.label} from="2000-01-01" to="2999-12-31" currency={report.currency} jobId={jobId} onClose={() => setDrill(null)} />
+      )}
     </Card>
   );
 }

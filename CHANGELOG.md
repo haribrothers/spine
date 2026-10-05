@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-JOB-26: see a job's cost by category (Phase 7)
+
+- **"Cost by category"** card on the Costing tab ("From bills and approved expenses tagged to this job") lists each expense account carrying cost for the job, largest first, with its amount and share ("5000 · Cost of Materials · $11,200.00 · 45%") and a "Total cost" row that equals Cost exactly. A donut sits beside it with the cost in the middle, showing the five largest accounts plus "Other" once there are more than six (the list always shows every account). With `ledger.view` each row opens the account drill-down filtered to this job; without it the rows aren't links. A job with no cost reads "No costs yet — bills and approved expenses tagged to this job show up here."
+- **API.** `GET /jobs/:id/costing` gains `byCategory`, grouped from journal lines tagged to the job (D-011), never from documents. `GET /reports/account-drilldown` takes an optional `jobId`.
+- **DonutChart** (`@spine/ui`) gains `legend={false}` and `aria-label` for pages that list the breakdown beside the ring, with its design-system page and a11y test. `DrilldownDialog` is shared from Reports with a `jobId` prop.
+
+Tests:
+- `apps/api/src/modules/jobs/us-job-26.http.integration.test.ts` (3): empty, amounts and shares adding up to cost, drill-down filtered to the job.
+- `apps/e2e/tests/us-job-26.spec.ts` (2): the list, total and donut, drill-down; the empty state.
+- `packages/ui/src/components/donut-chart.a11y.test.tsx`: without its legend.
+
 ### 2026-10-05 — US-JOB-25: see budget spent and get warned before going over (Phase 7)
 
 - **Costing tab** (`JobCostingBudget`) is laid out as cards: "Job costing" (contract value, revenue recognised, cost, margin, margin % — a negative margin reads "Cost is ahead of billing" in the danger colour) and a new **Budget** card. The Budget card shows "Cost budget", "Spent" and "Remaining", with a bar labelled "78% of budget used". From 80% it turns to the warning colour with an icon and "Nearing budget — 85% used". Past the budget it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" goes negative and the bar is full. With no budget: "No budget set" and "Set a budget" (only with edit rights on the job), which opens Edit job. The old "cost tracking goes live later" note is gone.

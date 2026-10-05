@@ -105,9 +105,11 @@ export class ReportsController {
     @Query("accountId") accountId: string,
     @Query("from") from: string,
     @Query("to") to: string,
+    @Query("jobId") jobId?: string,
   ) {
     const orgId = requireOrgId(session);
-    return this.reportsService.accountDrilldown(orgId, accountId, from, to);
+    // US-JOB-26: from a job's cost by category, only that job's lines.
+    return this.reportsService.accountDrilldown(orgId, accountId, from, to, jobId || undefined);
   }
 
   /** S-09.6 — all-jobs profitability summary; its own independent capability, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */

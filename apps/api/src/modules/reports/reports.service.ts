@@ -542,7 +542,7 @@ export class ReportsService {
    * human-readable fallback for source types the client doesn't have a
    * dedicated link for.
    */
-  async accountDrilldown(orgId: string, accountId: string, from: string, to: string): Promise<AccountDrilldownReport> {
+  async accountDrilldown(orgId: string, accountId: string, from: string, to: string, jobId?: string): Promise<AccountDrilldownReport> {
     const [account] = await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.id, accountId)));
     if (!account) {
       return { accountId, accountCode: "", accountName: "", from, to, entries: [] };
@@ -558,6 +558,7 @@ export class ReportsService {
           eq(journalLines.accountId, accountId),
           gte(journalEntries.date, from),
           lte(journalEntries.date, to),
+          ...(jobId ? [eq(journalLines.jobId, jobId)] : []),
         ),
       );
 

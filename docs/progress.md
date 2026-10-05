@@ -294,7 +294,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-QUO-26 · Add a bundle while building a quote
 - [x] US-JOB-24 · Set a cost budget for a job
 - [x] US-JOB-25 · See budget spent and get warned before going over
-- [ ] US-JOB-26 · See a job's cost by category
+- [x] US-JOB-26 · See a job's cost by category
 - [ ] US-JOB-27 · See how much of the contract has been billed
 - [ ] US-JOB-28 · Record how complete a job is and compare it with billing
 - [ ] US-JOB-29 · Number each progress claim on a job

@@ -134,6 +134,8 @@ export interface JobCostingReport {
   marginPct: number | null;
   /** US-JOB-25 */
   budget: BudgetFigures;
+  /** US-JOB-26 — largest first; amounts add up to `cost`. */
+  byCategory: { accountId: string; code: string; name: string; amount: string; sharePct: number }[];
 }
 
 export const JOB_STATUS_LABELS: Record<JobStatus, string> = {

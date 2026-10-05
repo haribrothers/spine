@@ -1,5 +1,5 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { budgetFigures, type BudgetFigures, type BudgetState } from "@spine/shared";
+import { budgetFigures, wholePercent, type BudgetFigures, type BudgetState } from "@spine/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
@@ -16,6 +16,8 @@ export interface JobCostingReport {
   marginPct: number | null;
   /** US-JOB-25 — cost against the job's budget. */
   budget: BudgetFigures;
+  /** US-JOB-26 — the cost split by the expense account it posted to, largest first; amounts add up to `cost` exactly. */
+  byCategory: { accountId: string; code: string; name: string; amount: string; sharePct: number }[];
 }
 
 /** US-JOB-25 — what the Jobs list adds per job for members who may see job profitability. */
@@ -55,17 +57,26 @@ export class JobCostingService {
     }
 
     const lines = await this.db
-      .select({ debit: journalLines.debit, credit: journalLines.credit, accountType: accounts.type })
+      .select({ debit: journalLines.debit, credit: journalLines.credit, accountType: accounts.type, accountId: accounts.id, code: accounts.code, name: accounts.name })
       .from(journalLines)
       .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
       .where(eq(journalLines.jobId, jobId));
 
     let revenue = 0n;
     let cost = 0n;
+    const byAccount = new Map<string, { accountId: string; code: string; name: string; amount: bigint }>();
     for (const line of lines) {
       if (line.accountType === "income") revenue += line.credit;
-      if (line.accountType === "expense") cost += line.debit;
+      if (line.accountType === "expense" && line.debit > 0n) {
+        cost += line.debit;
+        const row = byAccount.get(line.accountId) ?? { accountId: line.accountId, code: line.code, name: line.name, amount: 0n };
+        row.amount += line.debit;
+        byAccount.set(line.accountId, row);
+      }
     }
+    const byCategory = [...byAccount.values()]
+      .sort((a, b) => (a.amount === b.amount ? a.code.localeCompare(b.code) : a.amount > b.amount ? -1 : 1))
+      .map((r) => ({ accountId: r.accountId, code: r.code, name: r.name, amount: r.amount.toString(), sharePct: wholePercent(r.amount, cost) ?? 0 }));
 
     const margin = revenue - cost;
     const marginPct = revenue > 0n ? Number((margin * 10000n) / revenue) / 100 : null;
@@ -79,6 +90,7 @@ export class JobCostingService {
       margin: margin.toString(),
       marginPct,
       budget: budgetFigures(job.costBudgetAmount, cost),
+      byCategory,
     };
   }
 

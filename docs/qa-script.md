@@ -2574,6 +2574,16 @@ Regression: Edit job still saves name, site address, status, dates, notes and re
 
 Regression: the Costing tab's contract value, revenue, cost and margin match before; the Jobs list (search, sort, filters) works in light and dark mode; Progress bars elsewhere (onboarding checklist) look the same.
 
+## 76. Job cost by category (US-JOB-26, Phase 7)
+
+1. On a job with bills or approved expenses tagged to it, open "Costing". "Cost by category" lists each expense account ("5000 · Cost of Materials") with its amount and share, largest first, and "Total cost" equal to the Cost figure above. The donut shows the same split with the total in the middle.
+2. With more than six accounts carrying cost, the donut shows the five largest and "Other"; the list shows them all.
+3. As an Owner (or Staff with "View ledger"), click a row: the account drill-down opens with only this job's lines. Without "View ledger" the rows aren't links.
+4. A job with no costs: "No costs yet — bills and approved expenses tagged to this job show up here."
+5. Check the donut and list in dark mode; the colours come from the theme.
+
+Regression: Reports › account drill-down (from the trial balance, P&L, balance sheet) still lists every line for the account; the dashboard's receivables donut still shows its legend.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

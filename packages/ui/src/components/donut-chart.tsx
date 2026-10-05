@@ -19,6 +19,10 @@ export interface DonutChartProps {
   centerLabel?: React.ReactNode;
   /** Shown when every segment's `value` is 0 (or `segments` is empty) — a donut with no data reads as broken, not "nothing here," without one. */
   emptyState?: React.ReactNode;
+  /** Set false when the page shows the same breakdown as a list or table beside the ring (it must — colour is never the only signal). Default true. */
+  legend?: boolean;
+  /** Names the ring for screen readers when the legend is hidden, e.g. "Cost by category". */
+  "aria-label"?: string;
   className?: string;
 }
 
@@ -37,24 +41,27 @@ export interface DonutChartProps {
  * overdue tokens for a financial-status breakdown, the categorical accent
  * for anything else.
  */
-export function DonutChart({ segments, centerLabel, emptyState, className }: DonutChartProps) {
+export function DonutChart({ segments, centerLabel, emptyState, legend = true, "aria-label": ariaLabel, className }: DonutChartProps) {
   const visible = segments.filter((s) => s.value > 0);
 
   if (visible.length === 0) {
-    return (
-      <div className={cn("flex h-40 items-center justify-center text-[13px] text-on-surface-muted", className)}>
-        {emptyState ?? "No data."}
-      </div>
-    );
+    return <div className={cn("flex h-40 items-center justify-center text-[13px] text-on-surface-muted", className)}>{emptyState ?? "No data."}</div>;
   }
 
   const config: ChartConfig = Object.fromEntries(segments.map((s) => [s.key, { label: s.label, color: s.color }]));
 
   return (
-    <div className={cn("flex items-center gap-6", className)}>
+    <div className={cn("flex items-center gap-6", className)} role={legend ? undefined : "img"} aria-label={legend ? undefined : ariaLabel}>
       <ChartContainer config={config} className="h-40 w-40 shrink-0 aspect-square">
         <RechartsPrimitive.PieChart>
-          <ChartTooltip content={(props) => <ChartTooltipContent {...props} payload={props.payload?.map((p) => ({ ...p, value: segments.find((s) => s.key === p.dataKey || s.key === p.name)?.formattedValue ?? p.value }))} />} />
+          <ChartTooltip
+            content={(props) => (
+              <ChartTooltipContent
+                {...props}
+                payload={props.payload?.map((p) => ({ ...p, value: segments.find((s) => s.key === p.dataKey || s.key === p.name)?.formattedValue ?? p.value }))}
+              />
+            )}
+          />
           <RechartsPrimitive.Pie data={visible} dataKey="value" nameKey="key" innerRadius="60%" outerRadius="90%" paddingAngle={2}>
             {visible.map((s) => (
               <RechartsPrimitive.Cell key={s.key} fill={s.color} />
@@ -74,17 +81,19 @@ export function DonutChart({ segments, centerLabel, emptyState, className }: Don
           </RechartsPrimitive.Pie>
         </RechartsPrimitive.PieChart>
       </ChartContainer>
-      <div className="flex flex-1 flex-col gap-1.5">
-        {segments.map((s) => (
-          <div key={s.key} className="flex items-center justify-between gap-3 text-[13px]">
-            <div className="flex items-center gap-2 text-on-surface-muted">
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
-              <span>{s.label}</span>
+      {legend && (
+        <div className="flex flex-1 flex-col gap-1.5">
+          {segments.map((s) => (
+            <div key={s.key} className="flex items-center justify-between gap-3 text-[13px]">
+              <div className="flex items-center gap-2 text-on-surface-muted">
+                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: s.color }} />
+                <span>{s.label}</span>
+              </div>
+              <span className="tabular-nums text-on-surface">{s.value === 0 ? "—" : s.formattedValue}</span>
             </div>
-            <span className="tabular-nums text-on-surface">{s.value === 0 ? "—" : s.formattedValue}</span>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
