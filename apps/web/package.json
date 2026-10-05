@@ -9,7 +9,7 @@
     "start": "dotenv -e ../../.env -- next start",
     "start:e2e": "dotenv -e ../../.env.e2e -v NEXT_DIST_DIR=.next-e2e -- next start --port 3110",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@spine/shared": "workspace:*",
