@@ -12,6 +12,7 @@ import { InvoicesService } from "./invoices.service";
 import { InvoiceEmailWorker } from "./invoice-email.worker";
 import { InvoiceRemindersController } from "./invoice-reminders.controller";
 import { InvoiceRemindersService } from "./invoice-reminders.service";
+import { InvoiceReminderRunWorker } from "./invoice-reminder-run.worker";
 
 /**
  * PRD F5 Stage 1 (Phase 2 · Money In) — invoice CRUD, issue with ledger
@@ -34,7 +35,7 @@ import { InvoiceRemindersService } from "./invoice-reminders.service";
 @Module({
   imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule],
   controllers: [InvoicesController, InvoiceRemindersController],
-  providers: [InvoicesService, InvoiceEmailWorker, InvoiceRemindersService],
+  providers: [InvoicesService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker],
   exports: [InvoicesService],
 })
 export class InvoicesModule {}

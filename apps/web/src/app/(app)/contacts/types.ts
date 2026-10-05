@@ -53,6 +53,8 @@ export interface Contact {
   taxId: string | null;
   website: string | null;
   logoFileId: string | null;
+  /** US-INV-19 — skip this contact's invoices in automatic reminders. */
+  remindersPaused: boolean;
   createdByUserId: string | null;
   archivedAt: string | null;
   createdAt: string;

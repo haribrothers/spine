@@ -128,6 +128,9 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
   const subject = own ? subjectLabel : (ENTITY_NAMES[entry.entityType] ?? `a ${fieldLabel(entry.entityType)}`);
   const changes = (entry.changes ?? []).filter((c) => !isIdChange(c));
 
+  // US-INV-19: the reminder run has no actor.
+  if (entry.action === "automatic_reminder_sent") return own ? "Automatic reminder sent" : `Automatic reminder sent for ${subject}`;
+
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".
   if (entry.action === "duplicated") {
     const from = changes.find((c) => c.field === "duplicatedFrom")?.to;

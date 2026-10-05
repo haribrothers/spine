@@ -62,8 +62,9 @@ New schema the stories require. Each is created by the story named; until then i
 | `catalog_bundles` (new) | `id`, `org_id`, `name`, `description`, `currency` (offered on documents in that currency), `total_amount bigint` (sum of the line totals when saved, for the picker), `created_by_user_id` (own/others), `archived_at`, timestamps (migration `0065`) | US-QUO-25 |
 | `catalog_bundle_lines` (new) | `id`, `bundle_id` → bundles (cascade), `sort_order`, `type` enum `catalog_bundle_line_type` (item/heading/text), `catalog_item_id?` (provenance, set null), `name`, `description`, `quantity numeric(18,4)`, `unit_price_amount bigint`, `discount_percentage`, `tax_rate_percentage`, `tax_rate_id?`, `tax_group_id?`, `is_tax_inclusive` — a snapshot of the quote line it was saved from (D-096) | US-QUO-25 |
 | `settings` key `invoice_reminders` | `{ enabled, offsets: int[], repeatEvery?, repeatMax?, sendAt }` | US-INV-18 |
-| `contacts` | `reminders_paused boolean not null default false` | US-INV-19 |
-| `invoice_reminders` (new) | `id`, `org_id`, `invoice_id`, `sent_at`, `kind` (`auto`/`manual`); unique (`invoice_id`, date of `sent_at`) | US-INV-19 |
+| `contacts` | `reminders_paused boolean not null default false` (migration `0066`) | US-INV-19 |
+| `invoice_reminders` (new) | `id`, `org_id`, `invoice_id` → invoices (cascade), `sent_on date` (organisation date), `sent_at`, `kind` enum `invoice_reminder_kind` (`auto`/`manual`); unique (`invoice_id`, `sent_on`) — at most one reminder per invoice per day, automatic or manual (migration `0066`) | US-INV-19 |
+| `settings` key `invoice_reminders_last_run` | `{ date }` — the organisation date the reminder run last completed, so a day runs once | US-INV-19 |
 | `recurring_invoices` (new) | `id`, `org_id`, `name`, `contact_id`, `frequency` (`weekly`/`monthly`/`quarterly`/`yearly`), `day_rule`, `starts_on`, `ends_on?`, `max_count?`, `due_days`, `mode` (`issue_and_email`/`draft`), `status` (`active`/`paused`/`finished`), `next_run_on`, `created_by_user_id`, timestamps | US-INV-20 |
 | `recurring_invoice_lines` (new) | same shape as `catalog_bundle_lines`, keyed by `recurring_invoice_id` | US-INV-20 |
 | `invoices` | `recurring_invoice_id uuid?`, `recurring_run_on date?`; unique (`recurring_invoice_id`, `recurring_run_on`) | US-INV-21 |

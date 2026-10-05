@@ -2453,6 +2453,17 @@ Regression: picking a single catalogue item still fills one line; "Use … as a 
 
 Regression: the manual "Send reminder" on an overdue invoice still sends, now with the subject "Reminder: invoice INV-… is N days overdue".
 
+## 64. Scheduled reminders (US-INV-19, Phase 7)
+
+1. Turn on Settings › Automatic reminders with "Send at" a few minutes from now (organisation time = the server's `TZ`). Make an issued invoice due 7 days ago with a balance, for a customer with an email.
+2. Within 15 minutes of "Send at", the customer gets one email: "Reminder: invoice INV-… is 7 days overdue", showing the balance due, due date and payment instructions, with the PDF attached. The invoice history shows "Automatic reminder sent".
+3. Wait for the next 15-minute run: no second email. Restart the API: still no second email today.
+4. On another invoice due 7 days ago, click "Send reminder" by hand first. The run then sends nothing for it today.
+5. On a customer's contact page, turn on "Pause automatic reminders" ("Reminders paused" toast). Their overdue invoices get no automatic reminders; "Send reminder" by hand still works. A vendor's page has no switch.
+6. A paid, voided or fully credited invoice never gets a reminder.
+
+Regression: the contact page header (name, badges, email, tax ID, Edit/Archive/Delete) looks and works as before in light and dark mode; manual "Send reminder" still sends; Settings › Automatic reminders (§63) saves and previews as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

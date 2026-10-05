@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, uniqueIndex } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -202,3 +202,29 @@ export const invoiceLines = pgTable(
     index("invoice_lines_catalog_item_idx").on(table.catalogItemId),
   ],
 );
+
+export const invoiceReminderKindEnum = pgEnum("invoice_reminder_kind", ["auto", "manual"]);
+
+/**
+ * US-INV-19 (D-091) — every payment reminder sent, automatic or manual.
+ * `sent_on` is the organisation-time date; the unique index is what stops
+ * a second reminder for the same invoice on the same day, even when the
+ * run is late, repeated or racing a manual send.
+ */
+export const invoiceReminders = pgTable(
+  "invoice_reminders",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id, { onDelete: "cascade" }),
+    sentOn: date("sent_on", { mode: "string" }).notNull(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    kind: invoiceReminderKindEnum("kind").notNull(),
+  },
+  (table) => [uniqueIndex("invoice_reminders_invoice_day_uidx").on(table.invoiceId, table.sentOn), index("invoice_reminders_org_idx").on(table.orgId)],
+);
+

@@ -255,6 +255,7 @@ export class ContactsService {
           ...(input.taxId !== undefined ? { taxId: input.taxId } : {}),
           ...(input.website !== undefined ? { website: input.website } : {}),
           ...(input.logoFileId !== undefined ? { logoFileId: input.logoFileId } : {}),
+          ...(input.remindersPaused !== undefined ? { remindersPaused: input.remindersPaused } : {}),
           updatedAt: new Date(),
         })
         .where(eq(contacts.id, id));

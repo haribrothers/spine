@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  Switch,
   Tabs,
   TabsContent,
   TabsList,
@@ -176,6 +177,20 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     await reloadContact();
   }
 
+  async function handleRemindersPaused(remindersPaused: boolean) {
+    setContact((c) => (c ? { ...c, remindersPaused } : c));
+    try {
+      await apiClient.put(`/contacts/${contactId}`, { remindersPaused });
+      showToast(
+        remindersPaused ? "Reminders paused" : "Reminders on",
+        remindersPaused ? `${contact?.name ?? "This contact"} won't get automatic payment reminders.` : `${contact?.name ?? "This contact"} gets automatic payment reminders again.`,
+      );
+    } catch (err) {
+      setContact((c) => (c ? { ...c, remindersPaused: !remindersPaused } : c));
+      setError(err instanceof Error ? err.message : "Could not save the reminder setting.");
+    }
+  }
+
   async function handleArchive() {
     setBusy(true);
     try {
@@ -281,6 +296,18 @@ export function ContactDetail({ contactId }: { contactId: string }) {
                 )}
               </p>
             )}
+            {/* US-INV-19 — per-customer opt-out of the automatic reminder run (Settings › Automatic reminders). */}
+            {contact.type !== "vendor" &&
+              (canEdit ? (
+                <div className="flex items-center gap-2">
+                  <Switch id="reminders-paused" checked={contact.remindersPaused} onCheckedChange={handleRemindersPaused} />
+                  <label htmlFor="reminders-paused" className="text-[13px] text-on-surface">
+                    Pause automatic reminders
+                  </label>
+                </div>
+              ) : (
+                contact.remindersPaused && <p className="text-[13px] text-on-surface-muted">Automatic reminders paused</p>
+              ))}
           </div>
         </div>
 

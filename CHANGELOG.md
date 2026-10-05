@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-INV-19: send reminders on schedule without double-sending (Phase 7)
+
+- **Daily run.** The `invoice-reminder-run` queue fires every 15 minutes. For each organisation with automatic reminders on, once organisation time (the server's `TZ`) passes "Send at", it runs the day once: every issued invoice with a balance whose due date is a scheduled number of days away gets one reminder email ("Reminder: invoice INV-… is 7 days overdue" / "is due today" / "is due in 3 days"). If the server was off at send time, the day runs once when it comes back. Missed days aren't caught up.
+- **No double-sending.** New `invoice_reminders` table, one row per invoice per day (unique `invoice_id`, `sent_on`). Manual "Send reminder" records a row too, so the run skips an invoice already reminded that day. Paid, voided and fully credited invoices are never picked.
+- **Pause per customer.** "Pause automatic reminders" switch on a customer's contact page (`contacts.reminders_paused`, through `PUT /contacts/:id` with `contacts.edit_*`). Vendors don't get the switch. Members who can't edit the contact see "Automatic reminders paused" instead.
+- **History.** Each automatic reminder shows "Automatic reminder sent" in the invoice history.
+
+Tests:
+- `packages/shared/src/us-inv-19.test.ts` (2): the history line and the contact field.
+- `apps/api/src/common/us-inv-19.test.ts` (2): organisation clock and day counting.
+- `apps/api/src/modules/invoices/us-inv-19.http.integration.test.ts` (8): scheduled days, repeats, same-day skip (auto and manual), paid/void/credited skip, paused contact, once per day after "Send at", history, email subject/balance/instructions.
+- `apps/e2e/tests/us-inv-19.spec.ts` (2): the pause switch saves; vendors don't get it.
+
 ### 2026-10-05 — US-INV-18: turn on automatic payment reminders (Phase 7)
 
 - **Settings › Automatic reminders** (Owner-only, the `SettingsReminders` design): "Send reminders automatically" (off), the schedule (3 days before, on the due date, 7 and 14 days after, and every 14 days after that up to 3 more times), "Send at" in half-hour steps (organisation time = the server's `TZ`), "Save" and "Preview email" (the email in a sandboxed frame with its subject).

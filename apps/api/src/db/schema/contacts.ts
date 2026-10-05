@@ -70,6 +70,8 @@ export const contacts = pgTable(
      * touches these rows, never real customer/vendor data. Not surfaced in
      * any list UI — it's purely a filter key for that one bulk-delete op.
      */
+    /** US-INV-19 — "Pause automatic reminders": the reminder run skips this contact's invoices. */
+    remindersPaused: boolean("reminders_paused").notNull().default(false),
     isDemo: boolean("is_demo").notNull().default(false),
     /**
      * PRD §2.1/§9 S-01.15 — the "own vs others" capability split

@@ -73,6 +73,8 @@ export const updateContactSchema = z.object({
   taxId: z.string().optional().nullable(),
   website: z.string().optional().nullable(),
   logoFileId: uuidSchema.optional().nullable(),
+  /** US-INV-19 — "Pause automatic reminders" for this contact's invoices. */
+  remindersPaused: z.boolean().optional(),
   contactPersons: z.array(contactPersonInputSchema).optional(),
   addresses: z.array(addressInputSchema).optional(),
 });

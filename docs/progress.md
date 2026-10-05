@@ -299,7 +299,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-JOB-28 · Record how complete a job is and compare it with billing
 - [ ] US-JOB-29 · Number each progress claim on a job
 - [x] US-INV-18 · Turn on automatic payment reminders
-- [ ] US-INV-19 · Send reminders on schedule without double-sending
+- [x] US-INV-19 · Send reminders on schedule without double-sending
 - [ ] US-INV-20 · Set up a recurring invoice
 - [ ] US-INV-21 · Create recurring invoices automatically
 - [ ] US-INV-22 · Pause, edit or stop a recurring invoice

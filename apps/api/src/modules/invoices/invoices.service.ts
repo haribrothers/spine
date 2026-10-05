@@ -5,7 +5,8 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { invoices, invoiceLines, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
+import { invoices, invoiceLines, invoiceReminders, contacts, accounts, quotes, quoteLines, catalogItems, jobs, journalLines, milestones, settings } from "../../db/schema";
+import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -932,6 +933,8 @@ export class InvoicesService {
     }
 
     await this.db.update(invoices).set({ emailStatus: "pending", updatedAt: new Date() }).where(eq(invoices.id, id));
+    // US-INV-19: a manual reminder counts as today's, so the automatic run skips this invoice today.
+    await this.db.insert(invoiceReminders).values({ orgId, invoiceId: id, sentOn: orgClock().date, kind: "manual" }).onConflictDoNothing();
 
     await this.auditLog.record(this.db, {
       orgId,

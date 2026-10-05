@@ -463,6 +463,13 @@
       "when": 1791185286588,
       "tag": "0065_catalog_bundles",
       "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1791192759526,
+      "tag": "0066_invoice_reminders",
+      "breakpoints": true
     }
   ]
 }

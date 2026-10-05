@@ -461,7 +461,8 @@ Routes the stories add. Each is created by the story named.
 | CAT | GET/POST | `/catalog-bundles` (`?includeArchived=true`, `?currency=`) → bundles with their lines; POST `{ name, description?, sourceQuoteId }` copies the quote's lines (400 "Give the bundle a name.", "This quote has no item lines to save as a bundle."); GET/PUT/DELETE `/catalog-bundles/:id` (PUT renames/re-describes only); POST `/catalog-bundles/:id/archive`, `/restore`. Audited as `catalog_bundle` | GET any member; create `catalog.edit_own`; rename `catalog.edit_own`/`edit_others`; archive/restore/delete `catalog.delete_own`/`delete_others` (by creator) | US-QUO-25, US-QUO-26 |
 | INV | GET/PUT | `/org/settings/invoice_reminders` (generic settings route, new key). PUT validates with `invoiceRemindersSchema`: on with no day ticked → 400 "Pick at least one reminder."; `sendAt` is `HH:MM` | GET any member; PUT Owner | US-INV-18 |
 | INV | GET | `/invoice-reminders/preview` → `{ subject, html, sample }`: the reminder email the most overdue unpaid invoice would get today (logo inlined), or a sample when nothing is overdue | roles: owner | US-INV-18 |
-| INV | — | `PUT /contacts/:id` accepts `remindersPaused` | `contacts.edit_*` | US-INV-19 |
+| INV | — | `PUT /contacts/:id` accepts `remindersPaused` (boolean; contacts return it) | `contacts.edit_*` | US-INV-19 |
+| INV | — | Queue `invoice-reminder-run` fires every 15 minutes; per organisation with reminders on, once the organisation time passes "Send at" and the day hasn't run, it records one `invoice_reminders` row (`auto`) per issued invoice with a balance whose due date is a scheduled number of days away (contacts with `remindersPaused` skipped; an invoice already reminded that day skipped), audits `automatic_reminder_sent` (no actor) and queues `invoice-send-email` with `{ isReminder: true, daysOverdue }`. `POST /invoices/:id/send-reminder` records a `manual` row for the day | System | US-INV-19 |
 | INV | GET/POST | `/recurring-invoices`; PUT/DELETE `/recurring-invoices/:id`; POST `/recurring-invoices/:id/pause`, `/resume` | `invoices.manage_recurring` | US-INV-20–22 |
 | INV | POST | `/invoices/bulk/send-reminders { ids }` → `{ sent, skipped }` | `invoices.send_reminder` | US-INV-23 |
 | INV | POST | `/invoices/bulk/pdf { ids }` → ZIP | `invoices.edit_own` read rules | US-INV-24 |
@@ -499,6 +500,6 @@ Routes the stories add. Each is created by the story named.
 | `files_damaged` | Owners | "<n> stored files are damaged or missing — restore from your latest backup." | US-OPS-28 |
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |
 
-Queues added: `file-integrity-check` (weekly), `invoice-reminder-run` (daily), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.
+Queues added: `file-integrity-check` (weekly), `invoice-reminder-run` (every 15 min, runs each organisation's day once after "Send at"), `recurring-invoice-run` (daily 6:00 AM), `daily-digest` (every 15 min), `data-export`, `store-issued-pdf`.
 
 `GET /quotes/:id/pdf`, `/invoices/:id/pdf`, `/credit-notes/:id/pdf` and `/payments/:id/pdf` render live for a draft and, once the document is sent or issued, always serve the PDF stored at that moment (stored by `store-issued-pdf`, or on the first download for documents issued before US-INV-17). Email jobs attach the same stored file.
