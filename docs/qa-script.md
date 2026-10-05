@@ -2522,6 +2522,17 @@ Regression: the bulk bar's "Send reminders" and "Clear" (§68) still work; singl
 
 Regression: the contact page header (badges, Edit/Archive/Delete, Pause automatic reminders) and Timeline look and work as before in light and dark mode.
 
+## 71. Statement PDF (US-PAY-15, Phase 7)
+
+1. From "Send a statement" (§70) with "All activity", "Download PDF": the header shows your business (logo or initials), "STATEMENT", the period, "Statement for <customer>" with their address and "Balance due".
+2. The table has Date, Reference, Type, Charges, Payments, Balance, starting with "Opening balance", then each invoice, payment, credit note and void with a running balance that ends at the balance due.
+3. The aging strip shows Current, 1–30, 31–60, 61–90 and 90+ days. The amounts add up to what the customer owes on open invoices.
+4. With Settings › Payment instructions set, "How to pay" appears at the bottom; clear them and it disappears.
+5. With "Open invoices only", paid invoices and their payments are gone and there's no opening balance row.
+6. The PDF stays light, whatever the app theme.
+
+Regression: invoice, quote and receipt PDFs look as before.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

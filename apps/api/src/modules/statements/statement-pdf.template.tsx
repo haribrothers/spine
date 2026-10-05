@@ -41,7 +41,24 @@ const styles = StyleSheet.create({
   colRef: { width: 80 },
   colType: { flex: 1 },
   colMoney: { width: 80, textAlign: "right" },
+  aging: { flexDirection: "row", marginTop: 18, borderWidth: 1, borderColor: "#E7E5E0", borderRadius: 4 },
+  agingCell: { flex: 1, paddingVertical: 6, alignItems: "center" },
+  agingDivider: { borderLeftWidth: 1, borderLeftColor: "#E7E5E0" },
+  agingLabel: { fontSize: 7, color: "#555555", marginBottom: 2 },
+  agingValue: { fontSize: 9, fontWeight: 700 },
+  howToPay: { marginTop: 20 },
+  howToPayTitle: { fontSize: 9, fontWeight: 700, marginBottom: 2, color: "#211F1A" },
+  howToPayText: { fontSize: 9, lineHeight: 1.4 },
 });
+
+/** US-PAY-15 — the aging strip's buckets, in order. */
+export const AGING_LABELS = [
+  ["current", "Current"],
+  ["1-30", "1–30 days"],
+  ["31-60", "31–60 days"],
+  ["61-90", "61–90 days"],
+  ["90+", "90+ days"],
+] as const;
 
 function shortDate(value: string): string {
   return new Date(`${value}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -69,7 +86,10 @@ function initials(name: string): string {
 /**
  * US-PAY-14/15 — the statement PDF (`StatementPdf`): the business,
  * "STATEMENT" and the period, "Statement for <customer>" with the balance
- * due, and every charge and payment with a running balance.
+ * due, and every charge and payment with a running balance — from the
+ * opening balance for all activity, or just the open invoices with their
+ * payments and credits. Underneath, what's still owed by age (US-PAY-15)
+ * and the "How to pay" block when payment instructions are set (US-INV-16).
  */
 export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding }: StatementPdfData) {
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
@@ -134,6 +154,22 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
             <Text style={styles.colMoney}>{fmt(row.balance)}</Text>
           </View>
         ))}
+
+        <View style={styles.aging} wrap={false}>
+          {AGING_LABELS.map(([key, label], i) => (
+            <View key={key} style={[styles.agingCell, ...(i ? [styles.agingDivider] : [])]}>
+              <Text style={styles.agingLabel}>{label}</Text>
+              <Text style={styles.agingValue}>{fmt(statement.aging[key])}</Text>
+            </View>
+          ))}
+        </View>
+
+        {business?.paymentInstructions?.trim() && (
+          <View style={styles.howToPay} wrap={false}>
+            <Text style={styles.howToPayTitle}>How to pay</Text>
+            <Text style={styles.howToPayText}>{business.paymentInstructions.trim()}</Text>
+          </View>
+        )}
 
         <DocumentFooterLine footer={brand.footer} />
       </Page>

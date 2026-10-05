@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-PAY-15: give customers a clear statement PDF (Phase 7)
+
+- **Statement PDF** (`StatementPdf`), same fonts and colours as invoices: the business (logo, or its initials), "STATEMENT" and the period ("Jul 6 – Oct 4, 2026"), "Statement for <customer>" with their billing address, and "Balance due".
+- **Table**: Date, Reference, Type, Charges, Payments and Balance, starting with "Opening balance" (all activity). "Open invoices only" leaves out paid invoices, their payments and the opening balance.
+- **Aging strip**: Current, 1–30 days, 31–60 days, 61–90 days and 90+ days for what's still owed, by days past due today.
+- **How to pay**: the payment instructions (Settings › Payment instructions) at the bottom when set.
+
+Tests:
+- `apps/api/src/modules/statements/us-pay-15.integration.test.ts` (5): header, table and opening balance, aging strip, How to pay on and off, open-invoices-only.
+
 ### 2026-10-05 — US-PAY-14: send a customer a statement (Phase 7)
 
 - **"Send statement"** on a customer's contact page opens "Send a statement" (`ContactStatementDialog`): Period (Last 30 days, Last 90 days, This year, Custom), Show (Open invoices only, All activity), a summary ("Opening balance (<date>)", "Invoiced", "Paid and credited", "Balance due"), To (the contact's email) and Message (greeting the main contact person). Needs `reports.view_receivables`; vendors don't get it.
