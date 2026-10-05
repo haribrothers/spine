@@ -2390,6 +2390,16 @@ Regression: PDFs without branding set still use Spine Blue and show no footer li
 
 Regression: dragging a card between columns still moves the lead; the dashboard pipeline chart shows every stage in board order; demo data (Settings › Demo data) puts leads into your stages.
 
+## 58. Deleting a pipeline stage (US-CRM-20, Phase 7)
+
+1. Settings › Pipeline stages: add a stage and press its red ✕ — it disappears at once (it has no leads).
+2. Press ✕ on a stage with leads (e.g. Proposal with 3): "Delete “Proposal”?" asks "Move 3 leads to:" and "Delete stage" stays disabled until you choose a stage.
+3. Choose Qualified and press "Delete stage", then Save. On Pipeline, Proposal is gone and its leads are in Qualified.
+4. Won and Lost show a padlock instead of ✕.
+5. As Staff, try `PUT /org/lead-stages` (or open Settings): refused — only Owners change stages.
+
+Regression: Cancel in the delete dialog keeps the stage and its leads; leaving the pane without saving changes nothing.
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

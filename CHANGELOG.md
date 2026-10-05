@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-CRM-20: delete a stage and move its leads (Phase 7)
+
+- **Settings › Pipeline stages** gains a red ✕ on every open stage. A stage with no leads is removed at once; one with leads opens "Delete “<stage>”?" with "Move <n> leads to:" and a stage picker, and "Delete stage" stays disabled until a stage is chosen. Moves wait until Save and are sent with the stages (`moves`), so nothing changes if you leave without saving; a stage that was itself a move target passes its incoming leads on.
+- **API** (built with US-CRM-19): a deleted stage that still has leads is refused with '"<stage>" still has <n> leads. Choose a stage to move them to first.'; a move into a stage being deleted is refused; leads move and the stage is deleted in one transaction. Staff get 403.
+
+Tests:
+- `apps/api/src/modules/contacts/us-crm-20.http.integration.test.ts` (5): empty stage deleted; refused while it has leads; leads moved to the chosen stage; no move into a deleted stage; Staff 403.
+- `apps/e2e/tests/us-crm-20.spec.ts` (1): on a fresh organisation, an empty stage goes straight away; Proposal's 3 leads move to Qualified after "Move 3 leads to:" and Save.
+
 ### 2026-10-05 — US-CRM-19: rename, reorder and add pipeline stages (Phase 7)
 
 - **Data.** New `lead_stages` table (name, kind open/won/lost, position, token colour) replaces the fixed `lead_stage` enum. Migration `0063` seeds New / Qualified / Proposal / Won / Lost for every organisation and maps each lead to the stage at its old position; `0064` drops the enum column. New organisations get the same stages at sign-up, and `LeadStagesService.ensureSeeded` covers any organisation without them.

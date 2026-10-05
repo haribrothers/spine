@@ -1,8 +1,32 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Lock } from "lucide-react";
-import { Alert, AlertDescription, Button, DragHandle, Input, ReorderableItem, ReorderableList, Spinner, cn } from "@spine/ui";
+import { ArrowDown, ArrowUp, Lock, X } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  DragHandle,
+  FormField,
+  Input,
+  ReorderableItem,
+  ReorderableList,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+  cn,
+} from "@spine/ui";
 import { LEAD_STAGE_NAME_MAX, MAX_LEAD_STAGES, putLeadStagesSchema, type LeadStage, type LeadStageKind } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { STAGE_DOT_CLASS, useLeadStages } from "../../(app)/contacts/use-lead-stages";
@@ -26,10 +50,11 @@ function toRows(stages: LeadStage[]): StageRow[] {
 }
 
 /**
- * US-CRM-19 — Settings › Pipeline stages: rename, reorder and add the
- * columns of the pipeline board. Won and Lost always stay last and can
- * only be renamed. The whole ordered list is saved at once
- * (`PUT /org/lead-stages`).
+ * US-CRM-19 / US-CRM-20 — Settings › Pipeline stages: rename, reorder,
+ * add and delete the columns of the pipeline board. Won and Lost always
+ * stay last and can only be renamed. Deleting a stage that still has leads
+ * first asks which stage they move to. The whole ordered list, with any
+ * moves, is saved at once (`PUT /org/lead-stages`).
  */
 export function LeadStagesPane() {
   const { stages, error: loadError, setStages } = useLeadStages();
@@ -37,15 +62,30 @@ export function LeadStagesPane() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  /** Leads of deleted stages wait here until Save: deleted stage id → stage they move to. */
+  const [moves, setMoves] = useState<Record<string, string>>({});
+  const [deleting, setDeleting] = useState<StageRow | null>(null);
+  const [moveTo, setMoveTo] = useState("");
 
   useEffect(() => {
-    if (stages) setRows(toRows(stages));
+    if (stages) {
+      setRows(toRows(stages));
+      setMoves({});
+    }
   }, [stages]);
 
   const open = rows.filter((r) => r.kind === "open");
   const closed = rows.filter((r) => r.kind !== "open");
   const atLimit = rows.length >= MAX_LEAD_STAGES;
-  const payload = useMemo(() => ({ stages: rows.map((r) => ({ id: r.id, name: r.name, kind: r.kind, color: r.color })) }), [rows]);
+  const payload = useMemo(
+    () => ({
+      stages: rows.map((r) => ({ id: r.id, name: r.name, kind: r.kind, color: r.color })),
+      moves: Object.entries(moves).map(([fromStageId, toStageId]) => ({ fromStageId, toStageId })),
+    }),
+    [rows, moves],
+  );
+  /** Saved stages that can take a deleted stage's leads (a new stage has no id until it's saved). */
+  const moveTargets = deleting ? rows.filter((r) => r.id && r.key !== deleting.key) : [];
   const problem = putLeadStagesSchema.safeParse(payload).error?.issues[0]?.message;
 
   function setOpenOrder(keys: string[]) {
@@ -70,6 +110,28 @@ export function LeadStagesPane() {
     if (atLimit) return;
     const key = `new-${crypto.randomUUID()}`;
     setRows([...open, { key, name: "New stage", kind: "open", leadCount: 0 }, ...closed]);
+  }
+
+  function removeRow(row: StageRow, target?: string) {
+    setRows((prev) => prev.filter((r) => r.key !== row.key));
+    if (row.id && target) {
+      const targetRow = rows.find((r) => r.id === target)!;
+      setMoves((prev) => {
+        // Leads already headed for this stage follow its own leads to the new target.
+        const next = Object.fromEntries(Object.entries(prev).map(([from, to]) => [from, to === row.id ? target : to]));
+        return { ...next, [row.id!]: target };
+      });
+      setRows((prev) => prev.map((r) => (r.key === targetRow.key ? { ...r, leadCount: r.leadCount + row.leadCount } : r)));
+    }
+  }
+
+  function askDelete(row: StageRow) {
+    if (row.leadCount === 0) {
+      removeRow(row);
+      return;
+    }
+    setMoveTo("");
+    setDeleting(row);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -134,6 +196,16 @@ export function LeadStagesPane() {
           {row.leadCount} {row.leadCount === 1 ? "lead" : "leads"}
         </span>
         <span className="flex w-6 shrink-0 justify-center">
+          {!locked && (
+            <button
+              type="button"
+              aria-label={`Delete ${row.name}`}
+              onClick={() => askDelete(row)}
+              className="rounded-sm text-overdue transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              <X size={16} />
+            </button>
+          )}
           {locked && (
             <span title="Won and Lost can be renamed but not moved or deleted" className="text-on-surface-muted">
               <Lock size={14} aria-label="Can't be moved or deleted" />
@@ -177,7 +249,9 @@ export function LeadStagesPane() {
         <Button type="button" variant="secondary" onClick={addStage} disabled={atLimit}>
           + Add stage
         </Button>
-        <p className="text-[12px] text-on-surface-muted">{atLimit ? "Up to 12 stages." : "Up to 12 stages. Drag a stage, or use the arrows with the keyboard, to change its place."}</p>
+        <p className="text-[12px] text-on-surface-muted">
+          {atLimit ? "Up to 12 stages." : "Deleting a stage that still has leads asks which stage to move them to first. Up to 12 stages."}
+        </p>
         {problem && <p className="text-[13px] text-overdue">{problem}</p>}
       </div>
 
@@ -187,6 +261,46 @@ export function LeadStagesPane() {
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />
+
+      <AlertDialog open={!!deleting} onOpenChange={(o) => !o && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete “{deleting?.name}”?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Its leads aren&apos;t deleted — they move to the stage you choose when you save the stages.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <FormField label={`Move ${deleting?.leadCount ?? 0} ${deleting?.leadCount === 1 ? "lead" : "leads"} to:`}>
+            {(field) => (
+              <Select value={moveTo} onValueChange={setMoveTo}>
+                <SelectTrigger {...field} className="w-full">
+                  <SelectValue placeholder="Choose a stage…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {moveTargets.map((t) => (
+                    <SelectItem key={t.key} value={t.id!}>
+                      {t.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </FormField>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="danger"
+              disabled={!moveTo}
+              onClick={() => {
+                if (deleting && moveTo) removeRow(deleting, moveTo);
+                setDeleting(null);
+              }}
+            >
+              Delete stage
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </form>
   );
 }
