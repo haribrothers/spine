@@ -14,11 +14,15 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Card,
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { ArrowLeft, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronDown, Clock, XCircle } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -102,6 +106,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   const hasSendCapability = useCapability("quotes.send");
   const hasReviseCapability = useCapability("quotes.revise");
   const hasCreateJobCapability = useCapability("jobs.edit_own");
+  // US-QUO-24: anyone who can create quotes may start one from this quote.
+  const canDuplicate = useCapability("quotes.edit_own");
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const load = useCallback(() => {
     apiClient
@@ -157,6 +164,33 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark this quote as sent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** US-QUO-24 — opens the new draft straight away. */
+  async function handleDuplicate() {
+    if (!quote) return;
+    setBusy(true);
+    try {
+      const copy = await apiClient.post<Quote>(`/quotes/${quote.id}/duplicate`);
+      router.push(`/quotes/${copy.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not duplicate this quote.");
+      setBusy(false);
+    }
+  }
+
+  /** US-QUO-24 — "Email again" re-sends the quote email; the page polls while it's pending. */
+  async function handleEmailAgain() {
+    if (!quote) return;
+    setBusy(true);
+    try {
+      setQuote(await apiClient.post<Quote>(`/quotes/${quote.id}/resend`));
+      showToast("Email queued", `Quote ${quote.number ?? ""} is being emailed to ${quote.contactName ?? "the contact"} again.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not email this quote again.");
     } finally {
       setBusy(false);
     }
@@ -328,7 +362,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" />
+            <HistorySection endpoint={`/quotes/${quote.id}/history`} subjectLabel="this quote" open={historyOpen} onOpenChange={setHistoryOpen} />
             {/* PRD S-03.3 / US-INV-17 — a draft previews live; a sent quote downloads the PDF stored when it was sent (see quotes.controller.ts's GET /:id/pdf). `target="_blank"` opens the browser's native PDF viewer rather than forcing a download, matching how most PDF "preview" affordances behave; the browser's own Save/Download control still lets a user save it if they want the file. */}
             <Button variant="secondary" asChild>
               <a href={quotePdfUrl(quote.id)} target="_blank" rel="noreferrer">
@@ -365,6 +399,18 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 Delete draft
               </Button>
             )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" disabled={busy}>
+                  More <ChevronDown size={14} />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {canDuplicate && <DropdownMenuItem onSelect={handleDuplicate}>Duplicate as new draft</DropdownMenuItem>}
+                {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={handleEmailAgain}>Email again</DropdownMenuItem>}
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 

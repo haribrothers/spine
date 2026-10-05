@@ -456,7 +456,8 @@ Routes the stories add. Each is created by the story named.
 | DASH | GET | `/dashboard/kpis` → `{ key, value, previous, series[] }[]` for the KPIs the caller may see | Any member (per-KPI capability) | US-DASH-14 |
 | DASH | GET | `/reports/money-in-out?months=3\|6\|12` | `reports.view_dashboard_summary` | US-DASH-15 |
 | DASH | — | `GET /activities/overdue` gains `includeToday=true`; `GET /dashboard/activity` gains `actor` and `groupCount` | as today | US-DASH-16, US-DASH-19 |
-| QUO | POST | `/quotes/:id/duplicate` | `quotes.edit_own` | US-QUO-24 |
+| QUO | POST | `/quotes/:id/duplicate` → the new draft: same contact, lines (their snapshot prices and tax), notes and terms; no number, `parentQuoteId` null, version 1, valid until today plus the original's validity period (30 days when it had none); audited as `duplicated` with `duplicatedFrom` | `quotes.edit_own` | US-QUO-24 |
+| QUO | POST | `/quotes/:id/resend` ("Email again") → queues the quote email again with a fresh public link (earlier links keep working); `emailStatus` back to `pending`; only `sent` quotes (else 400 "Only a sent quote can be emailed again.") | `quotes.send` | US-QUO-24 |
 | CAT | GET/POST | `/catalog-bundles`; PUT/DELETE `/catalog-bundles/:id`; POST `/catalog-bundles/:id/archive` | `catalog.edit_own`/`edit_others`/`delete_*` | US-QUO-25, US-QUO-26 |
 | INV | GET/PUT | `/org/settings/invoice_reminders` (generic settings route, new key) | GET any member; PUT Owner | US-INV-18 |
 | INV | — | `PUT /contacts/:id` accepts `remindersPaused` | `contacts.edit_*` | US-INV-19 |

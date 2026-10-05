@@ -2411,6 +2411,17 @@ Regression: Cancel in the delete dialog keeps the stage and its leads; leaving t
 
 Regression: saving a quote with only catalogue items creates nothing new; editing a draft keeps its lines; the tax picker on each line still works.
 
+## 60. Duplicate a quote (US-QUO-24, Phase 7)
+
+1. Open a sent quote and press "More ▾": "Duplicate as new draft", "Email again" and "View history" (bundles arrive with US-QUO-25).
+2. "Duplicate as new draft" opens a new Draft with the same contact, lines, notes and terms, no number and a validity date in the future.
+3. Change a catalogue item's price, then duplicate a quote that uses it: the copy keeps the original quote's price.
+4. On the copy, "More ▾" → "View history": the first entry reads "Duplicated from QUO-<number> by <you>".
+5. "Email again" on a sent quote: a toast says it's being emailed again and the email status shows sending, then sent. The customer's earlier link still opens.
+6. As Staff without "create quotes", the menu has no "Duplicate as new draft".
+
+Regression: Revise still creates the next version; the quote's History is still reachable (now from "More ▾").
+
 ## Known gaps — don't file these as bugs
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

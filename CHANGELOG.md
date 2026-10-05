@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-05 — US-QUO-24: duplicate a quote as a new draft (Phase 7)
+
+- **"More ▾"** on the quote page (the `QuoteActionsMenu` design): "Duplicate as new draft" (members with `quotes.edit_own`), "Email again" (sent quotes, `quotes.send`) and "View history" (the History dialog, which can now be opened from a menu). "Save lines as a bundle…" joins it with US-QUO-25.
+- **API.** `POST /quotes/:id/duplicate` copies the contact, lines with their snapshot prices and tax, notes and terms into a new draft — no number, no parent, version 1, valid until today plus the original's validity period (30 days if it had none) — and audits `duplicated` from the original's number, which History shows as "Duplicated from QUO-0004 by Sarah Mendes". `POST /quotes/:id/resend` re-queues a sent quote's email with a fresh public link (earlier links stay valid).
+
+Tests:
+- `packages/shared/src/us-quo-24.test.ts` (1): the history sentence.
+- `apps/api/src/modules/quotes/us-quo-24.http.integration.test.ts` (5): the copy's fields; original line prices kept after a catalogue price change; history entry; 403 without `quotes.edit_own`; "Email again" queues the email with a working link, and a draft is refused.
+- `apps/e2e/tests/us-quo-24.spec.ts` (1): the menu items, duplicating into a draft, and the history sentence.
+
 ### 2026-10-05 — US-CAT-06: add a new item while building a quote (Phase 7)
 
 - **One item field.** The quote line's separate name box and "Prefill from catalogue…" dropdown are replaced by `LineItemPicker` (`apps/web/src/components/line-item-picker.tsx`), laid out as the `QuoteLinePicker` design: type a name and an ARIA combobox list shows matching catalogue items with price and unit; when nothing matches exactly it ends with "Use “<name>” as a one-off line" and, for members with `catalog.edit_own`, "Also save to catalogue". Arrows, Enter and Escape work; focus leaving closes the list.

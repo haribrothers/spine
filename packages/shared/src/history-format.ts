@@ -36,6 +36,7 @@ const ENTITY_NAMES: Record<string, string> = {
   job_note: "a job note",
   job_photo: "a job photo",
   lead: "a lead",
+  lead_stage: "a pipeline stage",
   meeting: "a meeting",
   milestone: "a milestone",
   payment: "a payment",
@@ -125,6 +126,12 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
   const own = !ownEntityType || entry.entityType === ownEntityType;
   const subject = own ? subjectLabel : (ENTITY_NAMES[entry.entityType] ?? `a ${fieldLabel(entry.entityType)}`);
   const changes = (entry.changes ?? []).filter((c) => !isIdChange(c));
+
+  // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".
+  if (entry.action === "duplicated") {
+    const from = changes.find((c) => c.field === "duplicatedFrom")?.to;
+    return from ? `Duplicated from ${String(from)} by ${actor}` : `${actor} duplicated ${subject}`;
+  }
 
   if (entry.action === "updated" && changes.length > 0) {
     const shown = changes.slice(0, MAX_CHANGES_LISTED).map(changePhrase);

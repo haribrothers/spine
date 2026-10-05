@@ -40,13 +40,21 @@ export function HistorySection({
   endpoint,
   subjectLabel,
   ownEntityType,
+  open: controlledOpen,
+  onOpenChange,
 }: {
   endpoint: string;
   subjectLabel: string;
   /** For a history that also lists related records (a contact's invoices, say): which entries are this record's own. */
   ownEntityType?: string;
+  /** Opened from elsewhere (e.g. a "View history" menu item, US-QUO-24): no icon button is rendered. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const controlled = controlledOpen !== undefined;
+  const open = controlled ? controlledOpen : ownOpen;
+  const setOpen = controlled ? (onOpenChange ?? (() => {})) : setOwnOpen;
   const [entries, setEntries] = useState<AuditEntry[] | null>(null);
 
   useEffect(() => {
@@ -56,11 +64,13 @@ export function HistorySection({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
-          <History size={16} />
-        </Button>
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="ghost" size="icon" aria-label="View history" className="h-8 w-8 shrink-0 text-on-surface-muted">
+            <History size={16} />
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent>
         <DialogHeader>
           <DialogTitle>History</DialogTitle>
