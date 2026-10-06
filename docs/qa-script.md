@@ -2910,6 +2910,18 @@ Regression: bulk-approving expenses still works and posts each to the account it
 
 Regression: the Banking list, register filters and opening balance still read correctly with transfers in them; the dashboard's "Money in and out" counts neither side of a transfer between two bank or cash accounts.
 
+## 105. Money in and money out (US-BANK-05, Phase 8)
+
+1. Banking › "Money in": the dialog asks for "Into account", "Date", "Category", "Amount", "Contact" and "Description" (no "Tax"). The shortcuts read "Owner's capital", "Loan received" and "Interest received". Choose "Owner's capital": the category shows "3000 · Owner's Capital". Record $10,000.00: the toast reads "Money in recorded" and Bank Account goes up.
+2. "Money out": the shortcuts read "Owner's drawings", "Loan repayment" and "Bank charges" (6900 Other Expenses). Open the category list and search "Receivable", "Payable", "Tax" or "Advances": nothing is offered and the list reads "No matching account. Use a payment, bill or tax payment for this.". Bank, cash and card accounts aren't offered either (use Transfer).
+3. Bank charges of $11.80 with GST 18%: the amount reads "Includes $1.80 tax, which goes to Input Tax Receivable." After saving, Reports › Balance Sheet shows Input Tax Receivable up by $1.80 and Other Expenses up by $10.00.
+4. The register reads "Money in — Owner's Capital" and "Money out — Other Expenses", with the description as the reference and the contact if one was chosen.
+5. Row menu › "Delete entry" › confirm: the toast reads "Entry deleted", the row shows "Deleted", a "Money out deleted — …" row dated today reverses it, and the balance goes back. Team › Audit log shows "Money in or out" created and deleted.
+6. A new organisation's chart of accounts has 4800 Interest Received; an existing organisation gains it after the upgrade unless code 4800 was already used.
+7. As Staff without "Record transfers and other money in or out", there's no "Money in" / "Money out" and `POST /bank-transactions` returns 403; Field 403.
+
+Regression: Transfer still works and deleting a transfer still reads "Delete transfer". The Chart of accounts settings pane lists 4800 under income.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

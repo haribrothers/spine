@@ -160,3 +160,64 @@ export interface BankTransfer {
   reference: string | null;
   deletedAt: string | null;
 }
+
+/**
+ * Accounts that move only through their own documents, never through money
+ * in or out (US-BANK-05) or a manual journal (D-134): receivables,
+ * retention, input and output tax, payables, customer advances, retained
+ * earnings and opening balance adjustments.
+ */
+export const CONTROL_ACCOUNT_CODES = ["1100", "1150", "1200", "2000", "2100", "2200", "3200", "3900"] as const;
+export const CONTROL_ACCOUNT_HINT = "Use a payment, bill or tax payment for this.";
+export const MONEY_ACCOUNT_AS_CATEGORY = "Use a transfer between your accounts for this.";
+
+export const BANK_TRANSACTION_DIRECTIONS = ["in", "out"] as const;
+export type BankTransactionDirection = (typeof BANK_TRANSACTION_DIRECTIONS)[number];
+
+/** The category shortcuts on Money in / Money out (D-174), by the ledger code they pick. */
+export const BANK_TRANSACTION_SHORTCUTS: { label: string; code: string; direction: BankTransactionDirection }[] = [
+  { label: "Owner's capital", code: "3000", direction: "in" },
+  { label: "Loan received", code: "2500", direction: "in" },
+  { label: "Interest received", code: "4800", direction: "in" },
+  { label: "Owner's drawings", code: "3100", direction: "out" },
+  { label: "Loan repayment", code: "2500", direction: "out" },
+  { label: "Bank charges", code: "6900", direction: "out" },
+];
+
+const optionalUuid = z.string().uuid().optional().nullable().transform((v) => v ?? null);
+
+/** `POST /bank-transactions` (US-BANK-05). `amount` is what moved through the account; on money out any tax is included in it. */
+export const createBankTransactionSchema = z
+  .object({
+    moneyAccountId: z.string().uuid("Choose the account."),
+    direction: z.enum(BANK_TRANSACTION_DIRECTIONS),
+    accountId: z.string().uuid("Choose a category."),
+    contactId: optionalUuid,
+    amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+    taxRateId: optionalUuid,
+    taxGroupId: optionalUuid,
+    date: isoDateSchema,
+    description: z
+      .string()
+      .trim()
+      .max(500)
+      .optional()
+      .nullable()
+      .transform((v) => (v ? v : null)),
+  })
+  .refine((v) => v.direction === "out" || (!v.taxRateId && !v.taxGroupId), { message: "Tax applies to money out only.", path: ["taxRateId"] })
+  .refine((v) => !(v.taxRateId && v.taxGroupId), { message: "Choose a tax rate or a tax group, not both.", path: ["taxGroupId"] });
+export type CreateBankTransactionInput = z.infer<typeof createBankTransactionSchema>;
+
+export interface BankTransaction {
+  id: string;
+  moneyAccount: MoneyAccountRef;
+  direction: BankTransactionDirection;
+  account: { id: string; code: string; name: string };
+  contact: { id: string; name: string } | null;
+  amount: string;
+  taxAmount: string;
+  date: string;
+  description: string | null;
+  deletedAt: string | null;
+}

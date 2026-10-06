@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-05: record money in or out that has no invoice or bill (Phase 8)
+
+- **Money in / Money out** (`MoneyInOutDialog`, Banking): the account, "Date", "Category", "Amount", "Contact" (optional), "Tax" (money out only) and "Description". Shortcuts pick the usual categories: Owner's capital, Loan received and Interest received on money in; Owner's drawings, Loan repayment and Bank charges on money out (D-174).
+- **Categories**: any account except the control accounts (1100, 1150, 1200, 2000, 2100, 2200, 3200, 3900) and the money accounts themselves. Searching for one shows "No matching account. Use a payment, bill or tax payment for this."; the API refuses them with the same message (and "Use a transfer between your accounts for this." for a money account).
+- **Posting** (P22): money in is Dr the money account / Cr the category; money out is Dr the category (net), Dr 1200 Input Tax Receivable (any tax, backed out of the amount) / Cr the money account. Every line carries the contact.
+- **Registers** read "Money in — <category>" / "Money out — <category>", with the description as the reference. Row menu › "Delete entry" posts the reversing entry dated today and keeps the entry, marked "Deleted".
+- **Chart of accounts**: new 4800 Interest Received (income) for the "Interest received" shortcut, seeded at sign-up and added to existing organisations that haven't used 4800 (D-174).
+- **Migration 0080**: `bank_transactions` and account 4800.
+- **Access**: `banking.record`; Field never. Audited as "Money in or out".
+- **API.** `POST /bank-transactions`, `DELETE /bank-transactions/:id`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-05.http.integration.test.ts` (6): every shortcut's account exists; money in posts and reads in the register; bank charges with 18% GST split to 6900 and 1200; control accounts, a money account and tax on money in refused; deleting reverses and is audited; `banking.record` needed and Field refused.
+- `apps/e2e/tests/us-bank-05.spec.ts` (1): both dialogs and their shortcuts, the control-account hint, tax backed out of the amount, the register labels, and deleting an entry.
+
 ### 2026-10-06 — US-BANK-04: move money between my accounts (Phase 8)
 
 - **Transfer** (`TransferDialog`, Banking › "Transfer"): "From", "To", "Amount", "Date" and "Reference", with "Posts Dr <To> / Cr <From>. Both registers show it." and "Move money". The toast reads "Moved <amount> from <From> to <To>". Paying off a card is a transfer to the card.

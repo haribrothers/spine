@@ -66,6 +66,9 @@ function sourceHref(row: AccountRegisterRow): string | null {
   }
 }
 
+/** Entries recorded in Banking itself, which can be deleted (reversed) from the register. */
+const DELETABLE: ReadonlySet<string> = new Set(["bank_transfer", "bank_transaction"]);
+
 function monthStart(): Date {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -107,16 +110,21 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this account. Refresh to try again."));
   }, [accountId, from, to, unreconciledOnly, reloadKey]);
 
-  async function deleteTransfer() {
+  const deletingTransfer = deleting?.sourceType === "bank_transfer";
+
+  async function deleteEntry() {
     if (!deleting) return;
     setBusy(true);
     try {
-      await apiClient.delete(`/bank-transfers/${deleting.sourceId}`);
+      await apiClient.delete(deletingTransfer ? `/bank-transfers/${deleting.sourceId}` : `/bank-transactions/${deleting.sourceId}`);
       setDeleting(null);
       setReloadKey((k) => k + 1);
-      showToast("Transfer deleted", "A reversing entry was posted, so both balances are back where they were.");
+      showToast(
+        deletingTransfer ? "Transfer deleted" : "Entry deleted",
+        deletingTransfer ? "A reversing entry was posted, so both balances are back where they were." : "A reversing entry was posted, so the balance is back where it was.",
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't delete this transfer. Try again.");
+      setError(err instanceof Error ? err.message : "Couldn't delete this entry. Try again.");
       setDeleting(null);
     } finally {
       setBusy(false);
@@ -171,7 +179,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             header: "Actions",
             align: "right" as const,
             render: (row: AccountRegisterRow) =>
-              row.sourceType === "bank_transfer" && !row.deleted && !row.reconciled ? (
+              DELETABLE.has(row.sourceType) && !row.deleted && !row.reconciled ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label={`Actions for ${row.what}`}>
@@ -179,7 +187,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setDeleting(row)}>Delete transfer</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setDeleting(row)}>{row.sourceType === "bank_transfer" ? "Delete transfer" : "Delete entry"}</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : null,
@@ -257,13 +265,17 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete this transfer?</AlertDialogTitle>
-            <AlertDialogDescription>Spine posts a reversing entry today, so both accounts go back to their balances before it. The transfer stays in both registers, marked deleted.</AlertDialogDescription>
+            <AlertDialogTitle>{deletingTransfer ? "Delete this transfer?" : "Delete this entry?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingTransfer
+                ? "Spine posts a reversing entry today, so both accounts go back to their balances before it. The transfer stays in both registers, marked deleted."
+                : "Spine posts a reversing entry today, so the account goes back to its balance before it. The entry stays in the register, marked deleted."}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep transfer</AlertDialogCancel>
-            <AlertDialogAction variant="danger" onClick={deleteTransfer} disabled={busy}>
-              Delete transfer
+            <AlertDialogCancel>{deletingTransfer ? "Keep transfer" : "Keep entry"}</AlertDialogCancel>
+            <AlertDialogAction variant="danger" onClick={deleteEntry} disabled={busy}>
+              {deletingTransfer ? "Delete transfer" : "Delete entry"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -18,7 +18,7 @@ import {
   TableSkeleton,
   type TableColumn,
 } from "@spine/ui";
-import { MONEY_ACCOUNT_KIND_LABELS, type BankTransfer, type MoneyAccount } from "@spine/shared";
+import { MONEY_ACCOUNT_KIND_LABELS, type BankTransaction, type BankTransactionDirection, type BankTransfer, type MoneyAccount } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { useCapability } from "../../../lib/capabilities-context";
@@ -26,6 +26,7 @@ import { useMyRole } from "../../../lib/role-context";
 import { formatDay } from "./dates";
 import { useEntityToast } from "./entity-toast";
 import { MoneyAccountDialog } from "./money-account-dialog";
+import { MoneyInOutDialog } from "./money-in-out-dialog";
 import { TransferDialog } from "./transfer-dialog";
 
 const TABLE_COLUMNS = [
@@ -50,6 +51,7 @@ export function BankingExplorer() {
   const isOwner = useMyRole() === "owner";
   const canRecord = useCapability("banking.record");
   const [transferOpen, setTransferOpen] = useState(false);
+  const [moneyDirection, setMoneyDirection] = useState<BankTransactionDirection | null>(null);
   const [rows, setRows] = useState<MoneyAccount[] | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +92,14 @@ export function BankingExplorer() {
   function handleTransferred(transfer: BankTransfer) {
     load();
     showToast(`Moved ${formatMoney(BigInt(transfer.amount), currency)} from ${transfer.fromMoneyAccount.name} to ${transfer.toMoneyAccount.name}`, "Both registers show the transfer.");
+  }
+
+  function handleMoneyRecorded(entry: BankTransaction) {
+    load();
+    showToast(
+      `${entry.direction === "in" ? "Money in" : "Money out"} recorded`,
+      `${formatMoney(BigInt(entry.amount), currency)} ${entry.direction === "in" ? "into" : "from"} ${entry.moneyAccount.name} — ${entry.account.name}.`,
+    );
   }
 
   function openAdd() {
@@ -220,6 +230,16 @@ export function BankingExplorer() {
               Transfer
             </Button>
           )}
+          {canRecord && (
+            <Button variant="secondary" onClick={() => setMoneyDirection("in")} disabled={!rows?.length}>
+              Money in
+            </Button>
+          )}
+          {canRecord && (
+            <Button variant="secondary" onClick={() => setMoneyDirection("out")} disabled={!rows?.length}>
+              Money out
+            </Button>
+          )}
           {isOwner && <Button onClick={openAdd}>Add account</Button>}
         </div>
       )}
@@ -239,6 +259,14 @@ export function BankingExplorer() {
         </div>
       )}
 
+      <MoneyInOutDialog
+        direction={moneyDirection ?? "in"}
+        open={moneyDirection !== null}
+        onOpenChange={(open) => !open && setMoneyDirection(null)}
+        accounts={rows ?? []}
+        currency={currency}
+        onRecorded={handleMoneyRecorded}
+      />
       <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} accounts={rows ?? []} currency={currency} onRecorded={handleTransferred} />
       <MoneyAccountDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} onSaved={handleSaved} />
       {toast}

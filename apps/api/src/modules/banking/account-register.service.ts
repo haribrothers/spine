@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { bankTransfers, contacts, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
+import { accounts, bankTransactions, bankTransfers, contacts, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -25,6 +25,8 @@ interface SourceDetails {
   deleted?: boolean;
   /** For a transfer: the two accounts, so each side reads "Transfer to …" or "Transfer from …". */
   transfer?: { from: string; to: string };
+  /** For money in or out: the full "Money out — Bank charges" label. */
+  label?: string;
 }
 
 /**
@@ -78,7 +80,12 @@ export class AccountRegisterService {
       const source: SourceDetails = details.get(`${entry.sourceType}:${entry.sourceId}`) ?? { number: null, reference: null };
       const label = SOURCE_LABELS[entry.sourceType] ?? "Journal entry";
       // Money leaving this account went to the other one, and the other way round.
-      const what = source.transfer && entry.sourceType === "bank_transfer" ? (line.credit > 0n ? `Transfer to ${source.transfer.to}` : `Transfer from ${source.transfer.from}`) : source.number ? `${label} ${source.number}` : label;
+      const what =
+        source.transfer && entry.sourceType === "bank_transfer"
+          ? line.credit > 0n
+            ? `Transfer to ${source.transfer.to}`
+            : `Transfer from ${source.transfer.from}`
+          : (source.label ?? (source.number ? `${label} ${source.number}` : label));
       return {
         journalLineId: line.id,
         date: entry.date,
@@ -169,6 +176,20 @@ export class AccountRegisterService {
         for (const type of transferTypes) {
           out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt), transfer: { from: row.from, to: row.to } });
         }
+      }
+    }
+    const transactionIds = ids(["bank_transaction", "bank_transaction_delete"]);
+    if (transactionIds.length) {
+      const rows = await this.db
+        .select({ id: bankTransactions.id, direction: bankTransactions.direction, description: bankTransactions.description, deletedAt: bankTransactions.deletedAt, category: accounts.name })
+        .from(bankTransactions)
+        .innerJoin(accounts, eq(accounts.id, bankTransactions.accountId))
+        .where(and(eq(bankTransactions.orgId, orgId), inArray(bankTransactions.id, transactionIds)));
+      for (const row of rows) {
+        const kind = row.direction === "in" ? "Money in" : "Money out";
+        const base = { number: null, reference: row.description, deleted: Boolean(row.deletedAt) };
+        out.set(`bank_transaction:${row.id}`, { ...base, label: `${kind} — ${row.category}` });
+        out.set(`bank_transaction_delete:${row.id}`, { ...base, label: `${kind} deleted — ${row.category}` });
       }
     }
     return out;

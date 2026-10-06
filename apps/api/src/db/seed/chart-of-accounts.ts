@@ -35,6 +35,8 @@ export const DEFAULT_CHART_OF_ACCOUNTS: readonly SeedAccount[] = [
   { code: "3200", name: "Retained Earnings", type: "equity", isSystem: true },
   { code: "4000", name: "Sales — Goods", type: "income", isSystem: false },
   { code: "4100", name: "Sales — Services", type: "income", isSystem: false },
+  // US-BANK-05 (D-174): the "Interest received" shortcut for money in.
+  { code: "4800", name: "Interest Received", type: "income", isSystem: false },
   { code: "4900", name: "Discounts Given", type: "income", isSystem: false },
   { code: "5000", name: "Cost of Materials", type: "expense", isSystem: false },
   { code: "5100", name: "Subcontractor Costs", type: "expense", isSystem: false },

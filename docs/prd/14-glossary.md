@@ -113,6 +113,7 @@ Seeded for every new organisation (`apps/api/src/db/seed/chart-of-accounts.ts`).
 | 3900 | Opening Balance Adjustments ● (Phase 8, D-137) | Equity |
 | 4000 | Sales — Goods | Income |
 | 4100 | Sales — Services | Income |
+| 4800 | Interest Received (Phase 8, D-174) | Income |
 | 4900 | Discounts Given | Income (contra) |
 | 5000 | Cost of Materials | Expense |
 | 5100 | Subcontractor Costs | Expense |
