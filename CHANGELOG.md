@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-06: archive an account I no longer use (Phase 8)
+
+- **Archive** (Banking row menu, Owners): an account with money in it is refused with "Move the <balance> out of this account before archiving it."; the default with "Choose another default account first.". Otherwise it leaves the list, the totals and every picker (payments, vendor payments, expenses, transfers, money in/out), and keeps its register.
+- **Archived accounts**: a new "Active accounts" / "Archived accounts" filter on Banking lists archived accounts; "Restore" brings one back unless an active account has taken its name in the meantime.
+- Archiving and restoring are audited. The balance in the message uses the organisation's currency and locale (new `orgMoneySettings` helper).
+- **API.** `POST /money-accounts/:id/archive`, `POST /money-accounts/:id/restore` (Owner-only).
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-06.http.integration.test.ts` (5): a balance refused with its amount; the default refused; archive leaves the pickers but keeps the register, a payment to it is refused, restore brings it back, all audited; restoring over a taken name refused; Staff 403.
+- `apps/e2e/tests/us-bank-06.spec.ts` (1): both refusals, archiving, the archived filter, the payment picker without it, and restoring.
+
 ### 2026-10-06 — US-BANK-05: record money in or out that has no invoice or bill (Phase 8)
 
 - **Money in / Money out** (`MoneyInOutDialog`, Banking): the account, "Date", "Category", "Amount", "Contact" (optional), "Tax" (money out only) and "Description". Shortcuts pick the usual categories: Owner's capital, Loan received and Interest received on money in; Owner's drawings, Loan repayment and Bank charges on money out (D-174).

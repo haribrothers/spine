@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { Landmark, MoreHorizontal } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -13,6 +13,12 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  EmptyState,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   StatCard,
   StatusChip,
   TableSkeleton,
@@ -52,7 +58,11 @@ export function BankingExplorer() {
   const canRecord = useCapability("banking.record");
   const [transferOpen, setTransferOpen] = useState(false);
   const [moneyDirection, setMoneyDirection] = useState<BankTransactionDirection | null>(null);
-  const [rows, setRows] = useState<MoneyAccount[] | null>(null);
+  // Every account, archived included; `rows` below is the active ones, which pickers and totals use.
+  const [allRows, setAllRows] = useState<MoneyAccount[] | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
+  const rows = useMemo(() => allRows?.filter((r) => !r.archivedAt) ?? null, [allRows]);
+  const archivedRows = useMemo(() => allRows?.filter((r) => r.archivedAt) ?? null, [allRows]);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -61,8 +71,8 @@ export function BankingExplorer() {
 
   const load = useCallback(() => {
     apiClient
-      .get<MoneyAccount[]>("/money-accounts")
-      .then(setRows)
+      .get<MoneyAccount[]>("/money-accounts?includeArchived=true")
+      .then(setAllRows)
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your accounts. Refresh to try again."));
   }, []);
 
@@ -100,6 +110,16 @@ export function BankingExplorer() {
       `${entry.direction === "in" ? "Money in" : "Money out"} recorded`,
       `${formatMoney(BigInt(entry.amount), currency)} ${entry.direction === "in" ? "into" : "from"} ${entry.moneyAccount.name} — ${entry.account.name}.`,
     );
+  }
+
+  async function setArchived(account: MoneyAccount, archive: boolean) {
+    try {
+      await apiClient.post(`/money-accounts/${account.id}/${archive ? "archive" : "restore"}`);
+      load();
+      showToast(archive ? "Account archived" : "Account restored", archive ? `${account.name} is under Archived accounts. Its history stays.` : `${account.name} is back in the pickers.`);
+    } catch (err) {
+      showToast(archive ? `Couldn't archive ${account.name}` : `Couldn't restore ${account.name}`, err instanceof Error ? err.message : "Try again.");
+    }
   }
 
   function openAdd() {
@@ -182,6 +202,11 @@ export function BankingExplorer() {
                   >
                     Edit
                   </DropdownMenuItem>
+                  {row.archivedAt ? (
+                    <DropdownMenuItem onSelect={() => setArchived(row, false)}>Restore</DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem onSelect={() => setArchived(row, true)}>Archive</DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             ),
@@ -223,7 +248,16 @@ export function BankingExplorer() {
         />
       </div>
 
-      {(isOwner || canRecord) && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Select value={showArchived ? "archived" : "active"} onValueChange={(v) => setShowArchived(v === "archived")}>
+          <SelectTrigger className="w-48" aria-label="Which accounts">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="active">Active accounts</SelectItem>
+            <SelectItem value="archived">Archived accounts</SelectItem>
+          </SelectContent>
+        </Select>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {canRecord && (
             <Button variant="secondary" onClick={() => setTransferOpen(true)} disabled={!rows || rows.length < 2}>
@@ -242,15 +276,19 @@ export function BankingExplorer() {
           )}
           {isOwner && <Button onClick={openAdd}>Add account</Button>}
         </div>
-      )}
+      </div>
 
       {!rows ? (
         <TableSkeleton columns={TABLE_COLUMNS} />
+      ) : showArchived && archivedRows?.length === 0 ? (
+        <div className="rounded-lg border border-border bg-surface">
+          <EmptyState icon={<Landmark />} title="No archived accounts" description="Accounts you archive appear here with their history, and can be restored." />
+        </div>
       ) : (
         <div data-testid="money-accounts-table">
           <DataTable
             columns={columns}
-            data={rows}
+            data={(showArchived ? archivedRows : rows) ?? []}
             rowKey={(row) => row.id}
             searchPlaceholder="Search accounts"
             searchKey={(row) => `${row.name} ${row.bankName ?? ""} ${row.last4 ?? ""}`}

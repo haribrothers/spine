@@ -2922,6 +2922,18 @@ Regression: the Banking list, register filters and opening balance still read co
 
 Regression: Transfer still works and deleting a transfer still reads "Delete transfer". The Chart of accounts settings pane lists 4800 under income.
 
+## 106. Archive a money account (US-BANK-06, Phase 8)
+
+1. Move $1,000.00 into a second account, then its row menu › "Archive": "Move the $1,000.00 out of this account before archiving it." and nothing changes.
+2. Bank Account's row menu › "Archive" (the default): "Choose another default account first.".
+3. Transfer the money back, then "Archive": the toast reads "Account archived" and the account leaves the list. The totals at the top don't count it.
+4. The filter "Active accounts" › "Archived accounts": the account is listed. Its register still opens with its history.
+5. Record payment, Record vendor payment, the expense form, Transfer and Money in/out no longer offer it. Recording a payment to it through the API returns "Choose one of your active accounts.".
+6. Archived accounts › row menu › "Restore": "Account restored", and it's back in the list and the pickers. If you'd since added another account with the same name, restoring says "You already have an account called <name>. Choose another name.".
+7. Team › Audit log shows the account archived and restored. As Staff, there's no row menu and the routes return 403.
+
+Regression: adding, editing and moving the default still work; "Archived accounts" with none reads "No archived accounts".
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

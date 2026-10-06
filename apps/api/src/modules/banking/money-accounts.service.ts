@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   DUPLICATE_MONEY_ACCOUNT_NAME,
+  formatMoney,
   INACTIVE_MONEY_ACCOUNT,
   type LastMoneyAccounts,
   MONEY_ACCOUNT_CODE_RANGES,
@@ -13,6 +14,7 @@ import {
   type MoneyAccountNextCodes,
   type MoneyAccountRef,
 } from "@spine/shared";
+import { orgMoneySettings } from "../../common/money-format";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { accounts, journalLines, moneyAccounts, user } from "../../db/schema";
@@ -134,6 +136,38 @@ export class MoneyAccountsService {
   }
 
   /**
+   * US-BANK-06 — an account the business no longer uses leaves every picker
+   * but keeps its history. Only with a zero balance, and never the default.
+   */
+  async archive(orgId: string, id: string, actorUserId: string): Promise<MoneyAccount> {
+    return this.db.transaction(async (tx) => {
+      const existing = await this.load(tx, orgId, id);
+      if (existing.archivedAt) throw new BadRequestException("This account is already archived.");
+      if (existing.isDefault) throw new BadRequestException("Choose another default account first.");
+      const balance = (await this.balances(tx, [existing])).get(existing.id) ?? 0n;
+      if (balance !== 0n) {
+        const { currency, locale } = await orgMoneySettings(this.db, orgId);
+        throw new BadRequestException(`Move the ${formatMoney(balance, currency, locale)} out of this account before archiving it.`);
+      }
+      const [row] = await tx.update(moneyAccounts).set({ archivedAt: new Date(), updatedAt: new Date() }).where(eq(moneyAccounts.id, id)).returning();
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "archived", entityType: "money_account", entityId: id, contactId: null, changes: { name: existing.name } });
+      return this.toResponse(row!, await this.codeOf(tx, existing.accountId));
+    });
+  }
+
+  /** Brings an archived account back into the pickers, if its name is still free. */
+  async restore(orgId: string, id: string, actorUserId: string): Promise<MoneyAccount> {
+    return this.db.transaction(async (tx) => {
+      const existing = await this.load(tx, orgId, id);
+      if (!existing.archivedAt) throw new BadRequestException("This account isn't archived.");
+      await this.assertNameFree(tx, orgId, existing.name, id);
+      const [row] = await tx.update(moneyAccounts).set({ archivedAt: null, updatedAt: new Date() }).where(eq(moneyAccounts.id, id)).returning();
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "restored", entityType: "money_account", entityId: id, contactId: null, changes: { name: existing.name } });
+      return this.toResponse(row!, await this.codeOf(tx, existing.accountId));
+    });
+  }
+
+  /**
    * The active money account a payment, expense or transfer posts to.
    * An archived account, or one from another organisation, is refused.
    */
@@ -214,6 +248,11 @@ export class MoneyAccountsService {
       .groupBy(journalLines.accountId);
     const byAccount = new Map(counts.map((c) => [c.accountId, c.count]));
     return new Map(rows.map((r) => [r.id, byAccount.get(r.accountId) ?? 0]));
+  }
+
+  private async codeOf(db: Database | Transaction, accountId: string): Promise<string> {
+    const [ledger] = await db.select({ code: accounts.code }).from(accounts).where(eq(accounts.id, accountId));
+    return ledger!.code;
   }
 
   private async load(db: Database | Transaction, orgId: string, id: string): Promise<MoneyAccountRow> {

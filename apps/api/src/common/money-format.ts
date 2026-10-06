@@ -12,6 +12,16 @@ export async function orgLocale(db: Database, orgId: string): Promise<string> {
   return (row?.value as { locale?: string } | undefined)?.locale || "en-US";
 }
 
+/** The organisation's currency and locale from Settings › Currency & locale (USD, "en-US" when unset), for amounts in messages. */
+export async function orgMoneySettings(db: Database, orgId: string): Promise<{ currency: string; locale: string }> {
+  const [row] = await db
+    .select({ value: settings.value })
+    .from(settings)
+    .where(and(eq(settings.orgId, orgId), eq(settings.key, "currency")));
+  const value = row?.value as { code?: string; locale?: string } | undefined;
+  return { currency: value?.code || "USD", locale: value?.locale || "en-US" };
+}
+
 /** Characters the PDFs' built-in Helvetica can draw (Windows-1252). */
 const PDF_SAFE = new Set(new TextDecoder("windows-1252").decode(Uint8Array.from({ length: 256 }, (_, i) => i)));
 

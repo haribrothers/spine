@@ -66,6 +66,21 @@ export class MoneyAccountsController {
     return this.moneyAccounts.create(requireOrgId(session), session.user.id, parseInput(body));
   }
 
+  /** US-BANK-06 — archive an account with a zero balance that isn't the default. */
+  @Post(":id/archive")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async archive(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.moneyAccounts.archive(requireOrgId(session), id, session.user.id);
+  }
+
+  @Post(":id/restore")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async restore(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.moneyAccounts.restore(requireOrgId(session), id, session.user.id);
+  }
+
   @Put(":id")
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
