@@ -14,7 +14,7 @@ test.describe("US-PUR-23", () => {
     await expect(dialog.getByText("Preselected: posts to 5200 Direct Labour.")).toBeVisible();
     await expect(dialog.getByText("Labour is always for a job.")).toBeVisible();
     await expect(dialog.getByText("Only headcounts and day rates are recorded — no names, attendance or hours.")).toBeVisible();
-    await expect(dialog.getByRole("textbox", { name: "Amount" })).toHaveCount(0);
+    await expect(dialog.getByRole("textbox", { name: "Amount", exact: true })).toHaveCount(0);
 
     const rows: [string, string, string][] = [
       ["Mason", "4", "950.00"],

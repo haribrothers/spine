@@ -37,15 +37,19 @@ export function ExpenseRowActions({
   expense,
   onDeleted,
   onOpen,
+  onEdit,
 }: {
   expense: Expense;
   onDeleted: (expense: Expense) => void;
   onOpen: (expense: Expense) => void;
+  /** US-PUR-10 — opens the expense form on this expense. */
+  onEdit: (expense: Expense) => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canDelete = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.delete_own", others: "expenses.delete_others" });
+  const canEdit = useCanEditOwnership(expense.submittedByUserId, { own: "expenses.edit_own", others: "expenses.edit_others" });
 
   async function handleDelete() {
     setBusy(true);
@@ -76,6 +80,7 @@ export function ExpenseRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           <DropdownMenuItem onSelect={() => onOpen(expense)}>View</DropdownMenuItem>
+          {expense.status === "submitted" && canEdit && <DropdownMenuItem onSelect={() => onEdit(expense)}>Edit</DropdownMenuItem>}
           {expense.status === "submitted" && canDelete && (
             <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
               Delete

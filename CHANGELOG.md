@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — Fix: "Edit" was missing on submitted expenses (US-PUR-10)
+
+- US-PUR-10 was ticked in Phase 4. The API (`PUT /expenses/:id`) and the form's edit mode existed, but nothing in the web app ever opened the form on an existing expense. Now:
+  - The expense drawer has "Edit" while an expense is "Submitted" and you can edit it: your own with `expenses.edit_own` (Field always), anyone's with `expenses.edit_others`. It's a button when there's no review to make; when Approve and Reject show, it's under "More". Saving shows "Expense updated", and the expense stays "Submitted".
+  - The Expenses list's row menu has "Edit" for submitted expenses.
+- Editing an approved or rejected expense through the API now returns the story's message: "Only a submitted expense can be edited — an approved expense has already posted to the ledger."
+- The expense form's "Amount" and "Tax amount" fields are now linked to their labels, so screen readers announce them.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-10.http.integration.test.ts` (3):
+  - An edit stays submitted, and a delete works.
+  - Approved and rejected expenses are refused, with the message.
+  - Staff without "edit others'" get 403. Field can edit and delete their own and are refused on others'. The Owner can edit anyone's.
+- `apps/e2e/tests/us-pur-10.spec.ts` (1): edit from the drawer; Edit in the row menu; Edit under "More" on a colleague's expense; no Edit on an approved one.
+- `us-pur-23.spec.ts` matches "Amount" exactly, now that "Tax amount" is labelled.
+
 ### 2026-10-06 — Credit note, vendor payment and expense drawers match the payment drawer (Phase 8)
 
 - The credit note, vendor payment and expense drawers are now `size="lg"`. Their footers follow the payment drawer's pattern: History, then the main action, then a "More" menu (shown only when it has something in it), then "Close". The footer wraps at narrow widths.

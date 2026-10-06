@@ -220,7 +220,7 @@ export class ExpensesService {
       "own",
     );
     if (existing.status !== "submitted") {
-      throw new BadRequestException("Only a submitted expense can be edited");
+      throw new BadRequestException("Only a submitted expense can be edited — an approved expense has already posted to the ledger.");
     }
     // US-PUR-23: switching mode or changing labour rows re-checks the whole labour entry.
     const mode = input.entryMode ?? existing.entryMode;

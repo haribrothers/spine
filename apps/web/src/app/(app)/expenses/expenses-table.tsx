@@ -28,6 +28,7 @@ export function ExpensesTable({
   members,
   onDeleted,
   onOpen,
+  onEdit,
   selection,
 }: {
   expenses: Expense[];
@@ -37,6 +38,7 @@ export function ExpensesTable({
   members: MemberRow[];
   onDeleted: (expense: Expense) => void;
   onOpen: (expense: Expense) => void;
+  onEdit: (expense: Expense) => void;
 }) {
   const jobById = new Map(jobs.map((j) => [j.id, j]));
   const memberByUserId = new Map(members.map((m) => [m.userId, m]));
@@ -121,7 +123,7 @@ export function ExpensesTable({
       header: "",
       render: (row) => (
         <div className="flex justify-end">
-          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} />
+          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} onEdit={onEdit} />
         </div>
       ),
     },

@@ -3098,6 +3098,19 @@ Regression: the Tax Summary's cards, per-rate table and CSV export are unchanged
 
 Regression: the PDF links, refund, delete, approve, reject and bill-to-customer flows work as before.
 
+## 121. Edit a submitted expense (US-PUR-10)
+
+1. As Sarah (Staff), submit an expense and open it. The drawer shows "Edit" and "More" (with "Delete expense"). Click "Edit": the "Edit expense" dialog opens with the expense filled in, under "Only a submitted expense can be edited — an approved expense has already posted to the ledger."
+2. Change the amount and description, then "Save expense". The toast reads "Expense updated", the drawer shows the new figures, and the status is still "Submitted".
+3. On Expenses, the row menu (⋯) for a submitted expense offers "View", "Edit" and "Delete". Approved and rejected rows offer "View" only.
+4. As an Owner, open a colleague's submitted expense: "Reject" and "Approve" show, and "Edit" is under "More".
+5. Open an approved or rejected expense: there's no "Edit". `PUT /expenses/:id` on it returns 400 with the message above.
+6. As Sarah with "Edit others' expenses" off, a colleague's submitted expense has no "Edit", and `PUT` returns 403.
+7. As Marcus (Field), "Edit" works on your own submitted expense. On anyone else's, it's refused.
+8. With a screen reader, the form's "Amount" and "Tax amount" fields are announced by name.
+
+Regression: submitting a new expense still opens a blank "Submit an expense" form, including straight after editing one. Approving, rejecting, deleting and labour entries work as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

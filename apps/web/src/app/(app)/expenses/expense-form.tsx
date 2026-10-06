@@ -285,14 +285,14 @@ export function ExpenseForm({
             </FormField>
             {entryMode === "amount" && (
               <FormField label="Amount" required>
-                {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+                {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} />}
               </FormField>
             )}
             <FormField label="Tax rate">
               {() => <Combobox options={taxOptions} value={taxRateSelection} onValueChange={setTaxRateSelection} placeholder="No tax" />}
             </FormField>
             <FormField label="Tax amount" helperText="Included in the amount above, not added on top.">
-              {() => <MoneyInput value={taxAmount} onValueChange={setTaxAmount} currency={currency} />}
+              {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={taxAmount} onValueChange={setTaxAmount} currency={currency} />}
             </FormField>
             <FormField label="Paid by" required>
               {() => (
