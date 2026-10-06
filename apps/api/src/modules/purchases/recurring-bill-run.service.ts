@@ -3,7 +3,7 @@ import { createVendorBillSchema, occurrenceAfter, scheduleFinished } from "@spin
 import { and, asc, count, eq, lte } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { member, recurringBillLines, recurringBills, vendorBills } from "../../db/schema";
+import { member, recurringBillLines, recurringBills, settings, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { NotificationsService } from "../notifications/notifications.service";
 import { RECURRING_RUN_AT } from "../invoices/recurring-invoice-run.service";
@@ -51,8 +51,15 @@ export class RecurringBillRunService {
       .from(recurringBills)
       .where(and(eq(recurringBills.status, "active"), lte(recurringBills.nextRunOn, today)))
       .orderBy(asc(recurringBills.nextRunOn));
+    // Skipped while Recurring documents is switched off (D-154); schedules keep their dates.
+    const off = new Set(
+      (await this.db.select({ orgId: settings.orgId, value: settings.value }).from(settings).where(eq(settings.key, "modules")))
+        .filter((r) => (r.value as { recurring?: boolean } | null)?.recurring === false)
+        .map((r) => r.orgId),
+    );
     const created: string[] = [];
     for (const schedule of due) {
+      if (off.has(schedule.orgId)) continue;
       try {
         created.push(...(await this.catchUp(schedule, today)));
       } catch (err) {

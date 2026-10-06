@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createDb, type Database } from "../../db/client";
-import { accounts, contacts, journalEntries, member, notifications, recurringBills, user, vendorBillLines, vendorBills } from "../../db/schema";
+import { accounts, contacts, journalEntries, member, notifications, recurringBills, settings, user, vendorBillLines, vendorBills } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { orgClock } from "../../common/org-clock";
 import { RecurringBillRunService } from "./recurring-bill-run.service";
@@ -108,6 +108,16 @@ describe("US-PUR-30 · create recurring bills automatically (requires local Post
     expect((await made(s.id)).map((b) => b.recurringRunOn)).toEqual(["2026-08-01", "2026-09-01", "2026-10-01"]);
     const after = await reload(s.id);
     expect([after.nextRunOn, after.createdCount, after.status]).toEqual(["2026-11-01", 3, "active"]);
+  });
+
+  it("skips organisations with Recurring documents switched off", async () => {
+    const s = await schedule({}, "2026-10-01");
+    await db.insert(settings).values({ orgId, key: "modules", value: { leadsMeetings: true, jobsField: true, approvals: true, recurring: false } });
+    await run.runDue(at("2026-10-15"));
+    expect(await made(s.id)).toHaveLength(0);
+    await db.delete(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "modules")));
+    await run.runDue(at("2026-10-15"));
+    expect(await made(s.id)).toHaveLength(1);
   });
 
   it("finishes once the end condition is met", async () => {
