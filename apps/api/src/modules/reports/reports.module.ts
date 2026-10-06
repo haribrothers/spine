@@ -4,6 +4,7 @@ import { ReportsService } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
 import { AnalysisReportsService } from "./analysis-reports.service";
 import { CashFlowService } from "./cash-flow.service";
+import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 import { LedgerSourcesService } from "./ledger-sources.service";
 import { NotificationsModule } from "../notifications/notifications.module";
@@ -17,7 +18,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 @Module({
   imports: [NotificationsModule],
   controllers: [ReportsController],
-  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService],
+  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService],
   exports: [ReportsService, LedgerSourcesService],
 })
 export class ReportsModule {}

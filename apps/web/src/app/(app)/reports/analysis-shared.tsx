@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, Label, Spinner, Tabs, TabsList, TabsTrigger } from "@spine/ui";
-import type { AnalysisDocumentRef } from "@spine/shared";
+import { canOpenReport, REPORTS, type AnalysisDocumentRef } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useCapabilities } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
+import { useMyRole } from "../../../lib/role-context";
 
 export const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 export const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -29,13 +31,20 @@ export function useCurrency(): string {
   return currency;
 }
 
-/** Two reports on one screen, each its own page: the tabs switch between them. */
+/** Two reports on one screen, each its own page: the tabs switch between them. A tab the person can't open isn't shown. */
 export function ReportTabs({ value, tabs }: { value: string; tabs: { value: string; label: string; href: string }[] }) {
   const router = useRouter();
+  const role = useMyRole();
+  const { capabilities } = useCapabilities();
+  const visible = tabs.filter((t) => {
+    const report = REPORTS.find((r) => r.href === t.href);
+    return t.value === value || !report || canOpenReport(report, role, capabilities);
+  });
+  if (visible.length < 2) return null;
   return (
     <Tabs value={value} onValueChange={(v) => router.push(tabs.find((t) => t.value === v)!.href)}>
       <TabsList>
-        {tabs.map((t) => (
+        {visible.map((t) => (
           <TabsTrigger key={t.value} value={t.value}>
             {t.label}
           </TabsTrigger>

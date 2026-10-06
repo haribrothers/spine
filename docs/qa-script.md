@@ -3364,6 +3364,19 @@ Regression: Receivables and the invoice list are unchanged.
 
 Regression: Payables and the vendor bill list are unchanged.
 
+## 142. Payments received and made (US-RPT-30, Phase 8)
+
+1. This quarter: a payment allocated to an invoice into the bank account, a payment with nothing allocated into cash, a payment against an opening invoice, and a vendor payment against a bill.
+2. Reports › Receivables › Payments received: cards show Payments, Received and Held as credit ("1 payment"). Rows are newest first with number, date, customer, method, account, amount and Allocated to — the invoice number, "<number> (opening)" for the opening invoice, "Held as credit" for the unallocated one.
+3. Refund part of the held payment (Payments › Refund) and Refresh: its row shows "<amount> refunded" and Held as credit drops.
+4. Account → Cash: only the cash payment shows. All accounts: all are back.
+5. Click a payment number: the payment drawer opens. Click an invoice number: the invoice opens.
+6. Tab "Payments made": the vendor payment with its bill; the number opens the vendor payment drawer and the bill number opens the bill.
+7. As Staff with only "View receivables": Payments received opens and the "Payments made" tab isn't shown; /reports/payments-made shows the no-access page. The reverse with only "View payables". Field: no Reports.
+8. Dark mode: cards, table and links are readable.
+
+Regression: the Payments and Vendor Payments lists are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

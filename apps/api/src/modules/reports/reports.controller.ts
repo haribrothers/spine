@@ -1,4 +1,4 @@
-import { analysisQuerySchema, balanceSheetQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { analysisQuerySchema, balanceSheetQuerySchema, paymentRegisterQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -9,6 +9,7 @@ import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
 import { AnalysisReportsService } from "./analysis-reports.service";
 import { CashFlowService } from "./cash-flow.service";
+import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 
 /**
@@ -36,7 +37,30 @@ export class ReportsController {
     private readonly ledgerReports: LedgerReportsService,
     private readonly cashFlow: CashFlowService,
     private readonly analysis: AnalysisReportsService,
+    private readonly registers: RegistersService,
   ) {}
+
+  private registerQuery(query: unknown) {
+    const parsed = paymentRegisterQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return parsed.data;
+  }
+
+  /** US-RPT-30 — customer payments in a range, optionally one money account. Owner, or `reports.view_receivables`. */
+  @Get("payments-received")
+  @RequireCapability("reports.view_receivables")
+  async paymentsReceived(@Session() session: UserSession, @Query() query: unknown) {
+    const q = this.registerQuery(query);
+    return this.registers.paymentsReceived(requireOrgId(session), q.from, q.to, q.moneyAccountId);
+  }
+
+  /** US-RPT-30 — vendor payments in a range, optionally one money account. Owner, or `reports.view_payables`. */
+  @Get("payments-made")
+  @RequireCapability("reports.view_payables")
+  async paymentsMade(@Session() session: UserSession, @Query() query: unknown) {
+    const q = this.registerQuery(query);
+    return this.registers.paymentsMade(requireOrgId(session), q.from, q.to, q.moneyAccountId);
+  }
 
   private analysisRange(query: unknown) {
     const parsed = analysisQuerySchema.safeParse(query);

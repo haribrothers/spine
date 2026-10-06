@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-30: see payments received and made in a period (Phase 8)
+
+- **Reports › Receivables › Payments received** (`/reports/payments-received`): cards for Payments, Received and Held as credit, then each payment's number, date, customer, method, money account, amount and what it was allocated to (invoice numbers, "(opening)" for opening invoices, "Held as credit", amounts refunded). Newest first; search and Columns.
+- **Payments made** (`/reports/payments-made`, the second tab): the same for vendor payments and the bills they paid.
+- **"Account"** narrows either register to one money account. Numbers and allocations open their documents.
+- **Access.** Payments received needs "View receivables"; Payments made needs "View payables"; a tab you can't open isn't shown.
+- API: `GET /reports/payments-received`, `GET /reports/payments-made` (`?from=&to=&moneyAccountId=`).
+
 ### 2026-10-06 — US-RPT-29: see expenses by category and purchases by vendor (Phase 8)
 
 - **Reports › Purchases › Expenses by category** (`/reports/expenses-by-category`): "From bills, expenses, journals and money out · <range>", cards for Total expenses, Categories and Largest, then each expense account with a share bar, amount and % of total, largest first. Read from the ledger, so vendor credits and reversals net out.
