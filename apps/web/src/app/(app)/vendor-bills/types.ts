@@ -34,6 +34,8 @@ export interface VendorBill {
   status: VendorBillStatus;
   /** Vendor-supplied identifier, never system-allocated — see vendorBills' own schema doc comment. */
   billNumber: string;
+  /** US-RPT-18 — brought in from the old system: no lines; removed in Opening balances, never voided. */
+  isOpening?: boolean;
   date: string;
   dueDate: string | null;
   currency: string;

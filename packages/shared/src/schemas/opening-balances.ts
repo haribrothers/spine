@@ -144,3 +144,70 @@ export interface OpeningImportResult {
   /** Names in the file that match no contact; nothing was imported (choose "Create these customers" or fix the file). */
   unmatched: string[];
 }
+
+// US-RPT-18 — opening vendor bills and vendor credits.
+
+export const openingBillInputSchema = z
+  .object({
+    contactId: z.string().uuid("Choose the vendor."),
+    billNumber: z.string().trim().min(1, "Enter the vendor's bill number.").max(60),
+    billDate: isoDate,
+    dueDate: isoDate,
+    amountDue: z.coerce.bigint().positive("Enter the amount due."),
+  })
+  .refine((v) => v.dueDate >= v.billDate, { message: "The due date can't be before the bill date.", path: ["dueDate"] });
+export type OpeningBillInput = z.infer<typeof openingBillInputSchema>;
+
+export const openingBillImportSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        row: z.number().int(),
+        vendor: z.string().trim().min(1),
+        number: z.string().trim(),
+        billDate: z.string(),
+        dueDate: z.string(),
+        amountDue: z.string(),
+      }),
+    )
+    .max(5000, "Split the file into smaller files (up to 5,000 rows)."),
+  createVendors: z.boolean().default(false),
+});
+export type OpeningBillImportInput = z.infer<typeof openingBillImportSchema>;
+
+export const openingVendorCreditSchema = z.object({
+  contactId: z.string().uuid("Choose the vendor."),
+  amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+  vendorReference: z
+    .string()
+    .trim()
+    .max(60)
+    .optional()
+    .nullable()
+    .transform((v) => (v ? v : null)),
+});
+
+export const OPENING_BILL_NUMBER_USED = (number: string, vendor: string) => `Bill ${number} from ${vendor} is already in Spine. Enter each bill once.`;
+
+export interface OpeningBill {
+  id: string;
+  contactId: string;
+  contactName: string;
+  billNumber: string;
+  billDate: string;
+  dueDate: string;
+  amountDue: string;
+  balanceDue: string;
+  hasActivity: boolean;
+}
+
+export interface OpeningVendorCredit {
+  id: string;
+  contactId: string;
+  contactName: string;
+  number: string | null;
+  vendorReference: string | null;
+  amount: string;
+  /** What's left to apply or have refunded. */
+  available: string;
+}

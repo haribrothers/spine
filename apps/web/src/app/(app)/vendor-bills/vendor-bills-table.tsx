@@ -44,6 +44,7 @@ export function VendorBillsTable({
           <Link href={`/vendor-bills/${row.id}`} className="flex items-center gap-1.5 font-medium text-on-surface hover:text-primary hover:underline">
             {row.billNumber}
           </Link>
+          {row.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
           <AttachmentCount count={row.attachmentCount} />
         </span>
       ),

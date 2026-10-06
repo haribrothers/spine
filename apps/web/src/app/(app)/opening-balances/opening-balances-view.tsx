@@ -7,6 +7,8 @@ import { apiClient } from "../../../lib/api-client";
 import { AccountBalancesTab } from "./account-balances-tab";
 import { CustomerCreditTab } from "./customer-credit-tab";
 import { OpeningInvoicesTab } from "./opening-invoices-tab";
+import { OpeningBillsTab } from "./opening-bills-tab";
+import { VendorCreditTab } from "./vendor-credit-tab";
 
 /**
  * US-RPT-16–US-RPT-19 — `OpeningBalances`: the account balances on the
@@ -48,6 +50,8 @@ export function OpeningBalancesView() {
             <TabsTrigger value="accounts">Account balances</TabsTrigger>
             <TabsTrigger value="invoices">Customer invoices</TabsTrigger>
             <TabsTrigger value="credit">Customer credit</TabsTrigger>
+            <TabsTrigger value="bills">Vendor bills</TabsTrigger>
+            <TabsTrigger value="vendor-credits">Vendor credits</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts" className="pt-4">
             <AccountBalancesTab view={view} currency={currency} onSaved={setView} />
@@ -57,6 +61,12 @@ export function OpeningBalancesView() {
           </TabsContent>
           <TabsContent value="credit" className="pt-4">
             <CustomerCreditTab currency={currency} locked={view.status === "locked"} onChanged={load} />
+          </TabsContent>
+          <TabsContent value="bills" className="pt-4">
+            <OpeningBillsTab currency={currency} locked={view.status === "locked"} onChanged={load} />
+          </TabsContent>
+          <TabsContent value="vendor-credits" className="pt-4">
+            <VendorCreditTab currency={currency} locked={view.status === "locked"} onChanged={load} />
           </TabsContent>
         </Tabs>
       )}

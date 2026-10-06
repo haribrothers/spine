@@ -318,6 +318,8 @@ export class VendorCreditsService {
       if (!credit) throw new NotFoundException("Vendor credit not found");
       if (credit.status === "draft") throw new BadRequestException("A draft can be deleted instead of voided.");
       if (credit.status === "void") throw new BadRequestException("This vendor credit is already void.");
+      // US-RPT-18: an opening vendor credit is removed in Opening balances (while unlocked).
+      if (credit.isOpening) throw new BadRequestException("An opening vendor credit can't be voided. Remove it in Settings › Opening balances.");
       const [[applied], [refunded]] = await Promise.all([
         tx.select({ n: count() }).from(vendorCreditAllocations).where(eq(vendorCreditAllocations.vendorCreditId, id)),
         tx.select({ n: count() }).from(vendorRefunds).where(and(eq(vendorRefunds.vendorCreditId, id), isNull(vendorRefunds.deletedAt))),

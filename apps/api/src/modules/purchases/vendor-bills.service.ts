@@ -448,6 +448,8 @@ export class VendorBillsService {
     if (!preCheck) {
       throw new NotFoundException("Vendor bill not found");
     }
+    // US-RPT-18: an opening bill is removed in Opening balances (while unlocked).
+    if (preCheck.isOpening) throw new BadRequestException("An opening bill can't be voided. Remove it in Settings › Opening balances.");
 
     const result = await this.db.transaction(async (tx) => {
       const [existing] = await tx

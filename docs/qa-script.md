@@ -3218,6 +3218,18 @@ Regression: Settings' other panes work as before. Settings › Chart of accounts
 
 Regression: ordinary invoices still download their PDF, email with it attached, and void as before.
 
+## 130. Opening vendor bills and vendor credits (US-RPT-18, Phase 8)
+
+1. Opening balances › "Vendor bills" › "Add bill": Vendor, Bill number, Bill date, Due date and Amount due. Save: it's listed. The same vendor and number again: "Bill <number> from <vendor> is already in Spine. Enter each bill once." A bill date on or after the cutover date is refused.
+2. "Import from CSV" (Vendor, Bill no., Bill date, Due date, Amount): an unknown vendor gives "<n> vendor names didn't match anyone in Spine: …", with "Create these vendors" or "Fix the file".
+3. "Vendor credits" › "Add credit": Vendor, Amount and "Vendor's credit note number". It's listed as "VCR-000n · their <number>".
+4. "Account balances": Accounts Payable reads "From opening bills · <bills less credits>".
+5. Bills: each opening bill shows "Opening balance", reads "Brought in from your old system, so it has no lines…", and has no "Void". Payables lists it by due date. Pay it from Vendor Payments.
+6. Vendor Credits: the opening credit is "Open". "Apply to bills" and "Record refund" work, and "Void" says "An opening vendor credit can't be voided. Remove it in Settings › Opening balances."
+7. Once paid or applied, an opening bill or credit can't be edited or removed on Opening balances.
+
+Regression: ordinary bills and vendor credits record, pay, apply and void as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

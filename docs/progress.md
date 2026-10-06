@@ -362,7 +362,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TAX-08 · Record paying tax and using input tax credit
 - [x] US-RPT-16 · Set a cutover date and enter opening account balances
 - [x] US-RPT-17 · Bring in unpaid customer invoices, retention and credit
-- [ ] US-RPT-18 · Bring in unpaid vendor bills and vendor credits
+- [x] US-RPT-18 · Bring in unpaid vendor bills and vendor credits
 - [ ] US-RPT-19 · Check and lock my opening balances
 - [ ] US-RPT-20 · Post an adjusting journal
 - [ ] US-RPT-21 · Reverse a journal posted by mistake

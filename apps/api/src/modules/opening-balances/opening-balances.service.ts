@@ -15,7 +15,7 @@ import { formatMessageDate, orgMoneySettings } from "../../common/money-format";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, invoices, journalEntries, journalLines, openingBalanceLines, openingBalances, payments } from "../../db/schema";
+import { accounts, invoices, journalEntries, journalLines, openingBalanceLines, openingBalances, payments, vendorBills, vendorCredits } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService, type PostingLine } from "../ledger/ledger.service";
 import { SettingsService } from "../org/settings.service";
@@ -26,6 +26,8 @@ type OpeningRow = typeof openingBalances.$inferSelect;
 const OPENING_DOCUMENT_POINTERS: Record<string, (tx: Transaction, id: string, entryId: string) => Promise<unknown>> = {
   opening_invoice: (tx, id, entryId) => tx.update(invoices).set({ journalEntryId: entryId }).where(eq(invoices.id, id)),
   opening_customer_credit: (tx, id, entryId) => tx.update(payments).set({ journalEntryId: entryId }).where(eq(payments.id, id)),
+  opening_bill: (tx, id, entryId) => tx.update(vendorBills).set({ journalEntryId: entryId }).where(eq(vendorBills.id, id)),
+  opening_vendor_credit: (tx, id, entryId) => tx.update(vendorCredits).set({ entryId }).where(eq(vendorCredits.id, id)),
 };
 
 /** Labels for the read-only rows, by code. */

@@ -140,7 +140,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
   const canEdit = bill.status === "draft";
   const canRecord = bill.status === "draft";
-  const canVoid = bill.status === "recorded";
+  const canVoid = bill.status === "recorded" && !bill.isOpening;
   const balanceDue = BigInt(bill.balanceDue);
   const amountPaid = BigInt(bill.amountPaid);
   // US-PUR-25: vendor credits used against this bill.
@@ -170,6 +170,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-on-surface">{bill.billNumber}</h2>
               <Badge className={STATUS_BADGE_CLASS[bill.status]}>{VENDOR_BILL_STATUS_LABELS[bill.status]}</Badge>
+              {bill.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
             </div>
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {bill.contactName ?? "Unknown vendor"}
@@ -218,6 +219,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
+        {bill.isOpening && <p className="text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines. Attach the original bill below to keep it with this one.</p>}
         <div className="flex flex-col divide-y divide-border">
           {(bill.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-start justify-between gap-4 py-2">

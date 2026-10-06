@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-18: bring in unpaid vendor bills and vendor credits (Phase 8)
+
+- **"Vendor bills" tab** on Opening balances: "Add bill" (Vendor, Bill number, Bill date, Due date, Amount due) and "Import from CSV". The import matches vendors by name, offering "Create these vendors" or "Fix the file", and lists rows it couldn't import. The same vendor and bill number twice: "Bill <number> from <vendor> is already in Spine. Enter each bill once."
+- **Opening bills.** Each posts P20: Dr Opening Balance Adjustments / Cr Accounts Payable for the vendor, dated the day before the cutover date. It's a recorded bill with an "Opening balance" badge in Bills ("Brought in from your old system, so it has no lines…"). It ages on Payables, is paid with a vendor payment, and can't be voided.
+- **"Vendor credits" tab.** "Add credit" (Vendor, Amount, Vendor's credit note number) posts P20: Dr Accounts Payable / Cr Opening Balance Adjustments. It creates an open vendor credit numbered VCR that can be applied to bills or refunded (US-PUR-25, US-PUR-26), and can't be voided.
+- The Account balances tab's Accounts Payable row shows bills less credits. Moving the cutover date moves these entries too.
+- **Migration 0095**: `vendor_bills.is_opening`.
+- **API**: `/opening-balances/bills` (GET/POST/PUT/DELETE, import) and `/opening-balances/vendor-credits` (GET/POST/DELETE), all Owner only.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-18.http.integration.test.ts` (6):
+  - P20 for a bill, the grid total, and the duplicate message.
+  - P20 for a credit, applied to the bill; it can't be removed or voided after that.
+  - The bill paid by a vendor payment can't be changed or voided.
+  - CSV import with unmatched vendors.
+  - Moving the cutover date moves the entries.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-18.spec.ts` (1): CSV import creating a vendor, the opening vendor credit, the payables total on the grid, the bill's badge, no lines and no Void.
+
 ### 2026-10-06 — US-RPT-17: bring in unpaid customer invoices, retention and credit (Phase 8)
 
 - **"Customer invoices" tab** on Opening balances:

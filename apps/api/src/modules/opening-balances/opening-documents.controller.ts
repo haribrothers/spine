@@ -1,17 +1,75 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, UseInterceptors } from "@nestjs/common";
-import { openingCustomerCreditSchema, openingInvoiceImportSchema, openingInvoiceInputSchema } from "@spine/shared";
+import { openingBillImportSchema, openingBillInputSchema, openingCustomerCreditSchema, openingInvoiceImportSchema, openingInvoiceInputSchema, openingVendorCreditSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { OpeningBillsService } from "./opening-bills.service";
 import { OpeningInvoicesService } from "./opening-invoices.service";
 
 const firstIssue = (error: { issues: { message: string }[] }) => error.issues[0]?.message ?? "Check the entry and try again.";
 
-/** US-RPT-17 — opening customer invoices and customer credit. Owner-only (07-security). */
+/** US-RPT-17, US-RPT-18 — opening invoices, customer credit, bills and vendor credits. Owner-only (07-security). */
 @Controller("opening-balances")
 @OrgRoles(["owner"])
 export class OpeningDocumentsController {
-  constructor(private readonly invoices: OpeningInvoicesService) {}
+  constructor(
+    private readonly invoices: OpeningInvoicesService,
+    private readonly bills: OpeningBillsService,
+  ) {}
+
+  @Get("bills")
+  async listBills(@Session() session: UserSession) {
+    return this.bills.listBills(requireOrgId(session));
+  }
+
+  @Post("bills")
+  @UseInterceptors(IdempotencyInterceptor)
+  async createBill(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = openingBillInputSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error));
+    return this.bills.createBill(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  @Post("bills/import")
+  @UseInterceptors(IdempotencyInterceptor)
+  async importBills(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = openingBillImportSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error));
+    return this.bills.importBills(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  @Put("bills/:id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async updateBill(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    const parsed = openingBillInputSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error));
+    return this.bills.updateBill(requireOrgId(session), session.user.id, id, parsed.data);
+  }
+
+  @Delete("bills/:id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async deleteBill(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.bills.deleteBill(requireOrgId(session), session.user.id, id);
+  }
+
+  @Get("vendor-credits")
+  async listVendorCredits(@Session() session: UserSession) {
+    return this.bills.listCredits(requireOrgId(session));
+  }
+
+  @Post("vendor-credits")
+  @UseInterceptors(IdempotencyInterceptor)
+  async createVendorCredit(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = openingVendorCreditSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error));
+    return this.bills.createCredit(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  @Delete("vendor-credits/:id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async deleteVendorCredit(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.bills.deleteCredit(requireOrgId(session), session.user.id, id);
+  }
 
   @Get("invoices")
   async listInvoices(@Session() session: UserSession) {

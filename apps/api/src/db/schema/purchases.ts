@@ -64,6 +64,8 @@ export const vendorBills = pgTable(
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     voidJournalEntryId: uuid("void_journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-RPT-18 (D-137) — an unpaid bill brought in from the old system: no lines, posts P20. */
+    isOpening: boolean("is_opening").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
