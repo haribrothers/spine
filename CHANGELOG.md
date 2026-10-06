@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-28: let a Team manage vendor credits (Phase 8)
+
+- **"Vendor credits"** in the privilege matrix: "Create/edit own", "Edit others'", "Delete own draft", "Delete others' draft", "Record", "Apply and refund" and "Void vendor credits". All seven are granted to General Staff, and existing Teams were backfilled from their bill rights (migration 0085, US-PUR-24). Without "Record vendor credits" a draft has no "Record" and the API returns 403. Field users get 403 on every vendor credit route.
+
+Tests:
+- `packages/shared/src/us-pur-28.test.ts` (1): the seven rights, the group and the General Staff defaults.
+- `apps/api/src/modules/purchases/us-pur-28.http.integration.test.ts` (3): General Staff hold all seven; recording returns 403 without the right and 201 with it; Field gets 403 on all twelve routes.
+- `apps/e2e/tests/us-pur-28.spec.ts` (1): the matrix group's seven switches are on; a Staff member without "Record" sees "Edit" but no "Record".
+
 ### 2026-10-06 — US-PUR-27: void a vendor credit (Phase 8)
 
 - **"Void"** on an open or used vendor credit asks for a reason, then posts P24's reversal (dated today) and marks it "Void — <reason>"; the list shows "Void" with a zero balance. With applications or refunds it refuses: "Remove its <n> applications and refunds first.". Drafts are deleted instead.

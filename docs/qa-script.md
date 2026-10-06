@@ -3058,6 +3058,15 @@ Regression: applying credits to bills still works alongside refunds; the two tog
 
 Regression: drafts are still deleted, not voided.
 
+## 118. Vendor credit rights for a Team (US-PUR-28, Phase 8)
+
+1. Team › Teams › General Staff › Privileges › "Vendor credits": seven switches, all on. They are "Create/edit own vendor credits", "Edit others' vendor credits", "Delete own draft vendor credits", "Delete others' draft vendor credits", "Record vendor credits", "Apply and refund vendor credits" and "Void vendor credits".
+2. Turn "Record vendor credits" off. As a General Staff member, open a draft vendor credit: "Edit" is there and "Record" isn't. `POST /vendor-credits/:id/record` returns 403.
+3. Turn off "Apply and refund vendor credits": "Apply to bills", "Record refund" and the Remove/Delete refund buttons go. Turn off "Void vendor credits": "Void" goes.
+4. As a Field user, every `/vendor-credits` route and `DELETE /vendor-refunds/:id` return 403, and Vendor Credits isn't in the sidebar.
+
+Regression: the "Manage Vendor Bills" switches still save, and the group switch turns all seven on and off.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
