@@ -12,6 +12,8 @@ import { ExpenseCategoriesController } from "./expense-categories.controller";
 import { ExpenseCategoriesService } from "./expense-categories.service";
 import { ExpensesController } from "./expenses.controller";
 import { ExpensesService } from "./expenses.service";
+import { VendorCreditsController } from "./vendor-credits.controller";
+import { VendorCreditsService } from "./vendor-credits.service";
 import { VendorPaymentsController } from "./vendor-payments.controller";
 import { VendorPaymentsService } from "./vendor-payments.service";
 
@@ -36,8 +38,8 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  */
 @Module({
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
-  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController],
-  providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
+  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController],
+  providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
 })
 export class PurchasesModule {}

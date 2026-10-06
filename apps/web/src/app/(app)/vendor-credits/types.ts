@@ -1,0 +1,25 @@
+import type { VendorCreditStatus } from "@spine/shared";
+import type { VendorBillLine } from "../vendor-bills/types";
+
+/** `GET /vendor-credits/:id` (US-PUR-24). Amounts are minor units as strings. */
+export interface VendorCredit {
+  id: string;
+  number: string | null;
+  vendorReference: string | null;
+  contactId: string;
+  contactName: string | null;
+  billId: string | null;
+  billNumber?: string | null;
+  jobId: string | null;
+  date: string;
+  status: VendorCreditStatus;
+  currency: string;
+  subtotalAmount: string;
+  taxAmount: string;
+  totalAmount: string;
+  balanceAmount: string;
+  notes: string | null;
+  voidReason: string | null;
+  createdByUserId: string | null;
+  lines?: (Omit<VendorBillLine, "billId"> & { vendorCreditId: string })[];
+}

@@ -22,6 +22,8 @@ export const NUMBERING_DOCUMENT_TYPES = [
   "expense",
   "job",
   "vendor_payment",
+  // US-PUR-24 (D-141): vendor credits, numbered when recorded.
+  "vendor_credit",
 ] as const;
 export type NumberingDocumentType = (typeof NUMBERING_DOCUMENT_TYPES)[number];
 
@@ -33,6 +35,7 @@ export const NUMBERING_DEFAULTS: Record<NumberingDocumentType, { prefix: string;
   expense: { prefix: "EXP", padding: 4 },
   job: { prefix: "JOB", padding: 3 },
   vendor_payment: { prefix: "VPY", padding: 4 },
+  vendor_credit: { prefix: "VCR", padding: 4 },
 };
 
 /**

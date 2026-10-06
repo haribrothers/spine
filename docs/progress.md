@@ -351,7 +351,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-16 · Keep a credit note's extra as customer credit
 - [x] US-PAY-17 · Refund a customer
 - [x] US-PAY-18 · Let a Team refund customers
-- [ ] US-PUR-24 · Record a credit from a vendor
+- [x] US-PUR-24 · Record a credit from a vendor
 - [ ] US-PUR-25 · Apply a vendor credit to bills
 - [ ] US-PUR-26 · Record a refund from a vendor
 - [ ] US-PUR-27 · Void a vendor credit

@@ -31,6 +31,8 @@ const TABLES = [
   "notifications",
   "vendor_payment_allocations",
   "vendor_payments",
+  "vendor_credit_lines",
+  "vendor_credits",
   "vendor_bill_lines",
   "vendor_bills",
   "expenses",

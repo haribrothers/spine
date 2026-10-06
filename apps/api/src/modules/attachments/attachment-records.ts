@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { AttachmentEntityType, Capability } from "@spine/shared";
 import { getMemberRole, hasCapability } from "../../auth/capability.util";
 import type { Database } from "../../db/client";
-import { bankTransactions, contacts, creditNotes, expenses, invoices, payments, quotes, vendorBills, vendorPayments } from "../../db/schema";
+import { bankTransactions, contacts, creditNotes, expenses, invoices, payments, quotes, vendorBills, vendorCredits, vendorPayments } from "../../db/schema";
 
 /** What attachments need to know about the record they belong to. */
 export interface AttachmentRecord {
@@ -42,6 +42,10 @@ const LOADERS: Partial<Record<AttachmentEntityType, Loader>> = {
     const row = one(await db.select({ createdBy: vendorBills.createdByUserId, status: vendorBills.status, contactId: vendorBills.contactId }).from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.id, id))));
     return row && { createdBy: row.createdBy, locked: row.status !== "draft", contactId: row.contactId };
   },
+  vendor_credit: async (db, orgId, id) => {
+    const row = one(await db.select({ createdBy: vendorCredits.createdByUserId, status: vendorCredits.status, contactId: vendorCredits.contactId }).from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id))));
+    return row && { createdBy: row.createdBy, locked: row.status !== "draft", contactId: row.contactId };
+  },
   vendor_payment: async (db, orgId, id) => {
     const row = one(await db.select({ createdBy: vendorPayments.createdByUserId, contactId: vendorPayments.contactId }).from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.id, id))));
     return row && { createdBy: row.createdBy, locked: true, contactId: row.contactId };
@@ -67,6 +71,7 @@ const EDIT_CAPABILITIES: Partial<Record<AttachmentEntityType, { own: Capability;
   credit_note: { own: "credit_notes.edit_own", others: "credit_notes.edit_others" },
   payment: { own: "payments.edit_own", others: "payments.edit_others" },
   vendor_bill: { own: "vendor_bills.edit_own", others: "vendor_bills.edit_others" },
+  vendor_credit: { own: "vendor_credits.edit_own", others: "vendor_credits.edit_others" },
   vendor_payment: { own: "vendor_payments.edit_own", others: "vendor_payments.edit_others" },
   expense: { own: "expenses.edit_own", others: "expenses.edit_others" },
   bank_transaction: "banking.record",

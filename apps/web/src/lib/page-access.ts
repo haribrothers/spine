@@ -42,6 +42,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/payments": "Payments",
   "/receivables": "Receivables",
   "/vendor-bills": "Vendor Bills",
+  "/vendor-credits": "Vendor Credits",
   "/vendor-payments": "Vendor Payments",
   "/payables": "Payables",
   "/banking": "Banking",

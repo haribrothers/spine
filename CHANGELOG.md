@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-24: record a credit from a vendor (Phase 8)
+
+- **Purchases › Vendor Credits** (new): a list with Total, Draft, Open ("<amount> to use") and Used cards, status and vendor filters, and Number, Vendor's number, Vendor, Status (Draft, Open, Used, Void), Date, Amount and Balance.
+- **New vendor credit** (`VendorCreditBuilder`): "Vendor", "Vendor's credit note number", "Against bill" (one of the vendor's recorded bills; its lines and job are copied in to edit down), "Currency", "Date", "Job", lines like a bill's, notes and attachments. Saves as a draft that can be edited or deleted.
+- **Record** (D-141): numbers it `VCR-0001` and posts P24 — Dr 2000 AP for the total; Cr each line's account (6900 when a line has none) and 1200 Input Tax — contact-tagged and tagged with the job, so the job's cost drops. The credit shows "Open — <amount> to use" and can't be edited after; mistakes are voided (US-PUR-27).
+- **Rights**: seven `vendor_credits.*` capabilities (edit own/others, delete own/others, record, apply, void), granted to General Staff by default and backfilled from each Team's matching bill rights; Field never (US-PUR-28 covers the matrix).
+- Vendor credits can hold attachments. Settings › Numbering lists "Vendor Credit" (VCR).
+- **Migration 0085**: `vendor_credits`, `vendor_credit_lines`, the `vendor_credit_status` enum and the capability backfill.
+- **API.** `GET/POST /vendor-credits`, `GET/PUT/DELETE /vendor-credits/:id`, `GET /vendor-credits/:id/history`, `POST /vendor-credits/:id/record`.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-24.http.integration.test.ts` (4): recording numbers VCR-0001 and posts P24 with the job and contact on every line, then locks the credit; "against bill" only the vendor's recorded bills; the list's fields and status filter; drafting without the record right and Field refused.
+- `apps/e2e/tests/us-pur-24.spec.ts` (1): a credit against a bill copying its lines, saved, recorded and listed.
+
 ### 2026-10-06 — US-PAY-18: let a Team refund customers (Phase 8)
 
 - **"Refund customers"** (`payments.refund`) in the privilege matrix's "Manage Payments" group, off for General Staff and every existing Team (migration 0084, US-PAY-17). Without it, "Refund" is hidden on payments, credit notes and contacts, and `POST`/`DELETE /customer-refunds` return 403; Field always gets 403.

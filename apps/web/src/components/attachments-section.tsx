@@ -72,6 +72,7 @@ const LOCKED_AS: Partial<Record<AttachmentEntityType, [noun: string, state: stri
   credit_note: ["credit note", "issued"],
   payment: ["payment", "recorded"],
   vendor_bill: ["bill", "recorded"],
+  vendor_credit: ["vendor credit", "recorded"],
   vendor_payment: ["vendor payment", "recorded"],
   expense: ["expense", "reviewed"],
   bank_transaction: ["entry", "recorded"],

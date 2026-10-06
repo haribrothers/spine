@@ -47,6 +47,7 @@ const ENTITY_NAMES: Record<string, string> = {
   tax_rate: "a tax rate",
   vendor_bill: "a vendor bill",
   vendor_payment: "a vendor payment",
+  vendor_credit: "a vendor credit",
 };
 
 const ACTION_VERBS: Record<string, string> = {

@@ -339,3 +339,85 @@ export const vendorPaymentAllocations = pgTable(
     index("vendor_payment_allocations_org_idx").on(table.orgId),
   ],
 );
+
+export const vendorCreditStatusEnum = pgEnum("vendor_credit_status", ["draft", "open", "used", "void"]);
+
+/**
+ * US-PUR-24 (D-141) — a vendor's credit note: returned goods, an
+ * overcharge, a discount after the bill. Lines are shaped like a bill's.
+ * Recording numbers it `VCR-` and posts P24 (Dr 2000 AP / Cr each line's
+ * account and 1200 Input Tax, tagged with the job). `balance_amount` is
+ * what's left to apply to bills or take as a refund; it never goes below
+ * zero. Status: draft → open → used (balance 0), or void.
+ */
+export const vendorCredits = pgTable(
+  "vendor_credits",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    number: text("number"),
+    /** The vendor's own credit note number. */
+    vendorReference: text("vendor_reference"),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "restrict" }),
+    /** "Against bill" — the bill whose lines it started from, if any. */
+    billId: uuid("bill_id").references(() => vendorBills.id, { onDelete: "set null" }),
+    jobId: uuid("job_id").references(() => jobs.id, { onDelete: "restrict" }),
+    date: date("date", { mode: "date" }).notNull(),
+    status: vendorCreditStatusEnum("status").notNull().default("draft"),
+    currency: text("currency").notNull(),
+    subtotalAmount: bigint("subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    taxAmount: bigint("tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    balanceAmount: bigint("balance_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    /** Brought in at the cutover date (US-RPT-18): no lines, posts P20 instead of P24. */
+    isOpening: boolean("is_opening").notNull().default(false),
+    notes: text("notes"),
+    voidReason: text("void_reason"),
+    voidedAt: timestamp("voided_at", { withTimezone: true }),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }),
+    entryId: uuid("entry_id").references(() => journalEntries.id),
+    voidEntryId: uuid("void_entry_id").references(() => journalEntries.id),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("vendor_credits_balance_within_total", sql`${table.balanceAmount} >= 0 AND ${table.balanceAmount} <= ${table.totalAmount}`),
+    index("vendor_credits_org_status_idx").on(table.orgId, table.status),
+    index("vendor_credits_contact_idx").on(table.contactId),
+  ],
+);
+
+/** US-PUR-24 — a vendor credit's lines, the same shape as `vendor_bill_lines`. */
+export const vendorCreditLines = pgTable(
+  "vendor_credit_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    vendorCreditId: uuid("vendor_credit_id")
+      .notNull()
+      .references(() => vendorCredits.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    type: vendorBillLineTypeEnum("type").notNull().default("item"),
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    unitPriceCurrency: text("unit_price_currency").notNull(),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
+    lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("vendor_credit_lines_credit_idx").on(table.vendorCreditId)],
+);

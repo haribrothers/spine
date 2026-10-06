@@ -3016,6 +3016,18 @@ Regression: recording, applying and deleting payments without refunds behave as 
 
 Regression: the other "Manage Payments" switches and the group switch still save.
 
+## 114. Vendor credits (US-PUR-24, Phase 8)
+
+1. Purchases › "Vendor Credits" (new in the sidebar) is empty: "No vendor credits yet". The cards read Total credits, Draft, Open ("<amount> to use") and Used.
+2. "New vendor credit": "Vendor", "Vendor's credit note number" ("Spine gives it a VCR number when recorded"), "Against bill", "Currency", "Date", "Job", lines like a bill's, "Notes", attachments and "Total credit".
+3. Choose a vendor, then "Against bill": only their recorded bills are offered; choosing one copies its lines (edit them down) and its job. "Save as draft".
+4. The draft's page shows "Draft vendor credit", the vendor, "their <number>" and the bill link, with "Edit", "Delete draft" and "Record". "Record": it becomes "VCR-0001", "Open", and "Open — <amount> to use"; Edit and Delete go.
+5. Reports › Balance Sheet: Accounts Payable down by the total; the line accounts and Input Tax down by their parts. With a job, Jobs › Costing shows the job's cost lower.
+6. The list shows Number ("— (unrecorded draft)" for drafts), Vendor's number, Vendor, Status (Draft, Open, Used, Void), Date, Amount and Balance; filter by status and vendor.
+7. As Staff without "Record vendor credits", a draft shows no "Record"; Field users can't open Vendor Credits.
+
+Regression: Vendor Bills, recording bills and the bill line editor are unchanged. Settings › Numbering lists "Vendor Credit" (VCR).
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -15,7 +15,7 @@ import { attachmentCounts } from "../attachments/attachments.service";
 export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
 export type UpdateVendorBillInput = z.infer<typeof updateVendorBillSchema>;
 
-interface ComputedLine {
+export interface ComputedLine {
   sortOrder: number;
   type: "item" | "heading" | "text";
   catalogItemId: string | null;
@@ -50,7 +50,7 @@ interface ComputedTotals {
  * has no discount field, unlike quote/invoice lines; a vendor's own
  * discount, if any, is reflected directly in the unit price.
  */
-async function computeBillTotals(
+export async function computeBillTotals(
   orgId: string,
   currency: string,
   lines: CreateVendorBillInput["lines"],

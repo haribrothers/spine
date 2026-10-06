@@ -3,6 +3,7 @@ import {
   BarChart3,
   CalendarDays,
   ClipboardList,
+  FileMinus,
   FileText,
   HandCoins,
   HardHat,
@@ -88,6 +89,8 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     label: "Purchases",
     items: [
       { href: "/vendor-bills", label: "Vendor Bills", icon: <ClipboardList /> },
+      // US-PUR-24
+      { href: "/vendor-credits", label: "Vendor Credits", icon: <FileMinus /> },
       { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
       { href: "/vendor-payments", label: "Vendor Payments", icon: <HandCoins /> },
       { href: "/payables", label: "Payables", icon: <Wallet /> },

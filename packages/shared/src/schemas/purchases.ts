@@ -135,3 +135,23 @@ export const createVendorPaymentSchema = z.object({
   moneyAccountId: uuidSchema.optional().nullable(),
   allocations: z.array(vendorPaymentAllocationInputSchema).min(1),
 });
+
+/** US-PUR-24 (D-141) — a vendor credit draft: like a bill, with the vendor's own credit note number and an optional "against bill". */
+export const createVendorCreditSchema = z.object({
+  contactId: uuidSchema,
+  vendorReference: z.string().trim().min(1, "Enter the vendor's credit note number."),
+  billId: uuidSchema.optional().nullable(),
+  jobId: uuidSchema.optional().nullable(),
+  date: z.coerce.date(),
+  currency: currencyCodeSchema,
+  notes: z.string().optional().nullable(),
+  lines: z.array(vendorBillLineInputSchema).default([]),
+});
+export const updateVendorCreditSchema = createVendorCreditSchema.partial();
+
+export const voidVendorCreditSchema = z.object({
+  reason: z.string().trim().min(1, "Give a reason for voiding this credit."),
+});
+
+export const VENDOR_CREDIT_STATUS_LABELS = { draft: "Draft", open: "Open", used: "Used", void: "Void" } as const;
+export type VendorCreditStatus = keyof typeof VENDOR_CREDIT_STATUS_LABELS;

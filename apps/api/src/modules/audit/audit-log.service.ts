@@ -40,7 +40,9 @@ export type AuditEntityType =
   | "money_account"
   // US-BANK-04/05: transfers and other money in or out, recorded and deleted.
   | "bank_transfer"
-  | "bank_transaction";
+  | "bank_transaction"
+  // US-PUR-24: vendor credits.
+  | "vendor_credit";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see
