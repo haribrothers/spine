@@ -4,7 +4,7 @@
  * decided by the server (US-DASH-17 adds the Staff set).
  */
 
-export type KpiKey = "cash" | "profit" | "receivables" | "overdue" | "pipeline" | "quotes_won";
+export type KpiKey = "cash" | "profit" | "receivables" | "overdue" | "pipeline" | "quotes_won" | "payables";
 
 export interface Kpi {
   key: KpiKey;
@@ -16,8 +16,16 @@ export interface Kpi {
   previous: string | null;
   /** 8 points, oldest first, one per week ending today. */
   series: string[];
-  /** Receivables: current and overdue amounts. Overdue: how many invoices. Quotes won: their total. */
-  detail?: { current?: string; overdue?: string; count?: number; amount?: string };
+  /** Receivables and payables: current and overdue amounts. Overdue: how many invoices. Quotes won: their total. */
+  detail?: {
+    current?: string;
+    overdue?: string;
+    count?: number;
+    amount?: string;
+    /** Payables (US-DASH-21): bills due in the next 7 days, and the most overdue bill. */
+    dueSoon?: { count: number; amount: string };
+    oldestOverdue?: { number: string; days: number } | null;
+  };
 }
 
 /** Whether a figure going up is good for the business. */
@@ -28,6 +36,7 @@ export const KPI_UP_IS_GOOD: Record<KpiKey, boolean> = {
   overdue: false,
   pipeline: true,
   quotes_won: true,
+  payables: false,
 };
 
 export interface KpiChange {

@@ -544,7 +544,8 @@ Routes the stories add. Each is created by the story named.
 | RPT | — | `GET /org/tax/summary` gains `paidByRate`, `byTaxType`, `bySupplyClass` and `payments { paid, stillToPay }` | `reports.view_financial_statements` | US-RPT-37 |
 | RPT | GET | `/exports/tally?from=&to=` → `application/zip` (`masters.xml`, `vouchers.xml`, `README.txt`); audited | `reports.view_financial_statements` | US-RPT-38 |
 | RPT | GET/PUT | `/exports/tally/mapping` → `[{ accountId, code, name, type, tallyGroup, isDefault }]` | GET `reports.view_financial_statements`; PUT roles: owner | US-RPT-39 |
-| DASH | — | `GET /dashboard/kpis` gains key `payables` (`reports.view_payables`) and `?basis=accrual\|cash` for `profit` | as the KPI | US-DASH-21, US-DASH-26 |
+| DASH | — | `GET /dashboard/kpis` gains key `payables` for members with `reports.view_payables` (Owners included), after the others: `value` is the recorded bills' open balance, `previous`/`series` the 2000 Accounts Payable balance, `detail` `{ current, overdue, dueSoon: { count, amount } (due in the next 7 days, not yet overdue), oldestOverdue: { number, days } \| null }`. The web KPI row leaves it out; the Payables card shows it | as the KPI | US-DASH-21 |
+| DASH | — | `GET /dashboard/kpis?basis=accrual\|cash` for `profit` | as the KPI | US-DASH-26 |
 | DASH | GET | `/dashboard/top-expenses?period=month\|quarter\|year` → `[{ accountId, name, amount, sharePct }]` (top five + other) | `reports.view_financial_statements` | US-DASH-22 |
 | DASH | GET | `/dashboard/unbilled` → `{ milestones: { count, amount }, billableExpenses: { count, amount } }` (milestones omitted when Jobs & field is off) | `reports.view_receivables` | US-DASH-24 |
 | DASH | GET | `/dashboard/tax-period` → `{ from, to, collected, input, net, paid }` | `reports.view_financial_statements` | US-DASH-25 |

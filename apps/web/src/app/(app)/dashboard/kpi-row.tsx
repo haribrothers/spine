@@ -15,6 +15,7 @@ const KPI_HREF: Record<KpiKey, string> = {
   overdue: "/receivables?overdue=1",
   pipeline: "/leads",
   quotes_won: "/quotes?status=accepted",
+  payables: "/payables",
 };
 
 /**
@@ -35,7 +36,8 @@ export function KpiRow() {
       .catch(() => {});
     apiClient
       .get<Kpi[]>("/dashboard/kpis")
-      .then(setKpis)
+      // US-DASH-21 — payables has its own card, not a place in this row.
+      .then((rows) => setKpis(rows.filter((k) => k.key !== "payables")))
       .catch(() => setKpis([]));
   }, []);
 

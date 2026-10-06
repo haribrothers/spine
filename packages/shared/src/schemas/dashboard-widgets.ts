@@ -28,6 +28,8 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
+  // US-DASH-21 — what's owed to vendors, beside receivables (D-160).
+  { key: "payables", capability: "reports.view_payables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   { key: "money-in-out", capability: "reports.view_dashboard_summary" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   { key: "pipeline-by-stage", capability: null, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   // US-DASH-20 — shown by default only for the Construction template; elsewhere they start hidden.

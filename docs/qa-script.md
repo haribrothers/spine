@@ -3450,6 +3450,18 @@ Regression: screens look the same as before; tables still page.
 
 Regression: Receivables, Payables and Job profitability still follow their own privileges; Owners see everything as before.
 
+## 149. Payables on the dashboard (US-DASH-21, Phase 8)
+
+1. Record two vendor bills: one due a week ago, one due in three days. Dashboard › Payables: Current, Overdue (in the overdue colour, with its amount) and Total; the bar shows the current share; "Bills due in the next 7 days 1 · <amount>"; "Oldest overdue <bill number> · 7 days".
+2. Click Overdue: Payables opens with "Showing overdue bills only." and only the overdue bill; "Show all" brings the rest back.
+3. Pay the overdue bill: the card's Overdue drops to $0.00 and "Oldest overdue" reads "None".
+4. The KPI row still shows Cash position, Profit this month, Receivables and Overdue — not Payables.
+5. As Staff without "View payables": no Payables card. With it: the card shows.
+6. Edit layout: Payables can be moved and hidden like the other cards.
+7. Dark mode: figures, bar and links are readable; the bar's meaning doesn't rely on colour (amounts are written).
+
+Regression: the Payables page without ?overdue=1 lists every open bill as before.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

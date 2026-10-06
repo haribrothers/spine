@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
 import { PrintHeader, PrintRangeProvider } from "../../../components/print-header";
 import { PayablesExplorer } from "./payables-explorer";
@@ -12,7 +13,10 @@ export default function PayablesPage() {
         description="Outstanding vendor bill balances, bucketed by how overdue they are."
       />
       <PrintHeader />
-      <PayablesExplorer />
+      {/* US-DASH-21: reads ?overdue=1 from the URL. */}
+      <Suspense>
+        <PayablesExplorer />
+      </Suspense>
     </PrintRangeProvider>
   );
 }

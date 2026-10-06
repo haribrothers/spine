@@ -381,7 +381,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-RPT-34 · Print any report
 - [x] US-RPT-35 · See profit and loss on a cash basis
 - [x] US-RPT-36 · Let my accountant's Team see the financial statements
-- [ ] US-DASH-21 · See what I owe vendors on the dashboard
+- [x] US-DASH-21 · See what I owe vendors on the dashboard
 - [ ] US-DASH-22 · See where money goes
 - [ ] US-DASH-23 · See each bank, cash and card balance
 - [ ] US-DASH-24 · See work not yet billed

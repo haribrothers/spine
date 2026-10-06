@@ -162,7 +162,8 @@ describe("US-DASH-17 · a staff dashboard of only what I can act on (requires lo
   it("follows the grants held: no receivables grant, no receivables figures; the summary grant gets the Owner's set", async () => {
     expect((await get<Kpi[]>(plainStaff, "/dashboard/kpis")).map((k) => k.key)).toEqual(["pipeline", "quotes_won"]);
     expect((await get<Kpi[]>(summaryStaff, "/dashboard/kpis")).map((k) => k.key)).toEqual(["cash", "profit", "receivables", "overdue"]);
-    expect((await get<Kpi[]>(owner, "/dashboard/kpis")).map((k) => k.key)).toEqual(["cash", "profit", "receivables", "overdue"]);
+    // US-DASH-21 — Owners hold "View payables" too.
+    expect((await get<Kpi[]>(owner, "/dashboard/kpis")).map((k) => k.key)).toEqual(["cash", "profit", "receivables", "overdue", "payables"]);
   });
 
   it("a closed lead stays out of the pipeline", async () => {

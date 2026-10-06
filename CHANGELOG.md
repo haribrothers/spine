@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-21: see what I owe vendors on the dashboard (Phase 8)
+
+- **Dashboard › Payables** card (D-160): Current, Overdue and Total owed to vendors, a bar of current against overdue (with its figures as its accessible name), "Bills due in the next 7 days <n> · <amount>" and "Oldest overdue <bill> · <n> days". "Payables" opens the Payables page.
+- **Overdue** opens Payables filtered to overdue bills ("Showing overdue bills only. Show all").
+- Members without "View payables" don't get the card (and the API leaves the figure out). It can be moved or hidden with Edit layout like the other cards.
+- API: `GET /dashboard/kpis` gains `payables`.
+
 ### 2026-10-06 — US-RPT-36: let my accountant's Team see the financial statements (Phase 8)
 
 - **"View financial statements"** (Team › Privileges › Reports & Ledger, off by default) now opens Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and the revenue trend to a Team, alongside Cash Flow and the sales and purchase reports — they load and export (CSV, Excel, PDF, Print). Owners always can; Field never can, whatever their Teams ([D-136](docs/prd/12-decisions.md)).

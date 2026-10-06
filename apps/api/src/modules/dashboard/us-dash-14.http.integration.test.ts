@@ -83,6 +83,8 @@ describe("US-DASH-14 · see key figures with a trend and a comparison (requires 
       ["profit", "Profit this month"],
       ["receivables", "Receivables"],
       ["overdue", "Overdue"],
+      // US-DASH-21 — its own card, not part of the KPI row.
+      ["payables", "Payables"],
     ]);
     for (const k of rows) expect(k.series).toHaveLength(8);
     const [cash, profit, receivables, overdue] = rows;

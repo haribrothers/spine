@@ -4,7 +4,7 @@ import { and, eq, inArray, lte } from "drizzle-orm";
 import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, creditNotes, invoices, journalEntries, journalLines, leads, leadStages, paymentAllocations, payments, quotes } from "../../db/schema";
+import { accounts, creditNotes, invoices, journalEntries, journalLines, leads, leadStages, paymentAllocations, payments, quotes, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { cashAccountCodes } from "../banking/cash-accounts";
 
@@ -70,6 +70,7 @@ export class KpiService {
         kpis.push(receivables, overdue);
       }
       kpis.push(await this.pipelineKpi(orgId, today, monthAgo, weekEnds), await this.quotesWonKpi(orgId, today, monthAgo, weekEnds));
+      if (can["reports.view_payables"]) kpis.push(await this.payablesKpi(orgId, today, monthAgo, weekEnds));
       return kpis;
     }
 
@@ -105,7 +106,52 @@ export class KpiService {
         series: weekEnds.map((d) => profit(addDays(d, -6), d).toString()),
       },
       ...(await this.receivableKpis(orgId, today, monthAgo, weekEnds, lines)),
+      ...(can["reports.view_payables"] ? [await this.payablesKpi(orgId, today, monthAgo, weekEnds, lines)] : []),
     ];
+  }
+
+  /**
+   * US-DASH-21 (D-160) — what's owed to vendors: the 2000 Accounts Payable
+   * balance (with its 8 weeks and last month), split current and overdue
+   * from recorded bills' balances, the bills due in the next 7 days and
+   * the most overdue bill. Needs `reports.view_payables`.
+   */
+  private async payablesKpi(orgId: string, today: string, monthAgo: string, weekEnds: string[], allLines?: Line[]): Promise<Kpi> {
+    const lines = allLines ?? (await this.ledgerLines(orgId, today));
+    const AP = ["2000"];
+    const balance = (date: string) => lines.filter((l) => AP.includes(l.code) && l.date <= date).reduce((sum, l) => sum + l.credit - l.debit, 0n);
+    const hasLines = (date: string) => lines.some((l) => AP.includes(l.code) && l.date <= date);
+    const bills = await this.db
+      .select({ number: vendorBills.billNumber, dueDate: vendorBills.dueDate, total: vendorBills.totalAmount, paid: vendorBills.amountPaid, credited: vendorBills.creditedAmount })
+      .from(vendorBills)
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.status, "recorded")));
+    const inAWeek = addDays(today, 7);
+    let current = 0n;
+    let overdue = 0n;
+    let dueSoon = { count: 0, amount: 0n };
+    let oldest: { number: string; days: number } | null = null;
+    for (const b of bills) {
+      const open = b.total - b.paid - b.credited;
+      if (open <= 0n) continue;
+      const due = isoDate(b.dueDate);
+      if (due && due < today) {
+        overdue += open;
+        const days = Math.round((Date.parse(`${today}T00:00:00Z`) - Date.parse(`${due}T00:00:00Z`)) / 86_400_000);
+        if (!oldest || days > oldest.days) oldest = { number: b.number, days };
+      } else {
+        current += open;
+        if (due && due <= inAWeek) dueSoon = { count: dueSoon.count + 1, amount: dueSoon.amount + open };
+      }
+    }
+    return {
+      key: "payables",
+      label: "Payables",
+      format: "money",
+      value: (current + overdue).toString(),
+      previous: hasLines(monthAgo) ? balance(monthAgo).toString() : null,
+      series: weekEnds.map((d) => balance(d).toString()),
+      detail: { current: current.toString(), overdue: overdue.toString(), dueSoon: { count: dueSoon.count, amount: dueSoon.amount.toString() }, oldestOverdue: oldest },
+    };
   }
 
   /** Receivables (1100) and overdue, as for Owners. */

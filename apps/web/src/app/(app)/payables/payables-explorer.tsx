@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { HandCoins } from "lucide-react";
@@ -24,6 +25,9 @@ export function PayablesExplorer() {
   const [report, setReport] = useState<PayablesReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const router = useRouter();
+  // US-DASH-21 — the dashboard's "Overdue" opens this filtered to overdue bills.
+  const overdueOnly = useSearchParams().get("overdue") === "1";
 
   useEffect(() => {
     apiClient
@@ -72,7 +76,19 @@ export function PayablesExplorer() {
           <EmptyState icon={<HandCoins />} title="Nothing outstanding" description="Every recorded vendor bill has been paid in full." />
         </div>
       ) : (
-        <PayablesTable bills={report.bills} onSearchChange={setSearch} />
+        <>
+          {overdueOnly && (
+            <Alert variant="info">
+              <AlertDescription>
+                Showing overdue bills only.{" "}
+                <button type="button" className="font-medium text-primary hover:underline" onClick={() => router.replace("/payables")}>
+                  Show all
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
+          <PayablesTable bills={overdueOnly ? report.bills.filter((b) => b.bucket !== "current") : report.bills} onSearchChange={setSearch} />
+        </>
       )}
     </div>
   );

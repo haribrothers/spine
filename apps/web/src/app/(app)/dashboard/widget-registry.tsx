@@ -9,6 +9,7 @@ import { MyJobs } from "./widgets/my-jobs";
 import { RetentionHeldCard } from "./widgets/retention-held";
 import { JobsInProgress } from "./widgets/jobs-in-progress";
 import { MyExpenses } from "./widgets/my-expenses";
+import { PayablesCard } from "./widgets/payables-card";
 
 /** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
 function MyActivity() {
@@ -26,6 +27,7 @@ function MyActivity() {
  * kept out of the registry itself, not just filtered from these maps.
  */
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
+  payables: "Payables",
   "money-in-out": "Money in and out",
   "pipeline-by-stage": "Pipeline by stage",
   "retention-held": "Retention held",
@@ -40,6 +42,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 };
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
+  payables: PayablesCard,
   "money-in-out": MoneyInOutChart,
   "pipeline-by-stage": PipelineByStageChart,
   "retention-held": RetentionHeldCard,
