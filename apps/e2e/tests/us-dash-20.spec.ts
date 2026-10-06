@@ -37,6 +37,6 @@ test.describe("US-DASH-20", () => {
     await expect(jobs.locator("tbody tr").first()).toContainText(/\d+% billed/);
     await expect(jobs.locator("tbody tr").first()).toContainText(/No budget|\d+%|Over|Nearing/);
     await jobs.getByRole("link", { name: "Job profitability" }).click();
-    await expect(page).toHaveURL(/\/reports\?tab=jobs/);
+    await expect(page).toHaveURL(/\/reports\/job-profitability$/);
   });
 });

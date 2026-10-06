@@ -12,7 +12,7 @@ test.describe("US-RPT-20", () => {
   test("post a balanced journal; control accounts aren't offered and an unbalanced one can't be posted", async ({ page }) => {
     await signUpNewOrg(page, { name: "Journal Owner", email: `e2e-rpt-20-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
     await page.getByRole("link", { name: "Journals" }).click();
-    await expect(page.getByRole("heading", { name: "Journals" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Journals", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "New journal" }).click();
     const dialog = page.getByRole("dialog", { name: "New journal" });
     await expect(dialog).toContainText("For adjustments no document covers. Journals are never edited — a mistake is reversed.");

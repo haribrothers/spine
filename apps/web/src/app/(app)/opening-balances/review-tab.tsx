@@ -76,6 +76,11 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
     }
   }
 
+  function onConfirm(e: React.MouseEvent) {
+    e.preventDefault();
+    void act(confirm!);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -168,13 +173,7 @@ export function ReviewTab({ view, currency, onChanged }: { view: OpeningBalances
           )}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={busy}>{confirm === "lock" && adjustment !== 0n ? "Go back" : "Cancel"}</AlertDialogCancel>
-            <AlertDialogAction
-              disabled={busy}
-              onClick={(e) => {
-                e.preventDefault();
-                void act(confirm!);
-              }}
-            >
+            <AlertDialogAction disabled={busy} onClick={onConfirm}>
               {confirm === "unlock" ? "Unlock" : adjustment !== 0n ? "Lock anyway" : "Lock opening balances"}
             </AlertDialogAction>
           </AlertDialogFooter>
