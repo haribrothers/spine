@@ -21,9 +21,14 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { useSession } from "../../../lib/auth-client";
@@ -193,7 +198,7 @@ export function ExpenseDetailDrawer({
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               {expense?.number ?? "Expense"}
@@ -291,7 +296,7 @@ export function ExpenseDetailDrawer({
               </div>
             )}
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="flex-wrap">
             {expense?.status === "submitted" && isOwnReview && (canApprove || canReject) && (
               <p className="mr-auto text-[13px] text-on-surface-muted" data-testid="self-review-note">
                 Someone else needs to approve your own expense.
@@ -308,15 +313,25 @@ export function ExpenseDetailDrawer({
                 Approve
               </Button>
             )}
-            {canDeleteNow && (
-              <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={busy}>
-                Delete expense
-              </Button>
-            )}
             {canBillToCustomer && (
               <Button onClick={() => setBillOpen(true)} disabled={busy}>
                 Bill to customer
               </Button>
+            )}
+            {canDeleteNow && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem destructive onSelect={() => setConfirmDeleteOpen(true)}>
+                    Delete expense
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close

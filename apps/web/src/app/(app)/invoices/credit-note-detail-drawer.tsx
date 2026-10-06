@@ -13,8 +13,13 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
@@ -73,9 +78,14 @@ export function CreditNoteDetailDrawer({
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load this credit note."));
   }, [creditNoteId, reloadKey]);
 
+  // The footer keeps one main action visible and the rest under "More" (US-PAY-17 fix).
+  const canRefundNow = Boolean(creditNote && canRefund && BigInt(creditNote.creditRemainingAmount ?? "0") > 0n);
+  const pdfUrl = creditNote ? `${API_URL}/credit-notes/${creditNote.id}/pdf` : "";
+  const pdfLabel = creditNote?.status === "draft" ? "Preview PDF" : "Download PDF";
+
   return (
     <Drawer open={creditNoteId !== null} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent size="lg">
         <DrawerHeader>
           <DrawerTitle>{creditNote?.number ?? "Credit note"}</DrawerTitle>
           <DrawerDescription>{creditNote?.contactName ?? "—"}</DrawerDescription>
@@ -151,19 +161,36 @@ export function CreditNoteDetailDrawer({
             </div>
           )}
         </DrawerBody>
-        <DrawerFooter>
+        <DrawerFooter className="flex-wrap">
           {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
-          {creditNote && (
-            <Button variant="secondary" asChild>
-              <a href={`${API_URL}/credit-notes/${creditNote.id}/pdf`} target="_blank" rel="noreferrer">
-                {creditNote.status === "draft" ? "Preview PDF" : "Download PDF"}
-              </a>
-            </Button>
-          )}
-          {creditNote && canRefund && BigInt(creditNote.creditRemainingAmount ?? "0") > 0n && (
+          {creditNote && canRefundNow && (
             <Button variant="secondary" onClick={() => setRefundOpen(true)}>
               Refund
             </Button>
+          )}
+          {creditNote && !canRefundNow && (
+            <Button variant="secondary" asChild>
+              <a href={pdfUrl} target="_blank" rel="noreferrer">
+                {pdfLabel}
+              </a>
+            </Button>
+          )}
+          {creditNote && canRefundNow && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions">
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <a href={pdfUrl} target="_blank" rel="noreferrer">
+                      {pdfLabel}
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
           )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close

@@ -3090,7 +3090,13 @@ Regression: the Tax Summary's cards, per-rate table and CSV export are unchanged
 4. At phone width (390px), the footer stays inside the drawer and wraps if needed. Use the keyboard: Tab to "More", Enter opens it, the arrow keys move through the items, and Escape closes it.
 5. In dark mode, the menu and the red "Delete payment" are readable.
 
-Regression: the credit note, vendor payment and expense drawers are unchanged.
+6. The credit note drawer has the same layout:
+   - With credit left: "Refund", with "Download PDF" under "More".
+   - With nothing to refund: "Download PDF" (or "Preview PDF" for a draft) as the button, and no "More".
+7. The vendor payment drawer has "Delete payment" under "More" when the payment can be deleted, and no "More" otherwise.
+8. A submitted expense shows "Reject", "Approve", "More" (with "Delete expense" in red) and "Close". At phone width, "Close" wraps onto a second line inside the drawer. On your own expense, the note "Someone else needs to approve your own expense." still shows.
+
+Regression: the PDF links, refund, delete, approve, reject and bill-to-customer flows work as before.
 
 ## Known gaps — don't file these as bugs
 

@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — Credit note, vendor payment and expense drawers match the payment drawer (Phase 8)
+
+- The credit note, vendor payment and expense drawers are now `size="lg"`. Their footers follow the payment drawer's pattern: History, then the main action, then a "More" menu (shown only when it has something in it), then "Close". The footer wraps at narrow widths.
+  - **Credit note:** "Refund" is the main action when there's credit left and you have the right. "Download PDF" (or "Preview PDF" for a draft) goes under "More". With nothing to refund, the PDF is the main button.
+  - **Vendor payment:** "Delete payment" moves under "More".
+  - **Expense:** "Reject" and "Approve" stay side by side, and so does "Bill to customer". "Delete expense" moves under "More".
+
+Tests:
+- `apps/e2e/tests/us-pur-20.spec.ts` finds "Delete expense" under "More actions". The full e2e suite passes (190).
+
 ### 2026-10-06 — Fix: payment drawer buttons overflowed (US-PAY-17, Phase 8)
 
 - With "Refund" added, the payment drawer's footer held seven controls and ran past the drawer's edge. The drawer is now `size="lg"`. Its footer shows History, one main action ("Apply credit" when there's credit to apply, else "Email receipt"), a "More" menu and "Close". The menu holds "Download PDF", "Email receipt" (when it isn't the main action), "Refund" and "Delete payment" (destructive). The footer wraps at narrow widths.

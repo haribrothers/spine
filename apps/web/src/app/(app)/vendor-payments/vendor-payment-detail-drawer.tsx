@@ -20,9 +20,14 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
 import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
@@ -95,7 +100,7 @@ export function VendorPaymentDetailDrawer({
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle>{payment?.number ?? "Payment"}</DrawerTitle>
             <DrawerDescription>{payment?.contactName ?? "—"}</DrawerDescription>
@@ -157,12 +162,22 @@ export function VendorPaymentDetailDrawer({
               </div>
             )}
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="flex-wrap">
             {payment && <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel="this vendor payment" />}
             {canDelete && (
-              <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
-                Delete payment
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                    Delete payment
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close
