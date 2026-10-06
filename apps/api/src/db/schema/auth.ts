@@ -52,6 +52,8 @@ export const user = pgTable("user", {
    * preferences one table over.
    */
   dashboardLayout: jsonb("dashboard_layout"),
+  /** US-DASH-26 (D-138, D-179) — "accrual" or "cash" for the dashboard's profit figures; null means accrual. Kept with the layout, on every device. */
+  dashboardBasis: text("dashboard_basis"),
   /** US-RPT-23 — the reports this member starred, by slug, shown as Favourites on every device. */
   favouriteReports: jsonb("favourite_reports"),
   /** US-BANK-03 (D-140) — the money account this person last used on each kind of form: `{ payment, vendor_payment, expense, refund, tax_payment, money_in_out }`. */

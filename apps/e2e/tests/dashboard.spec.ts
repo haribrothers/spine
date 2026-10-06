@@ -48,7 +48,8 @@ test.describe("Dashboard v2", () => {
     await expect(kpis.getByText("Overdue", { exact: true })).toBeVisible();
 
     // Every widget in WIDGET_LABELS, by its own card heading.
-    await expect(main.getByText("Money in and out")).toBeVisible();
+    // US-DASH-26 — on the default (Accrual) the money chart reads "Income and expenses".
+    await expect(main.getByTestId("money-in-out").getByText("Income and expenses")).toBeVisible();
     await expect(main.getByText("Pipeline by stage")).toBeVisible();
     await expect(main.getByText("Receivables aging")).toBeVisible();
     await expect(main.getByText("Job profitability").first()).toBeVisible();
@@ -77,7 +78,7 @@ test.describe("Dashboard v2", () => {
     await expect(fieldPage.getByText("Recent activity")).toBeVisible();
 
     await expect(fieldPage.getByText("Cash position")).toHaveCount(0);
-    await expect(fieldPage.getByText("Money in and out")).toHaveCount(0);
+    await expect(fieldPage.getByTestId("money-in-out")).toHaveCount(0);
     await expect(fieldPage.getByText("Receivables aging")).toHaveCount(0);
     await fieldContext.close();
   });
@@ -85,7 +86,7 @@ test.describe("Dashboard v2", () => {
   test("Edit layout: hide a widget, confirm it's gone, then show it again", async ({ page, seededOrg }) => {
     void seededOrg;
     await page.goto("/dashboard");
-    await expect(page.getByText("Money in and out")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("money-in-out")).toBeVisible({ timeout: 15_000 });
 
     await page.getByRole("button", { name: "Edit layout" }).click();
 
@@ -103,17 +104,17 @@ test.describe("Dashboard v2", () => {
     await expect(editModeHideToggle(page, "Money in and out")).toHaveAttribute("aria-label", "Show widget");
 
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText("Money in and out")).toHaveCount(0);
+    await expect(page.getByTestId("money-in-out")).toHaveCount(0);
 
     // Re-show it — persisted layout must survive a reload too, since
     // DashboardShell fetches it fresh via GET /users/me/dashboard-layout.
     await page.getByRole("button", { name: "Edit layout" }).click();
     await editModeHideToggle(page, "Money in and out").click();
     await page.getByRole("button", { name: "Done" }).click();
-    await expect(page.getByText("Money in and out")).toBeVisible();
+    await expect(page.getByTestId("money-in-out")).toBeVisible();
 
     await page.reload();
-    await expect(page.getByText("Money in and out")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("money-in-out")).toBeVisible({ timeout: 15_000 });
   });
 });
 

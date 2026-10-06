@@ -133,8 +133,9 @@ export class DashboardController {
 
   /** US-DASH-14 — the key figures this member may see, each with 8 weeks and last month. */
   @Get("kpis")
-  async getKpis(@Session() session: UserSession) {
-    return this.kpis.list(requireOrgId(session), session.user.id);
+  async getKpis(@Session() session: UserSession, @Query("basis") basis?: string) {
+    // US-DASH-26 — `?basis=cash` works "Profit this month" out on the cash basis.
+    return this.kpis.list(requireOrgId(session), session.user.id, basis === "cash" ? "cash" : "accrual");
   }
 
   /** US-DASH-24 (D-160) — completed milestones not invoiced and approved billable expenses not billed. */

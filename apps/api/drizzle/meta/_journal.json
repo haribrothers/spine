@@ -687,6 +687,13 @@
       "when": 1791300558728,
       "tag": "0097_favourite_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1791310296834,
+      "tag": "0098_dashboard_basis",
+      "breakpoints": true
     }
   ]
 }

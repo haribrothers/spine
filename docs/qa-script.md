@@ -3500,6 +3500,17 @@ Regression: the Payables page without ?overdue=1 lists every open bill as before
 
 Regression: the Tax Summary opened from Reports still defaults to the start of the year to today.
 
+## 154. Accrual or cash on the dashboard (US-DASH-26, Phase 8)
+
+1. Issue a 1,000.00 invoice this month and record a 500.00 payment on it. Dashboard: "Accrual" is selected; Profit this month is $1,000.00; the money chart is "Income and expenses" with Income and Expenses in the legend and tooltip.
+2. Click "Cash": Profit this month reads $500.00 with "cash basis · …" under it; the chart becomes "Money in and out" (payments received, bills and expenses paid).
+3. Reload, then sign in on another browser: Cash is still selected.
+4. Switch back to Accrual: both figures return.
+5. Staff without "View dashboard summary" don't see the switch (they have no profit figure). Field: no switch.
+6. Keyboard: Tab to the switch, arrow keys change it; the selection is announced. Dark mode is readable.
+
+Regression: Money in and out (§ US-DASH-15) reads exactly as before on Cash, including the 3M/6M/12M range.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

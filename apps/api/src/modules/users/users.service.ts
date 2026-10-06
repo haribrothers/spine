@@ -111,6 +111,16 @@ export class UsersService {
     await this.db.update(user).set({ dashboardLayout: layout }).where(eq(user.id, userId));
   }
 
+  /** US-DASH-26 — the member's dashboard profit basis; accrual until they choose cash. */
+  async getDashboardBasis(userId: string): Promise<"accrual" | "cash"> {
+    const [row] = await this.db.select({ basis: user.dashboardBasis }).from(user).where(eq(user.id, userId));
+    return row?.basis === "cash" ? "cash" : "accrual";
+  }
+
+  async setDashboardBasis(userId: string, basis: "accrual" | "cash"): Promise<void> {
+    await this.db.update(user).set({ dashboardBasis: basis }).where(eq(user.id, userId));
+  }
+
   /** US-RPT-23 — the reports this member starred, in the order they starred them. Unknown slugs are dropped. */
   async getFavouriteReports(userId: string): Promise<string[]> {
     const [row] = await this.db.select({ favourites: user.favouriteReports }).from(user).where(eq(user.id, userId));

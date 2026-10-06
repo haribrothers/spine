@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-26: switch dashboard profit between accrual and cash (Phase 8)
+
+- **Dashboard › "Accrual | Cash"** (beside Edit layout, for members who see profit). On Cash, "Profit this month" — its figure, comparison and sparkline — is worked out on the cash basis (D-138, D-178) and says "cash basis" under the figure.
+- **The money chart follows it** ([D-179](docs/prd/12-decisions.md)): Accrual shows "Income and expenses" per month from the ledger; Cash shows "Money in and out" of bank and cash accounts, as before. Accrual is the default, so the chart first reads income and expenses.
+- **The choice is kept** on the member (`user.dashboard_basis`, migration 0098), so it's the same on every device.
+- API: `GET /dashboard/kpis?basis=`, `GET /reports/money-in-out?basis=accrual`, `GET/PUT /users/me/dashboard-basis`.
+
 ### 2026-10-06 — US-DASH-25: see tax owed this period (Phase 8)
 
 - **Dashboard › Tax this period** card (D-160): "Collected", "Input tax" and "Net payable" for the current month or quarter, and "<period> · paid <amount>" once a tax payment is recorded for it ("nothing paid yet" until then). The card opens the Tax Summary for that period.

@@ -200,9 +200,11 @@ export class ReportsController {
   /** US-DASH-15 — money received and spent per month, from the cash and bank accounts. */
   @Get("money-in-out")
   @RequireCapability("reports.view_dashboard_summary")
-  async moneyInOut(@Session() session: UserSession, @Query("months") months?: string) {
+  async moneyInOut(@Session() session: UserSession, @Query("months") months?: string, @Query("basis") basis?: string) {
     const n = months === "3" ? 3 : months === "6" ? 6 : 12;
-    return this.reportsService.moneyInOut(requireOrgId(session), n);
+    // US-DASH-26 (D-179) — Accrual shows income and expenses; Cash (the default) money in and out.
+    if (basis === "accrual") return this.reportsService.incomeExpensesByMonth(requireOrgId(session), n);
+    return { ...(await this.reportsService.moneyInOut(requireOrgId(session), n)), basis: "cash" as const };
   }
 
   /** S-09.11 (dashboard v2) — revenue trend chart; same gate as P&L/Balance Sheet (US-RPT-36), since it's derived from the same income-account history. */

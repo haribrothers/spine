@@ -17,6 +17,8 @@ export interface Kpi {
   previous: string | null;
   /** 8 points, oldest first, one per week ending today. */
   series: string[];
+  /** US-DASH-26 — the basis `profit` was worked out on. */
+  basis?: "accrual" | "cash";
   /** Receivables and payables: current and overdue amounts. Overdue: how many invoices. Quotes won: their total. */
   detail?: {
     current?: string;
@@ -70,6 +72,8 @@ export function kpiChange(kpi: Pick<Kpi, "key" | "value" | "previous" | "format"
 
 /** US-DASH-15 — `GET /reports/money-in-out`: cash received and spent per month. Minor units as strings. */
 export interface MoneyInOutReport {
+  /** US-DASH-26 (D-179) — "cash": money in and out of bank and cash accounts; "accrual": income and expenses from the ledger. */
+  basis?: "accrual" | "cash";
   months: { month: string; in: string; out: string }[];
   totalIn: string;
   totalOut: string;

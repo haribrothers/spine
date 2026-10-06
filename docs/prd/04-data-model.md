@@ -89,6 +89,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `accounts` | System account **3900 Opening Balance Adjustments** (equity) seeded by migration; new bank/cash accounts use codes 1011–1099, card accounts 2300–2399 (liability) | US-BANK-01, US-RPT-16 |
 | `user` | `last_money_accounts jsonb` (`{ payment, vendor_payment, expense, refund, tax_payment, money_in_out: money_account_id }`) | US-BANK-03 |
 | `user` | `favourite_reports jsonb` (report slugs in the order starred; unknown slugs dropped). Migration `0097`, which also gives every Team a `reports.view_financial_statements` row, off | US-RPT-23 |
+| `user` | `dashboard_basis text` ("accrual" \| "cash"; null means accrual) — the dashboard's profit basis, kept with the layout. Migration `0098` | US-DASH-26 |
 | `payments`, `vendor_payments`, `expenses` | `money_account_id uuid → money_accounts` (restrict; migration `0078` backfills it from the money account on each posted entry, then the organisation default for anything unposted; the services always set it on new rows, so it's nullable only for opening customer credit) | US-BANK-03 |
 | `bank_transfers` (new) | `id`, `org_id`, `from_money_account_id`, `to_money_account_id` (different: check `bank_transfers_different_accounts`), `amount bigint > 0` (check), `date`, `reference?`, `entry_id → journal_entries`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?`, timestamps; index (`org_id`, `date`). Migration `0079`. Its references are NO ACTION so deleting an organisation still cascades | US-BANK-04 |
 | `bank_transactions` (new) | `id`, `org_id`, `money_account_id`, `direction` enum `bank_transaction_direction` (`in`/`out`), `account_id` (the category; never a control account or a money account — service check), `contact_id?`, `amount bigint > 0` (what moved through the account; tax included on money out), `tax_rate_id?`/`tax_group_id?`, `tax_amount bigint default 0` (`>= 0` and `< amount`), `date`, `description?`, `entry_id`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?`, timestamps; index (`org_id`, `date`). Migration `0080`, which also adds account 4800 Interest Received (D-174) | US-BANK-05 |
@@ -146,7 +147,7 @@ Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones
 
 #### `user`
 
-`id` text (PK) · `name` text (not null) · `email` text (not null) · `email_verified` boolean (not null, default false) · `image` text · `created_at` timestamp (not null, default now) · `updated_at` timestamp (not null, default now) · `theme_preference` text (not null, default "system") · `dashboard_layout` jsonb · `favourite_reports` jsonb (US-RPT-23) · `meeting_reminder_lead_minutes` integer
+`id` text (PK) · `name` text (not null) · `email` text (not null) · `email_verified` boolean (not null, default false) · `image` text · `created_at` timestamp (not null, default now) · `updated_at` timestamp (not null, default now) · `theme_preference` text (not null, default "system") · `dashboard_layout` jsonb · `dashboard_basis` text (US-DASH-26) · `favourite_reports` jsonb (US-RPT-23) · `meeting_reminder_lead_minutes` integer
 
 #### `session`
 

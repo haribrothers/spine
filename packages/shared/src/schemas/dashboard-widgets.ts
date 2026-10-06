@@ -117,3 +117,7 @@ export function mergeDashboardLayout(
 
   return ordered;
 }
+
+/** US-DASH-26 (D-138, D-179) — the dashboard's profit basis, kept per member. */
+export const dashboardBasisSchema = z.object({ basis: z.enum(["accrual", "cash"], { message: "Choose Accrual or Cash." }) });
+export type DashboardBasis = z.infer<typeof dashboardBasisSchema>["basis"];

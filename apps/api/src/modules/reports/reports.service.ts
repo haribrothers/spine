@@ -741,6 +741,51 @@ export class ReportsService {
    * it adds cash, out when it takes it, so a transfer between two
    * of them counts as neither.
    */
+  /**
+   * US-DASH-26 (D-179) — the money chart on the accrual basis: income and
+   * expenses per month from income and expense journal lines, in the same
+   * shape as money in and out (`in` is income, `out` expenses).
+   */
+  async incomeExpensesByMonth(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
+    const today = orgClock().date;
+    const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
+    const startStr = start.toISOString().slice(0, 10);
+    const rows = await this.db
+      .select({ date: journalEntries.date, type: accounts.type, debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.type, ["income", "expense"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+    const byMonth = new Map<string, { in: bigint; out: bigint }>();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
+      byMonth.set(d.toISOString().slice(0, 7), { in: 0n, out: 0n });
+    }
+    for (const r of rows) {
+      const month = byMonth.get(r.date.slice(0, 7));
+      if (!month) continue;
+      if (r.type === "income") month.in += r.credit - r.debit;
+      else month.out += r.debit - r.credit;
+    }
+    const totalIn = [...byMonth.values()].reduce((s, v) => s + v.in, 0n);
+    const totalOut = [...byMonth.values()].reduce((s, v) => s + v.out, 0n);
+    const [any] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.type, ["income", "expense"])))
+      .limit(1);
+    return {
+      basis: "accrual",
+      months: [...byMonth.entries()].map(([month, v]) => ({ month, in: v.in.toString(), out: v.out.toString() })),
+      totalIn: totalIn.toString(),
+      totalOut: totalOut.toString(),
+      net: (totalIn - totalOut).toString(),
+      hasActivity: Boolean(any),
+    };
+  }
+
   async moneyInOut(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
     const today = orgClock().date;
     const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));

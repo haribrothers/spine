@@ -7,6 +7,7 @@ import type { Database } from "../../db/client";
 import { accounts, creditNotes, invoices, journalEntries, journalLines, leads, leadStages, paymentAllocations, payments, quotes, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { cashAccountCodes } from "../banking/cash-accounts";
+import { CashBasisService } from "../reports/cash-basis.service";
 
 function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -52,9 +53,13 @@ interface Line {
  */
 @Injectable()
 export class KpiService {
-  constructor(@Inject(DATABASE) private readonly db: Database) {}
+  constructor(
+    @Inject(DATABASE) private readonly db: Database,
+    private readonly cashBasis: CashBasisService,
+  ) {}
 
-  async list(orgId: string, userId: string): Promise<Kpi[]> {
+  /** `basis` (US-DASH-26, D-138): "cash" works "Profit this month" out on the cash basis; everything else is unchanged. */
+  async list(orgId: string, userId: string, basis: "accrual" | "cash" = "accrual"): Promise<Kpi[]> {
     const role = await getMemberRole(this.db, orgId, userId);
     if (role !== "owner" && role !== "staff") return [];
     const can = await getEffectiveCapabilities(this.db, { orgId, userId });
@@ -97,14 +102,17 @@ export class KpiService {
         previous: hasLines(CASH, monthAgo) ? balance(CASH, monthAgo).toString() : null,
         series: weekEnds.map((d) => balance(CASH, d).toString()),
       },
-      {
-        key: "profit",
-        label: "Profit this month",
-        format: "money",
-        value: profit(monthStart, today).toString(),
-        previous: hasProfitLines(lastMonthStart, monthAgo) ? profit(lastMonthStart, monthAgo).toString() : null,
-        series: weekEnds.map((d) => profit(addDays(d, -6), d).toString()),
-      },
+      basis === "cash"
+        ? await this.cashProfitKpi(orgId, today, monthStart, lastMonthStart, monthAgo, weekEnds, hasProfitLines(lastMonthStart, monthAgo))
+        : {
+            key: "profit",
+            label: "Profit this month",
+            format: "money",
+            basis: "accrual",
+            value: profit(monthStart, today).toString(),
+            previous: hasProfitLines(lastMonthStart, monthAgo) ? profit(lastMonthStart, monthAgo).toString() : null,
+            series: weekEnds.map((d) => profit(addDays(d, -6), d).toString()),
+          },
       ...(await this.receivableKpis(orgId, today, monthAgo, weekEnds, lines)),
       ...(can["reports.view_payables"] ? [await this.payablesKpi(orgId, today, monthAgo, weekEnds, lines)] : []),
     ];
@@ -152,6 +160,13 @@ export class KpiService {
       series: weekEnds.map((d) => balance(d).toString()),
       detail: { current: current.toString(), overdue: overdue.toString(), dueSoon: { count: dueSoon.count, amount: dueSoon.amount.toString() }, oldestOverdue: oldest },
     };
+  }
+
+  /** US-DASH-26 (D-138) — profit this month, last month to date and the 8 weeks, each on the cash basis (D-178). */
+  private async cashProfitKpi(orgId: string, today: string, monthStart: string, lastMonthStart: string, monthAgo: string, weekEnds: string[], hadLastMonth: boolean): Promise<Kpi> {
+    const net = async (from: string, to: string) => (await this.cashBasis.profitAndLoss(orgId, from, to)).netProfit;
+    const [value, previous, ...series] = await Promise.all([net(monthStart, today), hadLastMonth ? net(lastMonthStart, monthAgo) : Promise.resolve(null), ...weekEnds.map((d) => net(addDays(d, -6), d))]);
+    return { key: "profit", label: "Profit this month", format: "money", basis: "cash", value: value!, previous, series: series as string[] };
   }
 
   /** Receivables (1100) and overdue, as for Owners. */
