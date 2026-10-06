@@ -69,6 +69,8 @@ export const payments = pgTable(
     /** The journal_entries row this payment's creation posted (§7.2 "Payment received" if any amount was allocated to an invoice at creation time, or "Advance received" if fully unallocated — see PaymentsService.create's own comment on which rule applies and why a single payment can need both in one entry). */
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-RPT-17 (D-137) — a customer's unused credit brought in from the old system: no money account, posts P19. */
+    isOpening: boolean("is_opening").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

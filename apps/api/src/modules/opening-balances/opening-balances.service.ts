@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, inArray, like, lt, notLike, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, like, lt, notLike, sql } from "drizzle-orm";
 import {
   OPENING_ADJUSTMENTS_CODE,
   OPENING_DOCUMENTS_BEFORE,
@@ -15,12 +15,18 @@ import { formatMessageDate, orgMoneySettings } from "../../common/money-format";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, journalEntries, journalLines, openingBalanceLines, openingBalances } from "../../db/schema";
+import { accounts, invoices, journalEntries, journalLines, openingBalanceLines, openingBalances, payments } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService, type PostingLine } from "../ledger/ledger.service";
 import { SettingsService } from "../org/settings.service";
 
 type OpeningRow = typeof openingBalances.$inferSelect;
+
+/** How each opening document points at its entry, so re-dating can move it (US-RPT-17, US-RPT-18). */
+const OPENING_DOCUMENT_POINTERS: Record<string, (tx: Transaction, id: string, entryId: string) => Promise<unknown>> = {
+  opening_invoice: (tx, id, entryId) => tx.update(invoices).set({ journalEntryId: entryId }).where(eq(invoices.id, id)),
+  opening_customer_credit: (tx, id, entryId) => tx.update(payments).set({ journalEntryId: entryId }).where(eq(payments.id, id)),
+};
 
 /** Labels for the read-only rows, by code. */
 const FROM_DOCUMENTS_LABEL: Record<string, string> = {
@@ -172,8 +178,38 @@ export class OpeningBalancesService {
     return row;
   }
 
-  /** Opening documents posted on the old date move with the cutover date (US-RPT-17, US-RPT-18 add them). */
-  protected async redateDocuments(_tx: Transaction, _orgId: string, _cutoverDate: string): Promise<void> {}
+  /** The opening balances row, created on first use; refused once locked (US-RPT-19). */
+  async ensureDraft(tx: Transaction, orgId: string): Promise<OpeningRow> {
+    let row = await this.lockRow(tx, orgId);
+    if (!row) [row] = await tx.insert(openingBalances).values({ orgId, cutoverDate: await this.defaultCutover(orgId) }).returning();
+    if (row!.status === "locked") throw new BadRequestException(OPENING_LOCKED);
+    return row!;
+  }
+
+  /**
+   * Opening documents' entries move with the cutover date: each is reversed
+   * on its old date and posted again, unchanged, the day before the new one,
+   * and the document points at the new entry.
+   */
+  private async redateDocuments(tx: Transaction, orgId: string, cutoverDate: string): Promise<void> {
+    const live = await tx
+      .select()
+      .from(journalEntries)
+      .where(and(eq(journalEntries.orgId, orgId), inArray(journalEntries.sourceType, Object.keys(OPENING_DOCUMENT_POINTERS)), isNull(journalEntries.reversedById)));
+    for (const entry of live) {
+      const lines = await tx.select().from(journalLines).where(eq(journalLines.entryId, entry.id));
+      await this.ledger.reverseEntry(tx, entry.id, { orgId, date: entry.date, narration: `${entry.narration ?? "Opening document"} (cutover date changed)`, sourceType: `${entry.sourceType}_repost`, sourceId: entry.sourceId });
+      const newId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: dayBefore(cutoverDate),
+        narration: entry.narration,
+        sourceType: entry.sourceType,
+        sourceId: entry.sourceId,
+        lines: lines.map((l) => ({ accountId: l.accountId, debit: l.debit, credit: l.credit, contactId: l.contactId, jobId: l.jobId })),
+      });
+      await OPENING_DOCUMENT_POINTERS[entry.sourceType]!(tx, entry.sourceId, newId);
+    }
+  }
 
   /** The start of the current financial year (Settings › Financial year), the first-time default. */
   private async defaultCutover(orgId: string): Promise<string> {

@@ -585,6 +585,8 @@ export class PaymentsService {
       own: "payments.delete_own",
       others: "payments.delete_others",
     });
+    // US-RPT-17: opening customer credit is removed in Opening balances, while they're unlocked.
+    if (existing.isOpening) throw new BadRequestException("This is opening credit. Remove it in Settings › Opening balances.");
     // Any allocation, including one to an advance invoice (which doesn't count
     // towards allocatedAmount, US-PAY-13), makes the payment part of history.
     const [allocation] = await this.db.select({ id: paymentAllocations.id }).from(paymentAllocations).where(eq(paymentAllocations.paymentId, id)).limit(1);

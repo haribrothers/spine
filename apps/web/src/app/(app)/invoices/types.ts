@@ -1,6 +1,7 @@
 /** Mirrors apps/api/src/db/schema/invoices.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following quotes/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type InvoiceStatus = "draft" | "issued" | "void";
-export type InvoiceType = "standard" | "advance" | "progress";
+/** `opening` (US-RPT-17): brought in from the old system — its old number, no lines, no PDF. */
+export type InvoiceType = "standard" | "advance" | "progress" | "retention_release" | "opening";
 export type InvoiceLineType = "item" | "heading" | "text";
 /** Mirrors quotes' own QuoteEmailStatus — null until `sendEmail()` is called (S-05.7), then "pending" immediately, flipped to "sent"/"failed" by the queue worker. */
 export type InvoiceEmailStatus = "pending" | "sent" | "failed";

@@ -80,6 +80,33 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-17: bring in unpaid customer invoices, retention and credit (Phase 8)
+
+- **"Customer invoices" tab** on Opening balances:
+  - The cards show Opening invoices, Amount due, Retention held ("on <n> jobs") and Customers not matched ("from the last import").
+  - The list shows invoice number, customer, invoice date, due date, amount due, retention held and job.
+  - **"Add invoice"** asks for Customer, Invoice number, Invoice date, Due date, Amount due, and optionally Retention held with its Job. Edit and Remove work until the invoice is paid or credited.
+  - **"Import from CSV"** maps the columns (customer name, number, dates with their format, amount due, retention, job), checks each row and matches customers by name. When some don't match: "<n> customer names didn't match anyone in Spine: …", with "Create these customers" or "Fix the file". Then "Imported <n> invoices · <m> rows couldn't be imported", listing each failed row.
+  - A number already used gives "Invoice <number> already exists. Use the number from your old system exactly once."
+- **Posting.** An opening invoice posts P18: Dr Accounts Receivable, and Retention Receivable tagged with the job / Cr Opening Balance Adjustments, dated the day before the cutover date.
+- **How opening invoices behave.** They're listed in Invoices with an "Opening balance" badge. They age by due date and can be paid, reminded (the email goes without a PDF) and credited. They have no PDF ("Brought in from your old system, so it has no lines. Attach the original below…") and can't be voided. The job's retention release includes the opening retention.
+- **"Customer credit" tab.** "Add credit" (customer, amount) posts P19: Dr 3900 / Cr Customer Advances. The credit can be applied to the customer's invoices or refunded like any other. It's removed here, not from Payments.
+- **Cutover date.** Moving it moves every opening document's entry to the new day. The Account balances tab's read-only rows now show these totals.
+- **Migration 0094**: invoice type `opening` and `payments.is_opening`.
+- **API**: `/opening-balances/invoices` (GET/POST/PUT/DELETE, import) and `/opening-balances/customer-credits` (GET/POST/DELETE), all Owner only.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-17.http.integration.test.ts` (8):
+  - P18 with and without retention, and the grid's totals.
+  - A duplicate number and a date after the cutover are refused.
+  - An opening invoice is issued and payable but has no PDF, and is locked once paid.
+  - Retention release includes it.
+  - P19 credit, applied; can't be deleted from Payments or voided.
+  - CSV import with unmatched customers, then created; bad rows listed.
+  - Moving the cutover date moves the entries.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-17.spec.ts` (1): CSV import with "Create these customers", the list, the duplicate-number message, the receivables total on the grid, customer credit, and the invoice's badge, no PDF and "Record payment".
+
 ### 2026-10-06 — US-RPT-16: set a cutover date and enter opening account balances (Phase 8)
 
 - **Settings › Opening balances** (new pane) shows where things stand ("Not started", "Draft — not locked" or "Locked", with the cutover date). Its button opens the new Owner-only page `/opening-balances` ("Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need.").

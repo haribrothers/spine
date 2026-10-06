@@ -3203,6 +3203,21 @@ Regression: finishing and matching (§124–126) work as before.
 
 Regression: Settings' other panes work as before. Settings › Chart of accounts lists 3900 Opening Balance Adjustments (a system account). Money in/out and manual journals can't use it.
 
+## 129. Opening customer invoices and credit (US-RPT-17, Phase 8)
+
+1. Opening balances › "Customer invoices": the cards and "No opening invoices yet." "Add invoice": Customer, Invoice number, Invoice date, Due date, Amount due, Retention held ("Optional — held back on a job until the job is done.") and Job.
+2. Add one dated before the cutover date: it's listed. Add one dated on or after it: "An opening invoice is dated before the cutover date (<date>)." Add one with a number already in Spine: "Invoice <number> already exists. Use the number from your old system exactly once." Retention without a job: "Choose the job the retention is held on."
+3. "Import from CSV" with columns Customer, Invoice no., Invoice date, Due date, Amount due, Retention, Job: the columns are guessed. Pick the date format, then "Import <n> invoices". A name that doesn't match a customer: "<n> customer names didn't match anyone in Spine: …" with "Create these customers" (creates them and imports) or "Fix the file" (closes, nothing imported). Bad rows are listed with the reason.
+4. "Account balances": Accounts Receivable reads "From opening invoices · <total amount due>", and Retention Receivable shows the retention.
+5. Invoices: each opening invoice shows "Opening balance". It ages by its due date on Receivables. Open one: there's no "Download PDF", no "Email invoice" and no "Void". "Brought in from your old system, so it has no lines…". "Record payment", "Send reminder" (no PDF attached) and "Issue credit note" work. Attach the original PDF under Attachments.
+6. Once paid or credited, its row on Opening balances reads "Paid or credited" and can't be edited or removed.
+7. Jobs: the job with opening retention › "Release retention" includes it.
+8. "Customer credit" › "Add credit": choose a customer and an amount. It's listed, and the customer's invoices can use it ("Apply credit"). Payments lists it, but "Delete payment" says "This is opening credit. Remove it in Settings › Opening balances."
+9. Change the cutover date on "Account balances" and save: the Balance Sheet shows the opening invoices and credit on the new day before.
+10. Staff get 403 on every `/opening-balances/…` route.
+
+Regression: ordinary invoices still download their PDF, email with it attached, and void as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -65,3 +65,82 @@ export function dayBefore(date: string): string {
   d.setUTCDate(d.getUTCDate() - 1);
   return d.toISOString().slice(0, 10);
 }
+
+// US-RPT-17 — opening customer invoices (with retention) and customer credit.
+
+const money = z.coerce.bigint().nonnegative("Amounts can't be negative.");
+
+export const openingInvoiceInputSchema = z
+  .object({
+    contactId: z.string().uuid("Choose the customer."),
+    number: z.string().trim().min(1, "Enter the invoice number from your old system.").max(60),
+    invoiceDate: isoDate,
+    dueDate: isoDate,
+    amountDue: money,
+    retentionHeld: money.default(0n),
+    jobId: z.string().uuid().optional().nullable().transform((v) => v ?? null),
+  })
+  .refine((v) => v.amountDue + v.retentionHeld > 0n, { message: "Enter the amount due.", path: ["amountDue"] })
+  .refine((v) => v.retentionHeld === 0n || v.jobId, { message: "Choose the job the retention is held on.", path: ["jobId"] })
+  .refine((v) => v.dueDate >= v.invoiceDate, { message: "The due date can't be before the invoice date.", path: ["dueDate"] });
+export type OpeningInvoiceInput = z.infer<typeof openingInvoiceInputSchema>;
+
+/** `POST /opening-balances/invoices/import`: rows already read from the CSV (ISO dates, minor units), with their row numbers. */
+export const openingInvoiceImportSchema = z.object({
+  rows: z
+    .array(
+      z.object({
+        row: z.number().int(),
+        customer: z.string().trim().min(1),
+        number: z.string().trim(),
+        invoiceDate: z.string(),
+        dueDate: z.string(),
+        amountDue: z.string(),
+        retentionHeld: z.string().optional().nullable(),
+        job: z.string().trim().optional().nullable(),
+      }),
+    )
+    .max(5000, "Split the file into smaller files (up to 5,000 rows)."),
+  createCustomers: z.boolean().default(false),
+});
+export type OpeningInvoiceImportInput = z.infer<typeof openingInvoiceImportSchema>;
+
+export const openingCustomerCreditSchema = z.object({
+  contactId: z.string().uuid("Choose the customer."),
+  amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+});
+
+export const OPENING_INVOICE_NUMBER_USED = (number: string) => `Invoice ${number} already exists. Use the number from your old system exactly once.`;
+export const OPENING_DOCUMENT_HAS_ACTIVITY = "It has payments or credits against it. Remove those first.";
+
+export interface OpeningInvoice {
+  id: string;
+  contactId: string;
+  contactName: string;
+  number: string;
+  invoiceDate: string;
+  dueDate: string;
+  /** Minor units as strings. */
+  amountDue: string;
+  retentionHeld: string;
+  job: { id: string; name: string; number: string | null } | null;
+  balanceDue: string;
+  /** Paid or credited since: can't be changed or removed. */
+  hasActivity: boolean;
+}
+
+export interface OpeningCustomerCredit {
+  id: string;
+  contactId: string;
+  contactName: string;
+  amount: string;
+  /** What's left to apply or refund. */
+  available: string;
+}
+
+export interface OpeningImportResult {
+  imported: number;
+  failed: { row: number; reason: string }[];
+  /** Names in the file that match no contact; nothing was imported (choose "Create these customers" or fix the file). */
+  unmatched: string[];
+}

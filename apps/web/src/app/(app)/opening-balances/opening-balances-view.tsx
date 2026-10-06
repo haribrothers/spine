@@ -5,6 +5,8 @@ import { AppShellHeader, Spinner, Tabs, TabsContent, TabsList, TabsTrigger } fro
 import { OPENING_INTRO, type OpeningBalancesView as View } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { AccountBalancesTab } from "./account-balances-tab";
+import { CustomerCreditTab } from "./customer-credit-tab";
+import { OpeningInvoicesTab } from "./opening-invoices-tab";
 
 /**
  * US-RPT-16–US-RPT-19 — `OpeningBalances`: the account balances on the
@@ -44,9 +46,17 @@ export function OpeningBalancesView() {
         <Tabs defaultValue="accounts">
           <TabsList>
             <TabsTrigger value="accounts">Account balances</TabsTrigger>
+            <TabsTrigger value="invoices">Customer invoices</TabsTrigger>
+            <TabsTrigger value="credit">Customer credit</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts" className="pt-4">
             <AccountBalancesTab view={view} currency={currency} onSaved={setView} />
+          </TabsContent>
+          <TabsContent value="invoices" className="pt-4">
+            <OpeningInvoicesTab currency={currency} locked={view.status === "locked"} onChanged={load} />
+          </TabsContent>
+          <TabsContent value="credit" className="pt-4">
+            <CustomerCreditTab currency={currency} locked={view.status === "locked"} onChanged={load} />
           </TabsContent>
         </Tabs>
       )}

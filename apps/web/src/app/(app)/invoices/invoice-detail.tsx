@@ -264,6 +264,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               <h2 className="text-[18px] font-semibold text-on-surface">{invoice.number ?? "Draft invoice"}</h2>
               <Badge className={STATUS_BADGE_CLASS[invoice.status]}>{INVOICE_STATUS_LABELS[invoice.status]}</Badge>
               {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
+              {invoice.type === "opening" && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
               {invoice.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
           {PAYMENT_STATUS_LABELS[invoice.paymentStatus] && (
             <Badge className={invoice.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[invoice.paymentStatus]}</Badge>
@@ -277,11 +278,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
           <div className="flex flex-wrap items-center gap-2">
             <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" />
-            <Button variant="secondary" asChild>
-              <a href={invoicePdfUrl(invoice.id)} target="_blank" rel="noreferrer">
-                {invoice.status === "draft" ? "Preview PDF" : "Download PDF"}
-              </a>
-            </Button>
+            {/* US-RPT-17: an opening invoice has no PDF in Spine — its attachments hold the original. */}
+            {invoice.type !== "opening" && (
+              <Button variant="secondary" asChild>
+                <a href={invoicePdfUrl(invoice.id)} target="_blank" rel="noreferrer">
+                  {invoice.status === "draft" ? "Preview PDF" : "Download PDF"}
+                </a>
+              </Button>
+            )}
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/invoices/${invoice.id}/edit`}>Edit</Link>
@@ -307,7 +311,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 Issue credit note
               </Button>
             )}
-            {canSendEmail && (
+            {canSendEmail && invoice.type !== "opening" && (
               <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email invoice"}
               </Button>
@@ -317,7 +321,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {busy ? <Spinner size="sm" /> : "Send reminder"}
               </Button>
             )}
-            {canVoid && (
+            {canVoid && invoice.type !== "opening" && (
               <Button variant="ghost" onClick={() => setVoidOpen(true)} disabled={busy}>
                 Void
               </Button>
@@ -398,6 +402,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
+        {invoice.type === "opening" && (
+          <p className="text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines. Attach the original below to keep it with the invoice.</p>
+        )}
         <div className="flex flex-col divide-y divide-border">
           {(invoice.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-start justify-between gap-4 py-2">
