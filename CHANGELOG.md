@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — Fix: Escape didn't close a drawer or dialog while a toast showed
+
+- Radix treats an open toast as the topmost dismissable layer, so the first Escape only dismissed the toast, even with focus in a drawer or dialog. This affected every drawer and dialog that shows a toast.
+- `Toast` in `@spine/ui` now passes Escape on when focus isn't on the toast. The toast closes, and once it's gone the same Escape reaches the dialog or drawer underneath, so one press closes both. With focus on the toast, Escape still closes only the toast. The design-system Toast page's keyboard table says so.
+- The expense form, opened with "Edit" from a drawer's menu, used to drop focus onto the page when it closed, because the menu item that opened it was gone. Focus now returns to the drawer's "More" (or "Edit") button. `ExpenseForm` gains `returnFocusTo`.
+
+Tests:
+- `packages/ui/src/components/toast.a11y.test.tsx`: Escape with a toast and a dialog open closes both. It fails without the fix.
+- `apps/e2e/tests/us-pur-10.spec.ts`: after saving an edit, focus is on "More actions", and one Escape closes the drawer while the toast still shows.
+
 ### 2026-10-06 — Fix: "Edit" was missing on submitted expenses (US-PUR-10)
 
 - US-PUR-10 was ticked in Phase 4. The API (`PUT /expenses/:id`) and the form's edit mode existed, but nothing in the web app ever opened the form on an existing expense. Now:

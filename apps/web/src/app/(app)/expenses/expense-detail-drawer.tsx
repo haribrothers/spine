@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -110,6 +110,8 @@ export function ExpenseDetailDrawer({
     others: "expenses.edit_others",
   });
   const [editOpen, setEditOpen] = useState(false);
+  // Focus comes back to the control that opened the form (the menu item that did is gone).
+  const editTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open || !expenseId) {
@@ -329,14 +331,14 @@ export function ExpenseDetailDrawer({
               </Button>
             )}
             {canEditNow && !editInMenu && (
-              <Button variant="secondary" onClick={() => setEditOpen(true)} disabled={busy}>
+              <Button ref={editTriggerRef} variant="secondary" onClick={() => setEditOpen(true)} disabled={busy}>
                 Edit
               </Button>
             )}
             {(canDeleteNow || editInMenu) && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                  <Button ref={editInMenu ? editTriggerRef : undefined} variant="secondary" aria-label="More actions" disabled={busy}>
                     <MoreHorizontal size={16} aria-hidden />
                     More
                   </Button>
@@ -441,6 +443,7 @@ export function ExpenseDetailDrawer({
           open={editOpen}
           onOpenChange={setEditOpen}
           expense={expense}
+          returnFocusTo={editTriggerRef}
           onSaved={(updated) => {
             setExpense(updated);
             onChanged();

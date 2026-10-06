@@ -29,7 +29,10 @@ test.describe("US-PUR-10", () => {
     await expect(drawer).toContainText("$150.00");
     await expect(drawer).toContainText("Fuel and tolls");
     await expect(drawer).toContainText("Submitted");
-    await drawer.getByRole("button", { name: "Close", exact: true }).last().click();
+    // Focus is back in the drawer, and one Escape closes it even with the toast still showing.
+    await expect(drawer.getByRole("button", { name: "More actions" })).toBeFocused();
+    await expect(page.getByText("Expense updated").first()).toBeVisible();
+    await page.keyboard.press("Escape");
     await expect(drawer).toHaveCount(0);
 
     // The row menu offers Edit too.

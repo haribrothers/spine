@@ -3111,6 +3111,16 @@ Regression: the PDF links, refund, delete, approve, reject and bill-to-customer 
 
 Regression: submitting a new expense still opens a blank "Submit an expense" form, including straight after editing one. Approving, rejecting, deleting and labour entries work as before.
 
+## 122. Escape with a toast showing
+
+1. Open an expense and click "Edit" (under "More" for an Owner). Save the change. The "Expense updated" toast shows, and focus is on the drawer's "More" (or "Edit") button, not lost.
+2. While the toast is still showing, press Escape once: the toast and the drawer both close.
+3. Do the same with a payment: email a receipt, then press Escape while "Receipt sent" shows. The drawer closes with one press.
+4. Press F8 to move focus to a toast, then press Escape: only the toast closes.
+5. With no dialog open (e.g. after deleting an expense from the list), Escape closes the toast and nothing else happens.
+
+Regression: toasts still close on their own, swipe away on touch, and are announced by screen readers. Escape inside a dialog opened over a drawer (e.g. "Apply credit") closes only that dialog.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

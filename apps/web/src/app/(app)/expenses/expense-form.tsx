@@ -68,11 +68,14 @@ export function ExpenseForm({
   onOpenChange,
   expense,
   onSaved,
+  returnFocusTo,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expense?: Expense;
   onSaved: (expense: Expense, mode: "created" | "updated") => void;
+  /** Where focus goes when the form closes — for a form opened from a menu item, which is gone by then. */
+  returnFocusTo?: React.RefObject<HTMLElement | null>;
 }) {
   const [categoryId, setCategoryId] = useState("");
   const [jobId, setJobId] = useState(NO_JOB);
@@ -235,7 +238,14 @@ export function ExpenseForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
+      <DialogContent
+        size="lg"
+        onCloseAutoFocus={(event) => {
+          if (!returnFocusTo?.current) return;
+          event.preventDefault();
+          returnFocusTo.current.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{expense ? "Edit expense" : "Submit an expense"}</DialogTitle>
           <DialogDescription>
