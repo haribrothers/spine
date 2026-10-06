@@ -1,11 +1,13 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, ParseUUIDPipe, Post, Put, Query, UseInterceptors } from "@nestjs/common";
-import { moneyAccountInputSchema } from "@spine/shared";
+import { accountRegisterQuerySchema, moneyAccountInputSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { hasCapability } from "../../auth/capability.util";
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { requireOrgId } from "../org/settings.controller";
+import { AccountRegisterService } from "./account-register.service";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 function parseInput(body: unknown) {
@@ -25,6 +27,7 @@ function parseInput(body: unknown) {
 export class MoneyAccountsController {
   constructor(
     private readonly moneyAccounts: MoneyAccountsService,
+    private readonly registers: AccountRegisterService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
@@ -39,6 +42,15 @@ export class MoneyAccountsController {
   @OrgRoles(["owner"])
   async nextCodes(@Session() session: UserSession) {
     return this.moneyAccounts.nextCodes(requireOrgId(session));
+  }
+
+  /** US-BANK-02 — what moved through one account, with a running balance. */
+  @Get(":id/register")
+  @RequireCapability("banking.view")
+  async register(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Query() query: unknown) {
+    const parsed = accountRegisterQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return this.registers.register(requireOrgId(session), id, parsed.data);
   }
 
   @Post()

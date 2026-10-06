@@ -36,10 +36,14 @@ export class MoneyAccountsService {
       .innerJoin(accounts, eq(accounts.id, moneyAccounts.accountId))
       .where(and(eq(moneyAccounts.orgId, orgId), opts.includeArchived ? undefined : isNull(moneyAccounts.archivedAt)))
       .orderBy(asc(accounts.code));
-    const balances = opts.withBalances ? await this.balances(this.db, rows.map((r) => r.money)) : null;
+    if (!opts.withBalances) return rows.map(({ money, code }) => this.toResponse(money, code));
+    const [balances, unreconciled] = await Promise.all([this.balances(this.db, rows.map((r) => r.money)), this.unreconciledCounts(rows.map((r) => r.money))]);
     return rows.map(({ money, code }) => ({
       ...this.toResponse(money, code),
-      ...(balances ? { balance: (balances.get(money.id) ?? 0n).toString() } : {}),
+      balance: (balances.get(money.id) ?? 0n).toString(),
+      // Reconciliation arrives with US-BANK-08–US-BANK-10; until then every entry is unreconciled.
+      lastReconciledOn: null,
+      unreconciledCount: unreconciled.get(money.id) ?? 0,
     }));
   }
 
@@ -155,6 +159,18 @@ export class MoneyAccountsService {
       const net = byAccount.get(r.accountId) ?? 0n;
       return [r.id, r.kind === "card" ? -net : net];
     }));
+  }
+
+  /** How many journal lines on each account aren't reconciled yet. */
+  private async unreconciledCounts(rows: Pick<MoneyAccountRow, "id" | "accountId">[]): Promise<Map<string, number>> {
+    if (!rows.length) return new Map();
+    const counts = await this.db
+      .select({ accountId: journalLines.accountId, count: sql<number>`count(*)::int` })
+      .from(journalLines)
+      .where(inArray(journalLines.accountId, rows.map((r) => r.accountId)))
+      .groupBy(journalLines.accountId);
+    const byAccount = new Map(counts.map((c) => [c.accountId, c.count]));
+    return new Map(rows.map((r) => [r.id, byAccount.get(r.accountId) ?? 0]));
   }
 
   private async load(db: Database | Transaction, orgId: string, id: string): Promise<MoneyAccountRow> {

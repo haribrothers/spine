@@ -66,3 +66,51 @@ export interface MoneyAccount {
 export type MoneyAccountNextCodes = Record<MoneyAccountKind, string | null>;
 
 export const DUPLICATE_MONEY_ACCOUNT_NAME = (name: string) => `You already have an account called ${name}. Choose another name.`;
+
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2026-10-05.");
+
+/** `GET /money-accounts/:id/register` query (US-BANK-02). */
+export const accountRegisterQuerySchema = z.object({
+  from: isoDateSchema.optional(),
+  to: isoDateSchema.optional(),
+  unreconciled: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
+});
+export type AccountRegisterQuery = z.infer<typeof accountRegisterQuerySchema>;
+
+/**
+ * One journal line on the money account. `in` and `out` are in the
+ * account's own sense: for a card, `in` is "Paid off" and `out` is "Spent",
+ * and `balance` is what's owed. Amounts are minor units as strings.
+ */
+export interface AccountRegisterRow {
+  journalLineId: string;
+  date: string;
+  sourceType: string;
+  sourceId: string;
+  /** What it was, e.g. "Payment RCT-0018" or "Money out — Bank charges". */
+  what: string;
+  number: string | null;
+  contact: { id: string; name: string } | null;
+  reference: string | null;
+  in: string;
+  out: string;
+  balance: string;
+  reconciled: boolean;
+}
+
+export interface AccountRegister {
+  account: MoneyAccount & { balance: string };
+  from: string | null;
+  to: string | null;
+  /** The true balance before `from` (0 without `from`). */
+  openingBalance: string;
+  rows: AccountRegisterRow[];
+  closingBalance: string;
+  totalIn: string;
+  totalOut: string;
+  /** Whether anything has ever gone in or out of the account, regardless of filters. */
+  hasEntries: boolean;
+}

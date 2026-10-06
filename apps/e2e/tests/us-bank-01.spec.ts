@@ -23,7 +23,7 @@ test.describe("US-BANK-01", () => {
     await dialog.getByLabel("Bank name").fill("HDFC Bank");
     await dialog.getByLabel("Last 4 digits").fill("0193");
     await dialog.getByRole("button", { name: "Add account" }).click();
-    await expect(page.getByText("Account added")).toBeVisible();
+    await expect(page.getByText("Account added").first()).toBeVisible();
     await expect(table.getByRole("row", { name: /HDFC Current/ })).toContainText("HDFC Bank · ••0193");
     await expect(table.getByRole("row", { name: /HDFC Current/ })).toContainText("$0.00");
 

@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-02: see every account's balance and what moved through it (Phase 8)
+
+- **Banking list**: each account's name opens its register. New "Reconciliation" ("Never reconciled", or "Reconciled" with the date) and "Unreconciled" ("<n> entries") columns, and "Not yet reconciled" and "Last reconciled" cards at the top.
+- **Account register** (`/banking/<id>`): the title, bank, last four digits, type and ledger code; "Balance in Spine", "Money in" and "Money out" for the range, and "Unreconciled"; From and To dates (this month by default) and "All entries" / "Unreconciled only". One row per journal line on the account, newest first: Date, What ("Payment RCP-0018", "Vendor payment VP-0009", "Expense EXP-0031"), Contact, Reference, Money in, Money out, Balance and Status. The opening balance before the range is shown under the table, and every running balance starts from it, so filtering never changes the figures. Clicking "What" opens the payment, vendor payment or expense.
+- **Cards** read "Paid off" and "Spent", and balances are what's owed.
+- **Empty account**: "Nothing has gone in or out of this account yet."
+- **Read from the ledger** (D-011): the register reads `journal_lines` on the account, never documents, and its balance matches the Balance Sheet for the same date (tested).
+- **Reconciliation not built yet**: until US-BANK-08–US-BANK-10, every entry shows "Not reconciled", every account "Never reconciled", and the unreconciled count is every entry.
+- **Vendor Payments** opens a payment from `?id=<payment>`, as Payments and Expenses do, so register rows can link to it.
+- **API.** `GET /money-accounts/:id/register?from=&to=&unreconciled=` (`banking.view`); `GET /money-accounts` adds `lastReconciledOn` and `unreconciledCount` for callers with `banking.view`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-02.http.integration.test.ts` (7): balances and unreconciled counts on the list; rows with what, contact, reference and running balance; a range starting from the true balance, with and without "unreconciled only"; matching the Balance Sheet on two dates; a card's spent, paid off and owed; an empty account; 403 without `banking.view` and no balances in the names-only list.
+- `apps/e2e/tests/us-bank-02.spec.ts` (1): the list's balance and reconciliation columns, the register row and filter, opening the payment from the register, the empty account and a card's columns.
+
 ### 2026-10-06 — US-BANK-01: add my bank, cash and card accounts (Phase 8)
 
 - **Banking** (new "Money" section in the sidebar): every bank, cash and card account with its "Balance in Spine", a "Default" badge, and "Bank and cash" / "Owed on cards" totals. Owners add accounts with "Add account" and edit them from the row menu.

@@ -2870,6 +2870,20 @@ Regression: light mode looks as before apart from the slightly darker amber. Sha
 
 Regression: the dashboard's "Cash position" and "Money in and out" now include every bank and cash account (cards excluded); with only the two starting accounts they show the same figures as before. Recording a payment, vendor payment or expense still posts to Bank Account.
 
+## 102. Account register (US-BANK-02, Phase 8)
+
+1. Record a customer payment and a vendor payment, and approve an expense. Open Banking: Bank Account shows the new balance, "Never reconciled" and "3 entries". The cards at the top show "Not yet reconciled" with the total and "Last reconciled" reads "Never".
+2. Click "Bank Account": the breadcrumb reads "Money › Banking › Bank Account" and the line under the title reads "Bank account · ledger 1010". The cards show "Balance in Spine" (as of today), "Money in" and "Money out" for the range, and "Unreconciled".
+3. The table lists newest first: Date, What ("Payment RCP-…", "Vendor payment VP-…", "Expense EXP-…"), Contact, Reference, Money in, Money out, Balance and "Not reconciled". Each balance is the running balance after that row. Below the table: "Opening balance on <from>".
+4. Click a row's "What": the payment, vendor payment or expense opens in its own page.
+5. Move "From" to after the first entry: that entry leaves the list, the opening balance includes it and the running balances don't change. Choose "Unreconciled only": the same rows and balances stay (nothing is reconciled yet).
+6. Compare the balance on the last day of a month with Reports › Balance Sheet for that date: Bank Account matches.
+7. Open a credit card account: the columns read "Paid off" and "Spent", the balance column "Owed", and the first card "Owed on this card".
+8. Open Cash in Hand with nothing on it: "Nothing has gone in or out of this account yet."
+9. As Staff without "View bank balances and registers", /banking/<id> shows the no-access page and `GET /money-accounts/<id>/register` returns 403.
+
+Regression: Vendor Payments opens a payment's drawer from `/vendor-payments?id=<id>`, as Payments and Expenses already did. The Banking list still adds accounts and moves the default.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

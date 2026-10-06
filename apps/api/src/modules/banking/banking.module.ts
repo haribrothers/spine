@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { AccountRegisterService } from "./account-register.service";
 import { MoneyAccountsController } from "./money-accounts.controller";
 import { MoneyAccountsService } from "./money-accounts.service";
 
@@ -10,7 +11,7 @@ import { MoneyAccountsService } from "./money-accounts.service";
 @Module({
   imports: [AuditModule],
   controllers: [MoneyAccountsController],
-  providers: [MoneyAccountsService],
+  providers: [MoneyAccountsService, AccountRegisterService],
   exports: [MoneyAccountsService],
 })
 export class BankingModule {}

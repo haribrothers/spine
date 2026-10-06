@@ -33,7 +33,8 @@ export function VendorPaymentsExplorer() {
   const [contactFilter, setContactFilter] = useState<string>(searchParams.get("contactId") ?? ALL_CONTACTS);
   const [contacts, setContacts] = useState<ContactOption[]>([]);
   const [newPaymentOpen, setNewPaymentOpen] = useState(Boolean(payFor));
-  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(null);
+  // US-BANK-02: a register row opens the payment as ?id=<payment>.
+  const [selectedPaymentId, setSelectedPaymentId] = useState<string | null>(() => searchParams.get("id"));
   const { show: showToast, toast } = useEntityToast();
 
   const stats = useVendorPaymentStats(payments);

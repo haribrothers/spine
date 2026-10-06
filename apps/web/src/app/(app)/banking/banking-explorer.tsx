@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import {
@@ -13,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   StatCard,
+  StatusChip,
   TableSkeleton,
   type TableColumn,
 } from "@spine/ui";
@@ -20,6 +22,7 @@ import { MONEY_ACCOUNT_KIND_LABELS, type MoneyAccount } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { useMyRole } from "../../../lib/role-context";
+import { formatDay } from "./dates";
 import { useEntityToast } from "./entity-toast";
 import { MoneyAccountDialog } from "./money-account-dialog";
 
@@ -74,6 +77,9 @@ export function BankingExplorer() {
       cashCount: cash.length,
       owed: cards.reduce((sum, r) => sum + BigInt(r.balance ?? "0"), 0n),
       cardCount: cards.length,
+      unreconciled: rows.reduce((sum, r) => sum + (r.unreconciledCount ?? 0), 0),
+      unreconciledAccounts: rows.filter((r) => (r.unreconciledCount ?? 0) > 0).length,
+      lastReconciled: rows.filter((r) => r.lastReconciledOn).sort((a, b) => b.lastReconciledOn!.localeCompare(a.lastReconciledOn!))[0] ?? null,
     };
   }, [rows]);
 
@@ -92,8 +98,10 @@ export function BankingExplorer() {
       key: "name",
       header: "Account",
       render: (row) => (
-        <span className="flex flex-wrap items-center gap-2 font-medium text-on-surface">
-          {row.name}
+        <span className="flex flex-wrap items-center gap-2">
+          <Link href={`/banking/${row.id}`} className="font-medium text-on-surface hover:text-primary hover:underline">
+            {row.name}
+          </Link>
           {row.isDefault && <Badge className="bg-primary/10 text-primary">Default</Badge>}
         </span>
       ),
@@ -112,6 +120,26 @@ export function BankingExplorer() {
         </span>
       ),
       sortValue: (row) => Number(row.balance ?? "0"),
+    },
+    {
+      key: "reconciliation",
+      header: "Reconciliation",
+      render: (row) =>
+        row.lastReconciledOn ? (
+          <span className="flex flex-wrap items-center gap-2">
+            <StatusChip status="paid">Reconciled</StatusChip>
+            <span className="text-[13px] text-on-surface-muted">{formatDay(row.lastReconciledOn)}</span>
+          </span>
+        ) : (
+          <StatusChip status="draft">Never reconciled</StatusChip>
+        ),
+    },
+    {
+      key: "unreconciled",
+      header: "Unreconciled",
+      align: "right",
+      render: (row) => <span className="tabular-nums">{plural(row.unreconciledCount ?? 0, "entry", "entries")}</span>,
+      sortValue: (row) => row.unreconciledCount ?? 0,
     },
     ...(isOwner
       ? [
@@ -153,7 +181,7 @@ export function BankingExplorer() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           label="Bank and cash"
           value={totals ? formatMoney(totals.cash, currency) : "—"}
@@ -163,6 +191,16 @@ export function BankingExplorer() {
           label="Owed on cards"
           value={totals ? formatMoney(totals.owed, currency) : "—"}
           trend={totals ? { direction: "neutral", label: plural(totals.cardCount, "card", "cards") } : undefined}
+        />
+        <StatCard
+          label="Not yet reconciled"
+          value={totals ? String(totals.unreconciled) : "—"}
+          trend={totals ? { direction: "neutral", label: `entries across ${plural(totals.unreconciledAccounts, "account", "accounts")}` } : undefined}
+        />
+        <StatCard
+          label="Last reconciled"
+          value={totals?.lastReconciled?.lastReconciledOn ? formatDay(totals.lastReconciled.lastReconciledOn) : "Never"}
+          trend={totals?.lastReconciled ? { direction: "neutral", label: totals.lastReconciled.name } : undefined}
         />
       </div>
 
