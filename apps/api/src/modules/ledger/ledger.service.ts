@@ -2,7 +2,9 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException }
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, journalEntries, journalLines } from "../../db/schema";
+import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, journalEntries, journalLines, moneyAccounts } from "../../db/schema";
+import { RECONCILED_ENTRY_LOCKED } from "@spine/shared";
+import { orgMoneySettings } from "../../common/money-format";
 import { PeriodsService } from "./periods.service";
 
 /**
@@ -186,6 +188,7 @@ export class LedgerService {
     if (!originalLines.length) {
       throw new InternalServerErrorException(`Cannot reverse journal entry ${originalEntryId} — it has no lines`);
     }
+    await this.releaseFromReconciliations(tx, reversal.orgId, originalLines);
 
     const reversedEntryId = await this.postEntry(tx, {
       orgId: reversal.orgId,
@@ -205,5 +208,34 @@ export class LedgerService {
     await tx.update(journalEntries).set({ reversedById: reversedEntryId }).where(eq(journalEntries.id, originalEntryId));
 
     return reversedEntryId;
+  }
+
+  /**
+   * US-BANK-10 (invariant 10) — a document whose money-account line is part
+   * of a finished reconciliation can't be voided or deleted until that
+   * reconciliation is undone. A line matched in one still in progress is
+   * unmatched (its statement line goes back to unmatched) so nothing points
+   * at an entry that's been reversed.
+   */
+  private async releaseFromReconciliations(tx: Transaction, orgId: string, lines: (typeof journalLines.$inferSelect)[]) {
+    const reconciled = lines.find((l) => l.reconciliationId);
+    if (reconciled) {
+      const [rec] = await tx
+        .select({ endDate: bankReconciliations.statementEndDate, account: moneyAccounts.name })
+        .from(bankReconciliations)
+        .innerJoin(moneyAccounts, eq(moneyAccounts.id, bankReconciliations.moneyAccountId))
+        .where(eq(bankReconciliations.id, reconciled.reconciliationId!));
+      const { locale } = await orgMoneySettings(this.db, orgId);
+      const date = new Date(`${rec!.endDate}T00:00:00Z`).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+      throw new BadRequestException(RECONCILED_ENTRY_LOCKED(rec!.account, date));
+    }
+    const matched = await tx
+      .select({ statementLineId: bankStatementLineMatches.statementLineId })
+      .from(bankStatementLineMatches)
+      .where(inArray(bankStatementLineMatches.journalLineId, lines.map((l) => l.id)));
+    if (!matched.length) return;
+    const statementLineIds = [...new Set(matched.map((m) => m.statementLineId))];
+    await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.statementLineId, statementLineIds));
+    await tx.update(bankStatementLines).set({ status: "unmatched", reconciliationId: null }).where(and(inArray(bankStatementLines.id, statementLineIds), eq(bankStatementLines.status, "matched")));
   }
 }

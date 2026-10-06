@@ -93,8 +93,8 @@ export class AccountRegisterService {
         in: moneyIn.toString(),
         out: moneyOut.toString(),
         balance: balance.toString(),
-        // Reconciliation arrives with US-BANK-08–US-BANK-10; until then nothing is reconciled.
-        reconciled: false,
+        // US-BANK-10: part of a finished reconciliation.
+        reconciled: line.reconciliationId !== null,
       };
     });
 

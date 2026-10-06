@@ -40,6 +40,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   bank_transaction: "Money in or out",
   vendor_credit: "Vendor credit",
   tax_payment: "Tax payment",
+  bank_reconciliation: "Reconciliation",
 };
 
 function sentenceCase(key: string): string {

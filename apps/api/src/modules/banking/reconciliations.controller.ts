@@ -43,4 +43,10 @@ export class ReconciliationsController {
     if (!parsed.success) throw new BadRequestException(firstIssue(parsed.error));
     return this.reconciliations.saveMatches(requireOrgId(session), id, parsed.data);
   }
+
+  @Post(":id/finish")
+  @UseInterceptors(IdempotencyInterceptor)
+  async finish(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.reconciliations.finish(requireOrgId(session), session.user.id, id);
+  }
 }

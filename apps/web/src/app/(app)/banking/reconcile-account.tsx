@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -47,6 +48,8 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
   // US-BANK-09
   const [creating, setCreating] = useState<StatementLine | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  // US-BANK-10
+  const [finished, setFinished] = useState<{ endDate: string } | null>(null);
   const [rec, setRec] = useState<ReconciliationView | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [currency, setCurrency] = useState("USD");
@@ -104,6 +107,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
     }
     setBusy(true);
     setError(null);
+    setFinished(null);
     try {
       applyView(await apiClient.post<ReconciliationView>("/bank-reconciliations", { moneyAccountId: accountId, statementEndDate: toIsoDate(nextEnd), statementClosingBalance: closing.toString() }));
     } catch (err) {
@@ -126,6 +130,24 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
       setTicked(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't save that match. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /** US-BANK-10 — saves the reconciliation once Spine agrees with the statement. */
+  async function finish() {
+    if (!rec) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await apiClient.post(`/bank-reconciliations/${rec.id}/finish`);
+      setFinished({ endDate: rec.statementEndDate });
+      setNotice(null);
+      setRec(null);
+      setClosingText("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't finish this reconciliation. Try again.");
     } finally {
       setBusy(false);
     }
@@ -184,6 +206,17 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
           {error && (
             <Alert variant="critical">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {finished && (
+            <Alert variant="success">
+              <AlertDescription>
+                {name} is reconciled to {formatDay(finished.endDate)}. Its entries show the Reconciled tick in the{" "}
+                <Link href={`/banking/${accountId}`} className="font-medium underline">
+                  register
+                </Link>
+                .
+              </AlertDescription>
             </Alert>
           )}
           {notice && (
@@ -418,6 +451,9 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                 <p className={`text-[14px] font-medium ${difference === 0n ? "text-paid" : "text-overdue"}`}>
                   {difference === 0n ? `Spine agrees with the statement · ${matchedCount} lines matched.` : `Difference ${money(rec.difference)} — match or create entries until it's zero.`}
                 </p>
+                <Button onClick={finish} disabled={difference !== 0n || busy}>
+                  {busy ? <Spinner size="sm" /> : "Finish reconciliation"}
+                </Button>
               </Card>
             </>
           )}

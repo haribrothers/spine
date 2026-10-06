@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import {
+  DIFFERENCE_NOT_ZERO,
   MATCH_SUM_MISMATCH,
   RECONCILE_AFTER,
   formatMoney,
@@ -14,6 +15,7 @@ import { orgMoneySettings } from "../../common/money-format";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { bankReconciliations, bankStatementImports, bankStatementLineMatches, bankStatementLines, journalEntries, journalLines, moneyAccounts, user } from "../../db/schema";
+import { AuditLogService } from "../audit/audit-log.service";
 import { AccountRegisterService } from "./account-register.service";
 import { MoneyAccountsService } from "./money-accounts.service";
 import { toStatementLine } from "./statement-imports.service";
@@ -37,6 +39,7 @@ export class ReconciliationsService {
     @Inject(DATABASE) private readonly db: Database,
     private readonly moneyAccounts: MoneyAccountsService,
     private readonly register: AccountRegisterService,
+    private readonly auditLog: AuditLogService,
   ) {}
 
   async list(orgId: string, moneyAccountId: string, status?: ReconciliationRow["status"]): Promise<ReconciliationSummary[]> {
@@ -271,7 +274,7 @@ export class ReconciliationsService {
           eq(journalLines.accountId, ledgerAccountId),
           lte(journalEntries.date, rec.statementEndDate),
           broughtForwardBefore ? gte(journalEntries.date, broughtForwardBefore) : undefined,
-          rec.status === "in_progress" ? reconciledIsNull() : matchedIds.length ? inArray(journalLines.id, matchedIds) : sql`false`,
+          rec.status === "in_progress" ? isNull(journalLines.reconciliationId) : matchedIds.length ? inArray(journalLines.id, matchedIds) : sql`false`,
         ),
       )
       .orderBy(asc(journalEntries.date), asc(journalEntries.createdAt), asc(journalLines.id));
@@ -285,6 +288,64 @@ export class ReconciliationsService {
       }
     }
     return rows.filter((r) => matched.has(r.line.id) || !pairs.has(r.entry.id));
+  }
+
+  /**
+   * US-BANK-10 (D-158) — finishes a reconciliation whose difference is zero.
+   * Its matched entries get the Reconciled tick; so do, on an account's first
+   * one, the entries brought forward before its first statement line, and
+   * any entry and reversal that cancel out up to the end date (D-176).
+   */
+  async finish(orgId: string, actorUserId: string, id: string): Promise<ReconciliationView> {
+    const before = await this.load(this.db, orgId, id);
+    if (before.status !== "in_progress") throw new BadRequestException("This reconciliation is already finished.");
+    const view = await this.get(orgId, id);
+    const { currency, locale } = await orgMoneySettings(this.db, orgId);
+    if (BigInt(view.difference) !== 0n) throw new BadRequestException(DIFFERENCE_NOT_ZERO(formatMoney(BigInt(view.difference), currency, locale)));
+    const account = await this.moneyAccounts.get(orgId, before.moneyAccountId);
+
+    await this.db.transaction(async (tx) => {
+      const rec = await this.load(tx, orgId, id, true);
+      // Someone changed the matches while this was being checked.
+      if (rec.status !== "in_progress" || rec.updatedAt.getTime() !== before.updatedAt.getTime()) throw new BadRequestException("This reconciliation just changed. Refresh and try again.");
+
+      const matchedIds = view.matches.flatMap((m) => m.journalLineIds);
+      if (matchedIds.length) await tx.update(journalLines).set({ reconciliationId: rec.id }).where(and(inArray(journalLines.id, matchedIds), isNull(journalLines.reconciliationId)));
+      const inRange = await tx
+        .select({ line: journalLines, entry: journalEntries })
+        .from(journalLines)
+        .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+        .where(and(eq(journalLines.accountId, account.accountId), isNull(journalLines.reconciliationId), lte(journalEntries.date, rec.statementEndDate)));
+      // The same window the page offers entries from, so a pair counts only when both halves were left out of it.
+      const window = view.broughtForwardBefore ? inRange.filter((r) => r.entry.date >= view.broughtForwardBefore!) : inRange;
+      const entryIds = new Set(window.map((r) => r.entry.id));
+      const cancelled = window.filter((r) => (r.entry.reversedById && entryIds.has(r.entry.reversedById)) || window.some((o) => o.entry.reversedById === r.entry.id));
+      const broughtForward = view.broughtForwardBefore ? inRange.filter((r) => r.entry.date < view.broughtForwardBefore!) : [];
+      const extra = [...new Set([...cancelled, ...broughtForward].map((r) => r.line.id))];
+      if (extra.length) await tx.update(journalLines).set({ reconciliationId: rec.id }).where(inArray(journalLines.id, extra));
+
+      await tx
+        .update(bankReconciliations)
+        .set({
+          status: "finished",
+          openingBalance: BigInt(view.openingBalance),
+          broughtForwardBefore: view.broughtForwardBefore,
+          finishedByUserId: actorUserId,
+          finishedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(bankReconciliations.id, rec.id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "finished",
+        entityType: "bank_reconciliation",
+        entityId: rec.id,
+        contactId: null,
+        changes: { account: account.name, statementEndDate: rec.statementEndDate, closingBalance: rec.statementClosingBalance.toString(), entriesMatched: matchedIds.length },
+      });
+    });
+    return this.get(orgId, id);
   }
 
   private async dropMatchesAfter(tx: Transaction, recId: string, endDate: string) {
@@ -327,11 +388,6 @@ export class ReconciliationsService {
       isLatest,
     };
   }
-}
-
-/** Until US-BANK-10 marks journal lines reconciled, every entry is a candidate. */
-function reconciledIsNull() {
-  return isNull(sql`null`);
 }
 
 /**

@@ -3164,6 +3164,20 @@ Regression: the register, statement import and money in/out are unchanged.
 
 Regression: Payments, Vendor Payments, Banking's Transfer and Money in/out, and Reports › Tax Summary › "Record tax payment" work as before when opened from their own pages.
 
+## 126. Finish a reconciliation (US-BANK-10, Phase 8)
+
+1. On the reconcile page with a difference, "Finish reconciliation" is disabled and the footer reads "Difference <amount> — match or create entries until it's zero."
+2. Match until the difference is $0.00: the footer reads "Spine agrees with the statement · <n> lines matched." and "Finish reconciliation" is enabled. Click it: "<Account> is reconciled to <date>. Its entries show the Reconciled tick in the register."
+3. The register: matched entries, entries before the first statement line, and any deleted-and-reversed pairs up to the end date read "Reconciled". Later entries read "Not reconciled". The balance is unchanged.
+4. Banking: the account shows the end date under "Last reconciled", and "Last reconciled" at the top shows it. The unreconciled count drops.
+5. Team › Audit log: "<you> finished Reconciliation", with the account and closing balance.
+6. Try to delete a reconciled payment (Payments › drawer › More › Delete payment): "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first." The same goes for a vendor payment, a transfer or money in/out entry (the register has no Delete on reconciled rows), a refund and a tax payment.
+7. Start the next reconciliation with an end date on or before the last one: "Choose a date after <date>, when this account was last reconciled."
+8. In a reconciliation still in progress, match an entry, then delete its document: the deletion works and the statement line is unmatched again.
+9. As Staff without "Reconcile accounts", `POST /bank-reconciliations/:id/finish` returns 403.
+
+Regression: balances, the Balance Sheet and the dashboard's cash figures are the same before and after finishing. Deleting unreconciled documents works as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -80,6 +80,32 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-10: finish a reconciliation when it balances (Phase 8)
+
+- **"Finish reconciliation"** on the reconcile page is enabled only at a difference of $0.00. Until then the footer reads "Difference <amount> — match or create entries until it's zero."
+- **Finishing** saves the reconciliation, and the page then reads "<Account> is reconciled to <date>. Its entries show the Reconciled tick in the register." The tick goes on:
+  - the matched entries;
+  - on an account's first reconciliation, the entries brought forward before its first statement line;
+  - any entry and reversal that cancel out up to the end date (D-176).
+- **Where it shows.**
+  - The register's Status column now reads "Reconciled" for these.
+  - Banking shows "Last reconciled <date>", and the unreconciled counts exclude reconciled entries.
+  - The audit log records who finished it, the account and the closing balance.
+- **Lock (invariant 10).** Voiding or deleting any document with a reconciled line (payment, vendor payment, expense, transfer, money in/out, refund, tax payment) is refused: "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first." This is checked once, in `LedgerService.reverseEntry`. A document matched only in a reconciliation still in progress can still be deleted; its statement line goes back to unmatched.
+- **Migration 0092**: `journal_lines.reconciliation_id`. The journal-line immutability trigger now allows a change to that column and nothing else.
+- **API**: `POST /bank-reconciliations/:id/finish` (`banking.reconcile`). A later reconciliation must end after the last finished one.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-10.http.integration.test.ts` (7):
+  - Finishing is refused with a difference.
+  - Finishing at zero ticks the matched, brought-forward and cancelled-pair lines; the register, last reconciled date and unreconciled count update, the balance doesn't change, and the audit row is written.
+  - Deleting a reconciled payment or money-out entry is refused with the message.
+  - A later end date is required.
+  - Deleting a document matched in a reconciliation still in progress unmatches its line.
+  - The trigger still refuses other journal-line edits.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-10.spec.ts` (1): Finish disabled with a difference; finish; ticks in the register; "Never reconciled" only on Cash in Hand; deleting the reconciled payment shows the lock message.
+
 ### 2026-10-06 — US-BANK-09: create what's missing from a statement line (Phase 8)
 
 - **"Create"** on an unmatched statement line opens `ReconcileCreateDrawer` ("Create from statement line"; "Saving matches the line to the new entry."). "Record it as" offers:

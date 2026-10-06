@@ -645,6 +645,13 @@
       "when": 1791289145413,
       "tag": "0091_bank_reconciliations",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1791290385310,
+      "tag": "0092_journal_line_reconciliation",
+      "breakpoints": true
     }
   ]
 }

@@ -17,7 +17,7 @@ import {
 import { orgMoneySettings } from "../../common/money-format";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, journalLines, moneyAccounts, user } from "../../db/schema";
+import { accounts, bankReconciliations, journalLines, moneyAccounts, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 type MoneyAccountRow = typeof moneyAccounts.$inferSelect;
@@ -43,12 +43,16 @@ export class MoneyAccountsService {
       .where(and(eq(moneyAccounts.orgId, orgId), opts.includeArchived ? undefined : isNull(moneyAccounts.archivedAt)))
       .orderBy(asc(accounts.code));
     if (!opts.withBalances) return rows.map(({ money, code }) => this.toResponse(money, code));
-    const [balances, unreconciled] = await Promise.all([this.balances(this.db, rows.map((r) => r.money)), this.unreconciledCounts(rows.map((r) => r.money))]);
+    const [balances, unreconciled, lastReconciled] = await Promise.all([
+      this.balances(this.db, rows.map((r) => r.money)),
+      this.unreconciledCounts(rows.map((r) => r.money)),
+      this.lastReconciledDates(rows.map((r) => r.money.id)),
+    ]);
     return rows.map(({ money, code }) => ({
       ...this.toResponse(money, code),
       balance: (balances.get(money.id) ?? 0n).toString(),
-      // Reconciliation arrives with US-BANK-08–US-BANK-10; until then every entry is unreconciled.
-      lastReconciledOn: null,
+      // US-BANK-10: the end date of the latest finished reconciliation.
+      lastReconciledOn: lastReconciled.get(money.id) ?? null,
       unreconciledCount: unreconciled.get(money.id) ?? 0,
     }));
   }
@@ -244,10 +248,21 @@ export class MoneyAccountsService {
     const counts = await this.db
       .select({ accountId: journalLines.accountId, count: sql<number>`count(*)::int` })
       .from(journalLines)
-      .where(inArray(journalLines.accountId, rows.map((r) => r.accountId)))
+      .where(and(inArray(journalLines.accountId, rows.map((r) => r.accountId)), isNull(journalLines.reconciliationId)))
       .groupBy(journalLines.accountId);
     const byAccount = new Map(counts.map((c) => [c.accountId, c.count]));
     return new Map(rows.map((r) => [r.id, byAccount.get(r.accountId) ?? 0]));
+  }
+
+  /** US-BANK-10 — each account's latest finished reconciliation end date. */
+  private async lastReconciledDates(ids: string[]): Promise<Map<string, string>> {
+    if (!ids.length) return new Map();
+    const rows = await this.db
+      .select({ id: bankReconciliations.moneyAccountId, last: sql<string>`max(${bankReconciliations.statementEndDate})` })
+      .from(bankReconciliations)
+      .where(and(inArray(bankReconciliations.moneyAccountId, ids), eq(bankReconciliations.status, "finished")))
+      .groupBy(bankReconciliations.moneyAccountId);
+    return new Map(rows.map((r) => [r.id, r.last]));
   }
 
   private async codeOf(db: Database | Transaction, accountId: string): Promise<string> {

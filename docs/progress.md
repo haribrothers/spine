@@ -344,7 +344,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-BANK-07 · Import a bank statement
 - [x] US-BANK-08 · Match statement lines to what's in Spine
 - [x] US-BANK-09 · Create what's missing from a statement line
-- [ ] US-BANK-10 · Finish a reconciliation when it balances
+- [x] US-BANK-10 · Finish a reconciliation when it balances
 - [ ] US-BANK-11 · Review or undo a reconciliation
 - [x] US-BANK-12 · Let a Team see balances, record money and reconcile
 - [ ] US-CAT-09 · Import catalogue items from a spreadsheet
