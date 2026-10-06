@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Put, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Post, Put, UseInterceptors } from "@nestjs/common";
 import { saveOpeningBalancesSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -22,5 +22,18 @@ export class OpeningBalancesController {
     const parsed = saveOpeningBalancesSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the balances and try again.");
     return this.openingBalances.save(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  /** US-RPT-19 */
+  @Post("lock")
+  @UseInterceptors(IdempotencyInterceptor)
+  async lock(@Session() session: UserSession) {
+    return this.openingBalances.lock(requireOrgId(session), session.user.id);
+  }
+
+  @Post("unlock")
+  @UseInterceptors(IdempotencyInterceptor)
+  async unlock(@Session() session: UserSession) {
+    return this.openingBalances.unlock(requireOrgId(session), session.user.id);
   }
 }

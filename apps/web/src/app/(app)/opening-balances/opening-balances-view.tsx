@@ -9,6 +9,7 @@ import { CustomerCreditTab } from "./customer-credit-tab";
 import { OpeningInvoicesTab } from "./opening-invoices-tab";
 import { OpeningBillsTab } from "./opening-bills-tab";
 import { VendorCreditTab } from "./vendor-credit-tab";
+import { ReviewTab } from "./review-tab";
 
 /**
  * US-RPT-16–US-RPT-19 — `OpeningBalances`: the account balances on the
@@ -52,6 +53,7 @@ export function OpeningBalancesView() {
             <TabsTrigger value="credit">Customer credit</TabsTrigger>
             <TabsTrigger value="bills">Vendor bills</TabsTrigger>
             <TabsTrigger value="vendor-credits">Vendor credits</TabsTrigger>
+            <TabsTrigger value="review">Review</TabsTrigger>
           </TabsList>
           <TabsContent value="accounts" className="pt-4">
             <AccountBalancesTab view={view} currency={currency} onSaved={setView} />
@@ -67,6 +69,9 @@ export function OpeningBalancesView() {
           </TabsContent>
           <TabsContent value="vendor-credits" className="pt-4">
             <VendorCreditTab currency={currency} locked={view.status === "locked"} onChanged={load} />
+          </TabsContent>
+          <TabsContent value="review" className="pt-4">
+            <ReviewTab view={view} currency={currency} onChanged={setView} />
           </TabsContent>
         </Tabs>
       )}

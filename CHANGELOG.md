@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-19: check and lock my opening balances (Phase 8)
+
+- **"Review" tab** on Opening balances:
+  - The cards show opening invoices (count and retention), opening bills, credits (customers and vendors) and Opening Balance Adjustments, highlighted while it isn't zero.
+  - Below them, "Trial balance on <the day before the cutover date>", with the 3900 row highlighted when it holds anything.
+- **"Lock opening balances"** asks "Lock opening balances?" ("Spine closes everything up to <date> so nobody changes your starting point. An owner can unlock it later; both are recorded in the audit log."). When adjustments remain, it adds "Opening Balance Adjustments still holds <amount>. Lock anyway?" with "Go back" and "Lock anyway".
+- **Locking** creates a closed fiscal period from Jan 1, 1900 to the day before the cutover date, so nothing more can be posted before it. Every opening screen and route becomes read-only ("Unlock the opening balances to change them."). Settings › Opening balances reads "Locked", which the setup page (US-ONB-15) will read later.
+- **"Unlock"** reopens that period and allows editing again. Locking again reuses the same period.
+- Both are in the audit log ("locked" / "unlocked" Opening balances, with the adjustment at lock time).
+- **API**: `POST /opening-balances/lock`, `POST /opening-balances/unlock` (Owner only).
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-19.http.integration.test.ts` (4):
+  - Can't lock before anything is entered.
+  - Locking creates the closed period and audit row, refuses edits and documents, blocks posting before the cutover date and allows after.
+  - Unlocking reopens the period, edits work again, and locking again reuses the period.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-19.spec.ts` (1): the trial balance, the "Lock anyway?" warning with Go back, lock, read-only tabs, then unlock.
+
 ### 2026-10-06 — US-RPT-18: bring in unpaid vendor bills and vendor credits (Phase 8)
 
 - **"Vendor bills" tab** on Opening balances: "Add bill" (Vendor, Bill number, Bill date, Due date, Amount due) and "Import from CSV". The import matches vendors by name, offering "Create these vendors" or "Fix the file", and lists rows it couldn't import. The same vendor and bill number twice: "Bill <number> from <vendor> is already in Spine. Enter each bill once."

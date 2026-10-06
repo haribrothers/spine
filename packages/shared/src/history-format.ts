@@ -75,6 +75,9 @@ const ACTION_VERBS: Record<string, string> = {
   // US-BANK-10/11
   finished: "finished",
   undone: "undid",
+  // US-RPT-19
+  locked: "locked",
+  unlocked: "unlocked",
   credit_applied: "applied credit from",
   applied: "applied",
   application_removed: "removed an application of",

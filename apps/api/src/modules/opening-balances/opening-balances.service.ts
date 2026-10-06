@@ -15,12 +15,15 @@ import { formatMessageDate, orgMoneySettings } from "../../common/money-format";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, invoices, journalEntries, journalLines, openingBalanceLines, openingBalances, payments, vendorBills, vendorCredits } from "../../db/schema";
+import { accounts, fiscalPeriods, invoices, journalEntries, journalLines, openingBalanceLines, openingBalances, payments, vendorBills, vendorCredits } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService, type PostingLine } from "../ledger/ledger.service";
 import { SettingsService } from "../org/settings.service";
 
 type OpeningRow = typeof openingBalances.$inferSelect;
+
+/** The closed period made by locking starts here, so every date before the cutover date is covered (I17). */
+const OPENING_PERIOD_START = "1900-01-01";
 
 /** How each opening document points at its entry, so re-dating can move it (US-RPT-17, US-RPT-18). */
 const OPENING_DOCUMENT_POINTERS: Record<string, (tx: Transaction, id: string, entryId: string) => Promise<unknown>> = {
@@ -178,6 +181,43 @@ export class OpeningBalancesService {
   async lockRow(tx: Transaction, orgId: string): Promise<OpeningRow | undefined> {
     const [row] = await tx.select().from(openingBalances).where(eq(openingBalances.orgId, orgId)).for("update");
     return row;
+  }
+
+  /**
+   * US-RPT-19 — locks the opening balances: a closed fiscal period from the
+   * earliest possible date to the day before the cutover date, so nothing
+   * more is posted before it (I17), and every opening screen becomes
+   * read-only. Unlocking reopens that same period. Both are audited.
+   */
+  async lock(orgId: string, actorUserId: string): Promise<OpeningBalancesView> {
+    await this.db.transaction(async (tx) => {
+      const row = await this.lockRow(tx, orgId);
+      if (!row) throw new BadRequestException("Enter your opening balances before locking them.");
+      if (row.status === "locked") throw new BadRequestException("The opening balances are already locked.");
+      const endDate = dayBefore(row.cutoverDate);
+      let periodId = row.fiscalPeriodId;
+      if (periodId) {
+        await tx.update(fiscalPeriods).set({ startDate: OPENING_PERIOD_START, endDate, isClosed: true }).where(eq(fiscalPeriods.id, periodId));
+      } else {
+        const [period] = await tx.insert(fiscalPeriods).values({ orgId, startDate: OPENING_PERIOD_START, endDate, isClosed: true }).returning();
+        periodId = period!.id;
+      }
+      await tx.update(openingBalances).set({ status: "locked", lockedAt: new Date(), lockedByUserId: actorUserId, fiscalPeriodId: periodId, updatedAt: new Date() }).where(eq(openingBalances.orgId, orgId));
+      const view = await this.get(orgId);
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "locked", entityType: "opening_balances", entityId: orgId, contactId: null, changes: { cutoverDate: row.cutoverDate, openingBalanceAdjustments: view.adjustment } });
+    });
+    return this.get(orgId);
+  }
+
+  async unlock(orgId: string, actorUserId: string): Promise<OpeningBalancesView> {
+    await this.db.transaction(async (tx) => {
+      const row = await this.lockRow(tx, orgId);
+      if (!row || row.status !== "locked") throw new BadRequestException("The opening balances aren't locked.");
+      if (row.fiscalPeriodId) await tx.update(fiscalPeriods).set({ isClosed: false }).where(eq(fiscalPeriods.id, row.fiscalPeriodId));
+      await tx.update(openingBalances).set({ status: "draft", lockedAt: null, lockedByUserId: null, updatedAt: new Date() }).where(eq(openingBalances.orgId, orgId));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "unlocked", entityType: "opening_balances", entityId: orgId, contactId: null, changes: { cutoverDate: row.cutoverDate } });
+    });
+    return this.get(orgId);
   }
 
   /** The opening balances row, created on first use; refused once locked (US-RPT-19). */

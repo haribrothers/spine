@@ -3230,6 +3230,18 @@ Regression: ordinary invoices still download their PDF, email with it attached, 
 
 Regression: ordinary bills and vendor credits record, pay, apply and void as before.
 
+## 131. Review and lock opening balances (US-RPT-19, Phase 8)
+
+1. Opening balances › "Review": the cards show the opening invoices, bills, credits and Opening Balance Adjustments, highlighted when it isn't zero. "Trial balance on <day before cutover>" lists every account with a balance and totals that agree.
+2. With adjustments left, "Lock opening balances": the dialog adds "Opening Balance Adjustments still holds <amount>. Lock anyway?" "Go back" closes it. "Lock anyway" locks.
+3. Locked: "Locked on <today>" and "Unlock". On every tab the inputs are disabled, there's no Save, Add or Import, and rows have no Edit or Remove. Settings › Opening balances reads "Locked".
+4. Try to record anything dated before the cutover date (a payment, an expense, money out): "… falls within a closed fiscal period". Dated on or after it works.
+5. Team › Audit log: "<you> locked Opening balances".
+6. "Unlock" › confirm: "Everything up to <date> opens again so the opening balances can be changed." Editing works again, and the audit log shows "unlocked". Lock again: no second period is created.
+7. Staff get 403 on lock and unlock.
+
+Regression: other fiscal periods (Reports › close a period) still close and reopen as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
