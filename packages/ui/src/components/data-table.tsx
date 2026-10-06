@@ -59,7 +59,7 @@ export function DataTable<T>({
 
   return (
     <div className={className}>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3" data-print="hide">
         {searchKey ? (
           <Input
             placeholder={searchPlaceholder}

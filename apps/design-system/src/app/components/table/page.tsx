@@ -237,6 +237,10 @@ export default () => (
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="printing" title="Printing">
+        <DocLead>Prints with its column headings repeated on every page and rows kept whole (the print stylesheet, <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">@spine/ui/print.css</code>). When a page prints from its "Print" action (<code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">printPage()</code>), a paged table shows every row, then goes back to its page after printing.</DocLead>
+      </DocSection>
+
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>
           Uses a native{" "}

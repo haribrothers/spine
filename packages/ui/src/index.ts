@@ -81,3 +81,4 @@ export * from "./components/toolbar";
 export * from "./components/tooltip";
 export * from "./components/typography";
 export * from "./lib/cn";
+export * from "./lib/print-mode";

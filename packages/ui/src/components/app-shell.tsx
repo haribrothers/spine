@@ -28,7 +28,7 @@ import {
  * want it (a page can skip it and lay out its own header instead).
  */
 export function AppShell({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex h-screen w-full overflow-hidden bg-background", className)} {...props} />;
+  return <div data-print="flow" className={cn("flex h-screen w-full overflow-hidden bg-background", className)} {...props} />;
 }
 
 export interface AppShellNavItem {
@@ -153,7 +153,7 @@ export interface AppShellContentProps extends React.HTMLAttributes<HTMLDivElemen
 /** The scrollable main content region, capped to the design system's 1200px max-width container by default — see `fullWidth` to opt out. */
 export function AppShellContent({ className, fullWidth = false, banner, children, ...props }: AppShellContentProps) {
   return (
-    <main className={cn("min-h-0 flex-1 overflow-y-auto", className)} {...props}>
+    <main data-print="flow" className={cn("min-h-0 flex-1 overflow-y-auto", className)} {...props}>
       {banner}
       <div className={cn("mx-auto w-full p-6 lg:p-8", fullWidth ? "max-w-none" : "max-w-[1200px]")}>{children}</div>
     </main>

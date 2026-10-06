@@ -5,6 +5,7 @@ import { REPORTS, canOpenReport } from "@spine/shared";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { NoAccess } from "../../../components/no-access";
+import { PrintHeader, PrintRangeProvider } from "../../../components/print-header";
 
 /** US-RPT-23 — one report's page: "Reports › <name>", and the no-access page for anyone who can't open it. */
 export function ReportShell({ slug, description, children }: { slug: string; description?: string; children: React.ReactNode }) {
@@ -20,9 +21,10 @@ export function ReportShell({ slug, description, children }: { slug: string; des
   }
   if (!canOpenReport(report, role, capabilities)) return <NoAccess pageName={report.label} ownerOnly={report.access === "owner"} />;
   return (
-    <>
+    <PrintRangeProvider>
       <AppShellHeader breadcrumb={[{ label: "Reports", href: "/reports" }, { label: report.label }]} title={report.label} description={description} />
+      <PrintHeader />
       {children}
-    </>
+    </PrintRangeProvider>
   );
 }

@@ -25,6 +25,7 @@ import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
 import { JournalDialog } from "./journal-dialog";
 import { ReportExportMenu } from "../../../components/report-export-menu";
+import { PrintHeader, PrintRangeProvider } from "../../../components/print-header";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -99,13 +100,14 @@ export function JournalsExplorer() {
   ];
 
   return (
-    <>
+    <PrintRangeProvider>
       <AppShellHeader
         breadcrumb={[{ label: "Reports" }, { label: "Journals" }]}
         title="Journals"
         description="Adjustments posted by hand. Most businesses only need one for year-end adjustments."
         action={isOwner ? <Button onClick={() => setNewOpen(true)}>New journal</Button> : undefined}
       />
+      <PrintHeader />
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="journal-cards">
           <StatCard label="Total journals" value={rows ? String(rows.length) : "—"} />
@@ -148,6 +150,6 @@ export function JournalsExplorer() {
         <p className="text-[13px] text-on-surface-muted">Members with &quot;View ledger / journals&quot; can read journals; only owners post or reverse them.</p>
       </div>
       <JournalDialog open={newOpen} onOpenChange={setNewOpen} currency={currency} onPosted={(j) => router.push(`/journals/${j.id}`)} />
-    </>
+    </PrintRangeProvider>
   );
 }

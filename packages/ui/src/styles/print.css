@@ -1,0 +1,88 @@
+/*
+ * US-RPT-34 — printing a page from the browser. The app chrome (sidebar,
+ * breadcrumbs, filter bars, buttons, pagers) is left out, the scrolling
+ * shell becomes normal flow so long pages print in full, everything prints
+ * black on white whatever the theme, table headings repeat on every page
+ * and rows aren't split across pages. `data-print="hide"` leaves anything
+ * else out; `hidden print:block` shows print-only text.
+ */
+@media print {
+  @page {
+    margin: 14mm;
+  }
+
+  html,
+  body,
+  [data-print="flow"] {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  [data-print="flow"] {
+    display: block !important;
+  }
+
+  *,
+  *::before,
+  *::after {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  * {
+    border-color: #bbb !important;
+  }
+
+  aside,
+  nav[aria-label="Breadcrumb"],
+  [data-print="hide"],
+  [role="tablist"],
+  [role="toolbar"],
+  input,
+  select,
+  textarea,
+  label,
+  button {
+    display: none !important;
+  }
+
+  /* Names and numbers inside tables are sometimes buttons or links: keep them, as plain text. */
+  table button,
+  table label {
+    display: inline !important;
+    padding: 0 !important;
+  }
+
+  a {
+    text-decoration: none !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  tfoot {
+    display: table-footer-group;
+  }
+
+  tr,
+  [data-print="keep"] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+}

@@ -3427,6 +3427,17 @@ Regression: the old "Export CSV" downloads (/export.csv links bookmarked from Ph
 
 Regression: invoice, quote, credit note and receipt PDFs are unchanged.
 
+## 147. Print any report (US-RPT-34, Phase 8)
+
+1. Open Payments received with more than ten payments this quarter. Export › Print: the print preview has no sidebar, breadcrumbs, From/To, Account, Refresh, Export, search, Columns or pager. It shows "Payments received", a line "<business> · <range>" and every payment, not only the first ten.
+2. Close the preview: the table is back to ten rows a page.
+3. Print a long General ledger or Day book: column headings repeat at the top of every printed page and no row is cut across two pages.
+4. Switch the app to dark mode and print: the preview is black text on white.
+5. Profit & Loss, Balance Sheet ("As of <date>"), Cash Flow, Trial Balance and Tax Summary print with their title and range or date; Receivables and Payables print with the business name.
+6. Use the browser's own print shortcut (Ctrl/Cmd+P) instead: the chrome is still left out; the table prints the page on screen.
+
+Regression: screens look the same as before; tables still page.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

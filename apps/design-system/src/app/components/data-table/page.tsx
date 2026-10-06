@@ -125,6 +125,10 @@ export default () => (
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="printing" title="Printing">
+        <DocLead>The search box and Columns menu are left out of print; the table prints as Table does — every row when printed from a "Print" action, headings repeated, rows kept whole.</DocLead>
+      </DocSection>
+
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>Inherits Table's semantic markup; the Columns dropdown checkboxes announce their checked state via DropdownMenuCheckboxItem.</DocLead>
       </DocSection>

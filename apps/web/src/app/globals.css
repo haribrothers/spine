@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@spine/config/tailwind";
+@import "@spine/ui/print.css";
 @source "../../../../packages/ui/src";
 
 html,

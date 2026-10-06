@@ -5,6 +5,7 @@ import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
+import { usePrintMode } from "../lib/print-mode";
 
 export interface TableColumn<T> {
   key: string;
@@ -131,8 +132,10 @@ export function Table<T>({
   const pageCount = groupBy
     ? Math.max(1, Math.ceil((sortedGroups?.length ?? 0) / pageSize))
     : Math.max(1, Math.ceil(sorted.length / pageSize));
-  const pageRows = sorted.slice((page - 1) * pageSize, page * pageSize);
-  const pageGroups = sortedGroups?.slice((page - 1) * pageSize, page * pageSize) ?? [];
+  // US-RPT-34 — "Print" shows every row, not just this page.
+  const printing = usePrintMode();
+  const pageRows = printing ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
+  const pageGroups = (printing ? sortedGroups : sortedGroups?.slice((page - 1) * pageSize, page * pageSize)) ?? [];
   const groupTotal = sortedGroups?.length ?? 0;
 
   function toggleSort(key: string) {

@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-34: print any report (Phase 8)
+
+- **Export › Print** opens the browser's print dialog. The printout leaves out the sidebar, breadcrumbs, filter bars, buttons, search and pagers, and fills the page with the report: its title, a line with the business name and the range or date, and the table.
+- **Long tables**: printing from Print shows every row, not just the page on screen; column headings repeat on every printed page and rows aren't split. Afterwards the table is back on its page.
+- Prints are black on white whatever the theme. Printing with the browser's own shortcut prints the page as it stands.
+- `@spine/ui/print.css` (imported by the web app) holds the print stylesheet; `printPage()` and Table's print mode come from `@spine/ui`. Design-system pages for Table, DataTable, AppShell, Pagination and PaginationBar say how they print.
+
 ### 2026-10-06 — US-RPT-33: download any report as a PDF (Phase 8)
 
 - **Export › PDF** on every report downloads `<report>-<from>-<to>.pdf`: the logo and business name (Settings › Business), the report name, the range or date and the currency at the top; the table with section headings and totals in bold; the basis (accrual or cash), "Prepared <date>" and "Page n of m" in the footer of every page.
