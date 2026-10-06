@@ -373,7 +373,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-RPT-26 · See where cash came from and where it went
 - [x] US-RPT-27 · Compare profit and loss across periods
 - [x] US-RPT-28 · See sales by customer and by item
-- [ ] US-RPT-29 · See expenses by category and purchases by vendor
+- [x] US-RPT-29 · See expenses by category and purchases by vendor
 - [ ] US-RPT-30 · See payments received and made in a period
 - [ ] US-RPT-31 · See credit notes, vendor credits and refunds in a period
 - [ ] US-RPT-32 · Export every report to CSV and Excel

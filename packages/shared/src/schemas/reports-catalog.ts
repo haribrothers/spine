@@ -29,6 +29,8 @@ export const REPORTS: ReportEntry[] = [
   { slug: "sales-by-customer", label: "Sales by customer", group: "Sales", href: "/reports/sales-by-customer", access: ["reports.view_financial_statements"], keywords: "customers revenue top clients" },
   { slug: "sales-by-item", label: "Sales by item", group: "Sales", href: "/reports/sales-by-item", access: ["reports.view_financial_statements"], keywords: "catalogue products services quantity" },
   { slug: "receivables", label: "Receivables", group: "Receivables", href: "/receivables", access: ["reports.view_receivables"], keywords: "aging owed customers ar" },
+  { slug: "expenses-by-category", label: "Expenses by category", group: "Purchases", href: "/reports/expenses-by-category", access: ["reports.view_financial_statements"], keywords: "spending costs accounts where money goes" },
+  { slug: "purchases-by-vendor", label: "Purchases by vendor", group: "Purchases", href: "/reports/purchases-by-vendor", access: ["reports.view_financial_statements"], keywords: "suppliers bills spend" },
   { slug: "payables", label: "Payables", group: "Purchases", href: "/payables", access: ["reports.view_payables"], keywords: "aging owe vendors ap" },
   { slug: "tax-summary", label: "Tax Summary", group: "Tax", href: "/reports/tax-summary", access: "owner", keywords: "gst vat sales tax" },
   { slug: "job-profitability", label: "Job profitability", group: "Jobs", href: "/reports/job-profitability", access: ["reports.view_job_profitability"], keywords: "jobs margin" },

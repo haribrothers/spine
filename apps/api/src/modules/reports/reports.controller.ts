@@ -60,6 +60,22 @@ export class ReportsController {
     return this.analysis.salesByItem(requireOrgId(session), from, to);
   }
 
+  /** US-RPT-29 — each expense account's amount and share, largest first. Owner, or `reports.view_financial_statements`. */
+  @Get("expenses-by-category")
+  @RequireCapability("reports.view_financial_statements")
+  async expensesByCategory(@Session() session: UserSession, @Query() query: unknown) {
+    const { from, to } = this.analysisRange(query);
+    return this.analysis.expensesByCategory(requireOrgId(session), from, to);
+  }
+
+  /** US-RPT-29 — each vendor's bills, net of vendor credits. Owner, or `reports.view_financial_statements`. */
+  @Get("purchases-by-vendor")
+  @RequireCapability("reports.view_financial_statements")
+  async purchasesByVendor(@Session() session: UserSession, @Query() query: unknown) {
+    const { from, to } = this.analysisRange(query);
+    return this.analysis.purchasesByVendor(requireOrgId(session), from, to);
+  }
+
   /** US-RPT-26 — where cash came from and where it went, indirect method. Owner, or `reports.view_financial_statements`. */
   @Get("cash-flow")
   @RequireCapability("reports.view_financial_statements")

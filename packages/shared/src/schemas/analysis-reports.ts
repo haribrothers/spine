@@ -69,3 +69,37 @@ export interface SalesByItemReport {
   rows: SalesByItemRow[];
   totals: { salesBeforeTax: string };
 }
+
+export interface ExpensesByCategoryRow {
+  accountId: string;
+  code: string;
+  name: string;
+  /** Minor units, debit-positive: bills, expenses, journals and money out, less credits. */
+  amount: string;
+  percentOfTotal: string | null;
+}
+
+export interface ExpensesByCategoryReport {
+  from: string;
+  to: string;
+  rows: ExpensesByCategoryRow[];
+  total: string;
+}
+
+export interface PurchasesByVendorRow {
+  contactId: string;
+  name: string;
+  billCount: number;
+  /** Minor units, net of vendor credits. */
+  amountBeforeTax: string;
+  tax: string;
+  total: string;
+  bills: AnalysisDocumentRef[];
+}
+
+export interface PurchasesByVendorReport {
+  from: string;
+  to: string;
+  rows: PurchasesByVendorRow[];
+  totals: { vendors: number; billCount: number; amountBeforeTax: string; tax: string; total: string };
+}

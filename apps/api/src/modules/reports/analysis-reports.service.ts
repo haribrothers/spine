@@ -4,13 +4,16 @@ import {
   ITEMS_NOT_FROM_CATALOGUE,
   sharePercent,
   type AnalysisDocumentRef,
+  type ExpensesByCategoryReport,
+  type PurchasesByVendorReport,
+  type PurchasesByVendorRow,
   type SalesByCustomerReport,
   type SalesByCustomerRow,
   type SalesByItemReport,
 } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, catalogItems, contacts, creditNoteLines, creditNotes, invoiceLines, invoices, journalEntries, journalLines } from "../../db/schema";
+import { accounts, catalogItems, contacts, creditNoteLines, creditNotes, invoiceLines, invoices, journalEntries, journalLines, vendorBills, vendorCredits } from "../../db/schema";
 import { SYSTEM_ACCOUNT_CODES } from "../ledger/ledger.service";
 
 const isoDay = (d: Date | string | null) => (d instanceof Date ? d.toISOString().slice(0, 10) : (d ?? ""));
@@ -183,5 +186,90 @@ export class AnalysisReportsService {
         return d > 0n ? 1 : d < 0n ? -1 : a.name.localeCompare(b.name);
       });
     return { from, to, rows, totals: { salesBeforeTax: rows.reduce((s, r) => s + BigInt(r.salesBeforeTax), 0n).toString() } };
+  }
+
+  /** US-RPT-29 — each expense account's movement in the range (bills, expenses, journals, money out, less credits), largest first. */
+  async expensesByCategory(orgId: string, from: string, to: string): Promise<ExpensesByCategoryReport> {
+    const rows = await this.db
+      .select({ accountId: accounts.id, code: accounts.code, name: accounts.name, amount: sql<string>`sum(${journalLines.debit} - ${journalLines.credit})` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
+      .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+      .where(and(eq(journalEntries.orgId, orgId), gte(journalEntries.date, from), lte(journalEntries.date, to), eq(accounts.type, "expense")))
+      .groupBy(accounts.id, accounts.code, accounts.name);
+    const nonZero = rows.filter((r) => BigInt(r.amount) !== 0n);
+    const total = nonZero.reduce((s, r) => s + BigInt(r.amount), 0n);
+    return {
+      from,
+      to,
+      rows: nonZero
+        .map((r) => ({ accountId: r.accountId, code: r.code, name: r.name, amount: BigInt(r.amount).toString(), percentOfTotal: sharePercent(BigInt(r.amount), total) }))
+        .sort((a, b) => {
+          const d = BigInt(b.amount) - BigInt(a.amount);
+          return d > 0n ? 1 : d < 0n ? -1 : a.code.localeCompare(b.code);
+        }),
+      total: total.toString(),
+    };
+  }
+
+  /**
+   * US-RPT-29 — each vendor's recorded bills dated in the range (opening
+   * bills left out), less their vendor credits dated in the range: bill
+   * count, amount before tax, tax and total, largest first.
+   */
+  async purchasesByVendor(orgId: string, from: string, to: string): Promise<PurchasesByVendorReport> {
+    const inRange = (column: typeof vendorBills.date | typeof vendorCredits.date) => and(sql`${column} >= ${from}::date`, sql`${column} <= ${to}::date`);
+    const bills = await this.db
+      .select({ id: vendorBills.id, contactId: vendorBills.contactId, name: contacts.name, number: vendorBills.billNumber, date: vendorBills.date, subtotal: vendorBills.subtotalAmount, tax: vendorBills.taxAmount, total: vendorBills.totalAmount })
+      .from(vendorBills)
+      .innerJoin(contacts, eq(contacts.id, vendorBills.contactId))
+      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.status, "recorded"), eq(vendorBills.isOpening, false), inRange(vendorBills.date)));
+    const credits = await this.db
+      .select({ contactId: vendorCredits.contactId, name: contacts.name, subtotal: vendorCredits.subtotalAmount, tax: vendorCredits.taxAmount, total: vendorCredits.totalAmount })
+      .from(vendorCredits)
+      .innerJoin(contacts, eq(contacts.id, vendorCredits.contactId))
+      .where(and(eq(vendorCredits.orgId, orgId), inArray(vendorCredits.status, ["open", "used"]), eq(vendorCredits.isOpening, false), inRange(vendorCredits.date)));
+
+    const byVendor = new Map<string, { name: string; before: bigint; tax: bigint; total: bigint; bills: AnalysisDocumentRef[] }>();
+    const vendor = (contactId: string, name: string) => {
+      const v = byVendor.get(contactId) ?? { name, before: 0n, tax: 0n, total: 0n, bills: [] };
+      byVendor.set(contactId, v);
+      return v;
+    };
+    for (const b of bills) {
+      const v = vendor(b.contactId, b.name);
+      v.before += b.subtotal;
+      v.tax += b.tax;
+      v.total += b.total;
+      v.bills.push({ id: b.id, number: b.number, date: isoDay(b.date), total: b.total.toString(), href: `/vendor-bills/${b.id}` });
+    }
+    for (const c of credits) {
+      const v = vendor(c.contactId, c.name);
+      v.before -= c.subtotal;
+      v.tax -= c.tax;
+      v.total -= c.total;
+    }
+    const rows: PurchasesByVendorRow[] = [...byVendor.entries()]
+      .filter(([, v]) => v.total !== 0n || v.bills.length > 0)
+      .map(([contactId, v]) => ({
+        contactId,
+        name: v.name,
+        billCount: v.bills.length,
+        amountBeforeTax: v.before.toString(),
+        tax: v.tax.toString(),
+        total: v.total.toString(),
+        bills: v.bills.sort((a, b) => a.date.localeCompare(b.date)),
+      }))
+      .sort((a, b) => {
+        const d = BigInt(b.total) - BigInt(a.total);
+        return d > 0n ? 1 : d < 0n ? -1 : a.name.localeCompare(b.name);
+      });
+    const sum = (pick: (r: PurchasesByVendorRow) => string) => rows.reduce((s, r) => s + BigInt(pick(r)), 0n).toString();
+    return {
+      from,
+      to,
+      rows,
+      totals: { vendors: rows.length, billCount: rows.reduce((s, r) => s + r.billCount, 0), amountBeforeTax: sum((r) => r.amountBeforeTax), tax: sum((r) => r.tax), total: sum((r) => r.total) },
+    };
   }
 }

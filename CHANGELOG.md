@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-29: see expenses by category and purchases by vendor (Phase 8)
+
+- **Reports › Purchases › Expenses by category** (`/reports/expenses-by-category`): "From bills, expenses, journals and money out · <range>", cards for Total expenses, Categories and Largest, then each expense account with a share bar, amount and % of total, largest first. Read from the ledger, so vendor credits and reversals net out.
+- **Purchases by vendor** (the second tab, `/reports/purchases-by-vendor`): each vendor's bill count, amount before tax, tax and total, net of vendor credits; opening bills aren't counted.
+- **Click a category** to open the account drill-down (Owners, or with "View ledger / journals"); **click a vendor** to list their bills, each opening the bill.
+- **Access.** Owners, and Staff with "View financial statements".
+- API: `GET /reports/expenses-by-category`, `GET /reports/purchases-by-vendor` (`?from=&to=`).
+
 ### 2026-10-06 — US-RPT-28: see sales by customer and by item (Phase 8)
 
 - **Reports › Sales › Sales by customer** (`/reports/sales-by-customer`): "Net of credit notes · <range>", cards for Customers, Invoices, Sales before tax and Total with tax, then each customer's invoice count, sales before tax, tax, total and % of sales, largest first. Search and Columns as on other lists.

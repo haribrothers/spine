@@ -3351,6 +3351,19 @@ Regression: Profit & Loss and Balance Sheet without a comparison look and export
 
 Regression: Receivables and the invoice list are unchanged.
 
+## 141. Expenses by category and purchases by vendor (US-RPT-29, Phase 8)
+
+1. This quarter: record a bill to Cost of Materials with tax, a vendor credit against it, an approved expense, money out to Rent and a depreciation journal.
+2. Reports › Purchases › Expenses by category: "From bills, expenses, journals and money out · <range>". Cards: Total expenses, Categories, Largest (name, amount and %). Each expense account shows a share bar, amount and % of total, largest first; the vendor credit has reduced Cost of Materials. The bar has an accessible name with its percentage.
+3. As an Owner, click a category: the account drill-down lists its entries. As Staff with "View financial statements" but not "View ledger / journals", categories aren't links.
+4. Tab "Purchases by vendor": each vendor shows bills, before tax, tax and total, net of the vendor credit, largest first. Opening bills from Opening balances aren't counted.
+5. Click a vendor: "Bills from <vendor>" lists their bills in the range; a number opens the bill.
+6. A range with nothing: "No expenses in this period" / "No bills in this period".
+7. As Staff without "View financial statements": the no-access page. Field: no Reports.
+8. Dark mode: cards, bars, table and dialogs are readable.
+
+Regression: Payables and the vendor bill list are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
