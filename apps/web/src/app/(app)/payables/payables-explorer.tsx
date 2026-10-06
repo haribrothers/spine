@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { HandCoins } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { ExportCsvButton } from "../../../components/export-csv-button";
+import { ReportExportMenu } from "../../../components/report-export-menu";
 import { PayablesSkeleton } from "./payables-skeleton";
 import { PayablesTable } from "./payables-table";
 import { AGING_BUCKET_LABELS, type AgingBucket, type PayablesReport } from "./types";
@@ -50,7 +50,7 @@ export function PayablesExplorer() {
     <div className="flex flex-col gap-6">
       {/* US-PUR-14: the file matches what's on screen, search included. */}
       <div className="flex justify-end">
-        <ExportCsvButton path="/reports/payables/export.csv" search={search} />
+        <ReportExportMenu path="/reports/payables" csvPath="/reports/payables/export.csv" search={search} />
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {BUCKET_ORDER.map((bucket) => (

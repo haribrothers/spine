@@ -19,6 +19,7 @@ import {
 import type { CashFlowLine, CashFlowReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -84,6 +85,9 @@ export function CashFlow() {
         <Button variant="secondary" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
+        <div className="ml-auto">
+          <ReportExportMenu path={`/reports/cash-flow?from=${iso(from)}&to=${iso(to)}`} />
+        </div>
       </div>
 
       {error && (

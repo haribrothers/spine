@@ -54,8 +54,24 @@ export function ReportTabs({ value, tabs }: { value: string; tabs: { value: stri
   );
 }
 
-/** From, To and Refresh. */
-export function RangeBar({ from, to, onFrom, onTo, onRefresh, loading }: { from: Date; to: Date; onFrom: (d: Date) => void; onTo: (d: Date) => void; onRefresh: () => void; loading: boolean }) {
+/** From, To and Refresh, with the page's actions (Export) on the right. */
+export function RangeBar({
+  from,
+  to,
+  onFrom,
+  onTo,
+  onRefresh,
+  loading,
+  actions,
+}: {
+  from: Date;
+  to: Date;
+  onFrom: (d: Date) => void;
+  onTo: (d: Date) => void;
+  onRefresh: () => void;
+  loading: boolean;
+  actions?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-wrap items-end gap-3">
       <div className="flex flex-col gap-1.5">
@@ -69,6 +85,7 @@ export function RangeBar({ from, to, onFrom, onTo, onRefresh, loading }: { from:
       <Button variant="secondary" onClick={onRefresh} disabled={loading}>
         {loading ? <Spinner size="sm" /> : "Refresh"}
       </Button>
+      {actions && <div className="ml-auto">{actions}</div>}
     </div>
   );
 }

@@ -39,11 +39,10 @@ import {
 import { formatMoney } from "../../../lib/money";
 import { budgetUsedLabel, PL_COMPARE_LABELS, PL_COMPARE_MODES, changePercent, periodLabel, previousYearEnd, type PlCompareMode } from "@spine/shared";
 import { BsCompareTable, PlCompareTable } from "./compare-tables";
+import { ReportExportMenu } from "../../../components/report-export-menu";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
 import { useEntityToast } from "../payments/entity-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
@@ -200,16 +199,7 @@ export function ProfitAndLossTab() {
         <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
-        {!error && (
-          <a
-            href={`${API_URL}/reports/profit-and-loss/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}${basis === "cash" ? "&basis=cash" : ""}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[13px] font-medium text-primary hover:underline"
-          >
-            Export CSV
-          </a>
-        )}
+        {!error && <ReportExportMenu path={`/reports/profit-and-loss?from=${toDateParam(from)}&to=${toDateParam(to)}${compare === "none" ? "" : `&compare=${compare}`}${basis === "cash" ? "&basis=cash" : ""}`} />}
       </div>
 
       {error && (
@@ -441,16 +431,7 @@ export function BalanceSheetTab() {
         <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
-        {!error && (
-          <a
-            href={`${API_URL}/reports/balance-sheet/export.csv?asOf=${toDateParam(asOf)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[13px] font-medium text-primary hover:underline"
-          >
-            Export CSV
-          </a>
-        )}
+        {!error && <ReportExportMenu path={`/reports/balance-sheet?asOf=${toDateParam(asOf)}${compare === "none" ? "" : `&compareAsOf=${previousYearEnd(toDateParam(asOf), yearStart)}`}`} />}
       </div>
 
       {error && (
@@ -578,9 +559,7 @@ export function JobProfitabilityTab() {
             ))}
           </SelectContent>
         </Select>
-        <a href={`${API_URL}/reports/job-profitability/export.csv?status=${status}`} target="_blank" rel="noreferrer" className="text-[13px] font-medium text-primary hover:underline">
-          Export CSV
-        </a>
+        <ReportExportMenu path={`/reports/job-profitability?status=${status}`} />
       </div>
       {!report ? (
         <div className="flex items-center justify-center py-16">
@@ -824,16 +803,7 @@ export function TrialBalanceTab() {
           <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
             {loading ? <Spinner size="sm" /> : "Refresh"}
           </Button>
-          {!error && (
-            <a
-              href={`${API_URL}/reports/trial-balance/export.csv?asOf=${toDateParam(asOf)}&includeZero=${!hideZero}`}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[13px] font-medium text-primary hover:underline"
-            >
-              Export CSV
-            </a>
-          )}
+          {!error && <ReportExportMenu path={`/reports/trial-balance?asOf=${toDateParam(asOf)}&includeZero=${!hideZero}`} />}
         </div>
         <label className="flex items-center gap-2 text-[13px] text-on-surface">
           <Checkbox
@@ -978,16 +948,7 @@ export function TaxSummaryTab() {
         <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
-        {!error && (
-          <a
-            href={`${API_URL}/org/tax/summary/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}`}
-            target="_blank"
-            rel="noreferrer"
-            className="text-[13px] font-medium text-primary hover:underline"
-          >
-            Export CSV
-          </a>
-        )}
+        {!error && <ReportExportMenu path={`/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`} />}
         {report && !error && (
           <Button size="sm" className="sm:ml-auto" onClick={() => setPaymentOpen(true)}>
             Record tax payment

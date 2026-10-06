@@ -8,6 +8,7 @@ import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
 import { useMyRole } from "../../../../lib/role-context";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { DocumentsDialog, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
 import { DrilldownDialog } from "../reports-explorer";
 
@@ -35,6 +36,7 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
   const [error, setError] = useState<string | null>(null);
   const [account, setAccount] = useState<ExpensesByCategoryRow | null>(null);
   const [bills, setBills] = useState<{ title: string; documents: AnalysisDocumentRef[] } | null>(null);
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -102,7 +104,15 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
         {tab === "category" ? "From bills, expenses, journals and money out" : "Recorded bills, net of vendor credits"} · {periodLabel(iso(from), iso(to))}
       </p>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar from={from} to={to} onFrom={setFrom} onTo={setTo} onRefresh={() => load()} loading={loading} />
+      <RangeBar
+        from={from}
+        to={to}
+        onFrom={setFrom}
+        onTo={setTo}
+        onRefresh={() => load()}
+        loading={loading}
+        actions={<ReportExportMenu path={`/reports/${tab === "category" ? "expenses-by-category" : "purchases-by-vendor"}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
+      />
 
       {error && (
         <Alert variant="critical">
@@ -133,10 +143,10 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
       ) : (
         <div data-testid="purchases-table">
           {tab === "category" && categories && !error && (
-            <DataTable columns={categoryColumns} data={categories.rows} rowKey={(r) => r.accountId} searchPlaceholder="Search categories" searchKey={(r) => `${r.code} ${r.name}`} configurablePageSize />
+            <DataTable columns={categoryColumns} data={categories.rows} rowKey={(r) => r.accountId} searchPlaceholder="Search categories" searchKey={(r) => `${r.code} ${r.name}`} onSearchChange={setSearch} configurablePageSize />
           )}
           {tab === "vendor" && vendors && !error && (
-            <DataTable columns={vendorColumns} data={vendors.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search vendors" searchKey={(r) => r.name} configurablePageSize />
+            <DataTable columns={vendorColumns} data={vendors.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search vendors" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
           )}
         </div>
       )}

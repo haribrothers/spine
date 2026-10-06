@@ -6,6 +6,7 @@ import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableCol
 import { periodLabel, type AnalysisDocumentRef, type SalesByCustomerReport, type SalesByCustomerRow, type SalesByItemReport, type SalesByItemRow } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { DocumentsDialog, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
 
 const TABS = [
@@ -29,6 +30,7 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drill, setDrill] = useState<{ title: string; documents: AnalysisDocumentRef[] } | null>(null);
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -91,7 +93,15 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
         {tab === "customer" ? "Net of credit notes" : "Quantities from invoice lines, less credit notes"} · {periodLabel(iso(from), iso(to))}
       </p>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar from={from} to={to} onFrom={setFrom} onTo={setTo} onRefresh={() => load()} loading={loading} />
+      <RangeBar
+        from={from}
+        to={to}
+        onFrom={setFrom}
+        onTo={setTo}
+        onRefresh={() => load()}
+        loading={loading}
+        actions={<ReportExportMenu path={`/reports/sales-by-${tab}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
+      />
 
       {error && (
         <Alert variant="critical">
@@ -121,10 +131,10 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
       ) : (
         <div data-testid="sales-table">
           {tab === "customer" && customers && !error && (
-            <DataTable columns={customerColumns} data={customers.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search customers" searchKey={(r) => r.name} configurablePageSize />
+            <DataTable columns={customerColumns} data={customers.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search customers" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
           )}
           {tab === "item" && items && !error && (
-            <DataTable columns={itemColumns} data={items.rows} rowKey={(r) => r.catalogItemId ?? "none"} searchPlaceholder="Search items" searchKey={(r) => r.name} configurablePageSize />
+            <DataTable columns={itemColumns} data={items.rows} rowKey={(r) => r.catalogItemId ?? "none"} searchPlaceholder="Search items" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
           )}
         </div>
       )}

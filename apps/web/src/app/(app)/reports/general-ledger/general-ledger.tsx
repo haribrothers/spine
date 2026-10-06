@@ -7,6 +7,7 @@ import { Alert, AlertDescription, Button, Checkbox, DatePicker, EmptyState, Labe
 import type { GeneralLedgerAccount, GeneralLedgerReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const shortDay = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -121,6 +122,9 @@ export function GeneralLedger() {
         >
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
+        <div className="ml-auto">
+          <ReportExportMenu path={`/reports/general-ledger?from=${iso(from)}&to=${iso(to)}&includeInactive=${!hideInactive}${accountIds.length ? `&accountIds=${accountIds.join(",")}` : ""}`} />
+        </div>
       </div>
 
       {error && (

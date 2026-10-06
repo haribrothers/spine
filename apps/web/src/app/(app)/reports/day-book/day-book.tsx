@@ -22,6 +22,7 @@ import {
 import { LEDGER_SOURCE_KINDS, type DayBookEntry, type DayBookReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -116,6 +117,9 @@ export function DayBook() {
         <Button variant="secondary" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
+        <div className="ml-auto">
+          <ReportExportMenu path={`/reports/day-book?from=${iso(from)}&to=${iso(to)}${sourceType === "all" ? "" : `&sourceType=${sourceType}`}`} search={search} />
+        </div>
       </div>
 
       <div className="relative w-full max-w-64">

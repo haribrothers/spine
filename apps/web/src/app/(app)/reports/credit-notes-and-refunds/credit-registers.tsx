@@ -7,6 +7,7 @@ import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableCol
 import { periodLabel, type CreditRegisterReport, type CreditRegisterRow } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
 
 const TABS = [
@@ -26,6 +27,7 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
   const [report, setReport] = useState<CreditRegisterReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   async function load() {
     setLoading(true);
@@ -82,7 +84,15 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
     <div className="flex flex-col gap-6">
       <p className="-mt-4 text-[14px] text-on-surface-muted">{periodLabel(iso(from), iso(to))}</p>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar from={from} to={to} onFrom={setFrom} onTo={setTo} onRefresh={() => load()} loading={loading} />
+      <RangeBar
+        from={from}
+        to={to}
+        onFrom={setFrom}
+        onTo={setTo}
+        onRefresh={() => load()}
+        loading={loading}
+        actions={<ReportExportMenu path={`/reports/${tab === "customer" ? "customer-credits" : "vendor-credits"}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
+      />
 
       {error && (
         <Alert variant="critical">
@@ -107,7 +117,7 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
         report &&
         !error && (
           <div data-testid="credits-table">
-            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search credits" searchKey={(r) => `${r.number ?? ""} ${r.reference ?? ""} ${r.contact.name} ${r.against?.number ?? ""}`} configurablePageSize />
+            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search credits" searchKey={(r) => `${r.number ?? ""} ${r.reference ?? ""} ${r.contact.name} ${r.against?.number ?? ""}`} onSearchChange={setSearch} configurablePageSize />
           </div>
         )
       )}

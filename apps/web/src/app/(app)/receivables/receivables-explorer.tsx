@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
 import { Inbox } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { ExportCsvButton } from "../../../components/export-csv-button";
+import { ReportExportMenu } from "../../../components/report-export-menu";
 import { ReceivablesSkeleton } from "./receivables-skeleton";
 import { ReceivablesTable } from "./receivables-table";
 import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesReport } from "./types";
@@ -55,7 +55,7 @@ export function ReceivablesExplorer() {
     <div className="flex flex-col gap-6">
       {/* US-PAY-10: the file matches what's on screen, search included. */}
       <div className="flex justify-end">
-        <ExportCsvButton path="/reports/receivables/export.csv" search={search} />
+        <ReportExportMenu path="/reports/receivables" csvPath="/reports/receivables/export.csv" search={search} />
       </div>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
         {BUCKET_ORDER.map((bucket) => (

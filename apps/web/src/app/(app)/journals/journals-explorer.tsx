@@ -24,6 +24,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useMyRole } from "../../../lib/role-context";
 import { formatMoney } from "../../../lib/money";
 import { JournalDialog } from "./journal-dialog";
+import { ReportExportMenu } from "../../../components/report-export-menu";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const day = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -50,6 +51,7 @@ export function JournalsExplorer() {
   const [from, setFrom] = useState<Date | undefined>();
   const [to, setTo] = useState<Date | undefined>();
   const [newOpen, setNewOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(() => {
     apiClient.get<ManualJournal[]>("/manual-journals").then(setRows).catch(() => setRows([]));
@@ -134,9 +136,12 @@ export function JournalsExplorer() {
               <div className="w-40">
                 <DatePicker value={to} onChange={setTo} placeholder="To" />
               </div>
+              <div className="ml-auto">
+                <ReportExportMenu path={`/manual-journals?status=${status}${from ? `&from=${iso(from)}` : ""}${to ? `&to=${iso(to)}` : ""}`} search={search} />
+              </div>
             </div>
             <div data-testid="journals-table">
-              <DataTable columns={columns} data={filtered} rowKey={(j) => j.id} searchPlaceholder="Search journals" searchKey={(j) => `${j.number} ${j.reason} ${j.postedBy?.name ?? ""}`} configurablePageSize />
+              <DataTable columns={columns} data={filtered} rowKey={(j) => j.id} searchPlaceholder="Search journals" searchKey={(j) => `${j.number} ${j.reason} ${j.postedBy?.name ?? ""}`} onSearchChange={setSearch} configurablePageSize />
             </div>
           </>
         )}

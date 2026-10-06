@@ -8,6 +8,7 @@ import { periodLabel, type PaymentRegisterReport, type PaymentRegisterRow } from
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../payments/types";
+import { ReportExportMenu } from "../../../../components/report-export-menu";
 import { day, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
 
 const TABS = [
@@ -29,6 +30,7 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
   const [report, setReport] = useState<PaymentRegisterReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     apiClient
@@ -123,6 +125,9 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
             </SelectContent>
           </Select>
         </div>
+        <div className="ml-auto">
+          <ReportExportMenu path={`/reports/payments-${tab}?from=${iso(from)}&to=${iso(to)}${account === "all" ? "" : `&moneyAccountId=${account}`}`} search={search} />
+        </div>
       </div>
 
       {error && (
@@ -151,7 +156,7 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
         report &&
         !error && (
           <div data-testid="register-table">
-            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search payments" searchKey={(r) => `${r.number ?? ""} ${r.contact.name} ${r.allocations.map((a) => a.number).join(" ")}`} configurablePageSize />
+            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search payments" searchKey={(r) => `${r.number ?? ""} ${r.contact.name} ${r.allocations.map((a) => a.number).join(" ")}`} onSearchChange={setSearch} configurablePageSize />
           </div>
         )
       )}

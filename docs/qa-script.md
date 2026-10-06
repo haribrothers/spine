@@ -3402,6 +3402,19 @@ Regression: the Credit Notes and Vendor Credits lists are unchanged.
 
 Regression: Accrual Profit & Loss, its comparison (§139) and Export CSV are unchanged.
 
+## 145. Export every report (US-RPT-32, Phase 8)
+
+1. As an Owner with data this year, open each report from Reports. Each has "Export" offering "CSV" and "Excel (.xlsx)"; the menu works with the keyboard (Enter opens it, arrows move, Escape closes).
+2. Profit & Loss › Export › Excel: the file is named "profit-and-loss-<from>-<to>.xlsx". Rows 1–4 read the business name (Settings › Business), "Profit & Loss", the range with "· Accrual basis", and "Amounts in <currency>". The heading row is bold and stays put when you scroll. Amounts are numbers (they sum in Excel) with two decimals.
+3. Profit & Loss › Export › CSV: "Account,Amount,Currency" with plain decimals like 12345.50.
+4. Compare with → Same period last year, then export: both files have the two period columns, Change and Change %. Basis → Cash: the subtitle row and file name say cash basis.
+5. Balance Sheet with "Previous year end", Trial Balance with "Hide accounts with no balance" unticked, General ledger with two accounts picked, Day book with Source → Journals, Payments received with Account → Cash: each export has exactly those filters.
+6. Type in a list's search (Sales by customer, Payments received, Journals…) and export: only the matching rows are in the file.
+7. Tax Summary exports CSV and Excel. Receivables and Payables: Export › CSV is the same file as before; Excel works too.
+8. As Staff with only "View receivables": Receivables and Payments received export; other reports' routes answer 403.
+
+Regression: the old "Export CSV" downloads (/export.csv links bookmarked from Phase 4–6) still work.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

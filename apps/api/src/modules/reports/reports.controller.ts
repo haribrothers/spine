@@ -9,6 +9,9 @@ import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
 import { AnalysisReportsService } from "./analysis-reports.service";
 import { CashBasisService } from "./cash-basis.service";
+import type { ReportDocument } from "./export/report-document";
+import * as docs from "./export/report-documents";
+import { ReportExportService } from "./export/report-export.service";
 import { CashFlowService } from "./cash-flow.service";
 import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
@@ -40,7 +43,21 @@ export class ReportsController {
     private readonly analysis: AnalysisReportsService,
     private readonly registers: RegistersService,
     private readonly cashBasis: CashBasisService,
+    private readonly exporter: ReportExportService,
   ) {}
+
+  /**
+   * US-RPT-32 (D-144) — `?format=csv|xlsx` turns any report into a download
+   * of exactly what the page shows (`search` included); without it the
+   * route answers JSON as before.
+   */
+  private async out<T>(orgId: string, query: unknown, report: Promise<T> | T, build: (report: T, search: string | undefined) => Omit<ReportDocument, "currency">) {
+    const q = (query ?? {}) as Record<string, unknown>;
+    const format = ReportExportService.parseFormat(q.format);
+    const resolved = await report;
+    if (!format) return resolved;
+    return this.exporter.file(orgId, format, build(resolved, typeof q.search === "string" ? q.search : undefined));
+  }
 
   /** US-RPT-35 (D-138) — the accrual P&L from the ledger, or the cash-basis view derived at report time. */
   private profitAndLossLoader(orgId: string, basis: "accrual" | "cash") {
@@ -58,7 +75,8 @@ export class ReportsController {
   @RequireCapability("reports.view_receivables")
   async paymentsReceived(@Session() session: UserSession, @Query() query: unknown) {
     const q = this.registerQuery(query);
-    return this.registers.paymentsReceived(requireOrgId(session), q.from, q.to, q.moneyAccountId);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.registers.paymentsReceived(orgId, q.from, q.to, q.moneyAccountId), (r, search) => docs.paymentRegisterDocument(r, "received", search, r.rows.find((x) => x.moneyAccount?.id === q.moneyAccountId)?.moneyAccount?.name));
   }
 
   /** US-RPT-30 — vendor payments in a range, optionally one money account. Owner, or `reports.view_payables`. */
@@ -66,7 +84,8 @@ export class ReportsController {
   @RequireCapability("reports.view_payables")
   async paymentsMade(@Session() session: UserSession, @Query() query: unknown) {
     const q = this.registerQuery(query);
-    return this.registers.paymentsMade(requireOrgId(session), q.from, q.to, q.moneyAccountId);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.registers.paymentsMade(orgId, q.from, q.to, q.moneyAccountId), (r, search) => docs.paymentRegisterDocument(r, "made", search, r.rows.find((x) => x.moneyAccount?.id === q.moneyAccountId)?.moneyAccount?.name));
   }
 
   private creditQuery(query: unknown) {
@@ -80,7 +99,8 @@ export class ReportsController {
   @RequireCapability("reports.view_receivables")
   async customerCredits(@Session() session: UserSession, @Query() query: unknown) {
     const q = this.creditQuery(query);
-    return this.registers.customerCredits(requireOrgId(session), q.from, q.to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.registers.customerCredits(orgId, q.from, q.to), (r, search) => docs.creditRegisterDocument(r, "customer", search));
   }
 
   /** US-RPT-31 — vendor credits in a range: applied, refunded, still held. Owner, or `reports.view_payables`. */
@@ -88,7 +108,8 @@ export class ReportsController {
   @RequireCapability("reports.view_payables")
   async vendorCreditsRegister(@Session() session: UserSession, @Query() query: unknown) {
     const q = this.creditQuery(query);
-    return this.registers.vendorCredits(requireOrgId(session), q.from, q.to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.registers.vendorCredits(orgId, q.from, q.to), (r, search) => docs.creditRegisterDocument(r, "vendor", search));
   }
 
   private analysisRange(query: unknown) {
@@ -102,7 +123,8 @@ export class ReportsController {
   @RequireCapability("reports.view_financial_statements")
   async salesByCustomer(@Session() session: UserSession, @Query() query: unknown) {
     const { from, to } = this.analysisRange(query);
-    return this.analysis.salesByCustomer(requireOrgId(session), from, to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.analysis.salesByCustomer(orgId, from, to), docs.salesByCustomerDocument);
   }
 
   /** US-RPT-28 — quantity, sales and average price per catalogue item. Owner, or `reports.view_financial_statements`. */
@@ -110,7 +132,8 @@ export class ReportsController {
   @RequireCapability("reports.view_financial_statements")
   async salesByItem(@Session() session: UserSession, @Query() query: unknown) {
     const { from, to } = this.analysisRange(query);
-    return this.analysis.salesByItem(requireOrgId(session), from, to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.analysis.salesByItem(orgId, from, to), docs.salesByItemDocument);
   }
 
   /** US-RPT-29 — each expense account's amount and share, largest first. Owner, or `reports.view_financial_statements`. */
@@ -118,7 +141,8 @@ export class ReportsController {
   @RequireCapability("reports.view_financial_statements")
   async expensesByCategory(@Session() session: UserSession, @Query() query: unknown) {
     const { from, to } = this.analysisRange(query);
-    return this.analysis.expensesByCategory(requireOrgId(session), from, to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.analysis.expensesByCategory(orgId, from, to), docs.expensesByCategoryDocument);
   }
 
   /** US-RPT-29 — each vendor's bills, net of vendor credits. Owner, or `reports.view_financial_statements`. */
@@ -126,7 +150,8 @@ export class ReportsController {
   @RequireCapability("reports.view_financial_statements")
   async purchasesByVendor(@Session() session: UserSession, @Query() query: unknown) {
     const { from, to } = this.analysisRange(query);
-    return this.analysis.purchasesByVendor(requireOrgId(session), from, to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.analysis.purchasesByVendor(orgId, from, to), docs.purchasesByVendorDocument);
   }
 
   /** US-RPT-26 — where cash came from and where it went, indirect method. Owner, or `reports.view_financial_statements`. */
@@ -136,7 +161,8 @@ export class ReportsController {
     const parsed = cashFlowQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
     if (parsed.data.from > parsed.data.to) throw new BadRequestException("Choose a From date on or before the To date.");
-    return this.cashFlow.report(requireOrgId(session), parsed.data.from, parsed.data.to);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.cashFlow.report(orgId, parsed.data.from, parsed.data.to), docs.cashFlowDocument);
   }
 
   /** US-RPT-24 — every account's opening balance, entries and closing balance; paged by account. Owner, or `ledger.view`. */
@@ -145,7 +171,11 @@ export class ReportsController {
   async generalLedger(@Session() session: UserSession, @Query() query: unknown) {
     const parsed = generalLedgerQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
-    return this.ledgerReports.generalLedger(requireOrgId(session), parsed.data);
+    const orgId = requireOrgId(session);
+    // An export holds every account the filters pick, not just the page on screen.
+    const format = ReportExportService.parseFormat((query as Record<string, unknown> | undefined)?.format);
+    const options = format ? { ...parsed.data, page: 1, pageSize: 100_000 } : parsed.data;
+    return this.out(orgId, query, this.ledgerReports.generalLedger(orgId, options), docs.generalLedgerDocument);
   }
 
   /** US-RPT-25 — every journal entry in date order, optionally one kind of source. Owner, or `ledger.view`. */
@@ -154,7 +184,8 @@ export class ReportsController {
   async dayBook(@Session() session: UserSession, @Query() query: unknown) {
     const parsed = dayBookQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
-    return this.ledgerReports.dayBook(requireOrgId(session), parsed.data);
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.ledgerReports.dayBook(orgId, parsed.data), (r, search) => docs.dayBookDocument(r, parsed.data.sourceType, search));
   }
 
   /** S-09.10 — the real dashboard summary. */
@@ -200,17 +231,17 @@ export class ReportsController {
 
   @Get("receivables")
   @RequireCapability("reports.view_receivables")
-  async receivables(@Session() session: UserSession) {
+  async receivables(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
-    return this.reportsService.receivables(orgId);
+    return this.out(orgId, query, this.reportsService.receivables(orgId), docs.receivablesDocument);
   }
 
   /** S-07.7 — the AP-side mirror of receivables above; its own independent capability, since Staff already manages vendor bills/payments end-to-end via the `vendor_bills.*`/`vendor_payments.*` capabilities and reasonably needs to see what's due, but that doesn't imply visibility into who owes THE ORG money. */
   @Get("payables")
   @RequireCapability("reports.view_payables")
-  async payables(@Session() session: UserSession) {
+  async payables(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
-    return this.reportsService.payables(orgId);
+    return this.out(orgId, query, this.reportsService.payables(orgId), docs.payablesDocument);
   }
 
   /** S-09.2 — Owner-only per this controller's own doc comment. */
@@ -227,14 +258,16 @@ export class ReportsController {
         ? // The cards show the accrual figure beside the cash one.
           { ...(await load(from, to)), accrualNetProfit: (await this.reportsService.profitAndLoss(orgId, from, to)).netProfit }
         : { ...(await load(from, to)), basis: "accrual" as const };
-    if (!compare) return report;
+    if (!compare) return this.out(orgId, query, report, docs.profitAndLossDocument);
     // US-RPT-27 — the columns to compare, lined up by account.
+    let comparison;
     try {
-      return { ...report, comparison: await this.reportsService.profitAndLossComparison(orgId, from, to, compare, load) };
+      comparison = await this.reportsService.profitAndLossComparison(orgId, from, to, compare, load);
     } catch (err) {
       if (err instanceof Error && err.message === TOO_MANY_MONTHS) throw new BadRequestException(TOO_MANY_MONTHS);
       throw err;
     }
+    return this.out(orgId, query, { ...report, comparison }, docs.profitAndLossDocument);
   }
 
   /** S-09.3 — Owner-only, same reasoning as profitAndLoss above. */
@@ -246,8 +279,8 @@ export class ReportsController {
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the date and try again.");
     const report = await this.reportsService.balanceSheet(orgId, parsed.data.asOf);
     // US-RPT-27 — "Compare with" → "Previous year end": the same statement on the other date.
-    if (!parsed.data.compareAsOf) return report;
-    return { ...report, comparison: await this.reportsService.balanceSheet(orgId, parsed.data.compareAsOf) };
+    const full = parsed.data.compareAsOf ? { ...report, comparison: await this.reportsService.balanceSheet(orgId, parsed.data.compareAsOf) } : report;
+    return this.out(orgId, query, full, docs.balanceSheetDocument);
   }
 
   /** S-09.4 — drill-down behind a P&L/Balance Sheet figure. `@OrgRoles(["owner"])` is a floor (Owner always passes); `ledger.view` additionally lets a Staff user in a granted Team reach this too, even though P&L/Balance Sheet themselves stay Owner-only with no bypass — drilling into raw journal entries is a narrower, more literal "view the ledger" grant than seeing the full financial statements. */
@@ -269,9 +302,10 @@ export class ReportsController {
   /** S-09.6 — all-jobs profitability summary; its own independent capability, not Owner-only, since Staff who can see jobs already sees per-job costing on the job detail page. */
   @Get("job-profitability")
   @RequireCapability("reports.view_job_profitability")
-  async jobProfitability(@Session() session: UserSession, @Query("status") status?: string) {
+  async jobProfitability(@Session() session: UserSession, @Query() query: unknown, @Query("status") status?: string) {
     const orgId = requireOrgId(session);
-    return this.reportsService.jobProfitability(orgId, jobStatusFilter(status));
+    const filter = jobStatusFilter(status);
+    return this.out(orgId, query, this.reportsService.jobProfitability(orgId, filter), (r) => docs.jobProfitabilityDocument(r, filter));
   }
 
   /**
@@ -307,8 +341,9 @@ export class ReportsController {
   /** US-RPT-13 — Owner-only, like the other financial statements. */
   @Get("trial-balance")
   @OrgRoles(["owner"])
-  async trialBalance(@Session() session: UserSession, @Query("asOf") asOf: string, @Query("includeZero") includeZero?: string) {
-    return this.reportsService.trialBalance(requireOrgId(session), asOf, includeZero === "true");
+  async trialBalance(@Session() session: UserSession, @Query() query: unknown, @Query("asOf") asOf: string, @Query("includeZero") includeZero?: string) {
+    const orgId = requireOrgId(session);
+    return this.out(orgId, query, this.reportsService.trialBalance(orgId, asOf, includeZero === "true"), docs.trialBalanceDocument);
   }
 
   @Get("trial-balance/export.csv")

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { test, expect } from "./fixtures";
 
 async function download(page: import("@playwright/test").Page) {
+  await page.getByRole("button", { name: "Export", exact: true }).click();
   const [file] = await Promise.all([page.waitForEvent("download"), page.getByTestId("export-csv").click()]);
   return readFileSync((await file.path())!, "utf8").split("\r\n");
 }

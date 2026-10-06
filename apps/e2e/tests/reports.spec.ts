@@ -61,11 +61,12 @@ test.describe("Reports", () => {
     void seededOrg;
     await page.goto("/reports/profit-and-loss");
 
-    const plExportLink = page.getByRole("link", { name: "Export CSV" });
-    await expect(plExportLink).toHaveAttribute("href", /\/reports\/profit-and-loss\/export\.csv\?from=.+&to=.+/);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "CSV" })).toHaveAttribute("href", /\/reports\/profit-and-loss\?from=.+&to=.+&format=csv/);
+    await page.keyboard.press("Escape");
 
     await page.goto("/reports/balance-sheet");
-    const bsExportLink = page.getByRole("link", { name: "Export CSV" });
-    await expect(bsExportLink).toHaveAttribute("href", /\/reports\/balance-sheet\/export\.csv\?asOf=.+/);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "CSV" })).toHaveAttribute("href", /\/reports\/balance-sheet\?asOf=.+&format=csv/);
   });
 });

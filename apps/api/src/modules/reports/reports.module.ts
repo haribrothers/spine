@@ -9,6 +9,8 @@ import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 import { LedgerSourcesService } from "./ledger-sources.service";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { OrgModule } from "../org/org.module";
+import { ReportExportService } from "./export/report-export.service";
 
 /**
  * PRD F9 (Phase 2 · Money In half) — S-06.7 / S-09.5's receivables-with-
@@ -17,9 +19,9 @@ import { NotificationsModule } from "../notifications/notifications.module";
  * module rather than a new one.
  */
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, OrgModule],
   controllers: [ReportsController],
-  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService],
-  exports: [ReportsService, LedgerSourcesService],
+  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService, ReportExportService],
+  exports: [ReportsService, LedgerSourcesService, ReportExportService],
 })
 export class ReportsModule {}

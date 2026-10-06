@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-32: export every report to CSV and Excel (Phase 8)
+
+- **"Export"** on every report — Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, Job profitability, Receivables, Payables, General ledger, Day book, Journals, the sales and purchase reports, and the payment and credit registers — offers **CSV** and **Excel (.xlsx)**. PDF and Print follow with US-RPT-33 and US-RPT-34.
+- **Files hold what's on screen**: dates, account and source filters, Basis, "Compare with" columns, and the list's search. The general ledger exports every account the filters pick, not just the page.
+- **Excel**: business name, report name, range and currency in the first rows; bold, frozen headings; amounts are real numbers with two decimals (the currency's decimals), percentages as %.
+- **CSV**: plain decimal amounts with the currency in its own column, as before. Files are named `<report>-<from>-<to>` (or `-<date>`).
+- The Tax Summary exports to Excel too. Receivables and Payables keep their CSV columns; their Export menu adds Excel.
+- API: `?format=csv|xlsx` on every report route (`exceljs`, D-144); the `/export.csv` routes stay.
+
 ### 2026-10-06 — US-RPT-35: see profit and loss on a cash basis (Phase 8)
 
 - **Profit & Loss › "Basis"**: Accrual (default) or Cash. On Cash the subtitle reads "<range> · Cash basis", cards show "Cash received (income)", "Cash paid (expenses)" and "Net profit (cash basis)" with the accrual figure beside it, and the table lists each account's cash-basis amount.
