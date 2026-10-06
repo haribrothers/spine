@@ -28,6 +28,8 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
+  // US-DASH-23 — every bank, cash and card balance.
+  { key: "accounts", capability: "banking.view" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   // US-DASH-21 — what's owed to vendors, beside receivables (D-160).
   { key: "payables", capability: "reports.view_payables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   // US-DASH-22 — the largest expense accounts for a period.

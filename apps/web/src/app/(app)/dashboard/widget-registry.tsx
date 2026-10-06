@@ -9,6 +9,7 @@ import { MyJobs } from "./widgets/my-jobs";
 import { RetentionHeldCard } from "./widgets/retention-held";
 import { JobsInProgress } from "./widgets/jobs-in-progress";
 import { MyExpenses } from "./widgets/my-expenses";
+import { AccountsCard } from "./widgets/accounts-card";
 import { PayablesCard } from "./widgets/payables-card";
 import { TopExpensesCard } from "./widgets/top-expenses";
 
@@ -28,6 +29,7 @@ function MyActivity() {
  * kept out of the registry itself, not just filtered from these maps.
  */
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
+  accounts: "Accounts",
   payables: "Payables",
   "top-expenses": "Top expenses",
   "money-in-out": "Money in and out",
@@ -44,6 +46,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 };
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
+  accounts: AccountsCard,
   payables: PayablesCard,
   "top-expenses": TopExpensesCard,
   "money-in-out": MoneyInOutChart,

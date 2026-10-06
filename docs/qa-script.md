@@ -3471,6 +3471,15 @@ Regression: the Payables page without ?overdue=1 lists every open bill as before
 5. Staff without "View financial statements": no Top expenses card.
 6. Narrow window (phone width): bars sit under their labels and stay readable. Dark mode is readable.
 
+## 151. Accounts on the dashboard (US-DASH-23, Phase 8)
+
+1. Dashboard › Accounts lists Cash in Hand, the bank account and any card or extra bank accounts you've added, each with its icon and balance; archived accounts aren't listed.
+2. Spend on a card account: its balance reads "<amount> owed".
+3. Finish a reconciliation on the bank account (Banking › Reconcile): the card reads "Reconciled to <date>"; the others still say "Not reconciled".
+4. Click an account name: its register opens. "Banking" opens Banking.
+5. Staff without "View banking": no Accounts card.
+6. Dark mode and phone width: names truncate, balances stay readable.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

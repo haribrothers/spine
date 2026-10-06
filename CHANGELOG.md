@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-23: see each bank, cash and card balance (Phase 8)
+
+- **Dashboard › Accounts** card (D-160): every active bank, cash and card account with a type icon (named for screen readers), its balance — a card's reads "<amount> owed" — and "Reconciled to <date>" or "Not reconciled". A name opens the account's register; "Banking" opens Banking.
+- Members without "View banking" don't get the card (and the API doesn't send them balances).
+- No API change: the card reads `GET /money-accounts` with balances.
+
 ### 2026-10-06 — US-DASH-22: see where money goes (Phase 8)
 
 - **Dashboard › Top expenses** card (D-160): the five largest expense accounts as labelled bars with amount and % ("Cost of Materials $12,380.00 · 39.1%"), then "Other". "Period" picks This month, This quarter (default) or This financial year; "Expenses by category" opens the full report.
