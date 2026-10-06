@@ -76,7 +76,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 ## Open points
 
 - The ledger is accrual. A cash-basis P&L and dashboard profit are derived at report time ([D-138](12-decisions.md), closes [Q-04](13-risks-open-questions.md)).
-- A practising accountant has not yet reviewed this table ([Q-02](13-risks-open-questions.md), [R-01](13-risks-open-questions.md)). P17–P27 are new in Phase 8 and need that review before they're built.
+- A practising accountant has not yet reviewed this table ([Q-02](13-risks-open-questions.md), [R-01](13-risks-open-questions.md)). P17–P27 are new in Phase 8. The product owner chose to build them to D-137 and D-141–D-143 first and have them reviewed before the Phase 8 PR merges into `main` (2026-10-06); until then the PR carries Q-02 as an open item.
 - An invoice with allocated payments can't be voided (P9 is refused); the correction is a credit note ([D-074](12-decisions.md)).
 - Expenses paid by an employee still credit the chosen money account (P15); an "employee reimbursements payable" account is planned for v1.1 ([Q-05](13-risks-open-questions.md), [16-roadmap](16-roadmap.md)).
 - Labour entered as headcount × day rate (US-PUR-23) is an ordinary expense: it posts P15 to its category's account (5200 Direct Labour by default) with the job's `job_id`. No new posting.
