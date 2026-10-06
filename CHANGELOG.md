@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PAY-17: refund a customer (Phase 8)
+
+- **"Refund"** on a payment with unallocated credit, a credit note with credit left (US-PAY-16), and a contact holding credit. `CustomerRefundDialog` asks for "Refund from", "Amount" (up to the credit), "Date", "Paid from" (money account, last used preselected), "Method", "Reference" and "Send refund confirmation". The toast reads "Refunded <amount> to <customer>".
+- **Posting** (P23): Dr 2200 Customer Advances / Cr the money account, both contact-tagged. The source's credit drops in the same transaction, under a lock on it, and database checks keep refunds within it (`payments.refunded_amount`, `credit_notes.credit_remaining_amount`).
+- **Confirmation email**: "We've refunded <amount>", receipt-style. If the customer has no email, email isn't set up, or the send fails, the refund is still saved and the toast says why.
+- **Delete**: "Delete refund" in the source's "Refunds" list posts the reversal dated today and gives the credit back. A payment with refunds can't be deleted until they are.
+- **Elsewhere**: payments' unallocated credit and "Apply credit" are net of refunds; registers read "Refund" / "Refund deleted"; statements show refunds as charge lines.
+- **Migration 0084**: `customer_refunds`, `payments.refunded_amount`, and the `payments.refund` right (off for every Team; US-PAY-18 covers the matrix).
+- **API.** `GET/POST /customer-refunds`, `DELETE /customer-refunds/:id`.
+
+Tests:
+- `apps/api/src/modules/payments/us-pay-17.http.integration.test.ts` (6): a partial refund posts P23, lowers the credit and sends the confirmation; over the credit refused and applying refunded credit refused; deleting reverses and returns the credit, and blocks deleting the payment first; a credit note's excess refunded; refunds and removals on the statement; 403 without `payments.refund`.
+- `apps/e2e/tests/us-pay-17.spec.ts` (1): the dialog from a payment, the toast and email, the refunds list, deleting a refund, and "Refund" on the contact.
+
 ### 2026-10-06 — US-PAY-16: keep a credit note's extra as customer credit (Phase 8)
 
 - **Crediting past the balance** (D-142): "Issue credit note" is offered on paid invoices too. When the credit is more than what's left to pay, the dialog reads "<balance> reduces what's owed on <invoice>; <excess> becomes credit for <customer>.". P8 credits 1100 AR up to the balance and 2200 Customer Advances for the rest, kept on the credit note as `creditRemainingAmount` ("Credit for the customer" in its drawer). All credit notes on one invoice can't exceed its total.

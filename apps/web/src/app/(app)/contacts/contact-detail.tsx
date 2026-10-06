@@ -44,6 +44,8 @@ import { HistorySection } from "../../../components/history-section";
 import { TimelineSection } from "./timeline-section";
 import { useEntityToast } from "./entity-toast";
 import { StatementDialog } from "./statement-dialog";
+import { CustomerRefundDialog, refundToast } from "../../../components/customer-refund-dialog";
+import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { AttachmentsSection } from "../../../components/attachments-section";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
@@ -102,6 +104,24 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   // US-PAY-14 — statements show what a customer owes, so they follow the receivables report's capability.
   const canSendStatement = useCapability("reports.view_receivables");
   const [statementOpen, setStatementOpen] = useState(false);
+  // US-PAY-17: "Refund" when the customer holds credit (unallocated payments, credit note excess).
+  const canRefund = useCapability("payments.refund");
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [credit, setCredit] = useState<bigint>(0n);
+  const [creditKey, setCreditKey] = useState(0);
+  const [currency, setCurrency] = useState("USD");
+  useEffect(() => {
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => setCurrency(res.value?.code ?? "USD"))
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!canRefund) return;
+    loadCustomerCredit(contactId)
+      .then((list) => setCredit(list.reduce((sum, c) => sum + c.available, 0n)))
+      .catch(() => setCredit(0n));
+  }, [contactId, canRefund, creditKey]);
   const [timelineKey, setTimelineKey] = useState(0);
   const canDelete = useCanEditOwnership(contact?.createdByUserId ?? null, { own: "contacts.delete_own", others: "contacts.delete_others" });
 
@@ -321,6 +341,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <div className="flex items-center gap-2">
             {/* US-SET-13 (D-061): History opens the same dialog as on every other record. */}
             <HistorySection endpoint={`/contacts/${contactId}/history`} subjectLabel="this contact" ownEntityType="contact" />
+            {canRefund && credit > 0n && contact.type !== "vendor" && (
+              <Button variant="secondary" onClick={() => setRefundOpen(true)}>
+                Refund
+              </Button>
+            )}
             {canSendStatement && contact.type !== "vendor" && (
               <Button variant="secondary" onClick={() => setStatementOpen(true)}>
                 Send statement
@@ -481,6 +506,20 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <AttachmentsSection entityType="contact" entityId={contactId} />
         </TabsContent>
       </Tabs>
+
+      <CustomerRefundDialog
+        open={refundOpen}
+        onOpenChange={setRefundOpen}
+        contactId={contactId}
+        contactName={contact.name}
+        currency={currency}
+        onRefunded={(refund) => {
+          setCreditKey((k) => k + 1);
+          setTimelineKey((k) => k + 1);
+          const { title, description } = refundToast(refund);
+          showToast(title, description);
+        }}
+      />
 
       <StatementDialog
         open={statementOpen}

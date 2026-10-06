@@ -7,6 +7,8 @@ import { EmailModule } from "../email/email.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { OrgModule } from "../org/org.module";
 import { PdfModule } from "../pdf/pdf.module";
+import { CustomerRefundsController } from "./customer-refunds.controller";
+import { CustomerRefundsService } from "./customer-refunds.service";
 import { PaymentsController } from "./payments.controller";
 import { PaymentsService } from "./payments.service";
 
@@ -26,8 +28,8 @@ import { PaymentsService } from "./payments.service";
  */
 @Module({
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, EmailModule, NotificationsModule, OrgModule, PdfModule],
-  controllers: [PaymentsController],
-  providers: [PaymentsService],
+  controllers: [PaymentsController, CustomerRefundsController],
+  providers: [PaymentsService, CustomerRefundsService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

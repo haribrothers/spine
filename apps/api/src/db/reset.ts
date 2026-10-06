@@ -43,6 +43,7 @@ const TABLES = [
   "invoice_lines",
   "invoices",
   "attachments",
+  "customer_refunds",
   "bank_transactions",
   "bank_transfers",
   "money_accounts",

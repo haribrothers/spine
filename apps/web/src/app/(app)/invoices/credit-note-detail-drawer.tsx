@@ -20,6 +20,9 @@ import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
 import { formatMoney } from "../../../lib/money";
 import { AttachmentsSection } from "../../../components/attachments-section";
+import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
+import { useCapability } from "../../../lib/capabilities-context";
+import { useEntityToast } from "./entity-toast";
 
 /** US-INV-17 — opened in a new tab: the route streams a PDF, not JSON. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -51,6 +54,11 @@ export function CreditNoteDetailDrawer({
 }) {
   const [creditNote, setCreditNote] = useState<CreditNote | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // US-PAY-17: refund the credit a credit note left the customer.
+  const canRefund = useCapability("payments.refund");
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
     if (!creditNoteId) {
@@ -63,7 +71,7 @@ export function CreditNoteDetailDrawer({
       .get<CreditNote>(`/credit-notes/${creditNoteId}`)
       .then(setCreditNote)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load this credit note."));
-  }, [creditNoteId]);
+  }, [creditNoteId, reloadKey]);
 
   return (
     <Drawer open={creditNoteId !== null} onOpenChange={onOpenChange}>
@@ -134,6 +142,11 @@ export function CreditNoteDetailDrawer({
           )}
           {creditNote && (
             <div className="mt-5">
+              <RefundsSection contactId={creditNote.contactId} sourceId={creditNote.id} refreshKey={reloadKey} canRefund={canRefund} onChanged={() => setReloadKey((k) => k + 1)} />
+            </div>
+          )}
+          {creditNote && (
+            <div className="mt-5">
               <AttachmentsSection entityType="credit_note" entityId={creditNote.id} />
             </div>
           )}
@@ -147,11 +160,32 @@ export function CreditNoteDetailDrawer({
               </a>
             </Button>
           )}
+          {creditNote && canRefund && BigInt(creditNote.creditRemainingAmount ?? "0") > 0n && (
+            <Button variant="secondary" onClick={() => setRefundOpen(true)}>
+              Refund
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DrawerFooter>
       </DrawerContent>
+      {creditNote && (
+        <CustomerRefundDialog
+          open={refundOpen}
+          onOpenChange={setRefundOpen}
+          contactId={creditNote.contactId}
+          contactName={creditNote.contactName ?? "the customer"}
+          currency={creditNote.currency}
+          sourceId={creditNote.id}
+          onRefunded={(refund) => {
+            setReloadKey((k) => k + 1);
+            const { title, description } = refundToast(refund);
+            showToast(title, description);
+          }}
+        />
+      )}
+      {toast}
     </Drawer>
   );
 }

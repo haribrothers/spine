@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, bankTransactions, bankTransfers, contacts, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
+import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -14,6 +14,8 @@ const SOURCE_LABELS: Record<string, string> = {
   vendor_payment: "Vendor payment",
   vendor_payment_delete: "Vendor payment deleted",
   expense: "Expense",
+  customer_refund: "Refund",
+  customer_refund_delete: "Refund deleted",
   bank_transfer: "Transfer",
   bank_transfer_delete: "Transfer deleted",
 };
@@ -177,6 +179,15 @@ export class AccountRegisterService {
           out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt), transfer: { from: row.from, to: row.to } });
         }
       }
+    }
+    const refundTypes = ["customer_refund", "customer_refund_delete"];
+    const refundIds = ids(refundTypes);
+    if (refundIds.length) {
+      const rows = await this.db
+        .select({ id: customerRefunds.id, reference: customerRefunds.reference, deletedAt: customerRefunds.deletedAt })
+        .from(customerRefunds)
+        .where(and(eq(customerRefunds.orgId, orgId), inArray(customerRefunds.id, refundIds)));
+      for (const row of rows) for (const type of refundTypes) out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt) });
     }
     const transactionIds = ids(["bank_transaction", "bank_transaction_delete"]);
     if (transactionIds.length) {

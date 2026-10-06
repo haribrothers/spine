@@ -46,3 +46,34 @@ export const createPaymentSchema = z.object({
 export const applyPaymentCreditSchema = z.object({
   allocations: z.array(paymentAllocationInputSchema).min(1),
 });
+
+/** `POST /customer-refunds` (US-PAY-17): pay a customer back out of one source of their credit. */
+export const createCustomerRefundSchema = z
+  .object({
+    sourcePaymentId: uuidSchema.optional().nullable(),
+    sourceCreditNoteId: uuidSchema.optional().nullable(),
+    amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2026-10-05."),
+    moneyAccountId: uuidSchema.optional().nullable(),
+    method: paymentMethodSchema,
+    reference: z.string().trim().max(120).optional().nullable(),
+    sendConfirmation: z.boolean().optional().default(false),
+  })
+  .refine((v) => Boolean(v.sourcePaymentId) !== Boolean(v.sourceCreditNoteId), { message: "Choose the payment or credit note to refund from.", path: ["sourcePaymentId"] });
+export type CreateCustomerRefundInput = z.infer<typeof createCustomerRefundSchema>;
+
+export interface CustomerRefund {
+  id: string;
+  contactId: string;
+  contactName: string;
+  source: { kind: "payment" | "credit_note"; id: string; number: string | null };
+  moneyAccount: { id: string; name: string };
+  amount: string;
+  currency: string;
+  date: string;
+  method: string;
+  reference: string | null;
+  deletedAt: string | null;
+  /** Only on create: whether the "We've refunded …" email went, and why not. */
+  confirmation?: { sent: boolean; reason?: string };
+}

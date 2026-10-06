@@ -589,6 +589,13 @@
       "when": 1791271517936,
       "tag": "0083_credit_note_credit",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791272053534,
+      "tag": "0084_customer_refunds",
+      "breakpoints": true
     }
   ]
 }

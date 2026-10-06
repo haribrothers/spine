@@ -2992,6 +2992,22 @@ Regression: adding files still works after a removal, and the 10-file limit coun
 
 Regression: a credit note within the balance still reduces only what's owed; Payments' own "Apply credit" still works; statements for customers without credit read as before.
 
+## 112. Refund a customer (US-PAY-17, Phase 8)
+
+1. Record a $500.00 payment from a customer with an email address, allocated to nothing. Open it: "Refund" is in the drawer.
+2. "Refund": "Refund <customer>" asks for "Refund from" (this payment, "$500.00 of credit"), "Amount" (prefilled $500.00), "Date", "Paid from", "Method", "Reference" and "Send refund confirmation". Refund $200.00 with the confirmation ticked.
+3. The toast reads "Refunded $200.00 to <customer>" and "The customer has been emailed a confirmation."; the email reads "We've refunded $200.00". The payment's unallocated credit is now $300.00, and the drawer lists the refund under "Refunds".
+4. Try to refund $300.01: "You can refund up to $300.00 from this payment.". "Apply credit" also offers only $300.00.
+5. The chosen account's register shows "Refund" as money out. Reports › Balance Sheet: Customer Advances down by $200.00.
+6. "Delete refund": the refund shows "Deleted", the credit is back to $500.00, and the register gets a "Refund deleted" row dated today.
+7. From a credit note with credit left (US-PAY-16), "Refund" works the same and its "Credit for the customer" drops.
+8. On the contact page, "Refund" appears when the customer holds credit and lets you choose which credit to refund.
+9. The customer's statement shows refunds as charge lines ("Refund") and deleted ones as "Refund removed".
+10. Without email set up, the refund still saves and the toast says "Email isn't set up, so no confirmation was sent.".
+11. Deleting a payment that has refunds: "Delete this payment's refunds first.".
+
+Regression: recording, applying and deleting payments without refunds behave as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

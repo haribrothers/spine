@@ -31,6 +31,7 @@ import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 import { formatMoney } from "../../../lib/money";
 import { AttachmentsSection } from "../../../components/attachments-section";
+import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
 
 /**
  * `GET /payments/:id/pdf` streams a binary PDF, not JSON — same reasoning
@@ -132,6 +133,11 @@ export function PaymentDetailDrawer({
   const hasSendReceiptCapability = useCapability("payments.send_receipt");
   const canDelete = payment && payment.allocatedAmount === "0" && hasDeleteCapability;
   const canApplyCredit = payment && payment.unallocatedAmount !== "0" && hasApplyCreditCapability;
+  // US-PAY-17/18: refunds need their own right.
+  const hasRefundCapability = useCapability("payments.refund");
+  const canRefund = payment && payment.unallocatedAmount !== "0" && hasRefundCapability;
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundsKey, setRefundsKey] = useState(0);
 
   return (
     <>
@@ -204,6 +210,21 @@ export function PaymentDetailDrawer({
             )}
             {payment && (
               <div className="mt-5">
+                <RefundsSection
+                  contactId={payment.contactId}
+                  sourceId={payment.id}
+                  refreshKey={refundsKey}
+                  canRefund={hasRefundCapability}
+                  onChanged={() => {
+                    reload();
+                    onChanged?.();
+                    setRefundsKey((k) => k + 1);
+                  }}
+                />
+              </div>
+            )}
+            {payment && (
+              <div className="mt-5">
                 <AttachmentsSection entityType="payment" entityId={payment.id} />
               </div>
             )}
@@ -227,6 +248,11 @@ export function PaymentDetailDrawer({
                 Apply credit
               </Button>
             )}
+            {canRefund && (
+              <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
+                Refund
+              </Button>
+            )}
             {canDelete && (
               <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
                 Delete payment
@@ -239,6 +265,23 @@ export function PaymentDetailDrawer({
         </DrawerContent>
       </Drawer>
 
+      {payment && (
+        <CustomerRefundDialog
+          open={refundOpen}
+          onOpenChange={setRefundOpen}
+          contactId={payment.contactId}
+          contactName={payment.contactName ?? "the customer"}
+          currency={payment.currency}
+          sourceId={payment.id}
+          onRefunded={(refund) => {
+            reload();
+            onChanged?.();
+            setRefundsKey((k) => k + 1);
+            const { title, description } = refundToast(refund);
+            showToast(title, description);
+          }}
+        />
+      )}
       <ApplyCreditDialog
         open={applyCreditOpen}
         onOpenChange={setApplyCreditOpen}

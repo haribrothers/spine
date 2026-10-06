@@ -65,7 +65,7 @@ export class PaymentsService {
     return rows.map((r) => ({
       ...r.payment,
       contactName: r.contactName,
-      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount,
+      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
     }));
   }
 
@@ -94,7 +94,7 @@ export class PaymentsService {
     return rows.map((r) => ({
       ...r.payment,
       contactName: r.contactName,
-      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount,
+      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
       allocatedToThisInvoice: r.allocatedToThisInvoice,
     }));
   }
@@ -120,7 +120,7 @@ export class PaymentsService {
       ...row.payment,
       contactName: row.contactName,
       moneyAccount: row.payment.moneyAccountId ? (refs.get(row.payment.moneyAccountId) ?? null) : null,
-      unallocatedAmount: row.payment.amount - row.payment.allocatedAmount,
+      unallocatedAmount: row.payment.amount - row.payment.allocatedAmount - row.payment.refundedAmount,
       allocations: allocations.map((a) => ({
         ...a.allocation,
         invoiceNumber: a.invoiceNumber,
@@ -364,7 +364,8 @@ export class PaymentsService {
       throw new NotFoundException("Payment not found");
     }
 
-    const unallocated = payment.amount - payment.allocatedAmount;
+    // US-PAY-17: credit already refunded can't be applied too.
+    const unallocated = payment.amount - payment.allocatedAmount - payment.refundedAmount;
     const totalRequested = input.allocations.reduce((sum, a) => sum + a.amount, 0n);
     if (totalRequested > unallocated) {
       throw new BadRequestException(`Requested ${totalRequested} exceeds this payment's unallocated credit of ${unallocated}`);
@@ -587,6 +588,9 @@ export class PaymentsService {
     // Any allocation, including one to an advance invoice (which doesn't count
     // towards allocatedAmount, US-PAY-13), makes the payment part of history.
     const [allocation] = await this.db.select({ id: paymentAllocations.id }).from(paymentAllocations).where(eq(paymentAllocations.paymentId, id)).limit(1);
+    if (existing.refundedAmount > 0n) {
+      throw new BadRequestException("Delete this payment's refunds first.");
+    }
     if (existing.allocatedAmount > 0n || allocation) {
       throw new BadRequestException("Cannot delete a payment that has been allocated to an invoice");
     }

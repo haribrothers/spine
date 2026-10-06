@@ -80,7 +80,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | | `job_photos.edit_own`, `job_notes.edit_own` | ✓ | ✓F (own only) |
 | | `job_photos.edit_others`, `job_notes.edit_others`, `variation_orders.edit_own`, `variation_orders.edit_others`, `variation_orders.apply` | ✓ | — |
 
-93 capabilities in total today (the three `banking.*` landed with US-BANK-01/US-BANK-12); Phase 8 adds 13 in all (`reports.view_financial_statements`, three `banking.*`, `payments.refund`, `vendor_bills.manage_recurring`, seven `vendor_credits.*`), making 103; Phase 9 adds `ai.use` (Team) and `ai.read_own_receipt` (Field, fixed), making 105. Adding one means: add it to `CAPABILITIES`, `CAPABILITY_LABELS` (with its `group`) and `DEFAULT_TEAM_GRANTS`; enforce it server-side; write a backfill migration granting it to existing General Staff Teams; wire the web UI (`useCapability` / `useCanEditOwnership`) in the same change; update this table.
+94 capabilities in total today (the three `banking.*` landed with US-BANK-01/US-BANK-12, `payments.refund` with US-PAY-17); Phase 8 adds 13 in all (`reports.view_financial_statements`, three `banking.*`, `payments.refund`, `vendor_bills.manage_recurring`, seven `vendor_credits.*`), making 103; Phase 9 adds `ai.use` (Team) and `ai.read_own_receipt` (Field, fixed), making 105. Adding one means: add it to `CAPABILITIES`, `CAPABILITY_LABELS` (with its `group`) and `DEFAULT_TEAM_GRANTS`; enforce it server-side; write a backfill migration granting it to existing General Staff Teams; wire the web UI (`useCapability` / `useCanEditOwnership`) in the same change; update this table.
 
 ## Secrets
 

@@ -60,6 +60,7 @@ export const CAPABILITIES = [
   "payments.delete_others",
   "payments.apply_credit",
   "payments.send_receipt",
+  "payments.refund",
   "credit_notes.edit_own",
   "credit_notes.edit_others",
   "credit_notes.delete_own",
@@ -373,6 +374,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Re-send a payment's receipt PDF to the paying contact on demand.",
     group: "Manage Payments",
   },
+  "payments.refund": {
+    label: "Refund customers",
+    description: "Pay a customer back out of their credit — an unallocated payment or a credit note's excess. Money leaves the bank, so it's its own right.",
+    group: "Manage Payments",
+  },
   "credit_notes.edit_own": {
     label: "Create/edit own credit notes",
     description:
@@ -660,6 +666,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "payments.delete_others": true,
   "payments.apply_credit": true,
   "payments.send_receipt": true,
+  "payments.refund": false,
   "credit_notes.edit_own": true,
   "credit_notes.edit_others": true,
   "credit_notes.delete_own": true,
