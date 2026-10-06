@@ -28,6 +28,8 @@ import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
 import { AttachmentsSection } from "../../../components/attachments-section";
+import { useCapability } from "../../../lib/capabilities-context";
+import { RecurringBillDialog } from "./recurring/recurring-bill-dialog";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -52,6 +54,9 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
+  // US-PUR-29 — "Make recurring" starts a recurring bill from this one.
+  const canManageRecurring = useCapability("vendor_bills.manage_recurring");
+  const [recurringOpen, setRecurringOpen] = useState(false);
   // Record Vendor Payment happens on the standalone /vendor-payments page
   // (see canRecordPayment's own button below) rather than an inline
   // dialog here, since a vendor payment can span several of a vendor's
@@ -200,6 +205,11 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                 Void
               </Button>
             )}
+            {canManageRecurring && !bill.isOpening && (
+              <Button variant="secondary" onClick={() => setRecurringOpen(true)} disabled={busy}>
+                Make recurring
+              </Button>
+            )}
             {canEdit && (
               <Button variant="ghost" onClick={handleDelete} disabled={busy}>
                 Delete draft
@@ -284,6 +294,34 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         </Card>
       )}
 
+      <RecurringBillDialog
+        open={recurringOpen}
+        onOpenChange={setRecurringOpen}
+        prefill={{
+          contactId: bill.contactId,
+          currency: bill.currency,
+          name: bill.contactName ?? "",
+          lines: (bill.lines ?? []).map((l) => ({
+            id: l.id,
+            sortOrder: l.sortOrder,
+            type: l.type,
+            catalogItemId: l.catalogItemId,
+            name: l.name,
+            description: l.description,
+            quantity: l.quantity,
+            unitPriceAmount: l.unitPriceAmount,
+            accountId: l.accountId,
+            taxRatePercentage: l.taxRatePercentage,
+            taxRateId: l.taxRateId,
+            taxGroupId: l.taxGroupId,
+            isTaxInclusive: l.isTaxInclusive,
+          })),
+        }}
+        onSaved={() => {
+          setRecurringOpen(false);
+          router.push("/vendor-bills/recurring");
+        }}
+      />
       {/* Void requires a reason; the API rejects an empty one, so this is a required field, not optional. */}
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
         <DialogContent>

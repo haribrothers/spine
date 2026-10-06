@@ -36,10 +36,12 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  * (`ExpensesService.createInvoiceFromExpense`) composes a new draft
  * invoice the same way `MilestonesService.invoiceMilestone` does.
  */
+import { RecurringBillsController } from "./recurring-bills.controller";
+import { RecurringBillsService } from "./recurring-bills.service";
 @Module({
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
-  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
-  providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
+  controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
+  providers: [RecurringBillsService, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
 })
 export class PurchasesModule {}

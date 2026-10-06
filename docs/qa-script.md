@@ -3511,6 +3511,18 @@ Regression: the Tax Summary opened from Reports still defaults to the start of t
 
 Regression: Money in and out (§ US-DASH-15) reads exactly as before on Cash, including the 3M/6M/12M range.
 
+## 155. Set up a recurring bill (US-PUR-29, Phase 8)
+
+1. Vendor Bills shows "Recurring bills" beside "New vendor bill". Open it: "No recurring bills yet".
+2. "+ New recurring bill": Name, Vendor, Repeat and On, Starts on (today by default), Ends, Due, Paid from ("Not set" or a money account), When it runs ("Record the bill" selected) and Lines. Save with no lines: "Add at least one line." A line without an expense account: "Choose an expense account on every line." A start date in the past: "Pick today or a later start date."
+3. Save a monthly schedule on the 1st: the list shows it Active with "Monthly · 1st", the next bill date, the amount and "Record".
+4. Open a recorded or draft bill › "Make recurring": the dialog opens with the bill's vendor and lines (collapsed to a summary with "Edit lines"). Name it and save: you land on Recurring bills with the new schedule.
+5. Click a schedule's name: "Edit recurring bill" with its details.
+6. Team › a Team › Privileges › Manage Vendor Bills has "Manage recurring bills"; Teams that create bills have it on. As Staff without it: no "Recurring bills" button, and /vendor-bills/recurring says to ask an Owner. Field: no access.
+7. Dark mode and phone width: the dialog and list are readable.
+
+Regression: Recurring invoices are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

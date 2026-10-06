@@ -25,6 +25,7 @@ import {
   payments,
   quotes,
   recurringInvoices,
+  recurringBills,
   taxGroups,
   taxRates,
   user,
@@ -134,6 +135,8 @@ const RESOLVERS: Record<string, Resolver> = {
     byId(await db.select({ id: vendorPayments.id, number: vendorPayments.number }).from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), inArray(vendorPayments.id, ids))), (r) => r.number, () => "/vendor-payments"),
   recurring_invoice: async (db, orgId, ids) =>
     byId(await db.select({ id: recurringInvoices.id, name: recurringInvoices.name }).from(recurringInvoices).where(and(eq(recurringInvoices.orgId, orgId), inArray(recurringInvoices.id, ids))), (r) => r.name, () => "/invoices/recurring"),
+  recurring_bill: async (db, orgId, ids) =>
+    byId(await db.select({ id: recurringBills.id, name: recurringBills.name }).from(recurringBills).where(and(eq(recurringBills.orgId, orgId), inArray(recurringBills.id, ids))), (r) => r.name, () => "/vendor-bills/recurring"),
   user: async (db, orgId, ids) => byId(await db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, ids)), (r) => r.name, () => "/team/users"),
   data_export: async () => new Map(),
 };

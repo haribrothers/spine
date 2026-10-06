@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, check, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, check, numeric, uniqueIndex, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -8,7 +8,7 @@ import { taxRates, taxGroups } from "./tax";
 import { accounts, journalEntries } from "./ledger";
 import { files } from "./files";
 import { moneyAccounts } from "./banking";
-import { invoiceLines } from "./invoices";
+import { invoiceLines, recurringFrequencyEnum, recurringStatusEnum } from "./invoices";
 
 /**
  * PRD FEAT-07 (Phase 4 · Money Out & Books, Stage 2) — a vendor bill with
@@ -66,10 +66,14 @@ export const vendorBills = pgTable(
     isDemo: boolean("is_demo").notNull().default(false),
     /** US-RPT-18 (D-137) — an unpaid bill brought in from the old system: no lines, posts P20. */
     isOpening: boolean("is_opening").notNull().default(false),
+    /** US-PUR-30 (D-159) — the recurring bill and run date that created this bill; unique together, so a date is created once. */
+    recurringBillId: uuid("recurring_bill_id").references((): AnyPgColumn => recurringBills.id, { onDelete: "set null" }),
+    recurringRunOn: date("recurring_run_on", { mode: "string" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
+    uniqueIndex("vendor_bills_recurring_run_uidx").on(table.recurringBillId, table.recurringRunOn),
     index("vendor_bills_org_idx").on(table.orgId),
     index("vendor_bills_org_status_idx").on(table.orgId, table.status),
     index("vendor_bills_contact_idx").on(table.contactId),
@@ -121,6 +125,71 @@ export const vendorBillLines = pgTable(
     index("vendor_bill_lines_catalog_item_idx").on(table.catalogItemId),
     index("vendor_bill_lines_account_idx").on(table.accountId),
   ],
+);
+
+export const recurringBillModeEnum = pgEnum("recurring_bill_mode", ["record", "draft"]);
+
+/**
+ * US-PUR-29–31 (D-159) — a recurring bill: the same schedule as a
+ * recurring invoice (`recurring_invoices`) with vendor bill lines. The
+ * 6:00 AM run (US-PUR-30) makes a bill for every date that has come, once
+ * each and in order; "record" records it at once (P11), "draft" leaves it
+ * for an Owner to check. `money_account_id` is the account it's usually
+ * paid from, for reference. `next_run_on` is null while paused or finished.
+ */
+export const recurringBills = pgTable(
+  "recurring_bills",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    contactId: uuid("contact_id")
+      .notNull()
+      .references(() => contacts.id, { onDelete: "cascade" }),
+    currency: text("currency").notNull(),
+    frequency: recurringFrequencyEnum("frequency").notNull(),
+    dayRule: text("day_rule").notNull(),
+    startsOn: date("starts_on", { mode: "string" }).notNull(),
+    endsOn: date("ends_on", { mode: "string" }),
+    maxCount: integer("max_count"),
+    createdCount: integer("created_count").notNull().default(0),
+    dueDays: integer("due_days").notNull().default(14),
+    moneyAccountId: uuid("money_account_id").references(() => moneyAccounts.id, { onDelete: "set null" }),
+    mode: recurringBillModeEnum("mode").notNull(),
+    status: recurringStatusEnum("status").notNull().default("active"),
+    nextRunOn: date("next_run_on", { mode: "string" }),
+    totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("recurring_bills_org_idx").on(table.orgId), index("recurring_bills_next_run_idx").on(table.status, table.nextRunOn)],
+);
+
+/** A template line, the same shape as a vendor bill line; tax is worked out again on each run. */
+export const recurringBillLines = pgTable(
+  "recurring_bill_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recurringBillId: uuid("recurring_bill_id")
+      .notNull()
+      .references(() => recurringBills.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
+    type: vendorBillLineTypeEnum("type").notNull().default("item"),
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    quantity: numeric("quantity", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
+    taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
+  },
+  (table) => [index("recurring_bill_lines_schedule_idx").on(table.recurringBillId, table.sortOrder)],
 );
 
 /**

@@ -32,6 +32,7 @@ export type AuditEntityType =
   | "expense"
   | "vendor_payment"
   | "recurring_invoice"
+  | "recurring_bill"
   // US-SET-11: role and access changes; entity id is the member's user id.
   | "user"
   // US-SET-16: data exports prepared and downloaded.

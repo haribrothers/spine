@@ -33,6 +33,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   expense: "Expense",
   vendor_payment: "Vendor payment",
   recurring_invoice: "Recurring invoice",
+  recurring_bill: "Recurring bill",
   user: "User",
   data_export: "Data export",
   money_account: "Money account",

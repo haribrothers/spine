@@ -694,6 +694,13 @@
       "when": 1791310296834,
       "tag": "0098_dashboard_basis",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1791310843189,
+      "tag": "0099_recurring_bills",
+      "breakpoints": true
     }
   ]
 }

@@ -33,6 +33,7 @@ const ALL_CONTACTS = "__all__";
  */
 export function VendorBillsExplorer() {
   const canCreate = useCapability("vendor_bills.edit_own");
+  const canManageRecurring = useCapability("vendor_bills.manage_recurring");
   const [bills, setBills] = useState<VendorBill[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -142,11 +143,19 @@ export function VendorBillsExplorer() {
           />
           <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />
         </div>
-        {canCreate && (
-          <Button asChild>
-            <Link href="/vendor-bills/new">New vendor bill</Link>
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {/* US-PUR-29 — hidden without vendor_bills.manage_recurring, which every /recurring-bills route also checks. */}
+          {canManageRecurring && (
+            <Button asChild variant="secondary">
+              <Link href="/vendor-bills/recurring">Recurring bills</Link>
+            </Button>
+          )}
+          {canCreate && (
+            <Button asChild>
+              <Link href="/vendor-bills/new">New vendor bill</Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       {job.filtering && job.selectedLabel && <JobFilterNote kind="vendor bills" jobId={job.jobId} label={job.selectedLabel} canViewCosting={canViewCosting} />}

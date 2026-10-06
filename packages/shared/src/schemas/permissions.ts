@@ -86,6 +86,7 @@ export const CAPABILITIES = [
   "vendor_bills.delete_others",
   "vendor_bills.record",
   "vendor_bills.void",
+  "vendor_bills.manage_recurring",
   "vendor_credits.edit_own",
   "vendor_credits.edit_others",
   "vendor_credits.delete_own",
@@ -512,6 +513,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Reverse a recorded vendor bill's journal entry.",
     group: "Manage Vendor Bills",
   },
+  "vendor_bills.manage_recurring": {
+    label: "Manage recurring bills",
+    description: "See, set up, change, pause and delete recurring bills — schedules that create, and can record, vendor bills automatically.",
+    group: "Manage Vendor Bills",
+  },
   "vendor_credits.edit_own": {
     label: "Create/edit own vendor credits",
     description: "Create vendor credit drafts, and edit drafts this user created.",
@@ -740,6 +746,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "vendor_bills.delete_others": true,
   "vendor_bills.record": true,
   "vendor_bills.void": true,
+  "vendor_bills.manage_recurring": true,
   "vendor_credits.edit_own": true,
   "vendor_credits.edit_others": true,
   "vendor_credits.delete_own": true,

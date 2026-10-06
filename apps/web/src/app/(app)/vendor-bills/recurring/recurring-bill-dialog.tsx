@@ -1,0 +1,426 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  DatePicker,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  Label,
+  RadioGroup,
+  RadioGroupItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Spinner,
+} from "@spine/ui";
+import {
+  RECURRING_BILL_DUE_OPTIONS,
+  RECURRING_BILL_LINE_ACCOUNT,
+  RECURRING_BILL_MODE_OPTIONS,
+  RECURRING_FREQUENCY_OPTIONS,
+  RECURRING_NAME_REQUIRED,
+  RECURRING_NEEDS_LINE,
+  START_IN_PAST,
+  ENDS_BEFORE_START,
+  recurringDayOptions,
+  type RecurringBill,
+  type RecurringBillMode,
+  type RecurringFrequency,
+} from "@spine/shared";
+import { apiClient } from "../../../../lib/api-client";
+import { formatMoney } from "../../../../lib/money";
+import { ContactPicker } from "../contact-picker";
+import { blankLine, computeLinePreview, VendorBillLineEditor, type EditableVendorBillLine } from "../vendor-bill-line-editor";
+
+type Ends = "never" | "on_date" | "after_count";
+
+/** A local calendar date as `YYYY-MM-DD` (never via UTC, which can shift the day). */
+function toIsoDate(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function fromIsoDate(value: string): Date {
+  return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10)));
+}
+
+function toEditableLines(lines: RecurringBill["lines"]): EditableVendorBillLine[] {
+  return lines.map((line) => ({
+    key: line.id,
+    type: line.type,
+    catalogItemId: line.catalogItemId,
+    name: line.name,
+    description: line.description ?? "",
+    quantity: line.quantity,
+    unitPriceAmount: BigInt(line.unitPriceAmount),
+    accountId: line.accountId,
+    taxRatePercentage: line.taxRatePercentage,
+    taxRateId: line.taxRateId,
+    taxGroupId: line.taxGroupId,
+    isTaxInclusive: line.isTaxInclusive,
+  }));
+}
+
+/** What "Make recurring" on a bill starts the dialog with (US-PUR-29). */
+export interface RecurringBillPrefill {
+  contactId: string;
+  currency: string;
+  name: string;
+  lines: RecurringBill["lines"];
+}
+
+/** "Office rent × 1 · $2,400.00 + tax" */
+function linesSummary(lines: EditableVendorBillLine[], currency: string): string | null {
+  const items = lines.filter((l) => l.type === "item" && l.name.trim());
+  if (!items.length) return null;
+  const subtotal = items.reduce((sum, l) => sum + computeLinePreview(l, currency).subtotal, 0n);
+  const taxed = items.some((l) => l.taxRateId || l.taxGroupId || l.taxRatePercentage > 0);
+  return `${items.map((l) => `${l.name} × ${l.quantity}`).join(", ")} · ${formatMoney(subtotal, currency)}${taxed ? " + tax" : ""}`;
+}
+
+/**
+ * US-PUR-29 (D-159) — `RecurringBillDialog`: "New recurring bill" (and
+ * editing one, US-PUR-31): name, vendor, lines, when it repeats, when it
+ * ends, when it's due, the account it's usually paid from, and whether a
+ * run records the bill or saves it as a draft. "Make recurring" on a bill
+ * opens it with that bill's vendor and lines.
+ */
+export function RecurringBillDialog({
+  open,
+  onOpenChange,
+  schedule,
+  prefill,
+  onSaved,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** Editing this schedule; a new one when absent. */
+  schedule?: RecurringBill | null;
+  /** A new schedule started from a bill. */
+  prefill?: RecurringBillPrefill | null;
+  onSaved: (saved: RecurringBill) => void;
+}) {
+  const [name, setName] = useState("");
+  const [contactId, setContactId] = useState("");
+  const [currency, setCurrency] = useState("USD");
+  const [frequency, setFrequency] = useState<RecurringFrequency>("monthly");
+  const [dayRule, setDayRule] = useState("1");
+  const [startsOn, setStartsOn] = useState<Date | undefined>(new Date());
+  const [ends, setEnds] = useState<Ends>("never");
+  const [endsOn, setEndsOn] = useState<Date | undefined>();
+  const [maxCount, setMaxCount] = useState("12");
+  const [dueDays, setDueDays] = useState(14);
+  const [mode, setMode] = useState<RecurringBillMode>("record");
+  const [moneyAccountId, setMoneyAccountId] = useState("none");
+  const [moneyAccounts, setMoneyAccounts] = useState<{ id: string; name: string }[]>([]);
+  const [lines, setLines] = useState<EditableVendorBillLine[]>([blankLine()]);
+  const [editingLines, setEditingLines] = useState(false);
+  const [problems, setProblems] = useState<Record<string, string>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setProblems({});
+    setError(null);
+    setSaving(false);
+    if (schedule) {
+      setName(schedule.name);
+      setContactId(schedule.contactId);
+      setCurrency(schedule.currency);
+      setFrequency(schedule.frequency);
+      setDayRule(schedule.dayRule);
+      setStartsOn(fromIsoDate(schedule.startsOn));
+      setEnds(schedule.endsOn ? "on_date" : schedule.maxCount ? "after_count" : "never");
+      setEndsOn(schedule.endsOn ? fromIsoDate(schedule.endsOn) : undefined);
+      setMaxCount(String(schedule.maxCount ?? 12));
+      setDueDays(schedule.dueDays);
+      setMode(schedule.mode);
+      setMoneyAccountId(schedule.moneyAccountId ?? "none");
+      setLines(toEditableLines(schedule.lines));
+      setEditingLines(false);
+      return;
+    }
+    setName(prefill?.name ?? "");
+    setContactId(prefill?.contactId ?? "");
+    setMoneyAccountId("none");
+    setFrequency("monthly");
+    setDayRule("1");
+    setStartsOn(new Date());
+    setEnds("never");
+    setEndsOn(undefined);
+    setMaxCount("12");
+    setDueDays(14);
+    setMode("record");
+    setLines(prefill?.lines.length ? toEditableLines(prefill.lines) : [blankLine()]);
+    setEditingLines(!prefill);
+    if (prefill) setCurrency(prefill.currency);
+    else
+      apiClient
+        .get<{ value: { code?: string } | null }>("/org/settings/currency")
+        .then((res) => res.value?.code && setCurrency(res.value.code))
+        .catch(() => {});
+  }, [open, schedule, prefill]);
+
+  useEffect(() => {
+    if (!open) return;
+    apiClient
+      .get<{ id: string; name: string; archivedAt: string | null }[]>("/money-accounts")
+      .then((rows) => setMoneyAccounts(rows.filter((r) => !r.archivedAt)))
+      .catch(() => {});
+  }, [open]);
+
+  const dayOptions = useMemo(() => recurringDayOptions(frequency), [frequency]);
+  const summary = linesSummary(lines, currency);
+
+  function changeFrequency(next: RecurringFrequency) {
+    setFrequency(next);
+    // Weekdays and days of the month don't carry over; start each on the 1st / Monday.
+    if ((next === "weekly") !== (frequency === "weekly")) setDayRule("1");
+  }
+
+  async function handleSave() {
+    setError(null);
+    const found: Record<string, string> = {};
+    const today = toIsoDate(new Date());
+    const starts = startsOn ? toIsoDate(startsOn) : "";
+    if (!name.trim()) found.name = RECURRING_NAME_REQUIRED;
+    if (!contactId) found.contact = "Pick a vendor.";
+    if (!starts) found.starts = "Pick a start date.";
+    else if (starts < today && starts !== schedule?.startsOn) found.starts = START_IN_PAST;
+    if (ends === "on_date" && (!endsOn || toIsoDate(endsOn) < starts)) found.ends = endsOn ? ENDS_BEFORE_START : "Pick an end date.";
+    if (ends === "after_count" && !(Number(maxCount) >= 1)) found.ends = "End after at least 1 bill.";
+    if (!lines.some((l) => l.type === "item" && l.name.trim())) found.lines = RECURRING_NEEDS_LINE;
+    else if (lines.some((l) => l.type === "item" && l.name.trim() && !l.accountId)) found.lines = RECURRING_BILL_LINE_ACCOUNT;
+    setProblems(found);
+    if (Object.keys(found).length) {
+      if (found.lines) setEditingLines(true);
+      return;
+    }
+
+    const payload = {
+      name: name.trim(),
+      contactId,
+      currency,
+      frequency,
+      dayRule,
+      startsOn: starts,
+      endsOn: ends === "on_date" && endsOn ? toIsoDate(endsOn) : null,
+      maxCount: ends === "after_count" ? Number(maxCount) : null,
+      dueDays,
+      mode,
+      moneyAccountId: moneyAccountId === "none" ? null : moneyAccountId,
+      lines: lines
+        .filter((l) => l.name.trim())
+        .map((l) => ({
+          type: l.type,
+          catalogItemId: l.catalogItemId,
+          name: l.name,
+          description: l.description || null,
+          quantity: l.quantity,
+          unitPriceAmount: l.unitPriceAmount.toString(),
+          accountId: l.accountId,
+          taxRatePercentage: l.taxRatePercentage,
+          taxRateId: l.taxRateId,
+          taxGroupId: l.taxGroupId,
+          isTaxInclusive: l.isTaxInclusive,
+        })),
+    };
+    setSaving(true);
+    try {
+      const saved = schedule
+        ? await apiClient.put<RecurringBill>(`/recurring-bills/${schedule.id}`, payload)
+        : await apiClient.post<RecurringBill>("/recurring-bills", payload);
+      onSaved(saved);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save the schedule. Try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={editingLines ? "max-w-5xl" : "max-w-2xl"}>
+        <DialogHeader>
+          <DialogTitle>{schedule ? "Edit recurring bill" : "New recurring bill"}</DialogTitle>
+          <DialogDescription>
+            {schedule
+              ? "Changes apply to bills it creates from now on. Bills it already created stay as they are."
+              : "Spine enters this bill for you on schedule — rent, subscriptions and retainers. You can pause or stop it at any time."}
+          </DialogDescription>
+        </DialogHeader>
+        <DialogBody className="flex flex-col gap-4">
+          {error && (
+            <Alert variant="critical">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <FormField label="Name" errorText={problems.name}>
+              {(field) => <Input {...field} value={name} onChange={(e) => setName(e.target.value)} placeholder="Office rent" />}
+            </FormField>
+            <FormField label="Vendor" errorText={problems.contact}>
+              {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
+            </FormField>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <FormField label="Repeat">
+              {(field) => (
+                <Select value={frequency} onValueChange={(v) => changeFrequency(v as RecurringFrequency)}>
+                  <SelectTrigger {...field}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {RECURRING_FREQUENCY_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="On">
+              {(field) => (
+                <Select value={dayRule} onValueChange={setDayRule}>
+                  <SelectTrigger {...field}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {dayOptions.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>
+                        {o.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </FormField>
+            <FormField label="Starts on" errorText={problems.starts}>
+              {() => <DatePicker value={startsOn} onChange={setStartsOn} />}
+            </FormField>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <FormField label="Ends" errorText={ends === "never" ? undefined : problems.ends}>
+                {(field) => (
+                  <Select value={ends} onValueChange={(v) => setEnds(v as Ends)}>
+                    <SelectTrigger {...field}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="never">Never</SelectItem>
+                      <SelectItem value="on_date">On a date</SelectItem>
+                      <SelectItem value="after_count">After a number of bills</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+              {ends === "on_date" && <FormField label="End date">{() => <DatePicker value={endsOn} onChange={setEndsOn} />}</FormField>}
+              {ends === "after_count" && (
+                <FormField label="Number of bills">
+                  {(field) => <Input {...field} type="number" min={1} value={maxCount} onChange={(e) => setMaxCount(e.target.value)} />}
+                </FormField>
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <FormField label="Due">
+                {(field) => (
+                  <Select value={String(dueDays)} onValueChange={(v) => setDueDays(Number(v))}>
+                    <SelectTrigger {...field}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RECURRING_BILL_DUE_OPTIONS.map((o) => (
+                        <SelectItem key={o.value} value={String(o.value)}>
+                          {o.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+              <FormField label="Paid from" helperText="For reference — paying the bill is still up to you.">
+                {(field) => (
+                  <Select value={moneyAccountId} onValueChange={setMoneyAccountId}>
+                    <SelectTrigger {...field}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Not set</SelectItem>
+                      {moneyAccounts.map((a) => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+            </div>
+          </div>
+
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-2 text-[13px] font-semibold text-on-surface">When it runs</legend>
+            <RadioGroup value={mode} onValueChange={(v) => setMode(v as RecurringBillMode)} aria-label="When it runs">
+              {RECURRING_BILL_MODE_OPTIONS.map((o) => (
+                <div key={o.value} className="flex items-center gap-2">
+                  <RadioGroupItem id={`mode-${o.value}`} value={o.value} />
+                  <Label htmlFor={`mode-${o.value}`} className="text-[14px] font-normal text-on-surface">
+                    {o.label}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </fieldset>
+
+          {editingLines ? (
+            <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[13px] font-semibold text-on-surface">Lines</h3>
+                {summary && (
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setEditingLines(false)}>
+                    Done
+                  </Button>
+                )}
+              </div>
+              <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} />
+              {problems.lines && <p className="text-[13px] text-overdue">{problems.lines}</p>}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3 rounded-md border border-border px-4 py-3">
+              <span className="text-[14px] text-on-surface">Lines: {summary}</span>
+              <button
+                type="button"
+                onClick={() => setEditingLines(true)}
+                className="shrink-0 rounded-sm text-[14px] font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                Edit lines
+              </button>
+            </div>
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : "Save schedule"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}

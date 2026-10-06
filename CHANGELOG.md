@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-29: set up a recurring bill (Phase 8)
+
+- **Vendor Bills › "Recurring bills"** (`/vendor-bills/recurring`) lists each schedule's name, vendor, how it repeats, next bill date, amount, status (Active, Paused, Finished) and what a run does. "+ New recurring bill" opens `RecurringBillDialog`: Name, Vendor, lines (each with its expense account), Repeat (weekly, monthly, every 3 months, yearly) and the day, Starts on, Ends (never, on a date, after a number of bills), Due (days after the bill date), Paid from (for reference) and When it runs — "Record the bill" or "Save as a draft for me to check" ([D-159](docs/prd/12-decisions.md)).
+- **"Make recurring"** on a bill opens the dialog with that bill's vendor and lines.
+- New Team privilege **"Manage recurring bills"** (`vendor_bills.manage_recurring`, Manage Vendor Bills group), given to every Team that can already create bills.
+- The bills themselves are created by US-PUR-30; pausing and deleting arrive with US-PUR-31.
+- API: `GET/POST /recurring-bills`, `GET/PUT/DELETE /recurring-bills/:id`; tables `recurring_bills`, `recurring_bill_lines` (migration 0099).
+
 ### 2026-10-06 — US-DASH-26: switch dashboard profit between accrual and cash (Phase 8)
 
 - **Dashboard › "Accrual | Cash"** (beside Edit layout, for members who see profit). On Cash, "Profit this month" — its figure, comparison and sparkline — is worked out on the cash basis (D-138, D-178) and says "cash basis" under the figure.

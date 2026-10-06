@@ -48,6 +48,8 @@ export const EXPORT_TABLES: ExportTable[] = [
   t(schema.invoiceReminders, "Payment reminders sent for invoices."),
   t(schema.recurringInvoices, "Recurring invoice schedules."),
   t(schema.recurringInvoiceLines, "Recurring invoice lines.", { column: "recurringInvoiceId", parent: schema.recurringInvoices }),
+  t(schema.recurringBills, "Recurring bill schedules."),
+  t(schema.recurringBillLines, "Recurring bill lines.", { column: "recurringBillId", parent: schema.recurringBills }),
   t(schema.creditNotes, "Credit notes."),
   t(schema.creditNoteLines, "Credit note lines.", { column: "creditNoteId", parent: schema.creditNotes }),
   t(schema.payments, "Payments received."),
