@@ -19,6 +19,7 @@ import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /** US-INV-17 — opened in a new tab: the route streams a PDF, not JSON. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -121,6 +122,11 @@ export function CreditNoteDetailDrawer({
                   View source invoice ({creditNote.invoiceNumber})
                 </a>
               )}
+            </div>
+          )}
+          {creditNote && (
+            <div className="mt-5">
+              <AttachmentsSection entityType="credit_note" entityId={creditNote.id} />
             </div>
           )}
         </DrawerBody>

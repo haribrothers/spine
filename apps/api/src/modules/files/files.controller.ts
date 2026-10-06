@@ -10,6 +10,7 @@ import {
   Res,
   UnauthorizedException,
   UploadedFile,
+  UseFilters,
   UseInterceptors,
 } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
@@ -22,6 +23,7 @@ import { filesDamagedMessage } from "./file-integrity.worker";
 import { verifyFileLink } from "./file-link";
 import { FilesService, contentDisposition } from "./files.service";
 import type { ByteRange } from "./storage/storage-driver";
+import { UploadSizeFilter } from "./upload-size.filter";
 
 /** Matches CLAUDE.md's field-role-read-only precedent, same as Contacts. */
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB — generous for a logo/avatar or a document attachment.
@@ -80,6 +82,7 @@ export class FilesController {
    */
   @Post()
   @OrgRoles(["owner", "staff", "field"])
+  @UseFilters(UploadSizeFilter)
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_UPLOAD_BYTES } }), IdempotencyInterceptor)
   @ApiConsumes("multipart/form-data")
   @ApiBody({ schema: { type: "object", properties: { file: { type: "string", format: "binary" } } } })
@@ -130,6 +133,7 @@ export class FilesController {
     @Param("id") id: string,
     @Query("exp") exp: string | undefined,
     @Query("sig") sig: string | undefined,
+    @Query("download") downloadParam: string | undefined,
     @Headers("range") rangeHeader: string | undefined,
     @Headers("if-none-match") ifNoneMatch: string | undefined,
     @Res() res: Response,
@@ -149,6 +153,7 @@ export class FilesController {
     }
 
     // US-OPS-29: browsers must never guess a different type from the bytes.
+    const asDownload = downloadParam === "1";
     res.setHeader("X-Content-Type-Options", "nosniff");
     const etag = `"${file.id}"`;
     res.setHeader("ETag", etag);
@@ -165,14 +170,14 @@ export class FilesController {
       return;
     }
 
-    const download = await this.filesService.download(file, range ?? undefined);
+    const download = await this.filesService.download(file, range ?? undefined, asDownload);
     if (download.kind === "redirect") {
       res.redirect(302, download.url);
       return;
     }
 
     res.setHeader("Content-Type", file.mimeType);
-    res.setHeader("Content-Disposition", contentDisposition(file));
+    res.setHeader("Content-Disposition", contentDisposition(file, asDownload));
     res.setHeader("Accept-Ranges", "bytes");
     if (range) {
       res.status(206);

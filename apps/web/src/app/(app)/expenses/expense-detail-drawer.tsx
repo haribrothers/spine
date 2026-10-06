@@ -33,6 +33,7 @@ import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -282,6 +283,11 @@ export function ExpenseDetailDrawer({
                     <p className="text-[13px] text-on-surface">{expense.reviewComment}</p>
                   </div>
                 )}
+              </div>
+            )}
+            {expense && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="expense" entityId={expense.id} />
               </div>
             )}
           </DrawerBody>

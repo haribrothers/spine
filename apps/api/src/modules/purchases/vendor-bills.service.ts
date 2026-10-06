@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { attachmentCounts } from "../attachments/attachments.service";
 
 export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
 export type UpdateVendorBillInput = z.infer<typeof updateVendorBillSchema>;
@@ -194,7 +195,9 @@ export class VendorBillsService {
       result = result.filter((b) => b.status === options.status);
     }
 
-    return result;
+    // US-OPS-33: the paperclip on the list.
+    const counts = await attachmentCounts(this.db, orgId, "vendor_bill", result.map((b) => b.id));
+    return result.map((b) => ({ ...b, attachmentCount: counts.get(b.id) ?? 0 }));
   }
 
   async getOne(orgId: string, id: string) {

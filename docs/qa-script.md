@@ -2945,6 +2945,20 @@ Regression: adding, editing and moving the default still work; "Archived account
 
 Regression: the rest of the privilege matrix still saves one switch at a time and by group; "Everything in <group>" switches still set the whole group.
 
+## 108. Attachments on records (US-OPS-33, Phase 8)
+
+1. Vendor Bills › "New bill": below the lines there's "Attachments" with a drop zone reading "Drop files here or add files · PDF, JPEG, PNG, WebP or HEIC, up to 10 MB each, 10 per record". Drop a PDF: it's listed with "added when you save". Save: the bill opens with the PDF attached, "added by <you> · <date>".
+2. On the bill, "Add files" › choose a photo: it's listed with a thumbnail, name, size, who added it and when. PDFs show a "PDF" badge. Click the name: it opens in the browser. "Download" saves it.
+3. Add a .txt file: "This file type isn't supported. Upload a photo or a PDF.". Add a file over 10 MB: "This file is over 10 MB. Upload a smaller copy, or split the PDF.".
+4. Add files until there are 10, then one more: "A record can hold up to 10 files. Remove one first." and "Add files" is disabled.
+5. The same section appears on a quote, an invoice, a credit note (drawer), a payment (drawer), a vendor payment (drawer), an expense (drawer) and a contact (Attachments tab). In Banking, a money in/out row's menu › "Attachments" opens a drawer with the section.
+6. Vendor Bills and Expenses lists show a paperclip with the count next to records with files; a screen reader reads "2 attachments".
+7. The record's History reads "<you> attached <file name>".
+8. As Staff who can read but not edit bills, the section shows the files but no "Add files" or drop zone; with no files the section is hidden.
+9. Light and dark mode: the drop zone, badges and any error message are readable (axe passes).
+
+Regression: the expense receipt (separate from attachments) still uploads and opens; contact logos and avatars still upload. Error messages in alerts everywhere now use full-contrast text.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

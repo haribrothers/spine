@@ -67,8 +67,9 @@ export const DAMAGED_FILE_MESSAGE = "This file is damaged. Restore it from your 
  * anything else (only files stored before type checks existed, such as an
  * SVG that could carry script) downloads instead of rendering.
  */
-export function contentDisposition(file: Pick<FileRow, "mimeType" | "originalFilename">): string {
-  const inline = INLINE_TYPES.has(file.mimeType);
+/** `download` (US-OPS-34, `?download=1`) saves the file instead of showing it. */
+export function contentDisposition(file: Pick<FileRow, "mimeType" | "originalFilename">, download = false): string {
+  const inline = !download && INLINE_TYPES.has(file.mimeType);
   const name = file.originalFilename.replace(/[\r\n"\\]/g, "_");
   const ascii = name.replace(/[^\x20-\x7e]/g, "_");
   const encoded = encodeURIComponent(name).replace(/['()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
@@ -375,13 +376,13 @@ export class FilesService {
    * read — the weekly check verifies them — but one already flagged is
    * refused the same way.
    */
-  async download(file: FileRow, range?: ByteRange): Promise<FileDownload> {
+  async download(file: FileRow, range?: ByteRange, asDownload = false): Promise<FileDownload> {
     const driver = this.readerFor(file);
     if (driver.presignedUrl) {
       if (file.integrityProblem) throw new ConflictException(DAMAGED_FILE_MESSAGE);
       const url = await driver.presignedUrl(file.key, MAX_FILE_LINK_SECONDS, {
         contentType: file.mimeType,
-        contentDisposition: contentDisposition(file),
+        contentDisposition: contentDisposition(file, asDownload),
       });
       return { kind: "redirect", file, url };
     }

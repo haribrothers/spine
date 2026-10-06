@@ -19,6 +19,12 @@ import {
   Button,
   DataTable,
   DatePicker,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerDescription,
+  DrawerHeader,
+  DrawerTitle,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -40,6 +46,7 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
 import { useEntityToast } from "./entity-toast";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 const TABLE_COLUMNS = [
   { key: "date", header: "Date", width: "w-24" },
@@ -88,6 +95,7 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [deleting, setDeleting] = useState<AccountRegisterRow | null>(null);
+  const [filesFor, setFilesFor] = useState<AccountRegisterRow | null>(null);
   const [busy, setBusy] = useState(false);
   const canRecord = useCapability("banking.record");
   const { show: showToast, toast } = useEntityToast();
@@ -172,28 +180,30 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       header: "Status",
       render: (row) => (row.reconciled ? <StatusChip status="paid">Reconciled</StatusChip> : <StatusChip status="due-soon">Not reconciled</StatusChip>),
     },
-    ...(canRecord
-      ? [
-          {
-            key: "actions",
-            header: "Actions",
-            align: "right" as const,
-            render: (row: AccountRegisterRow) =>
-              DELETABLE.has(row.sourceType) && !row.deleted && !row.reconciled ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label={`Actions for ${row.what}`}>
-                      <MoreHorizontal size={16} />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setDeleting(row)}>{row.sourceType === "bank_transfer" ? "Delete transfer" : "Delete entry"}</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null,
-          },
-        ]
-      : []),
+    {
+      key: "actions",
+      header: "Actions",
+      align: "right" as const,
+      render: (row: AccountRegisterRow) => {
+        const canDelete = canRecord && DELETABLE.has(row.sourceType) && !row.deleted && !row.reconciled;
+        // US-OPS-33: a bank entry has no page of its own, so its files open from here.
+        const hasFiles = row.sourceType === "bank_transaction";
+        if (!canDelete && !hasFiles) return null;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label={`Actions for ${row.what}`}>
+                <MoreHorizontal size={16} />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {hasFiles && <DropdownMenuItem onSelect={() => setFilesFor(row)}>Attachments</DropdownMenuItem>}
+              {canDelete && <DropdownMenuItem onSelect={() => setDeleting(row)}>{row.sourceType === "bank_transfer" ? "Delete transfer" : "Delete entry"}</DropdownMenuItem>}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
   ];
 
   const subtitle = account
@@ -280,6 +290,15 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Drawer open={filesFor !== null} onOpenChange={(open) => !open && setFilesFor(null)}>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>{filesFor?.what}</DrawerTitle>
+            <DrawerDescription>{filesFor ? `${formatDay(filesFor.date)} · ${money(filesFor.in !== "0" ? filesFor.in : filesFor.out)}` : null}</DrawerDescription>
+          </DrawerHeader>
+          <DrawerBody>{filesFor && <AttachmentsSection entityType="bank_transaction" entityId={filesFor.sourceId} />}</DrawerBody>
+        </DrawerContent>
+      </Drawer>
       {toast}
     </>
   );

@@ -30,6 +30,7 @@ import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * `GET /payments/:id/pdf` streams a binary PDF, not JSON — same reasoning
@@ -199,6 +200,11 @@ export function PaymentDetailDrawer({
                     <p className="text-[13px] text-on-surface">{payment.notes}</p>
                   </div>
                 )}
+              </div>
+            )}
+            {payment && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="payment" entityId={payment.id} />
               </div>
             )}
           </DrawerBody>

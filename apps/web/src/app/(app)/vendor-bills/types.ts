@@ -25,6 +25,8 @@ export interface VendorBillLine {
 
 export interface VendorBill {
   id: string;
+  /** US-OPS-33 — live attachments, on list rows. */
+  attachmentCount?: number;
   orgId: string;
   contactId: string;
   contactName: string | null;

@@ -32,6 +32,7 @@ import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
@@ -402,6 +403,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
       <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
+      <AttachmentsSection entityType="invoice" entityId={invoice.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />

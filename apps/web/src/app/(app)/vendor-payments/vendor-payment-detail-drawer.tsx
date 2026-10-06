@@ -28,6 +28,7 @@ import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * Read-only detail Drawer — a vendor payment has no draft/edit lifecycle
@@ -148,6 +149,11 @@ export function VendorPaymentDetailDrawer({
                     <p className="text-[13px] text-on-surface">{payment.notes}</p>
                   </div>
                 )}
+              </div>
+            )}
+            {payment && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="vendor_payment" entityId={payment.id} />
               </div>
             )}
           </DrawerBody>

@@ -140,6 +140,12 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
     return `${actor} sent a statement${to ? ` to ${String(to)}` : ""}`;
   }
 
+  // US-OPS-33: "Sarah Mendes attached coastal-timber-88213.pdf".
+  if (entry.action === "attachment_added") {
+    const name = changes.find((c) => c.field === "attachment")?.to;
+    return `${actor} attached ${name ? String(name) : "a file"}${own ? "" : ` to ${subject}`}`;
+  }
+
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".
   if (entry.action === "duplicated") {
     const from = changes.find((c) => c.field === "duplicatedFrom")?.to;

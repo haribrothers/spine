@@ -5,6 +5,7 @@ import Link from "next/link";
 import { VendorBillRowActions } from "./vendor-bill-row-actions";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentCount } from "../../../components/attachments-section";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -39,9 +40,12 @@ export function VendorBillsTable({
       key: "billNumber",
       header: "Bill number",
       render: (row) => (
-        <Link href={`/vendor-bills/${row.id}`} className="flex items-center gap-1.5 font-medium text-on-surface hover:text-primary hover:underline">
-          {row.billNumber}
-        </Link>
+        <span className="flex items-center gap-2">
+          <Link href={`/vendor-bills/${row.id}`} className="flex items-center gap-1.5 font-medium text-on-surface hover:text-primary hover:underline">
+            {row.billNumber}
+          </Link>
+          <AttachmentCount count={row.attachmentCount} />
+        </span>
       ),
       sortValue: (row) => row.billNumber,
     },

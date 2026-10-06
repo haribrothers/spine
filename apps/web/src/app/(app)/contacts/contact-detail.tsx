@@ -44,6 +44,7 @@ import { HistorySection } from "../../../components/history-section";
 import { TimelineSection } from "./timeline-section";
 import { useEntityToast } from "./entity-toast";
 import { StatementDialog } from "./statement-dialog";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 const TYPE_LABELS: Record<Contact["type"], string> = {
   customer: "Customer",
@@ -440,6 +441,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
           <TabsTrigger value="leads">Leads</TabsTrigger>
           <TabsTrigger value="activities">Activities</TabsTrigger>
+          <TabsTrigger value="attachments">Attachments</TabsTrigger>
         </TabsList>
 
         <TabsContent value="timeline">
@@ -474,6 +476,9 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             onChanged={reloadActivities}
             onCreated={() => showToast("Activity logged", "The activity has been saved.")}
           />
+        </TabsContent>
+        <TabsContent value="attachments">
+          <AttachmentsSection entityType="contact" entityId={contactId} />
         </TabsContent>
       </Tabs>
 

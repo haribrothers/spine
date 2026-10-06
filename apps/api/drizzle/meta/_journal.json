@@ -568,6 +568,13 @@
       "when": 1791266661073,
       "tag": "0080_bank_transactions",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791269239952,
+      "tag": "0081_attachments",
+      "breakpoints": true
     }
   ]
 }

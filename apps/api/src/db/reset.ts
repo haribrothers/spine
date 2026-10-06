@@ -41,6 +41,7 @@ const TABLES = [
   "payments",
   "invoice_lines",
   "invoices",
+  "attachments",
   "bank_transactions",
   "bank_transfers",
   "money_accounts",

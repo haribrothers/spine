@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-OPS-33: attach files to bills, invoices and other records (Phase 8)
+
+- **Attachments** (D-156): an "Attachments" section with "Add files" and a drop zone on quotes, invoices, credit notes, payments, vendor bills, vendor payments, expenses and contacts (Attachments tab); a money in/out entry's register menu › "Attachments" opens it in a drawer. Each file shows its name, size, who added it and when, a thumbnail for images and a badge for PDFs, and opens in the browser or downloads. Refunds, vendor credits, journals and opening documents get the section when those stories ship.
+- **New bill**: files dropped on the "New bill" form upload straight away and are attached when the bill is saved.
+- **Limits**: 10 files a record ("A record can hold up to 10 files. Remove one first."), 10 MB each (`POST /files` now says "This file is over 10 MB. Upload a smaller copy, or split the PDF." instead of "File too large"), and the five types US-OPS-29 accepts.
+- **Rules**: adding needs the record's edit right (Field: their own expenses); reading follows the record's read rule, and anyone else gets a 404. Only a file you uploaded can be attached, and to one record.
+- **Lists**: Vendor Bills and Expenses show a paperclip with the count ("2 attachments" to screen readers).
+- **History**: "<name> attached <file>" on the record.
+- **Download**: `GET /files/:id?download=1` saves the file instead of showing it.
+- **Accessibility fix in `@spine/ui`**: `AlertDescription` is now full-contrast `on-surface`. Its muted text measured 4.37:1 on the critical tint, caught by this story's axe check, so every error alert in the app was slightly below AA.
+- **Migration 0081**: `attachments` and the `attachment_entity` enum.
+- **API.** `GET /attachments`, `POST /attachments`; `attachmentCount` on `GET /vendor-bills` and `GET /expenses`.
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-33.http.integration.test.ts` (6): adding and listing with name, size and creator, audited; the 11th refused; type and size messages; only your own upload, attached once; edit right to add, read right to list, Field on their own expense, 404 for other records and types; list counts.
+- `packages/shared/src/us-ops-33.test.ts` (2): the history sentence; file sizes.
+- `packages/ui/src/components/us-ops-33.contrast.test.ts` (10): alert text on every tint in both modes.
+- `apps/e2e/tests/us-ops-33.spec.ts` (1): a PDF dropped on a new bill and attached on save, a photo with a thumbnail, the type message, axe, and the paperclip on the list.
+
 ### 2026-10-06 — US-BANK-12: let a Team see balances, record money and reconcile (Phase 8)
 
 - **Privilege matrix › Banking**: "View bank balances and registers" (`banking.view`), "Record transfers and other money in or out" (`banking.record`) and "Reconcile accounts" (`banking.reconcile`), off for General Staff (migration 0077 added them to every Team, off).

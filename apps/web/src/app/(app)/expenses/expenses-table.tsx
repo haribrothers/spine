@@ -5,6 +5,7 @@ import type { MemberRow } from "../../../lib/members";
 import { ExpenseRowActions } from "./expense-row-actions";
 import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentCount } from "../../../components/attachments-section";
 
 const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
   submitted: "bg-draft-bg text-draft",
@@ -74,7 +75,12 @@ export function ExpensesTable({
     {
       key: "category",
       header: "Category",
-      render: (row) => row.categoryName ?? "—",
+      render: (row) => (
+        <span className="flex items-center gap-2">
+          {row.categoryName ?? "—"}
+          <AttachmentCount count={row.attachmentCount} />
+        </span>
+      ),
       sortValue: (row) => row.categoryName ?? "",
     },
     {

@@ -32,6 +32,7 @@ import { SaveBundleDialog } from "./save-bundle-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * Body shape of the 409 QuoteConversionGuardService throws when the org's
@@ -520,6 +521,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           <TotalRow label="Total" value={quote.totalAmount} currency={quote.currency} emphasize />
         </div>
       </Card>
+
+      <AttachmentsSection entityType="quote" entityId={quote.id} />
 
       {(quote.notes || quote.termsAndConditions) && (
         <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2">

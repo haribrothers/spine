@@ -63,6 +63,10 @@ export function AlertTitle({ className, ...props }: React.HTMLAttributes<HTMLPar
   return <p className={cn("font-semibold text-on-surface", className)} {...props} />;
 }
 
+/**
+ * Full-contrast text: muted text on the alert tints fell below 4.5:1 (4.37:1
+ * on the critical tint in light mode, caught by US-OPS-33's axe check).
+ */
 export function AlertDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-on-surface-muted", className)} {...props} />;
+  return <p className={cn("text-on-surface", className)} {...props} />;
 }

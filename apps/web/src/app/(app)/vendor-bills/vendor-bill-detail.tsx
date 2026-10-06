@@ -27,6 +27,7 @@ import { useEntityToast } from "./entity-toast";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -239,6 +240,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
       </Card>
 
       <VendorPaymentsSection billId={bill.id} refreshKey={paymentsRefreshKey} />
+      <AttachmentsSection entityType="vendor_bill" entityId={bill.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={bill.subtotalAmount} currency={bill.currency} />

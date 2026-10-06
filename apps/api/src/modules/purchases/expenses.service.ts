@@ -17,6 +17,7 @@ import { InvoicesService } from "../invoices/invoices.service";
 import { orgLocale } from "../../common/money-format";
 import { formatMoney } from "@spine/shared";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { attachmentCounts } from "../attachments/attachments.service";
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
@@ -63,13 +64,15 @@ export class ExpensesService {
     if (options.jobId) conditions.push(eq(expenses.jobId, options.jobId));
     if (options.submittedByUserId) conditions.push(eq(expenses.submittedByUserId, options.submittedByUserId));
 
-    return this.db
+    const rows = await this.db
       .select({ expense: expenses, categoryName: expenseCategories.name })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
       .where(and(...conditions))
-      .orderBy(desc(expenses.createdAt))
-      .then((rows) => rows.map((r) => ({ ...r.expense, categoryName: r.categoryName })));
+      .orderBy(desc(expenses.createdAt));
+    // US-OPS-33: the paperclip on the list.
+    const counts = await attachmentCounts(this.db, orgId, "expense", rows.map((r) => r.expense.id));
+    return rows.map((r) => ({ ...r.expense, categoryName: r.categoryName, attachmentCount: counts.get(r.expense.id) ?? 0 }));
   }
 
   /**
