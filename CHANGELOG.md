@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PAY-18: let a Team refund customers (Phase 8)
+
+- **"Refund customers"** (`payments.refund`) in the privilege matrix's "Manage Payments" group, off for General Staff and every existing Team (migration 0084, US-PAY-17). Without it, "Refund" is hidden on payments, credit notes and contacts, and `POST`/`DELETE /customer-refunds` return 403; Field always gets 403.
+
+Tests:
+- `packages/shared/src/us-pay-18.test.ts` (1): the label, group and General Staff default.
+- `apps/api/src/modules/payments/us-pay-18.http.integration.test.ts` (1): off for General Staff (403), granted (201), Field 403 either way.
+- `apps/e2e/tests/us-pay-18.spec.ts` (1): the matrix switch off; the Owner sees "Refund", a General Staff member doesn't.
+
 ### 2026-10-06 — US-PAY-17: refund a customer (Phase 8)
 
 - **"Refund"** on a payment with unallocated credit, a credit note with credit left (US-PAY-16), and a contact holding credit. `CustomerRefundDialog` asks for "Refund from", "Amount" (up to the credit), "Date", "Paid from" (money account, last used preselected), "Method", "Reference" and "Send refund confirmation". The toast reads "Refunded <amount> to <customer>".

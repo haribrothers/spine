@@ -3008,6 +3008,14 @@ Regression: a credit note within the balance still reduces only what's owed; Pay
 
 Regression: recording, applying and deleting payments without refunds behave as before.
 
+## 113. Refund right for a Team (US-PAY-18, Phase 8)
+
+1. Team › Teams › General Staff › Privileges › "Manage Payments": "Refund customers" is listed and off.
+2. As a General Staff member, open a payment with unallocated credit: "Apply credit" is there but "Refund" isn't; a contact holding credit shows no "Refund" either. `POST /customer-refunds` returns 403.
+3. Turn "Refund customers" on: "Refund" appears and works. A Field user still gets 403.
+
+Regression: the other "Manage Payments" switches and the group switch still save.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
