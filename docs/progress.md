@@ -366,7 +366,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-RPT-19 · Check and lock my opening balances
 - [x] US-RPT-20 · Post an adjusting journal
 - [x] US-RPT-21 · Reverse a journal posted by mistake
-- [ ] US-RPT-22 · See every manual journal
+- [x] US-RPT-22 · See every manual journal
 - [ ] US-RPT-23 · Find every report in one place
 - [ ] US-RPT-24 · See the general ledger
 - [ ] US-RPT-25 · See the day book

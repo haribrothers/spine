@@ -3265,6 +3265,15 @@ Regression: reports, registers and other numbering types are unchanged.
 
 Regression: posting journals (§132) is unchanged.
 
+## 134. The journals list (US-RPT-22, Phase 8)
+
+1. Reports › Journals with none: "No journals yet. Most businesses only need one for year-end adjustments."
+2. After posting and reversing some: the cards read Total journals, Posted, Reversed and "Posted this year" (since the start of the financial year). The list shows number, date, reason, status, total and who posted it, newest first. Search, the Status filter and the From/To dates narrow it.
+3. Footer: "Members with "View ledger / journals" can read journals; only owners post or reverse them."
+4. As Staff without "View ledger / journals": no "Journals" in the sidebar, /journals shows the no-access page, and the API returns 403. Grant it: "Journals" appears, the list and a journal open, and there's no "New journal", "Reverse" or "Copy to new journal". Field gets 403.
+
+Regression: Reports (the tab page) is unchanged and still shown to Staff with any report right.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

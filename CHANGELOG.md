@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-22: see every manual journal (Phase 8)
+
+- **Reports › Journals:**
+  - The cards show Total journals, Posted, Reversed, and "Posted this year" (since the start of the financial year).
+  - Filters for status (All, Posted, Reversed) and dates, plus a search.
+  - Each journal shows number, date, reason, status ("Posted" or "Reversed"), total and who posted it, newest first.
+  - With none: "No journals yet. Most businesses only need one for year-end adjustments."
+  - The footer note reads "Members with "View ledger / journals" can read journals; only owners post or reverse them."
+- **Read access.** A member with `ledger.view` gets "Journals" in the sidebar and can read the list and each journal, with no "New journal", "Reverse" or "Copy to new journal". Without it, Journals isn't in the sidebar, the page shows no access, and the API returns 403. Field always gets 403.
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-22.http.integration.test.ts` (3): newest first with every field; a `ledger.view` member reads but can't post; Staff without it and Field get 403.
+- `apps/e2e/tests/us-rpt-22.spec.ts` (2):
+  - Owner: the empty state, then the cards, order and status filter.
+  - A Staff member gets Journals only once granted, reads the list and a journal, and sees no New journal, Reverse or Copy.
+
 ### 2026-10-06 — US-RPT-21: reverse a journal posted by mistake (Phase 8)
 
 - **"Reverse"** on a posted journal (Owner only) opens "Reverse JNL-000n" ("A reversing entry mirrors every line. The journal stays in the history as Reversed."), with "Reversal date" (today) and "Reason" (required). "Reverse journal" posts the mirror entry on that date. The journal then reads "Reversed", gains a "Reversal" card ("Reversed on <date> by <name>" and the reason), and "Reverse" goes.
