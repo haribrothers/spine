@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
-import { brandingSchema, businessProfileSchema, invoiceRemindersSchema } from "@spine/shared";
+import { brandingSchema, businessProfileSchema, invoiceRemindersSchema, taxProfileSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
@@ -54,6 +54,11 @@ export class SettingsController {
       // US-INV-18: the schedule the reminder job follows.
       const parsed = invoiceRemindersSchema.safeParse(value);
       if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the reminder settings and try again.");
+    }
+    if (key === "tax_profile") {
+      // US-DASH-25: the return period the dashboard's tax card follows.
+      const parsed = taxProfileSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the tax settings and try again.");
     }
     if (key === "branding") {
       // US-SET-09: only the listed theme presets.

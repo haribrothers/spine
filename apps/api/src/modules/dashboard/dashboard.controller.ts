@@ -1,11 +1,14 @@
 import { BadRequestException, Controller, Get, Inject, Post, Query, UseInterceptors } from "@nestjs/common";
-import { sharePercent, TOP_EXPENSE_PERIODS, type TopExpensePeriod, type TopExpenses } from "@spine/shared";
+import { periodLabel, sharePercent, TOP_EXPENSE_PERIODS, type ReturnPeriod, type TaxPeriod, type TopExpensePeriod, type TopExpenses } from "@spine/shared";
 import { orgClock } from "../../common/org-clock";
 import { AnalysisReportsService } from "../reports/analysis-reports.service";
+import { ReportsService } from "../reports/reports.service";
 import { SettingsService } from "../org/settings.service";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { getMemberRole } from "../../auth/capability.util";
 import type { Database } from "../../db/client";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { taxPayments } from "../../db/schema";
 import { DATABASE } from "../../db/db.module";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -29,8 +32,52 @@ export class DashboardController {
     private readonly kpis: KpiService,
     private readonly analysis: AnalysisReportsService,
     private readonly settings: SettingsService,
+    private readonly reports: ReportsService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
+
+  /**
+   * US-DASH-25 (D-160) — tax for the current month or quarter (Settings ›
+   * Tax › "Return period"): collected, input tax and net payable as the
+   * Tax Summary works them out, and what's been paid for the period.
+   */
+  @Get("tax-period")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_financial_statements")
+  async taxPeriod(@Session() session: UserSession): Promise<TaxPeriod> {
+    const orgId = requireOrgId(session);
+    const returnPeriod: ReturnPeriod = (await this.settings.get<{ returnPeriod?: ReturnPeriod }>(orgId, "tax_profile"))?.returnPeriod ?? "monthly";
+    const today = orgClock().date;
+    const [y, m] = [Number(today.slice(0, 4)), Number(today.slice(5, 7))];
+    const first = returnPeriod === "quarterly" ? Math.floor((m - 1) / 3) * 3 + 1 : m;
+    const last = returnPeriod === "quarterly" ? first + 2 : m;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const from = `${y}-${pad(first)}-01`;
+    const to = `${y}-${pad(last)}-${pad(new Date(Date.UTC(y, last, 0)).getUTCDate())}`;
+    const summary = await this.reports.taxSummary(orgId, from, to);
+    const [paid] = await this.db
+      .select({ amount: sql<string | null>`sum(${taxPayments.amount})` })
+      .from(taxPayments)
+      .where(
+        and(
+          eq(taxPayments.orgId, orgId),
+          eq(taxPayments.kind, "payment"),
+          isNull(taxPayments.deletedAt),
+          sql`coalesce(${taxPayments.periodTo}, ${taxPayments.date}) >= ${from}::date`,
+          sql`coalesce(${taxPayments.periodFrom}, ${taxPayments.date}) <= ${to}::date`,
+        ),
+      );
+    return {
+      returnPeriod,
+      from,
+      to,
+      label: returnPeriod === "monthly" ? new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }) : periodLabel(from, to),
+      collected: summary.taxCollected,
+      input: summary.taxPaid,
+      net: summary.netTaxPayable,
+      paid: paid?.amount ? BigInt(paid.amount).toString() : null,
+    };
+  }
 
   /**
    * US-DASH-22 (D-160) — the five largest expense accounts this month,

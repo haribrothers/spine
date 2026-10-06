@@ -13,6 +13,7 @@ import { AccountsCard } from "./widgets/accounts-card";
 import { PayablesCard } from "./widgets/payables-card";
 import { TopExpensesCard } from "./widgets/top-expenses";
 import { ReadyToBillCard } from "./widgets/ready-to-bill";
+import { TaxPeriodCard } from "./widgets/tax-period";
 
 /** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
 function MyActivity() {
@@ -34,6 +35,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   payables: "Payables",
   "top-expenses": "Top expenses",
   "ready-to-bill": "Ready to bill",
+  "tax-period": "Tax this period",
   "money-in-out": "Money in and out",
   "pipeline-by-stage": "Pipeline by stage",
   "retention-held": "Retention held",
@@ -52,6 +54,7 @@ export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> 
   payables: PayablesCard,
   "top-expenses": TopExpensesCard,
   "ready-to-bill": ReadyToBillCard,
+  "tax-period": TaxPeriodCard,
   "money-in-out": MoneyInOutChart,
   "pipeline-by-stage": PipelineByStageChart,
   "retention-held": RetentionHeldCard,

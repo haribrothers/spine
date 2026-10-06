@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-25: see tax owed this period (Phase 8)
+
+- **Dashboard › Tax this period** card (D-160): "Collected", "Input tax" and "Net payable" for the current month or quarter, and "<period> · paid <amount>" once a tax payment is recorded for it ("nothing paid yet" until then). The card opens the Tax Summary for that period.
+- **Settings › Tax › "Return period"**: Monthly (default) or Quarterly; the card follows it.
+- The Tax Summary now opens on `?from=&to=` when a link gives them.
+- Members without "View financial statements" don't get the card.
+- API: `GET /dashboard/tax-period`; `settings.tax_profile.returnPeriod`.
+
 ### 2026-10-06 — US-DASH-24: see work not yet billed (Phase 8)
 
 - **Dashboard › Ready to bill** card (D-160): "Completed milestones not invoiced <n>" with their total, and "Approved billable expenses not billed <n>" with what they'd invoice for (amount + tax). Nothing to bill: "Nothing waiting to be billed."

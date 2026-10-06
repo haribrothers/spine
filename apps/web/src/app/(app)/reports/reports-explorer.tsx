@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -914,8 +915,12 @@ export function TrialBalanceTab() {
 export function TaxSummaryTab() {
   // Recording tax payments stays Owner-only (US-TAX-08); reading the summary is "View financial statements" (US-RPT-36).
   const isOwner = useMyRole() === "owner";
-  const [from, setFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
-  const [to, setTo] = useState<Date>(endOfToday());
+  // US-DASH-25 — the dashboard's tax card opens this for its period (?from=&to=).
+  const searchParams = useSearchParams();
+  const fromParam = searchParams.get("from");
+  const toParam = searchParams.get("to");
+  const [from, setFrom] = useState<Date>(() => (fromParam ? new Date(`${fromParam}T00:00:00`) : new Date(new Date().getFullYear(), 0, 1)));
+  const [to, setTo] = useState<Date>(() => (toParam ? new Date(`${toParam}T00:00:00`) : endOfToday()));
   const [currency, setCurrency] = useState("USD");
   const [report, setReport] = useState<TaxSummaryReport | null>(null);
   const [loading, setLoading] = useState(false);

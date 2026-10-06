@@ -3489,6 +3489,17 @@ Regression: the Payables page without ?overdue=1 lists every open bill as before
 5. A cancelled job's completed milestones aren't counted.
 6. Staff without "View receivables": no Ready to bill card.
 
+## 153. Tax this period on the dashboard (US-DASH-25, Phase 8)
+
+1. Record a taxed sale and a taxed purchase this month. Dashboard › Tax this period: Collected, Input tax and Net payable match Reports › Tax Summary for this month; the note reads "<Month Year> · nothing paid yet".
+2. Settings › Tax › Return period → Quarterly. The card now covers this quarter ("Oct – Dec 2026"), with the quarter's figures.
+3. Record a tax payment for the quarter (Tax Summary › Record tax payment): the note reads "… · paid <amount>".
+4. Click the card: the Tax Summary opens with From and To set to the period.
+5. Staff without "View financial statements": no Tax this period card.
+6. Keyboard: Tab reaches the card's link and Enter opens the Tax Summary. Dark mode is readable.
+
+Regression: the Tax Summary opened from Reports still defaults to the start of the year to today.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
