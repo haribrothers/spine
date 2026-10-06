@@ -82,6 +82,81 @@ Native: `@expo/ui` controls use the platform system font (SF Pro on iOS, Roboto 
 - Mobile app: native stack per tab; large titles on top-level screens; inset grouped lists on iOS, full-width list items on Android.
 - Touch targets are at least 44×44 on every touch surface.
 
+## Phases 8–9: books, tax and setup screens
+
+The 60 screens for Phase 8 (Books completeness) and Phase 9 (Tax, documents and setup) are on the design canvas pages "Phase 8 · Books completeness" and "Phase 9 · Tax, documents and setup", and in [screens.md](screens.md) ([D-133](../prd/12-decisions.md)). They use the D-131 page/surface split and only existing tokens.
+
+**Navigation.** The sidebar gains three items. The drawn screens share one sidebar component on the canvas (`V1Sidebar`):
+
+| Group | Items |
+|---|---|
+| Overview | Dashboard |
+| Sales | Contacts · Pipeline · Meetings · Catalogue · Quotes |
+| Jobs | Jobs |
+| Billing | Invoices · Credit Notes · Payments · Receivables |
+| Purchases | Vendor Bills · **Vendor Credits** · Expenses · Vendor Payments · Payables |
+| Money | **Banking** |
+| Reports | Reports · **Journals** |
+| Team | Users · Teams · Audit log |
+
+Items still follow the rule in US-TEAM-18: a person sees only the sections they can open. Banking needs `banking.view`, Journals needs `ledger.view`, and anything in a switched-off module is gone ([D-154](../prd/12-decisions.md)). The Settings dialog gains GST, Opening balances, Documents, Emails and Modules. Set up Spine opens from the user menu.
+
+**Page layout.** New pages follow the captured list pages (`InvoicesList`, `VendorBillsList`, `Receivables`) and report pages (`ReportsPL`), and an automated check verified every drawn screen:
+
+1. Breadcrumb, page title and description. Detail pages put their actions top right; list pages don't.
+2. One row of KPI cards (`StatCard`) in an equal-width grid, every card the same height. Label 14px, value 28px bold, an optional caption.
+3. Filter row: selects and date fields on the left, the page's actions on the right with the one primary button last. Every control is 40px tall.
+4. Search row: search box (256px) on the left, "Columns" on the right.
+5. `DataTable`: sunken header row, sort icons on sortable columns, status chips, money right-aligned with tabular figures, and a ⋯ row menu when rows have actions.
+6. Pager: "1–n of n · per page" on the left, page numbers on the right.
+7. Reports replace rows 3–4 with a filter bar of labelled 40px controls (From, To, Compare with, Basis), then Refresh, with Export (CSV, Excel, PDF, Print) on the right, bottom-aligned.
+
+Screens that extend an existing one reuse that screen's layout exactly; only the new fields are added:
+
+| Kind | Follows | Shape |
+|---|---|---|
+| Builders (`InvoiceBuilderGst`, `VendorCreditBuilder`) | `InvoiceBuilder`, `VendorBillBuilder` | Title + description; header card of labelled fields in three columns (required fields marked `*`, helper text under the field); "Lines" card of line blocks (move arrows, item name + "Prefill from catalogue", description, Qty / Unit price / Discount % / Line total, Tax + "Price includes tax", delete); "Add item / Add heading / Add text line"; Notes and Terms card; totals card on the right; Cancel and "Save as draft" at the bottom. GST adds an HSN/SAC + Supply type row inside each line block and Place of supply in the header card |
+| Drawers (`CatalogItemDrawerGst`, `ContactGstDialog`, `ReconcileCreateDrawer`) | `CatalogItemDrawer`, `ContactCreateDrawer` | 448px from the right over the dimmed list; title, description and ✕, divider; one column of fields (two side by side where the captured drawer pairs them); footer bar with Cancel and the primary action |
+| Dialogs (payments, refunds, credit notes, transfers, journals, imports, recurring bills) | `RecordPaymentDialog`, `CreditNoteDialog`, `ImportContactsDialog` | Title, description and ✕, divider; fields two to a row; money right-aligned; divider; Cancel and the primary action on the right. Confirmations (void, undo, lock, remove, switch off) are the compact `AlertDialog` with no dividers |
+| Settings panes (`SettingsTaxCountry`, `SettingsTaxGst`, `SettingsModules`, `SettingsDocumentLayout`, `SettingsEmailTemplates`, `SettingsPaymentInstructionsUpi`) | `SettingsTax` | 896px dialog: search, "ORGANISATION" list with icons (GST, Opening balances, Payment instructions, Documents, Emails and Modules added), ✕; pane title + description; uppercase section labels with "+ Add …"; bordered lists with ⋯; toggle cards. Small dialogs inside Settings (`TaxRateDialogType`) open over the pane like `TaxRateDialog` |
+| Onboarding (`OnbTaxCountry`) | `OnbTaxRate` | Centred logo, numbered stepper with done steps ticked, one card, "Skip to dashboard" and Continue, theme button bottom right |
+| Privileges (`TeamPrivilegesBooks`) | `TeamPrivilegesExpanded` | Team name, Members / Privileges tabs, one accordion: group rows with a chevron and a group switch, expanded rows with a title, a description and a switch |
+| Detail pages (`VendorBillAttachments`, `VendorCreditDetail`, `ManualJournalDetail`) | `VendorBillDetail` | "Back to …", header card (number, status chip, contact · due date, history icon, actions), one card per section (Lines, Payments, Credits applied, Attachments), totals card. No KPI row |
+| Documents (`InvoicePdfGst`, `ReportPdf`) | `InvoicePdfPaymentInstructions`, `StatementPdf` | Business mark and address, title and number top right, 4px document-colour rule, "Bill to" and "Balance due", line table, totals, "How to pay" box with a coloured left edge, page footer |
+
+**Patterns and the components they use:**
+
+| Pattern | Screens | Built from |
+|---|---|---|
+| Money account picker ("Paid into" / "Paid from"), preselected with the last account used | `NewPaymentDialogAccount`, refunds, transfers, tax payment | [Select](components/Select.md) with [HelperText](components/HelperText.md) |
+| Report toolbar: From/To, Compare with, Basis, Export (CSV, Excel, PDF, Print) | every report | [DatePicker](components/DatePicker.md), [Select](components/Select.md), [ToggleGroup](components/ToggleGroup.md) (single choice, Accrual/Cash), [DropdownMenu](components/DropdownMenu.md) |
+| Report centre: grouped report links with favourites | `ReportsCenter` | [Card](components/Card.md), [Toggle](components/Toggle.md) (star, with an `aria-label`) |
+| Reconcile: statement lines beside unreconciled entries, a running difference, and Finish disabled until the difference is zero | `ReconcileAccount` | [Card](components/Card.md), [Checkbox](components/Checkbox.md), [StatCard](components/StatCard.md), [Button](components/Button.md). The difference shows a sign and text, never colour alone |
+| Create from a statement line | `ReconcileCreateDrawer` | [Drawer](components/Drawer.md), [RadioGroup](components/RadioGroup.md) |
+| Editable money grids: opening balances, journal lines, apply credit | `OpeningBalances`, `ManualJournalDialog`, `ApplyVendorCreditDialog` | [DataTable](components/DataTable.md) with [MoneyInput](components/MoneyInput.md) cells; derived cells in muted text; a `danger` [Banner](components/Banner.md) for "Out by <amount>" |
+| Capability rows in the privilege matrix | `TeamPrivilegesBooks` | [Switch](components/Switch.md) with the label and the capability code |
+| Modules: a switch per module, and confirmation before switching one off | `SettingsModules`, `ModuleOffConfirm` | [Switch](components/Switch.md), [AlertDialog](components/AlertDialog.md) |
+| Setup cards with done / to do | `SetupSpine` | [Card](components/Card.md), [StatusChip](components/StatusChip.md), [Progress](components/Progress.md) |
+| Document options beside a live preview | `SettingsDocumentLayout` | [Tabs](components/Tabs.md), [Checkbox](components/Checkbox.md), [Textarea](components/Textarea.md) |
+| Email text with placeholders | `SettingsEmailTemplates` | [Textarea](components/Textarea.md), [Badge](components/Badge.md) chips that insert a placeholder |
+| Books cards on the dashboard: accounts, payables, top expenses, ready to bill, tax this period | `DashboardOwnerBooks` | [StatCard](components/StatCard.md), [Card](components/Card.md), [TrendBarChart](components/TrendBarChart.md); bars carry their amount as text |
+
+**New components to build with their stories** (each with its `apps/design-system` page and axe test, [D-033](../prd/12-decisions.md)):
+
+- **`FileDropzone`**: drop or pick files, showing the allowed types, size and count limits in text (US-OPS-33).
+- **`AttachmentList`**: file rows with a type tile, name, size, who added it, and Download/Remove; Remove becomes Owner-only with a reason on locked records (US-OPS-33–US-OPS-35).
+- **UPI QR**: rendered in the API by `qrcode` into the PDF ([D-150](../prd/12-decisions.md)). It's a document element, not an `@spine/ui` component.
+
+**AI assistant (Phase 9).** AI never gets its own page outside Settings › AI; it appears inside the forms it fills:
+
+- **The AI control** is a secondary button with a sparkle icon and a verb: "Read from document", "Read receipt", "Draft with AI", "Draft lines with AI". It's only rendered when AI is on, the feature is on and the person may use it (D-162, D-167).
+- **"Suggested by AI"** marks every field AI filled: an `info` tint on the field and a small text label, so it never relies on colour alone. The mark goes when the person edits the field. A banner above the form says what was filled and what to check ("Check the lines before saving").
+- **Working and failure states** use the existing `Spinner` and `Banner`: the form stays usable while AI works, and failures say what to do ("AI didn't answer. Fill this in by hand or try again.").
+- **Review lists** (quote lines, bank suggestions) show suggestions with a reason and a tick box. Only "Add to quote", "Match" or the normal save acts on them.
+- Settings › AI follows the Settings dialog pattern: master switch card, provider fields with "Test connection", feature switches with "What's sent", and the budget with a usage bar.
+
+**Sample data.** Phase 8 screens use the demo business, Riverstone Builders (USD). Phase 9's GST, GSTR-1, Tally and UPI screens use a sample Indian business, Kaveri Interiors (₹, Karnataka), so the Indian formats show: lakh grouping, GSTINs and state codes.
+
 ## Platforms
 
 | | Web | iOS | Android |
@@ -109,7 +184,12 @@ Functional only: motion confirms a state changed. Durations 100 / 150 / 180 / 26
 ## Documents and email
 
 - PDFs (quote, invoice, receipt) use the business logo, name and address, the document colour from Settings › Branding as a single accent, and the document footer. Money in `mono-data`. PDFs must render byte-identically across installs.
-- Every email uses one shared layout (`EmailBrandedQuote`): 6px brand-colour bar, logo and business name, heading, short body, a key-facts box, one primary button, and the business footer.
+- From Phase 9, PDFs use bundled Noto Sans and Noto Sans Devanagari instead of built-in Helvetica, so ₹ and Hindi names print ([D-151](../prd/12-decisions.md)).
+- **Layout options**, per document type (Settings › Documents): paper size, which columns show, the title, default terms and notes, a signature, the amount in words, a tax summary table and the UPI QR. One layout only, no template editor; issued PDFs never change ([D-152](../prd/12-decisions.md)).
+- **GST invoices** (India) are titled "Tax Invoice" or "Bill of Supply". They show both GSTINs, the place of supply, HSN/SAC per line, CGST + SGST or IGST per line, and an HSN-wise tax table (`InvoicePdfGst`).
+- **UPI QR** sits beside the payment instructions with "Scan to pay ₹<amount> with any UPI app" and the UPI ID in text, so it never relies on the image alone ([D-150](../prd/12-decisions.md)).
+- **Report PDFs** (`ReportPdf`) share the document header: logo, business name, report name, range and basis, a 4px document-colour rule, and "Prepared <date> · page n of m" in the footer. Landscape when a report has more than five amount columns.
+- Every email uses one shared layout (`EmailBrandedQuote`): 6px brand-colour bar, logo and business name, heading, short body, a key-facts box, one primary button, and the business footer. From Phase 9 the owner edits each customer email's subject and message (`SettingsEmailTemplates`); the layout around them stays fixed ([D-153](../prd/12-decisions.md)).
 
 ## Accessibility
 

@@ -15,7 +15,7 @@ The design system is already built and is reused, not redesigned ([D-037](12-dec
 | [native-notes.md](../design/native-notes.md) | Native implementation rules (moved from CLAUDE.md) |
 | [screens.md](../design/screens.md) and `screens/` | Every screen: captured from the app or drawn on the design canvas |
 
-The design canvas with every drawn screen is the "Spine — New screens" artifact (link in [screens.md](../design/screens.md)).
+The design canvas with every drawn screen is the "Spine — New screens" artifact (link in [screens.md](../design/screens.md)). Phase 8–9 screens are on its pages "Phase 8 · Books completeness" and "Phase 9 · Tax, documents and setup"; how they map to components is in the brand book's "Phases 8–9" section.
 
 ## Rules for code
 
@@ -29,7 +29,8 @@ The design canvas with every drawn screen is the "Spine — New screens" artifac
 8. **Icons:** Lucide, per-icon imports on native; native tab bars use SF Symbols / Material Symbols.
 9. **Mobile is native-first** on both platforms; Android follows Material 3 ([D-022](12-decisions.md), [D-051](12-decisions.md)).
 10. **New components in Phase 7:** `CommandPalette` (global search, US-OPS-23, built on `cmdk`), a selection toolbar for bulk actions (US-INV-23, US-PUR-21), and the KPI card with sparkline and comparison (US-DASH-14). Each ships with its doc page and axe test (D-033).
-11. **Copy:** sentence case; buttons are verbs; name the thing; say what happens to people's data; errors say what to do next.
+11. **New components in Phases 8–9:** `FileDropzone` and `AttachmentList` (US-OPS-33–US-OPS-35). Everything else in those screens composes existing components ([../design/README.md](../design/README.md#phases-89-books-tax-and-setup-screens)). The AI assistant (US-AI-01–US-AI-14) adds no new component either: its button is a secondary `Button` with the Lucide `Sparkles` icon, and "Suggested by AI" is a text label plus an `info` tint on the field, never colour alone.
+12. **Copy:** sentence case; buttons are verbs; name the thing; say what happens to people's data; errors say what to do next.
 
 ## Appendix — design-system rules moved verbatim from CLAUDE.md
 

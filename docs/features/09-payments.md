@@ -2,7 +2,7 @@
 
 Money in: record a payment against one or more invoices with an oldest-first suggestion, hold any remainder as customer credit, send a receipt, and see who owes what and for how long. Allocation limits are enforced by the database.
 
-**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2)
+**Screens:** `PaymentsList` (P1), `PaymentsEmpty` (P1), `NewPaymentDialog` (P1), `RecordPaymentDialog` (P1), `PaymentDrawer` (P2), `PaymentDrawerCredit` (P2), `PaymentDeleteConfirm` (P2), `ReceiptPdf` (P2), `EmailReceipt` (P2), `EmailPaymentReceivedOwner` (P3), `Receivables` (P1), `ReceivablesEmpty` (P1), `InvoiceDetail` (P1), `ContactStatementDialog` (P2), `StatementPdf` (P2), `CreditNoteDialogExcess` (P1), `CustomerRefundDialog` (P1)
 **Depends on:** 08 Invoicing, 03 Contacts, 14 Notifications, 12 Reports (aging derives from the ledger).
 
 ## Features
@@ -15,6 +15,7 @@ Money in: record a payment against one or more invoices with an oldest-first sug
 | F-PAY-04 | Receivables and AR aging | P1 | 2 | `Receivables`, `ReceivablesEmpty` |
 | F-PAY-05 | Own/others and workflow rights | P1 | 4 | `PaymentDrawer`, `PaymentsList` |
 | F-PAY-06 | Customer statements | P2 | 7 | `ContactStatementDialog`, `StatementPdf` |
+| F-PAY-07 | Refunds and credit from credit notes | P1 | 8 | `CreditNoteDialogExcess`, `CustomerRefundDialog`, `TeamPrivilegesBooks` |
 
 ## User stories
 
@@ -233,3 +234,45 @@ Decision: D-075 · Review finding: Stage 5 #18
 
 **Implementation notes**
 - PDF: `@react-pdf` template `StatementPdf`, same fonts and colours as invoices.
+
+### US-PAY-16 · Keep a credit note's extra as customer credit
+**Feature:** F-PAY-07 · **Priority:** P1 · **Phase:** 8 · **Screens:** `CreditNoteDialogExcess`
+**As** office staff, **I want** to credit a paid invoice, **so that** a customer who paid for something we didn't deliver gets their money back or keeps it as credit.
+
+Decision: D-142
+
+**Acceptance criteria**
+- **Given** a credit note for more than the invoice's balance (including a fully paid invoice), **when** the dialog totals it, **then** it reads "<balance> reduces what's owed on <invoice>; <excess> becomes credit for <customer>.".
+- **Given** I issue it, **when** it posts, **then** P8 credits AR up to the balance and Customer Advances for the excess.
+- **Given** the customer's credit, **when** I open "Apply credit" on another invoice, **then** credit from credit notes is offered alongside unallocated payments.
+- **Given** the customer's statement, **when** it renders, **then** the credit shows as a credit line.
+
+**Implementation notes**
+- API: `POST /credit-notes` no longer refuses totals above the balance; responses gain `creditRemainingAmount`. New `POST /credit-notes/:id/apply-credit { allocations: [{ invoiceId, amount }] }` (`payments.apply_credit`) applies a credit note's remaining credit, posting P6 like `POST /payments/:id/apply-credit`.
+- Data: `credit_notes.credit_remaining_amount bigint`.
+
+### US-PAY-17 · Refund a customer
+**Feature:** F-PAY-07 · **Priority:** P1 · **Phase:** 8 · **Screens:** `CustomerRefundDialog`
+**As** office staff, **I want** to pay back a customer's credit or overpayment, **so that** their account is settled and the bank shows the money out.
+
+**Acceptance criteria**
+- **Given** a customer with credit (an unallocated payment or a credit note's excess), **when** I choose "Refund" on the payment, the credit note or the contact, **then** I enter "Amount" (up to the credit), "Date", "Paid from", "Method" and "Reference".
+- **Given** I save, **when** it posts, **then** P23 debits Customer Advances and credits the money account, the credit drops, and the toast reads "Refunded <amount> to <customer>".
+- **Given** "Send refund confirmation", **when** I tick it, **then** the customer gets a receipt-style email "We've refunded <amount>".
+- **Given** a refund that isn't reconciled, **when** I delete it, **then** a reversing entry posts and the credit comes back.
+- **Given** the customer's statement, **when** it renders, **then** the refund appears as a debit line.
+
+**Implementation notes**
+- API: `POST /customer-refunds`, `GET /customer-refunds?contactId=`, `DELETE /customer-refunds/:id` (`payments.refund`).
+- Data: `customer_refunds` (new; source `payment_id` or `credit_note_id`, money account, amount, method, reference, entry_id); trigger keeps refunds ≤ the source's remaining credit.
+
+### US-PAY-18 · Let a Team refund customers
+**Feature:** F-PAY-07 · **Priority:** P2 · **Phase:** 8 · **Screens:** `TeamPrivilegesBooks`
+**As** an owner, **I want** refunds as their own right, **so that** only trusted people send money back.
+
+**Acceptance criteria**
+- **Given** a Team's "Payments" group, **when** I expand it, **then** it lists "Refund customers" (`payments.refund`), off for General Staff by default.
+- **Given** a member without it, **when** they open a payment with credit, **then** "Refund" is hidden and the API returns 403.
+
+**Implementation notes**
+- Capability `payments.refund` (General Staff default ✗) with migration.

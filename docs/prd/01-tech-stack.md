@@ -24,7 +24,11 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Background jobs | pg-boss 12 (queues in Postgres) | No Redis container |
 | Files | `StorageDriver` with two drivers: `local` (default — a Docker volume on the API container) and `s3` (`@aws-sdk/client-s3`, for AWS S3, R2, B2 or a self-hosted store) ([D-102](12-decisions.md)) | No extra container by default; MinIO dropped after its free images were withdrawn |
 | Email | Nodemailer 9 over SMTP | No SaaS needed; queued with retry |
-| PDF | `@react-pdf/renderer` 4 | Same output on every install |
+| PDF | `@react-pdf/renderer` 4, with bundled Noto Sans and Noto Sans Devanagari fonts from Phase 9 ([D-151](12-decisions.md)) | Same output on every install; ₹ and Indian names print |
+| Spreadsheets | `exceljs` for `.xlsx` report, GSTR-1 review and export files (Phase 8, [D-144](12-decisions.md)); `papaparse` for CSV imports | MIT, CommonJS, streams large sheets |
+| QR codes | `qrcode` for UPI QR codes on invoices (Phase 9, [D-150](12-decisions.md)) | MIT, no network |
+| ZIP | `fflate` ([D-132](12-decisions.md)) — bulk PDFs, data export, Tally export | Small, dependency-free |
+| AI (optional, Phase 9) | `AiDriver`: `openai-compatible` and `anthropic` drivers over `fetch` (no SDK dependency); `unpdf` (MIT) for PDF text before sending ([D-163](12-decisions.md), [D-170](12-decisions.md)) | Owner's own local or cloud model; nothing runs when AI is off |
 | Browser push | `web-push` 3 (VAPID) | Optional; disabled without keys |
 | Rate limiting | `@nestjs/throttler` 6 (in-memory) | Public quote endpoints |
 | Tests | Vitest 2 (unit + integration against a real `spine_test` database) | |
@@ -41,7 +45,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Command palette | cmdk | |
 | Docs | `apps/design-system` (Next.js docs app) | Living spec for `@spine/ui` |
 
-## `apps/site` — website, user guide and developer docs (Phase 8)
+## `apps/site` — website, user guide and developer docs (Phase 10)
 
 | Concern | Choice | Why |
 |---|---|---|

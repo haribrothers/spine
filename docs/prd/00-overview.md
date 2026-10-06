@@ -2,7 +2,7 @@
 
 ## What Spine is
 
-Spine is a self-hosted business app for service and project businesses of 1–20 people — contractors, fabricators, fit-out firms, design studios. It follows the way these businesses actually work, **enquiry → quote → job → invoice → payment → books**, and derives correct double-entry accounting from those events so nobody types a journal entry. One Docker install serves one business. Owners, office staff and field crew sign in; customers act on quotes through a public link with no account. A native mobile app (iOS and Android) lets field crew see their jobs, capture photos and receipts offline, complete milestones and take a customer's signature on a quote on site.
+Spine is a self-hosted business app for service and project businesses of 1–20 people — contractors, fabricators, fit-out firms, design studios. It follows the way these businesses actually work, **enquiry → quote → job → invoice → payment → books**, and derives correct double-entry accounting from those events so nobody types a journal entry. One Docker install serves one business. Owners, office staff and field crew sign in; customers act on quotes through a public link with no account. A native mobile app (iOS and Android) lets field crew see their jobs, capture photos and receipts offline, complete milestones and take a customer's signature on a quote on site. An optional AI assistant, off until an Owner connects their own local or cloud model, fills in forms — reading bills and receipts, drafting emails and quote lines, suggesting bank matches — and never saves anything by itself.
 
 ## The problem
 
@@ -24,31 +24,31 @@ Small businesses run their money on a patchwork: contacts in WhatsApp, quotes in
 | # | Goal | Measured by |
 |---|---|---|
 | G1 | An owner answers the three questions above from one screen | Dashboard shows receivables aging, job profitability and month revenue with no setup beyond issuing documents |
-| G2 | Accounting is an output, never an input | No screen in v1 creates a journal entry by hand; the trial balance balances after every workflow (automated test) |
+| G2 | Accounting is an output, never an input | The everyday workflow never needs a hand-typed journal entry; only Owners may post adjusting journals for what no document covers ([D-134](12-decisions.md)); the trial balance balances after every workflow (automated test) |
 | G3 | A stranger installs it without help | Clean machine with Docker → first issued invoice in under 5 minutes using only the README |
 | G4 | Field crew work with bad signal | Photos, expenses and milestone completions work end-to-end in airplane mode and sync with no duplicates |
 | G5 | Nothing financial is ever lost or silently changed | Issued documents are immutable; corrections are reversals or credit notes; every change is in the audit log |
 
 ## Non-goals (v1)
 
-Out of scope, and they stay out:
+Out of scope for 1.0. Work planned after 1.0 is listed, with reasons, in [16-roadmap](16-roadmap.md); everything below stays out unless a decision moves it there:
 
 - Multi-tenant SaaS hosting, including one owner account managing several organisations. One instance serves one business.
 - Payroll, HR, attendance.
 - Inventory with stock valuation, warehouses or manufacturing.
 - Marketing automation, email campaigns, lead scoring.
-- Country-specific statutory filing (GST/VAT returns, e-invoicing).
+- Filing tax returns or connecting to tax portals; e-invoicing and e-way bills. Spine prepares the figures and export files, such as GSTR-1 ([D-148](12-decisions.md)), and the owner or accountant files.
 - Customer self-service portal with accounts.
 - Multi-currency.
-- Bank feeds or statement import; bank reconciliation.
+- Live bank feeds. Importing a statement file and reconciling it is in V1 ([D-135](12-decisions.md)).
 - Native desktop app.
-- Recurring invoices, purchase orders, timesheets, plugin API, public REST API for third parties.
+- Purchase orders (planned for later, [16-roadmap](16-roadmap.md)), timesheets, plugin API, public REST API for third parties.
 - Cross-owner content ownership (one Owner restricting another Owner's access). All Owners are equal in v1.
 - Offline creation of financial documents (quotes, invoices) on mobile.
 
 ## Licence and repository
 
-Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 8). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
+Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 10). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
 
 ## Personas
 
@@ -66,8 +66,9 @@ Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md
 2. **Quote to cash.** Sarah adds a contact, builds a quote from the catalogue, emails it. Alan opens the link and accepts. Sarah converts it to a job and an advance invoice; Alan pays; Sarah records the payment.
 3. **Construction billing.** Sarah defines milestones on the job. Marcus marks a milestone complete on site with photos. Sarah raises a progress invoice; retention is held; at handover the retention is released.
 4. **Money out.** Marcus photographs a fuel receipt with no signal; it syncs later. Sarah approves it and bills it to the customer. Vendor bills are recorded and paid.
-5. **Books.** Alex opens the dashboard: cash, receivables, overdue, revenue. At quarter end he reads P&L, Balance Sheet, Trial Balance and Tax Summary, exports CSV for his accountant and closes the period.
+5. **Books.** Alex opens the dashboard: cash in each account, receivables, payables, overdue, revenue, tax owed. Sarah imports the bank statement and reconciles it. At quarter end Alex records the GST payment, reads P&L, Balance Sheet, Cash Flow, Trial Balance and Tax Summary, downloads the GSTR-1 file, and his accountant — in a Team with read access to the statements — exports the books to Excel or Tally, posts the year-end adjusting journals with Alex, and Alex closes the period.
 6. **On-site acceptance.** Marcus presents a variation quote on his phone; Alan signs on screen; the office is notified instantly.
+7. **Moving in.** Alex starts using Spine mid-year: he picks a cutover date, enters the balances from his old trial balance, brings in unpaid invoices, bills and retention, checks that nothing is left in Opening Balance Adjustments and locks them.
 
 ## Success metrics
 
@@ -94,6 +95,7 @@ Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md
 | Non-functional requirements | [08-non-functional](08-non-functional.md) |
 | Design system rules | [09-design-system](09-design-system.md) and [../design/README.md](../design/README.md) |
 | Phases and what's done | [10-phases](10-phases.md) and [../progress.md](../progress.md) |
+| After 1.0 | [16-roadmap](16-roadmap.md) |
 | Testing and release | [11-testing-release](11-testing-release.md) |
 | Decisions | [12-decisions](12-decisions.md) |
 | Risks and open questions | [13-risks-open-questions](13-risks-open-questions.md) |

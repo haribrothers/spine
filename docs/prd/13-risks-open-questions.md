@@ -6,10 +6,10 @@
 |---|---|---|---|---|
 | R-01 | Accounting correctness bugs found after real use | Severe: destroys trust | Medium | Ledger-integrity test after every workflow (NFR-REL-02); daily integrity check (US-RPT-12); accountant review of [06](06-ledger-posting-rules.md) before 1.0 (Q-02) |
 | R-02 | Scope creep toward a general ERP | Never ships | Medium | Non-goals in [00-overview](00-overview.md) are binding; new ideas go to a v2 backlog |
-| R-03 | Self-hosting is too hard for the target user | Nobody adopts it | Medium | Phase 8 install script, 5-minute target (NFR-MNT-01), install test on a clean machine with a non-technical person watching |
+| R-03 | Self-hosting is too hard for the target user | Nobody adopts it | Medium | Phase 10 install script, 5-minute target (NFR-MNT-01), install test on a clean machine with a non-technical person watching |
 | R-04 | Offline sync duplicates or loses data | Field users stop trusting the app | Medium | Idempotency keys on every mutation, append-only offline operations, no offline financial documents ([D-050](12-decisions.md)), NFR-REL-06 test |
 | R-05 | Solo maintainer burnout | Abandonment | Medium | Boring architecture, public early releases, contributor docs (US-OPS-19) |
-| R-06 | Tax model too generic for any one country's filing | Users still need an accountant to file | High | Accepted: v1 produces the numbers, not the filing; country packs are a v2 extension point |
+| R-06 | Tax model too generic for any one country's filing | Users still need an accountant to file | Medium | V1 produces the numbers and upload files, not the filing: country tax presets for six countries (D-145), India GST with place of supply and HSN/SAC (D-146) and a GSTR-1 export (D-148). Other countries' presets are on the [roadmap](16-roadmap.md) |
 | R-07 | PDF output differs across environments | Documents look wrong | Low | Pinned renderer and bundled fonts; PDF snapshot tests |
 | R-08 | Public quote links live 30 days regardless of the quote's `validUntil` | A customer can accept a quote shown as expired | Medium | Decide whether acceptance is refused after `validUntil` ([D-032](12-decisions.md)); until then the page shows "Expired" but accepts |
 | R-09 | Mobile migration to expo-router destabilises the field app | Phase 5 slips | Medium | Migration is its own story (US-MOB-19); `apps/showcase-native` already proves the pattern |
@@ -18,27 +18,38 @@
 | R-13 | ~~The default file store image `minio/minio` is no longer pullable from Docker Hub (found 2026-10-04 when CI tried to pull it), so `docker-compose.yml` and `docker-compose.dev.yml` fail on a fresh machine~~ — resolved by [D-102](12-decisions.md): local disk by default, MinIO dropped | New installs and new developers can't start Spine | High | Decide a replacement (Q-14) before Phase 8; CI already uses `adobe/s3mock` for E2E |
 | R-14 | Files and the database live on one host, so a dead disk loses both unless a backup left the machine | Data loss for the business | Medium | Off-site encrypted backups (D-105), stale-backup banner, checksum checks (D-104), restore verified in CI (US-OPS-04); cloud S3 for owners who want provider redundancy |
 | R-11 | Store review rejects the field app (server-address sign-in, no demo account) | Mobile release delayed | Medium | Provide a hosted demo server and reviewer notes ([15](15-mobile-release.md)) |
+| R-15 | The GST portal changes the GSTR-1 upload format | Exported files are rejected | Medium | One mapping module with fixture tests per table; schema version written in the file; the review workbook still works; follow GSTN release notes before each Spine release (D-148) |
+| R-16 | Tally XML imports differently across TallyPrime and Tally.ERP 9 versions | Accountants can't import the books | Medium | Sample import files kept in the repo and imported into TallyPrime 6.x/7.x and Tally.ERP 9 before release; README with defaults in every export (D-149) |
+| R-17 | Phases 8–9 add 81 stories before 1.0 | 1.0 ships much later | High | Phase 8 first (books), Phase 9 items independent of each other; anything slipping moves to v1.1 by decision, never quietly ([D-133](12-decisions.md)) |
+| R-18 | New posting paths (P17–P27) introduce accounting errors | Wrong books, lost trust | Medium | Each rule gets a ledger-integrity test and the daily balance check covers it; accountant review before build (Q-02); manual journals can't touch control accounts (D-134) |
+| R-19 | Bank CSV layouts vary between banks and change without notice | Imports fail or misread amounts | Medium | Column mapping saved per account (D-157), preview before import, duplicate detection, failed rows listed; presets for common banks (Q-17) |
+| R-20 | AI reads a bill wrongly or drafts something misleading | Wrong amounts saved, awkward emails sent | Medium | AI only fills forms and marks every field; people save (D-166); totals and tax computed by Spine; document-vs-computed total warning (D-170); placeholders filled by Spine, not the model (US-AI-12) |
+| R-21 | Business data reaches a cloud AI provider the business didn't mean to use, or the provider keeps it | Privacy breach, loss of trust | Medium | Off by default; Owner acknowledgement for non-local providers (D-164); redaction and per-feature "What's sent" (D-165); local-model option; no prompt or reply stored in Spine (D-169) |
+| R-22 | AI costs run away or the provider is down | Unexpected bills, blocked work | Medium | Monthly budget with 80% warning and hard stop, per-person rate limit (D-168); forms never depend on AI (US-AI-07) |
+| R-23 | Text inside a document or enquiry tries to instruct the model (prompt injection) | Misleading suggestions | Low | Fixed JSON schema, every field validated, AI routes are read-only ([07-security](07-security.md)) |
 
 ## Open questions
 
 | ID | Question | Options | Needed before | Owner |
 |---|---|---|---|---|
-| Q-01 | Licence | AGPL-3.0 · MIT | Phase 8 (US-OPS-19) | Product owner |
-| Q-02 | Is a practising accountant available to review the chart of accounts and posting rules? | Yes, name · No, accept risk R-01 | Phase 8 release | Product owner |
-| Q-03 | Does the reference business migrate historical data or start clean from a cutover date? | Opening balances only · Import open invoices and bills · Start clean | Phase 6 | Product owner |
-| Q-04 | Is accrual-only accounting acceptable for v1, or is a cash-basis report needed? | Accrual only · Add cash-basis P&L | Phase 6 | Product owner + accountant |
-| Q-05 | Should expenses paid personally by an employee credit an "Employee reimbursements payable" account instead of Bank? | Keep Bank · Add the account and a reimburse action | Phase 6 | Accountant |
+| Q-01 | Licence | AGPL-3.0 · MIT | Phase 10 (US-OPS-19) | Product owner |
+| Q-02 | Is a practising accountant available to review the chart of accounts and posting rules? | Yes, name · No, accept risk R-01 | Before Phase 8 builds P17–P27, and again before the Phase 10 release | Product owner |
+| Q-03 | ~~Does the reference business migrate historical data or start clean from a cutover date?~~ — closed by [D-137](12-decisions.md): opening balances at a cutover date plus open invoices, bills, retention and credits | — | — | — |
+| Q-04 | ~~Is accrual-only accounting acceptable for v1, or is a cash-basis report needed?~~ — closed by [D-138](12-decisions.md): a cash-basis P&L and dashboard profit, derived at report time | — | — | — |
+| Q-05 | Should expenses paid personally by an employee credit an "Employee reimbursements payable" account instead of Bank? | Keep Bank · Add the account and a reimburse action | v1.1 ([16-roadmap](16-roadmap.md)) | Accountant |
 | Q-06 | ~~Default document number pattern~~ — closed by [D-077](12-decisions.md): keep `QUO-0001`, no yearly reset | — | — | — |
 | Q-07 | Should mobile builds be published to the public stores or distributed privately (TestFlight / internal track / APK)? | Public stores · Private distribution | Phase 5 release | Product owner |
-| Q-08 | Two-factor authentication in v1? | No (v2) · TOTP for Owners · TOTP for everyone | Phase 6 | Product owner |
-| Q-09 | Should tax rates carry a classification (standard, zero-rated, exempt) so the Tax Summary reports them separately? | No, 0% rate is enough · Add classification | Phase 6 | Product owner + accountant |
+| Q-08 | Two-factor authentication in v1? | No (v2) · TOTP for Owners · TOTP for everyone | v1.1 ([16-roadmap](16-roadmap.md)) | Product owner |
+| Q-09 | ~~Should tax rates carry a classification (standard, zero-rated, exempt) so the Tax Summary reports them separately?~~ — closed by [D-147](12-decisions.md): a supply class on every line | — | — | — |
 | Q-10 | ~~Should issued documents snapshot the customer address, logo/branding and payment instructions, or store the rendered PDF at issue?~~ — closed by [D-083](12-decisions.md): store the issue-time PDF | — | — | — |
 | Q-11 | ~~What may anonymous visitors see on the invite-only and forgot-password pages (business name, "email may not be set up" hint)?~~ — closed by [D-084](12-decisions.md): business name only, no configuration hints | — | — | — |
 | Q-12 | ~~May a member with `expenses.approve` approve their own expense?~~ — closed by [D-085](12-decisions.md): no self-approval for Staff; Owners may | — | — | — |
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
 | Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
-| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 8 (US-SITE-14) | Product owner |
+| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 10 (US-SITE-14) | Product owner |
 | Q-16 | When a customer certifies less than a progress claim, should Spine record the claimed and certified amounts on the invoice? Today the office issues a credit note for the difference after issue, or edits the draft before issuing | Keep credit notes · Record a certified amount on the draft before issue (claimed amount kept for reference) · Add a certification step after issue that raises the credit note automatically | Before the next construction round | Product owner + accountant |
+| Q-17 | Should statement import ship ready-made column mappings for common Indian banks (HDFC, ICICI, SBI, Axis, Kotak)? | No, map by hand · Ship presets for the five banks | Phase 8 (US-BANK-07) | Product owner |
+| Q-18 | For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1? | WPAY only in 1.0 · Add LUT in Phase 9 | Phase 9 (US-TAX-13, US-TAX-16) | Product owner + accountant |
 
 ## Design follow-ups
 

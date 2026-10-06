@@ -51,14 +51,17 @@ Business event  ─▶  Domain service  ─▶  Posting rule  ─▶  Journal en
 
 - Journal entries are written **in the same transaction** as the document; either both land or neither does ([D-005](12-decisions.md)).
 - An entry is immutable; corrections post a reversing entry (`reversed_by_id`).
-- Every entry records `source_type` + `source_id` (`invoice`, `invoice_void`, `payment`, `payment_delete`, `payment_credit_applied`, `credit_note`, `expense`, `vendor_bill`, `vendor_bill_void`, `vendor_payment`, `vendor_payment_delete`) so every report figure drills down to a document.
+- Every entry records `source_type` + `source_id` (`invoice`, `invoice_void`, `payment`, `payment_delete`, `payment_credit_applied`, `credit_note`, `expense`, `vendor_bill`, `vendor_bill_void`, `vendor_payment`, `vendor_payment_delete`; from Phase 8 also `opening_balance`, `opening_invoice`, `opening_customer_credit`, `opening_bill`, `opening_vendor_credit`, `manual_journal`, `manual_journal_reversal`, `bank_transfer`, `bank_transaction`, `customer_refund`, `vendor_credit`, `vendor_credit_void`, `vendor_refund`, `tax_payment`, `tax_refund`) so every report figure drills down to a document.
 - A database trigger rejects an entry whose debits ≠ credits; a scheduled integrity check asserts the trial balance.
 - Postings are dated at the moment of the business action (issue/record/approve time). A closed fiscal period rejects postings dated inside it ([D-030](12-decisions.md)).
+- Owners may post adjusting journals (Phase 8), which never touch control accounts; opening balances post once at a cutover date and are then locked behind a closed period ([D-134](12-decisions.md), [D-137](12-decisions.md)).
+- Every movement of money names a **money account** — a bank, cash or card ledger account ([D-140](12-decisions.md)); bank reconciliation marks journal lines on those accounts as reconciled and posts nothing itself ([D-158](12-decisions.md)).
+- Cash-basis figures are computed when a report runs, from the accrual ledger and payment allocations; there is one ledger ([D-138](12-decisions.md)).
 - The full posting table is [06-ledger-posting-rules](06-ledger-posting-rules.md).
 
 ## Document numbering
 
-`number_sequences` holds one row per organisation and document type (quote, invoice, credit note, receipt, expense, vendor payment, job — jobs get their number with US-JOB-22). Issuing locks the row (`SELECT … FOR UPDATE`), takes the next value and writes the document in the same transaction, so numbers are gapless and never reused. Drafts have no number. Prefix and padding are configurable (Settings › Numbering). Vendor bills keep the vendor's own number.
+`number_sequences` holds one row per organisation and document type (quote, invoice, credit note, receipt, expense, vendor payment, job — jobs get their number with US-JOB-22; vendor credit `VCR-` and journal `JNL-` from Phase 8). Opening invoices keep their old system's numbers. Issuing locks the row (`SELECT … FOR UPDATE`), takes the next value and writes the document in the same transaction, so numbers are gapless and never reused. Drafts have no number. Prefix and padding are configurable (Settings › Numbering). Vendor bills keep the vendor's own number.
 
 ## State machines
 
@@ -98,11 +101,23 @@ variation order = a linked quote; when accepted, "Apply to job" adds its total t
 
 ### Expense
 
-`submitted` (by anyone, including Field, offline-capable) → `approved` (posts Dr Expense / Cr Bank — P15; an employee-reimbursements account is open question Q-05; can then be billed to the customer as a draft invoice) or `rejected` (comment required; no posting).
+`submitted` (by anyone, including Field, offline-capable) → `approved` (posts Dr Expense / Cr Bank — P15; an employee-reimbursements account is planned for v1.1 (Q-05); the money account is chosen at approval from Phase 8; can then be billed to the customer as a draft invoice) or `rejected` (comment required; no posting).
 
 ### Vendor bill
 
-`draft` → `recorded` (posts Dr Expense/COGS + Input Tax / Cr AP) → paid via vendor payments (allocated across bills) · `recorded` → `void` (reversing entry).
+`draft` → `recorded` (posts Dr Expense/COGS + Input Tax / Cr AP) → paid via vendor payments (allocated across bills) and vendor credits (Phase 8) · `recorded` → `void` (reversing entry).
+
+### Vendor credit (Phase 8)
+
+`draft` → `open` (recorded: posts P24) → `used` (allocations to bills and vendor refunds reach the total) · `open` with nothing applied → `void` (reversing entry).
+
+### Bank reconciliation (Phase 8)
+
+Statement lines import as `unmatched` → `matched` (to one or more journal lines on the account) or `excluded` (with a note). A reconciliation is `in_progress` → `finished` (difference zero; matched lines locked) → `undone` (latest only; lines unlocked).
+
+### Opening balances (Phase 8)
+
+`draft` (editable; P17–P20 re-post on change) → `locked` (closed fiscal period up to the day before the cutover date) → `draft` again only by an Owner's audited unlock.
 
 ### Meeting
 
@@ -120,6 +135,14 @@ Visibility `private` (organiser + invitees) or `org` (everyone). Invitees respon
 
 Details and the capability matrix: [07-security](07-security.md).
 
+## Modules (Phase 9)
+
+Four optional groups — Leads & meetings, Jobs & field, Approvals, Recurring documents — can be switched off per business ([D-154](12-decisions.md)). One map in `packages/shared/src/modules.ts` lists each module's routes, capabilities, navigation items, widgets, search types, notification types and queues. The API's `ModuleGuard` refuses a switched-off module's routes with 403 `MODULE_OFF` before capability checks; the web reads the same map to hide everything; queues skip a switched-off module's work. Switching off never deletes data or Team grants. These are runtime settings, unlike the build-time phase flags in `feature-flags.ts` ([D-068](12-decisions.md)).
+
+## AI assistant (Phase 9)
+
+Optional and off by default ([D-162](12-decisions.md)). `AiService` in the API calls one configured `AiDriver` — `none`, `openai-compatible` (local Ollama/vLLM/LM Studio or any compatible cloud endpoint) or `anthropic` — with the Owner's own endpoint and key ([D-163](12-decisions.md)). Each feature is a small read-only route that gathers what it needs through the module's own services with the caller's permissions, redacts it ([D-165](12-decisions.md)), asks the model for a fixed JSON shape, validates every field and returns a suggestion the web or mobile form pre-fills ([D-166](12-decisions.md)). AI never writes: the person saves through the normal route. Totals and tax are computed by `@spine/shared`, never taken from the model. Every request is metered and logged in `ai_requests` ([D-168](12-decisions.md), [D-169](12-decisions.md)); with the AI module off, nothing in this path runs.
+
 ## Background jobs and events
 
 | Queue / event | Trigger | Effect |
@@ -128,6 +151,7 @@ Details and the capability matrix: [07-security](07-security.md).
 | `invoice-send-email` | Invoice emailed / reminder | Render PDF, email with balance due |
 | `notify-email` | Any notification with an email channel | Email to the targeted users |
 | `meeting-starting-soon-poll` | Every few minutes | Sends `meeting_starting_soon` to each attendee once per occurrence |
+| `recurring-bill-run` | Every 15 minutes, from 6:00 AM organisation time (Phase 8) | Creates due recurring bills, recorded or as drafts ([D-159](12-decisions.md)) |
 | Notification types | `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon` | In-app notification row + optional email + optional browser push |
 
 ## Offline sync (mobile)

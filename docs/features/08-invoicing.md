@@ -2,7 +2,7 @@
 
 Standard, advance (deposit), progress and retention-release invoices. Drafts are freely editable; issuing locks the invoice, gives it a permanent number and posts it to the ledger. Mistakes are fixed by voiding with a reason or issuing a credit note — never by editing. Invoices are emailed as PDFs and chased with one-click reminders.
 
-**Screens:** `InvoicesList` (P1), `InvoicesEmpty` (P1), `InvoiceBuilder` (P1), `InvoiceBuilderAdvance` (P1), `InvoiceDetailDraft` (P1), `InvoiceDetail` (P1), `InvoiceDetailProgress` (P1), `InvoiceDetailVoid` (P2), `InvoiceVoidDialog` (P1), `InvoiceDeleteConfirm` (P2), `CreditNoteDialog` (P1), `CreditNotesList` (P2), `CreditNotesEmpty` (P2), `CreditNoteDrawer` (P2), `InvoicePdf` (P1), `ApplyCreditDialog` (P2), `SettingsBusiness` (P1), `SettingsReminders` (P1), `EmailReminder` (P1), `RecurringInvoiceDialog` (P2), `RecurringInvoicesList` (P2), `InvoicesBulkSelect` (P2), `InvoicePdfPaymentInstructions` (P2), `SettingsPaymentInstructions` (P2)
+**Screens:** `InvoicesList` (P1), `InvoicesEmpty` (P1), `InvoiceBuilder` (P1), `InvoiceBuilderAdvance` (P1), `InvoiceDetailDraft` (P1), `InvoiceDetail` (P1), `InvoiceDetailProgress` (P1), `InvoiceDetailVoid` (P2), `InvoiceVoidDialog` (P1), `InvoiceDeleteConfirm` (P2), `CreditNoteDialog` (P1), `CreditNotesList` (P2), `CreditNotesEmpty` (P2), `CreditNoteDrawer` (P2), `InvoicePdf` (P1), `ApplyCreditDialog` (P2), `SettingsBusiness` (P1), `SettingsReminders` (P1), `EmailReminder` (P1), `RecurringInvoiceDialog` (P2), `RecurringInvoicesList` (P2), `InvoicesBulkSelect` (P2), `InvoicePdfPaymentInstructions` (P2), `SettingsPaymentInstructions` (P2), `SettingsPaymentInstructionsUpi` (P1), `InvoicePdfGst` (P1)
 **Depends on:** 03 Contacts, 05 Catalogue, 11 Tax, 06 Quotes and 07 Jobs (other ways to create invoices), 09 Payments.
 
 ## Features
@@ -18,6 +18,7 @@ Standard, advance (deposit), progress and retention-release invoices. Drafts are
 | F-INV-07 | Automatic payment reminders | P1 | 7 | `SettingsReminders`, `EmailReminder` |
 | F-INV-08 | Recurring invoices | P2 | 7 | `RecurringInvoiceDialog`, `RecurringInvoicesList` |
 | F-INV-09 | Bulk invoice actions | P2 | 7 | `InvoicesBulkSelect` |
+| F-INV-10 | UPI QR code on invoices | P1 | 9 | `SettingsPaymentInstructionsUpi`, `InvoicePdfGst` |
 
 ## User stories
 
@@ -380,3 +381,33 @@ Decision: D-097
 
 **Implementation notes**
 - API: `POST /invoices/bulk/pdf { ids }` → ZIP stream (contract addition).
+
+### US-INV-25 · Set my UPI ID for payments
+**Feature:** F-INV-10 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsPaymentInstructionsUpi`
+**As** an owner in India, **I want** to give Spine my UPI ID, **so that** customers can pay invoices by scanning a code.
+
+Decision: D-150
+
+**Acceptance criteria**
+- **Given** Settings › Payment instructions and the currency is INR, **when** it opens, **then** it has "UPI ID" (placeholder "e.g. riverstone@okhdfc") and "Payee name" (default: the business name), with "Show a UPI QR code on invoices" on by default once a UPI ID is saved.
+- **Given** a UPI ID without "@" or with spaces, **when** I save, **then** I see "Enter a UPI ID like name@bank.".
+- **Given** another currency, **when** the pane opens, **then** the UPI fields aren't shown.
+
+**Implementation notes**
+- Data: `settings.business_profile` gains `upiId`, `upiPayeeName`, `showUpiQr`.
+
+### US-INV-26 · Show a UPI QR code on invoices
+**Feature:** F-INV-10 · **Priority:** P1 · **Phase:** 9 · **Screens:** `InvoicePdfGst`
+**As** a customer, **I want** to scan and pay an invoice with any UPI app, **so that** paying takes seconds.
+
+Decision: D-150
+
+**Acceptance criteria**
+- **Given** a UPI ID and the setting on, **when** an invoice is issued, **then** its PDF shows a QR code with "Scan to pay ₹<balance due> with any UPI app" and the UPI ID beside it, next to the payment instructions.
+- **Given** the QR code, **when** a UPI app scans it, **then** it opens with the payee, the amount and the invoice number as the note.
+- **Given** an invoice with nothing due at issue (fully offset by a deposit), **when** it's issued, **then** there's no QR code.
+- **Given** a payment reminder, **when** it's emailed, **then** the body states the current balance and, when it differs from the PDF's QR amount, says "The QR code on the attached invoice is for <original>; pay <balance> to clear it.".
+- **Given** a scanned payment, **when** money arrives, **then** nothing is recorded automatically; the office records it or finds it in reconciliation.
+
+**Implementation notes**
+- `qrcode` renders a PNG at issue into the stored PDF (D-083); the invoice keeps `upi_qr_amount` for the reminder text.

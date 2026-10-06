@@ -1,6 +1,6 @@
 # 04 · Data model
 
-PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums). Migrations are SQL in `apps/api/drizzle/`, forward-only. The table reference below is generated from the schema; the prose sections are the rules it has to obey. If you change a table or column, update this file in the same change.
+PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums today; Phases 8–9 add the tables and columns listed under "Columns added by the feature files"). Migrations are SQL in `apps/api/drizzle/`, forward-only. The table reference below is generated from the schema; the prose sections are the rules it has to obey. If you change a table or column, update this file in the same change.
 
 ## Conventions
 
@@ -27,6 +27,11 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums)
 | I10 | No journal posting dated inside a closed `fiscal_periods` row | Service layer (tested) |
 | I11 | A quote, invoice or bill line stores its own name, price and tax (snapshot) | Columns on `*_lines` |
 | I12 | An idempotency key is unique per org + user + endpoint + key, where endpoint is the method and actual path (not the route pattern); replays return the stored response (US-OPS-08) | `idempotency_keys` |
+| I13 | Exactly one default money account per organisation; each money account owns exactly one ledger account | Partial unique index on `money_accounts (org_id) where is_default`; unique `account_id` (Phase 8) |
+| I14 | Vendor credit allocations + vendor refunds ≤ the credit's total; an allocation ≤ the bill's balance; customer refunds ≤ the source's remaining credit | Triggers (Phase 8) |
+| I15 | Manual journal lines never use 1100, 1150, 1200, 2000, 2100, 2200 or 3900; opening balance lines never use 1100, 1150, 2000, 2200 or 3900 | Service layer (tested, D-134, D-137) |
+| I16 | A journal line belongs to at most one reconciliation; a document whose entry has reconciled lines can't be voided or deleted | Unique match + service check (D-158) |
+| I17 | Once opening balances are locked, nothing is posted dated before the cutover date except the opening entries themselves | The closed fiscal period created by the lock (I10) |
 
 ## Relationships worth knowing
 
@@ -80,6 +85,53 @@ New schema the stories require. Each is created by the story named; until then i
 | `expense_labour_lines` (new) | `id`, `org_id`, `expense_id` → expenses (cascade), `sort_order`, `trade text`, `headcount integer` (> 0), `day_rate_amount bigint` (> 0), `line_amount bigint` (= headcount × day rate); max 20 per expense; the expense `amount` is their sum. No worker names or hours (D-126). Migration `0072` | US-PUR-23 |
 | `accounts`, `expense_categories` | Rows seeded when the Construction template is chosen: accounts 5300 Plant & Equipment Hire, 5400 Fuel & Freight, 5500 Site Overheads & Permits; six expense categories mapped to 5000–5500. Existing codes and names are kept, never duplicated (D-129) | US-ONB-13 |
 | Rate and quantity columns | `tax_rates.rate`, `quote_lines`/`invoice_lines`/`credit_note_lines`/`vendor_bill_lines` `.quantity`, `.discount_percentage`, `.tax_rate_percentage`, `catalog_items.default_tax_rate_percentage`, `jobs.retention_pct`, `milestones.amount`: `real` → `numeric(18,4)` | US-TAX-07 |
+| `money_accounts` (new) | `id`, `org_id`, `account_id` (→ accounts, unique), `kind` enum `money_account_kind` (`bank`/`cash`/`card`), `name` (unique per org among active), `bank_name?`, `last4?`, `is_default boolean` (exactly one per org, partial unique index), `statement_mapping jsonb?` (D-157), `archived_at`, timestamps. Migration creates rows for 1000 (cash) and 1010 (bank, default) in every organisation (D-140) | US-BANK-01 |
+| `accounts` | System account **3900 Opening Balance Adjustments** (equity) seeded by migration; new bank/cash accounts use codes 1011–1099, card accounts 2300–2399 (liability) | US-BANK-01, US-RPT-16 |
+| `user` | `last_money_accounts jsonb` (`{ payment, vendor_payment, expense, refund, tax_payment, money_in_out: money_account_id }`) | US-BANK-03 |
+| `payments`, `vendor_payments`, `expenses` | `money_account_id uuid → money_accounts` (backfilled from the posted bank line; required for new rows except opening customer credit) | US-BANK-03 |
+| `bank_transfers` (new) | `id`, `org_id`, `from_money_account_id`, `to_money_account_id` (different), `amount bigint > 0`, `date`, `reference?`, `entry_id → journal_entries`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?`, timestamps | US-BANK-04 |
+| `bank_transactions` (new) | `id`, `org_id`, `money_account_id`, `direction` (`in`/`out`), `account_id` (the category; never a control account), `contact_id?`, `amount bigint`, `tax_rate_id?`/`tax_group_id?`, `tax_amount bigint default 0`, `date`, `description`, `entry_id`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?`, timestamps | US-BANK-05 |
+| `bank_statement_imports` (new) | `id`, `org_id`, `money_account_id`, `file_name`, `imported_count`, `skipped_count`, `failed_rows jsonb`, `imported_by_user_id`, `created_at` (the CSV file itself isn't stored) | US-BANK-07 |
+| `bank_statement_lines` (new) | `id`, `org_id`, `money_account_id`, `import_id`, `date`, `description`, `reference?`, `amount bigint` (signed: in > 0), `running_balance bigint?`, `dedupe_key` (unique per account: date + amount + normalised description), `status` enum `statement_line_status` (`unmatched`/`matched`/`excluded`), `exclude_note?`, `reconciliation_id?` | US-BANK-07, US-BANK-08 |
+| `bank_statement_line_matches` (new) | `statement_line_id` → bank_statement_lines (cascade), `journal_line_id` → journal_lines (restrict); unique (`journal_line_id`) among lines of unfinished and finished reconciliations | US-BANK-08 |
+| `bank_reconciliations` (new) | `id`, `org_id`, `money_account_id`, `statement_end_date`, `statement_closing_balance bigint`, `status` (`in_progress`/`finished`/`undone`), `started_by_user_id`, `finished_by_user_id?`, `finished_at?`, `undone_at?`; at most one `in_progress` per account | US-BANK-08–US-BANK-11 |
+| `journal_lines` | `reconciliation_id uuid? → bank_reconciliations` (set when a finished reconciliation matched it; cleared on undo) | US-BANK-10 |
+| `opening_balances` (new) | `org_id` PK, `cutover_date`, `status` (`draft`/`locked`), `entry_id?` (the current P17 entry), `locked_at?`, `locked_by_user_id?`, `fiscal_period_id?` (the closed period created by locking) | US-RPT-16, US-RPT-19 |
+| `opening_balance_lines` (new) | `org_id`, `account_id` (never 1100, 1150, 2000, 2200, 3900), `debit bigint`, `credit bigint` (one-sided) | US-RPT-16 |
+| `invoices` | `type` enum gains `opening` (no lines, no tax, no PDF; `number` is the old system's number, unique with all invoices); `retention_held_amount` used for opening retention | US-RPT-17 |
+| `payments` | `is_opening boolean default false` (opening customer credit: no money account, posts P19) | US-RPT-17 |
+| `vendor_bills` | `is_opening boolean default false` (no lines; posts P20); `recurring_bill_id?` → recurring_bills (set null), `recurring_run_on date?`, unique (`recurring_bill_id`, `recurring_run_on`) | US-RPT-18, US-PUR-30 |
+| `manual_journals` (new) | `id`, `org_id`, `number` (`JNL-0001`, numbering type `journal`), `date`, `reason`, `status` (`posted`/`reversed`), `entry_id`, `reversal_entry_id?`, `reversal_reason?`, `reversed_at?`, `created_by_user_id`, timestamps | US-RPT-20, US-RPT-21 |
+| `manual_journal_lines` (new) | `id`, `journal_id` (cascade), `sort_order`, `account_id` (never a control account, D-134), `description?`, `debit bigint`, `credit bigint` (one-sided), `job_id?` | US-RPT-20 |
+| `credit_notes` | `credit_remaining_amount bigint default 0` (the excess over the invoice's balance held as customer credit, D-142) | US-PAY-16 |
+| `customer_refunds` (new) | `id`, `org_id`, `contact_id`, `source_payment_id?` xor `source_credit_note_id?`, `money_account_id`, `amount bigint > 0`, `date`, `method` (`payment_method`), `reference?`, `entry_id`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?`, timestamps; trigger keeps refunds ≤ the source's remaining credit | US-PAY-17 |
+| `vendor_credits` (new) | `id`, `org_id`, `number?` (`VCR-0001` at record, numbering type `vendor_credit`), `vendor_reference?`, `contact_id`, `bill_id?` (against bill), `date`, `status` enum `vendor_credit_status` (`draft`/`open`/`used`/`void`), `currency`, totals (`subtotal_amount`, `tax_amount`, `total_amount`, `balance_amount`), `is_opening boolean`, `void_reason?`, `entry_id?`, `created_by_user_id`, timestamps | US-PUR-24, US-RPT-18 |
+| `vendor_credit_lines` (new) | same shape as `vendor_bill_lines`, keyed by `vendor_credit_id` (cascade) | US-PUR-24 |
+| `vendor_credit_allocations` (new) | `id`, `org_id`, `vendor_credit_id`, `bill_id`, `amount bigint > 0`, `created_by_user_id`, `created_at`; trigger: Σ allocations + refunds ≤ credit total, and allocation ≤ bill balance | US-PUR-25 |
+| `vendor_refunds` (new) | `id`, `org_id`, `vendor_credit_id`, `money_account_id`, `amount`, `date`, `method` (`vendor_payment_method`), `reference?`, `entry_id`, `reversal_entry_id?`, `deleted_at?` | US-PUR-26 |
+| `recurring_bills` (new), `recurring_bill_lines` (new) | Same shape as `recurring_invoices` / `recurring_invoice_lines` with `contact_id` a vendor and `mode` enum `recurring_bill_mode` (`record`/`draft`) | US-PUR-29 |
+| `tax_payments` (new) | `id`, `org_id`, `kind` (`payment`/`refund`), `period_from`, `period_to`, `input_tax_used bigint` (payments only), `amount bigint`, `money_account_id`, `date`, `reference?`, `entry_id`, `reversal_entry_id?`, `created_by_user_id`, `deleted_at?` | US-TAX-08 |
+| `attachments` (new) | `id`, `org_id`, `entity_type` enum `attachment_entity` (`quote`, `invoice`, `credit_note`, `payment`, `customer_refund`, `vendor_bill`, `vendor_credit`, `vendor_payment`, `expense`, `manual_journal`, `bank_transaction`, `contact`), `entity_id uuid`, `file_id → files`, `created_by_user_id`, `created_at`, `removed_at?`, `removed_by_user_id?`, `removal_reason?`; at most 10 live rows per record (service check); index (`org_id`, `entity_type`, `entity_id`) | US-OPS-33–US-OPS-35 |
+| `settings` key `tax_profile` | `{ country: "IN"\|"GB"\|"AU"\|"NZ"\|"AE"\|"SA"\|"other", registrationNumber?, legalName?, tradeName?, stateCode?, registeredOn?, returnPeriod: "monthly"\|"quarterly", defaultIntraTax?, defaultInterTax? }` | US-TAX-09, US-TAX-12, US-DASH-25 |
+| `tax_rates` | `tax_type` enum `tax_type` (`cgst`, `sgst`, `utgst`, `igst`, `cess`, `vat`, `gst`, `sales_tax`, `other`; existing rows → `other`) | US-TAX-10 |
+| `tax_groups` | `scope` (`intra`/`inter`/`any`, default `any`) | US-TAX-10 |
+| `catalog_items` | `supply_class` enum `supply_class` (`taxable`/`zero_rated`/`exempt`/`non_taxable`), `hsn_sac text?`, `inter_tax_rate_id?`, `inter_tax_group_id?` (the existing default tax becomes the intra-state tax) | US-TAX-11, US-TAX-13, US-TAX-14 |
+| `quote_lines`, `invoice_lines`, `credit_note_lines`, `vendor_bill_lines`, `vendor_credit_lines`, `recurring_*_lines`, `catalog_bundle_lines` | `supply_class` and `hsn_sac` (snapshots) | US-TAX-11, US-TAX-14 |
+| `contacts` | `gst_treatment` enum (`registered`, `unregistered`, `consumer`, `overseas`, `sez`; null outside India); `tax_id` holds the GSTIN | US-TAX-12 |
+| `addresses` | `state_code text?` (two-digit GST state code in India; free region code elsewhere) | US-TAX-12 |
+| `quotes`, `invoices`, `credit_notes`, `vendor_bills`, `vendor_credits` | `place_of_supply text?` (state code), `supply_type` (`intra`/`inter`/`export`, null without GST) — snapshotted at issue/record | US-TAX-13 |
+| `invoices` | `upi_qr_amount bigint?` (the amount encoded in the issued PDF's UPI QR) | US-INV-26 |
+| `settings` key `business_profile` | gains `upiId`, `upiPayeeName`, `showUpiQr` | US-INV-25 |
+| `settings` key `tally_mapping` | `{ [accountId]: tallyGroupName }` | US-RPT-39 |
+| `settings` key `document_layout` | `{ [docType: quote\|invoice\|credit_note\|receipt\|statement]: { paperSize, columns: { quantity, discount, hsnSac, lineTax }, title, terms, notes, signature, amountInWords, taxSummary, upiQr } , signatureFileId? }` | US-SET-17–US-SET-19 |
+| `settings` key `email_templates` | `{ [type: quote\|invoice\|reminder\|receipt\|credit_note\|statement]: { subject, body } }` (absent = Spine's default) | US-SET-21 |
+| `settings` key `modules` | `{ leadsMeetings, jobsField, approvals, recurring }` booleans, all true when absent; `modules_changed_at` per module for the "missed dates" message | US-SET-23 |
+| `settings` key `setup_hidden` | `string[]` of setup-card keys marked "not needed" | US-ONB-15 |
+| Member dashboard layout | gains `reportFavourites: string[]` and `profitBasis: "accrual"\|"cash"` | US-RPT-23, US-DASH-26 |
+| `settings` key `ai` | `{ enabled, driver: "none"\|"openai-compatible"\|"anthropic", baseUrl?, model?, apiKeyEncrypted?, apiKeyHint?, supportsImages?, features: { readDocuments, draftEmails, draftQuoteLines, bankSuggestions }, monthlyTokenBudget?, acknowledgedAt?, acknowledgedByUserId? }` — the key is never returned by the API | US-AI-01–US-AI-04 |
+| `ai_requests` (new) | `id`, `org_id`, `user_id`, `feature` (`read_document`/`draft_email`/`draft_quote_lines`/`bank_suggestions`), `entity_type?`, `entity_id?`, `provider`, `model`, `input_tokens`, `output_tokens`, `duration_ms`, `outcome` (`ok`/`error`/`timeout`/`budget`/`rate_limited`), `error_code?`, `created_at`; index (`org_id`, `created_at`). No prompt or reply text | US-AI-04, US-AI-06 |
+| `vendor_bills`, `expenses`, `quotes` | `ai_assisted boolean not null default false` (saved after AI filled fields) | US-AI-08, US-AI-09, US-AI-13 |
+| `bank_statement_line_matches` | `suggested_by` (`rules`/`ai`/`person`, default `person`) | US-AI-14 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).
 

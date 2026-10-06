@@ -2,7 +2,7 @@
 
 Organisation configuration in one Owner-only Settings dialog (business profile, branding, template, currency, financial year, tax, numbering, chart of accounts, purchases, pipeline stages, quote conversion, meeting defaults, demo data), record history on every document, and an organisation-wide audit log. Personal preferences live on Profile & Preferences (02), people and access under Team (15).
 
-**Screens:** `SettingsBusiness` (P1), `SettingsSearch` (P3), `SettingsTemplate` (P2), `SettingsCurrency` (P2), `SettingsFiscalYear` (P2), `SettingsNumbering` (P2), `SettingsDemoData` (P2), `DeleteDemoDataConfirm` (P2), `HistoryDialog` (P2), `ContactHistory` (P2), `UserMenu` (P1), `SettingsBranding` (P3), `OrgAuditLog` (P3), `SettingsAccounts` (P2), `QuotePdf` (P1), `SettingsDataExport` (P2), `SettingsPaymentInstructions` (P2)
+**Screens:** `SettingsBusiness` (P1), `SettingsSearch` (P3), `SettingsTemplate` (P2), `SettingsCurrency` (P2), `SettingsFiscalYear` (P2), `SettingsNumbering` (P2), `SettingsDemoData` (P2), `DeleteDemoDataConfirm` (P2), `HistoryDialog` (P2), `ContactHistory` (P2), `UserMenu` (P1), `SettingsBranding` (P3), `OrgAuditLog` (P3), `SettingsAccounts` (P2), `QuotePdf` (P1), `SettingsDataExport` (P2), `SettingsPaymentInstructions` (P2), `SettingsDocumentLayout` (P1), `SettingsEmailTemplates` (P1), `SettingsModules` (P1), `ModuleOffConfirm` (P1)
 **Depends on:** 01 Onboarding (same step components), 15 Team (Owner-only rule), every module (audit entries).
 
 ## Features
@@ -12,11 +12,14 @@ Organisation configuration in one Owner-only Settings dialog (business profile, 
 | F-SET-01 | Settings dialog | P1 | 0 | `UserMenu`, `SettingsBusiness`, `SettingsSearch` |
 | F-SET-02 | Change setup choices later | P1 | 0 | `SettingsBusiness`, `SettingsTemplate`, `SettingsCurrency`, `SettingsFiscalYear`, `SettingsNumbering` |
 | F-SET-03 | Record history | P2 | 0 | `HistoryDialog`, `ContactHistory` |
-| F-SET-04 | Demo data housekeeping | P2 | 8 | `SettingsDemoData`, `DeleteDemoDataConfirm` |
+| F-SET-04 | Demo data housekeeping | P2 | 10 | `SettingsDemoData`, `DeleteDemoDataConfirm` |
 | F-SET-05 | Branding and theme presets | P3 | 7 | `SettingsBranding`, `QuotePdf` |
 | F-SET-06 | Organisation audit log | P3 | 7 | `OrgAuditLog` |
 | F-SET-07 | Settings consistency fixes | P2 | 6 | `ContactHistory`, `SettingsTemplate`, `SettingsAccounts` |
 | F-SET-08 | Data export | P2 | 7 | `SettingsDataExport` |
+| F-SET-09 | Document layout options and fonts | P1 | 9 | `SettingsDocumentLayout`, `InvoicePdfGst` |
+| F-SET-10 | Email templates | P1 | 9 | `SettingsEmailTemplates` |
+| F-SET-11 | Modules | P1 | 9 | `SettingsModules`, `ModuleOffConfirm` |
 
 ## User stories
 
@@ -119,7 +122,7 @@ Legacy: S-10.6
 - Data: `audit_log`.
 
 ### US-SET-08 · Remove demo data and keep my real data
-**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 8 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
+**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 10 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
 **As** an owner who evaluated with demo data, **I want** to delete it in one step, **so that** I can start real work in the same install.
 
 Legacy: S-12.8
@@ -253,3 +256,126 @@ Decision: D-094
 
 **Implementation notes**
 - Files: stored privately; download authorised per request (07-security "Files").
+
+### US-SET-17 · Choose paper size and columns for each document
+**Feature:** F-SET-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsDocumentLayout`
+**As** an owner, **I want** to choose what my quotes and invoices show, **so that** they suit my customers.
+
+Decision: D-152
+
+**Acceptance criteria**
+- **Given** Settings › Documents, **when** it opens, **then** a tab per document type ("Quotes", "Invoices", "Credit notes", "Receipts", "Statements") shows options beside a live preview with sample data.
+- **Given** the options, **when** I change them, **then** I can set "Paper size" (A4, Letter) and show or hide "Quantity and unit", "Discount", "HSN/SAC" (when GST is on), "Tax per line" and "Tax summary table"; the preview updates as I change.
+- **Given** I save, **when** a new document is issued, **then** its PDF uses the options; issued PDFs never change.
+- **Given** a document with a discount on a line while "Discount" is hidden, **when** it renders, **then** the line shows its discounted price and the discount column is still hidden ("Hidden columns don't change any amounts.").
+
+**Implementation notes**
+- API: `GET/PUT /org/settings/document_layout` (roles: owner), validated by `documentLayoutSchema`; `GET /org/settings/document_layout/preview?type=` returns a sample PDF.
+
+### US-SET-18 · Set each document's title, terms and notes
+**Feature:** F-SET-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsDocumentLayout`
+**As** an owner, **I want** default terms and notes on each document type, **so that** I don't paste them every time.
+
+**Acceptance criteria**
+- **Given** a document tab, **when** I edit "Title" (e.g. "Quotation", "Tax Invoice", "Estimate"), "Default terms" and "Default notes", **then** new drafts start with them and I can change them on each document.
+- **Given** a GST invoice, **when** the title would conflict with GST rules (US-TAX-15), **then** the GST title wins and the field shows "Set by your GST settings".
+- **Given** terms over 2,000 characters, **when** I save, **then** I see "Keep terms under 2,000 characters.".
+
+**Implementation notes**
+- Same setting key; the document builders read defaults when a draft is created.
+
+### US-SET-19 · Add a signature and the amount in words
+**Feature:** F-SET-09 · **Priority:** P2 · **Phase:** 9 · **Screens:** `SettingsDocumentLayout`
+**As** an owner, **I want** my signature and the total in words on documents, **so that** they look like what customers expect.
+
+**Acceptance criteria**
+- **Given** "Signature", **when** I upload a PNG or JPEG, **then** it shows above "Authorised signatory — <business name>" on the chosen document types.
+- **Given** "Amount in words" is on, **when** an invoice renders, **then** the total appears in words in the organisation's currency (e.g. "Rupees Twelve Thousand Five Hundred and Fifty Paise Only" for INR, using lakh and crore; "Twelve thousand five hundred dollars and fifty cents" for others).
+- **Given** I remove the signature, **when** I save, **then** new PDFs have no signature; issued ones keep theirs.
+
+**Implementation notes**
+- Data: `settings.document_layout.signatureFileId` (→ files, served via the owning setting, D-117). `amountInWords` helper in `@spine/shared` with tests for Indian and international grouping.
+
+### US-SET-20 · Show every character on PDFs
+**Feature:** F-SET-09 · **Priority:** P1 · **Phase:** 9 · **Screens:** `InvoicePdfGst`
+**As** an owner in India, **I want** ₹ and Hindi names to print correctly, **so that** my documents look right.
+
+Decision: D-151
+
+**Acceptance criteria**
+- **Given** an INR organisation, **when** any PDF renders, **then** money shows "₹" (not "INR" or a blank box).
+- **Given** a customer name in Devanagari, **when** an invoice renders, **then** it prints correctly.
+- **Given** a name in a script the fonts don't cover, **when** it renders, **then** it still prints in the fallback font and the PDF snapshot test documents which scripts are covered.
+
+**Implementation notes**
+- Fonts in `apps/api/assets/fonts/` (Noto Sans regular/bold, Noto Sans Devanagari regular/bold), registered once in `document-branding.tsx`; PDF snapshot tests updated.
+
+### US-SET-21 · Edit the text of each customer email
+**Feature:** F-SET-10 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsEmailTemplates`
+**As** an owner, **I want** my own words in the emails customers get, **so that** they sound like my business.
+
+Decision: D-153
+
+**Acceptance criteria**
+- **Given** Settings › Emails, **when** it opens, **then** it lists "Quote", "Invoice", "Payment reminder", "Receipt", "Credit note" and "Statement", each with its subject and the first line of its body.
+- **Given** I open one, **when** I edit "Subject" and "Message", **then** a placeholder menu inserts `{customer_name}`, `{document_number}`, `{amount}`, `{balance_due}`, `{due_date}`, `{business_name}` and, where the email has one, `{link}`.
+- **Given** an unknown placeholder like `{invoice_no}`, **when** I save, **then** I see "{invoice_no} isn't a placeholder Spine knows. Use one from the list.".
+- **Given** a saved template, **when** that email is next sent, **then** it uses my text inside the branded layout; emails already sent are unchanged.
+- **Given** the "Send" dialogs, **when** they open, **then** the subject and message start from the template and can still be changed for one email.
+
+**Implementation notes**
+- API: `GET/PUT /org/settings/email_templates` (roles: owner), `emailTemplatesSchema`; `email-templates.ts` renders saved text through the placeholder engine with HTML escaping.
+
+### US-SET-22 · Preview an email and reset it to the default
+**Feature:** F-SET-10 · **Priority:** P2 · **Phase:** 9 · **Screens:** `SettingsEmailTemplates`
+**As** an owner, **I want** to see the email before customers do, **so that** I catch mistakes.
+
+**Acceptance criteria**
+- **Given** a template, **when** I press "Preview", **then** it renders in the branded layout with a recent real document (or sample data when none), in light mode.
+- **Given** "Send me a test", **when** I press it, **then** the preview is emailed to me only.
+- **Given** "Reset to default", **when** I confirm, **then** Spine's original text comes back.
+
+**Implementation notes**
+- API: `POST /org/settings/email_templates/:type/preview`, `/:type/test` (roles: owner).
+
+### US-SET-23 · Switch optional modules on or off
+**Feature:** F-SET-11 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsModules`, `ModuleOffConfirm`
+**As** an owner, **I want** to turn off what my business doesn't use, **so that** everyone sees a simpler Spine.
+
+Decision: D-154
+
+**Acceptance criteria**
+- **Given** Settings › Modules, **when** it opens, **then** it lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents", each with a switch, a one-line description and what it includes; a note says "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on."; an "AI assistant" row shows its state and links to Settings › AI, where it's switched on and set up (US-AI-01).
+- **Given** I switch one off, **when** the confirmation opens, **then** it says what disappears and "Nothing is deleted. Switch it back on any time and everything is where you left it." with "Switch off".
+- **Given** "Jobs & field" while active Field users exist, **when** I try to switch it off, **then** I see "<n> people use the field app. Change their role or deactivate them first." and the switch stays on.
+- **Given** "Approvals" off, **when** someone submits an expense, **then** it's approved and posted at once, and discount approval on quotes is skipped.
+- **Given** a Staff user, **when** they call the route, **then** the API returns 403.
+
+**Implementation notes**
+- API: `GET /org/modules` (any member — the UI needs it), `PUT /org/modules` (roles: owner). Data: `settings` key `modules` `{ leadsMeetings, jobsField, approvals, recurring }` (all true by default). Audited.
+
+### US-SET-24 · Hide everything a switched-off module owns
+**Feature:** F-SET-11 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsModules`
+**As** a member, **I want** no traces of switched-off modules, **so that** I'm not confused by things we don't use.
+
+**Acceptance criteria**
+- **Given** a module off, **when** anyone uses Spine, **then** its sidebar items, dashboard widgets and attention rows, search groups, notification types, digest sections, settings panes and privilege groups are gone.
+- **Given** a direct link to a page in a switched-off module, **when** it opens, **then** it shows "<Module> is switched off. An owner can switch it on in Settings › Modules.".
+- **Given** an API call to a switched-off module, **when** it arrives, **then** it returns 403 `{ error: "MODULE_OFF" }` — including from the mobile app.
+- **Given** Recurring documents off, **when** the scheduled runs happen, **then** no recurring invoices or bills are created.
+- **Given** the shared capability list, **when** a module is off, **then** its capabilities stay granted in Teams but aren't shown or enforced as usable; the same module map drives the API guard and the UI (tested together).
+
+**Implementation notes**
+- `packages/shared/src/modules.ts` maps each module to its routes, capabilities, nav items, widgets, search types and notification types; a `ModuleGuard` in the API and a `useModule` hook in the web app read it.
+
+### US-SET-25 · Switch a module back on with nothing lost
+**Feature:** F-SET-11 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SettingsModules`
+**As** an owner, **I want** to turn a module back on safely, **so that** I can try it again later.
+
+**Acceptance criteria**
+- **Given** a module that was off, **when** I switch it on, **then** its records, Team grants, settings and pages are back as they were.
+- **Given** Recurring documents switched back on, **when** it resumes, **then** schedules continue from the next future date and missed dates aren't created ("Recurring documents were off from <date> to <date>; missed dates were skipped.").
+- **Given** Approvals switched back on, **when** expenses are submitted again, **then** they wait for approval; ones approved while it was off stay approved.
+
+**Implementation notes**
+- On switching on, `next_run_on` of active schedules is moved to the next future occurrence.

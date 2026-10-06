@@ -1,6 +1,6 @@
 # 10 · Phases
 
-Phases 0–4 are built; Phase 5 is in progress; Phases 6–8 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
+Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–10 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
 
 | Phase | Name | Stories | Milestone |
 |---|---|---|---|
@@ -12,9 +12,11 @@ Phases 0–4 are built; Phase 5 is in progress; Phases 6–8 follow ([D-098](12-
 | 5 | Mobile field companion | 25 | The app works end-to-end in airplane mode and syncs without duplicates |
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
-| 8 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
+| 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
+| 9 | Tax, documents and setup | 40 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; an owner can switch on an AI assistant that fills in forms |
+| 10 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 327 stories.
+Total: 422 stories.
 
 ## Phase 0 · Foundation
 
@@ -591,7 +593,175 @@ Total: 327 stories.
 - US-OPS-26 · Use every new screen in dark mode (P1)
 - US-OPS-32 · Lift cards off the page in light mode (P1)
 
-## Phase 8 · Packaging & 1.0
+## Phase 8 · Books completeness
+
+**Goal:** An accountant migrates a business in, reconciles the bank and closes a year in Spine.
+
+**Deliverables:** Bank, cash and card accounts with registers, transfers and other money in and out; the account picker on every payment, expense and refund; bank reconciliation from imported CSV statements; opening balances with open invoices, bills, retention and credits at a cutover date; Owner-only adjusting journals; vendor credits and vendor refunds; customer refunds and credit from credit notes; tax payments and refunds; attachments on financial records; the reports centre, general ledger, day book, cash flow, P&L comparison, sales and purchase analysis, payment and credit registers; CSV, Excel, PDF and print on every report; a cash-basis P&L; accountant access through a Team; recurring bills; catalogue import; the books cards on the dashboard (D-133–D-144, D-156–D-161).
+
+**Done when:**
+- A simulated migration — opening balances, 20 open invoices and 10 open bills at a cutover date — produces a Balance Sheet on the cutover date that matches the source trial balance to the cent, with Opening Balance Adjustments at zero.
+- A month of a sample bank statement imports, matches and finishes reconciliation with a difference of zero, and every money account's balance equals the Balance Sheet.
+- The trial balance balances after every new posting (P17–P27) in the ledger-integrity test, and a practising accountant has reviewed P17–P27 (Q-02).
+- Every report exports to CSV, Excel and PDF with the same figures as on screen, and a member with only `reports.view_financial_statements` reads every statement but can't post or change anything.
+- Cash-basis profit for a sample year equals cash received less cash paid on income and expense accounts.
+
+**Stories:**
+
+*Banking*
+
+- US-BANK-01 · Add my bank, cash and card accounts (P1)
+- US-BANK-02 · See every account's balance and what moved through it (P1)
+- US-BANK-03 · Choose the account money went into or came out of (P1)
+- US-BANK-04 · Move money between my accounts (P1)
+- US-BANK-05 · Record money in or out that has no invoice or bill (P1)
+- US-BANK-06 · Archive an account I no longer use (P2)
+- US-BANK-07 · Import a bank statement (P1)
+- US-BANK-08 · Match statement lines to what's in Spine (P1)
+- US-BANK-09 · Create what's missing from a statement line (P1)
+- US-BANK-10 · Finish a reconciliation when it balances (P1)
+- US-BANK-11 · Review or undo a reconciliation (P2)
+- US-BANK-12 · Let a Team see balances, record money and reconcile (P1)
+
+*Catalogue*
+
+- US-CAT-09 · Import catalogue items from a spreadsheet (P2)
+
+*Payments & receivables*
+
+- US-PAY-16 · Keep a credit note's extra as customer credit (P1)
+- US-PAY-17 · Refund a customer (P1)
+- US-PAY-18 · Let a Team refund customers (P2)
+
+*Purchases & expenses*
+
+- US-PUR-24 · Record a credit from a vendor (P1)
+- US-PUR-25 · Apply a vendor credit to bills (P1)
+- US-PUR-26 · Record a refund from a vendor (P1)
+- US-PUR-27 · Void a vendor credit (P2)
+- US-PUR-28 · Let a Team manage vendor credits (P1)
+- US-PUR-29 · Set up a recurring bill (P2)
+- US-PUR-30 · Create recurring bills automatically (P2)
+- US-PUR-31 · Pause, edit or stop a recurring bill (P2)
+
+*Tax*
+
+- US-TAX-08 · Record paying tax and using input tax credit (P1)
+
+*Accounting & reports*
+
+- US-RPT-16 · Set a cutover date and enter opening account balances (P1)
+- US-RPT-17 · Bring in unpaid customer invoices, retention and credit (P1)
+- US-RPT-18 · Bring in unpaid vendor bills and vendor credits (P1)
+- US-RPT-19 · Check and lock my opening balances (P1)
+- US-RPT-20 · Post an adjusting journal (P1)
+- US-RPT-21 · Reverse a journal posted by mistake (P1)
+- US-RPT-22 · See every manual journal (P2)
+- US-RPT-23 · Find every report in one place (P1)
+- US-RPT-24 · See the general ledger (P1)
+- US-RPT-25 · See the day book (P1)
+- US-RPT-26 · See where cash came from and where it went (P1)
+- US-RPT-27 · Compare profit and loss across periods (P1)
+- US-RPT-28 · See sales by customer and by item (P1)
+- US-RPT-29 · See expenses by category and purchases by vendor (P1)
+- US-RPT-30 · See payments received and made in a period (P2)
+- US-RPT-31 · See credit notes, vendor credits and refunds in a period (P2)
+- US-RPT-32 · Export every report to CSV and Excel (P1)
+- US-RPT-33 · Download any report as a PDF (P1)
+- US-RPT-34 · Print any report (P2)
+- US-RPT-35 · See profit and loss on a cash basis (P1)
+- US-RPT-36 · Let my accountant's Team see the financial statements (P1)
+
+*Dashboard*
+
+- US-DASH-21 · See what I owe vendors on the dashboard (P2)
+- US-DASH-22 · See where money goes (P2)
+- US-DASH-23 · See each bank, cash and card balance (P1)
+- US-DASH-24 · See work not yet billed (P1)
+- US-DASH-25 · See tax owed this period (P2)
+- US-DASH-26 · Switch dashboard profit between accrual and cash (P2)
+
+*Self-hosting & system states*
+
+- US-OPS-33 · Attach files to bills, invoices and other records (P1)
+- US-OPS-34 · Open attachments only when I can open the record (P1)
+- US-OPS-35 · Remove an attachment added by mistake (P2)
+
+## Phase 9 · Tax, documents and setup
+
+**Goal:** An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails and modules that fit it.
+
+**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); and the optional AI assistant — Settings › AI with a local or cloud provider, per-feature switches, a monthly budget, `ai.use`, AI audit — with four features: reading bills and receipts, drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173).
+
+**Done when:**
+- An India-preset organisation issues intra-state, inter-state, export and bill-of-supply invoices whose PDFs pass a GST checklist review, and the GSTR-1 JSON for the month validates in the GST offline tool with totals equal to the Tax Summary.
+- The Tally export for a sample quarter imports into TallyPrime and Tally.ERP 9 without errors, and Tally's trial balance matches Spine's.
+- A UPI app scanning a test invoice's QR code opens with the right payee, amount and note.
+- With each module switched off, its pages, widgets, search results, notifications and API routes are gone (403 `MODULE_OFF`), and switching it back on restores everything (tested per module).
+- A new owner completes every card on the Set up Spine page using only the page and its links.
+- With AI off, a network test sees no AI request and no AI control renders on any screen; with AI on against a local model and a cloud model, a sample bill fills the bill form with totals matching Spine's computation, and nothing is saved until a person saves.
+
+**Stories:**
+
+*Onboarding & first run*
+
+- US-ONB-14 · Start with the modules my industry needs (P2)
+- US-ONB-15 · Open a setup page that shows what's left (P1)
+- US-ONB-16 · Go from each setup card to its setting and its guide (P2)
+
+*Invoicing & credit notes*
+
+- US-INV-25 · Set my UPI ID for payments (P1)
+- US-INV-26 · Show a UPI QR code on invoices (P1)
+
+*Tax*
+
+- US-TAX-09 · Start with my country's tax rates (P1)
+- US-TAX-10 · Give each rate a tax type (P1)
+- US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax (P1)
+- US-TAX-12 · Record my GSTIN and state, and each customer's (P1)
+- US-TAX-13 · Pick intra- or inter-state GST automatically (P1)
+- US-TAX-14 · Add HSN or SAC codes to items and lines (P1)
+- US-TAX-15 · Print GST details on invoices and credit notes (P1)
+- US-TAX-16 · Export GSTR-1 for the GST portal (P1)
+- US-TAX-17 · Check GSTR-1 figures before uploading (P1)
+
+*Accounting & reports*
+
+- US-RPT-37 · See tax collected and paid by rate and tax type (P1)
+- US-RPT-38 · Export my books for Tally (P1)
+- US-RPT-39 · Map my accounts to Tally groups (P2)
+
+*Settings & administration*
+
+- US-SET-17 · Choose paper size and columns for each document (P1)
+- US-SET-18 · Set each document's title, terms and notes (P1)
+- US-SET-19 · Add a signature and the amount in words (P2)
+- US-SET-20 · Show every character on PDFs (P1)
+- US-SET-21 · Edit the text of each customer email (P1)
+- US-SET-22 · Preview an email and reset it to the default (P2)
+- US-SET-23 · Switch optional modules on or off (P1)
+- US-SET-24 · Hide everything a switched-off module owns (P1)
+- US-SET-25 · Switch a module back on with nothing lost (P1)
+
+*AI assistant*
+
+- US-AI-01 · Switch the AI assistant on or off (P1)
+- US-AI-02 · Connect a local or cloud AI provider (P1)
+- US-AI-03 · Choose which AI features are on (P1)
+- US-AI-04 · Set a monthly AI budget and see usage (P2)
+- US-AI-05 · Let a Team use AI (P1)
+- US-AI-06 · See every AI request in the audit log (P2)
+- US-AI-07 · Keep working when AI is unavailable (P1)
+- US-AI-08 · Fill in a vendor bill from the vendor's PDF or photo (P1)
+- US-AI-09 · Fill in an expense from a receipt (P1)
+- US-AI-10 · Fill in my expense from a receipt on the phone (P1)
+- US-AI-11 · Draft a quote or invoice email with AI (P1)
+- US-AI-12 · Draft a payment reminder or statement email in a chosen tone (P2)
+- US-AI-13 · Draft quote lines from an enquiry (P1)
+- US-AI-14 · Get AI suggestions while reconciling (P1)
+
+## Phase 10 · Packaging & 1.0
 
 **Goal:** A stranger installs from the README and issues their first invoice.
 

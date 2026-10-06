@@ -6,7 +6,7 @@
 2. **One list.** The capability list the Teams UI renders and the list the API enforces are the same array (`CAPABILITIES` in `packages/shared/src/schemas/permissions.ts`). A capability in one and not the other is a bug.
 3. **Nothing financial is deleted.** Issued documents are voided or credited, never edited or deleted; every create/update/issue/void/delete is in the audit log.
 4. **Least exposure on phones.** Field users never see financial reports; Field's rights are fixed and can't be widened by a Team ([D-019](12-decisions.md)).
-5. **No mandatory SaaS, no silent calls home.** Telemetry is off by default; the only outbound call is the optional daily update check ([D-055](12-decisions.md)).
+5. **No mandatory SaaS, no silent calls home.** Telemetry is off by default; the only outbound calls are the optional daily update check and, only while an Owner has switched the AI assistant on, requests to the AI provider they configured ([D-164](12-decisions.md)) ([D-055](12-decisions.md)).
 
 ## Authentication
 
@@ -22,7 +22,7 @@
 | Sessions (web) | HTTP-only session cookie (Better Auth); `Secure` when served over HTTPS; lifetime pinned explicitly in `auth.ts` |
 | Sessions (mobile) | Session token in the OS secure store (Keychain / Keystore), sent as Bearer; signing out deletes it and revokes the session |
 | Customer | Public quote token: random, unguessable, one quote, 30-day lifetime, rate-limited 20/min/IP ([D-032](12-decisions.md)) |
-| 2FA | Not in v1 ([Q-08](13-risks-open-questions.md)) |
+| 2FA | Not in 1.0; planned for v1.1 ([Q-08](13-risks-open-questions.md), [16-roadmap](16-roadmap.md)) |
 
 ## Roles
 
@@ -42,7 +42,7 @@
 
 ## Owner-only, never Team-configurable
 
-Users, Teams, privileges and invitations · organisation Settings (business profile, branding, template, currency, financial year, tax, numbering, chart of accounts, payment instructions, pipeline stages, quote conversion guard, meeting defaults, demo data; expense categories moved to Expenses › Categories under `expense_categories.*` (US-PUR-19), browser push to each member's profile (US-NTF-12)) · P&L, Balance Sheet, Trial Balance, Tax Summary, revenue trend · fiscal period close/reopen · org-wide audit log · update banner.
+Users, Teams, privileges and invitations · organisation Settings (business profile, branding, template, currency, financial year, tax and GST profile, numbering, chart of accounts, payment instructions and UPI ID, pipeline stages, quote conversion guard, meeting defaults, demo data, document layout, email templates, modules, Tally account mapping; expense categories moved to Expenses › Categories under `expense_categories.*` (US-PUR-19), browser push to each member's profile (US-NTF-12)) · adding, editing and archiving money accounts · opening balances and their lock · posting and reversing manual journals · tax payments and refunds · fiscal period close/reopen · the Set up Spine page · org-wide audit log · update banner. P&L, Balance Sheet, Trial Balance, Tax Summary and revenue trend were Owner-only until Phase 8; from US-RPT-36 they're readable with `reports.view_financial_statements` ([D-136](12-decisions.md)).
 
 ## Capability matrix
 
@@ -52,6 +52,9 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 |---|---|:---:|:---:|
 | Reports & ledger | `reports.view_dashboard_summary`, `reports.view_receivables`, `reports.view_payables`, `reports.view_job_profitability` | ✓ | — |
 | | `ledger.view` (account drill-down) | ✗ | — |
+| | `reports.view_financial_statements` (P&L, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, sales and purchase analysis, GSTR-1 and Tally exports; Phase 8, D-136) | ✗ | — |
+| Banking | `banking.view`, `banking.record`, `banking.reconcile` (Phase 8, US-BANK-12) | ✗ | — |
+| AI assistant | `ai.use` (Phase 9, US-AI-05; hidden while AI is off) | ✗ | ✓F `ai.read_own_receipt` only (own expense on the phone) |
 | Contacts | `contacts.edit_own`, `contacts.edit_others`, `contacts.delete_own`, `contacts.delete_others` | ✓ | — |
 | | `contacts.manage_persons`, `contacts.manage_addresses` (checked in addition to the contact's own/others check) | ✓ | — |
 | Catalogue | `catalog.edit_own`, `catalog.edit_others`, `catalog.delete_own`, `catalog.delete_others` | ✓ | — |
@@ -63,11 +66,13 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | | `quotes.accept_in_person` | ✓ | ✓F |
 | Invoices | `invoices.edit_own`, `invoices.edit_others`, `invoices.delete_own`, `invoices.delete_others`, `invoices.issue`, `invoices.void`, `invoices.send`, `invoices.send_reminder`, `invoices.manage_recurring` | ✓ | — |
 | Payments | `payments.edit_own` (create), `payments.edit_others` (reserved), `payments.delete_own`, `payments.delete_others`, `payments.apply_credit`, `payments.send_receipt` | ✓ | — |
+| | `payments.refund` (Phase 8, US-PAY-18) | ✗ | — |
 | Credit notes | `credit_notes.edit_own`, `credit_notes.edit_others`, `credit_notes.delete_own`, `credit_notes.delete_others`, `credit_notes.issue` | ✓ | — |
 | Expenses | `expenses.edit_own`, `expenses.delete_own` | ✓ | ✓F (own only) |
 | | `expenses.edit_others`, `expenses.delete_others`, `expenses.approve`, `expenses.reject`, `expenses.mark_billed`, `expenses.bill_to_customer` | ✓ | — |
 | Expense categories | `expense_categories.edit_own`, `…edit_others`, `…delete_own`, `…delete_others` | ✓ | — |
-| Vendor bills | `vendor_bills.edit_own`, `…edit_others`, `…delete_own`, `…delete_others`, `vendor_bills.record`, `vendor_bills.void` | ✓ | — |
+| Vendor bills | `vendor_bills.edit_own`, `…edit_others`, `…delete_own`, `…delete_others`, `vendor_bills.record`, `vendor_bills.void`, `vendor_bills.manage_recurring` (Phase 8, US-PUR-29) | ✓ | — |
+| Vendor credits | `vendor_credits.edit_own`, `…edit_others`, `…delete_own`, `…delete_others`, `vendor_credits.record`, `vendor_credits.apply`, `vendor_credits.void` (Phase 8, US-PUR-28) | ✓ | — |
 | Vendor payments | `vendor_payments.edit_own` (create), `…edit_others` (reserved), `…delete_own`, `…delete_others` | ✓ | — |
 | Jobs | `jobs.edit_own`, `jobs.edit_others`, `jobs.release_retention`, `jobs.assign` | ✓ | — |
 | | `milestones.edit_own`, `milestones.edit_others` (define set; mark complete) | ✓ | ✓F (always, both) |
@@ -75,7 +80,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 | | `job_photos.edit_own`, `job_notes.edit_own` | ✓ | ✓F (own only) |
 | | `job_photos.edit_others`, `job_notes.edit_others`, `variation_orders.edit_own`, `variation_orders.edit_others`, `variation_orders.apply` | ✓ | — |
 
-90 capabilities in total. Adding one means: add it to `CAPABILITIES`, `CAPABILITY_LABELS` (with its `group`) and `DEFAULT_TEAM_GRANTS`; enforce it server-side; write a backfill migration granting it to existing General Staff Teams; wire the web UI (`useCapability` / `useCanEditOwnership`) in the same change; update this table.
+90 capabilities in total today; Phase 8 adds 13 (`reports.view_financial_statements`, three `banking.*`, `payments.refund`, `vendor_bills.manage_recurring`, seven `vendor_credits.*`), making 103; Phase 9 adds `ai.use` (Team) and `ai.read_own_receipt` (Field, fixed), making 105. Adding one means: add it to `CAPABILITIES`, `CAPABILITY_LABELS` (with its `group`) and `DEFAULT_TEAM_GRANTS`; enforce it server-side; write a backfill migration granting it to existing General Staff Teams; wire the web UI (`useCapability` / `useCanEditOwnership`) in the same change; update this table.
 
 ## Secrets
 
@@ -110,7 +115,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 ## Supply chain
 
 - Lockfile committed; `pnpm install --frozen-lockfile` in CI.
-- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 8 (NFR-SEC-04).
+- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 10 (NFR-SEC-04).
 - Docker images pinned to major versions (`postgres:16-alpine`, `caddy:2-alpine`); base images rebuilt per release.
 - OWASP Top 10 review documented before 1.0 (NFR-SEC-05).
 
@@ -160,3 +165,26 @@ No new capabilities: every new figure reuses an existing grant, in both the API 
 - The cost-category drill-down (US-JOB-26) needs `ledger.view`, as the account drill-down already does.
 - Seeding the Construction template's accounts and categories (US-ONB-13) is part of the Owner-only industry template setting.
 
+
+## Added with Books completeness and Tax, documents and setup (Phases 8–9, D-133–D-161)
+
+- **Accountant access** ([D-136](12-decisions.md)): `reports.view_financial_statements` replaces `roles: owner` on `GET /reports/profit-and-loss`, `/balance-sheet`, `/trial-balance`, `/revenue-trend`, `/org/tax/summary` and their exports, and gates every new statement and analysis report, `/exports/gstr1` and `/exports/tally`. Owners always pass; Field never. The general ledger, day book and journal list read with `ledger.view`. It grants nothing that writes.
+- **Owner-only writes, never Team-configurable**: opening balances (`/opening-balances*`), manual journals (`POST /manual-journals*`), money accounts (`POST/PUT /money-accounts*`, archive/restore), tax payments and refunds (`/tax-payments`, `/tax-refunds`), Tally mapping, modules, document layout, email templates, the tax profile and the setup page. Locking and unlocking opening balances, posting and reversing journals, finishing and undoing reconciliations, and changing modules are written to the audit log.
+- **Banking**: `banking.view` gates balances and registers (`GET /money-accounts` with balances, `/money-accounts/:id/register`, the dashboard accounts card); account **names** for the payment-form pickers are returned to any member who can record that document, without balances. `banking.record` gates transfers and other money in/out; `banking.reconcile` gates statement imports, matching, finishing and undoing, and implies `banking.view` (saved together, US-BANK-12). Field gets 403 on every banking route.
+- **Refunds and credits**: `payments.refund` (customer refunds) and `vendor_credits.apply` (applying credits and recording vendor refunds) are separate from recording payments, because they send money out or reduce what's owed. Own/others checks on vendor credits run in the service before status checks, as for bills.
+- **Attachments** ([D-156](12-decisions.md)): reading follows the owning record's read rule through `GET /files/:id` (D-117 gains the `attachments` table); adding follows its edit rule; removing from an issued or recorded document is Owner-only and audited. Field reads attachments only on their own expenses. Uploads keep D-104's byte checks and 10 MB limit.
+- **Modules** ([D-154](12-decisions.md)): a `ModuleGuard` answers 403 `{ error: "MODULE_OFF" }` on every route of a switched-off module, before capability checks; the web hides the same items from the same map in `packages/shared/src/modules.ts`. A module being off never widens access, and Team grants are kept unchanged.
+- **Exports leave the server**: GSTR-1 and Tally files hold every customer's GSTIN, addresses and amounts. Downloads are audited (who, period, format), never cached by the server, and never emailed by Spine.
+- **UPI**: the UPI ID is shown on PDFs by design; no gateway keys are stored. Email templates are rendered with HTML escaping of every placeholder value; only Spine's own placeholders are accepted ([D-153](12-decisions.md)).
+- **Statement files** are parsed in memory, limited to 2 MB and 5,000 rows, and only the parsed lines are stored — the uploaded CSV itself is not kept.
+
+## Added with the AI assistant (Phase 9, D-162–D-173)
+
+- **Off means off.** With the AI module off, every `/ai/*` route answers 403 `MODULE_OFF` before any other check, no AI control renders, no AI job is queued and no request reaches a provider (network test, NFR-REL-12). With a feature switched off, its route answers 403 `AI_FEATURE_OFF`.
+- **Owner-only configuration**: `GET/PUT /org/ai`, `POST /org/ai/test`, `GET /org/ai/usage`. Turning AI on with a non-local provider requires an acknowledgement that's audited (D-164).
+- **Provider secrets**: the API key is encrypted at rest with a key derived from `AUTH_SECRET`, returned only as a masked hint, never logged (including request logs and error traces), never sent to the browser in full, excluded from data exports and backups' readable form. Rotating `AUTH_SECRET` requires re-entering the key.
+- **Permission scope**: AI routes run as the caller. Anything the AI is given (the document, candidate catalogue items, recent categorised entries) is read through the module's own services with the caller's capabilities and ownership rules. `ai.use` is required for Staff; Field passes only `ai.read_own_receipt` on an expense they submitted. Bank suggestions also require `banking.reconcile`; email drafts require the right to send that document.
+- **No writes by AI**: AI routes are read-only — they return suggestions and never call a mutating service (route-introspection test). Saving goes through the normal routes and checks ([D-166](12-decisions.md)).
+- **Data minimisation**: the redaction step removes account numbers, IFSC/routing numbers, IBANs, card numbers, tax IDs/GSTINs, PAN, UPI IDs, passwords, keys and tokens from text before it leaves the server ([D-165](12-decisions.md)); documents a person explicitly asks AI to read are sent as they are, as the feature's note says.
+- **Prompt injection**: text inside documents, enquiries and statements is data. The model only fills a fixed JSON schema; Spine validates every field (types, lengths, known ids) and ignores anything else, so instructions inside a document can't change what Spine does.
+- **Audit and limits**: every AI request is in `ai_requests` and the audit log without prompt or reply text ([D-169](12-decisions.md)); per-person rate limit 30 requests per 10 minutes and the Owner's monthly budget ([D-168](12-decisions.md)).

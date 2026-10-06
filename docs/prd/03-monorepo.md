@@ -23,7 +23,7 @@ spine/
 │  ├─ design-system/          Docs app for @spine/ui
 │  ├─ design-system-native/   Docs app for NativeWind @spine/ui-native components
 │  ├─ showcase-native/        Docs app for @expo/ui @spine/ui-native components (expo-router)
-│  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 8)
+│  └─ site/                   Public website and docs (Astro + Starlight): home, user guide, self-hosting, developers, API reference (Phase 10)
 ├─ packages/
 │  ├─ shared/                 money + tax engine, Zod schemas, capability list, shared types
 │  ├─ ui/                     @spine/ui (79 web components)
@@ -31,7 +31,7 @@ spine/
 │  ├─ sdk/                    API client generated from OpenAPI
 │  └─ config/                 eslint, tsconfig, tailwind preset (CSS tokens)
 ├─ docker/                    Dockerfile.api, Dockerfile.web, Caddyfile
-├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 8)
+├─ scripts/                   seed.ts, create-native-app.mjs (install.sh, backup.sh, restore.sh: Phase 10)
 ├─ docs/                      this spec, design, QA script
 ├─ docker-compose.yml         production (profiles minimal/full)
 ├─ docker-compose.dev.yml     local infra: Postgres, MailDev (files use the local driver; optional rustfs profile)
@@ -69,4 +69,4 @@ Runs on pull requests into `main` only (and on demand), never on every push; doc
 | `test` · "Unit and integration" | install → lint → typecheck → unit tests (Turbo-cached) → run migrations → integration tests (real Postgres) |
 | `e2e` · "E2E" | runs after `test` passes · install → Playwright browsers (cached) → production build of API + web → E2E suite on a scratch database |
 
-Release, restore verification and mobile builds are added in Phase 8 ([11-testing-release](11-testing-release.md)).
+Release, restore verification and mobile builds are added in Phase 10 ([11-testing-release](11-testing-release.md)).

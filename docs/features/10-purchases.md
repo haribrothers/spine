@@ -1,8 +1,8 @@
 # 10 · Purchases & expenses
 
-Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post — including site labour entered as headcount × day rate — billable expenses passed on to customers, and a payables view of what's due.
+Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post — including site labour entered as headcount × day rate — billable expenses passed on to customers, and a payables view of what's due. Phase 8 adds vendor credits (applied to bills or refunded) and recurring bills.
 
-**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1), `ExpensesJobFilter` (P2), `ExpenseDialogLabour` (P1)
+**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1), `ExpensesJobFilter` (P2), `ExpenseDialogLabour` (P1), `VendorCreditsList` (P1), `VendorCreditBuilder` (P1), `VendorCreditDetail` (P1), `ApplyVendorCreditDialog` (P1), `VendorRefundDialog` (P1), `RecurringBillDialog` (P2), `RecurringBillsList` (P2)
 **Depends on:** 03 Contacts (vendors), 07 Jobs (costing), 11 Tax, 08 Invoicing (billing expenses on), 17 Mobile (field submission).
 
 ## Features
@@ -17,6 +17,8 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-06 | Expense categories | P2 | 4 | `SettingsPurchases`, `ExpenseCategoryDialog` |
 | F-PUR-07 | Own/others and workflow rights | P1 | 4 | `ExpensesList`, `VendorBillsList` |
 | F-PUR-08 | Job filter and labour expenses | P1 | 7 | `ExpensesJobFilter`, `ExpenseDialogLabour` |
+| F-PUR-09 | Vendor credits | P1 | 8 | `VendorCreditsList`, `VendorCreditBuilder`, `VendorCreditDetail`, `ApplyVendorCreditDialog`, `VendorRefundDialog`, `TeamPrivilegesBooks` |
+| F-PUR-10 | Recurring bills | P2 | 8 | `RecurringBillDialog`, `RecurringBillsList` |
 
 ## User stories
 
@@ -353,3 +355,111 @@ Decision: D-126
 - Money: each line is headcount × day rate in minor units (no rounding needed); the expense amount is the sum.
 - Mobile: the phone expense form (US-MOB-13) keeps the amount form in this phase; the labour form on the phone is a later story.
 
+
+### US-PUR-24 · Record a credit from a vendor
+**Feature:** F-PUR-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `VendorCreditBuilder`, `VendorCreditsList`
+**As** office staff, **I want** to record a vendor's credit note for returned goods or an overcharge, **so that** what we owe goes down without voiding the bill.
+
+Decision: D-141
+
+**Acceptance criteria**
+- **Given** Purchases › "Vendor credits" › "New vendor credit", **when** the form opens, **then** it asks for "Vendor", "Vendor's credit note number", "Date", optional "Against bill" and lines like a bill (account, description, quantity, price, tax, job).
+- **Given** "Against bill", **when** I choose a bill, **then** its lines can be copied in and edited down.
+- **Given** a draft, **when** I press "Record", **then** it gets the next `VCR-` number, posts P24 (Dr AP, Cr each line's account and input tax, job-tagged lines lower that job's cost) and shows "Open — <amount> to use".
+- **Given** a recorded credit, **when** I open it, **then** it can't be edited; mistakes are voided (US-PUR-27).
+- **Given** the list, **when** it loads, **then** each credit shows number, vendor's number, vendor, date, amount, balance and status ("Draft", "Open", "Used", "Void").
+
+**Implementation notes**
+- API: `GET/POST /vendor-credits`, `GET/PUT/DELETE /vendor-credits/:id` (draft only), `POST /vendor-credits/:id/record` (`vendor_credits.*`, own/others in the service).
+- Data: `vendor_credits`, `vendor_credit_lines` (new; lines shaped like `vendor_bill_lines`); numbering type `vendor_credit`.
+
+### US-PUR-25 · Apply a vendor credit to bills
+**Feature:** F-PUR-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `ApplyVendorCreditDialog`
+**As** office staff, **I want** to use a vendor credit against their open bills, **so that** I pay only what's really owed.
+
+**Acceptance criteria**
+- **Given** an open vendor credit, **when** I press "Apply to bills", **then** I see the vendor's open bills, oldest first, with "Amount to apply" boxes prefilled oldest-first.
+- **Given** amounts above the credit's balance or a bill's balance, **when** I save, **then** I see "You can apply up to <amount> to this bill." and nothing saves.
+- **Given** a valid allocation, **when** I save, **then** the bills' balances drop, nothing posts (P24a), and the credit's balance drops; at zero it shows "Used".
+- **Given** a bill, **when** I open it, **then** "Credits applied" lists each vendor credit and amount.
+- **Given** "Pay bill" for a vendor with open credit, **when** the dialog opens, **then** it shows "<Vendor> has <amount> of credit. Apply it first?" with a link.
+
+**Implementation notes**
+- API: `POST /vendor-credits/:id/apply { allocations: [{ billId, amount }] }` (`vendor_credits.apply`); `DELETE /vendor-credits/:id/allocations/:allocationId` undoes one.
+- Data: `vendor_credit_allocations` (new); trigger keeps allocations + refunds ≤ credit and ≤ bill balance (invariant 9).
+
+### US-PUR-26 · Record a refund from a vendor
+**Feature:** F-PUR-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `VendorRefundDialog`
+**As** office staff, **I want** to record money a vendor paid back, **so that** the credit closes and the bank shows the money.
+
+**Acceptance criteria**
+- **Given** an open vendor credit, **when** I choose "Record refund", **then** I enter "Amount" (up to the balance), "Date", "Paid into" (money account), "Method" and "Reference".
+- **Given** I save, **when** it posts, **then** P25 debits the money account and credits AP, and the credit's balance drops.
+- **Given** a refund that isn't reconciled, **when** I delete it, **then** a reversing entry posts and the balance returns.
+
+**Implementation notes**
+- API: `POST /vendor-credits/:id/refunds`, `DELETE /vendor-refunds/:id` (`vendor_credits.apply`).
+- Data: `vendor_refunds` (new).
+
+### US-PUR-27 · Void a vendor credit
+**Feature:** F-PUR-09 · **Priority:** P2 · **Phase:** 8 · **Screens:** `VendorCreditDetail`
+**As** office staff, **I want** to void a credit entered by mistake, **so that** AP is right again.
+
+**Acceptance criteria**
+- **Given** a credit with nothing applied or refunded, **when** I choose "Void" and give a reason, **then** P24's reversal posts and the credit shows "Void — <reason>".
+- **Given** a credit with allocations or refunds, **when** I try to void it, **then** I see "Remove its <n> applications and refunds first." and nothing changes.
+
+**Implementation notes**
+- API: `POST /vendor-credits/:id/void { reason }` (`vendor_credits.void`).
+
+### US-PUR-28 · Let a Team manage vendor credits
+**Feature:** F-PUR-09 · **Priority:** P1 · **Phase:** 8 · **Screens:** `TeamPrivilegesBooks`
+**As** an owner, **I want** vendor credit rights like bill rights, **so that** I decide who reduces what we owe.
+
+**Acceptance criteria**
+- **Given** a Team's privileges, **when** I expand "Vendor credits", **then** I see edit own/others, delete own/others (drafts), "Record", "Apply and refund" and "Void", granted to General Staff by default.
+- **Given** a member without `vendor_credits.record`, **when** they open a draft, **then** "Record" is hidden and the API returns 403.
+- **Given** a Field user, **when** they call any vendor credit route, **then** they get 403.
+
+**Implementation notes**
+- Capabilities `vendor_credits.edit_own`, `…edit_others`, `…delete_own`, `…delete_others`, `vendor_credits.record`, `vendor_credits.apply`, `vendor_credits.void` with a backfill migration matching each Team's `vendor_bills.*` grants.
+
+### US-PUR-29 · Set up a recurring bill
+**Feature:** F-PUR-10 · **Priority:** P2 · **Phase:** 8 · **Screens:** `RecurringBillDialog`, `RecurringBillsList`
+**As** office staff, **I want** rent, subscriptions and retainers entered automatically, **so that** I never forget a bill.
+
+Decision: D-159
+
+**Acceptance criteria**
+- **Given** Bills › "Recurring bills" › "New recurring bill", **when** the dialog opens, **then** it asks for "Name", "Vendor", lines, "Repeat" (weekly, monthly, quarterly, yearly) and the day, "Starts on", "Ends" (never, on a date, after n bills), "Due" (days after the bill date), "Paid from" for reference, and "When it runs": "Record the bill" or "Save as a draft for me to check".
+- **Given** "Make recurring" on an existing bill, **when** I choose it, **then** the dialog opens with its vendor and lines.
+- **Given** the list, **when** it loads, **then** each schedule shows name, vendor, frequency, next date, amount and status ("Active", "Paused", "Finished").
+
+**Implementation notes**
+- API: `GET/POST /recurring-bills`, `GET/PUT/DELETE /recurring-bills/:id` (`vendor_bills.manage_recurring`).
+- Data: `recurring_bills`, `recurring_bill_lines` (same shape as `recurring_invoices` and its lines).
+
+### US-PUR-30 · Create recurring bills automatically
+**Feature:** F-PUR-10 · **Priority:** P2 · **Phase:** 8 · **Screens:** `RecurringBillsList`
+**As** an owner, **I want** each bill created on its day exactly once, **so that** payables are complete without double entries.
+
+**Acceptance criteria**
+- **Given** an active schedule whose next date is today, **when** the 6:00 AM run happens, **then** one bill is created with today's date, the schedule's lines and due date, and "Created by Recurring bill <name>".
+- **Given** "Record the bill", **when** it's created, **then** it posts P11 at once; with "Save as a draft", Owners get "Recurring bill ready to review: <name>".
+- **Given** the server was down on the day, **when** it starts again, **then** missed dates are created once each, in order.
+- **Given** the end condition is met, **when** the last bill is created, **then** the schedule shows "Finished".
+
+**Implementation notes**
+- Queue `recurring-bill-run` (same pattern as `recurring-invoice-run`); unique (`recurring_bill_id`, `recurring_run_on`) on `vendor_bills`.
+
+### US-PUR-31 · Pause, edit or stop a recurring bill
+**Feature:** F-PUR-10 · **Priority:** P2 · **Phase:** 8 · **Screens:** `RecurringBillsList`
+**As** office staff, **I want** to change or stop a schedule, **so that** it matches the contract.
+
+**Acceptance criteria**
+- **Given** an active schedule, **when** I press "Pause", **then** no bills are created until "Resume", which sets the next date to the next future occurrence.
+- **Given** I edit lines or amounts, **when** I save, **then** bills already created are unchanged.
+- **Given** "Delete", **when** I confirm ("Delete this schedule? Bills it already created are kept."), **then** the schedule goes and its bills stay.
+
+**Implementation notes**
+- API: `POST /recurring-bills/:id/pause`, `/resume`.
