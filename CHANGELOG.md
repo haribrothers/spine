@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — Fix: labour expenses preselect Site labour on a slow connection (US-PUR-23)
+
+- Choosing "Headcount × day rate" before the expense categories had loaded left the category empty and never showed "Preselected: posts to 5200 Direct Labour." The form now preselects it as soon as the categories arrive.
+
 ### 2026-10-07 — US-CAT-09: import catalogue items from a spreadsheet (Phase 8)
 
 - **Catalogue › "Import"** (`ImportCatalogDialog`): choose a CSV, match its columns to Name, Description, Unit, Price, Tax, Income account and Expense account (guessed from the headings; only Name is required), then **Preview**: the first rows with "Ready", "Duplicate — skipped" or the problem — "Unknown tax <name>", "Unknown account <code>", a missing name or a price that isn't an amount ([D-161](docs/prd/12-decisions.md)).

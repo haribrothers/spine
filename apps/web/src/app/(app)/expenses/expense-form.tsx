@@ -146,6 +146,11 @@ export function ExpenseForm({
     if (next === "labour" && labourCategory && (!categoryId || !expense)) setCategoryId(labourCategory.id);
   }
 
+  // US-PUR-23 — if "Headcount × day rate" was chosen before the categories arrived, preselect once they do.
+  useEffect(() => {
+    if (entryMode === "labour" && labourCategory && !categoryId && !expense) setCategoryId(labourCategory.id);
+  }, [entryMode, labourCategory, categoryId, expense]);
+
   useEffect(() => {
     if (expense) return; // only pre-fill the org default currency for a brand-new expense
     apiClient
