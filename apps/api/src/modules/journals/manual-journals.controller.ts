@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, Get, Param, ParseUUIDPipe, Post, UseInterceptors } from "@nestjs/common";
-import { createManualJournalSchema } from "@spine/shared";
+import { createManualJournalSchema, reverseManualJournalSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -39,5 +39,15 @@ export class ManualJournalsController {
     const parsed = createManualJournalSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the journal and try again.");
     return this.journals.create(requireOrgId(session), session.user.id, parsed.data);
+  }
+
+  /** US-RPT-21 */
+  @Post(":id/reverse")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async reverse(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    const parsed = reverseManualJournalSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the reversal and try again.");
+    return this.journals.reverse(requireOrgId(session), session.user.id, id, parsed.data);
   }
 }

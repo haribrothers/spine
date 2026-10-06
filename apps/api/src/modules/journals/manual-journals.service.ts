@@ -68,6 +68,32 @@ export class ManualJournalsService {
     };
   }
 
+  /**
+   * US-RPT-21 — reverses a journal posted by mistake: P21's mirror, dated as
+   * chosen (outside closed periods). A line on a reconciled money account
+   * line is refused with the reconciliation message (US-BANK-10).
+   */
+  async reverse(orgId: string, actorUserId: string, id: string, input: { date: string; reason: string }): Promise<ManualJournal> {
+    await this.db.transaction(async (tx) => {
+      const [row] = await tx.select().from(manualJournals).where(and(eq(manualJournals.orgId, orgId), eq(manualJournals.id, id))).for("update");
+      if (!row) throw new NotFoundException("Journal not found");
+      if (row.status === "reversed") throw new BadRequestException("This journal is already reversed.");
+      const reversalEntryId = await this.ledger.reverseEntry(tx, row.entryId, {
+        orgId,
+        date: input.date,
+        narration: `Journal ${row.number} reversed — ${input.reason}`,
+        sourceType: "manual_journal_reversal",
+        sourceId: id,
+      });
+      await tx
+        .update(manualJournals)
+        .set({ status: "reversed", reversalEntryId, reversalDate: input.date, reversalReason: input.reason, reversedAt: new Date(), reversedByUserId: actorUserId, updatedAt: new Date() })
+        .where(eq(manualJournals.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "reversed", entityType: "manual_journal", entityId: id, contactId: null, changes: { number: row.number, date: input.date, reason: input.reason } });
+    });
+    return this.get(orgId, id);
+  }
+
   async getHistory(orgId: string, id: string) {
     await this.get(orgId, id);
     return this.auditLog.listForEntity(orgId, "manual_journal", id);

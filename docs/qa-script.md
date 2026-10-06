@@ -3254,6 +3254,17 @@ Regression: other fiscal periods (Reports › close a period) still close and re
 
 Regression: reports, registers and other numbering types are unchanged.
 
+## 133. Reverse a journal (US-RPT-21, Phase 8)
+
+1. Open a posted journal: "Copy to new journal" and "Reverse". "Reverse": "Reverse JNL-000n", with "Reversal date" (today) and "Reason". "Reverse journal" stays disabled until a reason is typed.
+2. Reverse it: the page reads "Reversed", and the Reversal card reads "Reversed on <date> by <you>" with the reason. "Reverse" is gone. Reports are back where they were. The drill-down shows "Journal JNL-000n reversed — <reason>".
+3. Reversal date inside a closed fiscal period: "… falls within a closed fiscal period".
+4. A journal with a line on a bank account reconciled since (§126): "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."
+5. "Copy to new journal": "New journal" opens with the same reason and lines. Change what's wrong and post: it gets the next number.
+6. Team › Audit log: "<you> reversed a journal".
+
+Regression: posting journals (§132) is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

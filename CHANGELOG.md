@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-21: reverse a journal posted by mistake (Phase 8)
+
+- **"Reverse"** on a posted journal (Owner only) opens "Reverse JNL-000n" ("A reversing entry mirrors every line. The journal stays in the history as Reversed."), with "Reversal date" (today) and "Reason" (required). "Reverse journal" posts the mirror entry on that date. The journal then reads "Reversed", gains a "Reversal" card ("Reversed on <date> by <name>" and the reason), and "Reverse" goes.
+- **Refusals.** A reversal date in a closed period is refused. A journal whose line is on a money account in a finished reconciliation gets "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."
+- **"Copy to new journal"** opens "New journal" with the same reason and lines, to correct and post as a new number.
+- The audit log records the reversal ("reversed a journal", with the reason).
+- **API**: `POST /manual-journals/:id/reverse { date, reason }` (Owner only).
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-21.http.integration.test.ts` (4):
+  - The mirror entry on the chosen date, with its narration and the reason kept; reversing twice refused.
+  - A closed period refused.
+  - A reconciled bank line refused with the reconciliation message.
+  - Staff with `ledger.view` read but can't reverse.
+- `apps/e2e/tests/us-rpt-21.spec.ts` (1): reverse with a reason, the Reversal card, no Reverse afterwards; Copy to new journal with an account changed and posted as JNL-0002; the list shows "Reversed".
+
 ### 2026-10-06 — US-RPT-20: post an adjusting journal (Phase 8)
 
 - **Reports › Journals** (new in the sidebar under Reports) lists manual journals, with "New journal" for an Owner.
