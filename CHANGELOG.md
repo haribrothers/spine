@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-33: download any report as a PDF (Phase 8)
+
+- **Export › PDF** on every report downloads `<report>-<from>-<to>.pdf`: the logo and business name (Settings › Business), the report name, the range or date and the currency at the top; the table with section headings and totals in bold; the basis (accrual or cash), "Prepared <date>" and "Page n of m" in the footer of every page.
+- A report with more than five amount columns (Profit & Loss "Each month", Job profitability) prints landscape.
+- PDFs are always light, whatever the screen's theme (D-100). Helvetica until Phase 9's fonts (D-151).
+- API: `?format=pdf` on every report route, one react-pdf template for all reports.
+
 ### 2026-10-06 — US-RPT-32: export every report to CSV and Excel (Phase 8)
 
 - **"Export"** on every report — Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, Job profitability, Receivables, Payables, General ledger, Day book, Journals, the sales and purchase reports, and the payment and credit registers — offers **CSV** and **Excel (.xlsx)**. PDF and Print follow with US-RPT-33 and US-RPT-34.

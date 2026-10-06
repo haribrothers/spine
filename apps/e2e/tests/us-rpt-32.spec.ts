@@ -30,7 +30,7 @@ test.describe("US-RPT-32", () => {
 
     await page.goto("/reports/profit-and-loss");
     await page.getByRole("button", { name: "Export", exact: true }).click();
-    await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["CSV", "Excel (.xlsx)"]);
+    await expect(page.getByRole("menu").getByRole("menuitem")).toHaveText(["CSV", "Excel (.xlsx)", "PDF"]);
     await page.keyboard.press("Escape");
 
     const csv = await download(page, "export-csv");

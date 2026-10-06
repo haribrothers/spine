@@ -6,7 +6,8 @@ import { Button, DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMe
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 /**
- * US-RPT-32 (D-144) — `ReportExportMenu`: "Export" → CSV or Excel (.xlsx).
+ * US-RPT-32, US-RPT-33 (D-144) — `ReportExportMenu`: "Export" → CSV,
+ * Excel (.xlsx) or PDF.
  * Each item is a plain link to the report's own API route with
  * `format=`, carrying the page's filters and search, so the file holds
  * exactly what's on screen; the session cookie goes with it and
@@ -38,6 +39,11 @@ export function ReportExportMenu({ path, search, csvPath }: { path: string; sear
         <DropdownMenuItem asChild>
           <a href={href(path, "xlsx")} data-testid="export-xlsx">
             Excel (.xlsx)
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <a href={href(path, "pdf")} data-testid="export-pdf">
+            PDF
           </a>
         </DropdownMenuItem>
       </DropdownMenuContent>

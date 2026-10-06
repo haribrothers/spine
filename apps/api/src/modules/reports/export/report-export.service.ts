@@ -1,8 +1,14 @@
-import { BadRequestException, Injectable, StreamableFile } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Logger, StreamableFile } from "@nestjs/common";
+import { renderToBuffer } from "@react-pdf/renderer";
 import ExcelJS from "exceljs";
 import { minorUnitExponent } from "@spine/shared";
 import { toCsv } from "../../../common/csv";
+import { orgLocale } from "../../../common/money-format";
+import { DATABASE } from "../../../db/db.module";
+import type { Database } from "../../../db/client";
+import { FilesService } from "../../files/files.service";
 import { SettingsService } from "../../org/settings.service";
+import { ReportPdfDocument } from "./report-pdf.template";
 import { decimalOf, EXPORT_FORMATS, type ExportFormat, type ReportCell, type ReportDocument } from "./report-document";
 
 /** Excel number format for a currency's minor units: "#,##0.00", or "#,##0" for zero-decimal currencies. */
@@ -20,7 +26,13 @@ const moneyFormat = (currency: string) => {
  */
 @Injectable()
 export class ReportExportService {
-  constructor(private readonly settings: SettingsService) {}
+  private readonly logger = new Logger(ReportExportService.name);
+
+  constructor(
+    private readonly settings: SettingsService,
+    private readonly files: FilesService,
+    @Inject(DATABASE) private readonly db: Database,
+  ) {}
 
   /** `?format=` → a format, or undefined for the JSON report; anything else → 400. */
   static parseFormat(format: unknown): ExportFormat | undefined {
@@ -29,7 +41,7 @@ export class ReportExportService {
     throw new BadRequestException("Choose CSV, Excel or PDF.");
   }
 
-  /** The report as a download: CSV or Excel now; PDF with US-RPT-33. */
+  /** The report as a download: CSV, Excel or PDF. */
   async file(orgId: string, format: ExportFormat, report: Omit<ReportDocument, "currency">): Promise<StreamableFile> {
     const currency = (await this.settings.get<{ code?: string }>(orgId, "currency"))?.code ?? "USD";
     const doc: ReportDocument = { ...report, currency };
@@ -40,7 +52,27 @@ export class ReportExportService {
       const buffer = await this.xlsx(doc, await this.businessName(orgId));
       return new StreamableFile(buffer, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", disposition: `attachment; filename="${doc.filename}.xlsx"` });
     }
-    throw new BadRequestException("PDF export isn't available yet.");
+    // US-RPT-33 — always light, logo and business name at the top, landscape when it's wide.
+    const profile = await this.settings.get<{ name?: string; logoUrl?: string }>(orgId, "business_profile");
+    const business = profile?.name?.trim() || "Your business";
+    const locale = await orgLocale(this.db, orgId);
+    const prepared = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short", year: "numeric" }).format(new Date());
+    const logoDataUri = profile?.logoUrl ? await this.logo(orgId, profile.logoUrl) : undefined;
+    const buffer = await renderToBuffer(ReportPdfDocument({ doc, business, logoDataUri, locale, prepared }));
+    return new StreamableFile(buffer, { type: "application/pdf", disposition: `attachment; filename="${doc.filename}.pdf"` });
+  }
+
+  /** The logo as a data URI through the StorageDriver; a missing or unreadable logo leaves it out. */
+  private async logo(orgId: string, logoUrl: string): Promise<string | undefined> {
+    try {
+      const fileId = logoUrl.match(/\/files\/([0-9a-fA-F-]{36})/)?.[1];
+      if (!fileId) return undefined;
+      const { bytes, mimeType } = await this.files.readBytes(orgId, fileId);
+      return `data:${mimeType};base64,${bytes.toString("base64")}`;
+    } catch (err) {
+      this.logger.warn(`Report PDF without the logo: ${(err as Error).message}`);
+      return undefined;
+    }
   }
 
   csv(doc: ReportDocument): string {

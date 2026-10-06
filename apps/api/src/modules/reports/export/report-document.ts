@@ -28,6 +28,8 @@ export interface ReportDocument {
   /** `<report>-<from>-<to>` or `<report>-<asOf>`, without the extension (D-144). */
   filename: string;
   currency: string;
+  /** "Accrual basis" or "Cash basis", printed in the PDF footer (US-RPT-33). */
+  basis?: string;
   columns: ReportColumn[];
   rows: ReportRow[];
   notes?: string[];

@@ -9,6 +9,7 @@ import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 import { LedgerSourcesService } from "./ledger-sources.service";
 import { NotificationsModule } from "../notifications/notifications.module";
+import { FilesModule } from "../files/files.module";
 import { OrgModule } from "../org/org.module";
 import { ReportExportService } from "./export/report-export.service";
 
@@ -19,7 +20,7 @@ import { ReportExportService } from "./export/report-export.service";
  * module rather than a new one.
  */
 @Module({
-  imports: [NotificationsModule, OrgModule],
+  imports: [NotificationsModule, OrgModule, FilesModule],
   controllers: [ReportsController],
   providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService, ReportExportService],
   exports: [ReportsService, LedgerSourcesService, ReportExportService],

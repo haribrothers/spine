@@ -3415,6 +3415,18 @@ Regression: Accrual Profit & Loss, its comparison (§139) and Export CSV are unc
 
 Regression: the old "Export CSV" downloads (/export.csv links bookmarked from Phase 4–6) still work.
 
+## 146. Report PDFs (US-RPT-33, Phase 8)
+
+1. With a logo and business name in Settings › Business, open Profit & Loss › Export › PDF. The file is "profit-and-loss-<from>-<to>.pdf". The top shows the logo, business name, "Profit & Loss", the range with "· Accrual basis" and "Amounts in <currency>". Sections are headed and totals bold; negative amounts carry a minus sign.
+2. The footer reads "<business> · Accrual basis · Prepared <today>" and "Page 1 of 1". Export a long General ledger: every page has the footer and "Page n of m".
+3. Basis → Cash, then PDF: the subtitle and footer say "Cash basis".
+4. Compare with → Each month over a year, then PDF: the page is landscape and the month columns fit.
+5. Switch the app to dark mode and export again: the PDF is light (white page, dark text).
+6. Remove the logo: the PDF still downloads, without it.
+7. Every other report's Export › PDF downloads a PDF named after the report and its range or date.
+
+Regression: invoice, quote, credit note and receipt PDFs are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

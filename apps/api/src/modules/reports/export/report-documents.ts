@@ -41,6 +41,7 @@ export function profitAndLossDocument(report: PlReport): Doc {
       title: "Profit & Loss",
       subtitle: `${rangeText(report.from, report.to)} · ${basis}`,
       filename: `profit-and-loss-${report.basis === "cash" ? "cash-basis-" : ""}${report.from}-${report.to}`,
+      basis,
       columns: [text("Account"), money(report.basis === "cash" ? "Cash basis" : "Amount")],
       rows: [
         heading("Income", 2),
@@ -66,6 +67,7 @@ export function profitAndLossDocument(report: PlReport): Doc {
     title: "Profit & Loss",
     subtitle: monthly ? `${rangeText(report.from, report.to)} by month · ${basis}` : `${rangeText(report.from, report.to)} compared with ${c.columns[1]!.label} · ${basis}`,
     filename: `profit-and-loss-${report.basis === "cash" ? "cash-basis-" : ""}${c.mode.replace("_", "-")}-${report.from}-${report.to}`,
+    basis,
     columns,
     rows: [
       heading("Income", columns.length),
@@ -115,6 +117,7 @@ export function balanceSheetDocument(report: BalanceSheetReport & { comparison?:
     title: "Balance Sheet",
     subtitle: other ? `${asOfText(report.asOf)} compared with ${periodLabel(other.asOf, other.asOf)}` : asOfText(report.asOf),
     filename: other ? `balance-sheet-${report.asOf}-vs-${other.asOf}` : `balance-sheet-${report.asOf}`,
+    basis: "Accrual basis",
     columns: other ? [text("Account"), money(periodLabel(report.asOf, report.asOf)), money(periodLabel(other.asOf, other.asOf)), money("Change")] : [text("Account"), money("Amount")],
     rows,
   };
@@ -125,6 +128,7 @@ export function trialBalanceDocument(report: TrialBalanceReport): Doc {
     title: "Trial Balance",
     subtitle: asOfText(report.asOf),
     filename: `trial-balance-${report.asOf}`,
+    basis: "Accrual basis",
     columns: [text("Code"), text("Account"), money("Debit"), money("Credit")],
     rows: [...report.lines.map((l): ReportRow => ({ cells: [l.code, l.name, l.debit, l.credit] })), { cells: ["", "Totals", report.totalDebit, report.totalCredit], style: "grand" }],
   };
@@ -140,6 +144,7 @@ export function cashFlowDocument(report: CashFlowReport): Doc {
     title: "Cash Flow",
     subtitle: rangeText(report.from, report.to),
     filename: `cash-flow-${report.from}-${report.to}`,
+    basis: "Accrual basis",
     columns: [text("Line"), money("Amount")],
     rows,
     notes: ["Cash at end equals the total of your bank and cash accounts. Card accounts are liabilities, not cash."],
@@ -151,6 +156,7 @@ export function taxSummaryDocument(report: TaxSummaryReport): Doc {
     title: "Tax Summary",
     subtitle: rangeText(report.from, report.to),
     filename: `tax-summary-${report.from}-${report.to}`,
+    basis: "Accrual basis",
     columns: [text("Collected by rate"), money("Taxable amount"), money("Tax")],
     rows: [
       ...report.collectedByRate.map((r): ReportRow => ({ cells: [r.name, r.taxableAmount, r.amount] })),
@@ -213,6 +219,7 @@ export function generalLedgerDocument(report: GeneralLedgerReport): Doc {
     title: "General ledger",
     subtitle: rangeText(report.from, report.to),
     filename: `general-ledger-${report.from}-${report.to}`,
+    basis: "Accrual basis",
     columns: [text("Date"), text("Source"), text("Contact · description"), text("Job"), money("Debit"), money("Credit"), money("Balance")],
     rows,
     notes: ["Balances are debit-positive: a negative balance is a credit balance."],
@@ -230,6 +237,7 @@ export function dayBookDocument(report: DayBookReport, sourceType?: string, sear
     title: "Day book",
     subtitle: `${rangeText(report.from, report.to)}${kind ? ` · ${kind.label}` : ""}`,
     filename: `day-book-${report.from}-${report.to}`,
+    basis: "Accrual basis",
     columns: [text("Date"), text("Source"), text("Contact · narration"), text("Account"), money("Debit"), money("Credit")],
     rows: [...rows, { cells: [null, null, null, "Totals", sum("debit"), sum("credit")], style: "grand" }],
   };
