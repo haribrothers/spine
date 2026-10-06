@@ -80,6 +80,32 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-16: set a cutover date and enter opening account balances (Phase 8)
+
+- **Settings › Opening balances** (new pane) shows where things stand ("Not started", "Draft — not locked" or "Locked", with the cutover date). Its button opens the new Owner-only page `/opening-balances` ("Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need.").
+- **"Account balances" tab:**
+  - "Cutover date" defaults to the start of the current financial year.
+  - Every account is listed, grouped by type, with "Debit" and "Credit". Entering one side clears the other.
+  - Accounts Receivable, Retention Receivable, Accounts Payable and Customer Advances are read-only, showing "From opening invoices / bills / credit · <total>".
+  - The cards show the cutover date ("balances as of <the day before>"), Debits, Credits and Opening Balance Adjustments.
+  - When debits and credits differ, "Opening Balance Adjustments <amount> — your old books didn't balance, or a figure is missing. The difference sits in Opening Balance Adjustments until you fix it." Saving is still allowed.
+- **Posting.** "Save balances" posts P17, dated the day before the cutover date, with the difference in **3900 Opening Balance Adjustments**. The account is new: seeded at sign-up and added to existing organisations by migration 0093. Saving again reverses the previous entry and posts the new one.
+- **Cutover date check.** A cutover date after documents already in Spine is refused: "<n> documents are dated before the cutover date. Pick a date on or before <earliest>, or move those documents."
+- **Migration 0093**: `opening_balances`, `opening_balance_lines` and account 3900.
+- **API**: `GET/PUT /opening-balances` (Owner only). The audit log records each save.
+- **Settings dialog:** panes can now close it when they link to a page of their own.
+- Not built: the design's "Import trial balance" button. The story doesn't ask for it, so balances are typed in.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-16.http.integration.test.ts` (6):
+  - The first-time default date and read-only rows.
+  - P17 dated the day before, with the difference in 3900 and on the Balance Sheet.
+  - Saving again reverses and re-posts.
+  - Document-sourced accounts and 3900 are refused on the grid.
+  - The cutover date can't come after existing documents, and the entry moves with the date.
+  - Staff and Field get 403.
+- `apps/e2e/tests/us-rpt-16.spec.ts` (1): from Settings to the page, the defaults, the read-only rows, entering balances, the adjustment warning, saving and reloading.
+
 ### 2026-10-06 — US-BANK-11: review or undo a reconciliation (Phase 8)
 
 - **"Reconciliations"** on an account's register and reconcile page opens `ReconciliationsHistory` at `/banking/<id>/reconciliations` ("Every finished reconciliation of <account>. Only the latest can be undone.").

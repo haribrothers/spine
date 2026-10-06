@@ -37,3 +37,8 @@ export function formatMoneyForPdf(amount: bigint | string | number, currency: st
   if ([...withSymbol].every((c) => PDF_SAFE.has(c))) return withSymbol;
   return pdfSafe(formatMoney(amount, currency, locale, { currencyDisplay: "code" }));
 }
+
+/** "Oct 4, 2026" in the organisation's locale, for messages (from a `YYYY-MM-DD` date). */
+export function formatMessageDate(date: string, locale: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString(locale, { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}

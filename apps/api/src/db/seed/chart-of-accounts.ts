@@ -33,6 +33,8 @@ export const DEFAULT_CHART_OF_ACCOUNTS: readonly SeedAccount[] = [
   { code: "3000", name: "Owner's Capital", type: "equity", isSystem: false },
   { code: "3100", name: "Owner's Drawings", type: "equity", isSystem: false },
   { code: "3200", name: "Retained Earnings", type: "equity", isSystem: true },
+  // US-RPT-16 (D-137): differences in the opening balances sit here.
+  { code: "3900", name: "Opening Balance Adjustments", type: "equity", isSystem: true },
   { code: "4000", name: "Sales — Goods", type: "income", isSystem: false },
   { code: "4100", name: "Sales — Services", type: "income", isSystem: false },
   // US-BANK-05 (D-174): the "Interest received" shortcut for money in.

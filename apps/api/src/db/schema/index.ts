@@ -24,3 +24,4 @@ export * from "./banking";
 export * from "./attachments";
 export * from "./refunds";
 export * from "./tax-payments";
+export * from "./opening-balances";

@@ -21,6 +21,8 @@ const RULES: PageRule[] = [
   // US-PUR-19: more specific than "/expenses", which every role can open.
   { prefix: "/expenses/categories", name: "Expense categories", anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
   { prefix: "/team", name: "Team", ownerOnly: true },
+  // US-RPT-16 (D-137)
+  { prefix: "/opening-balances", name: "Opening balances", ownerOnly: true },
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
   { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
   { prefix: "/banking", name: "Banking", anyOf: ["banking.view"] },

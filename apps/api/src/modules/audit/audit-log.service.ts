@@ -46,7 +46,9 @@ export type AuditEntityType =
   // US-TAX-08: tax paid to or refunded by the authority.
   | "tax_payment"
   // US-BANK-10/11: reconciliations finished and undone.
-  | "bank_reconciliation";
+  | "bank_reconciliation"
+  // US-RPT-16/19: the opening balances (entity id is the organisation's).
+  | "opening_balances";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

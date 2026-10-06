@@ -21,6 +21,8 @@ export const SYSTEM_ACCOUNT_CODES = {
   accountsPayable: "2000",
   outputTaxPayable: "2100",
   customerAdvances: "2200",
+  // US-RPT-16 (D-137)
+  openingBalanceAdjustments: "3900",
 } as const;
 
 export type SystemAccountKey = keyof typeof SYSTEM_ACCOUNT_CODES;

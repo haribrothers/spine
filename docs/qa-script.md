@@ -3190,6 +3190,19 @@ Regression: balances, the Balance Sheet and the dashboard's cash figures are the
 
 Regression: finishing and matching (§124–126) work as before.
 
+## 128. Opening account balances (US-RPT-16, Phase 8)
+
+1. As an Owner, Settings › "Opening balances": "Not started" and "Bring in opening balances". Click it: the dialog closes and "Opening balances" opens (breadcrumb "Settings › Opening balances"), with "Account balances".
+2. "Cutover date" is the start of your financial year (Settings › Financial year). The card reads "balances as of <the day before>".
+3. Every account is listed by type. Accounts Receivable and Retention Receivable read "From opening invoices · $0.00", Accounts Payable "From opening bills · $0.00", and Customer Advances "From opening credit · $0.00". There are no inputs on those rows, and Opening Balance Adjustments isn't listed.
+4. Enter a few balances that don't balance. Debits, Credits and "Opening Balance Adjustments <difference>" update as you type, and the warning reads "… your old books didn't balance, or a figure is missing. The difference sits in Opening Balance Adjustments until you fix it." Typing a credit on an account with a debit clears the debit.
+5. "Save balances": "Saved. The Balance Sheet on <day before> shows these balances." Reports › Balance Sheet as of that day shows them, with Opening Balance Adjustments under equity.
+6. Change a figure and save again: the Balance Sheet shows the new figures (the old entry was reversed).
+7. Record any document dated after the cutover date but before a new one you then pick: saving says "<n> documents are dated before the cutover date. Pick a date on or before <earliest>, or move those documents."
+8. Settings › Opening balances now reads "Draft — not locked" with the cutover date. Staff can't open /opening-balances (no access), and the API returns 403.
+
+Regression: Settings' other panes work as before. Settings › Chart of accounts lists 3900 Opening Balance Adjustments (a system account). Money in/out and manual journals can't use it.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

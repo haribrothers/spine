@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, BellRing, Building2, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
+import { AlarmClock, BellRing, Building2, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
 import { BrandingPane } from "../app/settings/panes/branding-pane";
@@ -11,6 +11,7 @@ import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
 import { TaxPane } from "../app/settings/panes/tax-pane";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
+import { OpeningBalancesPane } from "../app/settings/panes/opening-balances-pane";
 import { PaymentInstructionsPane } from "../app/settings/panes/payment-instructions-pane";
 import { LeadStagesPane } from "../app/settings/panes/lead-stages-pane";
 import { RemindersPane } from "../app/settings/panes/reminders-pane";
@@ -24,7 +25,8 @@ interface SettingsSection {
   key: string;
   label: string;
   icon: React.ReactNode;
-  render: () => React.ReactNode;
+  /** `close` shuts the dialog, for a pane that links to a page of its own. */
+  render: (close: () => void) => React.ReactNode;
 }
 
 const SECTIONS: SettingsSection[] = [
@@ -36,6 +38,8 @@ const SECTIONS: SettingsSection[] = [
   { key: "tax", label: "Tax", icon: <Percent size={16} />, render: () => <TaxPane /> },
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
+  // US-RPT-16
+  { key: "opening-balances", label: "Opening balances", icon: <Scale size={16} />, render: (close) => <OpeningBalancesPane onOpen={close} /> },
   { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
   { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
   { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
@@ -167,7 +171,7 @@ export function SettingsDialog({
             </div>
           </div>
           <div className="min-w-0 flex-1 overflow-y-auto p-6" data-testid="settings-pane">
-            <div className="mx-auto w-full max-w-xl">{active.render()}</div>
+            <div className="mx-auto w-full max-w-xl">{active.render(() => handleOpenChange(false))}</div>
           </div>
         </div>
       </DialogContent>
