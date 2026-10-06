@@ -3462,6 +3462,15 @@ Regression: Receivables, Payables and Job profitability still follow their own p
 
 Regression: the Payables page without ?overdue=1 lists every open bill as before.
 
+## 150. Top expenses on the dashboard (US-DASH-22, Phase 8)
+
+1. In a new organisation the Top expenses card reads "No expenses in this period."
+2. Record money out to seven expense accounts this month. The card shows "Top expenses · this quarter" with the five largest as bars, each with its amount and %, and "Other" for the rest; the figures match Reports › Expenses by category for the same dates.
+3. Period → This month, then This financial year: the title and figures follow (the year starts on Settings › Financial year).
+4. As an Owner, click an account name: the drill-down lists its entries for the period. As Staff with "View financial statements" only, names aren't links.
+5. Staff without "View financial statements": no Top expenses card.
+6. Narrow window (phone width): bars sit under their labels and stay readable. Dark mode is readable.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

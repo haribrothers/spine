@@ -23,6 +23,6 @@ import { ReportExportService } from "./export/report-export.service";
   imports: [NotificationsModule, OrgModule, FilesModule],
   controllers: [ReportsController],
   providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService, ReportExportService],
-  exports: [ReportsService, LedgerSourcesService, ReportExportService],
+  exports: [ReportsService, LedgerSourcesService, ReportExportService, AnalysisReportsService],
 })
 export class ReportsModule {}

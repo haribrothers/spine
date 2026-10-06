@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-22: see where money goes (Phase 8)
+
+- **Dashboard › Top expenses** card (D-160): the five largest expense accounts as labelled bars with amount and % ("Cost of Materials $12,380.00 · 39.1%"), then "Other". "Period" picks This month, This quarter (default) or This financial year; "Expenses by category" opens the full report.
+- **Click an account** to open its drill-down for that period (Owners, or with "View ledger / journals").
+- No expenses: "No expenses in this period." Each bar carries its name and share as its accessible name; amounts and % are written, so nothing relies on colour.
+- Members without "View financial statements" don't get the card.
+- API: `GET /dashboard/top-expenses?period=`.
+
 ### 2026-10-06 — US-DASH-21: see what I owe vendors on the dashboard (Phase 8)
 
 - **Dashboard › Payables** card (D-160): Current, Overdue and Total owed to vendors, a bar of current against overdue (with its figures as its accessible name), "Bills due in the next 7 days <n> · <amount>" and "Oldest overdue <bill> · <n> days". "Payables" opens the Payables page.

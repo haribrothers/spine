@@ -103,3 +103,20 @@ export interface PurchasesByVendorReport {
   rows: PurchasesByVendorRow[];
   totals: { vendors: number; billCount: number; amountBeforeTax: string; tax: string; total: string };
 }
+
+/** US-DASH-22 — the dashboard's "Top expenses" periods. */
+export const TOP_EXPENSE_PERIODS = ["month", "quarter", "year"] as const;
+export type TopExpensePeriod = (typeof TOP_EXPENSE_PERIODS)[number];
+export const TOP_EXPENSE_PERIOD_LABELS: Record<TopExpensePeriod, string> = { month: "This month", quarter: "This quarter", year: "This financial year" };
+
+export interface TopExpenses {
+  period: TopExpensePeriod;
+  from: string;
+  to: string;
+  /** Minor units. */
+  total: string;
+  /** The five largest expense accounts. */
+  rows: { accountId: string; code: string; name: string; amount: string; percent: string | null }[];
+  /** Everything else together; null when there are five accounts or fewer. */
+  other: { amount: string; percent: string | null } | null;
+}

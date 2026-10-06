@@ -10,6 +10,7 @@ import { RetentionHeldCard } from "./widgets/retention-held";
 import { JobsInProgress } from "./widgets/jobs-in-progress";
 import { MyExpenses } from "./widgets/my-expenses";
 import { PayablesCard } from "./widgets/payables-card";
+import { TopExpensesCard } from "./widgets/top-expenses";
 
 /** US-DASH-18 — Field's feed: events on their assigned jobs (the server filters it). */
 function MyActivity() {
@@ -28,6 +29,7 @@ function MyActivity() {
  */
 export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
   payables: "Payables",
+  "top-expenses": "Top expenses",
   "money-in-out": "Money in and out",
   "pipeline-by-stage": "Pipeline by stage",
   "retention-held": "Retention held",
@@ -43,6 +45,7 @@ export const WIDGET_LABELS: Record<DashboardWidgetKey, string> = {
 
 export const WIDGET_COMPONENTS: Record<DashboardWidgetKey, React.ComponentType> = {
   payables: PayablesCard,
+  "top-expenses": TopExpensesCard,
   "money-in-out": MoneyInOutChart,
   "pipeline-by-stage": PipelineByStageChart,
   "retention-held": RetentionHeldCard,
