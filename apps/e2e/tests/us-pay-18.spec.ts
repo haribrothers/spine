@@ -22,13 +22,16 @@ test.describe("US-PAY-18", () => {
 
     // The Owner sees Refund on the payment.
     await page.goto(`/payments?id=${payment.id}`);
-    await expect(page.getByRole("dialog").getByRole("button", { name: "Refund", exact: true })).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    await expect(page.getByRole("menuitem", { name: "Refund", exact: true })).toBeVisible();
 
     await page.goto("about:blank");
     await page.context().clearCookies();
     await logIn(page, DEMO_STAFF_USER);
     await page.goto(`/payments?id=${payment.id}`);
     await expect(page.getByRole("dialog").getByRole("button", { name: "Apply credit" })).toBeVisible();
-    await expect(page.getByRole("dialog").getByRole("button", { name: "Refund", exact: true })).toHaveCount(0);
+    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    await expect(page.getByRole("menuitem", { name: "Download PDF" })).toBeVisible();
+    await expect(page.getByRole("menuitem", { name: "Refund", exact: true })).toHaveCount(0);
   });
 });

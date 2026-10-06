@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — Fix: payment drawer buttons overflowed (US-PAY-17, Phase 8)
+
+- With "Refund" added, the payment drawer's footer held seven controls and ran past the drawer's edge. The drawer is now `size="lg"`. Its footer shows History, one main action ("Apply credit" when there's credit to apply, else "Email receipt"), a "More" menu and "Close". The menu holds "Download PDF", "Email receipt" (when it isn't the main action), "Refund" and "Delete payment" (destructive). The footer wraps at narrow widths.
+
+Tests:
+- `apps/e2e/tests/us-pay-17.spec.ts` and `us-pay-18.spec.ts` open "More actions" to reach "Refund".
+
 ### 2026-10-06 — US-TAX-08: record paying tax and using input tax credit (Phase 8)
 
 - **"Record tax payment"** on Reports › Tax Summary (Owner only) opens `TaxPaymentDialog`:

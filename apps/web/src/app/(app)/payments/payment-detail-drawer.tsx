@@ -20,8 +20,13 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -53,6 +58,8 @@ function paymentPdfUrl(paymentId: string): string {
  * (opens the live-rendered receipt directly, same pattern as invoices'
  * "Download PDF") and "Email receipt" (synchronous send, not queued — see
  * PaymentsService.sendReceiptEmail's own doc comment on why).
+ * The footer keeps one main action visible and puts the rest under "More"
+ * so it fits the drawer (US-PAY-17 fix).
  */
 export function PaymentDetailDrawer({
   open,
@@ -138,11 +145,13 @@ export function PaymentDetailDrawer({
   const canRefund = payment && payment.unallocatedAmount !== "0" && hasRefundCapability;
   const [refundOpen, setRefundOpen] = useState(false);
   const [refundsKey, setRefundsKey] = useState(0);
+  // The footer shows one main action; the rest go in "More actions" so the row fits the drawer.
+  const main = canApplyCredit ? "apply" : hasSendReceiptCapability ? "receipt" : null;
 
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle>{payment?.number ?? "Payment"}</DrawerTitle>
             <DrawerDescription>{payment?.contactName ?? "—"}</DrawerDescription>
@@ -229,34 +238,41 @@ export function PaymentDetailDrawer({
               </div>
             )}
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="flex-wrap">
             {payment && <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />}
-            {payment && (
-              <Button variant="secondary" asChild>
-                <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">
-                  Download PDF
-                </a>
-              </Button>
-            )}
-            {payment && hasSendReceiptCapability && (
-              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Email receipt"}
-              </Button>
-            )}
-            {canApplyCredit && (
+            {main === "apply" && (
               <Button variant="secondary" onClick={() => setApplyCreditOpen(true)} disabled={busy}>
                 Apply credit
               </Button>
             )}
-            {canRefund && (
-              <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
-                Refund
+            {payment && main === "receipt" && (
+              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Email receipt"}
               </Button>
             )}
-            {canDelete && (
-              <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
-                Delete payment
-              </Button>
+            {payment && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">
+                      Download PDF
+                    </a>
+                  </DropdownMenuItem>
+                  {hasSendReceiptCapability && main !== "receipt" && <DropdownMenuItem onSelect={handleSendReceipt}>Email receipt</DropdownMenuItem>}
+                  {canRefund && <DropdownMenuItem onSelect={() => setRefundOpen(true)}>Refund</DropdownMenuItem>}
+                  {canDelete && (
+                    <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                      Delete payment
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close

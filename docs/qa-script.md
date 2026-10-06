@@ -596,7 +596,9 @@ real, also walk ONE job manually through the full sequence below.
      received."
 3. Go to the standalone **Payments** page. Confirm the payment you just
    recorded appears, with correct Allocated/Unallocated amounts shown.
-4. Open that payment's detail drawer:
+4. Open that payment's detail drawer. The footer shows History, one main
+   action (**Apply credit** when there's credit, else **Email receipt**),
+   **More** and **Close**; everything else is under **More**:
    - Click **Download PDF** — confirm a receipt PDF opens showing the
      payment details and an "Applied to" table if it's allocated to any
      invoice.
@@ -2994,7 +2996,7 @@ Regression: a credit note within the balance still reduces only what's owed; Pay
 
 ## 112. Refund a customer (US-PAY-17, Phase 8)
 
-1. Record a $500.00 payment from a customer with an email address, allocated to nothing. Open it: "Refund" is in the drawer.
+1. Record a $500.00 payment from a customer with an email address, allocated to nothing. Open it: "Refund" is under "More" in the drawer's footer.
 2. "Refund": "Refund <customer>" asks for "Refund from" (this payment, "$500.00 of credit"), "Amount" (prefilled $500.00), "Date", "Paid from", "Method", "Reference" and "Send refund confirmation". Refund $200.00 with the confirmation ticked.
 3. The toast reads "Refunded $200.00 to <customer>" and "The customer has been emailed a confirmation."; the email reads "We've refunded $200.00". The payment's unallocated credit is now $300.00, and the drawer lists the refund under "Refunds".
 4. Try to refund $300.01: "You can refund up to $300.00 from this payment.". "Apply credit" also offers only $300.00.
@@ -3011,7 +3013,7 @@ Regression: recording, applying and deleting payments without refunds behave as 
 ## 113. Refund right for a Team (US-PAY-18, Phase 8)
 
 1. Team › Teams › General Staff › Privileges › "Manage Payments": "Refund customers" is listed and off.
-2. As a General Staff member, open a payment with unallocated credit: "Apply credit" is there but "Refund" isn't; a contact holding credit shows no "Refund" either. `POST /customer-refunds` returns 403.
+2. As a General Staff member, open a payment with unallocated credit: "Apply credit" is there but "More" has no "Refund"; a contact holding credit shows no "Refund" either. `POST /customer-refunds` returns 403.
 3. Turn "Refund customers" on: "Refund" appears and works. A Field user still gets 403.
 
 Regression: the other "Manage Payments" switches and the group switch still save.
@@ -3079,6 +3081,16 @@ Regression: the "Manage Vendor Bills" switches still save, and the group switch 
 8. As Staff, with any grants, the Tax Summary shows no access and `/tax-payments` and `/tax-refunds` return 403. Field gets 403 too.
 
 Regression: the Tax Summary's cards, per-rate table and CSV export are unchanged by tax payments. Money in/out still refuses 1200 and 2100 as categories ("Use a payment, bill or tax payment for this.").
+
+## 120. Payment drawer actions fit (US-PAY-17 fix, Phase 8)
+
+1. Open a payment with unallocated credit as an Owner. The drawer is wider than before. Its footer has, in one row: History, "Apply credit", "More" and "Close".
+2. "More" lists "Download PDF", "Email receipt", "Refund" and "Delete payment" (in red). Each works as before: the PDF opens, the receipt is emailed, the refund dialog opens, and the delete confirmation opens.
+3. Open a fully allocated payment: the main button is "Email receipt", and "More" has "Download PDF" only (no Refund or Delete).
+4. At phone width (390px), the footer stays inside the drawer and wraps if needed. Use the keyboard: Tab to "More", Enter opens it, the arrow keys move through the items, and Escape closes it.
+5. In dark mode, the menu and the red "Delete payment" are readable.
+
+Regression: the credit note, vendor payment and expense drawers are unchanged.
 
 ## Known gaps — don't file these as bugs
 

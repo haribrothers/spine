@@ -19,7 +19,8 @@ test.describe("US-PAY-17", () => {
 
     await clearInbox();
     await page.goto(`/payments?id=${payment.id}`);
-    await page.getByRole("dialog").getByRole("button", { name: "Refund", exact: true }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    await page.getByRole("menuitem", { name: "Refund", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "Refund Maple Ridge Developments" });
     await expect(dialog.getByRole("combobox", { name: "Refund from" })).toHaveText(`Payment ${payment.number}`);
     await expect(dialog).toContainText("$500.00 of credit");
