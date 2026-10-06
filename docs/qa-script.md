@@ -3337,6 +3337,20 @@ Regression: Profit & Loss's net profit for the same range matches Cash Flow's "N
 
 Regression: Profit & Loss and Balance Sheet without a comparison look and export as before (§15).
 
+## 140. Sales by customer and by item (US-RPT-28, Phase 8)
+
+1. Issue invoices this quarter to two customers — one with three of a catalogue item, one with one of it and a hand-typed line — and leave one invoice as a draft.
+2. Reports › Sales › Sales by customer: "Net of credit notes · <range>". Cards show Customers, Invoices (issued only), Sales before tax and Total with tax. Rows are largest first with invoice count, sales before tax, tax, total and % of sales; the percentages add to 100%.
+3. Issue a credit note on the larger customer's invoice and Refresh: their sales drop by the credit note's amount before tax; Invoices doesn't change.
+4. Click a customer: "Invoices for <name>" lists their invoices with number, date and total; a number opens the invoice.
+5. Tab "Sales by item": the catalogue item shows its quantity (less the credited quantity), sales before tax and average price; "Items not from the catalogue" is last. The note under the table explains where the figures come from.
+6. Click an item: its invoices. Search narrows rows on both tabs.
+7. Pick a range with no invoices: "No sales in this period".
+8. As Staff with "View financial statements": both open. Without it: the no-access page. Field: no Reports.
+9. Dark mode: cards, table and dialog are readable.
+
+Regression: Receivables and the invoice list are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

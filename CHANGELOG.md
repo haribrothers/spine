@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-28: see sales by customer and by item (Phase 8)
+
+- **Reports › Sales › Sales by customer** (`/reports/sales-by-customer`): "Net of credit notes · <range>", cards for Customers, Invoices, Sales before tax and Total with tax, then each customer's invoice count, sales before tax, tax, total and % of sales, largest first. Search and Columns as on other lists.
+- **Sales by item** (`/reports/sales-by-item`, the second tab): each catalogue item's quantity, sales before tax and average price, then "Items not from the catalogue" for lines typed by hand. The page says the figures read invoice lines and are before any whole-invoice discount ([D-177](docs/prd/12-decisions.md)).
+- **Click a customer or item** to see its invoices; a number opens the invoice.
+- **Access.** Owners, and Staff with "View financial statements".
+- API: `GET /reports/sales-by-customer`, `GET /reports/sales-by-item` (`?from=&to=`).
+
 ### 2026-10-06 — US-RPT-27: compare profit and loss across periods (Phase 8)
 
 - **Profit & Loss › "Compare with"**: "Previous period", "Same period last year" or "Each month". The first two add the other period's column plus "Change" and "Change %", with cards for Total income, Total expenses and Net profit ("▲ 11.6% vs previous period"); the subtitle reads "Jul – Sep 2026 compared with Apr – Jun 2026". "Each month" shows one column per month plus "Total" (up to 24 months).

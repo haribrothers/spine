@@ -1,4 +1,4 @@
-import { balanceSheetQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { analysisQuerySchema, balanceSheetQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -7,6 +7,7 @@ import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
+import { AnalysisReportsService } from "./analysis-reports.service";
 import { CashFlowService } from "./cash-flow.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 
@@ -34,7 +35,30 @@ export class ReportsController {
     private readonly ledgerIntegrityService: LedgerIntegrityService,
     private readonly ledgerReports: LedgerReportsService,
     private readonly cashFlow: CashFlowService,
+    private readonly analysis: AnalysisReportsService,
   ) {}
+
+  private analysisRange(query: unknown) {
+    const parsed = analysisQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return parsed.data;
+  }
+
+  /** US-RPT-28 — each customer's sales, tax and total, net of credit notes. Owner, or `reports.view_financial_statements`. */
+  @Get("sales-by-customer")
+  @RequireCapability("reports.view_financial_statements")
+  async salesByCustomer(@Session() session: UserSession, @Query() query: unknown) {
+    const { from, to } = this.analysisRange(query);
+    return this.analysis.salesByCustomer(requireOrgId(session), from, to);
+  }
+
+  /** US-RPT-28 — quantity, sales and average price per catalogue item. Owner, or `reports.view_financial_statements`. */
+  @Get("sales-by-item")
+  @RequireCapability("reports.view_financial_statements")
+  async salesByItem(@Session() session: UserSession, @Query() query: unknown) {
+    const { from, to } = this.analysisRange(query);
+    return this.analysis.salesByItem(requireOrgId(session), from, to);
+  }
 
   /** US-RPT-26 — where cash came from and where it went, indirect method. Owner, or `reports.view_financial_statements`. */
   @Get("cash-flow")
