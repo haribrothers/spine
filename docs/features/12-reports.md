@@ -18,7 +18,7 @@ The books Spine keeps underneath: a seeded chart of accounts owners can extend, 
 | F-RPT-07 | Trial Balance and Tax Summary reports (tax by type in Phase 9) | P1 | 6 | `ReportsTrialBalance`, `ReportsTaxSummary`, `ReportsTaxSummaryByType` |
 | F-RPT-08 | Opening balances | P1 | 8 | `OpeningBalances`, `OpeningBalancesDocuments`, `OpeningBalancesReview` |
 | F-RPT-09 | Adjusting journals | P1 | 8 | `ManualJournalDialog`, `ManualJournalDetail`, `ManualJournalsList` |
-| F-RPT-10 | Accountant's reports and the reports centre | P1 | 8 | `ReportsCenter`, `ReportsGeneralLedger`, `ReportsDayBook`, `ReportsCashFlow`, `ReportsPLCompare`, `ReportsSalesByCustomer`, `ReportsExpensesByCategory`, `ReportsPaymentsRegister`, `ReportsCreditsRegister` |
+| F-RPT-10 | Accountant's reports, the reports centre and one report layout | P1 | 8 | `ReportsCenter`, `ReportsGeneralLedger`, `ReportsDayBook`, `ReportsCashFlow`, `ReportsPLCompare`, `ReportsSalesByCustomer`, `ReportsExpensesByCategory`, `ReportsPaymentsRegister`, `ReportsCreditsRegister` |
 | F-RPT-11 | Export and print every report | P1 | 8 | `ReportExportMenu`, `ReportPdf` |
 | F-RPT-12 | Cash-basis profit and loss | P1 | 8 | `ReportsPLCashBasis` |
 | F-RPT-13 | Export to Tally | P1 | 9 | `ReportsTallyExport`, `TallyGroupMapping` |
@@ -533,6 +533,25 @@ Decision: D-136
 
 **Implementation notes**
 - Capability `reports.view_financial_statements`; P&L, Balance Sheet, Trial Balance, Tax Summary and revenue trend routes change from `roles: owner` to `@RequireCapability` (Owners always pass). [07-security](../prd/07-security.md) "Owner-only" list updated.
+
+### US-RPT-40 · See every report laid out the same way
+**Feature:** F-RPT-10 · **Priority:** P2 · **Phase:** 8 · **Screens:** `ReportsPL`, `ReportsGeneralLedger`, `ReportsSalesByCustomer`, `Receivables`
+**As** an owner, **I want** every report to put its filters, figures, chart, table and Export in the same places, **so that** I don't relearn each one.
+
+Decision: D-180
+
+**Acceptance criteria**
+- **Given** any report (statements, analysis, registers, ledger, Job profitability, Receivables, Payables), **when** it opens, **then** it shows, in order: the header (breadcrumb, title, and a description followed by the range it covers and any comparison or basis, e.g. "Income less expenses · Jan 1 – Oct 6, 2026 · Accrual basis"); tabs where reports are siblings; a toolbar of labelled 40px filters on the left and Export (CSV, Excel, PDF, Print), then any primary action, on the right; one row of three or four KPI cards; a chart where it adds something; the table; one muted footnote.
+- **Given** a filter, **when** I change it, **then** the report reloads straight away — there's no Refresh — with a spinner in the toolbar while it does.
+- **Given** Profit & Loss, Balance Sheet, Trial Balance or Cash Flow, **when** it opens, **then** tabs switch between the four; General ledger and Day book share tabs too.
+- **Given** a statement (P&L, Balance Sheet, Cash Flow, Tax Summary, a ledger account), **when** it renders, **then** it's one table with the list tables' heading row and type size, uppercase section headings, bold subtotals and the total on a shaded footer row; a list report (Trial Balance, Job profitability, sales, purchases, registers) has search, Columns, a totals row and a pager.
+- **Given** Profit & Loss, **when** the range is 24 months or fewer, **then** a chart shows income and expenses for each month; the cards are Total income, Total expenses, Net profit and Net margin.
+- **Given** Receivables or Payables, **when** they open, **then** the cards are Total outstanding, Current, Overdue and 90+ days, a bar splits what's owed across all five ages with each age's amount and share, and "Show" picks all outstanding or overdue only (the dashboard's "Overdue" opens it on overdue only).
+- **Given** the Trial Balance, **when** it balances, **then** the Difference card reads $0.00 "✓ balanced" and the footnote says so; when it doesn't, a red alert says by how much.
+
+**Implementation notes**
+- `@spine/ui`: `ReportToolbar`, `ReportFilter`, `ReportFilterCheckbox`, `StatementTable`, `SegmentedBar`; `Table`/`DataTable` gain `footer`. Web: `reports/report-kit.tsx` (`useReport`, `RangeFilters`, `ReportKpis`, `ReportChart`, `ReportFootnote`).
+- API: `GET /reports/general-ledger` gains `totals { lines, debit, credit }` across every listed account, for the KPI cards.
 
 ### US-RPT-37 · See tax collected and paid by rate and tax type
 **Feature:** F-RPT-07 · **Priority:** P1 · **Phase:** 9 · **Screens:** `ReportsTaxSummaryByType`

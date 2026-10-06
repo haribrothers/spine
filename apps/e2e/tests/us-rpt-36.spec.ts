@@ -29,9 +29,10 @@ test.describe("US-RPT-36", () => {
 
     await staff.goto("/reports/profit-and-loss");
     await expect(staff.getByRole("heading", { name: "Profit & Loss", level: 1 })).toBeVisible();
-    await expect(staff.getByText("Total income")).toBeVisible();
+    await expect(staff.getByTestId("pl-table").getByText("Total income")).toBeVisible();
     // No "View ledger / journals": figures aren't drill-down links.
-    await expect(main.getByRole("button", { name: /^4\d{3} — / })).toHaveCount(0);
+    await expect(staff.getByTestId("pl-table").getByText(/^4\d{3} · /).first()).toBeVisible();
+    await expect(staff.getByTestId("pl-table").getByRole("button")).toHaveCount(0);
 
     await staff.goto("/reports/tax-summary");
     await expect(staff.getByRole("heading", { name: "Tax Summary", level: 1 })).toBeVisible();

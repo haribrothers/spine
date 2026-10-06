@@ -21,15 +21,15 @@ test.describe("US-RPT-34", () => {
 
     await page.goto("/reports/payments-received");
     const table = page.getByTestId("register-table");
-    await expect(table.getByRole("row")).toHaveCount(11);
+    await expect(table.getByRole("row")).toHaveCount(12);
     // The browser's print dialog can't be driven; count the calls instead.
     await page.evaluate("window.printed = 0; window.print = () => { window.printed += 1; };");
 
     await page.getByRole("button", { name: "Export", exact: true }).click();
     await page.getByRole("menuitem", { name: "Print" }).click();
     await expect.poll(() => page.evaluate("window.printed")).toBe(1);
-    // Every row, not just the first page.
-    await expect(table.getByRole("row")).toHaveCount(13);
+    // Every row, not just the first page (plus the heading and totals rows).
+    await expect(table.getByRole("row")).toHaveCount(14);
 
     await page.emulateMedia({ media: "print" });
     await expect(page.locator("aside")).toBeHidden();
@@ -46,6 +46,6 @@ test.describe("US-RPT-34", () => {
     await page.emulateMedia({ media: "screen" });
     await expect(page.getByTestId("print-header")).toBeHidden();
     await page.evaluate('window.dispatchEvent(new Event("afterprint"))');
-    await expect(table.getByRole("row")).toHaveCount(11);
+    await expect(table.getByRole("row")).toHaveCount(12);
   });
 });

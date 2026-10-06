@@ -14,11 +14,11 @@ test.describe("Reports", () => {
 
     await expect(page.getByRole("heading", { name: "Profit & Loss" })).toBeVisible({ timeout: 15_000 });
     const main = page.getByRole("main");
-    await expect(main.getByText("Income", { exact: true })).toBeVisible();
+    await expect(main.getByText("Income", { exact: true }).first()).toBeVisible();
     await expect(main.getByText(/4100.*Sales.*Services/)).toBeVisible();
-    await expect(main.getByText("Total income")).toBeVisible();
-    await expect(main.getByText("Expenses", { exact: true })).toBeVisible();
-    await expect(main.getByText("Net profit")).toBeVisible();
+    await expect(main.getByTestId("pl-table").getByText("Total income")).toBeVisible();
+    await expect(main.getByText("Expenses", { exact: true }).first()).toBeVisible();
+    await expect(main.getByTestId("pl-table").getByText("Net profit")).toBeVisible();
   });
 
   test("clicking an account line opens the drill-down dialog with real transaction rows", async ({ page, seededOrg }) => {
@@ -40,7 +40,7 @@ test.describe("Reports", () => {
     const main = page.getByRole("main");
     await expect(main.getByText("Assets", { exact: true })).toBeVisible();
     await expect(main.getByText(/1010.*Bank Account/)).toBeVisible();
-    await expect(main.getByText("Total assets")).toBeVisible();
+    await expect(main.getByTestId("bs-table").getByText("Total assets")).toBeVisible();
     await expect(main.getByText("Liabilities", { exact: true })).toBeVisible();
     await expect(main.getByText(/2000.*Accounts Payable/)).toBeVisible();
     await expect(main.getByText("Equity", { exact: true })).toBeVisible();

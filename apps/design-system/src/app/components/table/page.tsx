@@ -120,6 +120,7 @@ export default () => (
             { prop: "groupBy", type: "(row: T) => string" },
             { prop: "groupPrimary", type: "(rows: T[]) => T" },
             { prop: "groupMemberLabel", type: "(row: T) => ReactNode" },
+            { prop: "footer", type: "Partial<Record<string, ReactNode>>", description: "A totals row under every page, keyed by column key (a report's \"Total\"). Columns left out stay blank." },
           ]}
           caption="TableColumn<T>"
         />
@@ -233,6 +234,22 @@ export default () => (
             groupBy={(row) => row.rootQuoteId}
             groupPrimary={quoteGroupPrimary}
             groupMemberLabel={(row) => <Badge className="bg-transparent text-on-surface-muted">v{row.version}</Badge>}
+          />
+        </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="totals" title="Totals row">
+        <DocLead>Pass <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">footer</code>, keyed by column, for a report&apos;s totals: a bold row on the sunken band under every page, in the table&apos;s footer.</DocLead>
+        <ComponentPreview>
+          <Table<InvoiceRow>
+            rowKey={(row) => row.number}
+            columns={[
+              { key: "number", header: "Invoice", render: (row) => row.number },
+              { key: "contact", header: "Contact", render: (row) => row.contact },
+              { key: "total", header: "Total", align: "right", render: (row) => `$${row.total.toFixed(2)}` },
+            ]}
+            data={rows}
+            footer={{ number: "Total", total: `$${rows.reduce((sum, row) => sum + row.total, 0).toFixed(2)}` }}
           />
         </ComponentPreview>
       </DocSection>

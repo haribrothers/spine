@@ -41,7 +41,6 @@ test.describe("US-RPT-24", () => {
     await page.getByRole("combobox", { name: "Accounts" }).click();
     await page.getByRole("option", { name: /^6900/ }).click();
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Refresh" }).click();
     await expect(page.getByTestId("gl-account-1510")).toHaveCount(0);
     await expect(page.getByTestId("gl-account-6900")).toBeVisible();
 

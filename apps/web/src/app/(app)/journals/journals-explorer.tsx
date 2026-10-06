@@ -105,7 +105,6 @@ export function JournalsExplorer() {
         breadcrumb={[{ label: "Reports" }, { label: "Journals" }]}
         title="Journals"
         description="Adjustments posted by hand. Most businesses only need one for year-end adjustments."
-        action={isOwner ? <Button onClick={() => setNewOpen(true)}>New journal</Button> : undefined}
       />
       <PrintHeader />
       <div className="flex flex-col gap-6">
@@ -115,37 +114,37 @@ export function JournalsExplorer() {
           <StatCard label="Reversed" value={rows ? String(rows.length - posted.length) : "—"} />
           <StatCard label="Posted this year" value={money(postedThisYear)} trend={{ direction: "neutral", label: `since ${day(yearStart)}` }} />
         </div>
+        {/* US-RPT-40 — the list layout: filters on the left, Export then the one primary action on the right. */}
+        <div className="flex flex-wrap items-center gap-3" data-print="hide">
+          <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
+            <SelectTrigger className="w-40" aria-label="Status">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All journals</SelectItem>
+              <SelectItem value="posted">Posted</SelectItem>
+              <SelectItem value="reversed">Reversed</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="w-40">
+            <DatePicker value={from} onChange={setFrom} placeholder="From" />
+          </div>
+          <div className="w-40">
+            <DatePicker value={to} onChange={setTo} placeholder="To" />
+          </div>
+          <div className="ml-auto flex items-center gap-3">
+            <ReportExportMenu path={`/manual-journals?status=${status}${from ? `&from=${iso(from)}` : ""}${to ? `&to=${iso(to)}` : ""}`} search={search} />
+            {isOwner && <Button onClick={() => setNewOpen(true)}>New journal</Button>}
+          </div>
+        </div>
         {rows?.length === 0 ? (
           <div className="rounded-lg border border-border bg-surface">
             <EmptyState icon={<BookOpen />} title={NO_JOURNALS} description={isOwner ? "Post one for depreciation, accruals or what your accountant sends at year end." : undefined} />
           </div>
         ) : (
-          <>
-            <div className="flex flex-wrap items-center gap-3">
-              <Select value={status} onValueChange={(v) => setStatus(v as typeof status)}>
-                <SelectTrigger className="w-40" aria-label="Status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All journals</SelectItem>
-                  <SelectItem value="posted">Posted</SelectItem>
-                  <SelectItem value="reversed">Reversed</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="w-40">
-                <DatePicker value={from} onChange={setFrom} placeholder="From" />
-              </div>
-              <div className="w-40">
-                <DatePicker value={to} onChange={setTo} placeholder="To" />
-              </div>
-              <div className="ml-auto">
-                <ReportExportMenu path={`/manual-journals?status=${status}${from ? `&from=${iso(from)}` : ""}${to ? `&to=${iso(to)}` : ""}`} search={search} />
-              </div>
-            </div>
-            <div data-testid="journals-table">
-              <DataTable columns={columns} data={filtered} rowKey={(j) => j.id} searchPlaceholder="Search journals" searchKey={(j) => `${j.number} ${j.reason} ${j.postedBy?.name ?? ""}`} onSearchChange={setSearch} configurablePageSize />
-            </div>
-          </>
+          <div data-testid="journals-table">
+            <DataTable columns={columns} data={filtered} rowKey={(j) => j.id} searchPlaceholder="Search journals" searchKey={(j) => `${j.number} ${j.reason} ${j.postedBy?.name ?? ""}`} onSearchChange={setSearch} configurablePageSize />
+          </div>
         )}
         <p className="text-[13px] text-on-surface-muted">Members with &quot;View ledger / journals&quot; can read journals; only owners post or reverse them.</p>
       </div>

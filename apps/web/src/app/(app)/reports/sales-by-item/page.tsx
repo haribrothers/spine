@@ -4,7 +4,7 @@ import { SalesReports } from "../sales-by-customer/sales-reports";
 /** US-RPT-28 — Sales by item. */
 export default function SalesByItemPage() {
   return (
-    <ReportShell slug="sales-by-item">
+    <ReportShell slug="sales-by-item" description="Quantities from invoice lines, less credit notes">
       <SalesReports tab="item" />
     </ReportShell>
   );

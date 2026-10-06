@@ -21,7 +21,7 @@ test.describe("US-RPT-28", () => {
     await page.goto("/reports");
     await page.getByRole("link", { name: "Sales by customer" }).click();
     await expect(page).toHaveURL(/\/reports\/sales-by-customer$/);
-    await expect(page.getByTestId("sales-subtitle")).toContainText("Net of credit notes");
+    await expect(page.locator("main h1 + p")).toContainText("Net of credit notes · ");
     const cards = page.getByTestId("sales-cards");
     await expect(cards).toContainText("Customers2");
     await expect(cards).toContainText("Invoices3");

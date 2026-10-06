@@ -2,25 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Alert, AlertDescription, EmptyState, StatCard } from "@spine/ui";
+import { Alert, AlertDescription, EmptyState, ReportToolbar } from "@spine/ui";
 import { Inbox } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { ReportExportMenu } from "../../../components/report-export-menu";
 import { ReceivablesSkeleton } from "./receivables-skeleton";
 import { ReceivablesTable } from "./receivables-table";
-import { AGING_BUCKET_LABELS, type AgingBucket, type ReceivablesReport } from "./types";
-import { formatMoney } from "../../../lib/money";
-
-const BUCKET_ORDER: AgingBucket[] = ["current", "0-30", "31-60", "61-90", "90+"];
+import type { ReceivablesReport } from "./types";
+import { AgingSummary, OverdueFilter } from "../../../components/aging-summary";
 
 /**
- * S-06.7 / S-09.5 — the receivables page's client body. One stat card per
- * aging bucket (0 outstanding renders as "—" per bucket, matching
- * payments-explorer.tsx's own null-state convention) plus the full
- * outstanding-invoice list, oldest-overdue first. Currency label on each
- * stat card assumes the org's invoices share one currency (true for v1 —
- * multi-currency is an explicit non-goal per CLAUDE.md) and falls back to
- * the first invoice's own currency, or blank if there are none yet.
+ * S-06.7 / S-09.5 / US-RPT-40 — the receivables page's client body: the
+ * report layout (Show and Export, four KPI cards, the age bar) over the
+ * outstanding-invoice list, oldest-overdue first. One currency (v1 has no
+ * multi-currency), taken from the first invoice.
  */
 export function ReceivablesExplorer() {
   const [report, setReport] = useState<ReceivablesReport | null>(null);
@@ -49,47 +44,24 @@ export function ReceivablesExplorer() {
     return <ReceivablesSkeleton />;
   }
 
-  const currency = report.invoices[0]?.currency ?? "";
+  const currency = report.invoices[0]?.currency || "USD";
+  const overdue = report.invoices.filter((r) => r.bucket !== "current");
 
   return (
     <div className="flex flex-col gap-6">
-      {/* US-PAY-10: the file matches what's on screen, search included. */}
-      <div className="flex justify-end">
-        <ReportExportMenu path="/reports/receivables" csvPath="/reports/receivables/export.csv" search={search} />
-      </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-        {BUCKET_ORDER.map((bucket) => (
-          <StatCard
-            key={bucket}
-            label={AGING_BUCKET_LABELS[bucket]}
-            value={report.buckets[bucket] === "0" ? "—" : formatMoney(BigInt(report.buckets[bucket]), currency || "USD")}
-          />
-        ))}
-      </div>
-
-      <StatCard
-        label="Total outstanding"
-        value={report.totalOutstanding === "0" ? "—" : formatMoney(BigInt(report.totalOutstanding), currency || "USD")}
+      {/* US-RPT-40 — the report layout: filter and Export, KPI cards, the age bar, the list. */}
+      <ReportToolbar
+        filters={<OverdueFilter overdueOnly={overdueOnly} onChange={(only) => router.replace(only ? "/receivables?overdue=1" : "/receivables")} />}
+        actions={<ReportExportMenu path="/reports/receivables" csvPath="/reports/receivables/export.csv" search={search} />}
       />
+      <AgingSummary buckets={report.buckets} total={report.totalOutstanding} overdueCount={overdue.length} noun="invoice" currency={currency} />
 
       {report.invoices.length === 0 ? (
         <div className="rounded-lg border border-border bg-surface">
           <EmptyState icon={<Inbox />} title="Nothing outstanding" description="Every issued invoice has been paid in full." />
         </div>
       ) : (
-        <>
-          {overdueOnly && (
-            <Alert variant="info">
-              <AlertDescription>
-                Showing overdue invoices only.{" "}
-                <button type="button" className="font-medium text-primary hover:underline" onClick={() => router.replace("/receivables")}>
-                  Show all
-                </button>
-              </AlertDescription>
-            </Alert>
-          )}
-          <ReceivablesTable invoices={overdueOnly ? report.invoices.filter((i) => i.bucket !== "current") : report.invoices} onSearchChange={setSearch} />
-        </>
+        <ReceivablesTable invoices={overdueOnly ? overdue : report.invoices} onSearchChange={setSearch} />
       )}
     </div>
   );

@@ -7,7 +7,7 @@ import { formatMoney } from "../../../lib/money";
 import { budgetUsedLabel } from "@spine/shared";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 
-const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
+export const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
   active: "bg-due-soon-bg text-due-soon",
   on_hold: "bg-draft-bg text-draft",
   completed: "bg-paid-bg text-paid",

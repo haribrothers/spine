@@ -24,6 +24,11 @@ export function usePrintRange(range: string | null) {
   }, [range, setRange]);
 }
 
+/** The range the report on screen covers ("Jul 1 – Sep 30, 2026"), or null. */
+export function useCurrentPrintRange(): string | null {
+  return useContext(PrintRangeContext)?.range ?? null;
+}
+
 /** "Riverstone Builders · Jul 1 – Sep 30, 2026", in print only. */
 export function PrintHeader() {
   const range = useContext(PrintRangeContext)?.range ?? null;

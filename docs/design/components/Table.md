@@ -23,6 +23,7 @@ import { TableColumn, Table } from "@spine/ui";
 | `groupBy` | (row: T) => string | — |
 | `groupPrimary` | (rows: T[]) => T | — |
 | `groupMemberLabel` | (row: T) => ReactNode | — |
+| `footer` | Partial<Record<string, ReactNode>> | — |
 | `key` | string | — |
 | `header` | string | — |
 | `render` | (row: T) => ReactNode | — |
@@ -31,6 +32,7 @@ import { TableColumn, Table } from "@spine/ui";
 
 ## Rules and behaviour
 
+- `footer` adds a totals row, keyed by column, on the sunken band in the table's `<tfoot>` (a report's "Total"); columns left out stay blank (US-RPT-40).
 - Column-level sorting via a sortValue accessor — click a header to toggle ascending/descending/off.
 - Automatic client-side pagination once data exceeds pageSize.
 - Set configurablePageSize to render a PaginationBar (rows-per-page select + summary) instead of a fixed pageSize.

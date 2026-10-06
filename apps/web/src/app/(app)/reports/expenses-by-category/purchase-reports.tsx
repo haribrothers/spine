@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Receipt } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, Progress, StatCard, type TableColumn } from "@spine/ui";
-import { periodLabel, type AnalysisDocumentRef, type ExpensesByCategoryReport, type ExpensesByCategoryRow, type PurchasesByVendorReport, type PurchasesByVendorRow } from "@spine/shared";
-import { apiClient } from "../../../../lib/api-client";
+import { Alert, AlertDescription, DataTable, EmptyState, Progress, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { type AnalysisDocumentRef, type ExpensesByCategoryReport, type ExpensesByCategoryRow, type PurchasesByVendorReport, type PurchasesByVendorRow } from "@spine/shared";
 import { useCapability } from "../../../../lib/capabilities-context";
 import { formatMoney } from "../../../../lib/money";
 import { useMyRole } from "../../../../lib/role-context";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
-import { DocumentsDialog, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
+import { DocumentsDialog, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
+import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { DrilldownDialog } from "../reports-explorer";
 
 const TABS = [
@@ -30,35 +30,15 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
   const canDrill = isOwner || canReadLedger;
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
-  const [categories, setCategories] = useState<ExpensesByCategoryReport | null>(null);
-  const [vendors, setVendors] = useState<PurchasesByVendorReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [account, setAccount] = useState<ExpensesByCategoryRow | null>(null);
   const [bills, setBills] = useState<{ title: string; documents: AnalysisDocumentRef[] } | null>(null);
   const [search, setSearch] = useState("");
-
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = `from=${iso(from)}&to=${iso(to)}`;
-      if (tab === "category") setCategories(await apiClient.get<ExpensesByCategoryReport>(`/reports/expenses-by-category?${query}`));
-      else setVendors(await apiClient.get<PurchasesByVendorReport>(`/reports/purchases-by-vendor?${query}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "This report didn't load. Refresh to try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // Loads once on open; "Refresh" reloads after that.
-  }, []);
+  const url = `/reports/${tab === "category" ? "expenses-by-category" : "purchases-by-vendor"}?from=${iso(from)}&to=${iso(to)}`;
+  const { data: report, error, loading } = useReport<ExpensesByCategoryReport | PurchasesByVendorReport>(url);
+  const categories = tab === "category" ? (report as ExpensesByCategoryReport | null) : null;
+  const vendors = tab === "vendor" ? (report as PurchasesByVendorReport | null) : null;
 
   const money = (v: string) => formatMoney(v, currency);
-  const report = tab === "category" ? categories : vendors;
   const largest = categories?.rows[0];
 
   const categoryColumns: TableColumn<ExpensesByCategoryRow>[] = [
@@ -99,20 +79,9 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="-mt-4 text-[14px] text-on-surface-muted" data-testid="purchases-subtitle">
-        {tab === "category" ? "From bills, expenses, journals and money out" : "Recorded bills, net of vendor credits"} · {periodLabel(iso(from), iso(to))}
-      </p>
+    <>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar
-        from={from}
-        to={to}
-        onFrom={setFrom}
-        onTo={setTo}
-        onRefresh={() => load()}
-        loading={loading}
-        actions={<ReportExportMenu path={`/reports/${tab === "category" ? "expenses-by-category" : "purchases-by-vendor"}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
-      />
+      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">
@@ -120,20 +89,20 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
         </Alert>
       )}
 
-      {tab === "category" && categories && !error && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="purchases-cards">
+      {categories && !error && (
+        <ReportKpis count={3} data-testid="purchases-cards">
           <StatCard label="Total expenses" value={money(categories.total)} />
           <StatCard label="Categories" value={String(categories.rows.length)} />
-          <StatCard label="Largest" value={largest?.name ?? "—"} trend={largest ? { direction: "neutral", label: `${money(largest.amount)} · ${largest.percentOfTotal ?? "0.0"}%` } : undefined} />
-        </div>
+          <StatCard label="Largest category" value={largest ? money(largest.amount) : "—"} trend={largest ? { direction: "neutral", label: `${largest.name} · ${largest.percentOfTotal ?? "0.0"}%` } : undefined} />
+        </ReportKpis>
       )}
-      {tab === "vendor" && vendors && !error && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="purchases-cards">
+      {vendors && !error && (
+        <ReportKpis count={4} data-testid="purchases-cards">
           <StatCard label="Vendors" value={String(vendors.totals.vendors)} />
           <StatCard label="Bills" value={String(vendors.totals.billCount)} />
           <StatCard label="Before tax" value={money(vendors.totals.amountBeforeTax)} />
           <StatCard label="Total with tax" value={money(vendors.totals.total)} />
-        </div>
+        </ReportKpis>
       )}
 
       {report && !error && report.rows.length === 0 ? (
@@ -142,17 +111,36 @@ export function PurchaseReports({ tab }: { tab: "category" | "vendor" }) {
         </div>
       ) : (
         <div data-testid="purchases-table">
-          {tab === "category" && categories && !error && (
-            <DataTable columns={categoryColumns} data={categories.rows} rowKey={(r) => r.accountId} searchPlaceholder="Search categories" searchKey={(r) => `${r.code} ${r.name}`} onSearchChange={setSearch} configurablePageSize />
+          {categories && !error && (
+            <DataTable
+              columns={categoryColumns}
+              data={categories.rows}
+              rowKey={(r) => r.accountId}
+              searchPlaceholder="Search categories"
+              searchKey={(r) => `${r.code} ${r.name}`}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{ category: "Total", amount: money(categories.total), pct: "100%" }}
+            />
           )}
-          {tab === "vendor" && vendors && !error && (
-            <DataTable columns={vendorColumns} data={vendors.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search vendors" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
+          {vendors && !error && (
+            <DataTable
+              columns={vendorColumns}
+              data={vendors.rows}
+              rowKey={(r) => r.contactId}
+              searchPlaceholder="Search vendors"
+              searchKey={(r) => r.name}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{ vendor: "Total", bills: vendors.totals.billCount, before: money(vendors.totals.amountBeforeTax), tax: money((BigInt(vendors.totals.total) - BigInt(vendors.totals.amountBeforeTax)).toString()), total: money(vendors.totals.total) }}
+            />
           )}
         </div>
       )}
+      {categories && !error && canDrill && categories.rows.length > 0 && <ReportFootnote>Click a category to see every journal entry behind it.</ReportFootnote>}
 
       {account && <DrilldownDialog accountId={account.accountId} accountLabel={`${account.code} — ${account.name}`} from={iso(from)} to={iso(to)} currency={currency} onClose={() => setAccount(null)} />}
       <DocumentsDialog title={bills?.title ?? ""} description="Recorded bills in this range. Click a number to open it." documents={bills?.documents ?? null} currency={currency} onClose={() => setBills(null)} />
-    </div>
+    </>
   );
 }

@@ -2111,7 +2111,7 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
 ## 29. Trial Balance (US-RPT-13, Phase 6)
 
-1. As Owner, Reports › "Trial Balance": choose "As of", "Refresh". Each
+1. As Owner, Reports › "Trial Balance": choose "As of" (it reloads by itself). Each
    account with a balance shows on its Debit or Credit side; the "Total"
    row's debit and credit match; the status reads "Balanced — total
    debits equal total credits."
@@ -2122,7 +2122,7 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
 ## 30. Tax Summary on Reports (US-RPT-14, Phase 6)
 
-1. As Owner, Reports › "Tax Summary": choose "From"/"To", "Refresh". Cards:
+1. As Owner, Reports › "Tax Summary": choose "From"/"To" (it reloads by itself). Cards:
    "Tax collected" (on issued invoices, after credit notes), "Tax paid" (on
    recorded vendor bills and approved expenses), "Net payable".
 2. "Collected by rate" lists each named rate or group with taxable amount
@@ -2351,7 +2351,7 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 
 ## 54. Light page behind white cards (US-OPS-32, Phase 7)
 
-1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Refresh", "Columns") are white with a thin border.
+1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Export", "Columns") are white with a thin border.
 2. Open a dialog (Settings, "Record payment") and a drawer: they are white on a dimmed page.
 3. Tab to a button or input on the page and inside a card: the focus ring is blue with a white gap, in both places.
 4. Open a public quote link (or any `/quote/...` link): the page is white, not grey. Download a quote or invoice PDF and open a customer email: both stay white.
@@ -2671,7 +2671,7 @@ Regression: Invoices, Expenses and Vendor Payments opened normally (no query str
 1. As an Owner, the KPI row shows Cash position, Profit this month, Receivables and Overdue. Each has its amount, a small 8-week line and "▲/▼ n% vs last month" (or "No data last month" in a new organisation).
 2. The change is green when good (cash or profit up, receivables or overdue down) and red when not, always with the arrow and sign. Check it in dark mode.
 3. Receivables shows "Current … · overdue …"; Overdue shows "n invoice(s)".
-4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Showing overdue invoices only." ("Show all" clears it).
+4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Show" set to "Overdue only" (choose "All outstanding" to clear it).
 5. As a Field user there's no KPI row.
 
 Regression: Reports and Receivables opened from the sidebar look as before; the dashboard below the KPI row is unchanged.
@@ -3279,7 +3279,7 @@ Regression: Reports (the tab page) is unchanged and still shown to Staff with an
 1. As an Owner, Reports: "Every report you can open, derived from the ledger." Cards for Business overview (Profit & Loss, Balance Sheet, Trial Balance), Receivables (Receivables), Purchases (Payables), Tax (Tax Summary), Jobs (Job profitability) and Accountant (Journals). More reports appear as later stories land.
 2. Type "ledger" in "Search reports": only Trial Balance and Journals stay. Clear it: all are back. Type nonsense: "No reports match …".
 3. Star Tax Summary and Profit & Loss: "Favourites" appears at the top with both. Reload, then sign in on another browser: they're still there. Unstar one: it leaves Favourites.
-4. Open each report: the breadcrumb reads "Reports › <name>" and the page works as the old tab did (dates, Refresh, drill-down, Export CSV).
+4. Open each report: the breadcrumb reads "Reports › <name>" and the page works as the old tab did (dates, drill-down, Export CSV); dates apply as they change (US-RPT-40).
 5. The dashboard's Cash and Profit cards open the Balance Sheet and Profit & Loss pages. An old bookmark like /reports?tab=tax lands on Tax Summary.
 6. As Staff with only "View job profitability": Reports lists only Job profitability, and /reports/profit-and-loss shows "Profit & Loss is only available to owners." With "View ledger / journals" only: Reports appears and lists Journals. Field: no Reports.
 7. Team › a Team › Privileges › Reports & Ledger has "View financial statements", off.
@@ -3289,9 +3289,9 @@ Regression: Receivables and Payables still open from the sidebar. The tax paymen
 ## 136. The general ledger (US-RPT-24, Phase 8)
 
 1. As an Owner, Reports › Accountant › General ledger: "Every account's opening balance, entries and closing balance." From is the first day of this quarter, To is today, "Hide accounts with no activity" is ticked.
-2. Post a journal dated last month (Dr 6900, Cr 1510) and one dated today. Refresh: 1510 and 6900 show. 6900 reads "Opening balance … Dr" (last month's journal), one row for today's journal with its reason as the description and a running balance, and "Closing balance … Dr"; 1510 reads Cr.
-3. Record a payment and an expense today, Refresh: the bank account, Accounts Receivable and the expense account appear; each row's source reads "Payment RCP-…", "Expense EXP-…". Click one: its document opens.
-4. Accounts: pick only 6900, Refresh: only 6900 shows. Clear it.
+2. Post a journal dated last month (Dr 6900, Cr 1510) and one dated today. The ledger updates by itself: 1510 and 6900 show. 6900 reads "Opening balance … Dr" (last month's journal), one row for today's journal with its reason as the description and a running balance, and "Closing balance … Dr"; 1510 reads Cr.
+3. Record a payment and an expense today, then reopen the General ledger: the bank account, Accounts Receivable and the expense account appear; each row's source reads "Payment RCP-…", "Expense EXP-…". Click one: its document opens.
+4. Accounts: pick only 6900: only 6900 shows. Clear it.
 5. Untick "Hide accounts with no activity": every account shows, ten to a page, with "No entries in this period." on the quiet ones; page through with the pager and change "per page".
 6. Set From and To to a month with nothing posted (ticked): "Nothing posted in this period".
 7. As Staff with "View ledger / journals": Reports lists General ledger and it opens. Without it: /reports/general-ledger shows the no-access page. Field: no Reports.
@@ -3318,7 +3318,7 @@ Regression: General ledger (§136) is unchanged.
 3. Operating activities: "Net profit", "Increase in receivables and retention" (the unpaid invoice, negative), "Tax collected less paid" (if it carried tax) and "Increase in card balances" (the card spend). Investing: "Fixed Assets" (negative). Financing: nothing in this period. Each section has its "Net cash from …" total, and the totals add up to Net change.
 4. Click "Net profit": a dialog lists Sales — Services and the expense accounts with their amounts. Escape closes it.
 5. The note under the statement reads "Cash at end equals the total of your bank and cash accounts on <To>. Card accounts are liabilities, not cash."
-6. Change the dates to last quarter and Refresh: the capital shows under Financing as Owner's Capital.
+6. Change the dates to last quarter: the capital shows under Financing as Owner's Capital.
 7. As Staff with "View financial statements": Reports lists Cash Flow and it opens. With only "View ledger / journals": the no-access page. Field: no Reports.
 8. Dark mode: cards, table and the note are readable.
 
@@ -3341,7 +3341,7 @@ Regression: Profit & Loss and Balance Sheet without a comparison look and export
 
 1. Issue invoices this quarter to two customers — one with three of a catalogue item, one with one of it and a hand-typed line — and leave one invoice as a draft.
 2. Reports › Sales › Sales by customer: "Net of credit notes · <range>". Cards show Customers, Invoices (issued only), Sales before tax and Total with tax. Rows are largest first with invoice count, sales before tax, tax, total and % of sales; the percentages add to 100%.
-3. Issue a credit note on the larger customer's invoice and Refresh: their sales drop by the credit note's amount before tax; Invoices doesn't change.
+3. Issue a credit note on the larger customer's invoice and reopen the report: their sales drop by the credit note's amount before tax; Invoices doesn't change.
 4. Click a customer: "Invoices for <name>" lists their invoices with number, date and total; a number opens the invoice.
 5. Tab "Sales by item": the catalogue item shows its quantity (less the credited quantity), sales before tax and average price; "Items not from the catalogue" is last. The note under the table explains where the figures come from.
 6. Click an item: its invoices. Search narrows rows on both tabs.
@@ -3354,7 +3354,7 @@ Regression: Receivables and the invoice list are unchanged.
 ## 141. Expenses by category and purchases by vendor (US-RPT-29, Phase 8)
 
 1. This quarter: record a bill to Cost of Materials with tax, a vendor credit against it, an approved expense, money out to Rent and a depreciation journal.
-2. Reports › Purchases › Expenses by category: "From bills, expenses, journals and money out · <range>". Cards: Total expenses, Categories, Largest (name, amount and %). Each expense account shows a share bar, amount and % of total, largest first; the vendor credit has reduced Cost of Materials. The bar has an accessible name with its percentage.
+2. Reports › Purchases › Expenses by category: "From bills, expenses, journals and money out · <range>". Cards: Total expenses, Categories, Largest category (its amount, with its name and % under it). Each expense account shows a share bar, amount and % of total, largest first; the vendor credit has reduced Cost of Materials. The bar has an accessible name with its percentage.
 3. As an Owner, click a category: the account drill-down lists its entries. As Staff with "View financial statements" but not "View ledger / journals", categories aren't links.
 4. Tab "Purchases by vendor": each vendor shows bills, before tax, tax and total, net of the vendor credit, largest first. Opening bills from Opening balances aren't counted.
 5. Click a vendor: "Bills from <vendor>" lists their bills in the range; a number opens the bill.
@@ -3368,7 +3368,7 @@ Regression: Payables and the vendor bill list are unchanged.
 
 1. This quarter: a payment allocated to an invoice into the bank account, a payment with nothing allocated into cash, a payment against an opening invoice, and a vendor payment against a bill.
 2. Reports › Receivables › Payments received: cards show Payments, Received and Held as credit ("1 payment"). Rows are newest first with number, date, customer, method, account, amount and Allocated to — the invoice number, "<number> (opening)" for the opening invoice, "Held as credit" for the unallocated one.
-3. Refund part of the held payment (Payments › Refund) and Refresh: its row shows "<amount> refunded" and Held as credit drops.
+3. Refund part of the held payment (Payments › Refund) and reopen the report: its row shows "<amount> refunded" and Held as credit drops.
 4. Account → Cash: only the cash payment shows. All accounts: all are back.
 5. Click a payment number: the payment drawer opens. Click an invoice number: the invoice opens.
 6. Tab "Payments made": the vendor payment with its bill; the number opens the vendor payment drawer and the bill number opens the bill.
@@ -3429,7 +3429,7 @@ Regression: invoice, quote, credit note and receipt PDFs are unchanged.
 
 ## 147. Print any report (US-RPT-34, Phase 8)
 
-1. Open Payments received with more than ten payments this quarter. Export › Print: the print preview has no sidebar, breadcrumbs, From/To, Account, Refresh, Export, search, Columns or pager. It shows "Payments received", a line "<business> · <range>" and every payment, not only the first ten.
+1. Open Payments received with more than ten payments this quarter. Export › Print: the print preview has no sidebar, breadcrumbs, From/To, Account, Export, search, Columns or pager. It shows "Payments received", a line "<business> · <range>" and every payment, not only the first ten.
 2. Close the preview: the table is back to ten rows a page.
 3. Print a long General ledger or Day book: column headings repeat at the top of every printed page and no row is cut across two pages.
 4. Switch the app to dark mode and print: the preview is black text on white.
@@ -3453,7 +3453,7 @@ Regression: Receivables, Payables and Job profitability still follow their own p
 ## 149. Payables on the dashboard (US-DASH-21, Phase 8)
 
 1. Record two vendor bills: one due a week ago, one due in three days. Dashboard › Payables: Current, Overdue (in the overdue colour, with its amount) and Total; the bar shows the current share; "Bills due in the next 7 days 1 · <amount>"; "Oldest overdue <bill number> · 7 days".
-2. Click Overdue: Payables opens with "Showing overdue bills only." and only the overdue bill; "Show all" brings the rest back.
+2. Click Overdue: Payables opens with "Show" set to "Overdue only" and only the overdue bill; "All outstanding" brings the rest back.
 3. Pay the overdue bill: the card's Overdue drops to $0.00 and "Oldest overdue" reads "None".
 4. The KPI row still shows Cash position, Profit this month, Receivables and Overdue — not Payables.
 5. As Staff without "View payables": no Payables card. With it: the card shows.
@@ -3555,6 +3555,58 @@ Regression: Recurring invoices' row menu still says "Invoices it already created
 7. Keyboard: the file chooser, menus and buttons work with Tab, Enter and Space. Dark mode is readable.
 
 Regression: adding and editing a single item is unchanged; contacts import is unchanged.
+
+## 159. Every report laid out the same way (US-RPT-40, Phase 8)
+
+1. Open each report in turn: Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, Job profitability, General ledger, Day book, Sales by customer and by item, Expenses by category, Purchases by vendor, Payments received and made, Credit notes and refunds, Vendor credits, Receivables and Payables. Each one shows, in order:
+   - The header. Its description ends with the range ("· Jan 1 – Oct 6, 2026", or "· As of Oct 6, 2026"); Job profitability, Receivables and Payables have no range.
+   - Tabs, where the report has siblings.
+   - The toolbar: labelled 40px filters on the left; Export, then any blue button, on the right, all lined up along the bottom.
+   - One row of three or four KPI cards, all the same height.
+   - A chart, where the report has one.
+   - The table.
+   - One grey footnote.
+2. No report has a Refresh button.
+   - Change From on Sales by customer: the cards and table update by themselves, with a spinner in the toolbar while they load.
+   - Tick or untick "Hide accounts with no balance" on Trial Balance: the list updates.
+   - Pick an account on General ledger: the list updates.
+3. Profit & Loss:
+   - Tabs: Profit & Loss, Balance Sheet, Trial Balance, Cash Flow; each opens its page.
+   - Cards: Total income, Total expenses, Net profit, Net margin.
+   - "Income and expenses by month" charts each month of the range. Choose a range over 24 months and the chart disappears.
+   - Compare with › Previous period: the header adds "compared with …", the cards show "▲/▼ n% vs previous period", and the table gains the other range, Change and Change %.
+   - Basis › Cash: the header ends "· Cash basis".
+4. Balance Sheet:
+   - Cards: Total assets, Total liabilities, Total equity.
+   - The table shows uppercase sections, bold subtotals, and "Total liabilities + equity" on a shaded row.
+5. Trial Balance:
+   - Cards: Accounts, Total debits, Total credits, Difference "$0.00 ✓ balanced".
+   - Search the accounts and use Columns.
+   - The table ends with a shaded Total row, and the footnote reads "Balanced — total debits equal total credits."
+6. Cash Flow: no green banner; the footnote starts "✓ Cash at end equals …". The table ends with "Net change in cash".
+7. Tax Summary: Export sits on the right with "Record tax payment" after it (Owner only). The three cards look like every other report's.
+8. Job profitability:
+   - The "Jobs" filter is labelled.
+   - Cards: Jobs, Contract value, Billed to date, Margin.
+   - The chart sits below the cards.
+   - Status shows as a coloured badge, and the table ends with a Total row.
+9. General ledger:
+   - Tabs: General ledger, Day book.
+   - Cards: Accounts, Lines, Total debits, Total credits. These cover every account, not just the page.
+   - Each account's table ends with a shaded "Closing balance".
+10. Receivables and Payables:
+    - "Show" offers All outstanding and Overdue only.
+    - Cards: Total outstanding, Current, Overdue (n invoices or bills), 90+ days.
+    - "Outstanding by age" splits one bar across Current, 1–30, 31–60, 61–90 and 90+ days, each with its amount and %.
+    - From the dashboard, the Overdue card opens Receivables with Show set to "Overdue only".
+11. Journals: the filters are on the left; Export, then "New journal" (Owner), on the right. There's no button top right.
+12. Dark mode: every report's cards, tables, chart and age bar are readable. At phone width the toolbar wraps and nothing scrolls sideways except wide tables.
+13. Keyboard: Tab reaches every filter, the tabs, Export and the table's buttons. Each filter is announced with its label.
+
+Regression:
+- Export (CSV, Excel, PDF) still downloads what's on screen, search included, and Print still prints every row.
+- Drill-downs from P&L, Balance Sheet, Trial Balance and Expenses by category still open.
+- Staff without "View ledger / journals" still see figures but no drill-down.
 
 ## Known gaps — don't file these as bugs
 

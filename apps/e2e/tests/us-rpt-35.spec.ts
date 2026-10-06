@@ -26,7 +26,7 @@ test.describe("US-RPT-35", () => {
     await expect(page.getByRole("radio", { name: "Accrual" })).toHaveAttribute("aria-checked", "true");
     await page.getByRole("radio", { name: "Cash" }).click();
     const view = page.getByTestId("cash-basis");
-    await expect(view.getByTestId("pl-basis-subtitle")).toContainText("· Cash basis");
+    await expect(page.locator("main h1 + p")).toContainText("· Cash basis");
     await expect(view).toContainText("Cash received (income)$500.00");
     await expect(view).toContainText("accrual basis: $1,000.00");
     await expect(view.getByTestId("cash-basis-table").getByRole("row", { name: /4100 · Sales — Services/ })).toContainText("$500.00");

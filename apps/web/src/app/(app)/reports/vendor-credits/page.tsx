@@ -4,7 +4,7 @@ import { CreditRegisters } from "../credit-notes-and-refunds/credit-registers";
 /** US-RPT-31 — Vendor credits. */
 export default function VendorCreditsRegisterPage() {
   return (
-    <ReportShell slug="vendor-credits-register">
+    <ReportShell slug="vendor-credits-register" description="What was applied, refunded or is still held">
       <CreditRegisters tab="vendor" />
     </ReportShell>
   );

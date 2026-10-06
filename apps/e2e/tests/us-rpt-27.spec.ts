@@ -24,11 +24,11 @@ test.describe("US-RPT-27", () => {
     await page.getByRole("option", { name: "Previous period" }).click();
     const table = page.getByTestId("pl-compare-table");
     await expect(table.getByRole("columnheader", { name: "Change %" })).toBeVisible();
-    await expect(page.getByTestId("pl-compare-subtitle")).toContainText("compared with");
+    await expect(page.locator("main h1 + p")).toContainText("compared with");
 
     await page.getByRole("combobox", { name: "Compare with" }).click();
     await page.getByRole("option", { name: "Same period last year" }).click();
-    await expect(page.getByTestId("pl-compare-subtitle")).toContainText(`${year - 1}`);
+    await expect(page.locator("main h1 + p")).toContainText(new RegExp(`compared with .*${year - 1}`));
     const sales = table.getByRole("row", { name: /4100 · Sales — Services/ });
     // Jan 1 last year 3,000 against Jan 1 this year 9,000 (the range starts on Jan 1): ▲ +6,000, ▲ +200%.
     await expect(sales).toContainText("$9,000.00");

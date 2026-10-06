@@ -28,6 +28,12 @@ describe("Table a11y", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("has no violations with a totals row", async () => {
+    const { container, getByText } = render(<Table columns={columns} data={invoices} rowKey={(row) => row.id} footer={{ number: "Total", amount: "$42,200.00" }} />);
+    getByText("$42,200.00");
+    await expectNoA11yViolations(container);
+  });
+
   it("has no violations with configurable page size", async () => {
     const { container } = render(
       <Table columns={columns} data={invoices} rowKey={(row) => row.id} configurablePageSize pageSizeOptions={[10, 25]} />,

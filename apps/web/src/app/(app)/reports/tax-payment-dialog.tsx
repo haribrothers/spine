@@ -296,8 +296,8 @@ export function TaxPaymentsList({ from, to, currency, version, onChanged }: { fr
   }
 
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-border-strong bg-surface p-4" data-testid="tax-payments">
-      <h3 className="text-[14px] font-semibold text-on-surface">Tax payments and refunds</h3>
+    <div className="flex flex-col gap-2 rounded-lg border border-border bg-surface p-4" data-testid="tax-payments">
+      <h3 className="text-[15px] font-semibold text-on-surface">Tax payments and refunds</h3>
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>

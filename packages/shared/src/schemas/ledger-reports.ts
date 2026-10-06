@@ -81,6 +81,8 @@ export interface GeneralLedgerReport {
   page: number;
   pageSize: number;
   totalAccounts: number;
+  /** US-RPT-40 — every listed account's lines in the range (all pages): how many, and their debits and credits in minor units. */
+  totals: { lines: number; debit: string; credit: string };
 }
 
 export const dayBookQuerySchema = z.object({

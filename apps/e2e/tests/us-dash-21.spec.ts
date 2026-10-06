@@ -34,7 +34,7 @@ test.describe("US-DASH-21", () => {
 
     await card.getByRole("link", { name: /^Overdue/ }).click();
     await expect(page).toHaveURL(/\/payables\?overdue=1$/);
-    await expect(page.getByText("Showing overdue bills only.")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Show" })).toHaveText("Overdue only");
     await expect(page.getByRole("table")).toContainText("GSC-8834");
     await expect(page.getByRole("table")).not.toContainText("GSC-8900");
   });

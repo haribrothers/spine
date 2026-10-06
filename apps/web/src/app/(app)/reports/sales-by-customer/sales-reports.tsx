@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BarChart3 } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableColumn } from "@spine/ui";
-import { periodLabel, type AnalysisDocumentRef, type SalesByCustomerReport, type SalesByCustomerRow, type SalesByItemReport, type SalesByItemRow } from "@spine/shared";
-import { apiClient } from "../../../../lib/api-client";
+import { Alert, AlertDescription, DataTable, EmptyState, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { type AnalysisDocumentRef, type SalesByCustomerReport, type SalesByCustomerRow, type SalesByItemReport, type SalesByItemRow } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
-import { DocumentsDialog, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
+import { DocumentsDialog, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
+import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 
 const TABS = [
   { value: "customer", label: "Sales by customer", href: "/reports/sales-by-customer" },
@@ -25,34 +25,15 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
-  const [customers, setCustomers] = useState<SalesByCustomerReport | null>(null);
-  const [items, setItems] = useState<SalesByItemReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [drill, setDrill] = useState<{ title: string; documents: AnalysisDocumentRef[] } | null>(null);
   const [search, setSearch] = useState("");
+  const url = `/reports/sales-by-${tab}?from=${iso(from)}&to=${iso(to)}`;
+  const { data: report, error, loading } = useReport<SalesByCustomerReport | SalesByItemReport>(url);
+  const customers = tab === "customer" ? (report as SalesByCustomerReport | null) : null;
+  const items = tab === "item" ? (report as SalesByItemReport | null) : null;
 
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = `from=${iso(from)}&to=${iso(to)}`;
-      if (tab === "customer") setCustomers(await apiClient.get<SalesByCustomerReport>(`/reports/sales-by-customer?${query}`));
-      else setItems(await apiClient.get<SalesByItemReport>(`/reports/sales-by-item?${query}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "This report didn't load. Refresh to try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // Loads once on open; "Refresh" reloads after that.
-  }, []);
-
-  const money = (v: string) => formatMoney(v, currency);
-  const report = tab === "customer" ? customers : items;
+  const money = (v: string | bigint) => formatMoney(v, currency);
+  const top = items?.rows.reduce<SalesByItemRow | null>((best, r) => (!best || BigInt(r.salesBeforeTax) > BigInt(best.salesBeforeTax) ? r : best), null);
 
   const customerColumns: TableColumn<SalesByCustomerRow>[] = [
     {
@@ -88,20 +69,9 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="-mt-4 text-[14px] text-on-surface-muted" data-testid="sales-subtitle">
-        {tab === "customer" ? "Net of credit notes" : "Quantities from invoice lines, less credit notes"} · {periodLabel(iso(from), iso(to))}
-      </p>
+    <>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar
-        from={from}
-        to={to}
-        onFrom={setFrom}
-        onTo={setTo}
-        onRefresh={() => load()}
-        loading={loading}
-        actions={<ReportExportMenu path={`/reports/sales-by-${tab}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
-      />
+      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">
@@ -109,19 +79,20 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
         </Alert>
       )}
 
-      {tab === "customer" && customers && !error && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="sales-cards">
+      {customers && !error && (
+        <ReportKpis count={4} data-testid="sales-cards">
           <StatCard label="Customers" value={String(customers.totals.customers)} />
           <StatCard label="Invoices" value={String(customers.totals.invoiceCount)} />
           <StatCard label="Sales before tax" value={money(customers.totals.salesBeforeTax)} />
           <StatCard label="Total with tax" value={money(customers.totals.total)} />
-        </div>
+        </ReportKpis>
       )}
-      {tab === "item" && items && !error && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2" data-testid="sales-cards">
+      {items && !error && (
+        <ReportKpis count={3} data-testid="sales-cards">
           <StatCard label="Items" value={String(items.rows.length)} />
           <StatCard label="Sales before tax" value={money(items.totals.salesBeforeTax)} />
-        </div>
+          <StatCard label="Top item" value={top ? money(top.salesBeforeTax) : "—"} trend={top ? { direction: "neutral", label: top.name } : undefined} />
+        </ReportKpis>
       )}
 
       {report && !error && report.rows.length === 0 ? (
@@ -130,17 +101,42 @@ export function SalesReports({ tab }: { tab: "customer" | "item" }) {
         </div>
       ) : (
         <div data-testid="sales-table">
-          {tab === "customer" && customers && !error && (
-            <DataTable columns={customerColumns} data={customers.rows} rowKey={(r) => r.contactId} searchPlaceholder="Search customers" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
+          {customers && !error && (
+            <DataTable
+              columns={customerColumns}
+              data={customers.rows}
+              rowKey={(r) => r.contactId}
+              searchPlaceholder="Search customers"
+              searchKey={(r) => r.name}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{
+                customer: "Total",
+                invoices: customers.totals.invoiceCount,
+                sales: money(customers.totals.salesBeforeTax),
+                tax: money(BigInt(customers.totals.total) - BigInt(customers.totals.salesBeforeTax)),
+                total: money(customers.totals.total),
+                share: "100%",
+              }}
+            />
           )}
-          {tab === "item" && items && !error && (
-            <DataTable columns={itemColumns} data={items.rows} rowKey={(r) => r.catalogItemId ?? "none"} searchPlaceholder="Search items" searchKey={(r) => r.name} onSearchChange={setSearch} configurablePageSize />
+          {items && !error && (
+            <DataTable
+              columns={itemColumns}
+              data={items.rows}
+              rowKey={(r) => r.catalogItemId ?? "none"}
+              searchPlaceholder="Search items"
+              searchKey={(r) => r.name}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{ item: "Total", sales: money(items.totals.salesBeforeTax) }}
+            />
           )}
         </div>
       )}
-      {tab === "item" && <p className="text-[13px] text-on-surface-muted">Item figures read invoice lines, because the ledger keeps amounts, not quantities. They're before any whole-invoice discount; Sales by customer is the ledger figure.</p>}
+      {tab === "item" && <ReportFootnote>Item figures read invoice lines, because the ledger keeps amounts, not quantities. They&apos;re before any whole-invoice discount; Sales by customer is the ledger figure.</ReportFootnote>}
 
       <DocumentsDialog title={drill?.title ?? ""} description="Issued invoices in this range. Click a number to open it." documents={drill?.documents ?? null} currency={currency} onClose={() => setDrill(null)} />
-    </div>
+    </>
   );
 }

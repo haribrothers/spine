@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, DatePicker, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, Label, Spinner, Tabs, TabsList, TabsTrigger } from "@spine/ui";
+import { Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, Tabs, TabsList, TabsTrigger } from "@spine/ui";
 import { canOpenReport, REPORTS, type AnalysisDocumentRef } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
@@ -31,7 +31,7 @@ export function useCurrency(): string {
   return currency;
 }
 
-/** Two reports on one screen, each its own page: the tabs switch between them. A tab the person can't open isn't shown. */
+/** Sibling reports, each its own page: the tabs switch between them. A tab the person can't open isn't shown. */
 export function ReportTabs({ value, tabs }: { value: string; tabs: { value: string; label: string; href: string }[] }) {
   const router = useRouter();
   const role = useMyRole();
@@ -51,42 +51,6 @@ export function ReportTabs({ value, tabs }: { value: string; tabs: { value: stri
         ))}
       </TabsList>
     </Tabs>
-  );
-}
-
-/** From, To and Refresh, with the page's actions (Export) on the right. */
-export function RangeBar({
-  from,
-  to,
-  onFrom,
-  onTo,
-  onRefresh,
-  loading,
-  actions,
-}: {
-  from: Date;
-  to: Date;
-  onFrom: (d: Date) => void;
-  onTo: (d: Date) => void;
-  onRefresh: () => void;
-  loading: boolean;
-  actions?: React.ReactNode;
-}) {
-  return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="flex flex-col gap-1.5">
-        <Label>From</Label>
-        <DatePicker value={from} onChange={(d) => d && onFrom(d)} />
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <Label>To</Label>
-        <DatePicker value={to} onChange={(d) => d && onTo(d)} />
-      </div>
-      <Button variant="secondary" onClick={onRefresh} disabled={loading}>
-        {loading ? <Spinner size="sm" /> : "Refresh"}
-      </Button>
-      {actions && <div className="ml-auto">{actions}</div>}
-    </div>
   );
 }
 

@@ -22,9 +22,11 @@ import { DataTable } from "@spine/ui";
 | `pageSize` | number | — |
 | `configurablePageSize` | boolean | false |
 | `pageSizeOptions` | number[] | [10, 25, 50, 100] |
+| `footer` | Partial<Record<string, ReactNode>> | — |
 
 ## Rules and behaviour
 
+- `footer` adds a totals row, keyed by column, on the sunken band in the table's `<tfoot>` (a report's "Total"); columns left out stay blank (US-RPT-40).
 - Client-side search filtering via a searchKey accessor.
 - A Columns dropdown lets the user hide/show individual columns without losing sort state.
 - Composes Table underneath rather than reimplementing row rendering.

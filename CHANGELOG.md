@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-RPT-40: every report laid out the same way (Phase 8)
+
+- Every report — the statements, analysis, registers, General ledger, Day book, Job profitability, Tax Summary, Receivables and Payables — now follows one layout (D-180). The header names the range, plus any comparison or basis. Labelled filters sit on the left; Export, then any primary action, sits on the right. Then come one row of KPI cards, a chart where it helps, the table and a footnote.
+- Filters apply as soon as they change; the Refresh button is gone.
+- Profit & Loss, Balance Sheet, Trial Balance and Cash Flow share tabs, and so do General ledger and Day book.
+- New KPI cards:
+  - Profit & Loss: income, expenses, net profit and net margin, plus a chart of income and expenses for each month.
+  - Balance Sheet: assets, liabilities and equity.
+  - Trial Balance: accounts, debits, credits and the difference.
+  - General ledger and Day book: lines or entries, debits and credits.
+  - Job profitability: jobs, contract value, billed to date and margin.
+- Statements are one table with section headings, subtotals and a shaded total row. List reports gain a totals row.
+- Receivables and Payables:
+  - Four cards: Total outstanding, Current, Overdue and 90+ days.
+  - A bar showing all five ages, each with its amount and share.
+  - A "Show: All outstanding / Overdue only" filter in place of the overdue banner.
+- Journals' "New journal" button moved next to Export.
+- New `@spine/ui` components: `ReportToolbar`, `StatementTable` and `SegmentedBar`. `Table` and `DataTable` gain a `footer` totals row.
+- `GET /reports/general-ledger` now returns `totals` covering every listed account.
+
 ### 2026-10-07 — Fix: labour expenses preselect Site labour on a slow connection (US-PUR-23)
 
 - Choosing "Headcount × day rate" before the expense categories had loaded left the category empty and never showed "Preselected: posts to 5200 Direct Labour." The form now preselects it as soon as the categories arrive.

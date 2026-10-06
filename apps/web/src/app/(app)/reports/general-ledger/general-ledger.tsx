@@ -3,20 +3,21 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { BookOpen } from "lucide-react";
-import { Alert, AlertDescription, Button, Checkbox, DatePicker, EmptyState, Label, MultiSelect, PaginationBar, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, EmptyState, MultiSelect, PaginationBar, ReportFilter, ReportFilterCheckbox, ReportToolbar, StatCard, StatementTable } from "@spine/ui";
 import type { GeneralLedgerAccount, GeneralLedgerReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
+import { iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
+import { RangeFilters, ReportKpis, useReport } from "../report-kit";
 
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const shortDay = (s: string) => new Date(`${s}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
-/** The first day of the current quarter. */
-function quarterStart(): Date {
-  const today = new Date();
-  return new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
-}
+/** The general ledger and the day book are siblings: tabs switch between them. */
+export const LEDGER_TABS = [
+  { value: "general-ledger", label: "General ledger", href: "/reports/general-ledger" },
+  { value: "day-book", label: "Day book", href: "/reports/day-book" },
+];
 
 /**
  * US-RPT-24 — `ReportsGeneralLedger`: each account's opening balance, one
@@ -24,6 +25,7 @@ function quarterStart(): Date {
  * account; a row's source opens its document.
  */
 export function GeneralLedger() {
+  const currency = useCurrency();
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
   const [accountIds, setAccountIds] = useState<string[]>([]);
@@ -31,16 +33,8 @@ export function GeneralLedger() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [options, setOptions] = useState<{ value: string; label: string }[]>([]);
-  const [currency, setCurrency] = useState("USD");
-  const [report, setReport] = useState<GeneralLedgerReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
     apiClient
       .get<Record<string, { id: string; code: string; name: string }[]>>("/org/accounts")
       .then((grouped) =>
@@ -54,30 +48,15 @@ export function GeneralLedger() {
       .catch(() => {});
   }, []);
 
-  async function load(next: { page?: number; pageSize?: number; hideInactive?: boolean } = {}) {
-    const query = new URLSearchParams({
-      from: iso(from),
-      to: iso(to),
-      includeInactive: String(!(next.hideInactive ?? hideInactive)),
-      page: String(next.page ?? page),
-      pageSize: String(next.pageSize ?? pageSize),
-    });
-    if (accountIds.length) query.set("accountIds", accountIds.join(","));
-    setLoading(true);
-    setError(null);
-    try {
-      setReport(await apiClient.get<GeneralLedgerReport>(`/reports/general-ledger?${query}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "The general ledger didn't load. Refresh to try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // Loads once on open; "Refresh", the checkbox and paging reload after that.
-  }, []);
+  // A new filter starts again from the first page.
+  const refilter =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPage(1);
+    };
+  const filters = `from=${iso(from)}&to=${iso(to)}&includeInactive=${!hideInactive}${accountIds.length ? `&accountIds=${accountIds.join(",")}` : ""}`;
+  const { data: report, error, loading } = useReport<GeneralLedgerReport>(`/reports/general-ledger?${filters}&page=${page}&pageSize=${pageSize}`);
 
   const drCr = (v: string) => {
     const n = BigInt(v);
@@ -87,50 +66,35 @@ export function GeneralLedger() {
   const amount = (v: string) => (BigInt(v) === 0n ? "" : formatMoney(v, currency));
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1.5">
-          <Label>From</Label>
-          <DatePicker value={from} onChange={(d) => d && setFrom(d)} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>To</Label>
-          <DatePicker value={to} onChange={(d) => d && setTo(d)} />
-        </div>
-        <div className="flex w-72 flex-col gap-1.5">
-          <Label id="gl-accounts-label">Accounts</Label>
-          <MultiSelect aria-labelledby="gl-accounts-label" options={options} value={accountIds} onValueChange={setAccountIds} placeholder={hideInactive ? "All accounts with activity" : "All accounts"} />
-        </div>
-        <label className="flex min-h-10 items-center gap-2 text-[14px] text-on-surface">
-          <Checkbox
-            checked={hideInactive}
-            onCheckedChange={(checked) => {
-              setHideInactive(checked === true);
-              setPage(1);
-              void load({ hideInactive: checked === true, page: 1 });
-            }}
-          />
-          Hide accounts with no activity
-        </label>
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setPage(1);
-            void load({ page: 1 });
-          }}
-          disabled={loading}
-        >
-          {loading ? <Spinner size="sm" /> : "Refresh"}
-        </Button>
-        <div className="ml-auto">
-          <ReportExportMenu path={`/reports/general-ledger?from=${iso(from)}&to=${iso(to)}&includeInactive=${!hideInactive}${accountIds.length ? `&accountIds=${accountIds.join(",")}` : ""}`} />
-        </div>
-      </div>
+    <>
+      <ReportTabs value="general-ledger" tabs={LEDGER_TABS} />
+      <ReportToolbar
+        loading={loading}
+        filters={
+          <>
+            <RangeFilters from={from} to={to} onFrom={refilter(setFrom)} onTo={refilter(setTo)} />
+            <ReportFilter label="Accounts" className="w-72">
+              {(id) => <MultiSelect aria-labelledby={id} options={options} value={accountIds} onValueChange={refilter(setAccountIds)} placeholder={hideInactive ? "All accounts with activity" : "All accounts"} />}
+            </ReportFilter>
+            <ReportFilterCheckbox label="Hide accounts with no activity" checked={hideInactive} onCheckedChange={refilter(setHideInactive)} />
+          </>
+        }
+        actions={!error && <ReportExportMenu path={`/reports/general-ledger?${filters}`} />}
+      />
 
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+
+      {report && !error && (
+        <ReportKpis count={4} data-testid="gl-cards">
+          <StatCard label="Accounts" value={String(report.totalAccounts)} />
+          <StatCard label="Lines" value={String(report.totals.lines)} />
+          <StatCard label="Total debits" value={formatMoney(report.totals.debit, currency)} />
+          <StatCard label="Total credits" value={formatMoney(report.totals.credit, currency)} />
+        </ReportKpis>
       )}
 
       {report && !error && report.accounts.length === 0 && (
@@ -139,25 +103,21 @@ export function GeneralLedger() {
         </div>
       )}
 
-      {report?.accounts.map((a) => <AccountLedger key={a.account.id} ledger={a} drCr={drCr} amount={amount} />)}
+      {!error && report?.accounts.map((a) => <AccountLedger key={a.account.id} ledger={a} drCr={drCr} amount={amount} />)}
 
-      {report && report.totalAccounts > 0 && (
+      {report && !error && report.totalAccounts > 0 && (
         <PaginationBar
           page={report.page}
           pageSize={report.pageSize}
           total={report.totalAccounts}
-          onPageChange={(p) => {
-            setPage(p);
-            void load({ page: p });
-          }}
+          onPageChange={setPage}
           onPageSizeChange={(size) => {
             setPageSize(size);
             setPage(1);
-            void load({ page: 1, pageSize: size });
           }}
         />
       )}
-    </div>
+    </>
   );
 }
 
@@ -167,61 +127,42 @@ function AccountLedger({ ledger, drCr, amount }: { ledger: GeneralLedgerAccount;
     <section className="flex flex-col gap-3" aria-label={title} data-testid={`gl-account-${ledger.account.code}`}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-[15px] font-semibold text-on-surface">{title}</h2>
-        <p className="text-[14px] tabular-nums text-on-surface-muted">Opening balance {drCr(ledger.openingBalance)}</p>
+        <p className="text-[13px] tabular-nums text-on-surface-muted">Opening balance {drCr(ledger.openingBalance)}</p>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-        <table className="w-full text-[14px]">
-          <thead>
-            <tr className="border-b border-border text-left text-on-surface">
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Source</th>
-              <th className="px-4 py-3 font-medium">Contact · description</th>
-              <th className="px-4 py-3 font-medium">Job</th>
-              <th className="px-4 py-3 text-right font-medium">Debit</th>
-              <th className="px-4 py-3 text-right font-medium">Credit</th>
-              <th className="px-4 py-3 text-right font-medium">Balance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ledger.rows.length === 0 && (
-              <tr className="border-b border-border">
-                <td colSpan={7} className="px-4 py-3 text-on-surface-muted">
-                  No entries in this period.
-                </td>
-              </tr>
-            )}
-            {ledger.rows.map((r) => (
-              <tr key={r.journalLineId} className="border-b border-border">
-                <td className="whitespace-nowrap px-4 py-3 text-on-surface">{shortDay(r.date)}</td>
-                <td className="whitespace-nowrap px-4 py-3">
-                  {r.href ? (
-                    <Link href={r.href} className="text-primary hover:underline">
-                      {r.label}
-                    </Link>
-                  ) : (
-                    <span className="text-on-surface">{r.label}</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-on-surface">{[r.contact?.name, r.description].filter(Boolean).join(" · ") || "—"}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-on-surface">{r.job ? (r.job.number ?? r.job.name) : "—"}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{amount(r.debit)}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{amount(r.credit)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums">{drCr(r.balance)}</td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="font-semibold text-on-surface">
-              <td colSpan={6} className="px-4 py-3 text-right">
-                Closing balance
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums" data-testid="gl-closing">
-                {drCr(ledger.closingBalance)}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
+      <StatementTable
+        columns={[
+          { key: "date", header: "Date" },
+          { key: "source", header: "Source" },
+          { key: "detail", header: "Contact · description" },
+          { key: "job", header: "Job" },
+          { key: "debit", header: "Debit", align: "right" },
+          { key: "credit", header: "Credit", align: "right" },
+          { key: "balance", header: "Balance", align: "right" },
+        ]}
+        rows={[
+          ...(ledger.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: "No entries in this period." }] : []),
+          ...ledger.rows.map((r) => ({
+            kind: "line" as const,
+            key: r.journalLineId,
+            cells: {
+              date: <span className="whitespace-nowrap">{shortDay(r.date)}</span>,
+              source: r.href ? (
+                <Link href={r.href} className="whitespace-nowrap text-primary hover:underline">
+                  {r.label}
+                </Link>
+              ) : (
+                <span className="whitespace-nowrap">{r.label}</span>
+              ),
+              detail: [r.contact?.name, r.description].filter(Boolean).join(" · ") || "—",
+              job: <span className="whitespace-nowrap">{r.job ? (r.job.number ?? r.job.name) : "—"}</span>,
+              debit: amount(r.debit),
+              credit: amount(r.credit),
+              balance: drCr(r.balance),
+            },
+          })),
+          { kind: "total" as const, key: "closing", cells: { date: "Closing balance", balance: <span data-testid="gl-closing">{drCr(ledger.closingBalance)}</span> } },
+        ]}
+      />
     </section>
   );
 }

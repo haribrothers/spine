@@ -38,7 +38,7 @@ export function ReportExportMenu({ path, search, csvPath }: { path: string; sear
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" size="sm" data-testid="export-menu">
+        <Button variant="secondary" data-testid="export-menu">
           <Download size={14} aria-hidden="true" />
           Export
           <ChevronDown size={14} aria-hidden="true" />

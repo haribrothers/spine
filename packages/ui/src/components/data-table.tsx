@@ -28,6 +28,8 @@ export interface DataTableProps<T> {
   groupBy?: (row: T) => string;
   groupPrimary?: (rows: T[]) => T;
   groupMemberLabel?: (row: T) => React.ReactNode;
+  /** Passed to `Table`: a totals row keyed by column. */
+  footer?: Partial<Record<string, React.ReactNode>>;
 }
 
 /**
@@ -50,6 +52,7 @@ export function DataTable<T>({
   groupBy,
   groupPrimary,
   groupMemberLabel,
+  footer,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -111,6 +114,7 @@ export function DataTable<T>({
         groupBy={groupBy}
         groupPrimary={groupPrimary}
         groupMemberLabel={groupMemberLabel}
+        footer={footer}
       />
     </div>
   );

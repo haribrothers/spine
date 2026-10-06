@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { FileMinus } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, StatCard, type TableColumn } from "@spine/ui";
-import { periodLabel, type CreditRegisterReport, type CreditRegisterRow } from "@spine/shared";
-import { apiClient } from "../../../../lib/api-client";
+import { Alert, AlertDescription, DataTable, EmptyState, ReportToolbar, StatCard, type TableColumn } from "@spine/ui";
+import { type CreditRegisterReport, type CreditRegisterRow } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
-import { day, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
+import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
+import { RangeFilters, ReportFootnote, ReportKpis, useReport } from "../report-kit";
 
 const TABS = [
   { value: "customer", label: "Credit notes and refunds", href: "/reports/credit-notes-and-refunds" },
@@ -24,27 +24,9 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
   const currency = useCurrency();
   const [from, setFrom] = useState<Date>(quarterStart);
   const [to, setTo] = useState<Date>(() => new Date());
-  const [report, setReport] = useState<CreditRegisterReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-
-  async function load() {
-    setLoading(true);
-    setError(null);
-    try {
-      setReport(await apiClient.get<CreditRegisterReport>(`/reports/${tab === "customer" ? "customer-credits" : "vendor-credits"}?from=${iso(from)}&to=${iso(to)}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "This report didn't load. Refresh to try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // Loads once on open; "Refresh" reloads after that.
-  }, []);
+  const url = `/reports/${tab === "customer" ? "customer-credits" : "vendor-credits"}?from=${iso(from)}&to=${iso(to)}`;
+  const { data: report, error, loading } = useReport<CreditRegisterReport>(url);
 
   const money = (v: string) => (BigInt(v) === 0n ? "—" : formatMoney(v, currency));
 
@@ -81,18 +63,9 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="-mt-4 text-[14px] text-on-surface-muted">{periodLabel(iso(from), iso(to))}</p>
+    <>
       <ReportTabs value={tab} tabs={TABS} />
-      <RangeBar
-        from={from}
-        to={to}
-        onFrom={setFrom}
-        onTo={setTo}
-        onRefresh={() => load()}
-        loading={loading}
-        actions={<ReportExportMenu path={`/reports/${tab === "customer" ? "customer-credits" : "vendor-credits"}?from=${iso(from)}&to=${iso(to)}`} search={search} />}
-      />
+      <ReportToolbar loading={loading} filters={<RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />} actions={!error && <ReportExportMenu path={url} search={search} />} />
 
       {error && (
         <Alert variant="critical">
@@ -101,12 +74,12 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
       )}
 
       {report && !error && (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="credits-cards">
+        <ReportKpis count={4} data-testid="credits-cards">
           <StatCard label={tab === "customer" ? "Credited" : "Credits from vendors"} value={formatMoney(report.totals.total, currency)} trend={{ direction: "neutral", label: `${report.totals.count} ${report.totals.count === 1 ? "credit" : "credits"}` }} />
           <StatCard label="Applied" value={formatMoney(report.totals.applied, currency)} />
           <StatCard label="Refunded" value={formatMoney(report.totals.refunded, currency)} />
           <StatCard label="Still held" value={formatMoney(report.totals.held, currency)} />
-        </div>
+        </ReportKpis>
       )}
 
       {report && !error && report.rows.length === 0 ? (
@@ -117,10 +90,26 @@ export function CreditRegisters({ tab }: { tab: "customer" | "vendor" }) {
         report &&
         !error && (
           <div data-testid="credits-table">
-            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search credits" searchKey={(r) => `${r.number ?? ""} ${r.reference ?? ""} ${r.contact.name} ${r.against?.number ?? ""}`} onSearchChange={setSearch} configurablePageSize />
+            <DataTable
+              columns={columns}
+              data={report.rows}
+              rowKey={(r) => r.id}
+              searchPlaceholder="Search credits"
+              searchKey={(r) => `${r.number ?? ""} ${r.reference ?? ""} ${r.contact.name} ${r.against?.number ?? ""}`}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{
+                number: "Total",
+                total: formatMoney(report.totals.total, currency),
+                applied: formatMoney(report.totals.applied, currency),
+                refunded: formatMoney(report.totals.refunded, currency),
+                held: formatMoney(report.totals.held, currency),
+              }}
+            />
           </div>
         )
       )}
-    </div>
+      <ReportFootnote>Still held is what can still be applied or refunded, so nothing is given back twice.</ReportFootnote>
+    </>
   );
 }

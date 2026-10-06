@@ -36,19 +36,22 @@ export class LedgerReportsService {
       .where(and(eq(accounts.orgId, orgId), query.accountIds.length ? inArray(accounts.id, query.accountIds) : undefined))
       .orderBy(asc(accounts.code));
     const ids = chart.map((a) => a.id);
-    if (!ids.length) return { from: query.from, to: query.to, accounts: [], page: query.page, pageSize: query.pageSize, totalAccounts: 0 };
+    const none = { lines: 0, debit: "0", credit: "0" };
+    if (!ids.length) return { from: query.from, to: query.to, accounts: [], page: query.page, pageSize: query.pageSize, totalAccounts: 0, totals: none };
 
     const active = await this.db
-      .select({ accountId: journalLines.accountId, n: sql<number>`count(*)::int` })
+      .select({ accountId: journalLines.accountId, n: sql<number>`count(*)::int`, debit: sql<string>`coalesce(sum(${journalLines.debit}), 0)`, credit: sql<string>`coalesce(sum(${journalLines.credit}), 0)` })
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalEntries.id, journalLines.entryId))
       .where(and(eq(journalEntries.orgId, orgId), inArray(journalLines.accountId, ids), gte(journalEntries.date, query.from), lte(journalEntries.date, query.to)))
       .groupBy(journalLines.accountId);
     const hasActivity = new Set(active.map((a) => a.accountId));
     const listed = query.includeInactive ? chart : chart.filter((a) => hasActivity.has(a.id));
+    // US-RPT-40 — the KPI cards: every listed account's lines in the range, not just this page's.
+    const totals = active.reduce((t, a) => ({ lines: t.lines + a.n, debit: (BigInt(t.debit) + BigInt(a.debit)).toString(), credit: (BigInt(t.credit) + BigInt(a.credit)).toString() }), none);
     const pageAccounts = listed.slice((query.page - 1) * query.pageSize, query.page * query.pageSize);
     const pageIds = pageAccounts.map((a) => a.id);
-    if (!pageIds.length) return { from: query.from, to: query.to, accounts: [], page: query.page, pageSize: query.pageSize, totalAccounts: listed.length };
+    if (!pageIds.length) return { from: query.from, to: query.to, accounts: [], page: query.page, pageSize: query.pageSize, totalAccounts: listed.length, totals };
 
     const openings = await this.db
       .select({ accountId: journalLines.accountId, net: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
@@ -91,7 +94,7 @@ export class LedgerReportsService {
         });
       return { account, openingBalance: opening.toString(), rows, closingBalance: balance.toString() };
     });
-    return { from: query.from, to: query.to, accounts: result, page: query.page, pageSize: query.pageSize, totalAccounts: listed.length };
+    return { from: query.from, to: query.to, accounts: result, page: query.page, pageSize: query.pageSize, totalAccounts: listed.length, totals };
   }
 
   /** US-RPT-25 — every journal entry in the range, in date order, with its lines. */

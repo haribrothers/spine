@@ -14,11 +14,12 @@ test.describe("US-RPT-15", () => {
     for (const header of ["Contract value", "Billed to date", "Billed %", "Budget used", "Revenue", "Cost", "Margin", "Margin %"]) {
       await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
     }
-    await expect(page.getByRole("table").getByRole("row")).toHaveCount(open.length + 1);
+    // Heading row, one per job, and the totals row.
+    await expect(page.getByRole("table").getByRole("row")).toHaveCount(open.length + 2);
 
-    await page.getByRole("combobox", { name: "Which jobs" }).click();
+    await page.getByRole("combobox", { name: "Jobs" }).click();
     await page.getByRole("option", { name: "All" }).click();
-    await expect(page.getByRole("table").getByRole("row")).toHaveCount(all.length + 1);
+    await expect(page.getByRole("table").getByRole("row")).toHaveCount(all.length + 2);
     await page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(page.getByRole("menuitem", { name: "CSV" })).toHaveAttribute("href", /status=all/);
     await page.keyboard.press("Escape");

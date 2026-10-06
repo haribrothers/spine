@@ -109,7 +109,7 @@ Items still follow the rule in US-TEAM-18: a person sees only the sections they 
 4. Search row: search box (256px) on the left, "Columns" on the right.
 5. `DataTable`: sunken header row, sort icons on sortable columns, status chips, money right-aligned with tabular figures, and a ⋯ row menu when rows have actions.
 6. Pager: "1–n of n · per page" on the left, page numbers on the right.
-7. Reports replace rows 3–4 with a filter bar of labelled 40px controls (From, To, Compare with, Basis), then Refresh, with Export (CSV, Excel, PDF, Print) on the right, bottom-aligned.
+7. Reports (D-180) follow one order: the header's description ends with the range and any comparison or basis ("Income less expenses · Jan 1 – Oct 6, 2026 · Accrual basis"); tabs where reports are siblings; a `ReportToolbar` of labelled 40px filters (From, To, Compare with, Basis, then the report's own) with Export (CSV, Excel, PDF, Print) and then the one primary action on the right, bottom-aligned — filters apply as they change, no Refresh; one KPI row of three or four cards; a chart only where it adds something, in a card; the table — `StatementTable` for statements, `DataTable` with a `footer` totals row for lists (search, Columns and pager as above); one muted footnote. A passing check is a footnote; a failing one is a red alert.
 
 Screens that extend an existing one reuse that screen's layout exactly; only the new fields are added:
 
@@ -129,7 +129,9 @@ Screens that extend an existing one reuse that screen's layout exactly; only the
 | Pattern | Screens | Built from |
 |---|---|---|
 | Money account picker ("Paid into" / "Paid from"), preselected with the last account used | `NewPaymentDialogAccount`, refunds, transfers, tax payment | [Select](components/Select.md) with [HelperText](components/HelperText.md) |
-| Report toolbar: From/To, Compare with, Basis, Export (CSV, Excel, PDF, Print) | every report | [DatePicker](components/DatePicker.md), [Select](components/Select.md), [ToggleGroup](components/ToggleGroup.md) (single choice, Accrual/Cash), [DropdownMenu](components/DropdownMenu.md) |
+| Report toolbar: From/To, Compare with, Basis, the report's own filters, Export (CSV, Excel, PDF, Print), then the primary action | every report, Receivables, Payables | [ReportToolbar](components/ReportToolbar.md), [DatePicker](components/DatePicker.md), [Select](components/Select.md), [ToggleGroup](components/ToggleGroup.md) (single choice, Accrual/Cash), [DropdownMenu](components/DropdownMenu.md) |
+| Statement: sections, subtotals and a total | P&L, Balance Sheet, Cash Flow, Tax Summary, General ledger, Day book | [StatementTable](components/StatementTable.md) |
+| Aging: four cards and a bar across all five ages | Receivables, Payables | [StatCard](components/StatCard.md), [SegmentedBar](components/SegmentedBar.md) |
 | Report centre: grouped report links with favourites | `ReportsCenter` | [Card](components/Card.md), [Toggle](components/Toggle.md) (star, with an `aria-label`) |
 | Reconcile: statement lines beside unreconciled entries, a running difference, and Finish disabled until the difference is zero | `ReconcileAccount` | [Card](components/Card.md), [Checkbox](components/Checkbox.md), [StatCard](components/StatCard.md), [Button](components/Button.md). The difference shows a sign and text, never colour alone |
 | Create from a statement line | `ReconcileCreateDrawer` | [Drawer](components/Drawer.md), [RadioGroup](components/RadioGroup.md) |

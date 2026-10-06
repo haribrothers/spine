@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { Fragment, useEffect, useState } from "react";
 import { Wallet } from "lucide-react";
-import { Alert, AlertDescription, DataTable, EmptyState, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, type TableColumn } from "@spine/ui";
-import { periodLabel, type PaymentRegisterReport, type PaymentRegisterRow } from "@spine/shared";
+import { Alert, AlertDescription, DataTable, EmptyState, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, type TableColumn } from "@spine/ui";
+import { type PaymentRegisterReport, type PaymentRegisterRow } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "../../payments/types";
 import { ReportExportMenu } from "../../../../components/report-export-menu";
-import { day, iso, quarterStart, RangeBar, ReportTabs, useCurrency } from "../analysis-shared";
+import { day, iso, quarterStart, ReportTabs, useCurrency } from "../analysis-shared";
+import { RangeFilters, ReportKpis, useReport } from "../report-kit";
 
 const TABS = [
   { value: "received", label: "Payments received", href: "/reports/payments-received" },
@@ -27,9 +28,6 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
   const [to, setTo] = useState<Date>(() => new Date());
   const [account, setAccount] = useState("all");
   const [accounts, setAccounts] = useState<{ id: string; name: string }[]>([]);
-  const [report, setReport] = useState<PaymentRegisterReport | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
@@ -39,23 +37,8 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
       .catch(() => {});
   }, []);
 
-  async function load(moneyAccount = account) {
-    setLoading(true);
-    setError(null);
-    try {
-      const query = `from=${iso(from)}&to=${iso(to)}${moneyAccount === "all" ? "" : `&moneyAccountId=${moneyAccount}`}`;
-      setReport(await apiClient.get<PaymentRegisterReport>(`/reports/payments-${tab}?${query}`));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "This report didn't load. Refresh to try again.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    void load();
-    // Loads once on open; "Refresh" and "Account" reload after that.
-  }, []);
+  const url = `/reports/payments-${tab}?from=${iso(from)}&to=${iso(to)}${account === "all" ? "" : `&moneyAccountId=${account}`}`;
+  const { data: report, error, loading } = useReport<PaymentRegisterReport>(url);
 
   const money = (v: string) => formatMoney(v, currency);
   const who = tab === "received" ? "Customer" : "Vendor";
@@ -98,37 +81,34 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
   ];
 
   return (
-    <div className="flex flex-col gap-6">
-      <p className="-mt-4 text-[14px] text-on-surface-muted">{periodLabel(iso(from), iso(to))}</p>
+    <>
       <ReportTabs value={tab} tabs={TABS} />
-      <div className="flex flex-wrap items-end gap-3">
-        <RangeBar from={from} to={to} onFrom={setFrom} onTo={setTo} onRefresh={() => load()} loading={loading} />
-        <div className="flex flex-col gap-1.5">
-          <Label id="register-account-label">Account</Label>
-          <Select
-            value={account}
-            onValueChange={(v) => {
-              setAccount(v);
-              void load(v);
-            }}
-          >
-            <SelectTrigger className="w-56" aria-labelledby="register-account-label">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All accounts</SelectItem>
-              {accounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="ml-auto">
-          <ReportExportMenu path={`/reports/payments-${tab}?from=${iso(from)}&to=${iso(to)}${account === "all" ? "" : `&moneyAccountId=${account}`}`} search={search} />
-        </div>
-      </div>
+      <ReportToolbar
+        loading={loading}
+        filters={
+          <>
+            <RangeFilters from={from} to={to} onFrom={setFrom} onTo={setTo} />
+            <ReportFilter label="Account">
+              {(id) => (
+                <Select value={account} onValueChange={setAccount}>
+                  <SelectTrigger className="w-56" aria-labelledby={id}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All accounts</SelectItem>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </ReportFilter>
+          </>
+        }
+        actions={!error && <ReportExportMenu path={url} search={search} />}
+      />
 
       {error && (
         <Alert variant="critical">
@@ -137,7 +117,7 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
       )}
 
       {report && !error && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3" data-testid="register-cards">
+        <ReportKpis count={3} data-testid="register-cards">
           <StatCard label="Payments" value={String(report.totals.count)} />
           <StatCard label={tab === "received" ? "Received" : "Paid"} value={money(report.totals.amount)} />
           <StatCard
@@ -145,7 +125,7 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
             value={money(report.totals.heldAsCredit)}
             trend={{ direction: "neutral", label: `${report.totals.heldCount} ${report.totals.heldCount === 1 ? "payment" : "payments"}` }}
           />
-        </div>
+        </ReportKpis>
       )}
 
       {report && !error && report.rows.length === 0 ? (
@@ -156,10 +136,19 @@ export function PaymentRegisters({ tab }: { tab: "received" | "made" }) {
         report &&
         !error && (
           <div data-testid="register-table">
-            <DataTable columns={columns} data={report.rows} rowKey={(r) => r.id} searchPlaceholder="Search payments" searchKey={(r) => `${r.number ?? ""} ${r.contact.name} ${r.allocations.map((a) => a.number).join(" ")}`} onSearchChange={setSearch} configurablePageSize />
+            <DataTable
+              columns={columns}
+              data={report.rows}
+              rowKey={(r) => r.id}
+              searchPlaceholder="Search payments"
+              searchKey={(r) => `${r.number ?? ""} ${r.contact.name} ${r.allocations.map((a) => a.number).join(" ")}`}
+              onSearchChange={setSearch}
+              configurablePageSize
+              footer={{ number: "Total", amount: money(report.totals.amount) }}
+            />
           </div>
         )
       )}
-    </div>
+    </>
   );
 }

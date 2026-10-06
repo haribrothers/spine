@@ -39,6 +39,8 @@ export interface TableProps<T> {
   groupPrimary?: (rows: T[]) => T;
   /** Optional badge/label rendered next to the expand chevron on a group's non-primary rows, e.g. "v1". Only used when `groupBy` is set. */
   groupMemberLabel?: (row: T) => React.ReactNode;
+  /** A totals row under every page, keyed by column (a report's "Total"); columns left out stay blank. */
+  footer?: Partial<Record<string, React.ReactNode>>;
 }
 
 type SortDirection = "asc" | "desc";
@@ -67,6 +69,7 @@ export function Table<T>({
   groupBy,
   groupPrimary,
   groupMemberLabel,
+  footer,
 }: TableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
   const [page, setPage] = useState(1);
@@ -281,6 +284,17 @@ export function Table<T>({
                   </tr>
                 ))}
           </tbody>
+          {footer && (
+            <tfoot>
+              <tr className="border-t border-border bg-surface-sunken font-semibold text-on-surface">
+                {columns.map((column) => (
+                  <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left")}>
+                    {footer[column.key]}
+                  </td>
+                ))}
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
       {configurablePageSize ? (

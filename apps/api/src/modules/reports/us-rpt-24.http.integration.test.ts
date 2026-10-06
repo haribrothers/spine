@@ -82,6 +82,17 @@ describe("US-RPT-24 · see the general ledger (requires local Postgres)", () => 
     expect([depreciation.openingBalance, depreciation.rows.at(-1)!.balance, depreciation.closingBalance]).toEqual(["-482000", "-692000", "-692000"]);
   });
 
+  describe("US-RPT-40", () => {
+    it("totals cover every listed account's lines in the range, not just the page", async () => {
+      const page1 = await json<GeneralLedgerReport>(await gl(owner, "from=2026-07-01&to=2026-09-30&pageSize=1"));
+      expect(page1.accounts).toHaveLength(1);
+      // Two journals in the range, two lines each: 2,100.00 on each side.
+      expect(page1.totals).toEqual({ lines: 4, debit: "210000", credit: "210000" });
+      const quiet = await json<GeneralLedgerReport>(await gl(owner, "from=2026-10-01&to=2026-10-31&includeInactive=true"));
+      expect(quiet.totals).toEqual({ lines: 0, debit: "0", credit: "0" });
+    });
+  });
+
   it("only the accounts picked show", async () => {
     const report = await json<GeneralLedgerReport>(await gl(owner, `from=2026-07-01&to=2026-09-30&accountIds=${code["6900"]}`));
     expect(report.accounts.map((a) => a.account.code)).toEqual(["6900"]);

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment } from "react";
+import { StatementTable, type StatementColumn, type StatementRow } from "@spine/ui";
 import { changePercent, type CompareLine, type ProfitAndLossComparison } from "@spine/shared";
 import { formatMoney } from "../../../lib/money";
 import type { BalanceSheetReport, ReportAccountLine } from "./types";
@@ -19,9 +19,6 @@ export function percentText(current: bigint, previous: bigint): string {
   return pct.startsWith("-") ? `▼ −${pct.slice(1)}%` : `▲ +${pct}%`;
 }
 
-const th = "px-4 py-3 font-medium";
-const td = "px-4 py-2 tabular-nums text-right";
-
 /**
  * US-RPT-27 — Profit & Loss with comparison columns. For "Previous period"
  * and "Same period last year": this range, the other, Change and Change %.
@@ -30,85 +27,39 @@ const td = "px-4 py-2 tabular-nums text-right";
 export function PlCompareTable({ comparison, totals, currency }: { comparison: ProfitAndLossComparison; totals: { income: string; expenses: string; netProfit: string }; currency: string }) {
   const monthly = comparison.mode === "monthly";
   const money = (v: string | bigint) => formatMoney(v, currency);
-  const cells = (amounts: string[], total: string) => {
-    if (monthly) {
-      return (
-        <>
-          {amounts.map((a, i) => (
-            <td key={i} className={td}>
-              {money(a)}
-            </td>
-          ))}
-          <td className={`${td} font-medium`}>{money(total)}</td>
-        </>
-      );
+  const columns: StatementColumn[] = [
+    { key: "account", header: "Account" },
+    ...comparison.columns.map((c, i) => ({ key: `c${i}`, header: c.label, align: "right" as const })),
+    ...(monthly
+      ? [{ key: "total", header: "Total", align: "right" as const }]
+      : [
+          { key: "change", header: "Change", align: "right" as const },
+          { key: "pct", header: "Change %", align: "right" as const },
+        ]),
+  ];
+  const cells = (label: string, amounts: string[], total: string): Record<string, React.ReactNode> => {
+    const out: Record<string, React.ReactNode> = { account: label };
+    amounts.forEach((a, i) => (out[`c${i}`] = money(a)));
+    if (monthly) out.total = money(total);
+    else {
+      const [current, previous] = [BigInt(amounts[0] ?? "0"), BigInt(amounts[1] ?? "0")];
+      out.change = changeText(current - previous, currency);
+      out.pct = percentText(current, previous);
     }
-    const [current, previous] = [BigInt(amounts[0] ?? "0"), BigInt(amounts[1] ?? "0")];
-    return (
-      <>
-        <td className={td}>{money(current)}</td>
-        <td className={td}>{money(previous)}</td>
-        <td className={`${td} whitespace-nowrap`}>{changeText(current - previous, currency)}</td>
-        <td className={`${td} whitespace-nowrap`}>{percentText(current, previous)}</td>
-      </>
-    );
+    return out;
   };
-  const rows = (lines: CompareLine[]) =>
-    lines.map((l) => (
-      <tr key={l.accountId} className="border-b border-border">
-        <td className="whitespace-nowrap px-4 py-2 text-on-surface">
-          {l.code} · {l.name}
-        </td>
-        {cells(l.amounts, l.amounts.reduce((s, a) => s + BigInt(a), 0n).toString())}
-      </tr>
-    ));
-  const totalRow = (label: string, amounts: string[], total: string, strong = false) => (
-    <tr className={`border-b border-border font-semibold text-on-surface ${strong ? "bg-surface-sunken" : ""}`}>
-      <td className="px-4 py-3">{label}</td>
-      {cells(amounts, total)}
-    </tr>
-  );
-  const section = (label: string) => (
-    <tr>
-      <th scope="rowgroup" colSpan={comparison.columns.length + (monthly ? 2 : 3)} className="px-4 pb-1 pt-4 text-left text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">
-        {label}
-      </th>
-    </tr>
-  );
-
-  return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full text-[14px]" data-testid="pl-compare-table">
-        <thead>
-          <tr className="border-b border-border text-on-surface">
-            <th className={`${th} text-left`}>Account</th>
-            {comparison.columns.map((c) => (
-              <th key={c.from} className={`${th} whitespace-nowrap text-right`}>
-                {c.label}
-              </th>
-            ))}
-            {monthly ? (
-              <th className={`${th} text-right`}>Total</th>
-            ) : (
-              <>
-                <th className={`${th} text-right`}>Change</th>
-                <th className={`${th} text-right`}>Change %</th>
-              </>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {section("Income")}
-          {rows(comparison.income)}
-          {totalRow("Total income", comparison.totalIncome, totals.income)}
-          {section("Expenses")}
-          {rows(comparison.expenses)}
-          {totalRow("Total expenses", comparison.totalExpenses, totals.expenses)}
-          {totalRow("Net profit", comparison.netProfit, totals.netProfit, true)}
-        </tbody>
-      </table>
-    </div>
-  );
+  const lines = (key: string, list: CompareLine[]): StatementRow[] =>
+    list.map((l) => ({ kind: "line", key: `${key}-${l.accountId}`, cells: cells(`${l.code} · ${l.name}`, l.amounts, l.amounts.reduce((s, a) => s + BigInt(a), 0n).toString()) }));
+  const rows: StatementRow[] = [
+    { kind: "section", key: "income", label: "Income" },
+    ...lines("income", comparison.income),
+    { kind: "subtotal", key: "total-income", cells: cells("Total income", comparison.totalIncome, totals.income) },
+    { kind: "section", key: "expenses", label: "Expenses" },
+    ...lines("expenses", comparison.expenses),
+    { kind: "subtotal", key: "total-expenses", cells: cells("Total expenses", comparison.totalExpenses, totals.expenses) },
+    { kind: "total", key: "net", cells: cells("Net profit", comparison.netProfit, totals.netProfit) },
+  ];
+  return <StatementTable columns={columns} rows={rows} data-testid="pl-compare-table" />;
 }
 
 /** US-RPT-27 — the Balance Sheet on two dates side by side. */
@@ -125,54 +76,30 @@ export function BsCompareTable({ report, comparison, currency, labels }: { repor
     }
     return [...rows.entries()].sort((x, y) => x[1].code.localeCompare(y[1].code));
   };
-  const sections: { label: string; lines: ReturnType<typeof merge>; total: [string, string]; totalLabel: string }[] = [
-    { label: "Assets", lines: merge(report.assets, comparison.assets), total: [report.totalAssets, comparison.totalAssets], totalLabel: "Total assets" },
-    { label: "Liabilities", lines: merge(report.liabilities, comparison.liabilities), total: [report.totalLiabilities, comparison.totalLiabilities], totalLabel: "Total liabilities" },
-    { label: "Equity", lines: merge(report.equity, comparison.equity), total: [report.totalEquity, comparison.totalEquity], totalLabel: "Total equity" },
+  const cells = (label: string, now: string, then: string) => ({ account: label, now: money(now), then: money(then), change: changeText(BigInt(now) - BigInt(then), currency) });
+  const sections = [
+    { label: "Assets", lines: merge(report.assets, comparison.assets), total: [report.totalAssets, comparison.totalAssets] as const, totalLabel: "Total assets" },
+    { label: "Liabilities", lines: merge(report.liabilities, comparison.liabilities), total: [report.totalLiabilities, comparison.totalLiabilities] as const, totalLabel: "Total liabilities" },
+    { label: "Equity", lines: merge(report.equity, comparison.equity), total: [report.totalEquity, comparison.totalEquity] as const, totalLabel: "Total equity" },
+  ];
+  const rows: StatementRow[] = [
+    ...sections.flatMap((s): StatementRow[] => [
+      { kind: "section", key: s.label, label: s.label },
+      ...s.lines.map(([id, l]): StatementRow => ({ kind: "line", key: `${s.label}-${id}`, cells: cells(l.label, l.now, l.then) })),
+      { kind: "subtotal", key: `${s.label}-total`, cells: cells(s.totalLabel, s.total[0], s.total[1]) },
+    ]),
+    { kind: "total", key: "total", cells: cells("Total liabilities + equity", report.totalLiabilitiesAndEquity, comparison.totalLiabilitiesAndEquity) },
   ];
   return (
-    <div className="overflow-x-auto rounded-lg border border-border bg-surface">
-      <table className="w-full text-[14px]" data-testid="bs-compare-table">
-        <thead>
-          <tr className="border-b border-border text-on-surface">
-            <th className={`${th} text-left`}>Account</th>
-            <th className={`${th} whitespace-nowrap text-right`}>{labels[0]}</th>
-            <th className={`${th} whitespace-nowrap text-right`}>{labels[1]}</th>
-            <th className={`${th} text-right`}>Change</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sections.map((s) => (
-            <Fragment key={s.label}>
-              <tr>
-                <th scope="rowgroup" colSpan={4} className="px-4 pb-1 pt-4 text-left text-[12px] font-semibold uppercase tracking-wide text-on-surface-muted">
-                  {s.label}
-                </th>
-              </tr>
-              {s.lines.map(([id, l]) => (
-                <tr key={id} className="border-b border-border">
-                  <td className="whitespace-nowrap px-4 py-2 text-on-surface">{l.label}</td>
-                  <td className={td}>{money(l.now)}</td>
-                  <td className={td}>{money(l.then)}</td>
-                  <td className={`${td} whitespace-nowrap`}>{changeText(BigInt(l.now) - BigInt(l.then), currency)}</td>
-                </tr>
-              ))}
-              <tr className="border-b border-border font-semibold text-on-surface">
-                <td className="px-4 py-3">{s.totalLabel}</td>
-                <td className={td}>{money(s.total[0])}</td>
-                <td className={td}>{money(s.total[1])}</td>
-                <td className={`${td} whitespace-nowrap`}>{changeText(BigInt(s.total[0]) - BigInt(s.total[1]), currency)}</td>
-              </tr>
-            </Fragment>
-          ))}
-          <tr className="bg-surface-sunken font-semibold text-on-surface">
-            <td className="px-4 py-3">Total liabilities + equity</td>
-            <td className={td}>{money(report.totalLiabilitiesAndEquity)}</td>
-            <td className={td}>{money(comparison.totalLiabilitiesAndEquity)}</td>
-            <td className={`${td} whitespace-nowrap`}>{changeText(BigInt(report.totalLiabilitiesAndEquity) - BigInt(comparison.totalLiabilitiesAndEquity), currency)}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <StatementTable
+      data-testid="bs-compare-table"
+      columns={[
+        { key: "account", header: "Account" },
+        { key: "now", header: labels[0], align: "right" },
+        { key: "then", header: labels[1], align: "right" },
+        { key: "change", header: "Change", align: "right" },
+      ]}
+      rows={rows}
+    />
   );
 }

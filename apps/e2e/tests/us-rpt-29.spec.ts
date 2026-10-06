@@ -25,11 +25,11 @@ test.describe("US-RPT-29", () => {
     await page.goto("/reports");
     await page.getByRole("link", { name: "Expenses by category" }).click();
     await expect(page).toHaveURL(/\/reports\/expenses-by-category$/);
-    await expect(page.getByTestId("purchases-subtitle")).toContainText("From bills, expenses, journals and money out");
+    await expect(page.locator("main h1 + p")).toContainText("From bills, expenses, journals and money out · ");
     const cards = page.getByTestId("purchases-cards");
     await expect(cards).toContainText("Total expenses$3,000.00");
     await expect(cards).toContainText("Categories2");
-    await expect(cards).toContainText("LargestCost of Materials");
+    await expect(cards).toContainText("Largest category$2,500.00Cost of Materials · 83.3%");
     const table = page.getByTestId("purchases-table");
     await expect(table.getByRole("row").nth(1)).toContainText("5000 · Cost of Materials");
     await expect(table.getByRole("row").nth(1)).toContainText("83.3%");
