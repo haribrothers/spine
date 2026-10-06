@@ -2897,6 +2897,19 @@ Regression: Vendor Payments opens a payment's drawer from `/vendor-payments?id=<
 
 Regression: bulk-approving expenses still works and posts each to the account it carries. Payments, vendor payments and expenses recorded before this change show the account they actually posted to.
 
+## 104. Transfers between accounts (US-BANK-04, Phase 8)
+
+1. As an Owner, Banking › "Transfer" (it's disabled with fewer than two accounts): the dialog "Transfer between accounts" asks for "From" (starts on the default), "To", "Amount", "Date" and "Reference", and the button reads "Move money".
+2. Choose the same account in both: "Choose two different accounts." and nothing is saved.
+3. Move $3,000.00 from Bank Account to a second account with reference "TRF-0004". The line above the buttons reads "Posts Dr <To> / Cr <From>. Both registers show it." The toast reads "Moved $3,000.00 from Bank Account to <To>". Both balances change.
+4. Open each register: one reads "Transfer to <To>" (money out), the other "Transfer from Bank Account" (money in), both with reference TRF-0004.
+5. Pay off a credit card with a transfer from the bank: the card's register shows "Paid off" and what's owed drops.
+6. In the register, the transfer's row menu › "Delete transfer" › confirm: the toast reads "Transfer deleted", the row shows "Deleted", a "Transfer deleted" row dated today reverses it, and both balances are back. Team › Audit log shows "Transfer" created and deleted.
+7. Close a fiscal period, then try a transfer dated inside it: it's refused with "… falls within a closed fiscal period".
+8. As Staff without "Record transfers and other money in or out", there's no "Transfer" button and no row menu, and `POST /bank-transfers` returns 403. As a Field user, 403.
+
+Regression: the Banking list, register filters and opening balance still read correctly with transfers in them; the dashboard's "Money in and out" counts neither side of a transfer between two bank or cash accounts.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

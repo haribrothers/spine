@@ -1,9 +1,10 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, eq, gte, inArray, isNotNull, lt, lte, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contacts, expenses, journalEntries, journalLines, payments, vendorPayments } from "../../db/schema";
+import { bankTransfers, contacts, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -13,11 +14,17 @@ const SOURCE_LABELS: Record<string, string> = {
   vendor_payment: "Vendor payment",
   vendor_payment_delete: "Vendor payment deleted",
   expense: "Expense",
+  bank_transfer: "Transfer",
+  bank_transfer_delete: "Transfer deleted",
 };
 
 interface SourceDetails {
   number: string | null;
   reference: string | null;
+  /** The source was deleted or voided after posting (a reversing entry exists). */
+  deleted?: boolean;
+  /** For a transfer: the two accounts, so each side reads "Transfer to …" or "Transfer from …". */
+  transfer?: { from: string; to: string };
 }
 
 /**
@@ -68,14 +75,17 @@ export class AccountRegisterService {
       balance += signed(line.debit, line.credit);
       totalIn += moneyIn;
       totalOut += moneyOut;
-      const source = details.get(`${entry.sourceType}:${entry.sourceId}`) ?? { number: null, reference: null };
+      const source: SourceDetails = details.get(`${entry.sourceType}:${entry.sourceId}`) ?? { number: null, reference: null };
       const label = SOURCE_LABELS[entry.sourceType] ?? "Journal entry";
+      // Money leaving this account went to the other one, and the other way round.
+      const what = source.transfer && entry.sourceType === "bank_transfer" ? (line.credit > 0n ? `Transfer to ${source.transfer.to}` : `Transfer from ${source.transfer.from}`) : source.number ? `${label} ${source.number}` : label;
       return {
         journalLineId: line.id,
         date: entry.date,
         sourceType: entry.sourceType,
         sourceId: entry.sourceId,
-        what: source.number ? `${label} ${source.number}` : label,
+        what,
+        deleted: source.deleted ?? false,
         number: source.number,
         contact: entryContacts.get(line.id) ?? null,
         reference: source.reference,
@@ -143,6 +153,23 @@ export class AccountRegisterService {
           .from(expenses)
           .where(and(eq(expenses.orgId, orgId), inArray(expenses.id, expenseIds))),
       );
+    }
+    const transferTypes = ["bank_transfer", "bank_transfer_delete"];
+    const transferIds = ids(transferTypes);
+    if (transferIds.length) {
+      const fromAccount = alias(moneyAccounts, "from_account");
+      const toAccount = alias(moneyAccounts, "to_account");
+      const rows = await this.db
+        .select({ id: bankTransfers.id, reference: bankTransfers.reference, deletedAt: bankTransfers.deletedAt, from: fromAccount.name, to: toAccount.name })
+        .from(bankTransfers)
+        .innerJoin(fromAccount, eq(fromAccount.id, bankTransfers.fromMoneyAccountId))
+        .innerJoin(toAccount, eq(toAccount.id, bankTransfers.toMoneyAccountId))
+        .where(and(eq(bankTransfers.orgId, orgId), inArray(bankTransfers.id, transferIds)));
+      for (const row of rows) {
+        for (const type of transferTypes) {
+          out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt), transfer: { from: row.from, to: row.to } });
+        }
+      }
     }
     return out;
   }

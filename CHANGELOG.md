@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-04: move money between my accounts (Phase 8)
+
+- **Transfer** (`TransferDialog`, Banking › "Transfer"): "From", "To", "Amount", "Date" and "Reference", with "Posts Dr <To> / Cr <From>. Both registers show it." and "Move money". The toast reads "Moved <amount> from <From> to <To>". Paying off a card is a transfer to the card.
+- **Posting** (P22): Dr the destination's ledger account, Cr the source's, dated the transfer's date, in the same transaction as the `bank_transfers` row. A date in a closed period is refused ("… falls within a closed fiscal period"); the same account twice is refused with "Choose two different accounts.".
+- **Registers**: the source reads "Transfer to <To>", the destination "Transfer from <From>", with the reference.
+- **Delete**: the register's row menu › "Delete transfer" posts the reversing entry dated today and keeps the transfer, marked "Deleted", so both balances go back. Reconciled transfers will refuse this once reconciliation ships (US-BANK-10).
+- **Migration 0079**: `bank_transfers`.
+- **Access**: `banking.record` (Owners always; Staff by Team; Field never). Created and deleted transfers are audited as "Transfer".
+- **API.** `POST /bank-transfers`, `DELETE /bank-transfers/:id`; register rows gain `deleted`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-04.http.integration.test.ts` (6): the P22 lines and both registers' rows; a card payoff; the same account refused; a closed period refused; deleting reverses both balances, marks the row and is audited; `banking.record` needed and Field refused.
+- `apps/e2e/tests/us-bank-04.spec.ts` (1): the dialog, the same-account message, the toast, both balances and registers, and deleting from the register.
+
 ### 2026-10-06 — US-BANK-03: choose the account money went into or came out of (Phase 8)
 
 - **"Paid into" / "Paid from"** on Record payment (Payments and an invoice), Record vendor payment (including "Pay bill"), the expense form and the approve dialog. It lists the organisation's active bank, cash and card accounts, and starts on the account this person used last on that kind of form ("Last used by you. Change it if the money went into another account."), else the organisation default.

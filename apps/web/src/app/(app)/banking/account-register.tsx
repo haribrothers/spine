@@ -2,13 +2,27 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Landmark } from "lucide-react";
+import { Landmark, MoreHorizontal } from "lucide-react";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   AppShellHeader,
+  Badge,
+  Button,
   DataTable,
   DatePicker,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   EmptyState,
   Select,
   SelectContent,
@@ -22,8 +36,10 @@ import {
 } from "@spine/ui";
 import { MONEY_ACCOUNT_KIND_LABELS, type AccountRegister as Register, type AccountRegisterRow } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
+import { useEntityToast } from "./entity-toast";
 
 const TABLE_COLUMNS = [
   { key: "date", header: "Date", width: "w-24" },
@@ -67,6 +83,11 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   const [register, setRegister] = useState<Register | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [deleting, setDeleting] = useState<AccountRegisterRow | null>(null);
+  const [busy, setBusy] = useState(false);
+  const canRecord = useCapability("banking.record");
+  const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
     apiClient
@@ -84,7 +105,23 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         setError(null);
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load this account. Refresh to try again."));
-  }, [accountId, from, to, unreconciledOnly]);
+  }, [accountId, from, to, unreconciledOnly, reloadKey]);
+
+  async function deleteTransfer() {
+    if (!deleting) return;
+    setBusy(true);
+    try {
+      await apiClient.delete(`/bank-transfers/${deleting.sourceId}`);
+      setDeleting(null);
+      setReloadKey((k) => k + 1);
+      showToast("Transfer deleted", "A reversing entry was posted, so both balances are back where they were.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete this transfer. Try again.");
+      setDeleting(null);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const account = register?.account;
   const isCard = account?.kind === "card";
@@ -100,12 +137,20 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       header: "What",
       render: (row) => {
         const href = sourceHref(row);
-        return href ? (
+        const label = href ? (
           <Link href={href} className="font-medium text-on-surface hover:text-primary hover:underline">
             {row.what}
           </Link>
         ) : (
           <span className="font-medium text-on-surface">{row.what}</span>
+        );
+        // The original entry of something deleted later; its reversal is its own row.
+        const showDeleted = row.deleted && !row.sourceType.endsWith("_delete");
+        return (
+          <span className="flex flex-wrap items-center gap-2">
+            {label}
+            {showDeleted && <Badge>Deleted</Badge>}
+          </span>
         );
       },
     },
@@ -119,6 +164,28 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
       header: "Status",
       render: (row) => (row.reconciled ? <StatusChip status="paid">Reconciled</StatusChip> : <StatusChip status="due-soon">Not reconciled</StatusChip>),
     },
+    ...(canRecord
+      ? [
+          {
+            key: "actions",
+            header: "Actions",
+            align: "right" as const,
+            render: (row: AccountRegisterRow) =>
+              row.sourceType === "bank_transfer" && !row.deleted && !row.reconciled ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" aria-label={`Actions for ${row.what}`}>
+                      <MoreHorizontal size={16} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => setDeleting(row)}>Delete transfer</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : null,
+          },
+        ]
+      : []),
   ];
 
   const subtitle = account
@@ -187,6 +254,21 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
           )}
         </div>
       )}
+      <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this transfer?</AlertDialogTitle>
+            <AlertDialogDescription>Spine posts a reversing entry today, so both accounts go back to their balances before it. The transfer stays in both registers, marked deleted.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep transfer</AlertDialogCancel>
+            <AlertDialogAction variant="danger" onClick={deleteTransfer} disabled={busy}>
+              Delete transfer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {toast}
     </>
   );
 }

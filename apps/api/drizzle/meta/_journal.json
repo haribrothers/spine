@@ -554,6 +554,13 @@
       "when": 1791265569347,
       "tag": "0078_money_account_on_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791266214430,
+      "tag": "0079_bank_transfers",
+      "breakpoints": true
     }
   ]
 }

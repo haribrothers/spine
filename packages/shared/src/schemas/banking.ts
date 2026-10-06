@@ -99,6 +99,8 @@ export interface AccountRegisterRow {
   out: string;
   balance: string;
   reconciled: boolean;
+  /** The source was deleted after posting; its reversal is a row of its own. */
+  deleted: boolean;
 }
 
 export interface AccountRegister {
@@ -127,3 +129,34 @@ export interface MoneyAccountRef {
 }
 
 export const INACTIVE_MONEY_ACCOUNT = "Choose one of your active accounts.";
+
+export const SAME_ACCOUNT_TRANSFER = "Choose two different accounts.";
+
+/** `POST /bank-transfers` (US-BANK-04): a deposit, top-up or card payoff between two of the organisation's own accounts. */
+export const createBankTransferSchema = z
+  .object({
+    fromMoneyAccountId: z.string().uuid("Choose the account the money left."),
+    toMoneyAccountId: z.string().uuid("Choose the account the money went to."),
+    amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+    date: isoDateSchema,
+    reference: z
+      .string()
+      .trim()
+      .max(120)
+      .optional()
+      .nullable()
+      .transform((v) => (v ? v : null)),
+  })
+  .refine((v) => v.fromMoneyAccountId !== v.toMoneyAccountId, { message: SAME_ACCOUNT_TRANSFER, path: ["toMoneyAccountId"] });
+export type CreateBankTransferInput = z.infer<typeof createBankTransferSchema>;
+
+export interface BankTransfer {
+  id: string;
+  fromMoneyAccount: MoneyAccountRef;
+  toMoneyAccount: MoneyAccountRef;
+  /** Minor units as a string. */
+  amount: string;
+  date: string;
+  reference: string | null;
+  deletedAt: string | null;
+}

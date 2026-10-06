@@ -1,6 +1,9 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { LedgerModule } from "../ledger/ledger.module";
 import { AccountRegisterService } from "./account-register.service";
+import { BankTransfersController } from "./bank-transfers.controller";
+import { BankTransfersService } from "./bank-transfers.service";
 import { MoneyAccountsController } from "./money-accounts.controller";
 import { MoneyAccountsService } from "./money-accounts.service";
 
@@ -9,9 +12,9 @@ import { MoneyAccountsService } from "./money-accounts.service";
  * transfers, other money in and out, and reconciliation.
  */
 @Module({
-  imports: [AuditModule],
-  controllers: [MoneyAccountsController],
-  providers: [MoneyAccountsService, AccountRegisterService],
+  imports: [AuditModule, LedgerModule],
+  controllers: [MoneyAccountsController, BankTransfersController],
+  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService],
   exports: [MoneyAccountsService],
 })
 export class BankingModule {}

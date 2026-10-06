@@ -37,7 +37,10 @@ export type AuditEntityType =
   // US-SET-16: data exports prepared and downloaded.
   | "data_export"
   // US-BANK-01: bank, cash and card accounts added, renamed, archived or restored.
-  | "money_account";
+  | "money_account"
+  // US-BANK-04/05: transfers and other money in or out, recorded and deleted.
+  | "bank_transfer"
+  | "bank_transaction";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

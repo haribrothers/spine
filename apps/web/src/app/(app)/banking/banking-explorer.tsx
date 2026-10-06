@@ -18,13 +18,15 @@ import {
   TableSkeleton,
   type TableColumn,
 } from "@spine/ui";
-import { MONEY_ACCOUNT_KIND_LABELS, type MoneyAccount } from "@spine/shared";
+import { MONEY_ACCOUNT_KIND_LABELS, type BankTransfer, type MoneyAccount } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { formatDay } from "./dates";
 import { useEntityToast } from "./entity-toast";
 import { MoneyAccountDialog } from "./money-account-dialog";
+import { TransferDialog } from "./transfer-dialog";
 
 const TABLE_COLUMNS = [
   { key: "name", header: "Account", width: "w-48" },
@@ -46,6 +48,8 @@ function bankLine(account: MoneyAccount): string {
  */
 export function BankingExplorer() {
   const isOwner = useMyRole() === "owner";
+  const canRecord = useCapability("banking.record");
+  const [transferOpen, setTransferOpen] = useState(false);
   const [rows, setRows] = useState<MoneyAccount[] | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +86,11 @@ export function BankingExplorer() {
       lastReconciled: rows.filter((r) => r.lastReconciledOn).sort((a, b) => b.lastReconciledOn!.localeCompare(a.lastReconciledOn!))[0] ?? null,
     };
   }, [rows]);
+
+  function handleTransferred(transfer: BankTransfer) {
+    load();
+    showToast(`Moved ${formatMoney(BigInt(transfer.amount), currency)} from ${transfer.fromMoneyAccount.name} to ${transfer.toMoneyAccount.name}`, "Both registers show the transfer.");
+  }
 
   function openAdd() {
     setEditing(null);
@@ -204,9 +213,14 @@ export function BankingExplorer() {
         />
       </div>
 
-      {isOwner && (
+      {(isOwner || canRecord) && (
         <div className="flex flex-wrap items-center justify-end gap-3">
-          <Button onClick={openAdd}>Add account</Button>
+          {canRecord && (
+            <Button variant="secondary" onClick={() => setTransferOpen(true)} disabled={!rows || rows.length < 2}>
+              Transfer
+            </Button>
+          )}
+          {isOwner && <Button onClick={openAdd}>Add account</Button>}
         </div>
       )}
 
@@ -225,6 +239,7 @@ export function BankingExplorer() {
         </div>
       )}
 
+      <TransferDialog open={transferOpen} onOpenChange={setTransferOpen} accounts={rows ?? []} currency={currency} onRecorded={handleTransferred} />
       <MoneyAccountDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} onSaved={handleSaved} />
       {toast}
     </div>
