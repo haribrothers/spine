@@ -540,6 +540,13 @@
       "when": 1791221601339,
       "tag": "0076_search_trigram",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1791263995115,
+      "tag": "0077_money_accounts",
+      "breakpoints": true
     }
   ]
 }

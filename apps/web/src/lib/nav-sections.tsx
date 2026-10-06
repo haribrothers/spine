@@ -7,6 +7,7 @@ import {
   HandCoins,
   HardHat,
   History,
+  Landmark,
   Inbox,
   LayoutDashboard,
   Package,
@@ -93,6 +94,11 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     ],
   },
   {
+    // US-BANK-01 (D-139): where the money actually sits.
+    label: "Money",
+    items: [{ href: "/banking", label: "Banking", icon: <Landmark /> }],
+  },
+  {
     label: "Reports",
     items: [{ href: "/reports", label: "Reports", icon: <BarChart3 /> }],
   },
@@ -142,6 +148,7 @@ export const FIELD_NAV_SECTIONS: AppShellNavSection[] = [
 const ITEM_CAPABILITY: Record<string, Capability> = {
   "/receivables": "reports.view_receivables",
   "/payables": "reports.view_payables",
+  "/banking": "banking.view",
 };
 
 /** The Reports page is shown to Staff who hold any report capability. */

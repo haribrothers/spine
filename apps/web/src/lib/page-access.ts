@@ -23,6 +23,7 @@ const RULES: PageRule[] = [
   { prefix: "/team", name: "Team", ownerOnly: true },
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
   { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
+  { prefix: "/banking", name: "Banking", anyOf: ["banking.view"] },
   {
     prefix: "/reports",
     name: "Reports",
@@ -43,6 +44,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/vendor-bills": "Vendor Bills",
   "/vendor-payments": "Vendor Payments",
   "/payables": "Payables",
+  "/banking": "Banking",
   "/reports": "Reports",
   "/team": "Team",
   "/expenses/categories": "Expense categories",

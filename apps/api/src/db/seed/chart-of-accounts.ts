@@ -1,5 +1,5 @@
 import type { Database } from "../client";
-import { accounts, type accountTypeEnum } from "../schema";
+import { accounts, moneyAccounts, type accountTypeEnum } from "../schema";
 
 type AccountType = (typeof accountTypeEnum.enumValues)[number];
 
@@ -48,14 +48,33 @@ export const DEFAULT_CHART_OF_ACCOUNTS: readonly SeedAccount[] = [
   { code: "6900", name: "Other Expenses", type: "expense", isSystem: false },
 ];
 
+/** US-BANK-01 (D-140) — 1000 and 1010 are the organisation's first money accounts; 1010 is the default. */
+const DEFAULT_MONEY_ACCOUNTS = [
+  { code: "1000", kind: "cash", isDefault: false },
+  { code: "1010", kind: "bank", isDefault: true },
+] as const;
+
 export async function seedChartOfAccounts(db: Database, orgId: string): Promise<void> {
-  await db.insert(accounts).values(
-    DEFAULT_CHART_OF_ACCOUNTS.map((account) => ({
+  const rows = await db
+    .insert(accounts)
+    .values(
+      DEFAULT_CHART_OF_ACCOUNTS.map((account) => ({
+        orgId,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        isSystem: account.isSystem,
+      })),
+    )
+    .returning({ id: accounts.id, code: accounts.code, name: accounts.name });
+  const byCode = new Map(rows.map((row) => [row.code, row]));
+  await db.insert(moneyAccounts).values(
+    DEFAULT_MONEY_ACCOUNTS.map((money) => ({
       orgId,
-      code: account.code,
-      name: account.name,
-      type: account.type,
-      isSystem: account.isSystem,
+      accountId: byCode.get(money.code)!.id,
+      kind: money.kind,
+      name: byCode.get(money.code)!.name,
+      isDefault: money.isDefault,
     })),
   );
 }

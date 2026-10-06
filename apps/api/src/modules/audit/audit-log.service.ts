@@ -35,7 +35,9 @@ export type AuditEntityType =
   // US-SET-11: role and access changes; entity id is the member's user id.
   | "user"
   // US-SET-16: data exports prepared and downloaded.
-  | "data_export";
+  | "data_export"
+  // US-BANK-01: bank, cash and card accounts added, renamed, archived or restored.
+  | "money_account";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

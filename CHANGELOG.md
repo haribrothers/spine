@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-01: add my bank, cash and card accounts (Phase 8)
+
+- **Banking** (new "Money" section in the sidebar): every bank, cash and card account with its "Balance in Spine", a "Default" badge, and "Bank and cash" / "Owed on cards" totals. Owners add accounts with "Add account" and edit them from the row menu.
+- **Add account** (`MoneyAccountDialog`): "Type" (Bank account, Cash, Credit card), "Name", "Bank name" and "Last 4 digits" (bank and card only), and "Use as default for new payments". The hint names the ledger account it will create ("Ledger account 1011 · Asset.").
+- **Ledger accounts** (D-140): a bank or cash account takes the next free asset code from 1011 to 1099; a card takes the next free liability code from 2300 to 2399, and its balance is what's owed. Renaming an account renames its ledger account. A name already used by another active account (any case) is refused with "You already have an account called <name>. Choose another name.". Ticking default moves the badge (one default per organisation, enforced by a partial unique index).
+- **Migration 0077**: new `money_accounts` table. 1000 Cash in Hand and 1010 Bank Account become money accounts in every existing organisation, 1010 the default; sign-up seeds the same two. Adds the three banking capabilities (`banking.view`, `banking.record`, `banking.reconcile`), off for every Team (US-BANK-12 finishes the privilege matrix).
+- **Access**: adding and changing accounts is Owner-only (Staff get 403). Any Owner or Staff member can list account names for payment forms; balances need `banking.view`. Field gets 403 on every banking route, and Banking stays out of their sidebar.
+- **Cash figures**: the dashboard's "Cash position" and "Money in and out" now sum every bank and cash account instead of the fixed 1000/1010 pair, so a new bank account counts. Cards aren't cash.
+- **Audit log**: adding and changing an account are recorded as "Money account".
+- **API.** `GET /money-accounts`, `GET /money-accounts/next-codes`, `POST /money-accounts`, `PUT /money-accounts/:id`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-01.http.integration.test.ts` (8): the starting accounts; a bank account at 1011 with a zero balance, cash without bank details; a card at 2300 as a liability; duplicate names; moving the default; renaming renames the ledger account and is audited; Staff 403 on create and update; next codes.
+- `apps/e2e/tests/us-bank-01.spec.ts` (1): the starting list, the dialog's fields and hint, adding a bank account and a card, the duplicate-name message, and moving the default.
+
 ### 2026-10-05 — US-OPS-26: use every new screen in dark mode (Phase 7)
 
 - **Sweep**: every Phase 7 screen is checked in light and dark mode, with a screenshot of each attached to the test report and axe (WCAG 2.1 A/AA, contrast included) passing in both. The screens are the Owner and Field dashboards, the search palette, invoices with bulk selection, Settings › Automatic reminders and Data export, the audit log, Activity, Profile › Notifications, recurring invoices, job costing and the job profitability report.

@@ -18,6 +18,7 @@ import {
   jobs,
   creditNotes,
 } from "../../db/schema";
+import { cashAccountCodes } from "../banking/cash-accounts";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -645,8 +646,8 @@ export class ReportsService {
    * S-09.10 — "a dashboard with cash position, receivables, overdue count
    * and month revenue, so one screen tells me how things stand." Reuses
    * `receivables()` for the AR figures (same balance computation, no
-   * second source of truth); cash position sums the two seeded cash/bank
-   * asset accounts' (`1000`/`1010`) lifetime net movement, same
+   * second source of truth); cash position sums every bank and cash money
+   * account's (D-140, `cashAccountCodes`) lifetime net movement, same
    * debit-increases-asset convention as `balanceSheet`; month revenue sums
    * `income`-type journal_lines credits for the current calendar month
    * to date, same convention as `profitAndLoss`.
@@ -655,10 +656,10 @@ export class ReportsService {
     const receivables = await this.receivables(orgId);
     const overdueCount = receivables.invoices.filter((i) => i.bucket !== "current").length;
 
-    const cashAccounts = await this.db
-      .select()
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), inArray(accounts.code, ["1000", "1010"])));
+    const cashCodes = await cashAccountCodes(this.db, orgId);
+    const cashAccounts = cashCodes.length
+      ? await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), inArray(accounts.code, cashCodes)))
+      : [];
     const cashAccountIds = cashAccounts.map((a) => a.id);
     const cashLines = cashAccountIds.length
       ? await this.db.select({ debit: journalLines.debit, credit: journalLines.credit }).from(journalLines).where(inArray(journalLines.accountId, cashAccountIds))
@@ -695,21 +696,22 @@ export class ReportsService {
    */
   /**
    * US-DASH-15 — money received and money spent per month, from the cash
-   * and bank accounts' journal lines (1000, 1010; D-011), never from
+   * and bank money accounts' journal lines (D-140, D-011), never from
    * documents. Each entry counts once by its net effect on cash: in when
-   * it adds cash, out when it takes it, so a transfer between the two
-   * accounts counts as neither.
+   * it adds cash, out when it takes it, so a transfer between two
+   * of them counts as neither.
    */
   async moneyInOut(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
     const today = orgClock().date;
     const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
     const startStr = start.toISOString().slice(0, 10);
+    const cashCodes = await cashAccountCodes(this.db, orgId);
     const rows = await this.db
       .select({ entryId: journalEntries.id, date: journalEntries.date, debit: journalLines.debit, credit: journalLines.credit })
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
       .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, cashCodes), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
 
     const byEntry = new Map<string, { month: string; net: bigint }>();
     for (const row of rows) {
@@ -736,7 +738,7 @@ export class ReportsService {
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
       .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"])))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, cashCodes)))
       .limit(1);
     return { months: list, totalIn: totalIn.toString(), totalOut: totalOut.toString(), net: (totalIn - totalOut).toString(), hasActivity: Boolean(anyCash) };
   }

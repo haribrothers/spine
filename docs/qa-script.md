@@ -2857,6 +2857,19 @@ Regression: other dialogs (Settings, confirmations) still return focus as before
 
 Regression: light mode looks as before apart from the slightly darker amber. Shadows under menus and dialogs look the same in light mode.
 
+## 101. Bank, cash and card accounts (US-BANK-01, Phase 8)
+
+1. As an Owner, the sidebar has a "Money" section with "Banking". Open it: the breadcrumb reads "Money › Banking" and the list shows "Bank Account" (marked "Default") and "Cash in Hand", each with "Balance in Spine". An organisation that already had payments shows their real balance on Bank Account.
+2. "Add account": the dialog asks for "Type" ("Bank account", "Cash", "Credit card"), "Name" (placeholder "e.g. HDFC Current"), "Bank name", "Last 4 digits" and "Use as default for new payments". The hint reads "Ledger account 1011 · Asset." Choose "Cash": the bank fields disappear. Choose "Credit card": the hint changes to 2300 and "Liability".
+3. Add "HDFC Current" with a bank name and last 4 digits: the toast reads "Account added", the row shows "HDFC Bank · ••0193" and $0.00. Settings › Chart of accounts lists 1011 HDFC Current under assets.
+4. Add a credit card: its row shows "$0.00 owed" and the "Owed on cards" card counts it.
+5. Add another account called "hdfc current": the dialog shows "You already have an account called hdfc current. Choose another name." and nothing is added.
+6. Add an account with "Use as default for new payments" ticked: it gets the "Default" badge and Bank Account loses it.
+7. Row menu › "Edit": rename the account. The ledger account is renamed too, and Team › Audit log shows "Money account" entries for the add and the change.
+8. As Staff, Banking isn't in the sidebar and /banking shows the no-access page unless their Team has "View bank balances and registers". With it, the list shows balances but no "Add account" or row menu. As a Field user, Banking isn't in the sidebar and /banking shows the no-access page.
+
+Regression: the dashboard's "Cash position" and "Money in and out" now include every bank and cash account (cards excluded); with only the two starting accounts they show the same figures as before. Recording a payment, vendor payment or expense still posts to Bank Account.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

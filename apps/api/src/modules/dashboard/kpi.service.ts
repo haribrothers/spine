@@ -6,6 +6,7 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { accounts, creditNotes, invoices, journalEntries, journalLines, leads, leadStages, paymentAllocations, payments, quotes } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
+import { cashAccountCodes } from "../banking/cash-accounts";
 
 function addDays(date: string, days: number): string {
   const d = new Date(`${date}T00:00:00Z`);
@@ -82,7 +83,7 @@ export class KpiService {
         .reduce((sum, l) => sum + l.credit - l.debit, 0n); // income credits less expense debits
     const hasProfitLines = (from: string, to: string) => lines.some((l) => l.date >= from && l.date <= to && (l.type === "income" || l.type === "expense"));
 
-    const CASH = ["1000", "1010"];
+    const CASH = await cashAccountCodes(this.db, orgId);
     const monthStart = `${today.slice(0, 8)}01`;
     const lastMonthStart = `${monthAgo.slice(0, 8)}01`;
 

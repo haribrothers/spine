@@ -335,7 +335,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 8 · Books completeness
 
-- [ ] US-BANK-01 · Add my bank, cash and card accounts
+- [x] US-BANK-01 · Add my bank, cash and card accounts
 - [ ] US-BANK-02 · See every account's balance and what moved through it
 - [ ] US-BANK-03 · Choose the account money went into or came out of
 - [ ] US-BANK-04 · Move money between my accounts

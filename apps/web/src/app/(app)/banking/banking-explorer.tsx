@@ -1,0 +1,194 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { MoreHorizontal } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  Badge,
+  Button,
+  DataTable,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  StatCard,
+  TableSkeleton,
+  type TableColumn,
+} from "@spine/ui";
+import { MONEY_ACCOUNT_KIND_LABELS, type MoneyAccount } from "@spine/shared";
+import { apiClient } from "../../../lib/api-client";
+import { formatMoney } from "../../../lib/money";
+import { useMyRole } from "../../../lib/role-context";
+import { useEntityToast } from "./entity-toast";
+import { MoneyAccountDialog } from "./money-account-dialog";
+
+const TABLE_COLUMNS = [
+  { key: "name", header: "Account", width: "w-48" },
+  { key: "kind", header: "Type", width: "w-24" },
+  { key: "bank", header: "Bank", width: "w-40" },
+  { key: "balance", header: "Balance in Spine", width: "w-28" },
+];
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "First Coastal Bank · ••0193"; cash shows nothing. */
+function bankLine(account: MoneyAccount): string {
+  return [account.bankName, account.last4 ? `••${account.last4}` : null].filter(Boolean).join(" · ");
+}
+
+/**
+ * US-BANK-01 — `BankingAccounts`: every bank, cash and card account with
+ * its balance in Spine. Owners add and edit accounts.
+ */
+export function BankingExplorer() {
+  const isOwner = useMyRole() === "owner";
+  const [rows, setRows] = useState<MoneyAccount[] | null>(null);
+  const [currency, setCurrency] = useState("USD");
+  const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<MoneyAccount | null>(null);
+  const { show: showToast, toast } = useEntityToast();
+
+  const load = useCallback(() => {
+    apiClient
+      .get<MoneyAccount[]>("/money-accounts")
+      .then(setRows)
+      .catch((err) => setError(err instanceof Error ? err.message : "Couldn't load your accounts. Refresh to try again."));
+  }, []);
+
+  useEffect(() => {
+    load();
+    apiClient
+      .get<{ value: { code: string } | null }>("/org/settings/currency")
+      .then((res) => setCurrency(res.value?.code ?? "USD"))
+      .catch(() => {});
+  }, [load]);
+
+  const totals = useMemo(() => {
+    if (!rows) return null;
+    const cash = rows.filter((r) => r.kind !== "card");
+    const cards = rows.filter((r) => r.kind === "card");
+    return {
+      cash: cash.reduce((sum, r) => sum + BigInt(r.balance ?? "0"), 0n),
+      cashCount: cash.length,
+      owed: cards.reduce((sum, r) => sum + BigInt(r.balance ?? "0"), 0n),
+      cardCount: cards.length,
+    };
+  }, [rows]);
+
+  function openAdd() {
+    setEditing(null);
+    setDialogOpen(true);
+  }
+
+  function handleSaved(saved: MoneyAccount, created: boolean) {
+    load();
+    showToast(created ? "Account added" : "Account saved", created ? `${saved.name} is ready to use on payments and expenses.` : `${saved.name} has been updated.`);
+  }
+
+  const columns: TableColumn<MoneyAccount>[] = [
+    {
+      key: "name",
+      header: "Account",
+      render: (row) => (
+        <span className="flex flex-wrap items-center gap-2 font-medium text-on-surface">
+          {row.name}
+          {row.isDefault && <Badge className="bg-primary/10 text-primary">Default</Badge>}
+        </span>
+      ),
+      sortValue: (row) => row.name.toLowerCase(),
+    },
+    { key: "kind", header: "Type", render: (row) => MONEY_ACCOUNT_KIND_LABELS[row.kind] },
+    { key: "bank", header: "Bank", render: (row) => bankLine(row) || <span className="text-on-surface-muted">—</span> },
+    {
+      key: "balance",
+      header: "Balance in Spine",
+      align: "right",
+      render: (row) => (
+        <span className="tabular-nums">
+          {formatMoney(BigInt(row.balance ?? "0"), currency)}
+          {row.kind === "card" && " owed"}
+        </span>
+      ),
+      sortValue: (row) => Number(row.balance ?? "0"),
+    },
+    ...(isOwner
+      ? [
+          {
+            key: "actions",
+            header: "Actions",
+            align: "right" as const,
+            render: (row: MoneyAccount) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label={`Actions for ${row.name}`}>
+                    <MoreHorizontal size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onSelect={() => {
+                      setEditing(row);
+                      setDialogOpen(true);
+                    }}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  if (error) {
+    return (
+      <Alert variant="critical">
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <StatCard
+          label="Bank and cash"
+          value={totals ? formatMoney(totals.cash, currency) : "—"}
+          trend={totals ? { direction: "neutral", label: plural(totals.cashCount, "account", "accounts") } : undefined}
+        />
+        <StatCard
+          label="Owed on cards"
+          value={totals ? formatMoney(totals.owed, currency) : "—"}
+          trend={totals ? { direction: "neutral", label: plural(totals.cardCount, "card", "cards") } : undefined}
+        />
+      </div>
+
+      {isOwner && (
+        <div className="flex flex-wrap items-center justify-end gap-3">
+          <Button onClick={openAdd}>Add account</Button>
+        </div>
+      )}
+
+      {!rows ? (
+        <TableSkeleton columns={TABLE_COLUMNS} />
+      ) : (
+        <div data-testid="money-accounts-table">
+          <DataTable
+            columns={columns}
+            data={rows}
+            rowKey={(row) => row.id}
+            searchPlaceholder="Search accounts"
+            searchKey={(row) => `${row.name} ${row.bankName ?? ""} ${row.last4 ?? ""}`}
+            configurablePageSize
+          />
+        </div>
+      )}
+
+      <MoneyAccountDialog open={dialogOpen} onOpenChange={setDialogOpen} account={editing} onSaved={handleSaved} />
+      {toast}
+    </div>
+  );
+}
