@@ -51,7 +51,7 @@ export class CatalogImportService {
         continue;
       }
       // "$12,500.00", "12500", "₹ 95" — currency symbols and thousands commas are dropped; anything else must be a number.
-      const priceText = (r.price ?? "").replace(/[\s,]/g, "").replace(/^[^\p{L}\d.\-]+|[^\p{L}\d.\-]+$/gu, "");
+      const priceText = (r.price ?? "").replace(/[\s,]/g, "").replace(/^[^\p{L}\d.-]+|[^\p{L}\d.-]+$/gu, "");
       const price = priceText ? fromDecimalString(priceText, currency) : 0n;
       if (price === null || price < 0n) {
         fail(`Price ${r.price} isn't an amount`);
