@@ -1,7 +1,7 @@
-import { pgTable, uuid, text, boolean, bigint, date, timestamp, jsonb, pgEnum, index, uniqueIndex, check } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, pgTable, uuid, text, boolean, bigint, date, timestamp, jsonb, pgEnum, index, uniqueIndex, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
-import { accounts, journalEntries } from "./ledger";
+import { accounts, journalEntries, journalLines } from "./ledger";
 import { contacts } from "./contacts";
 import { taxGroups, taxRates } from "./tax";
 
@@ -180,10 +180,69 @@ export const bankStatementLines = pgTable(
     rowNumber: bigint("row_number", { mode: "number" }).notNull().default(0),
     status: statementLineStatusEnum("status").notNull().default("unmatched"),
     excludeNote: text("exclude_note"),
+    /** US-BANK-08 — the reconciliation that matched or excluded it. */
+    reconciliationId: uuid("reconciliation_id").references((): AnyPgColumn => bankReconciliations.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("bank_statement_lines_dedupe_uidx").on(table.moneyAccountId, table.dedupeKey),
     index("bank_statement_lines_account_date_idx").on(table.moneyAccountId, table.date),
   ],
+);
+
+export const reconciliationStatusEnum = pgEnum("reconciliation_status", ["in_progress", "finished", "undone"]);
+
+/**
+ * US-BANK-08–US-BANK-11 (D-158, D-176) — one reconciliation of a money
+ * account to a statement's end date and closing balance. At most one is in
+ * progress per account. `opening_balance` and `brought_forward_before` are
+ * fixed when it finishes: the first reconciliation brings forward Spine's
+ * balance before its earliest statement line.
+ */
+export const bankReconciliations = pgTable(
+  "bank_reconciliations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    moneyAccountId: uuid("money_account_id")
+      .notNull()
+      .references(() => moneyAccounts.id),
+    statementEndDate: date("statement_end_date").notNull(),
+    statementClosingBalance: bigint("statement_closing_balance", { mode: "bigint" }).notNull(),
+    status: reconciliationStatusEnum("status").notNull().default("in_progress"),
+    openingBalance: bigint("opening_balance", { mode: "bigint" }),
+    broughtForwardBefore: date("brought_forward_before"),
+    startedByUserId: text("started_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    finishedByUserId: text("finished_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    undoneByUserId: text("undone_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    undoneAt: timestamp("undone_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("bank_reconciliations_one_in_progress_uidx").on(table.moneyAccountId).where(sql`${table.status} = 'in_progress'`),
+    index("bank_reconciliations_account_idx").on(table.moneyAccountId, table.statementEndDate),
+  ],
+);
+
+/** US-BANK-08 — a statement line matched to one or more journal lines on the account; a journal line matches at most one statement line. */
+export const bankStatementLineMatches = pgTable(
+  "bank_statement_line_matches",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    statementLineId: uuid("statement_line_id")
+      .notNull()
+      .references(() => bankStatementLines.id, { onDelete: "cascade" }),
+    journalLineId: uuid("journal_line_id")
+      .notNull()
+      .references(() => journalLines.id),
+    reconciliationId: uuid("reconciliation_id")
+      .notNull()
+      .references(() => bankReconciliations.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [uniqueIndex("bank_statement_line_matches_journal_line_uidx").on(table.journalLineId), index("bank_statement_line_matches_line_idx").on(table.statementLineId)],
 );

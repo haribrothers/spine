@@ -11,6 +11,8 @@ import { BankTransfersController } from "./bank-transfers.controller";
 import { BankTransfersService } from "./bank-transfers.service";
 import { MoneyAccountsController } from "./money-accounts.controller";
 import { MoneyAccountsService } from "./money-accounts.service";
+import { ReconciliationsController } from "./reconciliations.controller";
+import { ReconciliationsService } from "./reconciliations.service";
 import { StatementImportsController } from "./statement-imports.controller";
 import { StatementImportsService } from "./statement-imports.service";
 
@@ -22,8 +24,8 @@ import { StatementImportsService } from "./statement-imports.service";
  */
 @Module({
   imports: [AuditModule, LedgerModule, TaxModule],
-  controllers: [MoneyAccountsController, BankTransfersController, BankTransactionsController, TaxPaymentsController, TaxRefundsController, StatementImportsController],
-  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService, StatementImportsService],
+  controllers: [MoneyAccountsController, BankTransfersController, BankTransactionsController, TaxPaymentsController, TaxRefundsController, StatementImportsController, ReconciliationsController],
+  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService, StatementImportsService, ReconciliationsService],
   exports: [MoneyAccountsService],
 })
 export class BankingModule {}

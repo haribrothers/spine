@@ -71,7 +71,7 @@ export class AccountRegisterService {
       .where(and(onAccount, query.from ? gte(journalEntries.date, query.from) : undefined, query.to ? lte(journalEntries.date, query.to) : undefined))
       .orderBy(asc(journalEntries.date), asc(journalEntries.createdAt), asc(journalLines.id));
 
-    const [details, entryContacts] = await Promise.all([this.sourceDetails(orgId, lines.map((l) => l.entry)), this.entryContacts(lines.map((l) => l.line))]);
+    const described = await this.describe(orgId, lines);
 
     let balance = opening;
     let totalIn = 0n;
@@ -83,25 +83,13 @@ export class AccountRegisterService {
       balance += signed(line.debit, line.credit);
       totalIn += moneyIn;
       totalOut += moneyOut;
-      const source: SourceDetails = details.get(`${entry.sourceType}:${entry.sourceId}`) ?? { number: null, reference: null };
-      const label = SOURCE_LABELS[entry.sourceType] ?? "Journal entry";
-      // Money leaving this account went to the other one, and the other way round.
-      const what =
-        source.transfer && entry.sourceType === "bank_transfer"
-          ? line.credit > 0n
-            ? `Transfer to ${source.transfer.to}`
-            : `Transfer from ${source.transfer.from}`
-          : (source.label ?? (source.number ? `${label} ${source.number}` : label));
+      const about = described.get(line.id)!;
       return {
         journalLineId: line.id,
         date: entry.date,
         sourceType: entry.sourceType,
         sourceId: entry.sourceId,
-        what,
-        deleted: source.deleted ?? false,
-        number: source.number,
-        contact: entryContacts.get(line.id) ?? null,
-        reference: source.reference,
+        ...about,
         in: moneyIn.toString(),
         out: moneyOut.toString(),
         balance: balance.toString(),
@@ -128,6 +116,32 @@ export class AccountRegisterService {
       totalOut: totalOut.toString(),
       hasEntries: Boolean(anyEntry),
     };
+  }
+
+  /**
+   * What each journal line on a money account was, as the register shows
+   * it: "Payment RCT-0018", "Transfer to Petty cash", "Money out — Bank
+   * charges", with its contact and reference. Used by the reconcile page too.
+   */
+  async describe(
+    orgId: string,
+    lines: { line: typeof journalLines.$inferSelect; entry: typeof journalEntries.$inferSelect }[],
+  ): Promise<Map<string, { what: string; number: string | null; contact: { id: string; name: string } | null; reference: string | null; deleted: boolean }>> {
+    const [details, entryContacts] = await Promise.all([this.sourceDetails(orgId, lines.map((l) => l.entry)), this.entryContacts(lines.map((l) => l.line))]);
+    return new Map(
+      lines.map(({ line, entry }) => {
+        const source: SourceDetails = details.get(`${entry.sourceType}:${entry.sourceId}`) ?? { number: null, reference: null };
+        const label = SOURCE_LABELS[entry.sourceType] ?? "Journal entry";
+        // Money leaving this account went to the other one, and the other way round.
+        const what =
+          source.transfer && entry.sourceType === "bank_transfer"
+            ? line.credit > 0n
+              ? `Transfer to ${source.transfer.to}`
+              : `Transfer from ${source.transfer.from}`
+            : (source.label ?? (source.number ? `${label} ${source.number}` : label));
+        return [line.id, { what, number: source.number, contact: entryContacts.get(line.id) ?? null, reference: source.reference, deleted: source.deleted ?? false }];
+      }),
+    );
   }
 
   /** The number and reference of each source document, read from its own table. */

@@ -80,6 +80,30 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-08: match statement lines to what's in Spine (Phase 8)
+
+- **"Reconcile"** on an account's register opens `ReconcileAccount` at `/banking/<id>/reconcile`:
+  - Enter "Statement end date" and "Closing balance on the statement", then "Start reconciling".
+  - Three cards show "Statement closing balance", "Cleared in Spine" ("opening <x> + <n> matched") and "Difference".
+  - Below them sit two lists: the statement lines up to the end date, and "Unreconciled in Spine" (entries on the account up to the end date).
+- **Suggestions.** A line with exactly one Spine entry of the same amount within 3 days shows "Suggested match", with "Match" and "Not this one" (D-158).
+- **Matching by hand.** Select a line, tick the entries that make it up, then "Match". Until they add up, the bar reads "Selected entries add up to <x>; the line is <y>."
+- **Excluding.** "Exclude" asks for a note; the line counts as matched and shows "Excluded — <note>". "Unmatch" and "Include" undo a match or an exclusion.
+- **Saving.** Everything is saved as it's made, so it's all still there after leaving the page.
+- **Opening balance (D-176, new — you chose this).** An account's first reconciliation brings forward Spine's balance before the earliest statement line; later ones start from the last closing balance. An entry and its own reversal (a deleted document) both up to the end date cancel out and aren't offered.
+- **Migration 0091**: `bank_reconciliations`, `bank_statement_line_matches`, and `bank_statement_lines.reconciliation_id`.
+- **API**: `POST/GET /bank-reconciliations`, `GET /bank-reconciliations/:id` and `PUT /bank-reconciliations/:id/matches`, all needing `banking.reconcile`. `AccountRegisterService.describe` labels entries the same way the register does.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-08.http.integration.test.ts` (6):
+  - Brought-forward opening, lines and entries up to the end date, and suggestions.
+  - The mismatch message, then matches and an exclusion saved, with the cleared balance reaching a difference of 0.
+  - A line or entry used twice, or one after the end date, is refused.
+  - Moving the end date earlier drops later matches.
+  - A deleted entry and its reversal cancel out.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-08.spec.ts` (1): suggestions, "Not this one", matching by hand, two entries to one line, excluding with a note, difference $0.00, saved after a reload, and unmatching.
+
 ### 2026-10-06 — US-BANK-07: import a bank statement (Phase 8)
 
 - **"Import statement"** on an account's register (for people with "Reconcile accounts") opens `StatementImportDialog`:

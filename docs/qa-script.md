@@ -3134,6 +3134,22 @@ Regression: toasts still close on their own, swipe away on touch, and are announ
 
 Regression: the register's balances, filters and row menus are unchanged. Contact import still works (it has its own CSV parser).
 
+## 124. Match statement lines (US-BANK-08, Phase 8)
+
+1. Record a payment, a few money-out entries and a capital injection dated before the statement. Import a statement whose lines match them (§123).
+2. Bank Account › "Reconcile". The breadcrumb reads "Money › Banking › Bank Account › Reconcile" and the title "Reconcile Bank Account". Enter the end date and the statement's closing balance, then "Start reconciling".
+3. The cards show the closing balance, "Cleared in Spine" ("opening <x> + 0 matched") and "Difference" in red. The note says the opening balance is Spine's balance before the first statement line.
+4. A line with one Spine entry of the same amount within 3 days reads "Suggested match", with "Match" and "Not this one". "Match": it reads "Matched" and the entry leaves the right-hand list. "Not this one" on another line: the suggestion goes and "Exclude" shows.
+5. Click an unmatched line's description to select it, then tick entries on the right. If they don't add up: "Selected entries add up to <x>; the line is <y>." and "Match" stays disabled. Tick until they add up ("2 entries add up to the line."), then "Match".
+6. "Exclude" on a line: a dialog asks for a note. "Exclude line": it reads "Excluded — <note>" and counts as matched.
+7. As lines match, "Cleared in Spine" and "Difference" update. When the difference is $0.00 the footer reads "Spine agrees with the statement".
+8. Leave the page and come back: the matches and exclusions are still there. "Unmatch" and "Include" undo them.
+9. Change the end date to an earlier day: matches on lines or entries after it are dropped.
+10. Delete a money-out entry, then reconcile to today: neither it nor its reversal is offered.
+11. As Staff without "Reconcile accounts", there's no "Reconcile" button, /banking/<id>/reconcile shows the no-access page, and the routes return 403. Field gets 403.
+
+Regression: the register, statement import and money in/out are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

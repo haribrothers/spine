@@ -220,9 +220,14 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
         description={subtitle}
         action={
           canReconcile && account && !account.archivedAt ? (
-            <Button variant="secondary" onClick={() => setImportOpen(true)}>
-              Import statement
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                Import statement
+              </Button>
+              <Button asChild>
+                <Link href={`/banking/${accountId}/reconcile`}>Reconcile</Link>
+              </Button>
+            </div>
           ) : undefined
         }
       />
