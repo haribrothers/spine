@@ -45,6 +45,19 @@ export class RecurringBillsController {
     return this.recurring.update(requireOrgId(session), id, session.user.id, parse(updateRecurringBillSchema, body));
   }
 
+  /** US-PUR-31 */
+  @Post(":id/pause")
+  @UseInterceptors(IdempotencyInterceptor)
+  async pause(@Session() session: UserSession, @Param("id") id: string) {
+    return this.recurring.pause(requireOrgId(session), id, session.user.id);
+  }
+
+  @Post(":id/resume")
+  @UseInterceptors(IdempotencyInterceptor)
+  async resume(@Session() session: UserSession, @Param("id") id: string) {
+    return this.recurring.resume(requireOrgId(session), id, session.user.id);
+  }
+
   @Delete(":id")
   @UseInterceptors(IdempotencyInterceptor)
   async delete(@Session() session: UserSession, @Param("id") id: string) {

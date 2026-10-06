@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-PUR-31: pause, edit or stop a recurring bill (Phase 8)
+
+- **Recurring bills › row menu**: Edit, Pause or Resume, and Delete. A paused schedule creates no bills; **Resume** sets the next date to the next future occurrence (dates passed while paused aren't created) and finishes it instead if its end has passed.
+- **Edit** (or click the name) changes lines, amounts and the schedule for future bills only; bills already created are unchanged.
+- **Delete** asks "Delete this schedule? Bills it already created are kept." — the schedule goes, its bills stay.
+- The row menu is shared with recurring invoices (one component for both).
+- API: `POST /recurring-bills/:id/pause`, `/resume`.
+
 ### 2026-10-07 — US-PUR-30: create recurring bills automatically (Phase 8)
 
 - **The 6:00 AM run** (queue `recurring-bill-run`, every 15 minutes from 6:00 AM organisation time) creates one bill for each active schedule whose date has come: the schedule's vendor and lines, dated that day, due the set number of days later, numbered "<schedule name> · <date>" and noted "Created by Recurring bill <name>".

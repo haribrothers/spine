@@ -203,9 +203,31 @@ export class RecurringBillsService {
     return { id };
   }
 
-  /** For US-PUR-31's pause/resume, which follow the same rules as recurring invoices. */
-  protected nextAfterToday(existing: ScheduleRow) {
+  /** US-PUR-31 — a paused schedule creates nothing; its next date is empty until it's resumed. */
+  async pause(orgId: string, id: string, actorUserId: string): Promise<RecurringBill> {
+    const existing = await this.find(orgId, id);
+    if (existing.status !== "active") throw new BadRequestException("Only an active schedule can be paused.");
+    await this.db.transaction(async (tx) => {
+      await tx.update(recurringBills).set({ status: "paused", nextRunOn: null, updatedAt: new Date() }).where(eq(recurringBills.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "paused", entityType: "recurring_bill", entityId: id, contactId: existing.contactId });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-PUR-31 — resumes from the next future occurrence; dates passed while
+   * paused aren't created. A schedule whose end has passed meanwhile is
+   * finished instead.
+   */
+  async resume(orgId: string, id: string, actorUserId: string): Promise<RecurringBill> {
+    const existing = await this.find(orgId, id);
+    if (existing.status !== "paused") throw new BadRequestException("Only a paused schedule can be resumed.");
     const next = occurrenceAfter(existing, orgClock().date);
-    return { next, finished: scheduleFinished(next, existing, existing.createdCount) };
+    const finished = scheduleFinished(next, existing, existing.createdCount);
+    await this.db.transaction(async (tx) => {
+      await tx.update(recurringBills).set({ status: finished ? "finished" : "active", nextRunOn: finished ? null : next, updatedAt: new Date() }).where(eq(recurringBills.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "resumed", entityType: "recurring_bill", entityId: id, contactId: existing.contactId });
+    });
+    return this.getOne(orgId, id);
   }
 }

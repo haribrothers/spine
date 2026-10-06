@@ -3534,6 +3534,16 @@ Regression: Recurring invoices are unchanged.
 
 Regression: recurring invoices still create one invoice per due date.
 
+## 157. Pause, edit or stop a recurring bill (US-PUR-31, Phase 8)
+
+1. Recurring bills › a schedule's "…" menu: Edit, Pause, Delete. Pause: the status reads "Paused", Next bill "—", and a toast says it won't create bills until resumed. The 6:00 AM run creates nothing for it.
+2. "…" › Resume: "Active" again, with the next date in the future (no bills for dates passed while paused).
+3. Edit it, change the amount and save: future bills use the new amount; bills it already created keep theirs.
+4. "…" › Delete: "Delete this schedule? Bills it already created are kept." → Delete schedule. The schedule is gone; its bills are still in Vendor Bills.
+5. Keyboard: the menu opens with Enter, arrows move, Escape closes; the confirmation traps focus.
+
+Regression: Recurring invoices' row menu still says "Invoices it already created are kept." and pauses, resumes and deletes as before.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

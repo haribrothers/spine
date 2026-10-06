@@ -10,6 +10,7 @@ import { formatMoney } from "../../../../lib/money";
 import { useEntityToast } from "../entity-toast";
 import { formatRunDate } from "../../invoices/recurring/recurring-invoices-view";
 import { RecurringBillDialog } from "./recurring-bill-dialog";
+import { RecurringRowActions } from "../../invoices/recurring/recurring-row-actions";
 
 const STATUS_BADGE_CLASS: Record<RecurringStatus, string> = {
   active: "bg-paid-bg text-paid",
@@ -84,6 +85,33 @@ export function RecurringBillsView() {
     },
     { key: "status", header: "Status", render: (row) => <Badge className={STATUS_BADGE_CLASS[row.status]}>{RECURRING_STATUS_LABELS[row.status]}</Badge> },
     { key: "mode", header: "When it runs", render: (row) => RECURRING_BILL_MODE_OPTIONS.find((o) => o.value === row.mode)?.short ?? row.mode },
+    {
+      key: "actions",
+      header: "",
+      render: (row) => (
+        <div className="flex justify-end">
+          {/* US-PUR-31 — Edit, Pause or Resume, Delete. */}
+          <RecurringRowActions
+            schedule={row}
+            endpoint="/recurring-bills"
+            keptText="Bills it already created are kept."
+            onEdit={setEditing}
+            onChanged={(saved, action) => {
+              load();
+              showToast(
+                action === "paused" ? "Schedule paused" : "Schedule resumed",
+                action === "paused" ? `${saved.name} won't create bills until you resume it.` : saved.nextRunOn ? `${saved.name}'s next bill is on ${formatRunDate(saved.nextRunOn)}.` : `${saved.name} has reached its end.`,
+              );
+            }}
+            onDeleted={(deleted) => {
+              load();
+              showToast("Schedule deleted", `${deleted.name} is deleted. Bills it already created are kept.`);
+            }}
+            onError={(message) => showToast("Couldn't change the schedule", message)}
+          />
+        </div>
+      ),
+    },
   ];
 
   return (

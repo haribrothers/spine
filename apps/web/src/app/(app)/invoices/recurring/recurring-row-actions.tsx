@@ -15,25 +15,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@spine/ui";
-import type { RecurringInvoice } from "@spine/shared";
+import type { RecurringStatus } from "@spine/shared";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 
 /**
- * US-INV-22 — a schedule's row menu: Edit, Pause or Resume, and Delete
- * (confirmed; invoices it already created are kept).
+ * US-INV-22, US-PUR-31 — a schedule's row menu: Edit, Pause or Resume, and
+ * Delete (confirmed; what it already created is kept). Shared by recurring
+ * invoices and recurring bills.
  */
-export function RecurringRowActions({
+export function RecurringRowActions<T extends { id: string; name: string; status: RecurringStatus }>({
   schedule,
+  endpoint = "/recurring-invoices",
+  keptText = "Invoices it already created are kept.",
   onEdit,
   onChanged,
   onDeleted,
   onError,
 }: {
-  schedule: RecurringInvoice;
-  onEdit: (schedule: RecurringInvoice) => void;
-  onChanged: (schedule: RecurringInvoice, action: "paused" | "resumed") => void;
-  onDeleted: (schedule: RecurringInvoice) => void;
+  schedule: T;
+  /** The schedules' API route, e.g. "/recurring-bills". */
+  endpoint?: string;
+  /** What the delete confirmation says is kept. */
+  keptText?: string;
+  onEdit: (schedule: T) => void;
+  onChanged: (schedule: T, action: "paused" | "resumed") => void;
+  onDeleted: (schedule: T) => void;
   onError: (message: string) => void;
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -42,7 +49,7 @@ export function RecurringRowActions({
   async function act(action: "pause" | "resume") {
     setBusy(true);
     try {
-      const saved = await apiClient.post<RecurringInvoice>(`/recurring-invoices/${schedule.id}/${action}`);
+      const saved = await apiClient.post<T>(`${endpoint}/${schedule.id}/${action}`);
       onChanged(saved, action === "pause" ? "paused" : "resumed");
     } catch (err) {
       onError(err instanceof Error ? err.message : "Couldn't change the schedule. Try again.");
@@ -54,7 +61,7 @@ export function RecurringRowActions({
   async function handleDelete() {
     setBusy(true);
     try {
-      await apiClient.delete(`/recurring-invoices/${schedule.id}`);
+      await apiClient.delete(`${endpoint}/${schedule.id}`);
       setConfirmOpen(false);
       onDeleted(schedule);
     } catch (err) {
@@ -98,7 +105,7 @@ export function RecurringRowActions({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this schedule?</AlertDialogTitle>
-            <AlertDialogDescription>Invoices it already created are kept.</AlertDialogDescription>
+            <AlertDialogDescription>{keptText}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
