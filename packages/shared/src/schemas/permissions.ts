@@ -706,3 +706,29 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "meetings.delete_own": true,
   "meetings.delete_others": true,
 };
+
+/**
+ * Capabilities that only make sense with another one (US-BANK-12). Granting
+ * the first grants what it needs; revoking a needed one revokes what
+ * depends on it. Applied by the API when a Team's privileges are saved, so
+ * the matrix and the guard never disagree.
+ */
+export const CAPABILITY_REQUIRES: Partial<Record<Capability, { requires: Capability[]; reason: string }>> = {
+  "banking.reconcile": { requires: ["banking.view"], reason: "Reconciling needs to see the account." },
+};
+
+/** The privilege changes to save once implied ones are added (US-BANK-12). An explicit change in the same request wins. */
+export function withImpliedPrivileges(changes: { capability: Capability; granted: boolean }[]): { capability: Capability; granted: boolean }[] {
+  const result = new Map(changes.map((c) => [c.capability, c.granted]));
+  const explicit = new Set(changes.map((c) => c.capability));
+  for (const { capability, granted } of changes) {
+    if (granted) {
+      for (const needed of CAPABILITY_REQUIRES[capability]?.requires ?? []) if (!explicit.has(needed)) result.set(needed, true);
+    } else {
+      for (const [dependent, rule] of Object.entries(CAPABILITY_REQUIRES) as [Capability, { requires: Capability[] }][]) {
+        if (rule.requires.includes(capability) && !explicit.has(dependent)) result.set(dependent, false);
+      }
+    }
+  }
+  return [...result.entries()].map(([capability, granted]) => ({ capability, granted }));
+}

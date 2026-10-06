@@ -17,7 +17,7 @@ import {
   TabsTrigger,
 } from "@spine/ui";
 import { ArrowLeft, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
-import { CAPABILITIES, CAPABILITY_LABELS, type Capability } from "@spine/shared";
+import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, withImpliedPrivileges, type Capability } from "@spine/shared";
 import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
 import type { TeamDetail } from "../../../../../lib/teams";
@@ -35,6 +35,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   const [detail, setDetail] = useState<TeamDetail | null>(null);
   const [staffMembers, setStaffMembers] = useState<MemberRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
   const [savingName, setSavingName] = useState(false);
   // Which capability groups ("Manage Contacts", "Manage Catalogue", ...)
@@ -112,10 +113,21 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
     await setMemberIds(currentIds.filter((id) => id !== memberId));
   }
 
+  /** US-BANK-12 — says which other privileges changed with this one, and why. */
+  function impliedNotice(capability: Capability, granted: boolean): string | null {
+    const changed = withImpliedPrivileges([{ capability, granted }]).filter((c) => c.capability !== capability && detail?.privileges[c.capability] !== c.granted);
+    if (!changed.length) return null;
+    const names = changed.map((c) => `“${CAPABILITY_LABELS[c.capability].label}”`).join(" and ");
+    const reason = CAPABILITY_REQUIRES[granted ? capability : changed[0]!.capability]?.reason ?? "";
+    return `${names} turned ${granted ? "on" : "off"} too. ${reason}`.trim();
+  }
+
   async function togglePrivilege(capability: Capability, granted: boolean) {
     setError(null);
+    const implied = impliedNotice(capability, granted);
     try {
       await apiClient.put(`/org/teams/${teamId}/privileges`, { privileges: [{ capability, granted }] });
+      setNotice(implied);
       await reload();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update privileges.");
@@ -125,6 +137,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   /** Group-level "toggle all" switch (S-01.15/S-02.5's matrix UI) — sets every capability in the group to the same value in one request. */
   async function toggleGroup(capabilities: Capability[], granted: boolean) {
     setError(null);
+    setNotice(null);
     try {
       await apiClient.put(`/org/teams/${teamId}/privileges`, {
         privileges: capabilities.map((capability) => ({ capability, granted })),
@@ -206,6 +219,11 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      {notice && (
+        <Alert variant="info" data-testid="privilege-notice">
+          <AlertDescription>{notice}</AlertDescription>
         </Alert>
       )}
 
@@ -297,6 +315,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                       <Switch
                         checked={detail.privileges[capability] ?? false}
                         onCheckedChange={(checked) => togglePrivilege(capability, checked)}
+                        aria-label={CAPABILITY_LABELS[capability].label}
                       />
                     </div>
                   );
@@ -316,7 +335,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                         {isExpanded ? <ChevronDown size={14} className="shrink-0" /> : <ChevronRight size={14} className="shrink-0" />}
                         <span className="truncate">{row.label}</span>
                       </button>
-                      <Switch checked={allGranted} onCheckedChange={(checked) => toggleGroup(row.capabilities, checked)} />
+                      <Switch checked={allGranted} onCheckedChange={(checked) => toggleGroup(row.capabilities, checked)} aria-label={`Everything in ${row.label}`} />
                     </div>
                     {isExpanded &&
                       row.capabilities.map((capability) => (
@@ -328,6 +347,7 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
                           <Switch
                             checked={detail.privileges[capability] ?? false}
                             onCheckedChange={(checked) => togglePrivilege(capability, checked)}
+                            aria-label={CAPABILITY_LABELS[capability].label}
                           />
                         </div>
                       ))}

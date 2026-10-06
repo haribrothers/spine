@@ -2934,6 +2934,17 @@ Regression: Transfer still works and deleting a transfer still reads "Delete tra
 
 Regression: adding, editing and moving the default still work; "Archived accounts" with none reads "No archived accounts".
 
+## 107. Banking rights for a Team (US-BANK-12, Phase 8)
+
+1. As an Owner, Team › Teams › General Staff › Privileges › expand "Banking": "View bank balances and registers", "Record transfers and other money in or out" and "Reconcile accounts", all off. Each switch is announced by its name with a screen reader.
+2. Turn on "Reconcile accounts": "View bank balances and registers" turns on too, and the note reads "“View bank balances and registers” turned on too. Reconciling needs to see the account."
+3. Turn "View bank balances and registers" off: "Reconcile accounts" turns off too, with "“Reconcile accounts” turned off too. Reconciling needs to see the account."
+4. As a General Staff member with banking off: there's no "Money" section in the sidebar and /banking shows "You don't have access to Banking". Record payment still offers "Paid into" with account names.
+5. Turn on "View bank balances and registers": Banking appears with balances, but no Transfer, Money in or Money out. Turn on "Record transfers and other money in or out": those buttons appear and work.
+6. As a Field user, Banking isn't in the sidebar, /banking shows the no-access page, and every banking API route returns 403.
+
+Regression: the rest of the privilege matrix still saves one switch at a time and by group; "Everything in <group>" switches still set the whole group.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

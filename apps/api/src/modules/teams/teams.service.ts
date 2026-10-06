@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
 import type { Capability } from "@spine/shared";
-import { CAPABILITIES } from "@spine/shared";
+import { CAPABILITIES, withImpliedPrivileges } from "@spine/shared";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -142,7 +142,8 @@ export class TeamsService {
   ): Promise<Record<Capability, boolean>> {
     await this.requireTeam(orgId, teamId);
 
-    for (const { capability, granted } of privileges) {
+    // US-BANK-12: e.g. reconciling turns on seeing balances, and turning that off turns reconciling off.
+    for (const { capability, granted } of withImpliedPrivileges(privileges)) {
       await this.db
         .insert(teamPrivileges)
         .values({ teamId, capability, granted })

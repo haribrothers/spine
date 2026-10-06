@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-12: let a Team see balances, record money and reconcile (Phase 8)
+
+- **Privilege matrix › Banking**: "View bank balances and registers" (`banking.view`), "Record transfers and other money in or out" (`banking.record`) and "Reconcile accounts" (`banking.reconcile`), off for General Staff (migration 0077 added them to every Team, off).
+- **Reconciling needs viewing**: turning on "Reconcile accounts" turns on "View bank balances and registers"; turning viewing off turns reconciling off. The API applies it when privileges are saved (`withImpliedPrivileges`), and the matrix shows "“View bank balances and registers” turned on too. Reconciling needs to see the account.".
+- **Without `banking.view`**: Banking leaves the sidebar, /banking shows the no-access page and the register API returns 403; payment forms still list account names, without balances.
+- **Field** gets 403 on every banking route (tested route by route) and never sees Banking.
+- **Accessibility**: every switch in the privilege matrix now has an accessible name (the privilege's label, or "Everything in <group>"); they had none.
+
+Tests:
+- `packages/shared/src/us-bank-12.test.ts` (2): the three rights, their labels and General Staff defaults; the implication both ways.
+- `apps/api/src/modules/banking/us-bank-12.http.integration.test.ts` (5): General Staff start off; names-only pickers and a 403 register without `banking.view`; reconcile grants view and revoking view revokes reconcile; `banking.record` unlocks transfers; Field 403 on all twelve banking routes.
+- `apps/e2e/tests/us-bank-12.spec.ts` (2): the matrix group, both implications and their note; Staff without the right get the no-access page but keep the payment picker.
+
 ### 2026-10-06 — US-BANK-06: archive an account I no longer use (Phase 8)
 
 - **Archive** (Banking row menu, Owners): an account with money in it is refused with "Move the <balance> out of this account before archiving it."; the default with "Choose another default account first.". Otherwise it leaves the list, the totals and every picker (payments, vendor payments, expenses, transfers, money in/out), and keeps its register.

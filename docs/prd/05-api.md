@@ -292,7 +292,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/org/teams/:id` | roles: owner | — |
 | PUT | `/org/teams/:id` | roles: owner | Yes |
 | PUT | `/org/teams/:id/members` | roles: owner | Yes |
-| PUT | `/org/teams/:id/privileges` | roles: owner | Yes |
+| PUT | `/org/teams/:id/privileges` (implied privileges are saved too: granting `banking.reconcile` grants `banking.view`, revoking `banking.view` revokes `banking.reconcile`, unless the same request sets them; US-BANK-12) | roles: owner | Yes |
 
 ### Payments — `/payments`
 
