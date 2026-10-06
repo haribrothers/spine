@@ -35,6 +35,7 @@ const TABLES = [
   "vendor_bills",
   "expenses",
   "expense_categories",
+  "credit_note_allocations",
   "credit_note_lines",
   "credit_notes",
   "payment_allocations",

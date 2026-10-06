@@ -117,6 +117,14 @@ export function CreditNoteDetailDrawer({
                 </span>
               </div>
 
+              {/* US-PAY-16: the part held as customer credit, still to apply or refund. */}
+              {BigInt(creditNote.creditRemainingAmount ?? "0") > 0n && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-on-surface-muted">Credit for the customer</span>
+                  <span className="tabular-nums text-on-surface">{formatMoney(BigInt(creditNote.creditRemainingAmount!), creditNote.currency)}</span>
+                </div>
+              )}
+
               {creditNote.invoiceNumber && (
                 <a href={`/invoices/${creditNote.invoiceId}`} className="text-[13px] text-primary hover:underline">
                   View source invoice ({creditNote.invoiceNumber})

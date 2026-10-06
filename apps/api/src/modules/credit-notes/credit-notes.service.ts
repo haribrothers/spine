@@ -1,18 +1,20 @@
 import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
-import { computeDocumentLine } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import type { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
+import { computeDocumentLine, formatMoney } from "@spine/shared";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { creditNotes, creditNoteLines, invoices, contacts, accounts } from "../../db/schema";
+import { creditNotes, creditNoteAllocations, creditNoteLines, invoices, contacts, accounts } from "../../db/schema";
+import { orgMoneySettings } from "../../common/money-format";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
+type ApplyCreditInput = z.infer<typeof applyPaymentCreditSchema>;
 export type CreateCreditNoteInput = z.infer<typeof createCreditNoteSchema>;
 export type UpdateCreditNoteInput = z.infer<typeof updateCreditNoteSchema>;
 
@@ -272,10 +274,11 @@ export class CreditNotesService {
    * §7.2 "Credit note issued" entry (debit Revenue + Tax Payable, credit
    * AR — the mirror image of "Invoice issued"), and reduces the source
    * invoice's `creditedAmount` so `balanceDue` reflects the correction
-   * immediately. Blocked once the credit note total would push the
-   * invoice's effective balance below zero — a credit note corrects what's
-   * owed, it can't manufacture a negative balance/refund-owed state, which
-   * is real scope no S-05.6 wording asks for.
+   * immediately. US-PAY-16 (D-142): a credit beyond what's left to pay —
+   * a fully paid invoice included — credits AR only up to that balance and
+   * holds the rest in 2200 Customer Advances as `creditRemainingAmount`,
+   * to apply to another invoice or refund. All the credit notes on one
+   * invoice can't add up to more than the invoice itself.
    *
    * `revenueAccountId` mirrors InvoicesService.issue's own optional
    * override, same default-to-4100 fallback — see that method's identical
@@ -313,12 +316,19 @@ export class CreditNotesService {
       if (!invoice) {
         throw new NotFoundException("Source invoice not found");
       }
-      const currentBalance = invoice.totalAmount - invoice.amountPaid - invoice.creditedAmount;
-      if (existing.totalAmount > currentBalance) {
-        throw new BadRequestException(
-          `Credit note total ${existing.totalAmount} exceeds invoice ${invoice.number ?? invoice.id}'s remaining balance of ${currentBalance}`,
-        );
+      const [already] = await tx
+        .select({ total: sql<string>`coalesce(sum(${creditNotes.totalAmount}), 0)` })
+        .from(creditNotes)
+        .where(and(eq(creditNotes.invoiceId, invoice.id), eq(creditNotes.status, "issued"), ne(creditNotes.id, id)));
+      const creditable = invoice.totalAmount - BigInt(already!.total);
+      if (existing.totalAmount > creditable) {
+        const { currency, locale } = await orgMoneySettings(this.db, orgId);
+        throw new BadRequestException(`You can credit up to ${formatMoney(creditable > 0n ? creditable : 0n, invoice.currency || currency, locale)} on this invoice.`);
       }
+      // D-142: AR takes what's still owed; the rest is the customer's credit.
+      const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+      const toAr = existing.totalAmount < balance ? existing.totalAmount : balance > 0n ? balance : 0n;
+      const excess = existing.totalAmount - toAr;
 
       const number = await this.numbering.allocateNumber(tx, orgId, "credit_note");
       const issuedAt = new Date();
@@ -331,8 +341,12 @@ export class CreditNotesService {
       const jobId = invoice.jobId;
       const postingLines = [
         { accountId: resolvedRevenueAccountId, debit: existing.totalAmount - existing.taxAmount, credit: 0n, contactId: existing.contactId, jobId },
-        { accountId: arAccountId, debit: 0n, credit: existing.totalAmount, contactId: existing.contactId, jobId },
+        { accountId: arAccountId, debit: 0n, credit: toAr, contactId: existing.contactId, jobId },
       ];
+      if (excess > 0n) {
+        const advancesAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances");
+        postingLines.push({ accountId: advancesAccountId, debit: 0n, credit: excess, contactId: existing.contactId, jobId });
+      }
       if (existing.taxAmount > 0n) {
         postingLines.push({ accountId: taxAccountId, debit: existing.taxAmount, credit: 0n, contactId: existing.contactId, jobId });
       }
@@ -348,13 +362,13 @@ export class CreditNotesService {
 
       const [row] = await tx
         .update(creditNotes)
-        .set({ status: "issued", number, date: existing.date ?? issuedAt, issuedAt, journalEntryId, updatedAt: issuedAt })
+        .set({ status: "issued", number, date: existing.date ?? issuedAt, issuedAt, journalEntryId, creditRemainingAmount: excess, updatedAt: issuedAt })
         .where(eq(creditNotes.id, id))
         .returning();
 
       await tx
         .update(invoices)
-        .set({ creditedAmount: invoice.creditedAmount + existing.totalAmount, updatedAt: issuedAt })
+        .set({ creditedAmount: invoice.creditedAmount + toAr, updatedAt: issuedAt })
         .where(eq(invoices.id, invoice.id));
 
       await this.auditLog.record(tx, {
@@ -372,6 +386,73 @@ export class CreditNotesService {
 
     await queueIssuedPdf(this.queue, orgId, "credit_note", result!.id);
     return this.getOne(orgId, result!.id);
+  }
+
+  /**
+   * US-PAY-16 — applies a credit note's spare credit to the same customer's
+   * other invoices: posts P6 (Dr 2200 / Cr 1100), raises each invoice's
+   * `creditedAmount`, and lowers `creditRemainingAmount`, all under a lock
+   * on the credit note so two applications can't spend the same credit.
+   */
+  async applyCredit(orgId: string, actorUserId: string, id: string, input: ApplyCreditInput) {
+    const total = input.allocations.reduce((sum, a) => sum + a.amount, 0n);
+    await this.db.transaction(async (tx) => {
+      const [note] = await tx.select().from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.id, id))).for("update");
+      if (!note) throw new NotFoundException("Credit note not found");
+      if (note.status !== "issued") throw new BadRequestException("Only an issued credit note has credit to apply.");
+      if (total > note.creditRemainingAmount) {
+        const { currency, locale } = await orgMoneySettings(this.db, orgId);
+        throw new BadRequestException(`This credit note has ${formatMoney(note.creditRemainingAmount, note.currency || currency, locale)} of credit to apply.`);
+      }
+      const rows = await tx
+        .select()
+        .from(invoices)
+        .where(and(eq(invoices.orgId, orgId), inArray(invoices.id, input.allocations.map((a) => a.invoiceId))))
+        .for("update");
+      const byId = new Map(rows.map((r) => [r.id, r]));
+      for (const allocation of input.allocations) {
+        const invoice = byId.get(allocation.invoiceId);
+        if (!invoice || invoice.contactId !== note.contactId) throw new BadRequestException("Credit can only be applied to this customer's invoices.");
+        if (invoice.status !== "issued" || invoice.type === "advance") throw new BadRequestException(`Credit can't be applied to ${invoice.number ?? "this invoice"}: it isn't an issued invoice with a balance.`);
+        const balance = invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount;
+        if (allocation.amount > balance) {
+          const { locale } = await orgMoneySettings(this.db, orgId);
+          throw new BadRequestException(`You can apply up to ${formatMoney(balance > 0n ? balance : 0n, invoice.currency, locale)} to ${invoice.number ?? "this invoice"}.`);
+        }
+      }
+
+      const [advances, ar] = [await this.ledger.resolveSystemAccount(tx, orgId, "customerAdvances"), await this.ledger.resolveSystemAccount(tx, orgId, "accountsReceivable")];
+      const entryId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: new Date(),
+        narration: `Credit from credit note ${note.number} applied`,
+        sourceType: "credit_note_credit_applied",
+        sourceId: note.id,
+        lines: input.allocations.flatMap((a) => {
+          const jobId = byId.get(a.invoiceId)!.jobId;
+          return [
+            { accountId: advances, debit: a.amount, credit: 0n, contactId: note.contactId, jobId },
+            { accountId: ar, debit: 0n, credit: a.amount, contactId: note.contactId, jobId },
+          ];
+        }),
+      });
+      for (const allocation of input.allocations) {
+        const invoice = byId.get(allocation.invoiceId)!;
+        await tx.insert(creditNoteAllocations).values({ orgId, creditNoteId: note.id, invoiceId: invoice.id, amount: allocation.amount, entryId, createdByUserId: actorUserId });
+        await tx.update(invoices).set({ creditedAmount: invoice.creditedAmount + allocation.amount, updatedAt: new Date() }).where(eq(invoices.id, invoice.id));
+      }
+      await tx.update(creditNotes).set({ creditRemainingAmount: note.creditRemainingAmount - total, updatedAt: new Date() }).where(eq(creditNotes.id, note.id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "credit_applied",
+        entityType: "credit_note",
+        entityId: note.id,
+        contactId: note.contactId,
+        changes: [{ field: "creditRemainingAmount", from: note.creditRemainingAmount.toString(), to: (note.creditRemainingAmount - total).toString() }],
+      });
+    });
+    return this.getOne(orgId, id);
   }
 
   /** Only a draft is ever hard-deletable — an issued credit note is a permanent financial record, same posture as invoices/quotes. */

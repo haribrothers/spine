@@ -14,6 +14,8 @@ const TYPE_LABELS: Record<string, string> = {
   payment_delete: "Payment removed",
   payment_credit_applied: "Credit applied",
   credit_note: "Credit note",
+  customer_refund: "Refund",
+  customer_refund_delete: "Refund removed",
 };
 
 function isoDate(value: Date | string | null): string {
@@ -56,8 +58,12 @@ export class StatementsService {
       .orderBy(asc(invoices.issueDate), asc(invoices.createdAt));
     const currency = contactInvoices[0]?.currency ?? (await this.orgCurrency(orgId));
 
-    const arAccountId = await this.ledger.resolveSystemAccount(this.db, orgId, "accountsReceivable");
-    const entries = await this.db
+    // US-PAY-16/17 (D-142): what the customer owes less the credit they hold —
+    // 1100 AR and 2200 Customer Advances together — so a credit note's excess
+    // shows as a credit line and a refund as a charge. Applying credit only
+    // moves it between the two, so it nets to nothing and isn't listed.
+    const { accountsReceivable: arAccountId, customerAdvances: advancesAccountId } = await this.ledger.resolveSystemAccounts(this.db, orgId, ["accountsReceivable", "customerAdvances"]);
+    const grouped = await this.db
       .select({
         entryId: journalEntries.id,
         date: journalEntries.date,
@@ -68,9 +74,15 @@ export class StatementsService {
       })
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
-      .where(and(eq(journalEntries.orgId, orgId), eq(journalLines.accountId, arAccountId), eq(journalLines.contactId, contactId), lte(journalEntries.date, query.to)))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(journalLines.accountId, [arAccountId, advancesAccountId]), eq(journalLines.contactId, contactId), lte(journalEntries.date, query.to)))
       .groupBy(journalEntries.id, journalEntries.date, journalEntries.sourceType, journalEntries.sourceId, journalEntries.createdAt)
       .orderBy(asc(journalEntries.date), asc(journalEntries.createdAt));
+    const entries = grouped
+      .map((e) => {
+        const net = BigInt(e.debit) - BigInt(e.credit);
+        return { ...e, debit: (net > 0n ? net : 0n).toString(), credit: (net < 0n ? -net : 0n).toString() };
+      })
+      .filter((e) => e.debit !== "0" || e.credit !== "0");
 
     let opening = 0n;
     let invoiced = 0n;

@@ -2980,6 +2980,18 @@ Regression: receipts, job photos, logos, avatars and issued PDFs still open for 
 
 Regression: adding files still works after a removal, and the 10-file limit counts only files still attached.
 
+## 111. Credit note excess as customer credit (US-PAY-16, Phase 8)
+
+1. Fully pay an invoice, then "Issue credit note" (now offered on paid invoices) for $300.00: the dialog reads "$0.00 reduces what's owed on INV-…; $300.00 becomes credit for <customer>.". Issue it.
+2. On a part-paid invoice with $200.00 left, credit $500.00: "$200.00 reduces what's owed …; $300.00 becomes credit …". After issuing, the invoice's balance is $0.00, and Reports › Balance Sheet shows Customer Advances up by $300.00.
+3. Try to credit more than the invoice's total (counting earlier credit notes): "You can credit up to <amount> on this invoice.".
+4. The credit note's drawer shows "Credit for the customer $300.00".
+5. Open another unpaid invoice for the same customer: "Apply credit" is there. The dialog lists "Credit note CRN-…" and any unallocated payments, each with what's available, prefilled oldest first up to what's owed. "Apply credit": the toast reads "Credit applied", the balance drops, and the credit note's credit falls.
+6. The customer's statement ("All activity") shows the credit note as a credit line for its full amount; applying the credit adds no line, and the balance due is what's owed less credit held (it can be negative).
+7. As Staff without "Apply credit", "Apply credit" isn't shown and `POST /credit-notes/:id/apply-credit` returns 403.
+
+Regression: a credit note within the balance still reduces only what's owed; Payments' own "Apply credit" still works; statements for customers without credit read as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

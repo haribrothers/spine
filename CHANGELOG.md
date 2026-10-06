@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PAY-16: keep a credit note's extra as customer credit (Phase 8)
+
+- **Crediting past the balance** (D-142): "Issue credit note" is offered on paid invoices too. When the credit is more than what's left to pay, the dialog reads "<balance> reduces what's owed on <invoice>; <excess> becomes credit for <customer>.". P8 credits 1100 AR up to the balance and 2200 Customer Advances for the rest, kept on the credit note as `creditRemainingAmount` ("Credit for the customer" in its drawer). All credit notes on one invoice can't exceed its total.
+- **Apply credit on an invoice**: a new "Apply credit" dialog on an unpaid invoice lists the customer's credit from unallocated payments and credit notes side by side, prefilled oldest first up to what's owed. A credit note's credit posts P6 (Dr 2200 / Cr 1100, tagged with the invoice's job) and is recorded in `credit_note_allocations`.
+- **Statements** now read 1100 and 2200 together, so a credit note's excess shows as a credit line, applying credit nets out and isn't listed, and the balance due is what's owed less credit held. Customers without credit see no change.
+- **Known edge**: a job's "billed to date" counts only the AR part of a credit note against its invoice; the excess lowers the job's revenue but not its billed figure.
+- **Migration 0083**: `credit_notes.credit_remaining_amount` (never negative) and `credit_note_allocations`.
+- **API.** `POST /credit-notes/:id/apply-credit` (`payments.apply_credit`); credit notes carry `creditRemainingAmount`.
+
+Tests:
+- `apps/api/src/modules/credit-notes/us-pay-16.http.integration.test.ts` (4): a paid invoice's credit all to 2200; a split between 1100 and 2200 and the cap at the invoice total; applying credit (P6) with its limits, another customer's invoice refused, 403 without the right; the statement's credit lines and balance.
+- `apps/e2e/tests/us-pay-16.spec.ts` (1): the split message on a paid invoice, then applying the credit to another invoice.
+
 ### 2026-10-06 — US-OPS-35: remove an attachment added by mistake (Phase 8)
 
 - **"Remove"** on each file. On a record that can still be edited (a draft, a submitted expense, a contact), anyone who can edit it removes the file after a plain confirm.

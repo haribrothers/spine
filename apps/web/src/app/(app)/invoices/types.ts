@@ -184,6 +184,8 @@ export interface CreditNote {
   subtotalAmount: string;
   taxAmount: string;
   totalAmount: string;
+  /** US-PAY-16 (D-142) — the excess over the invoice's balance still held as customer credit. */
+  creditRemainingAmount?: string;
   createdByUserId: string | null;
   issuedAt: string | null;
   isDemo: boolean;

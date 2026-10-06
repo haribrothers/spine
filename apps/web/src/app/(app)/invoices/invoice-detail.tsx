@@ -25,6 +25,7 @@ import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
+import { ApplyCustomerCreditDialog, loadCustomerCredit } from "./apply-customer-credit-dialog";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
@@ -80,6 +81,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const hasSendReminderCapability = useCapability("invoices.send_reminder");
   const hasRecordPaymentCapability = useCapability("payments.edit_own");
   const hasIssueCreditNoteCapability = useCapability("credit_notes.issue");
+  const hasApplyCreditCapability = useCapability("payments.apply_credit");
+  // US-PAY-16: the customer's credit from payments and credit notes, for "Apply credit".
+  const [applyCreditOpen, setApplyCreditOpen] = useState(false);
+  const [customerCredit, setCustomerCredit] = useState<bigint>(0n);
 
   const load = useCallback(() => {
     apiClient
@@ -91,6 +96,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // US-PAY-16: whether this customer holds credit to apply, reloaded with the invoice.
+  useEffect(() => {
+    if (!invoice?.contactId || !hasApplyCreditCapability) return;
+    loadCustomerCredit(invoice.contactId)
+      .then((credits) => setCustomerCredit(credits.reduce((sum, c) => sum + c.available, 0n)))
+      .catch(() => setCustomerCredit(0n));
+  }, [invoice, hasApplyCreditCapability]);
 
   // S-05.7's email is sent by a queued worker, out of band from the
   // request that triggered it (see handleSendEmail's own comment) — same
@@ -221,7 +234,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   // posting (S-06.4, record the deposit as an unallocated payment)
   // instead, not through this invoice.
   const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasRecordPaymentCapability;
-  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasIssueCreditNoteCapability;
+  // US-PAY-16 (D-142): a paid invoice can be credited too; the excess becomes customer credit.
+  const canIssueCreditNote = invoice.status === "issued" && invoice.type !== "advance" && hasIssueCreditNoteCapability;
+  const canApplyCredit = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasApplyCreditCapability && customerCredit > 0n;
   const creditedAmount = BigInt(invoice.creditedAmount);
 
   return (
@@ -279,6 +294,11 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             {canRecordPayment && (
               <Button onClick={() => setPaymentOpen(true)} disabled={busy}>
                 Record payment
+              </Button>
+            )}
+            {canApplyCredit && (
+              <Button variant="secondary" onClick={() => setApplyCreditOpen(true)} disabled={busy}>
+                Apply credit
               </Button>
             )}
             {canIssueCreditNote && (
@@ -522,12 +542,30 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         open={creditNoteOpen}
         onOpenChange={setCreditNoteOpen}
         invoiceId={invoice.id}
+        invoiceNumber={invoice.number}
+        customerName={invoice.contactName ?? null}
         currency={invoice.currency}
-        maxAmount={balanceDue}
+        invoiceTotal={BigInt(invoice.totalAmount)}
+        balanceDue={balanceDue}
         onIssued={() => {
           load();
           setCreditNotesRefreshKey((key) => key + 1);
           showToast("Credit note issued", "The invoice's balance has been updated.");
+        }}
+      />
+
+      <ApplyCustomerCreditDialog
+        open={applyCreditOpen}
+        onOpenChange={setApplyCreditOpen}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.number}
+        contactId={invoice.contactId}
+        currency={invoice.currency}
+        balanceDue={balanceDue}
+        onApplied={(total) => {
+          load();
+          setPaymentsRefreshKey((key) => key + 1);
+          showToast("Credit applied", `${formatMoney(total, invoice.currency)} of credit now counts against ${invoice.number ?? "this invoice"}.`);
         }}
       />
 
