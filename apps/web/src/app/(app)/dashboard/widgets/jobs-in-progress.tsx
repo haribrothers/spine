@@ -43,7 +43,7 @@ export function JobsInProgress() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Jobs in progress
-          <Link href="/reports?tab=jobs" className="text-[13px] font-normal text-primary hover:underline">
+          <Link href="/reports/job-profitability" className="text-[13px] font-normal text-primary hover:underline">
             Job profitability
           </Link>
         </CardTitle>

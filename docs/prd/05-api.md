@@ -385,6 +385,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | PUT | `/users/me` | Any member | No |
 | GET | `/users/me/dashboard-layout` | Any member | — |
 | PUT | `/users/me/dashboard-layout` | Any member | No |
+| GET/PUT | `/users/me/favourite-reports` → `{ slugs }` (US-RPT-23; PUT `{ slugs }` keeps known reports once each, in order) | Any member | No |
 | PUT | `/users/me/meeting-reminder-lead-minutes` | Any member | No |
 | PUT | `/users/me/password` | Any member | No |
 | PUT | `/users/me/preferences` | Any member | No |

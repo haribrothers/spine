@@ -68,7 +68,7 @@ export function JobProfitabilityRanked() {
       <CardHeader>
         <CardTitle className="flex items-center justify-between text-[15px]">
           Job profitability
-          <Link href="/reports" className="text-[13px] font-normal text-primary hover:underline">
+          <Link href="/reports/job-profitability" className="text-[13px] font-normal text-primary hover:underline">
             View all
           </Link>
         </CardTitle>

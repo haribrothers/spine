@@ -7,8 +7,7 @@ test.describe("US-RPT-15", () => {
     const all = ((await (await page.request.get(`${API_URL}/reports/job-profitability?status=all`)).json()) as { jobs: { name: string; status: string }[] }).jobs;
     const open = all.filter((j) => j.status === "active" || j.status === "on_hold");
 
-    await page.goto("/reports");
-    await page.getByRole("tab", { name: "Job Profitability" }).click();
+    await page.goto("/reports/job-profitability");
     await expect(page.getByRole("heading", { name: "Contract, billed and cost by job" })).toBeVisible();
     await expect(page.getByRole("img", { name: "Contract, billed and cost by job" })).toBeVisible();
     for (const legend of ["Contract value", "Billed to date", "Cost", "Cost budget"]) await expect(page.getByText(legend, { exact: true }).first()).toBeVisible();

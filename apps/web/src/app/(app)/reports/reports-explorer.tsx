@@ -1,9 +1,6 @@
 "use client";
 
-import { NoAccess } from "../../../components/no-access";
-import { useMyRole } from "../../../lib/role-context";
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -23,10 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
 } from "@spine/ui";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
@@ -71,49 +64,6 @@ function ownerOnlyMessage(err: unknown): string {
       : "Could not load this report.";
 }
 
-/**
- * S-09.2/S-09.3/S-09.4/S-09.6/S-09.7 — the Reports page's client body.
- * Three tabs (P&L, Balance Sheet, Job Profitability), each independently
- * loaded — a Staff user with `reports.view_job_profitability` but not
- * Owner sees Job Profitability load fine and P&L/Balance Sheet show the
- * real 403 inline (same "no client-side capability check, surface the
- * server's real error" convention as tax-pane.tsx's own
- * TaxSummarySection), rather than hiding the tabs entirely.
- */
-export function ReportsExplorer() {
-  // US-OPS-12: P&L and Balance Sheet are Owner-only; others see why, and nothing is fetched.
-  const isOwner = useMyRole() === "owner";
-  // US-DASH-14: KPI cards open ?tab=pl / ?tab=bs.
-  const requested = useSearchParams().get("tab");
-  const start = requested && ["pl", "bs", "tb", "tax", "jobs"].includes(requested) ? requested : isOwner ? "pl" : "jobs";
-  return (
-    <Tabs defaultValue={start}>
-      <TabsList>
-        <TabsTrigger value="pl">Profit &amp; Loss</TabsTrigger>
-        <TabsTrigger value="bs">Balance Sheet</TabsTrigger>
-        <TabsTrigger value="tb">Trial Balance</TabsTrigger>
-        <TabsTrigger value="tax">Tax Summary</TabsTrigger>
-        <TabsTrigger value="jobs">Job Profitability</TabsTrigger>
-      </TabsList>
-      <TabsContent value="pl">
-        {isOwner ? <ProfitAndLossTab /> : <NoAccess pageName="Profit & Loss" ownerOnly />}
-      </TabsContent>
-      <TabsContent value="bs">
-        {isOwner ? <BalanceSheetTab /> : <NoAccess pageName="Balance Sheet" ownerOnly />}
-      </TabsContent>
-      <TabsContent value="tb">
-        {isOwner ? <TrialBalanceTab /> : <NoAccess pageName="Trial Balance" ownerOnly />}
-      </TabsContent>
-      <TabsContent value="tax">
-        {isOwner ? <TaxSummaryTab /> : <NoAccess pageName="Tax Summary" ownerOnly />}
-      </TabsContent>
-      <TabsContent value="jobs">
-        <JobProfitabilityTab />
-      </TabsContent>
-    </Tabs>
-  );
-}
-
 function AccountLineRow({
   line,
   currency,
@@ -143,7 +93,7 @@ function AccountLineRow({
   );
 }
 
-function ProfitAndLossTab() {
+export function ProfitAndLossTab() {
   const [from, setFrom] = useState<Date>(startOfYear());
   const [to, setTo] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");
@@ -258,7 +208,7 @@ function ProfitAndLossTab() {
   );
 }
 
-function BalanceSheetTab() {
+export function BalanceSheetTab() {
   const [asOf, setAsOf] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");
   const [report, setReport] = useState<BalanceSheetReport | null>(null);
@@ -392,7 +342,7 @@ const CHART_JOBS = 10;
  * contract value, billed to date and cost (with its budget marked), then
  * the table of every job. The figures are the job Costing tab's own.
  */
-function JobProfitabilityTab() {
+export function JobProfitabilityTab() {
   const [report, setReport] = useState<JobProfitabilityReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("active_on_hold");
@@ -633,7 +583,7 @@ export function DrilldownDialog({
  * US-RPT-13 — every account's balance as of a date, on its debit or credit
  * side, with matching totals. Click an account for its journal entries.
  */
-function TrialBalanceTab() {
+export function TrialBalanceTab() {
   const [asOf, setAsOf] = useState<Date>(endOfToday());
   const [hideZero, setHideZero] = useState(true);
   const [currency, setCurrency] = useState("USD");
@@ -781,7 +731,7 @@ function TrialBalanceTab() {
  * breakdown, for filing. Collected is from the ledger (after credit notes
  * and voids); the per-rate rows come from issued invoices' lines (D-031).
  */
-function TaxSummaryTab() {
+export function TaxSummaryTab() {
   const [from, setFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
   const [to, setTo] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");

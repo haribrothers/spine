@@ -15,6 +15,8 @@ export const CAPABILITIES = [
   "reports.view_receivables",
   "reports.view_payables",
   "reports.view_job_profitability",
+  // US-RPT-23, US-RPT-36 (D-136): the financial statements and analysis reports, read-only.
+  "reports.view_financial_statements",
   "ledger.view",
   "banking.view",
   "banking.record",
@@ -147,6 +149,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
   "reports.view_job_profitability": {
     label: "View job profitability",
     description: "Revenue, cost, and margin across every job.",
+    group: "Reports & Ledger",
+  },
+  "reports.view_financial_statements": {
+    label: "View financial statements",
+    description: "Read Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary and the sales and purchase reports. Grants nothing that writes.",
     group: "Reports & Ledger",
   },
   "ledger.view": {
@@ -664,6 +671,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "reports.view_payables": true,
   "reports.view_job_profitability": true,
   "ledger.view": false,
+  "reports.view_financial_statements": false,
   "banking.view": false,
   "banking.record": false,
   "banking.reconcile": false,

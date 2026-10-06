@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { digestEnabledFor, type DashboardLayout, type DigestDays, type NotificationPreferences } from "@spine/shared";
+import { REPORTS, digestEnabledFor, type DashboardLayout, type DigestDays, type NotificationPreferences } from "@spine/shared";
 import { and, eq } from "drizzle-orm";
 import { auth } from "../../auth/auth";
 import { DATABASE } from "../../db/db.module";
@@ -109,6 +109,20 @@ export class UsersService {
 
   async setDashboardLayout(userId: string, layout: DashboardLayout): Promise<void> {
     await this.db.update(user).set({ dashboardLayout: layout }).where(eq(user.id, userId));
+  }
+
+  /** US-RPT-23 — the reports this member starred, in the order they starred them. Unknown slugs are dropped. */
+  async getFavouriteReports(userId: string): Promise<string[]> {
+    const [row] = await this.db.select({ favourites: user.favouriteReports }).from(user).where(eq(user.id, userId));
+    const known = new Set(REPORTS.map((r) => r.slug));
+    return ((row?.favourites as string[] | null) ?? []).filter((s) => known.has(s));
+  }
+
+  async setFavouriteReports(userId: string, slugs: string[]): Promise<string[]> {
+    const known = new Set(REPORTS.map((r) => r.slug));
+    const clean = [...new Set(slugs)].filter((s) => known.has(s));
+    await this.db.update(user).set({ favouriteReports: clean }).where(eq(user.id, userId));
+    return clean;
   }
 
   /**

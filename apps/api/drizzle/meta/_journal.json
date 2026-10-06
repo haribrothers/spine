@@ -680,6 +680,13 @@
       "when": 1791298063223,
       "tag": "0096_manual_journals",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1791300558728,
+      "tag": "0097_favourite_reports",
+      "breakpoints": true
     }
   ]
 }

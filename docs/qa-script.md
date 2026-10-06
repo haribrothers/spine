@@ -3274,6 +3274,18 @@ Regression: posting journals (§132) is unchanged.
 
 Regression: Reports (the tab page) is unchanged and still shown to Staff with any report right.
 
+## 135. Every report in one place (US-RPT-23, Phase 8)
+
+1. As an Owner, Reports: "Every report you can open, derived from the ledger." Cards for Business overview (Profit & Loss, Balance Sheet, Trial Balance), Receivables (Receivables), Purchases (Payables), Tax (Tax Summary), Jobs (Job profitability) and Accountant (Journals). More reports appear as later stories land.
+2. Type "ledger" in "Search reports": only Trial Balance and Journals stay. Clear it: all are back. Type nonsense: "No reports match …".
+3. Star Tax Summary and Profit & Loss: "Favourites" appears at the top with both. Reload, then sign in on another browser: they're still there. Unstar one: it leaves Favourites.
+4. Open each report: the breadcrumb reads "Reports › <name>" and the page works as the old tab did (dates, Refresh, drill-down, Export CSV).
+5. The dashboard's Cash and Profit cards open the Balance Sheet and Profit & Loss pages. An old bookmark like /reports?tab=tax lands on Tax Summary.
+6. As Staff with only "View job profitability": Reports lists only Job profitability, and /reports/profit-and-loss shows "Profit & Loss is only available to owners." With "View ledger / journals" only: Reports appears and lists Journals. Field: no Reports.
+7. Team › a Team › Privileges › Reports & Ledger has "View financial statements", off.
+
+Regression: Receivables and Payables still open from the sidebar. The tax payment dialog (§119) still opens from Tax Summary.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -143,6 +143,9 @@ const REPORT_CAPABILITIES: Capability[] = [
   "reports.view_receivables",
   "reports.view_payables",
   "reports.view_job_profitability",
+  // US-RPT-23
+  "reports.view_financial_statements",
+  "ledger.view",
 ];
 
 /**

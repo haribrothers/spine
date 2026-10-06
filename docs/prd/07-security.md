@@ -52,7 +52,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 |---|---|:---:|:---:|
 | Reports & ledger | `reports.view_dashboard_summary`, `reports.view_receivables`, `reports.view_payables`, `reports.view_job_profitability` | ✓ | — |
 | | `ledger.view` (account drill-down) | ✗ | — |
-| | `reports.view_financial_statements` (P&L, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, sales and purchase analysis, GSTR-1 and Tally exports; Phase 8, D-136) | ✗ | — |
+| | `reports.view_financial_statements` (P&L, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, sales and purchase analysis, GSTR-1 and Tally exports; Phase 8, D-136). Added with US-RPT-23, off for every Team (migration `0097`), so the new reports can gate on it; US-RPT-36 moves the existing statements onto it | ✗ | — |
 | Banking | `banking.view`, `banking.record`, `banking.reconcile` (Phase 8, US-BANK-12) | ✗ | — |
 | AI assistant | `ai.use` (Phase 9, US-AI-05; hidden while AI is off) | ✗ | ✓F `ai.read_own_receipt` only (own expense on the phone) |
 | Contacts | `contacts.edit_own`, `contacts.edit_others`, `contacts.delete_own`, `contacts.delete_others` | ✓ | — |

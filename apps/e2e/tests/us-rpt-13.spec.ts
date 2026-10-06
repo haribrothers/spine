@@ -3,8 +3,7 @@ import { test, expect } from "./fixtures";
 test.describe("US-RPT-13", () => {
   test("Reports › Trial Balance shows balanced totals, zero-balance accounts on request, and drills into an account", async ({ page, seededOrg }) => {
     void seededOrg;
-    await page.goto("/reports");
-    await page.getByRole("tab", { name: "Trial Balance" }).click();
+    await page.goto("/reports/trial-balance");
 
     await expect(page.getByTestId("trial-balance-status")).toHaveText("Balanced — total debits equal total credits.");
     const table = page.getByTestId("trial-balance-table");

@@ -23,7 +23,7 @@ test.describe("US-TAX-08", () => {
     const charges = Object.values(grouped).flat().find((a) => a.code === "6900")!;
     await post("/bank-transactions", { moneyAccountId: bank.id, direction: "out", accountId: charges.id, amount: "5900", taxRateId: gst.id, date: today });
 
-    await page.goto("/reports?tab=tax");
+    await page.goto("/reports/tax-summary");
     await page.getByRole("button", { name: "Record tax payment" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog.getByTestId("tax-payment-figures")).toContainText("Tax collected$18.00");

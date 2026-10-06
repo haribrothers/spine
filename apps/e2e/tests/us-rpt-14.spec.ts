@@ -3,8 +3,7 @@ import { test, expect } from "./fixtures";
 test.describe("US-RPT-14", () => {
   test("Reports › Tax Summary shows collected, paid, net payable and the per-rate breakdown", async ({ page, seededOrg }) => {
     void seededOrg;
-    await page.goto("/reports");
-    await page.getByRole("tab", { name: "Tax Summary" }).click();
+    await page.goto("/reports/tax-summary");
 
     const cards = page.getByTestId("tax-summary-cards");
     await expect(cards).toContainText("Tax collected");

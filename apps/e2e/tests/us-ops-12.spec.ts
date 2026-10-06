@@ -63,8 +63,7 @@ test.describe("US-OPS-12", () => {
     await expect(staff.getByTestId("no-access")).toContainText("Team is only available to owners.");
     await expect(staff.getByTestId("no-access")).not.toContainText("team's permissions");
 
-    await staff.goto("/reports");
-    await staff.getByRole("tab", { name: "Profit & Loss" }).click();
+    await staff.goto("/reports/profit-and-loss");
     await expect(staff.getByTestId("no-access")).toContainText("Profit & Loss is only available to owners.");
     await staff.context().close();
   });

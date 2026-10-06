@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-23: find every report in one place (Phase 8)
+
+- **Reports** (`/reports`) is now the Reports page ("Every report you can open, derived from the ledger."). It groups every report the person can open into "Business overview", "Sales", "Receivables", "Purchases", "Tax", "Jobs" and "Accountant"; reports they can't open aren't listed. Reports join the list as their stories ship (Cash Flow, the sales and purchase reports, General ledger, Day book and so on later in Phase 8; GSTR-1 in Phase 9).
+- **Search** ("Search reports") narrows the list by name, group and keywords; "ledger" finds Trial Balance and Journals.
+- **Favourites.** The star next to a report adds it to "Favourites" at the top. Favourites are kept on the member (`user.favourite_reports`), so they're there on every device.
+- **Report pages.** Each existing report tab is now its own page: `/reports/profit-and-loss`, `/balance-sheet`, `/trial-balance`, `/tax-summary` and `/job-profitability`, with "Reports › <name>" and the no-access page for anyone who can't open it. The dashboard's cards and widgets link straight to them, and old `/reports?tab=` links redirect.
+- **New right: "View financial statements"** (`reports.view_financial_statements`, in the Team matrix under Reports & Ledger, off for every Team; migration 0097). The new reports use it; US-RPT-36 moves P&L, Balance Sheet, Trial Balance and Tax Summary onto it. Staff with it, or with "View ledger / journals", now see Reports in the sidebar.
+- **API**: `GET/PUT /users/me/favourite-reports`.
+
+Tests:
+- `packages/shared/src/us-rpt-23.test.ts` (3): groups and slugs; who can open what; search.
+- `apps/api/src/modules/users/us-rpt-23.http.integration.test.ts` (1): favourites start empty, keep their order, drop unknown or repeated reports, and are per person.
+- `apps/e2e/tests/us-rpt-23.spec.ts` (1): the grouped page, the search, starring, favourites after a reload, opening a favourite, and an old link redirecting.
+- Updated for the new pages: `reports.spec.ts`, `us-ops-12`, `us-ops-26`, `us-rpt-13`, `us-rpt-14`, `us-rpt-15`, `us-tax-08`, `us-dash-14`.
+
 ### 2026-10-06 — US-RPT-22: see every manual journal (Phase 8)
 
 - **Reports › Journals:**

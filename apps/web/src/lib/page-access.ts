@@ -31,7 +31,8 @@ const RULES: PageRule[] = [
   {
     prefix: "/reports",
     name: "Reports",
-    anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability"],
+    // US-RPT-23: the Reports page lists whatever reports the person can open.
+    anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability", "reports.view_financial_statements", "ledger.view"],
   },
 ];
 

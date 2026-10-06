@@ -9,8 +9,8 @@ import { formatMoney } from "../../../lib/money";
 
 /** Where each card opens (US-DASH-14). */
 const KPI_HREF: Record<KpiKey, string> = {
-  cash: "/reports?tab=bs",
-  profit: "/reports?tab=pl",
+  cash: "/reports/balance-sheet",
+  profit: "/reports/profit-and-loss",
   receivables: "/receivables",
   overdue: "/receivables?overdue=1",
   pipeline: "/leads",
