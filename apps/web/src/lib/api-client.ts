@@ -109,9 +109,10 @@ async function request<T>(
  * Still sends a fresh `Idempotency-Key` per call, matching every other
  * mutating request.
  */
-async function upload<T>(path: string, file: File): Promise<T> {
+async function upload<T>(path: string, file: File, fields?: Record<string, string>): Promise<T> {
   const formData = new FormData();
   formData.append("file", file);
+  for (const [name, value] of Object.entries(fields ?? {})) formData.append(name, value);
 
   const res = await fetch(`${API_URL}${path}`, {
     method: "POST",
@@ -176,6 +177,6 @@ export const apiClient = {
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
   delete: <T>(path: string, body?: unknown) => request<T>("DELETE", path, body),
-  upload: <T>(path: string, file: File) => upload<T>(path, file),
+  upload: <T>(path: string, file: File, fields?: Record<string, string>) => upload<T>(path, file, fields),
   download: (path: string, body?: unknown) => download(path, body),
 };

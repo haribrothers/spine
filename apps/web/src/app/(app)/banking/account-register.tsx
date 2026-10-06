@@ -40,13 +40,14 @@ import {
   TableSkeleton,
   type TableColumn,
 } from "@spine/ui";
-import { MONEY_ACCOUNT_KIND_LABELS, type AccountRegister as Register, type AccountRegisterRow } from "@spine/shared";
+import { MONEY_ACCOUNT_KIND_LABELS, statementImportSummary, type AccountRegister as Register, type AccountRegisterRow } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { formatDay, toIsoDate } from "./dates";
 import { useEntityToast } from "./entity-toast";
 import { AttachmentsSection } from "../../../components/attachments-section";
+import { StatementImportDialog } from "./statement-import-dialog";
 
 const TABLE_COLUMNS = [
   { key: "date", header: "Date", width: "w-24" },
@@ -98,6 +99,9 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
   const [filesFor, setFilesFor] = useState<AccountRegisterRow | null>(null);
   const [busy, setBusy] = useState(false);
   const canRecord = useCapability("banking.record");
+  // US-BANK-07
+  const canReconcile = useCapability("banking.reconcile");
+  const [importOpen, setImportOpen] = useState(false);
   const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
@@ -212,7 +216,16 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
 
   return (
     <>
-      <AppShellHeader breadcrumb={[{ label: "Money" }, { label: "Banking", href: "/banking" }, { label: account?.name ?? "Account" }]} title={account?.name ?? "Account"} description={subtitle} />
+      <AppShellHeader breadcrumb={[{ label: "Money" }, { label: "Banking", href: "/banking" }, { label: account?.name ?? "Account" }]} title={account?.name ?? "Account"}
+        description={subtitle}
+        action={
+          canReconcile && account && !account.archivedAt ? (
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Import statement
+            </Button>
+          ) : undefined
+        }
+      />
       {error ? (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
@@ -271,6 +284,15 @@ export function AccountRegisterView({ accountId }: { accountId: string }) {
             </div>
           )}
         </div>
+      )}
+      {account && (
+        <StatementImportDialog
+          open={importOpen}
+          onOpenChange={setImportOpen}
+          accountId={accountId}
+          accountName={account.name}
+          onImported={(result) => showToast("Statement imported", statementImportSummary(result))}
+        />
       )}
       <AlertDialog open={deleting !== null} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>

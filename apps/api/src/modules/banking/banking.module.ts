@@ -11,6 +11,8 @@ import { BankTransfersController } from "./bank-transfers.controller";
 import { BankTransfersService } from "./bank-transfers.service";
 import { MoneyAccountsController } from "./money-accounts.controller";
 import { MoneyAccountsService } from "./money-accounts.service";
+import { StatementImportsController } from "./statement-imports.controller";
+import { StatementImportsService } from "./statement-imports.service";
 
 /**
  * Module 20 Banking (D-139): bank, cash and card accounts, their registers,
@@ -20,8 +22,8 @@ import { MoneyAccountsService } from "./money-accounts.service";
  */
 @Module({
   imports: [AuditModule, LedgerModule, TaxModule],
-  controllers: [MoneyAccountsController, BankTransfersController, BankTransactionsController, TaxPaymentsController, TaxRefundsController],
-  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService],
+  controllers: [MoneyAccountsController, BankTransfersController, BankTransactionsController, TaxPaymentsController, TaxRefundsController, StatementImportsController],
+  providers: [MoneyAccountsService, AccountRegisterService, BankTransfersService, BankTransactionsService, TaxPaymentsService, StatementImportsService],
   exports: [MoneyAccountsService],
 })
 export class BankingModule {}

@@ -341,7 +341,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-BANK-04 · Move money between my accounts
 - [x] US-BANK-05 · Record money in or out that has no invoice or bill
 - [x] US-BANK-06 · Archive an account I no longer use
-- [ ] US-BANK-07 · Import a bank statement
+- [x] US-BANK-07 · Import a bank statement
 - [ ] US-BANK-08 · Match statement lines to what's in Spine
 - [ ] US-BANK-09 · Create what's missing from a statement line
 - [ ] US-BANK-10 · Finish a reconciliation when it balances

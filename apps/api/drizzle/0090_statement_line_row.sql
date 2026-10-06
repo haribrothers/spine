@@ -1,0 +1,1 @@
+ALTER TABLE "bank_statement_lines" ADD COLUMN "row_number" bigint DEFAULT 0 NOT NULL;

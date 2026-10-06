@@ -3121,6 +3121,19 @@ Regression: submitting a new expense still opens a blank "Submit an expense" for
 
 Regression: toasts still close on their own, swipe away on touch, and are announced by screen readers. Escape inside a dialog opened over a drawer (e.g. "Apply credit") closes only that dialog.
 
+## 123. Import a bank statement (US-BANK-07, Phase 8)
+
+1. As an Owner, Banking › Bank Account › "Import statement". The dialog reads "Import statement — Bank Account" and asks for a CSV.
+2. Choose a CSV with headers "Txn date, Narration, Ref no., Withdrawal, Deposit, Balance". The file name, row count and size show. "Separate money in and money out columns" is chosen, with Date = Txn date, Description = Narration, Reference = Ref no., Money out = Withdrawal, Money in = Deposit and Balance = Balance. "First rows" shows up to ten rows.
+3. Include a row with the date 31/09/2026 and one with the amount "abc". "Import <n> lines": "Imported <n−2> lines · skipped 0 already imported · 2 rows couldn't be read", and each bad row is listed with its row number and reason. "Done": the toast repeats the summary.
+4. Import a second file that overlaps the first: the mapping is already filled in, and the overlapping lines are counted as "skipped … already imported".
+5. Switch to "One amount column (money in positive)" for a file with a single signed Amount column. Withdrawals written as -58.20, (58.20) or 58.20 DR all import as money out.
+6. Choose a PDF: "Export the statement from your bank as CSV, then import it here." Choose a CSV with more than 5,000 rows, or over 2 MB: "Split the statement into smaller files (up to 5,000 lines)."
+7. As Staff without "Reconcile accounts", there's no "Import statement", and the import routes return 403. Field users get 403. An archived account has no "Import statement".
+8. Team › Audit log shows "imported a statement into Bank Account".
+
+Regression: the register's balances, filters and row menus are unchanged. Contact import still works (it has its own CSV parser).
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

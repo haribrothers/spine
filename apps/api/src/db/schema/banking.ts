@@ -127,3 +127,63 @@ export const bankTransactions = pgTable(
     index("bank_transactions_org_date_idx").on(table.orgId, table.date),
   ],
 );
+
+export const statementLineStatusEnum = pgEnum("statement_line_status", ["unmatched", "matched", "excluded"]);
+
+/** US-BANK-07 (D-157) — one CSV statement imported to a money account. The file itself isn't kept. */
+export const bankStatementImports = pgTable(
+  "bank_statement_imports",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    moneyAccountId: uuid("money_account_id")
+      .notNull()
+      .references(() => moneyAccounts.id),
+    fileName: text("file_name").notNull(),
+    importedCount: bigint("imported_count", { mode: "number" }).notNull(),
+    skippedCount: bigint("skipped_count", { mode: "number" }).notNull(),
+    failedRows: jsonb("failed_rows").notNull().default(sql`'[]'::jsonb`),
+    importedByUserId: text("imported_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("bank_statement_imports_account_idx").on(table.moneyAccountId)],
+);
+
+/**
+ * US-BANK-07 — one line of a bank statement. `amount` is signed in the
+ * account's own sense (money in > 0, like a debit). `dedupe_key` (date +
+ * amount + normalised description) is unique per account, so importing an
+ * overlapping statement skips lines already there.
+ */
+export const bankStatementLines = pgTable(
+  "bank_statement_lines",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    moneyAccountId: uuid("money_account_id")
+      .notNull()
+      .references(() => moneyAccounts.id),
+    importId: uuid("import_id")
+      .notNull()
+      .references(() => bankStatementImports.id),
+    date: date("date").notNull(),
+    description: text("description").notNull(),
+    reference: text("reference"),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    runningBalance: bigint("running_balance", { mode: "bigint" }),
+    dedupeKey: text("dedupe_key").notNull(),
+    /** The line's row in its file, so lines on the same day keep the statement's order. */
+    rowNumber: bigint("row_number", { mode: "number" }).notNull().default(0),
+    status: statementLineStatusEnum("status").notNull().default("unmatched"),
+    excludeNote: text("exclude_note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("bank_statement_lines_dedupe_uidx").on(table.moneyAccountId, table.dedupeKey),
+    index("bank_statement_lines_account_date_idx").on(table.moneyAccountId, table.date),
+  ],
+);

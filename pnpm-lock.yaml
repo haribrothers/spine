@@ -79,6 +79,9 @@ importers:
       nodemailer:
         specifier: ^9.0.5
         version: 9.0.5
+      papaparse:
+        specifier: ^5.5.4
+        version: 5.5.4
       pg-boss:
         specifier: ^12.27.0
         version: 12.27.0
@@ -128,6 +131,9 @@ importers:
       '@types/nodemailer':
         specifier: ^8.0.1
         version: 8.0.1
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.18

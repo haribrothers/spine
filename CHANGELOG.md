@@ -80,6 +80,28 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-07: import a bank statement (Phase 8)
+
+- **"Import statement"** on an account's register (for people with "Reconcile accounts") opens `StatementImportDialog`:
+  - Choose a CSV and see its first ten rows.
+  - Map "Date" (with its format: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD or DD MMM YYYY), "Description", "Reference", and either one "Amount" (money in positive) or "Money in" and "Money out", plus an optional "Balance".
+  - The first time, columns are guessed from common bank headers. After that, the account's saved mapping applies, and you can change it.
+- **Results.** The summary reads "Imported <n> lines · skipped <m> already imported · <k> rows couldn't be read", listing each unreadable row with its reason. Lines already imported (same date, amount and description, ignoring case and spacing) are skipped.
+- **Amounts** accept currency symbols, thousands separators, the true minus sign, brackets and CR/DR suffixes.
+- **Errors:**
+  - A file over 2 MB or 5,000 lines: "Split the statement into smaller files (up to 5,000 lines)."
+  - A file that isn't CSV: "Export the statement from your bank as CSV, then import it here."
+- **Migrations:** 0089 (`bank_statement_imports`, `bank_statement_lines`) and 0090 (the line's row in its file).
+- **API:**
+  - `POST /money-accounts/:id/statement-imports` (multipart `file` + `mapping`), `GET …/statement-lines` and `GET …/statement-mapping`, all needing `banking.reconcile`.
+  - The import is in the audit log ("imported a statement into").
+  - `papaparse` (MIT) is now an API dependency.
+
+Tests:
+- `packages/shared/src/us-bank-07.test.ts` (6): date formats, amount formats, duplicate keys, mapping guesses, mapping rules, the summary.
+- `apps/api/src/modules/banking/us-bank-07.http.integration.test.ts` (4): import with failed rows and the saved mapping; skipping lines already imported; non-CSV, too many rows, too big, and a missing column; 403 without the right and for Field.
+- `apps/e2e/tests/us-bank-07.spec.ts` (1): guessed mapping, preview, summary with an unreadable row, the saved mapping and skips, and the non-CSV and too-big messages.
+
 ### 2026-10-06 — Fix: Escape didn't close a drawer or dialog while a toast showed
 
 - Radix treats an open toast as the topmost dismissable layer, so the first Escape only dismissed the toast, even with focus in a drawer or dialog. This affected every drawer and dialog that shows a toast.
