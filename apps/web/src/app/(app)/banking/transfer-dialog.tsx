@@ -24,12 +24,13 @@ import {
   Spinner,
 } from "@spine/ui";
 import { SAME_ACCOUNT_TRANSFER, type BankTransfer, type MoneyAccount } from "@spine/shared";
+import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { apiClient } from "../../../lib/api-client";
 import { toIsoDate } from "./dates";
 
-function AccountSelect({ id, accounts, value, onValueChange }: { id: string; accounts: MoneyAccount[]; value: string; onValueChange: (v: string) => void }) {
+function AccountSelect({ id, accounts, value, onValueChange, disabled }: { id: string; accounts: MoneyAccount[]; value: string; onValueChange: (v: string) => void; disabled?: boolean }) {
   return (
-    <Select value={value} onValueChange={onValueChange}>
+    <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger id={id}>
         <SelectValue placeholder="Choose an account" />
       </SelectTrigger>
@@ -54,12 +55,15 @@ export function TransferDialog({
   accounts,
   currency,
   onRecorded,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   accounts: MoneyAccount[];
   currency: string;
   onRecorded: (transfer: BankTransfer) => void;
+  /** US-BANK-09 — from a statement line: the line's account is one side (the "to" side for money in), and amount and date are fixed. */
+  prefill?: StatementPrefill & { direction: "in" | "out" };
 }) {
   const [fromId, setFromId] = useState("");
   const [toId, setToId] = useState("");
@@ -71,13 +75,18 @@ export function TransferDialog({
 
   useEffect(() => {
     if (!open) return;
-    setFromId(accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
-    setToId("");
-    setAmount(0n);
-    setDate(new Date());
-    setReference("");
+    if (prefill) {
+      setFromId(prefill.direction === "out" ? prefill.moneyAccountId : "");
+      setToId(prefill.direction === "in" ? prefill.moneyAccountId : "");
+    } else {
+      setFromId(accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
+      setToId("");
+    }
+    setAmount(prefill?.amount ?? 0n);
+    setDate(prefill ? prefillDate(prefill) : new Date());
+    setReference(prefill?.reference ?? "");
     setError(null);
-  }, [open, accounts]);
+  }, [open, accounts, prefill]);
 
   const from = accounts.find((a) => a.id === fromId);
   const to = accounts.find((a) => a.id === toId);
@@ -123,16 +132,16 @@ export function TransferDialog({
           )}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="From" required>
-              {(field) => <AccountSelect id={field.id} accounts={accounts} value={fromId} onValueChange={setFromId} />}
+              {(field) => <AccountSelect id={field.id} accounts={accounts} value={fromId} onValueChange={setFromId} disabled={prefill?.direction === "out"} />}
             </FormField>
             <FormField label="To" required>
-              {(field) => <AccountSelect id={field.id} accounts={accounts} value={toId} onValueChange={setToId} />}
+              {(field) => <AccountSelect id={field.id} accounts={accounts} value={toId} onValueChange={setToId} disabled={prefill?.direction === "in"} />}
             </FormField>
             <FormField label="Amount" required>
-              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>
             <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
+              {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
           </div>
           <FormField label="Reference">

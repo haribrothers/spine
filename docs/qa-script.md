@@ -3150,6 +3150,20 @@ Regression: the register's balances, filters and row menus are unchanged. Contac
 
 Regression: the register, statement import and money in/out are unchanged.
 
+## 125. Create from a statement line (US-BANK-09, Phase 8)
+
+1. On the reconcile page (§124), an unmatched line with no suggestion shows "Create" and "Exclude". "Create" on a money-in line: the drawer "Create from statement line" shows "<date> · <description> · +<amount>. Saving matches the line to the new entry." and "Record it as" with "Customer payment", "Transfer from another account" and "Other money in".
+2. "Customer payment" › "Continue": "Record a payment" opens with the amount and date fixed (greyed) and "Paid into" showing this account. Choose the customer and "Record payment". The page reads "Recorded and matched to <line>." and the line is "Matched".
+3. "Create" on a money-out line offers "Vendor payment", "Expense", "Transfer to another account", "Other money out" and "Tax payment" (the last two for an Owner).
+4. "Expense": Amount, Date, Category, Job, "Paid from" (this account) and Description, all in the drawer. "Save and match": the expense is recorded and approved, appears under Expenses as approved, and the line is matched.
+5. "Other money out" › "Continue": the Money out form opens with the account, date and amount fixed. Choose "Bank charges" and record it: the line is matched.
+6. "Transfer to another account": the Transfer form opens with "From" fixed to this account. Choose "To" and "Move money": matched. "Tax payment": the tax payment form opens with the amount fixed and no refund switch.
+7. Cancel any form: the drawer comes back, and nothing is recorded.
+8. As Staff without "Create/edit own payments", "Customer payment" isn't offered. Without "Record transfers and other money in or out", the transfer and other-money options aren't offered. Staff never see "Expense" or "Tax payment". With nothing allowed: "You can't record any of these entries. Ask an owner, or exclude the line."
+9. In a browser set to an Indian or Australian time zone, record a customer payment and a vendor payment: the saved date is the date picked (it used to be the day before).
+
+Regression: Payments, Vendor Payments, Banking's Transfer and Money in/out, and Reports › Tax Summary › "Record tax payment" work as before when opened from their own pages.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

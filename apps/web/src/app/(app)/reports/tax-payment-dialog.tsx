@@ -27,6 +27,7 @@ import { inputTaxOverMessage, type MoneyAccount, type TaxPayment } from "@spine/
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
+import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import type { TaxSummaryReport } from "./types";
 
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -61,6 +62,7 @@ export function TaxPaymentDialog({
   reportTo,
   currency,
   onRecorded,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -68,6 +70,8 @@ export function TaxPaymentDialog({
   reportTo: string;
   currency: string;
   onRecorded: (payment: TaxPayment) => void;
+  /** US-BANK-09 — from a statement line: a payment of that amount, on that date, from that account. */
+  prefill?: StatementPrefill;
 }) {
   const [mode, setMode] = useState<"payment" | "refund">("payment");
   const options = useMemo(() => periodOptions(reportFrom, reportTo), [reportFrom, reportTo]);
@@ -88,10 +92,10 @@ export function TaxPaymentDialog({
     if (!open) return;
     setMode("payment");
     setPeriod(0);
-    setDate(new Date());
-    setReference("");
+    setDate(prefill ? prefillDate(prefill) : new Date());
+    setReference(prefill?.reference ?? "");
     setError(null);
-  }, [open]);
+  }, [open, prefill]);
 
   // Tax collected for the period, and the input tax there is on the date.
   useEffect(() => {
@@ -111,13 +115,17 @@ export function TaxPaymentDialog({
         setAvailable(a);
         const use = a < c ? a : c;
         setInputUsed(use);
-        setAmount(mode === "refund" ? a : c - use);
+        setAmount(prefill ? prefill.amount : mode === "refund" ? a : c - use);
       })
       .catch((err) => !cancelled && setError(err instanceof Error ? err.message : "Couldn't load the tax figures."));
     return () => {
       cancelled = true;
     };
-  }, [open, chosen.from, chosen.to, date, mode]);
+  }, [open, chosen.from, chosen.to, date, mode, prefill]);
+
+  useEffect(() => {
+    if (prefill) setMoneyAccountId(prefill.moneyAccountId);
+  }, [prefill, open]);
 
   useEffect(() => {
     if (!moneyAccountId) return;
@@ -216,7 +224,7 @@ export function TaxPaymentDialog({
               </FormField>
             )}
             <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
+              {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
             {mode === "payment" && (
               <FormField label="Input tax used" required helperText={available === null ? undefined : `You have ${m(available)} to use.`}>
@@ -224,9 +232,15 @@ export function TaxPaymentDialog({
               </FormField>
             )}
             <FormField label={mode === "payment" ? "Amount paid" : "Amount"} required helperText={mode === "refund" && available !== null ? `You have ${m(available)} of input tax to claim back.` : undefined}>
-              {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} />}
+              {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>
-            <MoneyAccountPicker key={mode} form="tax_payment" direction={mode === "payment" ? "out" : "in"} value={moneyAccountId} onValueChange={setMoneyAccountId} />
+            {prefill ? (
+              <FormField label="Paid from" required>
+                {() => <p className="py-2 text-[14px] text-on-surface">{prefill.moneyAccountName}</p>}
+              </FormField>
+            ) : (
+              <MoneyAccountPicker key={mode} form="tax_payment" direction={mode === "payment" ? "out" : "in"} value={moneyAccountId} onValueChange={setMoneyAccountId} />
+            )}
             <FormField label="Reference">
               {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. the challan or return number" maxLength={120} />}
             </FormField>
@@ -236,7 +250,7 @@ export function TaxPaymentDialog({
           </p>
         </DialogBody>
         <DialogFooter className="sm:justify-between">
-          <Button type="button" variant="ghost" className="text-primary" onClick={() => setMode(mode === "payment" ? "refund" : "payment")} disabled={saving}>
+          <Button type="button" variant="ghost" className={prefill ? "invisible" : "text-primary"} onClick={() => setMode(mode === "payment" ? "refund" : "payment")} disabled={saving || Boolean(prefill)}>
             {mode === "payment" ? "Record a tax refund instead" : "Record a tax payment instead"}
           </Button>
           <div className="flex gap-2">

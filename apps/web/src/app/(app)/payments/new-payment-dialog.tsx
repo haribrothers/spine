@@ -27,6 +27,7 @@ import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { localIsoDate, prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { MoneyAccountPicker } from "../../../components/money-account-picker";
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = (
@@ -73,10 +74,14 @@ export function NewPaymentDialog({
   open,
   onOpenChange,
   onRecorded,
+  prefill,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRecorded: () => void;
+  /** Gets the recorded payment (US-BANK-09 matches it to a statement line). */
+  onRecorded: (payment?: { id: string }) => void;
+  /** US-BANK-09 — from a statement line: amount, date and account are fixed. */
+  prefill?: StatementPrefill;
 }) {
   const [contactId, setContactId] = useState("");
   const [currency, setCurrency] = useState("USD");
@@ -93,14 +98,14 @@ export function NewPaymentDialog({
   useEffect(() => {
     if (!open) return;
     setContactId("");
-    setAmount(0n);
-    setDate(new Date());
+    setAmount(prefill?.amount ?? 0n);
+    setDate(prefill ? prefillDate(prefill) : new Date());
     setMethod("bank_transfer");
-    setReference("");
+    setReference(prefill?.reference ?? "");
     setOutstanding(null);
     setAllocations([]);
     setError(null);
-  }, [open]);
+  }, [open, prefill]);
 
   useEffect(() => {
     if (!open || !contactId) {
@@ -186,18 +191,18 @@ export function NewPaymentDialog({
     }
     setSaving(true);
     try {
-      await apiClient.post("/payments", {
+      const recorded = await apiClient.post<{ id: string }>("/payments", {
         contactId,
-        date: date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        date: localIsoDate(date ?? new Date()),
         method,
         reference: reference || null,
-        moneyAccountId: moneyAccountId || null,
+        moneyAccountId: prefill?.moneyAccountId ?? (moneyAccountId || null),
         currency,
         amount: amount.toString(),
         allocations: allocations.filter((a) => a.amount > 0n).map((a) => ({ invoiceId: a.invoiceId, amount: a.amount.toString() })),
       });
       onOpenChange(false);
-      onRecorded();
+      onRecorded(recorded);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not record this payment.");
     } finally {
@@ -227,7 +232,7 @@ export function NewPaymentDialog({
               {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
             </FormField>
             <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
+              {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
             <FormField label="Method" required>
               {() => (
@@ -249,9 +254,15 @@ export function NewPaymentDialog({
               {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" />}
             </FormField>
             <FormField label="Amount" required>
-              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={!contactId} />}
+              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={!contactId || Boolean(prefill)} />}
             </FormField>
-            <MoneyAccountPicker form="payment" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
+            {prefill ? (
+              <FormField label="Paid into" required>
+                {() => <p className="py-2 text-[14px] text-on-surface">{prefill.moneyAccountName}</p>}
+              </FormField>
+            ) : (
+              <MoneyAccountPicker form="payment" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
+            )}
           </div>
 
           {contactId && (

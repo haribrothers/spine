@@ -35,6 +35,7 @@ import {
   type BankTransactionDirection,
   type MoneyAccount,
 } from "@spine/shared";
+import { prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
 import { toIsoDate } from "./dates";
@@ -69,6 +70,7 @@ export function MoneyInOutDialog({
   accounts,
   currency,
   onRecorded,
+  prefill,
 }: {
   direction: BankTransactionDirection;
   open: boolean;
@@ -76,6 +78,8 @@ export function MoneyInOutDialog({
   accounts: MoneyAccount[];
   currency: string;
   onRecorded: (entry: BankTransaction) => void;
+  /** US-BANK-09 — from a statement line: account, amount and date are fixed. */
+  prefill?: StatementPrefill;
 }) {
   const isIn = direction === "in";
   const [moneyAccountId, setMoneyAccountId] = useState("");
@@ -93,13 +97,13 @@ export function MoneyInOutDialog({
 
   useEffect(() => {
     if (!open) return;
-    setMoneyAccountId(accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
-    setDate(new Date());
+    setMoneyAccountId(prefill?.moneyAccountId ?? accounts.find((a) => a.isDefault)?.id ?? accounts[0]?.id ?? "");
+    setDate(prefill ? prefillDate(prefill) : new Date());
     setCategoryId("");
-    setAmount(0n);
+    setAmount(prefill?.amount ?? 0n);
     setTaxRateId(NO_TAX);
     setContactId(NO_CONTACT);
-    setDescription("");
+    setDescription(prefill?.description ?? "");
     setError(null);
     apiClient
       .get<Record<string, LedgerAccount[]>>("/org/accounts")
@@ -107,7 +111,7 @@ export function MoneyInOutDialog({
       .catch(() => setLedger([]));
     apiClient.get<{ id: string; name: string; archivedAt: string | null }[]>("/contacts").then(setContacts).catch(() => {});
     if (!isIn) apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
-  }, [open, accounts, isIn]);
+  }, [open, accounts, isIn, prefill]);
 
   // Money accounts move by transfer, control accounts by their own documents.
   const categories = useMemo(() => {
@@ -168,7 +172,7 @@ export function MoneyInOutDialog({
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label={isIn ? "Into account" : "From account"} required>
               {(field) => (
-                <Select value={moneyAccountId} onValueChange={setMoneyAccountId}>
+                <Select value={moneyAccountId} onValueChange={setMoneyAccountId} disabled={Boolean(prefill)}>
                   <SelectTrigger id={field.id}>
                     <SelectValue placeholder="Choose an account" />
                   </SelectTrigger>
@@ -183,7 +187,7 @@ export function MoneyInOutDialog({
               )}
             </FormField>
             <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
+              {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
           </div>
 
@@ -223,7 +227,7 @@ export function MoneyInOutDialog({
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Amount" required helperText={!isIn && taxAmount > 0n ? `Includes ${formatMoney(taxAmount, currency)} tax, which goes to Input Tax Receivable.` : undefined}>
-              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={Boolean(prefill)} />}
             </FormField>
             {!isIn && (
               <FormField label="Tax">

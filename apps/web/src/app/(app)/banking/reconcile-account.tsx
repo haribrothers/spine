@@ -28,6 +28,7 @@ import { formatMoney } from "../../../lib/money";
 import { NoAccess } from "../../../components/no-access";
 import { formatDay, fromIsoDate, toIsoDate } from "./dates";
 import { StatementImportDialog } from "./statement-import-dialog";
+import { ReconcileCreateDrawer } from "./reconcile-create-drawer";
 
 type Matches = ReconciliationView["matches"];
 type Exclusions = { statementLineId: string; note: string }[];
@@ -42,6 +43,10 @@ const shortDay = (iso: string) => fromIsoDate(iso).toLocaleDateString(undefined,
 export function ReconcileAccount({ accountId }: { accountId: string }) {
   const canReconcile = useCapability("banking.reconcile");
   const [account, setAccount] = useState<MoneyAccount | null>(null);
+  const [accounts, setAccounts] = useState<MoneyAccount[]>([]);
+  // US-BANK-09
+  const [creating, setCreating] = useState<StatementLine | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [rec, setRec] = useState<ReconciliationView | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [currency, setCurrency] = useState("USD");
@@ -75,6 +80,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
         apiClient.get<{ id: string }[]>(`/bank-reconciliations?moneyAccountId=${accountId}&status=in_progress`),
         apiClient.get<{ value: { code: string } | null }>("/org/settings/currency").catch(() => ({ value: null })),
       ]);
+      setAccounts(accounts);
       setAccount(accounts.find((a) => a.id === accountId) ?? null);
       if (settings.value?.code) setCurrency(settings.value.code);
       if (open[0]) applyView(await apiClient.get<ReconciliationView>(`/bank-reconciliations/${open[0].id}`));
@@ -125,6 +131,25 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
     }
   }
 
+  /** US-BANK-09 — after recording the missing entry, match the line to it. */
+  async function matchCreated(line: StatementLine, sourceId: string) {
+    if (!rec) return;
+    setNotice(null);
+    try {
+      const view = await apiClient.get<ReconciliationView>(`/bank-reconciliations/${rec.id}`);
+      setRec(view);
+      const entry = view.entries.find((e) => e.sourceId === sourceId && !e.statementLineId && e.amount === line.amount);
+      if (!entry) {
+        setNotice(`Recorded. Spine couldn't find its entry on this account up to ${formatDay(view.statementEndDate)}, so match it by hand.`);
+        return;
+      }
+      await save([...view.matches, { statementLineId: line.id, journalLineIds: [entry.journalLineId] }], exclusionsOf(view));
+      setNotice(`Recorded and matched to ${line.description}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Recorded, but the match didn't save. Match it by hand.");
+    }
+  }
+
   const entryById = useMemo(() => new Map((rec?.entries ?? []).map((e) => [e.journalLineId, e])), [rec]);
   const suggestionFor = useMemo(() => new Map((rec?.suggestions ?? []).filter((s) => !dismissed.has(s.statementLineId)).map((s) => [s.statementLineId, s.journalLineId])), [rec, dismissed]);
   const openEntries = (rec?.entries ?? []).filter((e) => !e.statementLineId);
@@ -159,6 +184,11 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
           {error && (
             <Alert variant="critical">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+          {notice && (
+            <Alert variant="success">
+              <AlertDescription>{notice}</AlertDescription>
             </Alert>
           )}
           <div className="flex flex-wrap items-end gap-4">
@@ -284,6 +314,11 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
                                     Not this one
                                   </Button>
                                 </>
+                              )}
+                              {line.status === "unmatched" && !suggestion && (
+                                <Button size="sm" variant="secondary" onClick={() => setCreating(line)}>
+                                  Create
+                                </Button>
                               )}
                               {line.status === "unmatched" && !suggestion && (
                                 <Button
@@ -420,6 +455,16 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {rec && (
+        <ReconcileCreateDrawer
+          line={creating}
+          onOpenChange={(open) => !open && setCreating(null)}
+          account={{ id: accountId, name }}
+          accounts={accounts}
+          currency={currency}
+          onCreated={(line, sourceId) => void matchCreated(line, sourceId)}
+        />
+      )}
       <StatementImportDialog
         open={importOpen}
         onOpenChange={setImportOpen}

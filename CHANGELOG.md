@@ -80,6 +80,28 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-09: create what's missing from a statement line (Phase 8)
+
+- **"Create"** on an unmatched statement line opens `ReconcileCreateDrawer` ("Create from statement line"; "Saving matches the line to the new entry."). "Record it as" offers:
+  - **Money in:** "Customer payment", "Transfer from another account" or "Other money in".
+  - **Money out:** "Vendor payment", "Expense", "Transfer to another account", "Other money out" or "Tax payment".
+- **Who sees which options.** Each option shows only with its right:
+  - Customer payment: `payments.edit_own`. Vendor payment: `vendor_payments.edit_own`. Transfers and other money: `banking.record`.
+  - Tax payment: Owner only.
+  - Expense: Owner with expense rights. An expense posts only once approved, and Staff can't approve their own.
+- **How each option records.**
+  - Payments, transfers, money in/out and tax payments open their normal form, with the line's amount, date and account fixed.
+  - An expense is filled in inside the drawer and approved on save.
+  - When the entry posts, the line is matched to it ("Recorded and matched to <line>.").
+- **Dialog changes.** `NewPaymentDialog`, `NewVendorPaymentDialog`, `TransferDialog`, `MoneyInOutDialog` and `TaxPaymentDialog` accept `prefill`. The two payment dialogs now pass the recorded payment back.
+- **Fix:** the customer and vendor payment dialogs sent the picked date through UTC, which saved the previous day for anyone east of UTC (e.g. India, Australia). They now send the local date.
+- No new routes: the drawer uses the normal create routes, then `PUT /bank-reconciliations/:id/matches`.
+
+Tests:
+- `apps/e2e/tests/us-bank-09.spec.ts` (2):
+  - A customer payment (prefilled, amount locked), an expense and other money out are each created and matched, and the difference reaches $0.00.
+  - A Staff member without "Create/edit own payments" sees no "Customer payment", and no "Expense" or "Tax payment".
+
 ### 2026-10-06 — US-BANK-08: match statement lines to what's in Spine (Phase 8)
 
 - **"Reconcile"** on an account's register opens `ReconcileAccount` at `/banking/<id>/reconcile`:
