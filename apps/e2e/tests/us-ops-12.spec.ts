@@ -64,7 +64,8 @@ test.describe("US-OPS-12", () => {
     await expect(staff.getByTestId("no-access")).not.toContainText("team's permissions");
 
     await staff.goto("/reports/profit-and-loss");
-    await expect(staff.getByTestId("no-access")).toContainText("Profit & Loss is only available to owners.");
+    // US-RPT-36 — the statements open to a Team with "View financial statements"; without it, they say so.
+    await expect(staff.getByTestId("no-access")).toContainText("You don't have access to financial statements. Ask an owner.");
     await staff.context().close();
   });
 

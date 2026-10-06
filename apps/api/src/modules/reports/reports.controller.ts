@@ -28,9 +28,10 @@ import { LedgerReportsService } from "./ledger-reports.service";
  * can grant a Team visibility into one report without the others (e.g.
  * receivables without payables). `ledger.view` similarly gates
  * `account-drilldown` for Staff, alongside its existing `@OrgRoles(["owner"])`
- * floor (Owner always passes regardless of any grant). P&L, Balance Sheet,
- * and revenue-trend stay `@OrgRoles(["owner"])` with no capability bypass
- * at all — genuinely Owner-only, not Team-configurable.
+ * floor (Owner always passes regardless of any grant). US-RPT-36 (D-136):
+ * P&L, Balance Sheet, Trial Balance and revenue-trend are no longer
+ * Owner-only — `reports.view_financial_statements` opens them to a Team
+ * (an outside accountant), read-only; Owners always pass.
  */
 @Controller("reports")
 @OrgRoles(["owner", "staff"])
@@ -204,9 +205,9 @@ export class ReportsController {
     return this.reportsService.moneyInOut(requireOrgId(session), n);
   }
 
-  /** S-09.11 (dashboard v2) — revenue trend chart. Owner-only, no capability bypass — same gate as P&L/Balance Sheet, since this is derived from the same income-account journal history those reports summarize. */
+  /** S-09.11 (dashboard v2) — revenue trend chart; same gate as P&L/Balance Sheet (US-RPT-36), since it's derived from the same income-account history. */
   @Get("revenue-trend")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async revenueTrend(@Session() session: UserSession, @Query("months") months?: string) {
     const orgId = requireOrgId(session);
     const parsed = months ? Number(months) : 12;
@@ -244,9 +245,9 @@ export class ReportsController {
     return this.out(orgId, query, this.reportsService.payables(orgId), docs.payablesDocument);
   }
 
-  /** S-09.2 — Owner-only per this controller's own doc comment. */
+  /** S-09.2 — Owner, or `reports.view_financial_statements` (US-RPT-36). */
   @Get("profit-and-loss")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async profitAndLoss(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
     const parsed = profitAndLossQuerySchema.safeParse(query);
@@ -270,9 +271,9 @@ export class ReportsController {
     return this.out(orgId, query, { ...report, comparison }, docs.profitAndLossDocument);
   }
 
-  /** S-09.3 — Owner-only, same reasoning as profitAndLoss above. */
+  /** S-09.3 — same gate as profitAndLoss above. */
   @Get("balance-sheet")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async balanceSheet(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
     const parsed = balanceSheetQuerySchema.safeParse(query);
@@ -283,7 +284,7 @@ export class ReportsController {
     return this.out(orgId, query, full, docs.balanceSheetDocument);
   }
 
-  /** S-09.4 — drill-down behind a P&L/Balance Sheet figure. `@OrgRoles(["owner"])` is a floor (Owner always passes); `ledger.view` additionally lets a Staff user in a granted Team reach this too, even though P&L/Balance Sheet themselves stay Owner-only with no bypass — drilling into raw journal entries is a narrower, more literal "view the ledger" grant than seeing the full financial statements. */
+  /** S-09.4 — drill-down behind a P&L/Balance Sheet figure. `@OrgRoles(["owner"])` is a floor (Owner always passes); `ledger.view` additionally lets a Staff user in a granted Team reach this too, separately from `reports.view_financial_statements` (US-RPT-36), which opens the statements themselves — drilling into raw journal entries is the narrower, more literal "view the ledger" grant. */
   @Get("account-drilldown")
   @OrgRoles(["owner", "staff"])
   @RequireCapability("ledger.view")
@@ -319,7 +320,7 @@ export class ReportsController {
    * data, not a separate permission surface.
    */
   @Get("profit-and-loss/export.csv")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async exportProfitAndLoss(@Session() session: UserSession, @Query() query: unknown, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const parsed = profitAndLossQuerySchema.safeParse(query);
@@ -338,16 +339,16 @@ export class ReportsController {
     sendCsv(res, `profit-and-loss-${basis === "cash" ? "cash-basis-" : ""}${from}-to-${to}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
-  /** US-RPT-13 — Owner-only, like the other financial statements. */
+  /** US-RPT-13 — same gate as the other financial statements. */
   @Get("trial-balance")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async trialBalance(@Session() session: UserSession, @Query() query: unknown, @Query("asOf") asOf: string, @Query("includeZero") includeZero?: string) {
     const orgId = requireOrgId(session);
     return this.out(orgId, query, this.reportsService.trialBalance(orgId, asOf, includeZero === "true"), docs.trialBalanceDocument);
   }
 
   @Get("trial-balance/export.csv")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async exportTrialBalance(
     @Session() session: UserSession,
     @Query("asOf") asOf: string,
@@ -360,7 +361,7 @@ export class ReportsController {
   }
 
   @Get("balance-sheet/export.csv")
-  @OrgRoles(["owner"])
+  @RequireCapability("reports.view_financial_statements")
   async exportBalanceSheet(@Session() session: UserSession, @Query("asOf") asOf: string, @Res() res: Response) {
     const orgId = requireOrgId(session);
     const report = await this.reportsService.balanceSheet(orgId, asOf);

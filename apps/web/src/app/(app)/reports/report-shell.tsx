@@ -1,7 +1,7 @@
 "use client";
 
 import { AppShellHeader, Spinner } from "@spine/ui";
-import { REPORTS, canOpenReport } from "@spine/shared";
+import { FINANCIAL_STATEMENTS_NO_ACCESS, REPORTS, canOpenReport } from "@spine/shared";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
 import { NoAccess } from "../../../components/no-access";
@@ -19,7 +19,11 @@ export function ReportShell({ slug, description, children }: { slug: string; des
       </div>
     );
   }
-  if (!canOpenReport(report, role, capabilities)) return <NoAccess pageName={report.label} ownerOnly={report.access === "owner"} />;
+  if (!canOpenReport(report, role, capabilities)) {
+    // US-RPT-36 — the statements an accountant's Team can be given say so.
+    const statements = report.access !== "owner" && report.access.includes("reports.view_financial_statements");
+    return <NoAccess pageName={report.label} ownerOnly={report.access === "owner"} message={statements ? FINANCIAL_STATEMENTS_NO_ACCESS : undefined} />;
+  }
   return (
     <PrintRangeProvider>
       <AppShellHeader breadcrumb={[{ label: "Reports", href: "/reports" }, { label: report.label }]} title={report.label} description={description} />

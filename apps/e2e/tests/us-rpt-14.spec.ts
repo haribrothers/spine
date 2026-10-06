@@ -16,6 +16,6 @@ test.describe("US-RPT-14", () => {
     await expect(table.getByRole("columnheader")).toHaveText(["Collected by rate", "Taxable amount", "Tax"]);
     await expect(table).toContainText("Adjustments from credit notes and voided invoices");
     await expect(table.locator("tfoot")).toContainText("Total collected");
-    await expect(page.getByText("Spine produces the numbers for your return; it doesn't file it. Only owners can see this report.")).toBeVisible();
+    await expect(page.getByText(`Spine produces the numbers for your return; it doesn't file it. Owners, and members with "View financial statements", can see this report.`)).toBeVisible();
   });
 });

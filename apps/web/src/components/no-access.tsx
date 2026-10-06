@@ -19,7 +19,7 @@ interface MemberRow {
  * of suggesting a Team change. Field roles are fixed, so the Team clause
  * is left out for them too.
  */
-export function NoAccess({ pageName, ownerOnly = false, fixedRole = false }: { pageName: string; ownerOnly?: boolean; fixedRole?: boolean }) {
+export function NoAccess({ pageName, ownerOnly = false, fixedRole = false, message }: { pageName: string; ownerOnly?: boolean; fixedRole?: boolean; message?: string }) {
   const [owners, setOwners] = useState<string | null>(null);
 
   useEffect(() => {
@@ -34,7 +34,9 @@ export function NoAccess({ pageName, ownerOnly = false, fixedRole = false }: { p
   }, [ownerOnly]);
 
   const ask = owners ? `ask an owner — ${owners} —` : "ask an owner";
-  const description = ownerOnly
+  const description = message
+    ? message
+    : ownerOnly
     ? `${pageName} is only available to owners.`
     : fixedRole
       ? `Your account can't open this page. If you need it for your work, ${ask.replace(/ —$/, "")}.`

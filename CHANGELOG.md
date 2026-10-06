@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-36: let my accountant's Team see the financial statements (Phase 8)
+
+- **"View financial statements"** (Team › Privileges › Reports & Ledger, off by default) now opens Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and the revenue trend to a Team, alongside Cash Flow and the sales and purchase reports — they load and export (CSV, Excel, PDF, Print). Owners always can; Field never can, whatever their Teams ([D-136](docs/prd/12-decisions.md)).
+- **Read-only**: a member with it can't post or reverse journals, edit or lock opening balances, close a period, record tax payments or change Settings. On the Tax Summary they don't see "Record tax payment" or the payments list. Account drill-downs on the statements need "View ledger / journals" as well; without it, figures aren't links.
+- **Without it**, the statements show the no-access page: "You don't have access to financial statements. Ask an owner." (instead of "Owner-only report.").
+- API: `GET /reports/profit-and-loss`, `/balance-sheet`, `/trial-balance`, `/revenue-trend`, `/org/tax/summary` and their exports move from `roles: owner` to `@RequireCapability("reports.view_financial_statements")`.
+
 ### 2026-10-06 — US-RPT-34: print any report (Phase 8)
 
 - **Export › Print** opens the browser's print dialog. The printout leaves out the sidebar, breadcrumbs, filter bars, buttons, search and pagers, and fills the page with the report: its title, a line with the business name and the range or date, and the table.

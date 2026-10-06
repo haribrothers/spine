@@ -37,7 +37,9 @@ import {
   type TrialBalanceReport,
 } from "./types";
 import { formatMoney } from "../../../lib/money";
-import { budgetUsedLabel, PL_COMPARE_LABELS, PL_COMPARE_MODES, changePercent, periodLabel, previousYearEnd, type PlCompareMode } from "@spine/shared";
+import { useCapability } from "../../../lib/capabilities-context";
+import { useMyRole } from "../../../lib/role-context";
+import { budgetUsedLabel, FINANCIAL_STATEMENTS_NO_ACCESS, PL_COMPARE_LABELS, PL_COMPARE_MODES, changePercent, periodLabel, previousYearEnd, type PlCompareMode } from "@spine/shared";
 import { BsCompareTable, PlCompareTable } from "./compare-tables";
 import { ReportExportMenu } from "../../../components/report-export-menu";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
@@ -68,9 +70,18 @@ function endOfToday(): Date {
   return d;
 }
 
-function ownerOnlyMessage(err: unknown): string {
+/** True when this member can open the account drill-down (Owners, or "View ledger / journals"). */
+function useCanDrill(): boolean {
+  const isOwner = useMyRole() === "owner";
+  const canReadLedger = useCapability("ledger.view");
+  return isOwner || canReadLedger;
+}
+
+const NO_REPORT_ACCESS = "You don't have access to this report. Ask an owner.";
+
+function ownerOnlyMessage(err: unknown, refused: string = FINANCIAL_STATEMENTS_NO_ACCESS): string {
   return err instanceof ApiError && err.status === 403
-    ? "Owner-only report."
+    ? refused
     : err instanceof Error
       ? err.message
       : "Could not load this report.";
@@ -90,14 +101,13 @@ function AccountLineRow({
   const clickable = Boolean(line.accountId && onDrilldown);
   return (
     <div className="flex items-center justify-between border-b border-border py-1.5 text-[13px] last:border-b-0">
-      <button
-        type="button"
-        disabled={!clickable}
-        onClick={() => clickable && onDrilldown!(line.accountId!, line.code, line.name)}
-        className={clickable ? "text-left text-on-surface hover:text-primary hover:underline" : "text-left text-on-surface"}
-      >
-        {line.code ? `${line.code} — ${line.name}` : line.name}
-      </button>
+      {clickable ? (
+        <button type="button" onClick={() => onDrilldown!(line.accountId!, line.code, line.name)} className="text-left text-on-surface hover:text-primary hover:underline">
+          {line.code ? `${line.code} — ${line.name}` : line.name}
+        </button>
+      ) : (
+        <span className="text-left text-on-surface">{line.code ? `${line.code} — ${line.name}` : line.name}</span>
+      )}
       <span className={`tabular-nums ${negative ? "text-overdue" : "text-on-surface"}`}>
         {formatMoney(amount, currency)}
       </span>
@@ -106,6 +116,7 @@ function AccountLineRow({
 }
 
 export function ProfitAndLossTab() {
+  const canDrill = useCanDrill();
   const [from, setFrom] = useState<Date>(startOfYear());
   const [to, setTo] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");
@@ -249,7 +260,7 @@ export function ProfitAndLossTab() {
             {report.income.length === 0 ? (
               <p className="py-1.5 text-[13px] text-on-surface-muted">No income posted in this range.</p>
             ) : (
-              report.income.map((line) => <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={(accountId, code, name) => setDrilldown({ accountId, code, name })} />)
+              report.income.map((line) => <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={canDrill ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />)
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total income</span>
@@ -264,7 +275,7 @@ export function ProfitAndLossTab() {
             {report.expenses.length === 0 ? (
               <p className="py-1.5 text-[13px] text-on-surface-muted">No expenses posted in this range.</p>
             ) : (
-              report.expenses.map((line) => <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={(accountId, code, name) => setDrilldown({ accountId, code, name })} />)
+              report.expenses.map((line) => <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={canDrill ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />)
             )}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total expenses</span>
@@ -363,6 +374,7 @@ function CashBasisView({ report, currency }: { report: ProfitAndLossReport; curr
 }
 
 export function BalanceSheetTab() {
+  const canDrill = useCanDrill();
   const [asOf, setAsOf] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");
   const [report, setReport] = useState<BalanceSheetReport | null>(null);
@@ -449,7 +461,7 @@ export function BalanceSheetTab() {
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Assets</p>
             {report.assets.map((line) => (
-              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={(accountId, code, name) => setDrilldown({ accountId, code, name })} />
+              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={canDrill ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total assets</span>
@@ -462,7 +474,7 @@ export function BalanceSheetTab() {
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Liabilities</p>
             {report.liabilities.map((line) => (
-              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={(accountId, code, name) => setDrilldown({ accountId, code, name })} />
+              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={canDrill ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total liabilities</span>
@@ -475,7 +487,7 @@ export function BalanceSheetTab() {
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Equity</p>
             {report.equity.map((line) => (
-              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={line.accountId ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />
+              <AccountLineRow key={line.code} line={line} currency={currency} onDrilldown={line.accountId && canDrill ? (accountId, code, name) => setDrilldown({ accountId, code, name }) : undefined} />
             ))}
             <div className="flex items-center justify-between pt-1.5 text-[13px] font-semibold">
               <span>Total equity</span>
@@ -526,7 +538,7 @@ export function JobProfitabilityTab() {
     apiClient
       .get<JobProfitabilityReport>(`/reports/job-profitability?status=${status}`)
       .then(setReport)
-      .catch((err) => setError(ownerOnlyMessage(err)));
+      .catch((err) => setError(ownerOnlyMessage(err, NO_REPORT_ACCESS)));
   }, [status]);
 
   if (error) {
@@ -694,7 +706,7 @@ export function DrilldownDialog({
     apiClient
       .get<AccountDrilldownReport>(`/reports/account-drilldown?accountId=${accountId}&from=${from}&to=${to}${jobId ? `&jobId=${jobId}` : ""}`)
       .then(setReport)
-      .catch((err) => setError(ownerOnlyMessage(err)));
+      .catch((err) => setError(ownerOnlyMessage(err, NO_REPORT_ACCESS)));
   }, [accountId, from, to, jobId]);
 
   return (
@@ -756,6 +768,7 @@ export function DrilldownDialog({
  * side, with matching totals. Click an account for its journal entries.
  */
 export function TrialBalanceTab() {
+  const canDrill = useCanDrill();
   const [asOf, setAsOf] = useState<Date>(endOfToday());
   const [hideZero, setHideZero] = useState(true);
   const [currency, setCurrency] = useState("USD");
@@ -851,13 +864,17 @@ export function TrialBalanceTab() {
                   <tr key={line.accountId} className="border-b border-border last:border-0">
                     <td className="px-4 py-2 font-mono text-on-surface-muted">{line.code}</td>
                     <td className="px-4 py-2">
-                      <button
-                        type="button"
-                        className="text-left text-primary hover:underline"
-                        onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}
-                      >
-                        {line.name}
-                      </button>
+                      {canDrill ? (
+                        <button
+                          type="button"
+                          className="text-left text-primary hover:underline"
+                          onClick={() => setDrilldown({ accountId: line.accountId, code: line.code, name: line.name })}
+                        >
+                          {line.name}
+                        </button>
+                      ) : (
+                        <span className="text-on-surface">{line.name}</span>
+                      )}
                     </td>
                     <td className="px-4 py-2 text-right tabular-nums">{money(line.debit)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{money(line.credit)}</td>
@@ -895,6 +912,8 @@ export function TrialBalanceTab() {
  * and voids); the per-rate rows come from issued invoices' lines (D-031).
  */
 export function TaxSummaryTab() {
+  // Recording tax payments stays Owner-only (US-TAX-08); reading the summary is "View financial statements" (US-RPT-36).
+  const isOwner = useMyRole() === "owner";
   const [from, setFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
   const [to, setTo] = useState<Date>(endOfToday());
   const [currency, setCurrency] = useState("USD");
@@ -949,7 +968,7 @@ export function TaxSummaryTab() {
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
         {!error && <ReportExportMenu path={`/org/tax/summary?from=${toDateParam(from)}&to=${toDateParam(to)}`} />}
-        {report && !error && (
+        {report && !error && isOwner && (
           <Button size="sm" className="sm:ml-auto" onClick={() => setPaymentOpen(true)}>
             Record tax payment
           </Button>
@@ -1018,8 +1037,8 @@ export function TaxSummaryTab() {
               </tfoot>
             </table>
           </div>
-          <TaxPaymentsList from={report.from} to={report.to} currency={currency} version={paymentsVersion} onChanged={() => setPaymentsVersion((v) => v + 1)} />
-          <p className="text-[12px] text-on-surface-muted">Spine produces the numbers for your return; it doesn&apos;t file it. Only owners can see this report.</p>
+          {isOwner && <TaxPaymentsList from={report.from} to={report.to} currency={currency} version={paymentsVersion} onChanged={() => setPaymentsVersion((v) => v + 1)} />}
+          <p className="text-[12px] text-on-surface-muted">Spine produces the numbers for your return; it doesn&apos;t file it. Owners, and members with &quot;View financial statements&quot;, can see this report.</p>
           <TaxPaymentDialog
             open={paymentOpen}
             onOpenChange={setPaymentOpen}

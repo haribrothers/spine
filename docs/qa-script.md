@@ -3438,6 +3438,18 @@ Regression: invoice, quote, credit note and receipt PDFs are unchanged.
 
 Regression: screens look the same as before; tables still page.
 
+## 148. The accountant's Team (US-RPT-36, Phase 8)
+
+1. As an Owner, Team › Teams › a Team › Privileges › Reports & Ledger: "View financial statements" is off. Turn it on (and leave "View ledger / journals" off) for the Team a Staff member is in.
+2. As that Staff member: Reports lists Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary and the sales and purchase reports. Each opens and exports (CSV, Excel, PDF) and prints.
+3. On Profit & Loss, Balance Sheet and Trial Balance the account names aren't links. Turn on "View ledger / journals" too: they open the drill-down.
+4. Tax Summary: no "Record tax payment" button and no payments list; the note says owners and members with "View financial statements" can see it.
+5. As that Staff member, try Journals › New journal, Settings › Opening balances, closing a period and Settings: refused (no button, or "You don't have permission…").
+6. Turn "View financial statements" off: Profit & Loss shows "You don't have access to financial statements. Ask an owner."
+7. As a Field user: none of these reports appear; their URLs show the no-access page.
+
+Regression: Receivables, Payables and Job profitability still follow their own privileges; Owners see everything as before.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

@@ -1,3 +1,4 @@
+import { RequireCapability } from "../../auth/require-capability.decorator";
 import { Body, Controller, Get, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import type { Response } from "express";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
@@ -74,9 +75,10 @@ export class TaxController {
     return body;
   }
 
-  /** S-08.4 — Owner-only, per CLAUDE.md's "manage ... tax rules" carve-out; not reachable via the Staff `dashboard.view` capability that gates `GET /reports/receivables`. */
+  /** S-08.4 — Owner, or `reports.view_financial_statements` (US-RPT-36): reading the summary isn't managing tax, which stays Owner-only. */
   @Get("summary")
-  @OrgRoles(["owner"])
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_financial_statements")
   async taxSummary(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string, @Query("format") format?: string) {
     const orgId = requireOrgId(session);
     // US-RPT-32 — `?format=csv|xlsx` downloads it as on screen.
@@ -85,9 +87,10 @@ export class TaxController {
     return asFile ? this.exporter.file(orgId, asFile, taxSummaryDocument(report)) : report;
   }
 
-  /** US-RPT-14 — the tax summary as CSV, for the return. Owner-only. */
+  /** US-RPT-14 — the tax summary as CSV, for the return. Same gate as the summary. */
   @Get("summary/export.csv")
-  @OrgRoles(["owner"])
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_financial_statements")
   async exportTaxSummary(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string, @Res() res: Response) {
     const report = await this.reportsService.taxSummary(requireOrgId(session), from, to);
     const rows: (string | number)[][] = [
