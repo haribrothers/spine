@@ -46,3 +46,4 @@ export * from "./report-compare.ts";
 export * from "./analysis-reports.ts";
 export * from "./registers.ts";
 export * from "./recurring-bills.ts";
+export * from "./catalog-import.ts";

@@ -347,7 +347,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-BANK-10 · Finish a reconciliation when it balances
 - [x] US-BANK-11 · Review or undo a reconciliation
 - [x] US-BANK-12 · Let a Team see balances, record money and reconcile
-- [ ] US-CAT-09 · Import catalogue items from a spreadsheet
+- [x] US-CAT-09 · Import catalogue items from a spreadsheet
 - [x] US-PAY-16 · Keep a credit note's extra as customer credit
 - [x] US-PAY-17 · Refund a customer
 - [x] US-PAY-18 · Let a Team refund customers

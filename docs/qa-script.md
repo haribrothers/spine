@@ -3544,6 +3544,18 @@ Regression: recurring invoices still create one invoice per due date.
 
 Regression: Recurring invoices' row menu still says "Invoices it already created are kept." and pauses, resumes and deletes as before.
 
+## 158. Import catalogue items (US-CAT-09, Phase 8)
+
+1. Catalogue › Import: "Import catalogue items". Choose a CSV with headings like "Item Name, Description, Unit, Price, Tax, Income Account": the fields are matched to those columns; change one with its menu, or pick "Not in the file". Preview stays disabled until Name is matched.
+2. Include in the file: a good row, a row with a name already in the catalogue, a row repeated in the file, a tax that doesn't exist ("VAT 20%"), an account code that doesn't exist ("9999"), a row with no name and a price of "twelve". Preview: "<n> ready to import · <m> duplicates to skip · <k> rows with problems", with each row flagged ("Unknown tax VAT 20%", "Unknown account 9999", "Name is missing", "Price twelve isn't an amount", "Duplicate — skipped").
+3. "Import <n> items": the summary reads "Imported <n> items · skipped <m> duplicates · <k> rows failed" and lists the duplicates. "Download failed rows" saves "<file>-failed-rows.csv" with the original columns and a "Problem" column.
+4. Done: the new items are in the catalogue with their price, unit, tax and accounts; the existing item is unchanged.
+5. Import the same file again: everything good is now a duplicate; nothing changes.
+6. Staff without "Create/edit own catalogue items": no Import button; the route answers 403.
+7. Keyboard: the file chooser, menus and buttons work with Tab, Enter and Space. Dark mode is readable.
+
+Regression: adding and editing a single item is unchanged; contacts import is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

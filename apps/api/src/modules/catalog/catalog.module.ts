@@ -14,10 +14,11 @@ import { CatalogService } from "./catalog.service";
  * invoke item creation inline without depending on any quote-specific
  * context — see CatalogService.create's own comment.
  */
+import { CatalogImportService } from "./catalog-import.service";
 @Module({
   imports: [AuditModule, TaxModule],
   controllers: [CatalogController, CatalogBundlesController],
-  providers: [CatalogService, CatalogBundlesService],
+  providers: [CatalogService, CatalogBundlesService, CatalogImportService],
   exports: [CatalogService, CatalogBundlesService],
 })
 export class CatalogModule {}

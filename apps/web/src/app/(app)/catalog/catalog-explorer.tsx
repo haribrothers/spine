@@ -5,6 +5,7 @@ import { Alert, AlertDescription, Button, EmptyState, Input, MultiSelect, StatCa
 import { minorUnitExponent } from "@spine/shared/money";
 import { Package } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { ImportCatalogDialog } from "./import-catalog-dialog";
 import { useCapability } from "../../../lib/capabilities-context";
 import { CatalogItemDrawer } from "./catalog-item-drawer";
 import { CatalogSkeleton } from "./catalog-skeleton";
@@ -44,6 +45,7 @@ function parseDecimalToMinorUnits(input: string, currency: string): bigint | nul
  */
 export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
   const canCreate = useCapability("catalog.edit_own");
+  const [importOpen, setImportOpen] = useState(false);
   const [items, setItems] = useState<CatalogItem[] | null>(null);
   // Full (unfiltered) list, independent of statusFilter below — stats must
   // stay correct even when the table itself is scoped to "archived only",
@@ -198,7 +200,15 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
             />
           </div>
         </div>
-        {canCreate && <Button onClick={openCreate}>Add item</Button>}
+        {canCreate && (
+          <div className="flex items-center gap-2">
+            {/* US-CAT-09 — import from a CSV; same right as adding an item. */}
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Import
+            </Button>
+            <Button onClick={openCreate}>Add item</Button>
+          </div>
+        )}
       </div>
 
       {!filteredItems ? (
@@ -242,6 +252,14 @@ export function CatalogExplorer({ initialDrawerOpen }: { initialDrawerOpen: bool
       )}
 
       <CatalogItemDrawer open={drawerOpen} onOpenChange={setDrawerOpen} item={editingItem} onSaved={handleSaved} />
+      <ImportCatalogDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onImported={() => {
+          loadItems();
+          loadAllItems();
+        }}
+      />
       {toast}
     </div>
   );

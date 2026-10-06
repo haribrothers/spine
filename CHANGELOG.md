@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-CAT-09: import catalogue items from a spreadsheet (Phase 8)
+
+- **Catalogue › "Import"** (`ImportCatalogDialog`): choose a CSV, match its columns to Name, Description, Unit, Price, Tax, Income account and Expense account (guessed from the headings; only Name is required), then **Preview**: the first rows with "Ready", "Duplicate — skipped" or the problem — "Unknown tax <name>", "Unknown account <code>", a missing name or a price that isn't an amount ([D-161](docs/prd/12-decisions.md)).
+- **Import** creates the ready rows; items whose name is already in the catalogue (or repeats in the file) are skipped and listed, never changed. The summary reads "Imported <n> items · skipped <m> duplicates · <k> rows failed", with **"Download failed rows"** (the file's own columns plus "Problem") to fix and import again.
+- Tax is matched to a tax rate or group by name; accounts by code or name. Prices like "$12,500.00" are fine. "HSN/SAC" arrives with Phase 9.
+- Same right as adding an item ("Create/edit own catalogue items"). API: `POST /catalog-items/import` (with `dryRun` for the preview).
+
 ### 2026-10-07 — US-PUR-31: pause, edit or stop a recurring bill (Phase 8)
 
 - **Recurring bills › row menu**: Edit, Pause or Resume, and Delete. A paused schedule creates no bills; **Resume** sets the next date to the next future occurrence (dates passed while paused aren't created) and finishes it instead if its end has passed.

@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createCatalogItemSchema, updateCatalogItemSchema } from "@spine/shared";
+import { createCatalogItemSchema, importCatalogItemsSchema, updateCatalogItemSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { CatalogImportService } from "./catalog-import.service";
 import { CatalogService } from "./catalog.service";
 
 /**
@@ -26,7 +27,10 @@ import { CatalogService } from "./catalog.service";
  */
 @Controller("catalog-items")
 export class CatalogController {
-  constructor(private readonly catalogService: CatalogService) {}
+  constructor(
+    private readonly catalogService: CatalogService,
+    private readonly catalogImport: CatalogImportService,
+  ) {}
 
   @Get()
   async list(
@@ -50,6 +54,17 @@ export class CatalogController {
   async getHistory(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     return this.catalogService.getHistory(orgId, id);
+  }
+
+  /** US-CAT-09 (D-161) — import items from a CSV the browser has read and mapped; `dryRun` previews. Same gate as creating an item. */
+  @Post("import")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("catalog.edit_own")
+  @UseInterceptors(IdempotencyInterceptor)
+  async import(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = importCatalogItemsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the file and try again.");
+    return this.catalogImport.import(requireOrgId(session), session.user.id, parsed.data.rows, parsed.data.dryRun);
   }
 
   @Post()
