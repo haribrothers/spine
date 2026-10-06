@@ -3523,6 +3523,17 @@ Regression: Money in and out (§ US-DASH-15) reads exactly as before on Cash, in
 
 Regression: Recurring invoices are unchanged.
 
+## 156. Recurring bills run automatically (US-PUR-30, Phase 8)
+
+1. Create a monthly recurring bill starting today on today's day of the month, "Record the bill". After 6:00 AM (or within 15 minutes if it's later), Vendor Bills lists a recorded bill from the vendor dated today, numbered "<name> · <date>", with the schedule's lines, due on the set day and the note "Created by Recurring bill <name>". Payables includes it.
+2. Recurring bills shows the next bill date a month on.
+3. Another schedule set to "Save as a draft for me to check": its bill is a draft, and Owners get "Recurring bill ready to review: <name>" in the bell and by email; the link opens the draft.
+4. Restart the API several times on the same day: still one bill per schedule for today.
+5. With "Ends after 1 bill": after its bill, the schedule shows "Finished" and no next date.
+6. (Developer check) Stop the server over a run date and start it later: each missed date gets its bill once, in date order.
+
+Regression: recurring invoices still create one invoice per due date.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

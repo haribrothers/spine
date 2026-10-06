@@ -357,7 +357,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-27 · Void a vendor credit
 - [x] US-PUR-28 · Let a Team manage vendor credits
 - [x] US-PUR-29 · Set up a recurring bill
-- [ ] US-PUR-30 · Create recurring bills automatically
+- [x] US-PUR-30 · Create recurring bills automatically
 - [ ] US-PUR-31 · Pause, edit or stop a recurring bill
 - [x] US-TAX-08 · Record paying tax and using input tax credit
 - [x] US-RPT-16 · Set a cutover date and enter opening account balances

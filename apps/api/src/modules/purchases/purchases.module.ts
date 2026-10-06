@@ -38,10 +38,12 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  */
 import { RecurringBillsController } from "./recurring-bills.controller";
 import { RecurringBillsService } from "./recurring-bills.service";
+import { RecurringBillRunService } from "./recurring-bill-run.service";
+import { RecurringBillRunWorker } from "./recurring-bill-run.worker";
 @Module({
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
   controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
-  providers: [RecurringBillsService, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
+  providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
 })
 export class PurchasesModule {}

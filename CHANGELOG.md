@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-PUR-30: create recurring bills automatically (Phase 8)
+
+- **The 6:00 AM run** (queue `recurring-bill-run`, every 15 minutes from 6:00 AM organisation time) creates one bill for each active schedule whose date has come: the schedule's vendor and lines, dated that day, due the set number of days later, numbered "<schedule name> · <date>" and noted "Created by Recurring bill <name>".
+- **"Record the bill"** records it at once (P11). **"Save as a draft"** leaves a draft and tells Owners "Recurring bill ready to review: <name>" (in the app and by email). A bill that can't be recorded is left as a draft the same way.
+- **Exactly once**: each bill carries its schedule and run date, unique together, so a repeated or racing run never makes a second bill for a date. **Missed dates** (server off) are each created once, in order, when Spine starts again ([D-159](docs/prd/12-decisions.md)).
+- When the end condition is met (end date or number of bills), the schedule shows **"Finished"**.
+
 ### 2026-10-06 — US-PUR-29: set up a recurring bill (Phase 8)
 
 - **Vendor Bills › "Recurring bills"** (`/vendor-bills/recurring`) lists each schedule's name, vendor, how it repeats, next bill date, amount, status (Active, Paused, Finished) and what a run does. "+ New recurring bill" opens `RecurringBillDialog`: Name, Vendor, lines (each with its expense account), Repeat (weekly, monthly, every 3 months, yearly) and the day, Starts on, Ends (never, on a date, after a number of bills), Due (days after the bill date), Paid from (for reference) and When it runs — "Record the bill" or "Save as a draft for me to check" ([D-159](docs/prd/12-decisions.md)).

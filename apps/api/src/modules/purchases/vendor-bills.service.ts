@@ -238,7 +238,8 @@ export class VendorBillsService {
     return this.auditLog.listForEntity(orgId, "vendor_bill", id);
   }
 
-  async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false) {
+  /** `recurring` (US-PUR-30): the recurring bill and run date that created it — unique together, so a run never makes a second bill for one date. */
+  async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false, recurring?: { recurringBillId: string; recurringRunOn: string }) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -264,6 +265,8 @@ export class VendorBillsService {
           notes: input.notes ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          recurringBillId: recurring?.recurringBillId ?? null,
+          recurringRunOn: recurring?.recurringRunOn ?? null,
         })
         .returning();
 
