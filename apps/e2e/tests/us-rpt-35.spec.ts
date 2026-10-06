@@ -31,7 +31,9 @@ test.describe("US-RPT-35", () => {
     await expect(view).toContainText("accrual basis: $1,000.00");
     await expect(view.getByTestId("cash-basis-table").getByRole("row", { name: /4100 · Sales — Services/ })).toContainText("$500.00");
     await expect(view).toContainText(`Payments on invoices from before Jan 1, ${year} aren't counted — that income was in your old books.`);
-    await expect(page.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", /basis=cash/);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "CSV" })).toHaveAttribute("href", /basis=cash/);
+    await page.keyboard.press("Escape");
 
     for (const report of ["balance-sheet", "trial-balance", "tax-summary"]) {
       await page.goto(`/reports/${report}`);

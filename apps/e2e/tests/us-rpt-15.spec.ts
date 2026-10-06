@@ -19,6 +19,8 @@ test.describe("US-RPT-15", () => {
     await page.getByRole("combobox", { name: "Which jobs" }).click();
     await page.getByRole("option", { name: "All" }).click();
     await expect(page.getByRole("table").getByRole("row")).toHaveCount(all.length + 1);
-    await expect(page.getByRole("link", { name: "Export CSV" })).toHaveAttribute("href", /status=all/);
+    await page.getByRole("button", { name: "Export", exact: true }).click();
+    await expect(page.getByRole("menuitem", { name: "CSV" })).toHaveAttribute("href", /status=all/);
+    await page.keyboard.press("Escape");
   });
 });
