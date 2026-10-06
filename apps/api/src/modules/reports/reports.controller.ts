@@ -1,5 +1,5 @@
-import { toDecimalString } from "@spine/shared";
-import { Controller, Get, Query, Res } from "@nestjs/common";
+import { generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
@@ -7,6 +7,7 @@ import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
+import { LedgerReportsService } from "./ledger-reports.service";
 
 /**
  * `@OrgRoles(["owner", "staff"])` at the class level — Field never reaches
@@ -30,7 +31,17 @@ export class ReportsController {
   constructor(
     private readonly reportsService: ReportsService,
     private readonly ledgerIntegrityService: LedgerIntegrityService,
+    private readonly ledgerReports: LedgerReportsService,
   ) {}
+
+  /** US-RPT-24 — every account's opening balance, entries and closing balance; paged by account. Owner, or `ledger.view`. */
+  @Get("general-ledger")
+  @RequireCapability("ledger.view")
+  async generalLedger(@Session() session: UserSession, @Query() query: unknown) {
+    const parsed = generalLedgerQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return this.ledgerReports.generalLedger(requireOrgId(session), parsed.data);
+  }
 
   /** S-09.10 — the real dashboard summary. */
   @Get("dashboard-summary")

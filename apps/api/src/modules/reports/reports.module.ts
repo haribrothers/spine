@@ -2,6 +2,8 @@ import { Module } from "@nestjs/common";
 import { ReportsController } from "./reports.controller";
 import { ReportsService } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
+import { LedgerReportsService } from "./ledger-reports.service";
+import { LedgerSourcesService } from "./ledger-sources.service";
 import { NotificationsModule } from "../notifications/notifications.module";
 
 /**
@@ -13,7 +15,7 @@ import { NotificationsModule } from "../notifications/notifications.module";
 @Module({
   imports: [NotificationsModule],
   controllers: [ReportsController],
-  providers: [ReportsService, LedgerIntegrityService],
-  exports: [ReportsService],
+  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService],
+  exports: [ReportsService, LedgerSourcesService],
 })
 export class ReportsModule {}

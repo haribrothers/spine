@@ -3286,6 +3286,19 @@ Regression: Reports (the tab page) is unchanged and still shown to Staff with an
 
 Regression: Receivables and Payables still open from the sidebar. The tax payment dialog (§119) still opens from Tax Summary.
 
+## 136. The general ledger (US-RPT-24, Phase 8)
+
+1. As an Owner, Reports › Accountant › General ledger: "Every account's opening balance, entries and closing balance." From is the first day of this quarter, To is today, "Hide accounts with no activity" is ticked.
+2. Post a journal dated last month (Dr 6900, Cr 1510) and one dated today. Refresh: 1510 and 6900 show. 6900 reads "Opening balance … Dr" (last month's journal), one row for today's journal with its reason as the description and a running balance, and "Closing balance … Dr"; 1510 reads Cr.
+3. Record a payment and an expense today, Refresh: the bank account, Accounts Receivable and the expense account appear; each row's source reads "Payment RCP-…", "Expense EXP-…". Click one: its document opens.
+4. Accounts: pick only 6900, Refresh: only 6900 shows. Clear it.
+5. Untick "Hide accounts with no activity": every account shows, ten to a page, with "No entries in this period." on the quiet ones; page through with the pager and change "per page".
+6. Set From and To to a month with nothing posted (ticked): "Nothing posted in this period".
+7. As Staff with "View ledger / journals": Reports lists General ledger and it opens. Without it: /reports/general-ledger shows the no-access page. Field: no Reports.
+8. Dark mode: the tables, links and Dr/Cr balances are readable.
+
+Regression: Trial Balance's account drill-down (§29) and the Journals list (§134) are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

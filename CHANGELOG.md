@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-24: see the general ledger (Phase 8)
+
+- **Reports › General ledger** (`/reports/general-ledger`, under "Accountant") shows each account's "Opening balance", one row per entry (date, source and number, contact · description, job, debit, credit, running balance) and "Closing balance" for a period. Balances read Dr or Cr.
+- **Filters.** "From" and "To" (this quarter to today by default), "Accounts" to pick some, and "Hide accounts with no activity" (on by default). Accounts are paged ("1–10 of 14", 10 per page).
+- **A row's source opens its document**: the invoice, bill, payment drawer, expense, journal, bank account or opening balances. The description is the detail after the source (the void reason, the money in/out account, the journal's reason), not the source repeated.
+- **Access.** Owners, and Staff with "View ledger / journals" (`ledger.view`). Anyone else sees the no-access page; the API returns 403.
+- API: `GET /reports/general-ledger?from=&to=&accountIds=&includeInactive=&page=&pageSize=`, read from `journal_lines`. Export arrives with US-RPT-32.
+
 ### 2026-10-06 — US-RPT-23: find every report in one place (Phase 8)
 
 - **Reports** (`/reports`) is now the Reports page ("Every report you can open, derived from the ledger."). It groups every report the person can open into "Business overview", "Sales", "Receivables", "Purchases", "Tax", "Jobs" and "Accountant"; reports they can't open aren't listed. Reports join the list as their stories ship (Cash Flow, the sales and purchase reports, General ledger, Day book and so on later in Phase 8; GSTR-1 in Phase 9).

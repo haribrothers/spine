@@ -40,3 +40,4 @@ export * from "./bank-reconciliations.ts";
 export * from "./opening-balances.ts";
 export * from "./manual-journals.ts";
 export * from "./reports-catalog.ts";
+export * from "./ledger-reports.ts";
