@@ -34,3 +34,4 @@ export * from "./data-export.ts";
 export * from "./search.ts";
 export * from "./banking.ts";
 export * from "./attachments.ts";
+export * from "./tax-payments.ts";

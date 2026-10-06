@@ -23,3 +23,4 @@ export * from "./data-exports";
 export * from "./banking";
 export * from "./attachments";
 export * from "./refunds";
+export * from "./tax-payments";

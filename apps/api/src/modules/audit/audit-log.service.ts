@@ -42,7 +42,9 @@ export type AuditEntityType =
   | "bank_transfer"
   | "bank_transaction"
   // US-PUR-24: vendor credits.
-  | "vendor_credit";
+  | "vendor_credit"
+  // US-TAX-08: tax paid to or refunded by the authority.
+  | "tax_payment";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

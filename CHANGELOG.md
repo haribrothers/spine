@@ -80,6 +80,35 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-TAX-08: record paying tax and using input tax credit (Phase 8)
+
+- **"Record tax payment"** on Reports › Tax Summary (Owner only) opens `TaxPaymentDialog`:
+  - The top row shows "Tax collected" for the period, "Input tax available" and "Net payable".
+  - The fields are "Period" (the report's range, last quarter or last month), "Date", "Input tax used", "Amount paid", "Paid from" (last used preselected), "Reference" and a posting preview.
+  - "Input tax used" defaults to the smaller of the input tax available and the tax collected, and "Amount paid" defaults to the net payable.
+  - Using more than is available shows "You have <amount> of input tax to use. Lower the amount."
+  - "Record a tax refund instead" switches the dialog to a refund: Amount, Paid into, Date and Reference.
+- **Posting.**
+  - A payment posts P26: Dr 2100 (paid + input tax used) / Cr 1200 (input tax used) and Cr the money account (paid).
+  - A refund posts P27: Dr the money account / Cr 1200.
+  - Neither can take more from 1200 than it holds on the date (D-175, new). The Tax Summary leaves these entries out, so its figures don't change.
+- **"Tax payments and refunds"** below the Tax Summary lists those paid in the range or covering it. "Delete" posts the reversal dated today, and the row stays, struck through. In money account registers the entries read "Tax payment", "Tax refund", and "Tax payment deleted" or "Tax refund deleted".
+- **Migration 0088**: `tax_payments`.
+- **API.** `GET/POST /tax-payments`, `GET /tax-payments/input-tax-available`, `DELETE /tax-payments/:id` and `POST /tax-refunds`, all Owner-only. Staff (whatever their Team grants) and Field users get 403.
+- Known gap until US-BANK-07: deletes aren't yet blocked once reconciled, because reconciliation doesn't exist yet.
+
+Tests:
+- `apps/api/src/modules/tax/us-tax-08.http.integration.test.ts` (5):
+  - Too much input tax is refused, with the formatted message.
+  - P26 lines, the Tax Summary unchanged, the list, the register label and the audit row.
+  - P27 within the input tax left, and over it refused.
+  - Delete reverses and returns the input tax; deleting twice is refused; the register shows both rows.
+  - Staff and Field get 403 on every route.
+- `apps/e2e/tests/us-tax-08.spec.ts` (1):
+  - The dialog's figures and defaults, the over-limit message and recording.
+  - The list and delete.
+  - A refund via "Record a tax refund instead".
+
 ### 2026-10-06 — US-PUR-28: let a Team manage vendor credits (Phase 8)
 
 - **"Vendor credits"** in the privilege matrix: "Create/edit own", "Edit others'", "Delete own draft", "Delete others' draft", "Record", "Apply and refund" and "Void vendor credits". All seven are granted to General Staff, and existing Teams were backfilled from their bill rights (migration 0085, US-PUR-24). Without "Record vendor credits" a draft has no "Record" and the API returns 403. Field users get 403 on every vendor credit route.

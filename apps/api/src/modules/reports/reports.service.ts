@@ -1,6 +1,7 @@
 import { billingFigures, budgetFigures, type MoneyInOutReport } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
+import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
 import { billedByJob, costByJob } from "../jobs/job-costing.service";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
@@ -297,6 +298,7 @@ export class ReportsService {
               eq(journalLines.accountId, outputTaxAccount.id),
               gte(journalEntries.date, from),
               lte(journalEntries.date, to),
+              notInArray(journalEntries.sourceType, [...TAX_SETTLEMENT_SOURCES]),
             ),
           )
       : [];
@@ -312,10 +314,13 @@ export class ReportsService {
               eq(journalLines.accountId, inputTaxAccount.id),
               gte(journalEntries.date, from),
               lte(journalEntries.date, to),
+              notInArray(journalEntries.sourceType, [...TAX_SETTLEMENT_SOURCES]),
             ),
           )
       : [];
 
+    // US-TAX-08: paying or getting back tax (P26/P27) settles these
+    // accounts; it isn't tax collected or paid, so those entries are left out.
     // Credits increase Output Tax Payable (tax collected); a reversing
     // entry (void) posts an offsetting debit, so summing credit - debit
     // nets out voided invoices automatically rather than double-counting.

@@ -43,6 +43,8 @@ import {
 import { formatMoney } from "../../../lib/money";
 import { budgetUsedLabel } from "@spine/shared";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
+import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
+import { useEntityToast } from "../payments/entity-toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -786,6 +788,10 @@ function TaxSummaryTab() {
   const [report, setReport] = useState<TaxSummaryReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US-TAX-08
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [paymentsVersion, setPaymentsVersion] = useState(0);
+  const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
     apiClient
@@ -838,6 +844,11 @@ function TaxSummaryTab() {
           >
             Export CSV
           </a>
+        )}
+        {report && !error && (
+          <Button size="sm" className="sm:ml-auto" onClick={() => setPaymentOpen(true)}>
+            Record tax payment
+          </Button>
         )}
       </div>
 
@@ -903,9 +914,24 @@ function TaxSummaryTab() {
               </tfoot>
             </table>
           </div>
+          <TaxPaymentsList from={report.from} to={report.to} currency={currency} version={paymentsVersion} onChanged={() => setPaymentsVersion((v) => v + 1)} />
           <p className="text-[12px] text-on-surface-muted">Spine produces the numbers for your return; it doesn&apos;t file it. Only owners can see this report.</p>
+          <TaxPaymentDialog
+            open={paymentOpen}
+            onOpenChange={setPaymentOpen}
+            reportFrom={report.from}
+            reportTo={report.to}
+            currency={currency}
+            onRecorded={(payment) => {
+              setPaymentsVersion((v) => v + 1);
+              const total = BigInt(payment.amount) + BigInt(payment.inputTaxUsed);
+              if (payment.kind === "payment") showToast("Tax payment recorded", `${formatMoney(total, currency)} of output tax is settled for the period.`);
+              else showToast("Tax refund recorded", `${formatMoney(payment.amount, currency)} came back from the tax authority.`);
+            }}
+          />
         </>
       )}
+      {toast}
     </div>
   );
 }

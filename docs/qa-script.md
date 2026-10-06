@@ -3067,6 +3067,19 @@ Regression: drafts are still deleted, not voided.
 
 Regression: the "Manage Vendor Bills" switches still save, and the group switch turns all seven on and off.
 
+## 119. Tax payments and refunds (US-TAX-08, Phase 8)
+
+1. Set up a GST 18% rate. Issue a $100.00 + GST invoice ($18.00 output tax) and record $59.00 of Money out with GST ($9.00 input tax).
+2. Reports › Tax Summary › "Record tax payment". The top row shows Tax collected $18.00, Input tax available $9.00 and Net payable $9.00. "Input tax used" is 9.00 with "You have $9.00 to use." and "Amount paid" is 9.00. The preview reads "Posts Dr Output Tax Payable $18.00 / Cr Input Tax Receivable $9.00 / Cr <account> $9.00."
+3. Change "Period" to last quarter or last month: the figures reload. Change "Input tax used" to 9.01 and "Record payment": "You have $9.00 of input tax to use. Lower the amount."
+4. Set it back to 9.00, add a reference and "Record payment". The toast reads "Tax payment recorded". "Tax payments and refunds" lists "Tax payment for <period> · <account> · <reference>" with "$9.00 + $9.00 input tax". The Tax Summary cards still show $18.00 collected and $9.00 paid.
+5. Banking › the account's register shows "Tax payment" for −$9.00. The Balance Sheet shows Output Tax Payable and Input Tax Receivable both down by the amounts in step 4.
+6. "Delete" on the payment: it's struck through and marked "Deleted". The register shows "Tax payment deleted", and the input tax is available again.
+7. "Record tax payment" › "Record a tax refund instead": "Amount" (defaults to the input tax available), "Paid into", "Date" and "Reference". "Record refund": the toast reads "Tax refund recorded" and the list shows "Tax refund". A refund above the input tax available is refused with the same message.
+8. As Staff, with any grants, the Tax Summary shows no access and `/tax-payments` and `/tax-refunds` return 403. Field gets 403 too.
+
+Regression: the Tax Summary's cards, per-rate table and CSV export are unchanged by tax payments. Money in/out still refuses 1200 and 2100 as categories ("Use a payment, bill or tax payment for this.").
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, vendorRefunds, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
+import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, vendorRefunds, journalEntries, journalLines, moneyAccounts, payments, taxPayments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -20,6 +20,8 @@ const SOURCE_LABELS: Record<string, string> = {
   customer_refund_delete: "Refund deleted",
   bank_transfer: "Transfer",
   bank_transfer_delete: "Transfer deleted",
+  tax_payment: "Tax payment",
+  tax_refund: "Tax refund",
 };
 
 interface SourceDetails {
@@ -212,6 +214,18 @@ export class AccountRegisterService {
         const base = { number: null, reference: row.description, deleted: Boolean(row.deletedAt) };
         out.set(`bank_transaction:${row.id}`, { ...base, label: `${kind} — ${row.category}` });
         out.set(`bank_transaction_delete:${row.id}`, { ...base, label: `${kind} deleted — ${row.category}` });
+      }
+    }
+    const taxIds = ids(["tax_payment", "tax_refund", "tax_payment_delete"]);
+    if (taxIds.length) {
+      const rows = await this.db
+        .select({ id: taxPayments.id, kind: taxPayments.kind, reference: taxPayments.reference, deletedAt: taxPayments.deletedAt })
+        .from(taxPayments)
+        .where(and(eq(taxPayments.orgId, orgId), inArray(taxPayments.id, taxIds)));
+      for (const row of rows) {
+        const base = { number: null, reference: row.reference, deleted: Boolean(row.deletedAt) };
+        out.set(`tax_${row.kind}:${row.id}`, base);
+        out.set(`tax_payment_delete:${row.id}`, { ...base, label: row.kind === "payment" ? "Tax payment deleted" : "Tax refund deleted" });
       }
     }
     return out;
