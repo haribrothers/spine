@@ -17,6 +17,7 @@ import { Transform, type Readable } from "node:stream";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
+  attachments,
   dataExports,
   contactPersons,
   contacts,
@@ -35,6 +36,8 @@ import {
   user,
 } from "../../db/schema";
 import { getMemberRole } from "../../auth/capability.util";
+import { loadAttachmentRecord, recordAccess } from "../attachments/attachment-records";
+import type { AttachmentEntityType } from "@spine/shared";
 import { MAX_FILE_LINK_SECONDS, signFileLink } from "./file-link";
 import { UNSUPPORTED_TYPE_MESSAGE, sniffMimeType, stripGpsLocation } from "./upload-safety";
 import { registerEmailLogoReader } from "../email/email-brand";
@@ -55,7 +58,9 @@ export type IntegrityProblem = "damaged" | "missing";
 /** A record a file belongs to (US-OPS-20). For `job_photo`, `id` is the job's id. */
 export type FileOwner =
   | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo"; id: string }
-  | { type: "expense_receipt"; id: string; submittedBy: string | null };
+  | { type: "expense_receipt"; id: string; submittedBy: string | null }
+  // US-OPS-34 (D-156): a file kept with a record follows that record's read rule; `id` is the record's.
+  | { type: "attachment"; id: string; entityType: AttachmentEntityType };
 
 /** US-OPS-28 — the 409 every damaged or missing file returns. */
 const INLINE_TYPES = new Set<string>(["image/jpeg", "image/png", "image/webp", "image/heic", "application/pdf"]);
@@ -286,10 +291,11 @@ export class FilesService {
       if (file.uploadedByUserId === userId) return;
       throw new NotFoundException("File not found");
     }
-    if (role === "staff") return;
-    if (role === "field") {
-      for (const owner of owners) {
-        if (await this.fieldMayRead(orgId, userId, owner)) return;
+    for (const owner of owners) {
+      if (owner.type === "attachment") {
+        if (await this.attachmentReadable(orgId, userId, owner.entityType, owner.id)) return;
+      } else if (role === "staff" || (role === "field" && (await this.fieldMayRead(orgId, userId, owner)))) {
+        return;
       }
     }
     throw new NotFoundException("File not found");
@@ -298,7 +304,7 @@ export class FilesService {
   /** Every record that points at this file. */
   async owningRecords(orgId: string, fileId: string): Promise<FileOwner[]> {
     const ids = [fileId];
-    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows] = await Promise.all([
+    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows, attachmentRows] = await Promise.all([
       this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
       this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
       this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
@@ -309,6 +315,10 @@ export class FilesService {
       this.db.select({ id: contactPersons.id }).from(contactPersons).innerJoin(contacts, eq(contactPersons.contactId, contacts.id)).where(and(eq(contacts.orgId, orgId), inArray(contactPersons.logoFileId, ids))),
       this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile"))),
       this.db.select({ id: user.id }).from(user).innerJoin(member, eq(member.userId, user.id)).where(and(eq(member.organizationId, orgId), like(user.image, `%/files/${fileId}%`))),
+      this.db
+        .select({ entityType: attachments.entityType, entityId: attachments.entityId })
+        .from(attachments)
+        .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt))),
     ]);
     const owners: FileOwner[] = [
       ...invoiceRows.map((r) => ({ type: "invoice_pdf" as const, id: r.id })),
@@ -320,10 +330,18 @@ export class FilesService {
       ...contactRows.map((r) => ({ type: "contact_logo" as const, id: r.id })),
       ...personRows.map((r) => ({ type: "contact_person_photo" as const, id: r.id })),
       ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
+      ...attachmentRows.map((r) => ({ type: "attachment" as const, id: r.entityId, entityType: r.entityType })),
     ];
     const logoUrl = (profile[0]?.value as { logoUrl?: string } | undefined)?.logoUrl;
     if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
     return owners;
+  }
+
+  /** US-OPS-34 — readers of the record read its attachments (Field: only their own expenses'). */
+  private async attachmentReadable(orgId: string, userId: string, entityType: AttachmentEntityType, entityId: string): Promise<boolean> {
+    const record = await loadAttachmentRecord(this.db, orgId, entityType, entityId);
+    if (!record) return false;
+    return (await recordAccess(this.db, { orgId, userId }, entityType, record)).canRead;
   }
 
   private async fieldMayRead(orgId: string, userId: string, owner: FileOwner): Promise<boolean> {
@@ -484,6 +502,11 @@ export class FilesService {
     for (const r of photoRows) set(r.id, `Photo on job: ${r.name}`);
     for (const r of contactRows) set(r.id, `Logo of ${r.name}`);
     for (const r of personRows) set(r.id, `Photo of ${r.name}`);
+    const attached = await this.db
+      .select({ id: attachments.fileId, entityType: attachments.entityType })
+      .from(attachments)
+      .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt)));
+    for (const r of attached) set(r.id, `Attachment on a ${r.entityType.replace(/_/g, " ")}: ${labels.get(r.id)?.replace(/^File /, "") ?? ""}`.trim());
     const [profile] = await this.db
       .select({ value: settings.value })
       .from(settings)

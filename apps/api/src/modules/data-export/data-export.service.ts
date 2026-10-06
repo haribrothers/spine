@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { DATA_EXPORT_TTL_DAYS, formatBytes, type CreateDataExport, type DataExportFormat, type DataExportSummary } from "@spine/shared";
-import { and, desc, eq, inArray, lt, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { getMemberRole } from "../../auth/capability.util";
 import type { PgColumn, PgTable } from "drizzle-orm/pg-core";
 import { Zip, ZipDeflate, ZipPassThrough } from "fflate";
@@ -9,7 +9,7 @@ import { toCsv } from "../../common/csv";
 import { orgClock } from "../../common/org-clock";
 import type { Database } from "../../db/client";
 import { DATABASE } from "../../db/db.module";
-import { dataExports, files, member, settings, user } from "../../db/schema";
+import { attachments, dataExports, files, member, settings, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { appUrl, renderEmail } from "../email/email-layout";
@@ -36,10 +36,10 @@ function toJson(rows: Row[]): string {
   return JSON.stringify(rows, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 2);
 }
 
-/** `files/<id>-<name>`, safe for every unzip tool. */
-function zipFileName(id: string, original: string): string {
+/** `files/<id>-<name>` — or, for a file attached to a record, `attachments/<entity>/<record id>/<id>-<name>` (US-OPS-34) — safe for every unzip tool. */
+function zipFileName(id: string, original: string, attachedTo?: { entityType: string; entityId: string }): string {
   const safe = original.replace(/[^\w.\- ]+/g, "_").replace(/^\.+/, "").slice(0, 120) || "file";
-  return `files/${id}-${safe}`;
+  return attachedTo ? `attachments/${attachedTo.entityType}/${attachedTo.entityId}/${id}-${safe}` : `files/${id}-${safe}`;
 }
 
 /**
@@ -173,8 +173,16 @@ export class DataExportService {
           .select()
           .from(files)
           .where(and(eq(files.orgId, orgId), sql`${files.id} not in (select ${dataExports.fileId} from ${dataExports} where ${dataExports.fileId} is not null)`));
+        const attached = new Map(
+          (
+            await this.db
+              .select({ fileId: attachments.fileId, entityType: attachments.entityType, entityId: attachments.entityId })
+              .from(attachments)
+              .where(and(eq(attachments.orgId, orgId), isNull(attachments.removedAt)))
+          ).map((a) => [a.fileId, a]),
+        );
         for (const file of stored) {
-          const entry = new ZipPassThrough(zipFileName(file.id, file.originalFilename));
+          const entry = new ZipPassThrough(zipFileName(file.id, file.originalFilename, attached.get(file.id)));
           zip.add(entry);
           try {
             for await (const chunk of await this.files.openStored(file)) entry.push(chunk as Uint8Array);
@@ -183,7 +191,8 @@ export class DataExportService {
           }
           entry.push(new Uint8Array(0), true);
         }
-        readme.push(`files/ — Receipts, photos, signatures, logos and issued PDFs in their original format, named <file id>-<original name>; files.${formats[0]} lists them. ${stored.length} files.`);
+        readme.push(`files/ — Receipts, photos, signatures, logos and issued PDFs in their original format, named <file id>-<original name>; files.${formats[0]} lists them. ${stored.length - attached.size} files.`);
+        readme.push(`attachments/ — Files attached to records, in attachments/<record type>/<record id>/; attachments.${formats[0]} lists them. ${attached.size} files.`);
       }
 
       addText(

@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-OPS-34: open attachments only when I can open the record (Phase 8)
+
+- **`GET /files/:id`** finds a file's owning record through `attachments` too (D-117) and applies that record's read rule, the same rule `GET /attachments` uses: Owners every record; Staff every record except a bank entry without `banking.view`; Field only their own expenses, never money documents. Anyone else, another organisation included, gets 404. Tested for every record type that holds files today.
+- **Preview and download**: images and PDFs open in the browser; `?download=1` saves them (presigned `s3` links too).
+- **Data export with files**: attached files go under `attachments/<record type>/<record id>/<file id>-<name>`; the rest stay in `files/`. The export also gains `attachments`, `money_accounts`, `bank_transfers` and `bank_transactions`.
+- The storage-integrity warning names attached files ("Attachment on a vendor bill: “…”").
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-34.http.integration.test.ts` (5): Owners read all nine record types inline and as a download; Staff all but a bank entry, which needs `banking.view`; Field only their own expense; another organisation 404 on all; the export's attachments/ paths and new tables.
+- `apps/e2e/tests/us-ops-34.spec.ts` (1): an Owner previews an invoice's file; a Field user sees and opens their expense's file but gets 404 for the invoice's.
+
 ### 2026-10-06 — US-OPS-33: attach files to bills, invoices and other records (Phase 8)
 
 - **Attachments** (D-156): an "Attachments" section with "Add files" and a drop zone on quotes, invoices, credit notes, payments, vendor bills, vendor payments, expenses and contacts (Attachments tab); a money in/out entry's register menu › "Attachments" opens it in a drawer. Each file shows its name, size, who added it and when, a thumbnail for images and a badge for PDFs, and opens in the browser or downloads. Refunds, vendor credits, journals and opening documents get the section when those stories ship.

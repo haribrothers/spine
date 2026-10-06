@@ -2959,6 +2959,16 @@ Regression: the rest of the privilege matrix still saves one switch at a time an
 
 Regression: the expense receipt (separate from attachments) still uploads and opens; contact logos and avatars still upload. Error messages in alerts everywhere now use full-contrast text.
 
+## 109. Who can open attachments (US-OPS-34, Phase 8)
+
+1. As an Owner, attach a PDF to an invoice and a photo to a vendor bill. Click each name: the PDF and the photo open in the browser. "Download" saves them with their original names.
+2. As Staff (any Team), open the same invoice and bill: their files open. Attach a file to a money in/out entry in Banking: Staff without "View bank balances and registers" can't open it (copying its link gives "File not found"); with it, they can.
+3. As a Field user, submit an expense and attach a PDF to it: it's listed in the expense drawer and opens. Paste the invoice attachment's link: "File not found" (404). `GET /attachments?entityType=invoice&entityId=<id>` returns 404 too.
+4. Log in to another organisation and paste any of these links: 404.
+5. Settings › Data export with "Files" ticked: the ZIP has `attachments/<record type>/<record id>/<file id>-<name>` for every attached file, `attachments.csv` listing them, and the new `money_accounts`, `bank_transfers` and `bank_transactions` tables. README.txt counts files/ and attachments/ separately.
+
+Regression: receipts, job photos, logos, avatars and issued PDFs still open for the same people as before (US-OPS-20). The storage-integrity warning names an attached file as "Attachment on a vendor bill: “…”".
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
