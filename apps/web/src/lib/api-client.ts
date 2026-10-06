@@ -175,7 +175,7 @@ export const apiClient = {
   get: <T>(path: string) => request<T>("GET", path),
   put: <T>(path: string, body?: unknown) => request<T>("PUT", path, body),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, body),
-  delete: <T>(path: string) => request<T>("DELETE", path),
+  delete: <T>(path: string, body?: unknown) => request<T>("DELETE", path, body),
   upload: <T>(path: string, file: File) => upload<T>(path, file),
   download: (path: string, body?: unknown) => download(path, body),
 };

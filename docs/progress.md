@@ -389,7 +389,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-DASH-26 · Switch dashboard profit between accrual and cash
 - [x] US-OPS-33 · Attach files to bills, invoices and other records
 - [x] US-OPS-34 · Open attachments only when I can open the record
-- [ ] US-OPS-35 · Remove an attachment added by mistake
+- [x] US-OPS-35 · Remove an attachment added by mistake
 
 ## Phase 9 · Tax, documents and setup
 

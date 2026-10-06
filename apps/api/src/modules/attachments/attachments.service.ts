@@ -83,6 +83,48 @@ export class AttachmentsService {
     });
   }
 
+  /**
+   * US-OPS-35 — removes a file added by mistake. On a record that can still
+   * be edited, anyone who can edit it may; on an issued, sent or recorded
+   * one only an Owner, with a reason. Either way the record's history says
+   * so, and the stored file is deleted once nothing else uses it.
+   */
+  async remove(orgId: string, userId: string, id: string, reason: string | null): Promise<{ id: string }> {
+    const [row] = await this.db
+      .select({ attachment: attachments, file: files })
+      .from(attachments)
+      .leftJoin(files, eq(files.id, attachments.fileId))
+      .where(and(eq(attachments.orgId, orgId), eq(attachments.id, id), isNull(attachments.removedAt)));
+    if (!row) throw new NotFoundException("Attachment not found");
+    const { attachment, file } = row;
+    const { record, access } = await this.readable(orgId, userId, attachment.entityType, attachment.entityId);
+    if (record.locked) {
+      if (access.role !== "owner") throw new ForbiddenException("Only an owner can remove files from an issued or recorded record.");
+      if (!reason) throw new BadRequestException("Give a reason for removing this file. The record's history keeps it.");
+    } else if (!access.canEdit) {
+      throw new ForbiddenException("You don't have permission to remove files from this record.");
+    }
+
+    await this.db.transaction(async (tx) => {
+      await tx.update(attachments).set({ removedAt: new Date(), removedByUserId: userId, removalReason: reason }).where(eq(attachments.id, id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId: userId,
+        action: "attachment_removed",
+        entityType: attachment.entityType as AuditEntityType,
+        entityId: attachment.entityId,
+        contactId: record.contactId,
+        changes: [
+          { field: "attachment", from: file?.originalFilename ?? null, to: null },
+          ...(reason ? [{ field: "reason", from: null, to: reason }] : []),
+        ],
+      });
+    });
+    // Nothing points at the file any more (receipt, photo, another record): delete it from storage.
+    if (file && !(await this.files.owningRecords(orgId, file.id)).length) await this.files.deleteStored(orgId, file.id);
+    return { id };
+  }
+
   /** The record, if this person may read it; anyone else gets a 404, as if it didn't exist. */
   private async readable(orgId: string, userId: string, entityType: AttachmentEntityType, entityId: string) {
     const record: AttachmentRecord | null = await loadAttachmentRecord(this.db, orgId, entityType, entityId);

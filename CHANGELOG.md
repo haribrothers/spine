@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-OPS-35: remove an attachment added by mistake (Phase 8)
+
+- **"Remove"** on each file. On a record that can still be edited (a draft, a submitted expense, a contact), anyone who can edit it removes the file after a plain confirm.
+- **Locked records** (sent quotes, issued invoices and credit notes, recorded bills and payments, reviewed expenses, bank entries): Staff and Field get no "Remove". An Owner removes with a required reason: "This bill is recorded, so only an owner can remove its files, with a reason. The bill's history records it.". The API refuses Staff with 403 and an Owner without a reason with 400.
+- **History** reads "<name> removed attachment <file> — <reason>". The attachment row keeps who removed it, when and why.
+- **Storage**: the stored file is deleted once nothing else uses it; one that is also a receipt or another record's file stays.
+- **New bill**: a file dropped but not yet saved is simply taken off the list.
+- **Migration 0082**: `attachments.file_id` becomes nullable, set null when its file is deleted.
+- **API.** `DELETE /attachments/:id { reason? }`; the web client's `apiClient.delete` can now send a body.
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-35.http.integration.test.ts` (4): a draft's file removed without a reason and deleted from storage, audited; a recorded bill refused for Staff, and for an Owner without a reason, then removed with one and the reason kept; a file still used as a receipt stays; Field on their submitted expense but not an approved one.
+- `packages/shared/src/us-ops-35.test.ts` (1): the history sentence with the reason.
+- `apps/e2e/tests/us-ops-35.spec.ts` (1): the plain confirm on a draft; no Remove for Staff on a recorded bill; the Owner's reason dialog and the history line.
+
 ### 2026-10-06 — US-OPS-34: open attachments only when I can open the record (Phase 8)
 
 - **`GET /files/:id`** finds a file's owning record through `attachments` too (D-117) and applies that record's read rule, the same rule `GET /attachments` uses: Owners every record; Staff every record except a bank entry without `banking.view`; Field only their own expenses, never money documents. Anyone else, another organisation included, gets 404. Tested for every record type that holds files today.

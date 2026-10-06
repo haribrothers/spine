@@ -2,7 +2,24 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { FileText, Paperclip, Plus } from "lucide-react";
-import { Alert, AlertDescription, Button, Card, Spinner, cn } from "@spine/ui";
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Card,
+  FormField,
+  Input,
+  Spinner,
+  cn,
+} from "@spine/ui";
 import {
   FILE_TOO_LARGE,
   MAX_ATTACHMENT_BYTES,
@@ -48,6 +65,18 @@ function FileBadge({ contentType, fileId, name }: { contentType: string; fileId?
   );
 }
 
+/** How a locked record is named in the remove dialog: "This bill is recorded, …". */
+const LOCKED_AS: Partial<Record<AttachmentEntityType, [noun: string, state: string]>> = {
+  quote: ["quote", "sent"],
+  invoice: ["invoice", "issued"],
+  credit_note: ["credit note", "issued"],
+  payment: ["payment", "recorded"],
+  vendor_bill: ["bill", "recorded"],
+  vendor_payment: ["vendor payment", "recorded"],
+  expense: ["expense", "reviewed"],
+  bank_transaction: ["entry", "recorded"],
+};
+
 const when = (iso: string) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 
 /**
@@ -73,6 +102,9 @@ export function AttachmentsSection({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const isPending = entityId === null;
 
@@ -126,13 +158,43 @@ export function AttachmentsSection({
     }
   }
 
+  const withReason = !isPending && Boolean(data?.canRemoveWithReason);
+  const canRemove = isPending || Boolean(data?.canRemove) || withReason;
+  const [noun, state] = LOCKED_AS[entityType] ?? ["record", "locked"];
+
+  function startRemove(id: string, name: string) {
+    setError(null);
+    if (isPending) {
+      onPendingChange?.((pending ?? []).filter((p) => p.fileId !== id));
+      return;
+    }
+    setReason("");
+    setRemoving({ id, name });
+  }
+
+  async function confirmRemove() {
+    if (!removing) return;
+    setBusy(true);
+    try {
+      await apiClient.delete(`/attachments/${removing.id}`, withReason ? { reason: reason.trim() } : {});
+      setRemoving(null);
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't remove this file. Try again.");
+      setRemoving(null);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   // Readers who can't add files see the section only when there's something in it.
   if (!isPending && data && !data.canAdd && data.attachments.length === 0) return null;
 
   const rows = isPending
-    ? (pending ?? []).map((p) => ({ key: p.fileId, fileId: p.fileId, name: p.name, contentType: p.contentType, meta: `${formatFileSize(p.size)} · added when you save` }))
+    ? (pending ?? []).map((p) => ({ key: p.fileId, removeId: p.fileId, fileId: p.fileId, name: p.name, contentType: p.contentType, meta: `${formatFileSize(p.size)} · added when you save` }))
     : (data?.attachments ?? []).map((a) => ({
         key: a.id,
+        removeId: a.id,
         fileId: a.file.id,
         name: a.file.name,
         contentType: a.file.contentType,
@@ -179,6 +241,16 @@ export function AttachmentsSection({
                   Download
                 </a>
               )}
+              {canRemove && (
+                <button
+                  type="button"
+                  onClick={() => startRemove(row.removeId, row.name)}
+                  className="inline-flex min-h-11 items-center px-2 text-[13px] font-medium text-overdue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-h-0"
+                  aria-label={`Remove ${row.name}`}
+                >
+                  Remove
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -210,6 +282,36 @@ export function AttachmentsSection({
           <input ref={inputRef} type="file" multiple accept={PHOTO_OR_PDF_ACCEPT} className="sr-only" aria-label="Choose files to attach" onChange={(e) => e.target.files && void addFiles(e.target.files)} />
         </label>
       )}
+      <AlertDialog open={removing !== null} onOpenChange={(open) => !open && setRemoving(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove {removing?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {withReason
+                ? `This ${noun} is ${state}, so only an owner can remove its files, with a reason. The ${noun}'s history records it.`
+                : "The file is deleted from Spine. The record's history notes that it was removed."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {withReason && (
+            <FormField label="Reason" required>
+              {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500} autoFocus />}
+            </FormField>
+          )}
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="danger"
+              disabled={busy || (withReason && !reason.trim())}
+              onClick={(e) => {
+                e.preventDefault();
+                void confirmRemove();
+              }}
+            >
+              Remove attachment
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

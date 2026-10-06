@@ -506,7 +506,7 @@ export class FilesService {
       .select({ id: attachments.fileId, entityType: attachments.entityType })
       .from(attachments)
       .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt)));
-    for (const r of attached) set(r.id, `Attachment on a ${r.entityType.replace(/_/g, " ")}: ${labels.get(r.id)?.replace(/^File /, "") ?? ""}`.trim());
+    for (const r of attached) if (r.id) set(r.id, `Attachment on a ${r.entityType.replace(/_/g, " ")}: ${labels.get(r.id)?.replace(/^File /, "") ?? ""}`.trim());
     const [profile] = await this.db
       .select({ value: settings.value })
       .from(settings)

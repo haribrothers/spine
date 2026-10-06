@@ -33,9 +33,8 @@ export const attachments = pgTable(
       .references(() => organization.id, { onDelete: "cascade" }),
     entityType: attachmentEntityEnum("entity_type").notNull(),
     entityId: uuid("entity_id").notNull(),
-    fileId: uuid("file_id")
-      .notNull()
-      .references(() => files.id),
+    /** Null once the attachment was removed and its stored file deleted (US-OPS-35); the audit log keeps the name. */
+    fileId: uuid("file_id").references(() => files.id, { onDelete: "set null" }),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     removedAt: timestamp("removed_at", { withTimezone: true }),

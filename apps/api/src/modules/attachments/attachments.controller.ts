@@ -1,5 +1,5 @@
-import { BadRequestException, Body, Controller, Get, Post, Query, UseInterceptors } from "@nestjs/common";
-import { attachmentQuerySchema, createAttachmentSchema } from "@spine/shared";
+import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Query, UseInterceptors } from "@nestjs/common";
+import { attachmentQuerySchema, createAttachmentSchema, removeAttachmentSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -30,5 +30,13 @@ export class AttachmentsController {
   @UseInterceptors(IdempotencyInterceptor)
   async add(@Session() session: UserSession, @Body() body: unknown) {
     return this.attachments.add(requireOrgId(session), session.user.id, parse(createAttachmentSchema, body));
+  }
+
+  /** US-OPS-35 — `{ reason? }`; a reason is required on a locked record (Owners only). */
+  @Delete(":id")
+  @UseInterceptors(IdempotencyInterceptor)
+  async remove(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    const { reason } = parse(removeAttachmentSchema, body ?? {});
+    return this.attachments.remove(requireOrgId(session), session.user.id, id, reason);
   }
 }

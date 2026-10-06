@@ -2969,6 +2969,17 @@ Regression: the expense receipt (separate from attachments) still uploads and op
 
 Regression: receipts, job photos, logos, avatars and issued PDFs still open for the same people as before (US-OPS-20). The storage-integrity warning names an attached file as "Attachment on a vendor bill: “…”".
 
+## 110. Remove an attachment (US-OPS-35, Phase 8)
+
+1. On a draft bill, a file's "Remove" › the dialog reads "Remove <name>?" and "The file is deleted from Spine. …" with no reason field. "Remove attachment": the file leaves the list, its link gives 404, and History reads "<you> removed attachment <name>".
+2. On a recorded bill, as Staff (even with bill rights): no "Remove". As an Owner: "Remove" › "This bill is recorded, so only an owner can remove its files, with a reason. The bill's history records it." with "Reason". "Remove attachment" stays disabled until a reason is typed. After removing, History reads "<you> removed attachment <name> — <reason>".
+3. The same wording names the record on an issued invoice ("This invoice is issued, …"), a sent quote, a payment, a vendor payment, a reviewed expense and a bank entry.
+4. On the "New bill" form, "Remove" on a file you just dropped takes it off the list straight away (it isn't attached).
+5. As a Field user, remove a file from your submitted expense; once it's approved, "Remove" is gone.
+6. A file that is also an expense's receipt stays readable as the receipt after being removed as an attachment.
+
+Regression: adding files still works after a removal, and the 10-file limit counts only files still attached.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

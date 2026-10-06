@@ -146,6 +146,13 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
     return `${actor} attached ${name ? String(name) : "a file"}${own ? "" : ` to ${subject}`}`;
   }
 
+  // US-OPS-35: "Alex Morgan removed attachment delivery-docket.jpg — Wrong docket".
+  if (entry.action === "attachment_removed") {
+    const name = changes.find((c) => c.field === "attachment")?.from;
+    const reason = changes.find((c) => c.field === "reason")?.to;
+    return `${actor} removed attachment ${name ? String(name) : "a file"}${reason ? ` — ${String(reason)}` : ""}${own ? "" : ` from ${subject}`}`;
+  }
+
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".
   if (entry.action === "duplicated") {
     const from = changes.find((c) => c.field === "duplicatedFrom")?.to;
