@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-31: see credit notes, vendor credits and refunds in a period (Phase 8)
+
+- **Reports › Receivables › Credit notes and refunds** (`/reports/credit-notes-and-refunds`): cards for Credited, Applied, Refunded and Still held, then each credit note's number, date, customer, invoice, amount, how much was applied, refunded or is still held. What issuing took off the credit note's own invoice counts as applied.
+- **Vendor credits** (`/reports/vendor-credits`, the second tab): the same for vendor credits, with the vendor's own reference and the bill it was raised against; void credits aren't listed.
+- Numbers, invoices and bills open their documents.
+- **Access.** Credit notes need "View receivables"; vendor credits need "View payables".
+- API: `GET /reports/customer-credits`, `GET /reports/vendor-credits` (`?from=&to=`).
+
 ### 2026-10-06 — US-RPT-30: see payments received and made in a period (Phase 8)
 
 - **Reports › Receivables › Payments received** (`/reports/payments-received`): cards for Payments, Received and Held as credit, then each payment's number, date, customer, method, money account, amount and what it was allocated to (invoice numbers, "(opening)" for opening invoices, "Held as credit", amounts refunded). Newest first; search and Columns.

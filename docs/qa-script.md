@@ -3377,6 +3377,18 @@ Regression: Payables and the vendor bill list are unchanged.
 
 Regression: the Payments and Vendor Payments lists are unchanged.
 
+## 143. Credit notes, vendor credits and refunds (US-RPT-31, Phase 8)
+
+1. This quarter: a credit note on an unpaid invoice, a credit note on a paid invoice with part of it refunded, and a vendor credit raised against a bill, partly applied to it and partly refunded.
+2. Reports › Receivables › Credit notes and refunds: cards Credited (with the count), Applied, Refunded, Still held. The unpaid invoice's credit note shows its whole amount as Applied; the paid one shows Refunded and Still held. Zero amounts show "—".
+3. Click a credit note number or its invoice: the invoice opens (credit notes show on their invoice).
+4. Tab "Vendor credits": the vendor credit shows "VCR-… · <vendor reference>", the bill, Amount, Applied, Refunded and Still held. Void a different vendor credit: it isn't listed.
+5. A range with none: "No credit notes in this period" / "No vendor credits in this period".
+6. As Staff with only "View receivables": only Credit notes and refunds, no Vendor credits tab; the reverse with only "View payables". Field: no Reports.
+7. Dark mode: cards and table are readable.
+
+Regression: the Credit Notes and Vendor Credits lists are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -1,4 +1,4 @@
-import { analysisQuerySchema, balanceSheetQuerySchema, paymentRegisterQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { analysisQuerySchema, balanceSheetQuerySchema, creditRegisterQuerySchema, paymentRegisterQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -60,6 +60,28 @@ export class ReportsController {
   async paymentsMade(@Session() session: UserSession, @Query() query: unknown) {
     const q = this.registerQuery(query);
     return this.registers.paymentsMade(requireOrgId(session), q.from, q.to, q.moneyAccountId);
+  }
+
+  private creditQuery(query: unknown) {
+    const parsed = creditRegisterQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return parsed.data;
+  }
+
+  /** US-RPT-31 — credit notes in a range: applied, refunded, still held. Owner, or `reports.view_receivables`. */
+  @Get("customer-credits")
+  @RequireCapability("reports.view_receivables")
+  async customerCredits(@Session() session: UserSession, @Query() query: unknown) {
+    const q = this.creditQuery(query);
+    return this.registers.customerCredits(requireOrgId(session), q.from, q.to);
+  }
+
+  /** US-RPT-31 — vendor credits in a range: applied, refunded, still held. Owner, or `reports.view_payables`. */
+  @Get("vendor-credits")
+  @RequireCapability("reports.view_payables")
+  async vendorCreditsRegister(@Session() session: UserSession, @Query() query: unknown) {
+    const q = this.creditQuery(query);
+    return this.registers.vendorCredits(requireOrgId(session), q.from, q.to);
   }
 
   private analysisRange(query: unknown) {

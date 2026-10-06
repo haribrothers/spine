@@ -1,9 +1,24 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
-import type { PaymentRegisterReport, PaymentRegisterRow, RegisterAllocation } from "@spine/shared";
+import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import type { CreditRegisterReport, CreditRegisterRow, PaymentRegisterReport, PaymentRegisterRow, RegisterAllocation } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { contacts, invoices, moneyAccounts, paymentAllocations, payments, vendorBills, vendorPaymentAllocations, vendorPayments } from "../../db/schema";
+import {
+  contacts,
+  creditNoteAllocations,
+  creditNotes,
+  customerRefunds,
+  invoices,
+  moneyAccounts,
+  paymentAllocations,
+  payments,
+  vendorBills,
+  vendorCreditAllocations,
+  vendorCredits,
+  vendorPaymentAllocations,
+  vendorPayments,
+  vendorRefunds,
+} from "../../db/schema";
 
 const isoDay = (d: Date | string) => (d instanceof Date ? d.toISOString().slice(0, 10) : d);
 
@@ -15,6 +30,11 @@ function totals(rows: PaymentRegisterRow[]): PaymentRegisterReport["totals"] {
     heldAsCredit: held.reduce((s, r) => s + BigInt(r.heldAsCredit), 0n).toString(),
     heldCount: held.length,
   };
+}
+
+function creditTotals(rows: CreditRegisterRow[]): CreditRegisterReport["totals"] {
+  const sum = (pick: (r: CreditRegisterRow) => string) => rows.reduce((s, r) => s + BigInt(pick(r)), 0n).toString();
+  return { count: rows.length, total: sum((r) => r.total), applied: sum((r) => r.applied), refunded: sum((r) => r.refunded), held: sum((r) => r.held) };
 }
 
 /** US-RPT-30, US-RPT-31 — registers read from the documents themselves, newest first. */
@@ -114,5 +134,106 @@ export class RegistersService {
       };
     });
     return { from, to, rows: result, totals: totals(result) };
+  }
+
+  /**
+   * US-RPT-31 — every issued credit note dated in the range: the invoice it
+   * credits, its total, how much was applied to invoices, refunded, and is
+   * still held as credit. Newest first.
+   */
+  async customerCredits(orgId: string, from: string, to: string): Promise<CreditRegisterReport> {
+    const dated = sql`coalesce(${creditNotes.date}, (${creditNotes.issuedAt})::date)`;
+    const rows = await this.db
+      .select({ note: creditNotes, contactName: contacts.name, invoiceNumber: invoices.number, invoiceType: invoices.type, date: sql<string>`(${dated})::text` })
+      .from(creditNotes)
+      .innerJoin(contacts, eq(contacts.id, creditNotes.contactId))
+      .leftJoin(invoices, eq(invoices.id, creditNotes.invoiceId))
+      .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.status, "issued"), sql`${dated} >= ${from}::date`, sql`${dated} <= ${to}::date`))
+      .orderBy(desc(dated), desc(creditNotes.createdAt));
+    const ids = rows.map((r) => r.note.id);
+    const [applied, refunds] = ids.length
+      ? await Promise.all([
+          this.db
+            .select({ creditNoteId: creditNoteAllocations.creditNoteId, invoiceId: invoices.id, number: invoices.number, type: invoices.type, amount: creditNoteAllocations.amount })
+            .from(creditNoteAllocations)
+            .innerJoin(invoices, eq(invoices.id, creditNoteAllocations.invoiceId))
+            .where(inArray(creditNoteAllocations.creditNoteId, ids))
+            .orderBy(asc(creditNoteAllocations.createdAt)),
+          this.db
+            .select({ creditNoteId: customerRefunds.sourceCreditNoteId, amount: customerRefunds.amount })
+            .from(customerRefunds)
+            .where(and(inArray(customerRefunds.sourceCreditNoteId, ids), isNull(customerRefunds.deletedAt))),
+        ])
+      : [[], []];
+    const result = rows.map(({ note: n, contactName, invoiceNumber, invoiceType, date }): CreditRegisterRow => {
+      const later = applied
+        .filter((a) => a.creditNoteId === n.id)
+        .map((a) => ({ documentId: a.invoiceId, number: a.number, amount: a.amount.toString(), opening: a.type === "opening", href: `/invoices/${a.invoiceId}` }));
+      const refunded = refunds.filter((r) => r.creditNoteId === n.id).reduce((s, r) => s + r.amount, 0n);
+      // Issuing reduces its own invoice first, without an allocation row: whatever isn't held, refunded or applied later went there.
+      const toOwn = n.totalAmount - n.creditRemainingAmount - refunded - later.reduce((s, a) => s + BigInt(a.amount), 0n);
+      const appliedTo = toOwn > 0n ? [{ documentId: n.invoiceId, number: invoiceNumber, amount: toOwn.toString(), opening: invoiceType === "opening", href: `/invoices/${n.invoiceId}` }, ...later] : later;
+      return {
+        id: n.id,
+        number: n.number,
+        reference: null,
+        date,
+        contact: { id: n.contactId, name: contactName },
+        against: { id: n.invoiceId, number: invoiceNumber, href: `/invoices/${n.invoiceId}` },
+        total: n.totalAmount.toString(),
+        applied: appliedTo.reduce((s, a) => s + BigInt(a.amount), 0n).toString(),
+        refunded: refunded.toString(),
+        held: n.creditRemainingAmount.toString(),
+        appliedTo,
+        href: `/invoices/${n.invoiceId}`,
+      };
+    });
+    return { from, to, rows: result, totals: creditTotals(result) };
+  }
+
+  /** US-RPT-31 — every recorded vendor credit dated in the range (void left out), the same for vendors and bills. */
+  async vendorCredits(orgId: string, from: string, to: string): Promise<CreditRegisterReport> {
+    const rows = await this.db
+      .select({ credit: vendorCredits, contactName: contacts.name, billNumber: vendorBills.billNumber })
+      .from(vendorCredits)
+      .innerJoin(contacts, eq(contacts.id, vendorCredits.contactId))
+      .leftJoin(vendorBills, eq(vendorBills.id, vendorCredits.billId))
+      .where(and(eq(vendorCredits.orgId, orgId), inArray(vendorCredits.status, ["open", "used"]), sql`${vendorCredits.date} >= ${from}::date`, sql`${vendorCredits.date} <= ${to}::date`))
+      .orderBy(desc(vendorCredits.date), desc(vendorCredits.createdAt));
+    const ids = rows.map((r) => r.credit.id);
+    const [applied, refunds] = ids.length
+      ? await Promise.all([
+          this.db
+            .select({ creditId: vendorCreditAllocations.vendorCreditId, billId: vendorBills.id, number: vendorBills.billNumber, opening: vendorBills.isOpening, amount: vendorCreditAllocations.amount })
+            .from(vendorCreditAllocations)
+            .innerJoin(vendorBills, eq(vendorBills.id, vendorCreditAllocations.billId))
+            .where(inArray(vendorCreditAllocations.vendorCreditId, ids))
+            .orderBy(asc(vendorCreditAllocations.createdAt)),
+          this.db
+            .select({ creditId: vendorRefunds.vendorCreditId, amount: vendorRefunds.amount })
+            .from(vendorRefunds)
+            .where(and(inArray(vendorRefunds.vendorCreditId, ids), isNull(vendorRefunds.deletedAt))),
+        ])
+      : [[], []];
+    const result = rows.map(({ credit: c, contactName, billNumber }): CreditRegisterRow => {
+      const appliedTo = applied
+        .filter((a) => a.creditId === c.id)
+        .map((a) => ({ documentId: a.billId, number: a.number, amount: a.amount.toString(), opening: a.opening, href: `/vendor-bills/${a.billId}` }));
+      return {
+        id: c.id,
+        number: c.number,
+        reference: c.vendorReference,
+        date: isoDay(c.date),
+        contact: { id: c.contactId, name: contactName },
+        against: c.billId ? { id: c.billId, number: billNumber, href: `/vendor-bills/${c.billId}` } : null,
+        total: c.totalAmount.toString(),
+        applied: appliedTo.reduce((s, a) => s + BigInt(a.amount), 0n).toString(),
+        refunded: refunds.filter((r) => r.creditId === c.id).reduce((s, r) => s + r.amount, 0n).toString(),
+        held: c.balanceAmount.toString(),
+        appliedTo,
+        href: `/vendor-credits/${c.id}`,
+      };
+    });
+    return { from, to, rows: result, totals: creditTotals(result) };
   }
 }
