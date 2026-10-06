@@ -21,6 +21,8 @@ import {
   SelectValue,
   Spinner,
   StatCard,
+  ToggleGroup,
+  ToggleGroupItem,
 } from "@spine/ui";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
@@ -113,6 +115,7 @@ export function ProfitAndLossTab() {
   const [error, setError] = useState<string | null>(null);
   const [drilldown, setDrilldown] = useState<{ accountId: string; code: string; name: string } | null>(null);
   const [compare, setCompare] = useState<"none" | PlCompareMode>("none");
+  const [basis, setBasis] = useState<"accrual" | "cash">("accrual");
 
   useEffect(() => {
     apiClient
@@ -123,11 +126,11 @@ export function ProfitAndLossTab() {
       .catch(() => {});
   }, []);
 
-  async function load(mode = compare) {
+  async function load(mode = compare, on = basis) {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<ProfitAndLossReport>(`/reports/profit-and-loss?from=${toDateParam(from)}&to=${toDateParam(to)}${mode === "none" ? "" : `&compare=${mode}`}`);
+      const res = await apiClient.get<ProfitAndLossReport>(`/reports/profit-and-loss?from=${toDateParam(from)}&to=${toDateParam(to)}${mode === "none" ? "" : `&compare=${mode}`}${on === "cash" ? "&basis=cash" : ""}`);
       setReport(res);
     } catch (err) {
       setError(ownerOnlyMessage(err));
@@ -173,12 +176,33 @@ export function ProfitAndLossTab() {
             </SelectContent>
           </Select>
         </div>
+        <div className="flex flex-col gap-1.5">
+          <Label id="pl-basis-label">Basis</Label>
+          <ToggleGroup
+            type="single"
+            value={basis}
+            onValueChange={(v) => {
+              if (!v) return;
+              setBasis(v as typeof basis);
+              void load(compare, v as typeof basis);
+            }}
+            aria-labelledby="pl-basis-label"
+            className="rounded-md bg-surface-sunken p-1"
+          >
+            <ToggleGroupItem value="accrual" className="px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+              Accrual
+            </ToggleGroupItem>
+            <ToggleGroupItem value="cash" className="px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+              Cash
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
         <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
         {!error && (
           <a
-            href={`${API_URL}/reports/profit-and-loss/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}`}
+            href={`${API_URL}/reports/profit-and-loss/export.csv?from=${toDateParam(from)}&to=${toDateParam(to)}${basis === "cash" ? "&basis=cash" : ""}`}
             target="_blank"
             rel="noreferrer"
             className="text-[13px] font-medium text-primary hover:underline"
@@ -200,6 +224,7 @@ export function ProfitAndLossTab() {
             {report.comparison.mode === "monthly"
               ? `${periodLabel(report.from, report.to)} by month`
               : `${periodLabel(report.from, report.to)} compared with ${report.comparison.columns[1]!.label}`}
+            {report.basis === "cash" ? " · Cash basis" : " · Accrual basis"}
           </p>
           {report.comparison.mode !== "monthly" && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -224,7 +249,10 @@ export function ProfitAndLossTab() {
         </div>
       )}
 
-      {report && !report.comparison && !error && (
+      {report?.basis === "cash" && !report.comparison && !error && <CashBasisView report={report} currency={currency} />}
+      {report?.basis === "cash" && report.comparison && !error && <CashBasisNotes report={report} />}
+
+      {report && report.basis !== "cash" && !report.comparison && !error && (
         <div className="flex flex-col gap-4 rounded-md border border-border-strong bg-surface p-4">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Income</p>
@@ -268,6 +296,78 @@ export function ProfitAndLossTab() {
       {drilldown && (
         <DrilldownDialog accountId={drilldown.accountId} accountLabel={`${drilldown.code} — ${drilldown.name}`} from={toDateParam(from)} to={toDateParam(to)} currency={currency} onClose={() => setDrilldown(null)} />
       )}
+    </div>
+  );
+}
+
+/** US-RPT-35 — what the cash basis leaves out, and how it's worked out. */
+function CashBasisNotes({ report }: { report: ProfitAndLossReport }) {
+  const excluded = report.openingExcluded;
+  return (
+    <div className="flex flex-col gap-3" data-testid="cash-basis-notes">
+      {excluded && BigInt(excluded.invoices) > 0n && (
+        <p className="rounded-md bg-surface-sunken px-4 py-3 text-[14px] text-on-surface">
+          Payments on invoices from before {new Date(`${excluded.cutoverDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} aren&apos;t counted — that income was in your old books.
+        </p>
+      )}
+      {excluded && BigInt(excluded.bills) > 0n && (
+        <p className="rounded-md bg-surface-sunken px-4 py-3 text-[14px] text-on-surface">
+          Payments on bills from before {new Date(`${excluded.cutoverDate}T00:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })} aren&apos;t counted — those costs were in your old books.
+        </p>
+      )}
+      <p className="text-[13px] text-on-surface-muted">
+        Income counts what customers paid in the range and costs what was paid, split across accounts in proportion to each invoice&apos;s or bill&apos;s lines. The Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis.
+      </p>
+    </div>
+  );
+}
+
+/** US-RPT-35 — `ReportsPLCashBasis`: Profit & Loss counted as money received and paid. */
+function CashBasisView({ report, currency }: { report: ProfitAndLossReport; currency: string }) {
+  const money = (v: string) => formatMoney(BigInt(v), currency);
+  const rows = [...report.income, ...report.expenses];
+  return (
+    <div className="flex flex-col gap-4" data-testid="cash-basis">
+      <p className="text-[14px] text-on-surface-muted" data-testid="pl-basis-subtitle">
+        {periodLabel(report.from, report.to)} · Cash basis
+      </p>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <StatCard label="Cash received (income)" value={money(report.totalIncome)} trend={{ direction: "neutral", label: "paid by customers in the range" }} />
+        <StatCard label="Cash paid (expenses)" value={money(report.totalExpenses)} trend={{ direction: "neutral", label: "paid to vendors and staff" }} />
+        <StatCard label="Net profit (cash basis)" value={money(report.netProfit)} trend={{ direction: "neutral", label: `accrual basis: ${money(report.accrualNetProfit ?? "0")}` }} />
+      </div>
+      <div className="overflow-x-auto rounded-lg border border-border bg-surface">
+        <table className="w-full text-[14px]" data-testid="cash-basis-table">
+          <thead>
+            <tr className="border-b border-border text-on-surface">
+              <th className="px-4 py-3 text-left font-medium">Account</th>
+              <th className="px-4 py-3 text-right font-medium">Cash basis</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.length === 0 && (
+              <tr className="border-b border-border">
+                <td colSpan={2} className="px-4 py-3 text-on-surface-muted">
+                  Nothing received or paid in this range.
+                </td>
+              </tr>
+            )}
+            {rows.map((l) => (
+              <tr key={l.accountId ?? l.code} className="border-b border-border">
+                <td className="px-4 py-2 text-on-surface">
+                  {l.code} · {l.name}
+                </td>
+                <td className="px-4 py-2 text-right tabular-nums">{money(l.amount)}</td>
+              </tr>
+            ))}
+            <tr className="bg-surface-sunken font-semibold text-on-surface">
+              <td className="px-4 py-3">Net profit (cash basis)</td>
+              <td className="px-4 py-3 text-right tabular-nums">{money(report.netProfit)}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <CashBasisNotes report={report} />
     </div>
   );
 }

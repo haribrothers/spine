@@ -25,6 +25,8 @@ export const profitAndLossQuerySchema = z
     from: isoDate,
     to: isoDate,
     compare: z.enum(PL_COMPARE_MODES, { message: "Choose Previous period, Same period last year or Each month." }).optional(),
+    /** US-RPT-35 (D-138). */
+    basis: z.enum(["accrual", "cash"], { message: "Choose Accrual or Cash." }).default("accrual"),
   })
   .refine((q) => q.from <= q.to, "Choose a From date on or before the To date.");
 

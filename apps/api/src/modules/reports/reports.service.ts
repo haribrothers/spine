@@ -424,9 +424,15 @@ export class ReportsService {
    * US-RPT-27 — the same Profit & Loss for each comparison column, lined up
    * by account. Accounts with nothing in any column are left out.
    */
-  async profitAndLossComparison(orgId: string, from: string, to: string, mode: PlCompareMode): Promise<ProfitAndLossComparison> {
+  async profitAndLossComparison(
+    orgId: string,
+    from: string,
+    to: string,
+    mode: PlCompareMode,
+    load: (from: string, to: string) => Promise<ProfitAndLossReport> = (f, t) => this.profitAndLoss(orgId, f, t),
+  ): Promise<ProfitAndLossComparison> {
     const columns = comparePeriods(from, to, mode);
-    const reports = await Promise.all(columns.map((c) => this.profitAndLoss(orgId, c.from, c.to)));
+    const reports = await Promise.all(columns.map((c) => load(c.from, c.to)));
     const lineUp = (pick: (r: ProfitAndLossReport) => ReportAccountLine[]): CompareLine[] => {
       const byId = new Map<string, CompareLine>();
       reports.forEach((r, i) => {

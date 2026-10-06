@@ -3389,7 +3389,22 @@ Regression: the Payments and Vendor Payments lists are unchanged.
 
 Regression: the Credit Notes and Vendor Credits lists are unchanged.
 
+## 144. Profit & Loss on a cash basis (US-RPT-35, Phase 8)
+
+1. Set a cutover date (Settings › Opening balances) at the start of the year and add an opening invoice. This year: pay the opening invoice; issue a 1,000.00 services invoice with no tax and record a 500.00 payment; record a 400.00 bill and pay 100.00 of it; money out to Rent; post a depreciation journal.
+2. Profit & Loss: "Basis" shows Accrual selected. Click Cash: the subtitle reads "<range> · Cash basis"; cards show Cash received (income) 500.00, Cash paid (expenses), and Net profit (cash basis) with "accrual basis: <figure>".
+3. The table shows Sales — Services 500.00, Cost of Materials 100.00, Rent and Depreciation as posted, and "Net profit (cash basis)".
+4. The note reads "Payments on invoices from before <cutover date> aren't counted — that income was in your old books." The explanation under it says the Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis.
+5. Export CSV on Cash: the file is named "profit-and-loss-cash-basis-…" and starts with "Basis … Cash basis".
+6. Compare with → Previous period on Cash: the columns are cash-basis figures and the subtitle ends "· Cash basis". Switch back to Accrual: the accrual figures return.
+7. Balance Sheet, Trial Balance and Tax Summary have no Basis switch.
+8. Keyboard: Tab to Basis and use arrow keys to switch; the selected option is announced. Dark mode is readable.
+
+Regression: Accrual Profit & Loss, its comparison (§139) and Export CSV are unchanged.
+
 ## Known gaps — don't file these as bugs
+
+- Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

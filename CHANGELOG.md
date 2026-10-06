@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-35: see profit and loss on a cash basis (Phase 8)
+
+- **Profit & Loss › "Basis"**: Accrual (default) or Cash. On Cash the subtitle reads "<range> · Cash basis", cards show "Cash received (income)", "Cash paid (expenses)" and "Net profit (cash basis)" with the accrual figure beside it, and the table lists each account's cash-basis amount.
+- **How it's counted** ([D-138](docs/prd/12-decisions.md), [D-178](docs/prd/12-decisions.md)): income is what customers paid in the range, split across each invoice's income lines in proportion; costs likewise from vendor payments on bills; expenses, journals and money in or out count as posted. A half-paid 1,000.00 services invoice is 500.00 under Sales — Services. Nothing is posted — it's a view.
+- **Opening invoices**: payments on them aren't income, and the page says "Payments on invoices from before <cutover date> aren't counted — that income was in your old books." (likewise for opening bills).
+- Works with "Compare with"; Export CSV carries the basis. Balance Sheet, Trial Balance and Tax Summary have no basis switch. Closes Q-04.
+- API: `GET /reports/profit-and-loss?basis=cash`.
+
 ### 2026-10-06 — US-RPT-31: see credit notes, vendor credits and refunds in a period (Phase 8)
 
 - **Reports › Receivables › Credit notes and refunds** (`/reports/credit-notes-and-refunds`): cards for Credited, Applied, Refunded and Still held, then each credit note's number, date, customer, invoice, amount, how much was applied, refunded or is still held. What issuing took off the credit note's own invoice counts as applied.

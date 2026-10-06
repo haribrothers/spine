@@ -17,6 +17,12 @@ export interface ProfitAndLossReport {
   netProfit: string;
   /** US-RPT-27 — with `?compare=`. */
   comparison?: ProfitAndLossComparison;
+  /** US-RPT-35 (D-138). */
+  basis?: "accrual" | "cash";
+  /** On the cash basis: the accrual net profit for the same range. */
+  accrualNetProfit?: string;
+  /** On the cash basis: payments on documents from before the cutover, which aren't counted. */
+  openingExcluded?: { cutoverDate: string; invoices: string; bills: string } | null;
 }
 
 export interface BalanceSheetReport {

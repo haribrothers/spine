@@ -8,6 +8,7 @@ import { requireOrgId } from "../org/settings.controller";
 import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
 import { AnalysisReportsService } from "./analysis-reports.service";
+import { CashBasisService } from "./cash-basis.service";
 import { CashFlowService } from "./cash-flow.service";
 import { RegistersService } from "./registers.service";
 import { LedgerReportsService } from "./ledger-reports.service";
@@ -38,7 +39,13 @@ export class ReportsController {
     private readonly cashFlow: CashFlowService,
     private readonly analysis: AnalysisReportsService,
     private readonly registers: RegistersService,
+    private readonly cashBasis: CashBasisService,
   ) {}
+
+  /** US-RPT-35 (D-138) — the accrual P&L from the ledger, or the cash-basis view derived at report time. */
+  private profitAndLossLoader(orgId: string, basis: "accrual" | "cash") {
+    return (from: string, to: string) => (basis === "cash" ? this.cashBasis.profitAndLoss(orgId, from, to) : this.reportsService.profitAndLoss(orgId, from, to));
+  }
 
   private registerQuery(query: unknown) {
     const parsed = paymentRegisterQuerySchema.safeParse(query);
@@ -213,12 +220,17 @@ export class ReportsController {
     const orgId = requireOrgId(session);
     const parsed = profitAndLossQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
-    const { from, to, compare } = parsed.data;
-    const report = await this.reportsService.profitAndLoss(orgId, from, to);
+    const { from, to, compare, basis } = parsed.data;
+    const load = this.profitAndLossLoader(orgId, basis);
+    const report =
+      basis === "cash"
+        ? // The cards show the accrual figure beside the cash one.
+          { ...(await load(from, to)), accrualNetProfit: (await this.reportsService.profitAndLoss(orgId, from, to)).netProfit }
+        : { ...(await load(from, to)), basis: "accrual" as const };
     if (!compare) return report;
     // US-RPT-27 — the columns to compare, lined up by account.
     try {
-      return { ...report, comparison: await this.reportsService.profitAndLossComparison(orgId, from, to, compare) };
+      return { ...report, comparison: await this.reportsService.profitAndLossComparison(orgId, from, to, compare, load) };
     } catch (err) {
       if (err instanceof Error && err.message === TOO_MANY_MONTHS) throw new BadRequestException(TOO_MANY_MONTHS);
       throw err;
@@ -274,17 +286,22 @@ export class ReportsController {
    */
   @Get("profit-and-loss/export.csv")
   @OrgRoles(["owner"])
-  async exportProfitAndLoss(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string, @Res() res: Response) {
+  async exportProfitAndLoss(@Session() session: UserSession, @Query() query: unknown, @Res() res: Response) {
     const orgId = requireOrgId(session);
-    const report = await this.reportsService.profitAndLoss(orgId, from, to);
+    const parsed = profitAndLossQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    const { from, to, basis } = parsed.data;
+    const report = await this.profitAndLossLoader(orgId, basis)(from, to);
     const rows = [
+      // US-RPT-35 — exports say which basis they're on.
+      ["Basis", "", basis === "cash" ? "Cash basis" : "Accrual basis", ""],
       ...report.income.map((l) => ["Income", l.code, l.name, l.amount]),
       ["Income", "", "Total income", report.totalIncome],
       ...report.expenses.map((l) => ["Expense", l.code, l.name, l.amount]),
       ["Expense", "", "Total expenses", report.totalExpenses],
       ["", "", "Net profit", report.netProfit],
     ];
-    sendCsv(res, `profit-and-loss-${from}-to-${to}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
+    sendCsv(res, `profit-and-loss-${basis === "cash" ? "cash-basis-" : ""}${from}-to-${to}.csv`, toCsv(["Section", "Code", "Account", "Amount"], rows));
   }
 
   /** US-RPT-13 — Owner-only, like the other financial statements. */
