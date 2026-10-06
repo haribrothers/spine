@@ -114,6 +114,7 @@ export function VendorPaymentDetailDrawer({
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Date" value={new Date(payment.date).toLocaleDateString()} />
                   <Field label="Method" value={PAYMENT_METHOD_LABELS[payment.method]} />
+                  {payment.moneyAccount && <Field label="Paid from" value={payment.moneyAccount.name} />}
                   <Field label="Reference" value={payment.reference ?? "—"} />
                   <Field
                     label="Amount"

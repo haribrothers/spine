@@ -114,3 +114,16 @@ export interface AccountRegister {
   /** Whether anything has ever gone in or out of the account, regardless of filters. */
   hasEntries: boolean;
 }
+
+/** The forms that remember the account each person used last (US-BANK-03, `user.last_money_accounts`). */
+export const MONEY_ACCOUNT_FORMS = ["payment", "vendor_payment", "expense", "refund", "tax_payment", "money_in_out"] as const;
+export type MoneyAccountForm = (typeof MONEY_ACCOUNT_FORMS)[number];
+export type LastMoneyAccounts = Partial<Record<MoneyAccountForm, string>>;
+
+/** The account a payment, expense or refund used, as its responses carry it. */
+export interface MoneyAccountRef {
+  id: string;
+  name: string;
+}
+
+export const INACTIVE_MONEY_ACCOUNT = "Choose one of your active accounts.";

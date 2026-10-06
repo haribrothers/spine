@@ -4,7 +4,8 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { vendorPayments, vendorPaymentAllocations, vendorBills, contacts, accounts } from "../../db/schema";
+import { vendorPayments, vendorPaymentAllocations, vendorBills, contacts } from "../../db/schema";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { NumberingService } from "../numbering/numbering.service";
@@ -30,6 +31,7 @@ export class VendorPaymentsService {
     private readonly auditLog: AuditLogService,
     private readonly numbering: NumberingService,
     private readonly ledger: LedgerService,
+    private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
   async list(orgId: string, options: { contactId?: string }) {
@@ -75,9 +77,11 @@ export class VendorPaymentsService {
       .leftJoin(vendorBills, eq(vendorPaymentAllocations.billId, vendorBills.id))
       .where(eq(vendorPaymentAllocations.vendorPaymentId, id));
 
+    const refs = await this.moneyAccounts.refs(orgId, [row.payment.moneyAccountId]);
     return {
       ...row.payment,
       contactName: row.contactName,
+      moneyAccount: row.payment.moneyAccountId ? (refs.get(row.payment.moneyAccountId) ?? null) : null,
       allocations: allocations.map((a) => ({ ...a.allocation, billNumber: a.billNumber, billTotal: a.billTotal })),
     };
   }
@@ -117,8 +121,8 @@ export class VendorPaymentsService {
     return { allocations: suggestions, unallocatedAmount: remaining };
   }
 
-  /** §7.2 "Vendor paid": debit Accounts Payable, credit Bank/Cash for the full amount — allocations must sum to exactly `amount` (see createVendorPaymentSchema's own comment), so this is always one clean two-line entry, no split like the customer side's advance-handling. */
-  async create(orgId: string, actorUserId: string, input: CreateVendorPaymentInput, bankAccountId?: string, isDemo = false) {
+  /** §7.2 "Vendor paid" (P13): debit Accounts Payable, credit the chosen money account (US-BANK-03; the organisation's default when omitted) for the full amount — allocations must sum to exactly `amount` (see createVendorPaymentSchema's own comment), so this is always one clean two-line entry, no split like the customer side's advance-handling. */
+  async create(orgId: string, actorUserId: string, input: CreateVendorPaymentInput, isDemo = false) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -147,9 +151,8 @@ export class VendorPaymentsService {
       }
     }
 
-    const resolvedBankAccountId = bankAccountId ?? (await this.resolveDefaultBankAccount(orgId));
-
     const created = await this.db.transaction(async (tx) => {
+      const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
       const number = await this.numbering.allocateNumber(tx, orgId, "vendor_payment");
 
       const [payment] = await tx
@@ -161,12 +164,14 @@ export class VendorPaymentsService {
           date: input.date,
           method: input.method,
           reference: input.reference ?? null,
+          moneyAccountId: moneyAccount.id,
           currency: input.currency,
           amount: input.amount,
           createdByUserId: actorUserId,
           isDemo,
         })
         .returning();
+      if (!isDemo) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "vendor_payment", moneyAccount.id);
 
       for (const allocation of input.allocations) {
         await tx.insert(vendorPaymentAllocations).values({
@@ -189,7 +194,7 @@ export class VendorPaymentsService {
         sourceId: payment!.id,
         lines: [
           { accountId: apAccountId, debit: input.amount, credit: 0n, contactId: input.contactId },
-          { accountId: resolvedBankAccountId, debit: 0n, credit: input.amount, contactId: input.contactId },
+          { accountId: moneyAccount.accountId, debit: 0n, credit: input.amount, contactId: input.contactId },
         ],
       });
 
@@ -250,17 +255,5 @@ export class VendorPaymentsService {
     });
 
     return { id };
-  }
-
-  /** Mirrors PaymentsService.resolveDefaultBankAccount exactly (hardcoded seeded account code 1010). */
-  private async resolveDefaultBankAccount(orgId: string): Promise<string> {
-    const [row] = await this.db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "1010")));
-    if (!row) {
-      throw new BadRequestException("No bank account found (expected code 1010, 'Bank Account'). Pass bankAccountId explicitly or restore this account.");
-    }
-    return row.id;
   }
 }

@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { BankingModule } from "../banking/banking.module";
 import { NumberingModule } from "../numbering/numbering.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
@@ -34,7 +35,7 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  * invoice the same way `MilestonesService.invoiceMilestone` does.
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
+  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
   controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController],
   providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],

@@ -5,6 +5,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { invoices } from "./invoices";
 import { journalEntries } from "./ledger";
+import { moneyAccounts } from "./banking";
 
 /** PRD F6 (S-06.1's own wording: "cash, bank transfer, cheque, card, UPI and 'other'"). */
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank_transfer", "cheque", "card", "upi", "other"]);
@@ -55,6 +56,8 @@ export const payments = pgTable(
     date: date("date", { mode: "date" }).notNull(),
     method: paymentMethodEnum("method").notNull(),
     reference: text("reference"),
+    /** US-BANK-03 (D-140) — the account the money went into. */
+    moneyAccountId: uuid("money_account_id").references(() => moneyAccounts.id, { onDelete: "restrict" }),
     currency: text("currency").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     /** Denormalized running total of `payment_allocations.amount` for this payment — see this table's own doc comment. */

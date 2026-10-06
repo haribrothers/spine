@@ -30,9 +30,9 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P1 | Standard or progress invoice issued, no retention | `invoice` | 1100 AR (total) | Revenue per line's catalogue income account (fallback 4100), 2100 Output Tax |
 | P2 | Progress invoice issued with retention | `invoice` | 1100 AR (total − retention), 1150 Retention Receivable (retention) | Revenue per line, 2100 Output Tax |
 | P3 | Advance (deposit) invoice issued | — | *Nothing posted* — a request for a deposit is not a claim; the deposit posts when paid (P5) | |
-| P4 | Payment received, allocated to invoices | `payment` | 1010 Bank (amount) | 1100 AR (allocated) |
-| P5 | Payment received, part or all unallocated (deposit / overpayment) | `payment` | 1010 Bank (amount) | 1100 AR (allocated part), 2200 Customer Advances (unallocated part) |
-| P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | 1010 Bank | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
+| P4 | Payment received, allocated to invoices | `payment` | The chosen money account (amount; the organisation default when none is chosen, US-BANK-03) | 1100 AR (allocated) |
+| P5 | Payment received, part or all unallocated (deposit / overpayment) | `payment` | The chosen money account (amount) | 1100 AR (allocated part), 2200 Customer Advances (unallocated part) |
+| P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | The chosen money account | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
 | P6 | Sitting credit applied to an invoice | `payment_credit_applied` | 2200 Customer Advances | 1100 AR |
 | P7 | Unallocated payment deleted | `payment_delete` | Reverses P4/P5 | |
 | P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (up to the invoice's balance), 2200 Customer Advances (any excess, from Phase 8, [D-142](12-decisions.md)) — every line tagged with the invoice's `job_id` when it has one (US-JOB-27), so job revenue and billed to date drop by the credit |
@@ -40,9 +40,9 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P10 | Retention released (raises a `retention_release` invoice) | `invoice` | 1100 AR | 1150 Retention Receivable |
 | P11 | Vendor bill recorded | `vendor_bill` | Expense/COGS per line account, 1200 Input Tax | 2000 AP (total) |
 | P12 | Vendor bill voided | `vendor_bill_void` | Reverses P11 | |
-| P13 | Vendor payment recorded | `vendor_payment` | 2000 AP | 1010 Bank (or the chosen cash account) |
+| P13 | Vendor payment recorded | `vendor_payment` | 2000 AP | The chosen money account (US-BANK-03) |
 | P14 | Vendor payment deleted | `vendor_payment_delete` | Reverses P13 | |
-| P15 | Expense approved (submitted and rejected expenses post nothing) | `expense` | Category's expense account (net), 1200 Input Tax | 1010 Bank (total) |
+| P15 | Expense approved (submitted and rejected expenses post nothing) | `expense` | Category's expense account (net), 1200 Input Tax | The money account the approver confirmed (total) — a card's liability account when paid by card (US-BANK-03) |
 | P16 | Approved expense billed to the customer | — | Nothing on billing itself; the draft invoice it creates posts P1 when issued | |
 | P17 | Opening balances locked or saved (US-RPT-16, [D-137](12-decisions.md)) | `opening_balance` | Each account's debit balance on the cutover date | Each account's credit balance; the difference to 3900 Opening Balance Adjustments. Never 1100, 1150, 2000 or 2200. Dated the day before the cutover date; re-posted (reversed and posted again) while the opening balances are unlocked |
 | P18 | Opening customer invoice (US-RPT-17) | `opening_invoice` | 1100 AR (amount due), 1150 Retention Receivable (retention held, tagged with its job) — contact-tagged | 3900 Opening Balance Adjustments |

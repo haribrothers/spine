@@ -31,6 +31,7 @@ import { useMyRole } from "../../../lib/role-context";
 import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { formatMoney } from "../../../lib/money";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -84,6 +85,8 @@ export function ExpenseDetailDrawer({
   const role = useMyRole();
   const [approveOpen, setApproveOpen] = useState(false);
   const [approveComment, setApproveComment] = useState("");
+  const [approveAccountId, setApproveAccountId] = useState("");
+  const isField = role === "field";
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -112,7 +115,7 @@ export function ExpenseDetailDrawer({
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Expense>(`/expenses/${expense.id}/approve`, { comment: approveComment || null });
+      const updated = await apiClient.post<Expense>(`/expenses/${expense.id}/approve`, { comment: approveComment || null, moneyAccountId: approveAccountId || null });
       setExpense(updated);
       setApproveOpen(false);
       setApproveComment("");
@@ -221,6 +224,7 @@ export function ExpenseDetailDrawer({
                     value={formatMoney(BigInt(expense.taxAmount), expense.currency)}
                   />
                   <Field label="Paid by" value={EXPENSE_PAID_BY_LABELS[expense.paidBy]} />
+                  {!isField && expense.moneyAccount && <Field label="Paid from" value={expense.moneyAccount.name} />}
                   <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />
                 </div>
 
@@ -326,6 +330,8 @@ export function ExpenseDetailDrawer({
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* US-BANK-03: the approver can change the account before it posts. */}
+          {approveOpen && expense && <MoneyAccountPicker form="expense" direction="out" value={approveAccountId} onValueChange={setApproveAccountId} initialId={expense.moneyAccountId} />}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setApproveComment("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction disabled={busy} onClick={handleApprove}>

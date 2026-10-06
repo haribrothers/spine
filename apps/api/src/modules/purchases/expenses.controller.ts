@@ -126,7 +126,7 @@ export class ExpensesController {
   async approve(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const input = reviewExpenseSchema.parse(body);
-    return this.expensesService.approve(orgId, id, session.user.id, input.comment ?? null);
+    return this.expensesService.approve(orgId, id, session.user.id, input.comment ?? null, input.moneyAccountId ?? null);
   }
 
   @Post(":id/reject")

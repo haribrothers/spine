@@ -28,6 +28,9 @@ export interface Expense {
   taxRateId: string | null;
   description: string | null;
   paidBy: ExpensePaidBy;
+  /** US-BANK-03 — the account it was (or will be) paid from. */
+  moneyAccountId: string | null;
+  moneyAccount?: { id: string; name: string } | null;
   receiptFileId: string | null;
   status: ExpenseStatus;
   submittedByUserId: string | null;

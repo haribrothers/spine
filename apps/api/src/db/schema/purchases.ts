@@ -7,6 +7,7 @@ import { jobs } from "./jobs";
 import { taxRates, taxGroups } from "./tax";
 import { accounts, journalEntries } from "./ledger";
 import { files } from "./files";
+import { moneyAccounts } from "./banking";
 import { invoiceLines } from "./invoices";
 
 /**
@@ -205,6 +206,8 @@ export const expenses = pgTable(
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     description: text("description"),
     paidBy: expensePaidByEnum("paid_by").notNull().default("company"),
+    /** US-BANK-03 (D-140) — the account it was paid from; the approver can change it before approving. */
+    moneyAccountId: uuid("money_account_id").references(() => moneyAccounts.id, { onDelete: "restrict" }),
     receiptFileId: uuid("receipt_file_id").references(() => files.id, { onDelete: "set null" }),
     status: expenseStatusEnum("status").notNull().default("submitted"),
     submittedByUserId: text("submitted_by_user_id").references(() => user.id, { onDelete: "set null" }),
@@ -288,6 +291,8 @@ export const vendorPayments = pgTable(
     date: date("date", { mode: "date" }).notNull(),
     method: vendorPaymentMethodEnum("method").notNull(),
     reference: text("reference"),
+    /** US-BANK-03 (D-140) — the account the money came out of. */
+    moneyAccountId: uuid("money_account_id").references(() => moneyAccounts.id, { onDelete: "restrict" }),
     currency: text("currency").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     allocatedAmount: bigint("allocated_amount", { mode: "bigint" }).notNull().default(sql`0`),

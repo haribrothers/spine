@@ -547,6 +547,13 @@
       "when": 1791263995115,
       "tag": "0077_money_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791265569347,
+      "tag": "0078_money_account_on_payments",
+      "breakpoints": true
     }
   ]
 }

@@ -27,6 +27,7 @@ import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = (
   Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]
@@ -82,6 +83,7 @@ export function NewPaymentDialog({
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
   const [reference, setReference] = useState("");
+  const [moneyAccountId, setMoneyAccountId] = useState("");
   const [amount, setAmount] = useState<bigint>(0n);
   const [outstanding, setOutstanding] = useState<OutstandingInvoice[] | null>(null);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
@@ -189,6 +191,7 @@ export function NewPaymentDialog({
         date: date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         method,
         reference: reference || null,
+        moneyAccountId: moneyAccountId || null,
         currency,
         amount: amount.toString(),
         allocations: allocations.filter((a) => a.amount > 0n).map((a) => ({ invoiceId: a.invoiceId, amount: a.amount.toString() })),
@@ -248,6 +251,7 @@ export function NewPaymentDialog({
             <FormField label="Amount" required>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={!contactId} />}
             </FormField>
+            <MoneyAccountPicker form="payment" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
           </div>
 
           {contactId && (

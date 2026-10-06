@@ -44,6 +44,12 @@ export class MoneyAccountsController {
     return this.moneyAccounts.nextCodes(requireOrgId(session));
   }
 
+  /** US-BANK-03 — the account this person last used on each form, to preselect it. */
+  @Get("last-used")
+  async lastUsed(@Session() session: UserSession) {
+    return this.moneyAccounts.lastUsed(session.user.id);
+  }
+
   /** US-BANK-02 — what moved through one account, with a running balance. */
   @Get(":id/register")
   @RequireCapability("banking.view")

@@ -16,6 +16,7 @@ import { NotificationsService } from "../notifications/notifications.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { orgLocale } from "../../common/money-format";
 import { formatMoney } from "@spine/shared";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 
 export type CreateExpenseInput = z.infer<typeof createExpenseSchema>;
 export type UpdateExpenseInput = z.infer<typeof updateExpenseSchema>;
@@ -44,6 +45,7 @@ export class ExpensesService {
     private readonly ledger: LedgerService,
     private readonly notifications: NotificationsService,
     private readonly invoices: InvoicesService,
+    private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
   /** US-PUR-22 — whether a member is on a job's crew. */
@@ -100,7 +102,8 @@ export class ExpensesService {
       row.expense.entryMode === "labour"
         ? await this.db.select().from(expenseLabourLines).where(eq(expenseLabourLines.expenseId, id)).orderBy(asc(expenseLabourLines.sortOrder))
         : [];
-    return { ...row.expense, categoryName: row.categoryName, labourLines };
+    const refs = await this.moneyAccounts.refs(orgId, [row.expense.moneyAccountId]);
+    return { ...row.expense, categoryName: row.categoryName, moneyAccount: row.expense.moneyAccountId ? (refs.get(row.expense.moneyAccountId) ?? null) : null, labourLines };
   }
 
   /**
@@ -154,7 +157,12 @@ export class ExpensesService {
     const labour = input.entryMode === "labour";
     if (labour) this.checkLabour({ labourLines: input.labourLines, amount: input.amount, jobId: input.jobId ?? null, currency: input.currency });
 
+    // US-BANK-03: Field never chooses an account (they can't see them); theirs starts on the default and the approver can change it.
+    const chosenAccountId = (await getMemberRole(this.db, orgId, actorUserId)) === "field" ? null : input.moneyAccountId;
+
     const created = await this.db.transaction(async (tx) => {
+      const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, chosenAccountId);
+      if (chosenAccountId && !isDemo) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "expense", moneyAccount.id);
       const [expense] = await tx
         .insert(expenses)
         .values({
@@ -168,6 +176,7 @@ export class ExpensesService {
           taxRateId: input.taxRateId ?? null,
           description: input.description ?? null,
           paidBy: input.paidBy,
+          moneyAccountId: moneyAccount.id,
           receiptFileId: input.receiptFileId ?? null,
           status: "submitted",
           submittedByUserId: actorUserId,
@@ -230,9 +239,12 @@ export class ExpensesService {
     }
 
     const updated = await this.db.transaction(async (tx) => {
+      const moneyAccount =
+        input.moneyAccountId && (await getMemberRole(this.db, orgId, actorUserId)) !== "field" ? await this.moneyAccounts.requireActive(tx, orgId, input.moneyAccountId) : null;
       const [row] = await tx
         .update(expenses)
         .set({
+          ...(moneyAccount ? { moneyAccountId: moneyAccount.id } : {}),
           ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
           ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
           ...(input.date !== undefined ? { date: input.date } : {}),
@@ -303,7 +315,7 @@ export class ExpensesService {
     throw new ForbiddenException(SELF_REVIEW_MESSAGE);
   }
 
-  async approve(orgId: string, id: string, actorUserId: string, comment: string | null, bankAccountId?: string) {
+  async approve(orgId: string, id: string, actorUserId: string, comment: string | null, moneyAccountId?: string | null) {
     const [preCheck] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Expense not found");
@@ -312,7 +324,6 @@ export class ExpensesService {
 
     const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, preCheck.categoryId));
     const resolvedExpenseAccountId = category?.accountId ?? (await this.resolveDefaultExpenseAccount(orgId));
-    const resolvedBankAccountId = bankAccountId ?? (await this.resolveDefaultBankAccount(orgId));
 
     const result = await this.db.transaction(async (tx) => {
       const [existing] = await tx
@@ -327,6 +338,9 @@ export class ExpensesService {
         throw new BadRequestException("Only a submitted expense can be approved");
       }
 
+      // P15 credits the account the approver chose, else the one the expense carries, else the default (US-BANK-03).
+      const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, moneyAccountId ?? existing.moneyAccountId);
+      if (moneyAccountId) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "expense", moneyAccount.id);
       const number = await this.numbering.allocateNumber(tx, orgId, "expense");
       const approvedAt = new Date();
       const dateStr = new Date(existing.date).toISOString().slice(0, 10);
@@ -338,7 +352,7 @@ export class ExpensesService {
         const inputTaxAccountId = await this.ledger.resolveSystemAccount(tx, orgId, "inputTaxReceivable");
         postingLines.push({ accountId: inputTaxAccountId, debit: existing.taxAmount, credit: 0n, jobId: existing.jobId });
       }
-      postingLines.push({ accountId: resolvedBankAccountId, debit: 0n, credit: existing.amount, jobId: existing.jobId });
+      postingLines.push({ accountId: moneyAccount.accountId, debit: 0n, credit: existing.amount, jobId: existing.jobId });
 
       const journalEntryId = await this.ledger.postEntry(tx, {
         orgId,
@@ -357,6 +371,7 @@ export class ExpensesService {
           approvedByUserId: actorUserId,
           approvedAt,
           reviewComment: comment,
+          moneyAccountId: moneyAccount.id,
           journalEntryId,
           updatedAt: approvedAt,
         })
@@ -643,18 +658,6 @@ export class ExpensesService {
       throw new BadRequestException(
         "No default expense account found (expected code 6900, 'Other Expenses'). Assign an account to this expense's category or restore this account.",
       );
-    }
-    return row.id;
-  }
-
-  /** Mirrors PaymentsService.resolveDefaultBankAccount's exact convention (hardcoded seeded account code 1010). */
-  private async resolveDefaultBankAccount(orgId: string): Promise<string> {
-    const [row] = await this.db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "1010")));
-    if (!row) {
-      throw new BadRequestException("No default bank account found (expected code 1010, 'Bank Account'). Pass bankAccountId explicitly or restore this account.");
     }
     return row.id;
   }

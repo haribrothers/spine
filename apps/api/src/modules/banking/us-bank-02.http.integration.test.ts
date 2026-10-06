@@ -54,7 +54,7 @@ describe("US-BANK-02 · see every account's balance and what moved through it (r
 
   async function payment(date: string, amount: bigint, reference: string) {
     const payments = testApp.app.get(PaymentsService);
-    await payments.create(orgId, owner.userId, createPaymentSchema.parse({ contactId, date, method: "bank_transfer", reference, currency: "USD", amount: amount.toString() }), bank.accountId);
+    await payments.create(orgId, owner.userId, createPaymentSchema.parse({ contactId, date, method: "bank_transfer", reference, currency: "USD", amount: amount.toString(), moneyAccountId: bank.id }));
   }
 
   /** An entry no document covers, straight through the ledger. */

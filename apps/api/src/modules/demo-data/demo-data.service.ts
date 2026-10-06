@@ -1374,8 +1374,7 @@ export class DemoDataService {
               amount: payAmount,
               allocations: [{ invoiceId: issued.id, amount: payAmount }],
             },
-            undefined, // bankAccountId — default to the seeded "Bank Account"
-            true, // isDemo
+            true, // isDemo — paid into the organisation's default account
           );
           paymentsCreated++;
         }
@@ -1693,7 +1692,6 @@ export class DemoDataService {
             amount: recorded.totalAmount,
             allocations: [{ billId: recorded.id, amount: recorded.totalAmount }],
           },
-          undefined,
           true, // isDemo
         );
         vendorPaymentsCreated++;

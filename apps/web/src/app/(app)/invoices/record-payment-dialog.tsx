@@ -25,6 +25,7 @@ import {
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
 import { formatMoney } from "../../../lib/money";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
 
 type PaymentMethod = "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other";
 
@@ -91,6 +92,7 @@ export function RecordPaymentDialog({
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
   const [reference, setReference] = useState("");
+  const [moneyAccountId, setMoneyAccountId] = useState("");
   const [amount, setAmount] = useState<bigint>(presetBalanceDue ?? 0n);
   const [outstanding, setOutstanding] = useState<OutstandingInvoice[] | null>(null);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
@@ -214,6 +216,7 @@ export function RecordPaymentDialog({
         date: date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
         method,
         reference: reference || null,
+        moneyAccountId: moneyAccountId || null,
         currency,
         amount: amount.toString(),
         allocations: allocations.filter((a) => a.amount > 0n).map((a) => ({ invoiceId: a.invoiceId, amount: a.amount.toString() })),
@@ -271,6 +274,7 @@ export function RecordPaymentDialog({
             <FormField label="Amount" required>
               {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
             </FormField>
+            <MoneyAccountPicker form="payment" direction="in" value={moneyAccountId} onValueChange={setMoneyAccountId} />
           </div>
 
           <div className="flex flex-col gap-2">

@@ -84,6 +84,8 @@ export const createExpenseSchema = z.object({
   paidBy: expensePaidBySchema.default("company"),
   receiptFileId: uuidSchema.optional().nullable(),
   isBillable: z.boolean().default(false),
+  /** US-BANK-03 — the account it was paid from; omitted means the organisation's default. */
+  moneyAccountId: uuidSchema.optional().nullable(),
   /** US-PUR-23 — "amount" (the default when absent) or "labour", where `amount` must equal the labour rows' total. */
   entryMode: z.enum(["amount", "labour"]).optional(),
   labourLines: z.array(labourLineSchema).max(LABOUR_MAX_ROWS, `Enter up to ${LABOUR_MAX_ROWS} trades.`).optional(),
@@ -95,6 +97,8 @@ export const updateExpenseSchema = createExpenseSchema.partial();
 /** S-07.4 — reject requires a comment; approve's comment is optional. */
 export const reviewExpenseSchema = z.object({
   comment: z.string().optional().nullable(),
+  /** US-BANK-03 — the approver can change the account before approving. */
+  moneyAccountId: uuidSchema.optional().nullable(),
 });
 
 export const rejectExpenseSchema = z.object({
@@ -127,5 +131,7 @@ export const createVendorPaymentSchema = z.object({
   currency: currencyCodeSchema,
   amount: z.coerce.bigint().positive(),
   notes: z.string().optional().nullable(),
+  /** US-BANK-03 — the account the money came out of; omitted means the organisation's default. */
+  moneyAccountId: uuidSchema.optional().nullable(),
   allocations: z.array(vendorPaymentAllocationInputSchema).min(1),
 });

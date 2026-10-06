@@ -2,16 +2,20 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import {
   DUPLICATE_MONEY_ACCOUNT_NAME,
+  INACTIVE_MONEY_ACCOUNT,
+  type LastMoneyAccounts,
   MONEY_ACCOUNT_CODE_RANGES,
   MONEY_ACCOUNT_KINDS,
   type MoneyAccount,
   type MoneyAccountInput,
+  type MoneyAccountForm,
   type MoneyAccountKind,
   type MoneyAccountNextCodes,
+  type MoneyAccountRef,
 } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, journalLines, moneyAccounts } from "../../db/schema";
+import { accounts, journalLines, moneyAccounts, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 type MoneyAccountRow = typeof moneyAccounts.$inferSelect;
@@ -138,8 +142,47 @@ export class MoneyAccountsService {
       .select()
       .from(moneyAccounts)
       .where(and(eq(moneyAccounts.orgId, orgId), eq(moneyAccounts.id, id), isNull(moneyAccounts.archivedAt)));
-    if (!row) throw new BadRequestException("Choose one of your active accounts.");
+    if (!row) throw new BadRequestException(INACTIVE_MONEY_ACCOUNT);
     return row;
+  }
+
+  /**
+   * US-BANK-03 (D-140) — the money account a payment, vendor payment or
+   * expense posts to: the one chosen, which must be active and this
+   * organisation's, or else the organisation's default.
+   */
+  async resolveForPosting(db: Database | Transaction, orgId: string, moneyAccountId?: string | null): Promise<MoneyAccountRow> {
+    if (moneyAccountId) return this.requireActive(db, orgId, moneyAccountId);
+    const [row] = await db
+      .select()
+      .from(moneyAccounts)
+      .where(and(eq(moneyAccounts.orgId, orgId), eq(moneyAccounts.isDefault, true), isNull(moneyAccounts.archivedAt)));
+    if (!row) throw new BadRequestException("Add a bank, cash or card account in Banking first.");
+    return row;
+  }
+
+  /** Remembers the account this person just used on this kind of form, so it's preselected next time. */
+  async rememberLastUsed(db: Database | Transaction, userId: string, form: MoneyAccountForm, moneyAccountId: string): Promise<void> {
+    await db
+      .update(user)
+      .set({ lastMoneyAccounts: sql`coalesce(${user.lastMoneyAccounts}, '{}'::jsonb) || jsonb_build_object(${form}::text, ${moneyAccountId}::text)` })
+      .where(eq(user.id, userId));
+  }
+
+  async lastUsed(userId: string): Promise<LastMoneyAccounts> {
+    const [row] = await this.db.select({ last: user.lastMoneyAccounts }).from(user).where(eq(user.id, userId));
+    return (row?.last as LastMoneyAccounts | null) ?? {};
+  }
+
+  /** `{ id, name }` for each money account id, for document responses. */
+  async refs(orgId: string, ids: (string | null)[]): Promise<Map<string, MoneyAccountRef>> {
+    const wanted = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+    if (!wanted.length) return new Map();
+    const rows = await this.db
+      .select({ id: moneyAccounts.id, name: moneyAccounts.name })
+      .from(moneyAccounts)
+      .where(and(eq(moneyAccounts.orgId, orgId), inArray(moneyAccounts.id, wanted)));
+    return new Map(rows.map((r) => [r.id, r]));
   }
 
   /** Each money account's balance in its own sign: an asset's debit balance, a card's credit balance (what's owed). */

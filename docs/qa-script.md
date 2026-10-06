@@ -2884,6 +2884,19 @@ Regression: the dashboard's "Cash position" and "Money in and out" now include e
 
 Regression: Vendor Payments opens a payment's drawer from `/vendor-payments?id=<id>`, as Payments and Expenses already did. The Banking list still adds accounts and moves the default.
 
+## 103. Choose the account on payments and expenses (US-BANK-03, Phase 8)
+
+1. Add a second bank account and a credit card in Banking.
+2. Payments › "Record payment": below Amount, "Paid into" lists every active account (cash and card marked) and starts on the default, with "Your organisation's default account. Change it if the money went into another account." Pick the second bank account and record the payment.
+3. Open "Record payment" again: "Paid into" starts on the account you just used and reads "Last used by you. Change it if the money went into another account." Log in as someone else: they still start on the default.
+4. Open the recorded payment: "Paid into" shows its account next to "Method", read-only. The account's register in Banking lists the payment and its balance went up.
+5. Do the same from an invoice's "Record payment", from Vendor Payments › "Record payment" ("Paid from") and from a "Pay bill" link on the dashboard.
+6. Submit an expense as an Owner or Staff member: the form has "Paid from". Choose the credit card. Approve it: the card's register shows it as "Spent" and Banking shows the card's balance as owed.
+7. As a Field user, submit an expense: there's no "Paid from". As an approver, open it: "Paid from" shows the default account. Approve it and, in the approve dialog, change "Paid from" to Cash in Hand: the expense posts to Cash in Hand.
+8. Archive an account in the database (or after US-BANK-06, from Banking) and try to record a payment to it through the API: 400 "Choose one of your active accounts.".
+
+Regression: bulk-approving expenses still works and posts each to the account it carries. Payments, vendor payments and expenses recorded before this change show the account they actually posted to.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

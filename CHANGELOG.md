@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-03: choose the account money went into or came out of (Phase 8)
+
+- **"Paid into" / "Paid from"** on Record payment (Payments and an invoice), Record vendor payment (including "Pay bill"), the expense form and the approve dialog. It lists the organisation's active bank, cash and card accounts, and starts on the account this person used last on that kind of form ("Last used by you. Change it if the money went into another account."), else the organisation default.
+- **Posting** (P4, P5, P5a, P13, P15; D-140): each posts to the chosen account's ledger account instead of 1010. An expense paid by card credits the card's liability account. No new posting rules.
+- **Expenses**: Owners and Staff choose the account when they enter an expense; a Field user's expense starts on the default (Field never see accounts), and the approver can change it in the approve dialog before it posts. Bulk approve posts each expense to the account it carries.
+- **Read-only afterwards**: a recorded payment, vendor payment or expense shows "Paid into" / "Paid from" beside its method.
+- **Validation**: an archived account, or another organisation's, is refused with "Choose one of your active accounts.".
+- **Migration 0078**: `money_account_id` on payments, vendor payments and expenses, backfilled from the account each one actually posted to (then the default for submitted expenses), and `user.last_money_accounts`.
+- **API.** `moneyAccountId` on `POST /payments`, `POST /vendor-payments`, `POST/PUT /expenses` and `POST /expenses/:id/approve` (replaces the unused `bankAccountId`); detail responses carry `moneyAccount { id, name }`; new `GET /money-accounts/last-used`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-03.http.integration.test.ts` (7): a payment posts to and carries the chosen account and is remembered; the default without a choice; archived and other organisations' accounts refused; a vendor payment from cash; an expense by card credits the card; a Field expense starts on the default and the approver changes it; Field can't list accounts.
+- `apps/e2e/tests/us-bank-03.spec.ts` (1): the default then last-used preselection, the read-only account on the payment, the register balance, and changing an expense's account while approving it.
+
 ### 2026-10-06 — US-BANK-02: see every account's balance and what moved through it (Phase 8)
 
 - **Banking list**: each account's name opens its register. New "Reconciliation" ("Never reconciled", or "Reconciled" with the date) and "Unreconciled" ("<n> entries") columns, and "Not yet reconciled" and "Last reconciled" cards at the top.

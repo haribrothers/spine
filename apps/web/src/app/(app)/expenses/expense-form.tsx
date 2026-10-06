@@ -28,6 +28,8 @@ import {
   ToggleGroupItem,
 } from "@spine/ui";
 import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE } from "@spine/shared";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
+import { useMyRole } from "../../../lib/role-context";
 import { LabourRows, blankLabourRow, headcountOf, rowsTotal, type LabourRow } from "./labour-rows";
 import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
@@ -82,6 +84,9 @@ export function ExpenseForm({
   const canManageCategories = useCanManageExpenseCategories();
   const [description, setDescription] = useState("");
   const [paidBy, setPaidBy] = useState<ExpensePaidBy>("company");
+  const [moneyAccountId, setMoneyAccountId] = useState("");
+  // US-BANK-03: Field don't see accounts; their expenses start on the default and the approver picks.
+  const choosesAccount = useMyRole() !== "field";
   const [receiptFileId, setReceiptFileId] = useState<string | null>(null);
   const [receiptFilename, setReceiptFilename] = useState<string | null>(null);
   const [isBillable, setIsBillable] = useState(false);
@@ -212,6 +217,7 @@ export function ExpenseForm({
         taxRateId: taxRateSelection || null,
         description: description || null,
         paidBy,
+        ...(choosesAccount && moneyAccountId ? { moneyAccountId } : {}),
         receiptFileId,
         isBillable,
       };
@@ -304,6 +310,7 @@ export function ExpenseForm({
                 </Select>
               )}
             </FormField>
+            {choosesAccount && <MoneyAccountPicker form="expense" direction="out" value={moneyAccountId} onValueChange={setMoneyAccountId} initialId={expense?.moneyAccountId} />}
           </div>
 
           {entryMode === "labour" && (

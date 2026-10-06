@@ -30,6 +30,8 @@ export const createPaymentSchema = z.object({
   currency: currencyCodeSchema,
   amount: z.coerce.bigint().positive(),
   notes: z.string().optional().nullable(),
+  /** US-BANK-03 — the account the money went into; omitted means the organisation's default. */
+  moneyAccountId: uuidSchema.optional().nullable(),
   allocations: z.array(paymentAllocationInputSchema).default([]),
 });
 

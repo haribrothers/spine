@@ -337,7 +337,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 - [x] US-BANK-01 · Add my bank, cash and card accounts
 - [x] US-BANK-02 · See every account's balance and what moved through it
-- [ ] US-BANK-03 · Choose the account money went into or came out of
+- [x] US-BANK-03 · Choose the account money went into or came out of
 - [ ] US-BANK-04 · Move money between my accounts
 - [ ] US-BANK-05 · Record money in or out that has no invoice or bill
 - [ ] US-BANK-06 · Archive an account I no longer use
