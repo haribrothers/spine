@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { applyVendorCreditSchema, createVendorCreditSchema, createVendorRefundSchema, updateVendorCreditSchema } from "@spine/shared";
+import { applyVendorCreditSchema, createVendorCreditSchema, createVendorRefundSchema, updateVendorCreditSchema, voidVendorCreditSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -76,6 +76,14 @@ export class VendorCreditsController {
   @UseInterceptors(IdempotencyInterceptor)
   async removeAllocation(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Param("allocationId", ParseUUIDPipe) allocationId: string) {
     return this.credits.removeAllocation(requireOrgId(session), session.user.id, id, allocationId);
+  }
+
+  /** US-PUR-27 — void with a reason (P24 reversed); only with nothing applied or refunded. */
+  @Post(":id/void")
+  @RequireCapability("vendor_credits.void")
+  @UseInterceptors(IdempotencyInterceptor)
+  async void(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    return this.credits.void(requireOrgId(session), session.user.id, id, parse(voidVendorCreditSchema, body).reason);
   }
 
   /** US-PUR-26 — record money the vendor paid back (P25). */

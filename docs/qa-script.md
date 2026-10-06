@@ -3050,6 +3050,14 @@ Regression: bills without credits read and pay exactly as before.
 
 Regression: applying credits to bills still works alongside refunds; the two together can't exceed the credit.
 
+## 117. Void a vendor credit (US-PUR-27, Phase 8)
+
+1. On a recorded credit with a refund or a bill application, "Void" › enter a reason › "Void credit": "Remove its <n> applications and refunds first." and nothing changes. ("Void credit" stays disabled until a reason is typed.)
+2. Remove the applications and delete the refunds, then void with "Entered twice": the credit reads "Void — Entered twice", Apply and Refund disappear, the list shows "Void" with balance $0.00, and Balance Sheet: Accounts Payable back up by the total (P24 reversed, dated today).
+3. As Staff without "Void vendor credits", "Void" isn't shown and the API returns 403.
+
+Regression: drafts are still deleted, not voided.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

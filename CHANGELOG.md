@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-27: void a vendor credit (Phase 8)
+
+- **"Void"** on an open or used vendor credit asks for a reason, then posts P24's reversal (dated today) and marks it "Void — <reason>"; the list shows "Void" with a zero balance. With applications or refunds it refuses: "Remove its <n> applications and refunds first.". Drafts are deleted instead.
+- **API.** `POST /vendor-credits/:id/void { reason }` (`vendor_credits.void`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-27.http.integration.test.ts` (3): the reversal lines and "Void"; refused with an application and a refund; reason required and 403 without the right.
+- `apps/e2e/tests/us-pur-27.spec.ts` (1): refused with a refund, then voided after deleting it.
+
 ### 2026-10-06 — US-PUR-26: record a refund from a vendor (Phase 8)
 
 - **"Record refund"** on an open vendor credit (`VendorRefundDialog`): "Amount" (up to the balance, prefilled with it), "Date", "Paid into" (money account), "Method" and "Reference". Over the balance: "This credit has <amount> left to refund.".

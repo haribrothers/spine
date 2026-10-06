@@ -3,7 +3,25 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, Spinner, StatusChip } from "@spine/ui";
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card,
+  FormField,
+  Input,
+  Spinner,
+  StatusChip,
+} from "@spine/ui";
 import { VENDOR_CREDIT_STATUS_LABELS, type VendorCreditStatus } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -38,6 +56,10 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const canApply = useCapability("vendor_credits.apply");
   const [applyOpen, setApplyOpen] = useState(false);
   const [refundOpen, setRefundOpen] = useState(false);
+  // US-PUR-27
+  const canVoid = useCapability("vendor_credits.void");
+  const [voidOpen, setVoidOpen] = useState(false);
+  const [voidReason, setVoidReason] = useState("");
   const canEdit = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.edit_own", others: "vendor_credits.edit_others" });
   const canDelete = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.delete_own", others: "vendor_credits.delete_others" });
 
@@ -136,6 +158,18 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               Record refund
             </Button>
           )}
+          {(credit.status === "open" || credit.status === "used") && canVoid && (
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setVoidReason("");
+                setVoidOpen(true);
+              }}
+              disabled={busy}
+            >
+              Void
+            </Button>
+          )}
           {isDraft && canRecord && (
             <Button onClick={() => act(() => apiClient.post(`/vendor-credits/${credit.id}/record`))} disabled={busy}>
               {busy ? <Spinner size="sm" /> : "Record"}
@@ -220,6 +254,31 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
       </Card>
       <ApplyVendorCreditDialog open={applyOpen} onOpenChange={setApplyOpen} credit={credit} onApplied={load} />
       <VendorRefundDialog open={refundOpen} onOpenChange={setRefundOpen} credit={credit} onRecorded={load} />
+      <AlertDialog open={voidOpen} onOpenChange={setVoidOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Void {credit.number}?</AlertDialogTitle>
+            <AlertDialogDescription>Spine reverses its ledger entry today, so what you owe {credit.contactName} goes back up. The credit stays, marked void.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <FormField label="Reason" required>
+            {(field) => <Input {...field} value={voidReason} onChange={(e) => setVoidReason(e.target.value)} maxLength={500} />}
+          </FormField>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep credit</AlertDialogCancel>
+            <AlertDialogAction
+              variant="danger"
+              disabled={busy || !voidReason.trim()}
+              onClick={(e) => {
+                e.preventDefault();
+                setVoidOpen(false);
+                void act(() => apiClient.post(`/vendor-credits/${credit.id}/void`, { reason: voidReason.trim() }));
+              }}
+            >
+              Void credit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { formatMoney, type createVendorCreditSchema, type updateVendorCreditSchema } from "@spine/shared";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { z } from "zod";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
@@ -305,6 +305,41 @@ export class VendorCreditsService {
       await this.auditLog.record(tx, { orgId, actorUserId, action: "refund_deleted", entityType: "vendor_credit", entityId: credit!.id, contactId: credit!.contactId, changes: [{ field: "balanceAmount", from: credit!.balanceAmount.toString(), to: balance.toString() }] });
     });
     return this.getOne(orgId, creditId);
+  }
+
+  /**
+   * US-PUR-27 — voids a credit entered by mistake: posts P24's reversal
+   * (dated today) and marks it "Void — <reason>". Only with nothing applied
+   * or refunded; those are removed first.
+   */
+  async void(orgId: string, actorUserId: string, id: string, reason: string) {
+    await this.db.transaction(async (tx) => {
+      const [credit] = await tx.select().from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id))).for("update");
+      if (!credit) throw new NotFoundException("Vendor credit not found");
+      if (credit.status === "draft") throw new BadRequestException("A draft can be deleted instead of voided.");
+      if (credit.status === "void") throw new BadRequestException("This vendor credit is already void.");
+      const [[applied], [refunded]] = await Promise.all([
+        tx.select({ n: count() }).from(vendorCreditAllocations).where(eq(vendorCreditAllocations.vendorCreditId, id)),
+        tx.select({ n: count() }).from(vendorRefunds).where(and(eq(vendorRefunds.vendorCreditId, id), isNull(vendorRefunds.deletedAt))),
+      ]);
+      const n = Number(applied!.n) + Number(refunded!.n);
+      if (n > 0) throw new BadRequestException(`Remove its ${n} applications and refunds first.`);
+      const voidEntryId = await this.ledger.reverseEntry(tx, credit.entryId!, { orgId, date: orgClock().date, narration: `Vendor credit ${credit.number} voided: ${reason}`, sourceType: "vendor_credit_void", sourceId: id });
+      await tx.update(vendorCredits).set({ status: "void", voidReason: reason, voidedAt: new Date(), voidEntryId, balanceAmount: 0n, updatedAt: new Date() }).where(eq(vendorCredits.id, id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "voided",
+        entityType: "vendor_credit",
+        entityId: id,
+        contactId: credit.contactId,
+        changes: [
+          { field: "status", from: credit.status, to: "void" },
+          { field: "voidReason", from: null, to: reason },
+        ],
+      });
+    });
+    return this.getOne(orgId, id);
   }
 
   private async load(orgId: string, id: string) {
