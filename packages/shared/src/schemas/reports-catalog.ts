@@ -25,6 +25,7 @@ export const REPORTS: ReportEntry[] = [
   { slug: "profit-and-loss", label: "Profit & Loss", group: "Business overview", href: "/reports/profit-and-loss", access: "owner", keywords: "income statement p&l pl" },
   { slug: "balance-sheet", label: "Balance Sheet", group: "Business overview", href: "/reports/balance-sheet", access: "owner", keywords: "assets liabilities equity" },
   { slug: "trial-balance", label: "Trial Balance", group: "Business overview", href: "/reports/trial-balance", access: "owner", keywords: "tb debits credits ledger" },
+  { slug: "cash-flow", label: "Cash Flow", group: "Business overview", href: "/reports/cash-flow", access: ["reports.view_financial_statements"], keywords: "cash flow statement operating investing financing" },
   { slug: "receivables", label: "Receivables", group: "Receivables", href: "/receivables", access: ["reports.view_receivables"], keywords: "aging owed customers ar" },
   { slug: "payables", label: "Payables", group: "Purchases", href: "/payables", access: ["reports.view_payables"], keywords: "aging owe vendors ap" },
   { slug: "tax-summary", label: "Tax Summary", group: "Tax", href: "/reports/tax-summary", access: "owner", keywords: "gst vat sales tax" },

@@ -370,7 +370,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-RPT-23 · Find every report in one place
 - [x] US-RPT-24 · See the general ledger
 - [x] US-RPT-25 · See the day book
-- [ ] US-RPT-26 · See where cash came from and where it went
+- [x] US-RPT-26 · See where cash came from and where it went
 - [ ] US-RPT-27 · Compare profit and loss across periods
 - [ ] US-RPT-28 · See sales by customer and by item
 - [ ] US-RPT-29 · See expenses by category and purchases by vendor

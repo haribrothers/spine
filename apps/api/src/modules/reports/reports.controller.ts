@@ -1,4 +1,4 @@
-import { dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { cashFlowQuerySchema, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -7,6 +7,7 @@ import { toCsv, sendCsv } from "../../common/csv";
 import { requireOrgId } from "../org/settings.controller";
 import { ReportsService, type JobProfitabilityStatus } from "./reports.service";
 import { LedgerIntegrityService } from "./ledger-integrity.service";
+import { CashFlowService } from "./cash-flow.service";
 import { LedgerReportsService } from "./ledger-reports.service";
 
 /**
@@ -32,7 +33,18 @@ export class ReportsController {
     private readonly reportsService: ReportsService,
     private readonly ledgerIntegrityService: LedgerIntegrityService,
     private readonly ledgerReports: LedgerReportsService,
+    private readonly cashFlow: CashFlowService,
   ) {}
+
+  /** US-RPT-26 — where cash came from and where it went, indirect method. Owner, or `reports.view_financial_statements`. */
+  @Get("cash-flow")
+  @RequireCapability("reports.view_financial_statements")
+  async cashFlowStatement(@Session() session: UserSession, @Query() query: unknown) {
+    const parsed = cashFlowQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    if (parsed.data.from > parsed.data.to) throw new BadRequestException("Choose a From date on or before the To date.");
+    return this.cashFlow.report(requireOrgId(session), parsed.data.from, parsed.data.to);
+  }
 
   /** US-RPT-24 — every account's opening balance, entries and closing balance; paged by account. Owner, or `ledger.view`. */
   @Get("general-ledger")

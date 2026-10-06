@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-26: see where cash came from and where it went (Phase 8)
+
+- **Reports › Cash Flow** (`/reports/cash-flow`, under "Business overview"): "Cash at start", "Net change" (with ▲/▼ and words, not colour alone) and "Cash at end" cards, then "Operating activities" (net profit adjusted for receivables and retention, payables, tax, customer advances, card balances and other working capital), "Investing activities" (fixed assets, one line per account) and "Financing activities" (capital, drawings, loans, one line per account), each with its net total. This quarter to today by default.
+- **Cash is the bank and cash accounts.** "Cash at end equals the total of your bank and cash accounts on <date>. Card accounts are liabilities, not cash." is checked every time; a mismatch is logged as an error and the page says so.
+- **Click a line** to see the accounts behind it.
+- **Access.** Owners, and Staff with "View financial statements". Field never.
+- API: `GET /reports/cash-flow?from=&to=`, indirect method from `journal_lines`. Section mapping in the glossary ("Cash flow sections").
+
 ### 2026-10-06 — US-RPT-25: see the day book (Phase 8)
 
 - **Reports › Day book** (`/reports/day-book`, under "Accountant") lists every journal entry in date order: date, source ("Invoice INV-0042", "Payment RCP-0012", "Journal JNL-0003"…), contact · narration, and each line's account, debit and credit, with totals. Today by default.

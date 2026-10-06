@@ -3311,6 +3311,19 @@ Regression: Trial Balance's account drill-down (§29) and the Journals list (§1
 
 Regression: General ledger (§136) is unchanged.
 
+## 138. Cash Flow (US-RPT-26, Phase 8)
+
+1. In a new organisation, record money in to Owner's Capital dated last quarter. Then, today: money out to Fixed Assets, money in to Sales — Services, money out on a card to Travel & Vehicle, and an invoice left unpaid.
+2. Reports › Business overview › Cash Flow: "Where cash came from and where it went." From is the first of this quarter, To is today. "Cash at start" is the capital; "Net change" shows ▼ and "less cash than at the start" when it's negative; "Cash at end" equals the bank account's balance on Banking.
+3. Operating activities: "Net profit", "Increase in receivables and retention" (the unpaid invoice, negative), "Tax collected less paid" (if it carried tax) and "Increase in card balances" (the card spend). Investing: "Fixed Assets" (negative). Financing: nothing in this period. Each section has its "Net cash from …" total, and the totals add up to Net change.
+4. Click "Net profit": a dialog lists Sales — Services and the expense accounts with their amounts. Escape closes it.
+5. The note under the statement reads "Cash at end equals the total of your bank and cash accounts on <To>. Card accounts are liabilities, not cash."
+6. Change the dates to last quarter and Refresh: the capital shows under Financing as Owner's Capital.
+7. As Staff with "View financial statements": Reports lists Cash Flow and it opens. With only "View ledger / journals": the no-access page. Field: no Reports.
+8. Dark mode: cards, table and the note are readable.
+
+Regression: Profit & Loss's net profit for the same range matches Cash Flow's "Net profit".
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
