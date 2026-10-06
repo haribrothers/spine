@@ -54,6 +54,9 @@ export interface VendorBill {
   updatedAt: string;
   /** Computed server-side — totalAmount - amountPaid. */
   balanceDue: string;
+  /** US-PUR-25 — vendor credits applied to this bill. */
+  creditedAmount?: string;
+  creditsApplied?: { id: string; vendorCreditId: string; number: string | null; vendorReference: string | null; amount: string }[];
   lines?: VendorBillLine[];
 }
 

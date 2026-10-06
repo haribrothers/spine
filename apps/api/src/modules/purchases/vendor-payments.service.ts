@@ -100,7 +100,7 @@ export class VendorPaymentsService {
       .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.contactId, contactId), eq(vendorBills.status, "recorded")));
 
     const withBalance = outstanding
-      .map((bill) => ({ bill, balance: bill.totalAmount - bill.amountPaid }))
+      .map((bill) => ({ bill, balance: bill.totalAmount - bill.amountPaid - bill.creditedAmount }))
       .filter((row) => row.balance > 0n)
       .sort((a, b) => {
         if (!a.bill.dueDate && !b.bill.dueDate) return a.bill.createdAt.getTime() - b.bill.createdAt.getTime();
@@ -145,7 +145,7 @@ export class VendorPaymentsService {
       if (bill.status !== "recorded") {
         throw new BadRequestException(`Vendor bill ${bill.billNumber} is not recorded and cannot receive a payment`);
       }
-      const balance = bill.totalAmount - bill.amountPaid;
+      const balance = bill.totalAmount - bill.amountPaid - bill.creditedAmount;
       if (allocation.amount > balance) {
         throw new BadRequestException(`Allocation of ${allocation.amount} exceeds vendor bill ${bill.billNumber}'s remaining balance of ${balance}`);
       }

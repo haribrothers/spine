@@ -12,6 +12,7 @@ import { AttachmentsSection } from "../../../components/attachments-section";
 import { HistorySection } from "../../../components/history-section";
 import { Row } from "./vendor-credit-builder";
 import type { VendorCredit } from "./types";
+import { ApplyVendorCreditDialog } from "./apply-vendor-credit-dialog";
 
 /** Draft grey, Open blue, Used green, Void red — always with the word, never colour alone. */
 export function VendorCreditStatusChip({ status }: { status: VendorCreditStatus }) {
@@ -33,6 +34,8 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const canRecord = useCapability("vendor_credits.record");
+  const canApply = useCapability("vendor_credits.apply");
+  const [applyOpen, setApplyOpen] = useState(false);
   const canEdit = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.edit_own", others: "vendor_credits.edit_others" });
   const canDelete = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.delete_own", others: "vendor_credits.delete_others" });
 
@@ -121,6 +124,11 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               Delete draft
             </Button>
           )}
+          {credit.status === "open" && canApply && (
+            <Button onClick={() => setApplyOpen(true)} disabled={busy}>
+              Apply to bills
+            </Button>
+          )}
           {isDraft && canRecord && (
             <Button onClick={() => act(() => apiClient.post(`/vendor-credits/${credit.id}/record`))} disabled={busy}>
               {busy ? <Spinner size="sm" /> : "Record"}
@@ -146,6 +154,27 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         ))}
       </Card>
 
+      {(credit.allocations ?? []).length > 0 && (
+        <Card className="flex flex-col gap-3" data-testid="credit-allocations">
+          <h2 className="text-[15px] font-semibold text-on-surface">Applied to bills</h2>
+          {credit.allocations!.map((a) => (
+            <div key={a.id} className="flex flex-wrap items-center justify-between gap-2 text-[14px]">
+              <Link href={`/vendor-bills/${a.billId}`} className="text-primary hover:underline">
+                Bill {a.billNumber}
+              </Link>
+              <span className="flex items-center gap-2">
+                <span className="tabular-nums text-on-surface">{formatMoney(BigInt(a.amount), credit.currency)}</span>
+                {canApply && credit.status !== "void" && (
+                  <Button variant="ghost" size="sm" aria-label={`Remove from bill ${a.billNumber}`} onClick={() => act(() => apiClient.delete(`/vendor-credits/${credit.id}/allocations/${a.id}`))} disabled={busy}>
+                    Remove
+                  </Button>
+                )}
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
+
       <AttachmentsSection entityType="vendor_credit" entityId={credit.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
@@ -156,6 +185,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         </div>
         {credit.status !== "draft" && <Row label="Left to use" value={formatMoney(balance, credit.currency)} />}
       </Card>
+      <ApplyVendorCreditDialog open={applyOpen} onOpenChange={setApplyOpen} credit={credit} onApplied={load} />
     </div>
   );
 }

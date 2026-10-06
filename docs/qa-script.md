@@ -3028,6 +3028,18 @@ Regression: the other "Manage Payments" switches and the group switch still save
 
 Regression: Vendor Bills, recording bills and the bill line editor are unchanged. Settings › Numbering lists "Vendor Credit" (VCR).
 
+## 115. Apply a vendor credit to bills (US-PUR-25, Phase 8)
+
+1. With an open $400.00 credit for a vendor with two open bills ($300.00 older, $500.00 newer): Vendor Payments › "Record payment", choose the vendor: "<Vendor> has $400.00 of credit. Apply it first?" links to the credit.
+2. On the credit, "Apply to bills": the bills are listed oldest first, prefilled $300.00 then $100.00. Change the first to $301.00: "You can apply up to $300.00 to this bill." Put it back and "Apply credit".
+3. The credit shows "Used" and "Applied to bills" with both bills. The ledger has no new entry (P24a). The older bill's page lists "Credits applied: VCR-0001 · their CN-4471 $300.00", a "Credits applied" total line and balance $0.00; the newer one owes $400.00.
+4. Payables, the dashboard's "due soon" items and search treat credited bills as paid down. Paying more than the newer bill's $400.00 is refused.
+5. "Remove" an application on the credit: the credit is "Open" again and the bill's balance comes back.
+6. Voiding a bill with credits applied: "Remove the vendor credits applied to this bill before voiding it.".
+7. As Staff without "Apply and refund vendor credits", "Apply to bills" isn't shown and the API returns 403.
+
+Regression: bills without credits read and pay exactly as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

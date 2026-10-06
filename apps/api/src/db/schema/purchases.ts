@@ -52,6 +52,8 @@ export const vendorBills = pgTable(
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
     /** Denormalized running total, kept in sync by VendorPaymentsService on every allocation — never client-computed, same convention as invoices.amountPaid. */
     amountPaid: bigint("amount_paid", { mode: "bigint" }).notNull().default(sql`0`),
+    /** US-PUR-25 — vendor credits applied to this bill (P24a posts nothing); balance = total − paid − credited. */
+    creditedAmount: bigint("credited_amount", { mode: "bigint" }).notNull().default(sql`0`),
     notes: text("notes"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     recordedAt: timestamp("recorded_at", { withTimezone: true }),
@@ -71,6 +73,7 @@ export const vendorBills = pgTable(
     index("vendor_bills_contact_idx").on(table.contactId),
     index("vendor_bills_job_idx").on(table.jobId),
     index("vendor_bills_org_demo_idx").on(table.orgId, table.isDemo),
+    check("vendor_bills_paid_and_credited_within_total", sql`${table.amountPaid} + ${table.creditedAmount} <= ${table.totalAmount}`),
   ],
 );
 
@@ -420,4 +423,34 @@ export const vendorCreditLines = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("vendor_credit_lines_credit_idx").on(table.vendorCreditId)],
+);
+
+/**
+ * US-PUR-25 (D-141, P24a) — part of a vendor credit used against one of the
+ * vendor's bills. Nothing posts: the credit and the bill both sit in 2000
+ * AP for the vendor. A deferred trigger keeps allocations (and refunds,
+ * US-PUR-26) within the credit, and payments plus credits within the bill.
+ */
+export const vendorCreditAllocations = pgTable(
+  "vendor_credit_allocations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    vendorCreditId: uuid("vendor_credit_id")
+      .notNull()
+      .references(() => vendorCredits.id),
+    billId: uuid("bill_id")
+      .notNull()
+      .references(() => vendorBills.id),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("vendor_credit_allocations_positive", sql`${table.amount} > 0`),
+    index("vendor_credit_allocations_credit_idx").on(table.vendorCreditId),
+    index("vendor_credit_allocations_bill_idx").on(table.billId),
+  ],
 );

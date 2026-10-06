@@ -143,6 +143,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const canVoid = bill.status === "recorded";
   const balanceDue = BigInt(bill.balanceDue);
   const amountPaid = BigInt(bill.amountPaid);
+  // US-PUR-25: vendor credits used against this bill.
+  const credited = BigInt(bill.creditedAmount ?? "0");
   const canRecordPayment = bill.status === "recorded" && balanceDue > 0n;
 
   return (
@@ -240,6 +242,20 @@ export function VendorBillDetail({ billId }: { billId: string }) {
       </Card>
 
       <VendorPaymentsSection billId={bill.id} refreshKey={paymentsRefreshKey} />
+      {(bill.creditsApplied ?? []).length > 0 && (
+        <Card className="flex flex-col gap-3" data-testid="credits-applied">
+          <h2 className="text-[15px] font-semibold text-on-surface">Credits applied</h2>
+          {bill.creditsApplied!.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-3 text-[14px]">
+              <a href={`/vendor-credits/${c.vendorCreditId}`} className="text-primary hover:underline">
+                {c.number}
+                {c.vendorReference ? ` · their ${c.vendorReference}` : ""}
+              </a>
+              <span className="tabular-nums text-on-surface">{formatMoney(BigInt(c.amount), bill.currency)}</span>
+            </div>
+          ))}
+        </Card>
+      )}
       <AttachmentsSection entityType="vendor_bill" entityId={bill.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
@@ -251,7 +267,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         {amountPaid > 0n && (
           <TotalRow label="Paid" value={formatMoney(-(amountPaid), bill.currency)} currency="" raw />
         )}
-        {amountPaid > 0n && (
+        {credited > 0n && <TotalRow label="Credits applied" value={formatMoney(-credited, bill.currency)} currency="" raw />}
+        {(amountPaid > 0n || credited > 0n) && (
           <div className="border-t border-border pt-2">
             <TotalRow label="Balance due" value={bill.balanceDue} currency={bill.currency} emphasize critical />
           </div>

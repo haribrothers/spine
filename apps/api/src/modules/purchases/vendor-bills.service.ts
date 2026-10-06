@@ -5,7 +5,7 @@ import { and, eq, desc } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { vendorBills, vendorBillLines, contacts, accounts } from "../../db/schema";
+import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
@@ -188,7 +188,7 @@ export class VendorBillsService {
     let result = rows.map((r) => ({
       ...r.bill,
       contactName: r.contactName,
-      balanceDue: r.bill.totalAmount - r.bill.amountPaid,
+      balanceDue: r.bill.totalAmount - r.bill.amountPaid - r.bill.creditedAmount,
     }));
 
     if (options.status) {
@@ -216,11 +216,19 @@ export class VendorBillsService {
       .where(eq(vendorBillLines.billId, id))
       .orderBy(vendorBillLines.sortOrder);
 
+    // US-PUR-25: the vendor credits used against this bill.
+    const creditsApplied = await this.db
+      .select({ id: vendorCreditAllocations.id, vendorCreditId: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, amount: vendorCreditAllocations.amount })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorCredits, eq(vendorCredits.id, vendorCreditAllocations.vendorCreditId))
+      .where(eq(vendorCreditAllocations.billId, id));
+
     return {
       ...row.bill,
       contactName: row.contactName,
-      balanceDue: row.bill.totalAmount - row.bill.amountPaid,
+      balanceDue: row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount,
       lines,
+      creditsApplied,
     };
   }
 
@@ -455,6 +463,9 @@ export class VendorBillsService {
       }
       if (existing.amountPaid > 0n) {
         throw new BadRequestException("Cannot void a vendor bill with payments allocated against it");
+      }
+      if (existing.creditedAmount > 0n) {
+        throw new BadRequestException("Remove the vendor credits applied to this bill before voiding it.");
       }
       if (!existing.journalEntryId) {
         throw new BadRequestException("This vendor bill has no journal entry to reverse");

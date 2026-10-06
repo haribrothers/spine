@@ -181,14 +181,14 @@ export class SearchService {
 
   private async vendorBills(c: Ctx) {
     const rows = await this.db
-      .select({ id: vendorBills.id, number: vendorBills.billNumber, status: vendorBills.status, currency: vendorBills.currency, total: vendorBills.totalAmount, paid: vendorBills.amountPaid, dueDate: vendorBills.dueDate, vendor: contacts.name })
+      .select({ id: vendorBills.id, number: vendorBills.billNumber, status: vendorBills.status, currency: vendorBills.currency, total: vendorBills.totalAmount, paid: vendorBills.amountPaid, credited: vendorBills.creditedAmount, dueDate: vendorBills.dueDate, vendor: contacts.name })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
       .where(and(eq(vendorBills.orgId, c.orgId), this.numberOrText(vendorBills.billNumber, c.q, contacts.name)))
       .orderBy(...this.rank(vendorBills.billNumber, contacts.name, c.q), desc(vendorBills.createdAt))
       .limit(c.n);
     return rows.map((r) => {
-      const open = r.total - r.paid;
+      const open = r.total - r.paid - r.credited;
       const dueDate = isoDate(r.dueDate);
       const status = r.status === "void" ? "Void" : r.status === "draft" ? "Draft" : open <= 0n ? "Paid" : dueDate && dueDate < c.today ? "Overdue" : "Unpaid";
       return { id: r.id, title: [r.number, r.vendor].filter(Boolean).join(" · "), subtitle: c.money(r.total, r.currency), status, href: `/vendor-bills/${r.id}`, exact: isNumberMatch(r.number, c.q) };

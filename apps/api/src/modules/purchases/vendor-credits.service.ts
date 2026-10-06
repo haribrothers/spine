@@ -1,11 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createVendorCreditSchema, updateVendorCreditSchema } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { formatMoney, type createVendorCreditSchema, type updateVendorCreditSchema } from "@spine/shared";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, contacts, vendorBills, vendorCreditLines, vendorCredits } from "../../db/schema";
+import { accounts, contacts, vendorBills, vendorCreditAllocations, vendorCreditLines, vendorCredits } from "../../db/schema";
+import { orgMoneySettings } from "../../common/money-format";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NumberingService } from "../numbering/numbering.service";
@@ -61,7 +62,13 @@ export class VendorCreditsService {
       .where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id)));
     if (!row) throw new NotFoundException("Vendor credit not found");
     const lines = await this.db.select().from(vendorCreditLines).where(eq(vendorCreditLines.vendorCreditId, id)).orderBy(vendorCreditLines.sortOrder);
-    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, lines };
+    const allocations = await this.db
+      .select({ id: vendorCreditAllocations.id, billId: vendorCreditAllocations.billId, billNumber: vendorBills.billNumber, amount: vendorCreditAllocations.amount, createdAt: vendorCreditAllocations.createdAt })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorBills, eq(vendorBills.id, vendorCreditAllocations.billId))
+      .where(eq(vendorCreditAllocations.vendorCreditId, id))
+      .orderBy(asc(vendorCreditAllocations.createdAt), asc(vendorBills.date), asc(vendorBills.billNumber));
+    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, lines, allocations };
   }
 
   async getHistory(orgId: string, id: string) {
@@ -181,6 +188,60 @@ export class VendorCreditsService {
       const recordedAt = new Date();
       await tx.update(vendorCredits).set({ status: "open", number, entryId, recordedAt, balanceAmount: credit.totalAmount, updatedAt: recordedAt }).where(eq(vendorCredits.id, id));
       await this.auditLog.record(tx, { orgId, actorUserId, action: "recorded", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "status", from: "draft", to: "open" }] });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-PUR-25 (P24a) — uses the credit against the vendor's recorded bills.
+   * Nothing posts: the credit and the bills already sit in 2000 AP. Each
+   * bill's `creditedAmount` and the credit's balance move under locks, and
+   * a trigger keeps both within their totals.
+   */
+  async apply(orgId: string, actorUserId: string, id: string, allocations: { billId: string; amount: bigint }[]) {
+    await this.db.transaction(async (tx) => {
+      const [credit] = await tx.select().from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id))).for("update");
+      if (!credit) throw new NotFoundException("Vendor credit not found");
+      if (credit.status !== "open") throw new BadRequestException("Only an open vendor credit can be applied.");
+      const { locale } = await orgMoneySettings(this.db, orgId);
+      const money = (amount: bigint) => formatMoney(amount > 0n ? amount : 0n, credit.currency, locale);
+      const total = allocations.reduce((sum, a) => sum + a.amount, 0n);
+      if (total > credit.balanceAmount) throw new BadRequestException(`This credit has ${money(credit.balanceAmount)} left to apply.`);
+
+      const bills = await tx.select().from(vendorBills).where(and(eq(vendorBills.orgId, orgId), inArray(vendorBills.id, allocations.map((a) => a.billId)))).for("update");
+      const byId = new Map(bills.map((b) => [b.id, b]));
+      for (const a of allocations) {
+        const bill = byId.get(a.billId);
+        if (!bill || bill.contactId !== credit.contactId || bill.status !== "recorded") throw new BadRequestException("Apply this credit only to the vendor's recorded bills.");
+        const balance = bill.totalAmount - bill.amountPaid - bill.creditedAmount;
+        if (a.amount > balance) throw new BadRequestException(`You can apply up to ${money(balance)} to this bill.`);
+      }
+      for (const a of allocations) {
+        const bill = byId.get(a.billId)!;
+        await tx.insert(vendorCreditAllocations).values({ orgId, vendorCreditId: id, billId: a.billId, amount: a.amount, createdByUserId: actorUserId });
+        await tx.update(vendorBills).set({ creditedAmount: bill.creditedAmount + a.amount, updatedAt: new Date() }).where(eq(vendorBills.id, a.billId));
+        await this.auditLog.record(tx, { orgId, actorUserId, action: "credit_applied", entityType: "vendor_bill", entityId: a.billId, contactId: credit.contactId, changes: [{ field: "creditedAmount", from: bill.creditedAmount.toString(), to: (bill.creditedAmount + a.amount).toString() }] });
+      }
+      const balance = credit.balanceAmount - total;
+      await tx.update(vendorCredits).set({ balanceAmount: balance, status: balance === 0n ? "used" : "open", updatedAt: new Date() }).where(eq(vendorCredits.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "applied", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() }] });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /** US-PUR-25 — undoes one application: the bill's balance and the credit's come back. */
+  async removeAllocation(orgId: string, actorUserId: string, id: string, allocationId: string) {
+    await this.db.transaction(async (tx) => {
+      const [credit] = await tx.select().from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id))).for("update");
+      if (!credit) throw new NotFoundException("Vendor credit not found");
+      const [allocation] = await tx.select().from(vendorCreditAllocations).where(and(eq(vendorCreditAllocations.id, allocationId), eq(vendorCreditAllocations.vendorCreditId, id)));
+      if (!allocation) throw new NotFoundException("That application isn't on this credit.");
+      const [bill] = await tx.select().from(vendorBills).where(eq(vendorBills.id, allocation.billId)).for("update");
+      await tx.delete(vendorCreditAllocations).where(eq(vendorCreditAllocations.id, allocationId));
+      await tx.update(vendorBills).set({ creditedAmount: bill!.creditedAmount - allocation.amount, updatedAt: new Date() }).where(eq(vendorBills.id, bill!.id));
+      const balance = credit.balanceAmount + allocation.amount;
+      await tx.update(vendorCredits).set({ balanceAmount: balance, status: "open", updatedAt: new Date() }).where(eq(vendorCredits.id, id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "application_removed", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() }] });
     });
     return this.getOne(orgId, id);
   }

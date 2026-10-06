@@ -71,6 +71,8 @@ const ACTION_VERBS: Record<string, string> = {
   refunded: "refunded",
   refund_deleted: "deleted a refund from",
   credit_applied: "applied credit from",
+  applied: "applied",
+  application_removed: "removed an application of",
   assigned: "assigned",
   unassigned: "unassigned",
   email_queued: "emailed",

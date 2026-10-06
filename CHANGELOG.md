@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-25: apply a vendor credit to bills (Phase 8)
+
+- **"Apply to bills"** on an open vendor credit (`ApplyVendorCreditDialog`): the vendor's open bills oldest first, with "Amount to apply" prefilled oldest first from the credit's balance; "You can apply up to <amount> to this bill." over a bill's balance.
+- **Nothing posts** (P24a): the credit and the bills already sit in 2000 AP. Each bill's new `credited_amount` and the credit's balance move; at zero the credit is "Used". "Applied to bills" on the credit lists each, with "Remove" to undo one.
+- **On the bill**: "Credits applied" lists each vendor credit ("VCR-0001 · their CN-4471") and the totals show it. Every bill balance — the bill list and page, payables, the dashboard's attention items, search, and vendor payment checks — is now total − paid − credited. A bill with credits can't be voided until they're removed.
+- **Pay bill**: when the vendor has open credit, the payment dialog says "<Vendor> has <amount> of credit. Apply it first?" with a link.
+- **Database limits** (invariant 9): a deferred trigger keeps a credit's applications within its total and a bill's payments plus credits within its total; the vendor-payment trigger counts credits too; bills check `amount_paid + credited_amount <= total_amount`.
+- **Migration 0086**: `vendor_credit_allocations`, `vendor_bills.credited_amount`, the triggers.
+- **API.** `POST /vendor-credits/:id/apply`, `DELETE /vendor-credits/:id/allocations/:allocationId` (`vendor_credits.apply`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-25.http.integration.test.ts` (5): limits on the bill, the credit and another vendor's bills; applying across bills posts nothing and marks the credit Used, the bill lists it; payments, voids and payables respect credits; removing an application; the database refuses credits beyond a bill.
+- `apps/e2e/tests/us-pur-25.spec.ts` (1): the pay-bill note, applying oldest first with the over-balance message, and the bill's "Credits applied".
+
 ### 2026-10-06 — US-PUR-24: record a credit from a vendor (Phase 8)
 
 - **Purchases › Vendor Credits** (new): a list with Total, Draft, Open ("<amount> to use") and Used cards, status and vendor filters, and Number, Vendor's number, Vendor, Status (Draft, Open, Used, Void), Date, Amount and Balance.

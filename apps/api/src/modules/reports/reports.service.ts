@@ -189,7 +189,7 @@ export class ReportsService {
     let totalOutstanding = 0n;
 
     for (const row of rows) {
-      const balanceDue = row.bill.totalAmount - row.bill.amountPaid;
+      const balanceDue = row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount;
       if (balanceDue <= 0n) continue;
 
       const daysOverdue = daysPastDue(row.bill.dueDate, today);

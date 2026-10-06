@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createVendorCreditSchema, updateVendorCreditSchema } from "@spine/shared";
+import { applyVendorCreditSchema, createVendorCreditSchema, updateVendorCreditSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -61,5 +61,20 @@ export class VendorCreditsController {
   @UseInterceptors(IdempotencyInterceptor)
   async record(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
     return this.credits.record(requireOrgId(session), id, session.user.id);
+  }
+
+  /** US-PUR-25 — apply to the vendor's bills (nothing posts, P24a). */
+  @Post(":id/apply")
+  @RequireCapability("vendor_credits.apply")
+  @UseInterceptors(IdempotencyInterceptor)
+  async apply(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    return this.credits.apply(requireOrgId(session), session.user.id, id, parse(applyVendorCreditSchema, body).allocations);
+  }
+
+  @Delete(":id/allocations/:allocationId")
+  @RequireCapability("vendor_credits.apply")
+  @UseInterceptors(IdempotencyInterceptor)
+  async removeAllocation(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Param("allocationId", ParseUUIDPipe) allocationId: string) {
+    return this.credits.removeAllocation(requireOrgId(session), session.user.id, id, allocationId);
   }
 }

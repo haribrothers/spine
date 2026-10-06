@@ -76,6 +76,8 @@ export function NewVendorPaymentDialog({
   initialContactId?: string;
 }) {
   const [contactId, setContactId] = useState("");
+  // US-PUR-25: the vendor's open credit, offered before paying.
+  const [openCredit, setOpenCredit] = useState<{ total: bigint; vendor: string; href: string } | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
@@ -98,6 +100,20 @@ export function NewVendorPaymentDialog({
     setAllocations([]);
     setError(null);
   }, [open, initialContactId]);
+
+  useEffect(() => {
+    if (!open || !contactId) {
+      setOpenCredit(null);
+      return;
+    }
+    apiClient
+      .get<{ id: string; balanceAmount: string; contactName: string | null }[]>(`/vendor-credits?contactId=${contactId}&status=open`)
+      .then((credits) => {
+        const total = credits.reduce((sum, c) => sum + BigInt(c.balanceAmount), 0n);
+        setOpenCredit(total > 0n ? { total, vendor: credits[0]!.contactName ?? "This vendor", href: credits.length === 1 ? `/vendor-credits/${credits[0]!.id}` : "/vendor-credits" } : null);
+      })
+      .catch(() => setOpenCredit(null));
+  }, [open, contactId]);
 
   useEffect(() => {
     if (!open || !contactId) {
@@ -216,6 +232,17 @@ export function NewVendorPaymentDialog({
           {error && (
             <Alert variant="critical">
               <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {openCredit && (
+            <Alert variant="info" data-testid="vendor-credit-note">
+              <AlertDescription>
+                {openCredit.vendor} has {formatMoney(openCredit.total, currency)} of credit.{" "}
+                <a href={openCredit.href} className="font-medium text-primary underline">
+                  Apply it first?
+                </a>
+              </AlertDescription>
             </Alert>
           )}
 

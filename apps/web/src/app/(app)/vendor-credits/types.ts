@@ -22,4 +22,6 @@ export interface VendorCredit {
   voidReason: string | null;
   createdByUserId: string | null;
   lines?: (Omit<VendorBillLine, "billId"> & { vendorCreditId: string })[];
+  /** US-PUR-25 — where the credit has been used. */
+  allocations?: { id: string; billId: string; billNumber: string; amount: string; createdAt: string }[];
 }

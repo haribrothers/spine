@@ -155,3 +155,8 @@ export const voidVendorCreditSchema = z.object({
 
 export const VENDOR_CREDIT_STATUS_LABELS = { draft: "Draft", open: "Open", used: "Used", void: "Void" } as const;
 export type VendorCreditStatus = keyof typeof VENDOR_CREDIT_STATUS_LABELS;
+
+/** `POST /vendor-credits/:id/apply` (US-PUR-25). */
+export const applyVendorCreditSchema = z.object({
+  allocations: z.array(z.object({ billId: uuidSchema, amount: z.coerce.bigint().positive("Enter an amount greater than zero.") })).min(1, "Choose at least one bill."),
+});
