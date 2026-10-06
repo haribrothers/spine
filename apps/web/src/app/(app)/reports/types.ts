@@ -86,6 +86,9 @@ export const SOURCE_TYPE_ROUTES: Record<string, (sourceId: string) => string> = 
   vendor_payment: (id) => `/vendor-payments/${id}`,
   vendor_payment_delete: (id) => `/vendor-payments/${id}`,
   expense: (id) => `/expenses/${id}`,
+  // US-RPT-20/21
+  manual_journal: (id) => `/journals/${id}`,
+  manual_journal_reversal: (id) => `/journals/${id}`,
   // credit_note deliberately omitted — sourceId is the credit note's own
   // id, and there's no standalone /credit-notes/:id route (invoice-
   // triggered only, per CHANGELOG's own known-gap note), so this falls

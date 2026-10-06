@@ -23,6 +23,7 @@ import { LedgerModule } from "./modules/ledger/ledger.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { BankingModule } from "./modules/banking/banking.module";
 import { OpeningBalancesModule } from "./modules/opening-balances/opening-balances.module";
+import { JournalsModule } from "./modules/journals/journals.module";
 import { AttachmentsModule } from "./modules/attachments/attachments.module";
 import { TaxModule } from "./modules/tax/tax.module";
 import { NumberingModule } from "./modules/numbering/numbering.module";
@@ -70,6 +71,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     ReportsModule,
     BankingModule,
     OpeningBalancesModule,
+    JournalsModule,
     AttachmentsModule,
     TaxModule,
     NumberingModule,

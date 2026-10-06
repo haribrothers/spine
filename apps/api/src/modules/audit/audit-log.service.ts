@@ -48,7 +48,9 @@ export type AuditEntityType =
   // US-BANK-10/11: reconciliations finished and undone.
   | "bank_reconciliation"
   // US-RPT-16/19: the opening balances (entity id is the organisation's).
-  | "opening_balances";
+  | "opening_balances"
+  // US-RPT-20/21: manual journals posted and reversed.
+  | "manual_journal";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

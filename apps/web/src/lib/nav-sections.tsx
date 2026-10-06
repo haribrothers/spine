@@ -1,26 +1,4 @@
-import {
-  Banknote,
-  BarChart3,
-  CalendarDays,
-  ClipboardList,
-  FileMinus,
-  FileText,
-  HandCoins,
-  HardHat,
-  History,
-  Landmark,
-  Inbox,
-  LayoutDashboard,
-  Package,
-  Receipt,
-  ReceiptText,
-  Shield,
-  Target,
-  Undo2,
-  UserCog,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Banknote, BarChart3, BookOpen, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, History, Inbox, Landmark, LayoutDashboard, Package, Receipt, ReceiptText, Shield, Target, Undo2, UserCog, Users, Wallet } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 import type { Capability } from "@spine/shared";
 
@@ -103,7 +81,11 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
   },
   {
     label: "Reports",
-    items: [{ href: "/reports", label: "Reports", icon: <BarChart3 /> }],
+    items: [
+      { href: "/reports", label: "Reports", icon: <BarChart3 /> },
+      // US-RPT-20–US-RPT-22 (D-134)
+      { href: "/journals", label: "Journals", icon: <BookOpen /> },
+    ],
   },
 ];
 
@@ -152,6 +134,7 @@ const ITEM_CAPABILITY: Record<string, Capability> = {
   "/receivables": "reports.view_receivables",
   "/payables": "reports.view_payables",
   "/banking": "banking.view",
+  "/journals": "ledger.view",
 };
 
 /** The Reports page is shown to Staff who hold any report capability. */

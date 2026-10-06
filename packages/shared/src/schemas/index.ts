@@ -38,3 +38,4 @@ export * from "./tax-payments.ts";
 export * from "./bank-statements.ts";
 export * from "./bank-reconciliations.ts";
 export * from "./opening-balances.ts";
+export * from "./manual-journals.ts";

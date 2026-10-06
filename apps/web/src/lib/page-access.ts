@@ -26,6 +26,8 @@ const RULES: PageRule[] = [
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
   { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
   { prefix: "/banking", name: "Banking", anyOf: ["banking.view"] },
+  // US-RPT-22
+  { prefix: "/journals", name: "Journals", anyOf: ["ledger.view"] },
   {
     prefix: "/reports",
     name: "Reports",
@@ -48,6 +50,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/vendor-payments": "Vendor Payments",
   "/payables": "Payables",
   "/banking": "Banking",
+  "/journals": "Journals",
   "/reports": "Reports",
   "/team": "Team",
   "/expenses/categories": "Expense categories",

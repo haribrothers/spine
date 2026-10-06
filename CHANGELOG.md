@@ -80,6 +80,28 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-20: post an adjusting journal (Phase 8)
+
+- **Reports › Journals** (new in the sidebar under Reports) lists manual journals, with "New journal" for an Owner.
+- **"New journal"** ("For adjustments no document covers. Journals are never edited — a mistake is reversed.") asks for:
+  - "Date" and "Reason" (required, "e.g. Depreciation for March").
+  - Lines of "Account", "Description", "Debit", "Credit" and optional "Job". "Add line" adds more; a line takes a debit or a credit.
+  - The footer shows total debits and credits, and "Debits and credits must be equal — out by <amount>." until they match. "Post journal" stays disabled until then.
+- **Control accounts** (Accounts Receivable, Retention Receivable, Input Tax, Accounts Payable, Output Tax, Customer Advances, Opening Balance Adjustments) aren't offered, and the API refuses them: "Use invoices, bills, payments or Record tax payment to change <account>." Retained Earnings is allowed for year-end entries.
+- **"Post journal"** numbers it `JNL-0001` (numbering type `journal`, prefix JNL, listed in Settings › Numbering). It posts P21 as entered, job-tagged where chosen, with narration "Journal <number> — <reason>". The report drill-down and money account registers show it as a Journal, linking to it. A date in a closed period is refused ("… falls within a closed fiscal period").
+- After posting, the journal's page opens: number, "Posted", date, reason, who posted it, and the lines.
+- **Migration 0096**: `manual_journals`, `manual_journal_lines`.
+- **API**: `POST /manual-journals` (Owner only; Staff get 403 even with `ledger.view`). `GET /manual-journals`, `/manual-journals/:id` and `/:id/history` need Owner or `ledger.view`.
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-20.http.integration.test.ts` (5):
+  - JNL-0001 posts P21 as entered, job-tagged, with its narration; Retained Earnings allowed.
+  - "Out by" refusal.
+  - Every control account refused.
+  - A closed period refused.
+  - 403 for Staff with `ledger.view` and for Field.
+- `apps/e2e/tests/us-rpt-20.spec.ts` (1): from the sidebar, control accounts not offered, out-by message and disabled button, post, the journal's page and the list.
+
 ### 2026-10-06 — US-RPT-19: check and lock my opening balances (Phase 8)
 
 - **"Review" tab** on Opening balances:

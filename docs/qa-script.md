@@ -3242,6 +3242,18 @@ Regression: ordinary bills and vendor credits record, pay, apply and void as bef
 
 Regression: other fiscal periods (Reports › close a period) still close and reopen as before.
 
+## 132. Post an adjusting journal (US-RPT-20, Phase 8)
+
+1. As an Owner, the sidebar's Reports section has "Journals". Open it, then "New journal": "For adjustments no document covers. Journals are never edited — a mistake is reversed." Date (today), Reason ("e.g. Depreciation for March") and two empty lines.
+2. In an Account box, search "Receivable", "Payable", "Tax", "Advances" or "Opening": nothing matching is offered. The note lists those accounts and says to use invoices, bills, payments or Record tax payment.
+3. Enter Other Expenses debit 400.00 and Accumulated Depreciation credit 350.00: the totals read $400.00 and $350.00, the alert reads "Debits and credits must be equal — out by $50.00.", and "Post journal" is disabled. A line with both a debit and a credit keeps only the last one typed.
+4. Make them equal, add a job on one line, then "Post journal". The journal's page opens: "JNL-0001", "Posted", date, reason, "posted by <you>", and the lines with the job.
+5. Reports › P&L / Balance Sheet move by the amounts. The drill-down shows "Journal JNL-0001 — <reason>", linking to the journal. A journal line on a bank account shows in its register as "Journal JNL-0001".
+6. Post one dated inside a closed fiscal period: "… falls within a closed fiscal period".
+7. Settings › Numbering lists "Journal" (JNL). Staff, even with "View ledger / journals", get 403 posting.
+
+Regression: reports, registers and other numbering types are unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

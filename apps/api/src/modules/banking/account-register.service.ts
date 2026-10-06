@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, vendorRefunds, journalEntries, journalLines, moneyAccounts, payments, taxPayments, vendorPayments } from "../../db/schema";
+import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, vendorRefunds, journalEntries, journalLines, manualJournals, moneyAccounts, payments, taxPayments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -22,6 +22,11 @@ const SOURCE_LABELS: Record<string, string> = {
   bank_transfer_delete: "Transfer deleted",
   tax_payment: "Tax payment",
   tax_refund: "Tax refund",
+  // US-RPT-16, US-RPT-20/21
+  opening_balance: "Opening balance",
+  opening_balance_repost: "Opening balance re-entered",
+  manual_journal: "Journal",
+  manual_journal_reversal: "Journal reversed",
 };
 
 interface SourceDetails {
@@ -229,6 +234,15 @@ export class AccountRegisterService {
         out.set(`bank_transaction:${row.id}`, { ...base, label: `${kind} — ${row.category}` });
         out.set(`bank_transaction_delete:${row.id}`, { ...base, label: `${kind} deleted — ${row.category}` });
       }
+    }
+    const journalTypes = ["manual_journal", "manual_journal_reversal"];
+    const journalIds = ids(journalTypes);
+    if (journalIds.length) {
+      const rows = await this.db
+        .select({ id: manualJournals.id, number: manualJournals.number, reason: manualJournals.reason, status: manualJournals.status })
+        .from(manualJournals)
+        .where(and(eq(manualJournals.orgId, orgId), inArray(manualJournals.id, journalIds)));
+      for (const row of rows) for (const type of journalTypes) out.set(`${type}:${row.id}`, { number: row.number, reference: row.reason, deleted: row.status === "reversed" });
     }
     const taxIds = ids(["tax_payment", "tax_refund", "tax_payment_delete"]);
     if (taxIds.length) {
