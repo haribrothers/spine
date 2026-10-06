@@ -3178,6 +3178,18 @@ Regression: Payments, Vendor Payments, Banking's Transfer and Money in/out, and 
 
 Regression: balances, the Balance Sheet and the dashboard's cash figures are the same before and after finishing. Deleting unreconciled documents works as before.
 
+## 127. Review or undo a reconciliation (US-BANK-11, Phase 8)
+
+1. Reconcile an account twice (two month-ends, §124–126). Bank Account › "Reconciliations": the breadcrumb reads "Money › Banking › Bank Account › Reconciliations", and the description reads "Every finished reconciliation of Bank Account. Only the latest can be undone."
+2. The cards: "Reconciled to <latest date>" with its closing balance, "Reconciliations 2 · since <first date>", and "Entries matched" with the total. The table lists both, newest first, with closing balance, entries matched, who finished it and when, and "Latest" or "Finished".
+3. The older row reads "Undo the later reconciliations first." and has no Undo. `POST /bank-reconciliations/<older id>/undo` returns 400 with the same message.
+4. "Undo" on the latest: "Undo this reconciliation?", "Statement to <date> · <n> entries. Its entries go back to unreconciled; nothing is deleted. Its statement lines go back to unmatched." and "Only the most recent reconciliation of an account can be undone." Click "Undo reconciliation": the toast reads "Reconciliation undone", and the older one becomes "Latest".
+5. The register: that reconciliation's entries read "Not reconciled" again. Banking shows the older date under "Last reconciled". The audit log reads "<you> undid Reconciliation".
+6. Their documents can now be deleted. Reconcile to the same date again: its statement lines are offered unmatched.
+7. With no reconciliations: "No reconciliations yet". As Staff without "Reconcile accounts", the page shows no access and the routes return 403.
+
+Regression: finishing and matching (§124–126) work as before.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

@@ -49,4 +49,11 @@ export class ReconciliationsController {
   async finish(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
     return this.reconciliations.finish(requireOrgId(session), session.user.id, id);
   }
+
+  /** US-BANK-11 — only the most recent finished reconciliation of an account. */
+  @Post(":id/undo")
+  @UseInterceptors(IdempotencyInterceptor)
+  async undo(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.reconciliations.undo(requireOrgId(session), session.user.id, id);
+  }
 }

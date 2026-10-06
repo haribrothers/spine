@@ -72,6 +72,9 @@ const ACTION_VERBS: Record<string, string> = {
   refund_deleted: "deleted a refund from",
   // US-BANK-07
   statement_imported: "imported a statement into",
+  // US-BANK-10/11
+  finished: "finished",
+  undone: "undid",
   credit_applied: "applied credit from",
   applied: "applied",
   application_removed: "removed an application of",

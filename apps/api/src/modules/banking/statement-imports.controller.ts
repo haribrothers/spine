@@ -6,6 +6,7 @@ import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
+import { ReconciliationsService } from "./reconciliations.service";
 import { StatementImportsService, type UploadedStatement } from "./statement-imports.service";
 
 /** A statement over 2 MB says what to do instead of multer's "File too large". */
@@ -16,12 +17,21 @@ class StatementSizeFilter implements ExceptionFilter {
   }
 }
 
-/** US-BANK-07 — CSV statements for a money account. `banking.reconcile`; Field never. */
+/** US-BANK-07 and US-BANK-11 — CSV statements and reconciliation history for a money account. `banking.reconcile`; Field never. */
 @Controller("money-accounts/:id")
 @OrgRoles(["owner", "staff"])
 @RequireCapability("banking.reconcile")
 export class StatementImportsController {
-  constructor(private readonly imports: StatementImportsService) {}
+  constructor(
+    private readonly imports: StatementImportsService,
+    private readonly reconciliations: ReconciliationsService,
+  ) {}
+
+  /** US-BANK-11 — the account's finished reconciliations, newest first. */
+  @Get("reconciliations")
+  async reconciliationHistory(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.reconciliations.list(requireOrgId(session), id, "finished");
+  }
 
   /** The column mapping saved by the last import, if any. */
   @Get("statement-mapping")

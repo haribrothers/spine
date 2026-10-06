@@ -192,9 +192,14 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
         title={`Reconcile ${name}`}
         description="Match each statement line to an entry in Spine until the difference is zero."
         action={
-          <Button variant="secondary" onClick={() => setImportOpen(true)}>
-            Import statement
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="ghost" asChild>
+              <Link href={`/banking/${accountId}/reconciliations`}>Reconciliations</Link>
+            </Button>
+            <Button variant="secondary" onClick={() => setImportOpen(true)}>
+              Import statement
+            </Button>
+          </div>
         }
       />
       {!loaded ? (

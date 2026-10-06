@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-BANK-11: review or undo a reconciliation (Phase 8)
+
+- **"Reconciliations"** on an account's register and reconcile page opens `ReconciliationsHistory` at `/banking/<id>/reconciliations` ("Every finished reconciliation of <account>. Only the latest can be undone.").
+  - Three cards show "Reconciled to" (with the closing balance), the number of reconciliations, and "Entries matched".
+  - The table lists statement end date, closing balance, entries matched, finished by, finished, and status ("Latest" or "Finished").
+- **Undo** is offered only on the latest. Older rows read "Undo the later reconciliations first."
+  - The confirmation reads "Undo this reconciliation?" and "Statement to <date> · <n> entries. Its entries go back to unreconciled; nothing is deleted."
+  - Undoing takes the Reconciled tick off its entries, puts its statement lines back to unmatched, and moves "Last reconciled" back. The toast reads "Reconciliation undone".
+  - It's in the audit log ("undid Reconciliation"). The account can then be reconciled to that date again.
+- **API**: `GET /money-accounts/:id/reconciliations` and `POST /bank-reconciliations/:id/undo` (`banking.reconcile`). The audit log phrases "finished" and "undone" reconciliations.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-11.http.integration.test.ts` (4):
+  - The history with who finished each.
+  - Undoing an older one is refused.
+  - Undoing the latest takes off its ticks, unmatches its lines, moves "Last reconciled" back, is audited, and the date can be reconciled again.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-11.spec.ts` (1): the history page, no Undo on the older one, the confirmation, undo and the toast; the register's ticks afterwards.
+
 ### 2026-10-06 — US-BANK-10: finish a reconciliation when it balances (Phase 8)
 
 - **"Finish reconciliation"** on the reconcile page is enabled only at a difference of $0.00. Until then the footer reads "Difference <amount> — match or create entries until it's zero."

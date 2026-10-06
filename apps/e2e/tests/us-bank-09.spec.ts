@@ -105,6 +105,16 @@ seeded.describe("US-BANK-09 rights", () => {
     await expect(drawer.getByRole("radio", { name: "Tax payment" })).toHaveCount(0);
     await context.close();
 
-    expect((await setRights([{ capability: "banking.reconcile", granted: false }, { capability: "banking.record", granted: false }, { capability: "payments.edit_own", granted: true }])).ok()).toBe(true);
+    // Back to General Staff's defaults (reconciling turned viewing on too).
+    expect(
+      (
+        await setRights([
+          { capability: "banking.reconcile", granted: false },
+          { capability: "banking.view", granted: false },
+          { capability: "banking.record", granted: false },
+          { capability: "payments.edit_own", granted: true },
+        ])
+      ).ok(),
+    ).toBe(true);
   });
 });

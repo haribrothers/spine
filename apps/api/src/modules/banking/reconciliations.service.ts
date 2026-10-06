@@ -2,6 +2,7 @@ import { BadRequestException, Inject, Injectable, NotFoundException } from "@nes
 import { and, asc, desc, eq, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import {
   DIFFERENCE_NOT_ZERO,
+  UNDO_LATER_FIRST,
   MATCH_SUM_MISMATCH,
   RECONCILE_AFTER,
   formatMoney,
@@ -219,6 +220,43 @@ export class ReconciliationsService {
       await tx.update(bankReconciliations).set({ updatedAt: new Date() }).where(eq(bankReconciliations.id, rec.id));
     });
     return this.get(orgId, id);
+  }
+
+  /**
+   * US-BANK-11 (D-158) — undoes the most recent finished reconciliation of an
+   * account: its entries lose the tick and its statement lines go back to
+   * unmatched. Nothing is deleted or posted. Older ones need the later ones
+   * undone first.
+   */
+  async undo(orgId: string, actorUserId: string, id: string): Promise<ReconciliationSummary> {
+    await this.db.transaction(async (tx) => {
+      const rec = await this.load(tx, orgId, id, true);
+      if (rec.status !== "finished") throw new BadRequestException("Only a finished reconciliation can be undone.");
+      await tx.select({ id: moneyAccounts.id }).from(moneyAccounts).where(eq(moneyAccounts.id, rec.moneyAccountId)).for("update");
+      const latest = await this.latestFinished(tx, rec.moneyAccountId);
+      if (latest?.id !== rec.id) throw new BadRequestException(UNDO_LATER_FIRST);
+      const [{ n }] = (await tx.select({ n: sql<number>`count(*)::int` }).from(bankStatementLineMatches).where(eq(bankStatementLineMatches.reconciliationId, rec.id))) as [{ n: number }];
+      await tx.update(journalLines).set({ reconciliationId: null }).where(eq(journalLines.reconciliationId, rec.id));
+      await tx.delete(bankStatementLineMatches).where(eq(bankStatementLineMatches.reconciliationId, rec.id));
+      await tx.update(bankStatementLines).set({ status: "unmatched", excludeNote: null, reconciliationId: null }).where(eq(bankStatementLines.reconciliationId, rec.id));
+      await tx.update(bankReconciliations).set({ status: "undone", undoneByUserId: actorUserId, undoneAt: new Date(), updatedAt: new Date() }).where(eq(bankReconciliations.id, rec.id));
+      const account = await this.moneyAccounts.get(orgId, rec.moneyAccountId);
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "undone",
+        entityType: "bank_reconciliation",
+        entityId: rec.id,
+        contactId: null,
+        changes: { account: account.name, statementEndDate: rec.statementEndDate, closingBalance: rec.statementClosingBalance.toString(), entriesMatched: n },
+      });
+    });
+    const [row] = await this.db
+      .select({ rec: bankReconciliations, name: user.name })
+      .from(bankReconciliations)
+      .leftJoin(user, eq(user.id, bankReconciliations.finishedByUserId))
+      .where(eq(bankReconciliations.id, id));
+    return this.toSummary(row!.rec, row!.name, 0, false);
   }
 
   /** The most recent finished reconciliation of an account. */
