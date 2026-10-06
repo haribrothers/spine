@@ -30,6 +30,7 @@ export const REPORTS: ReportEntry[] = [
   { slug: "tax-summary", label: "Tax Summary", group: "Tax", href: "/reports/tax-summary", access: "owner", keywords: "gst vat sales tax" },
   { slug: "job-profitability", label: "Job profitability", group: "Jobs", href: "/reports/job-profitability", access: ["reports.view_job_profitability"], keywords: "jobs margin" },
   { slug: "general-ledger", label: "General ledger", group: "Accountant", href: "/reports/general-ledger", access: ["ledger.view"], keywords: "gl ledger accounts entries" },
+  { slug: "day-book", label: "Day book", group: "Accountant", href: "/reports/day-book", access: ["ledger.view"], keywords: "daybook entries journal ledger" },
   { slug: "journals", label: "Journals", group: "Accountant", href: "/journals", access: ["ledger.view"], keywords: "manual journal adjustments ledger" },
 ];
 

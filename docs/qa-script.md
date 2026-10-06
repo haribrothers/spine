@@ -3299,6 +3299,18 @@ Regression: Receivables and Payables still open from the sidebar. The tax paymen
 
 Regression: Trial Balance's account drill-down (§29) and the Journals list (§134) are unchanged.
 
+## 137. The day book (US-RPT-25, Phase 8)
+
+1. As an Owner, record money in and post a journal today. Reports › Accountant › Day book: "Every journal entry in date order." From and To are today. Both entries show with their date, source ("Money in", "Journal JNL-…"), contact · narration (the journal's reason) and one row per line — debits first — with Totals equal on both sides.
+2. Source → Journals: only the journal stays. Source → All sources: both are back.
+3. Type the journal's reason in "Search entries": only it stays. Type nonsense: "No entries match your search".
+4. Widen From to the start of the month: older entries appear in date order; page through with the pager.
+5. Click an entry's source: its document opens (invoice, payment drawer, bill, expense, journal, bank account, opening balances).
+6. As Staff with "View ledger / journals": Reports lists Day book and it opens. Without it: the no-access page. Field: no Reports.
+7. Dark mode: the table and links are readable.
+
+Regression: General ledger (§136) is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

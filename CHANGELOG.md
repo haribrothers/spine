@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-25: see the day book (Phase 8)
+
+- **Reports › Day book** (`/reports/day-book`, under "Accountant") lists every journal entry in date order: date, source ("Invoice INV-0042", "Payment RCP-0012", "Journal JNL-0003"…), contact · narration, and each line's account, debit and credit, with totals. Today by default.
+- **"Source"** narrows to one kind (Invoices, Credit notes, Payments, Refunds, Bills, Vendor credits, Vendor payments, Expenses, Transfers and money in or out, Tax payments, Journals, Opening balances). "Search entries" matches source, contact, narration and account. Entries are paged, 10 per page by default.
+- **An entry's source opens its document.** Owners, and Staff with "View ledger / journals"; anyone else gets 403.
+- API: `GET /reports/day-book?from=&to=&sourceType=`. Export arrives with US-RPT-32.
+
 ### 2026-10-06 — US-RPT-24: see the general ledger (Phase 8)
 
 - **Reports › General ledger** (`/reports/general-ledger`, under "Accountant") shows each account's "Opening balance", one row per entry (date, source and number, contact · description, job, debit, credit, running balance) and "Closing balance" for a period. Balances read Dr or Cr.

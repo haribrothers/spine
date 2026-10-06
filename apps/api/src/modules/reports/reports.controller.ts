@@ -1,4 +1,4 @@
-import { generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -41,6 +41,15 @@ export class ReportsController {
     const parsed = generalLedgerQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
     return this.ledgerReports.generalLedger(requireOrgId(session), parsed.data);
+  }
+
+  /** US-RPT-25 — every journal entry in date order, optionally one kind of source. Owner, or `ledger.view`. */
+  @Get("day-book")
+  @RequireCapability("ledger.view")
+  async dayBook(@Session() session: UserSession, @Query() query: unknown) {
+    const parsed = dayBookQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    return this.ledgerReports.dayBook(requireOrgId(session), parsed.data);
   }
 
   /** S-09.10 — the real dashboard summary. */

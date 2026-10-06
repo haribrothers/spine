@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, asc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
-import type { GeneralLedgerAccount, GeneralLedgerReport } from "@spine/shared";
+import { LEDGER_SOURCE_KINDS, type DayBookReport, type GeneralLedgerAccount, type GeneralLedgerReport } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { accounts, contacts, jobs, journalEntries, journalLines } from "../../db/schema";
@@ -94,4 +94,39 @@ export class LedgerReportsService {
     return { from: query.from, to: query.to, accounts: result, page: query.page, pageSize: query.pageSize, totalAccounts: listed.length };
   }
 
+  /** US-RPT-25 — every journal entry in the range, in date order, with its lines. */
+  async dayBook(orgId: string, query: { from: string; to: string; sourceType?: string }): Promise<DayBookReport> {
+    const types = query.sourceType ? (LEDGER_SOURCE_KINDS.find((k) => k.key === query.sourceType)?.types ?? []) : null;
+    const entries = await this.db
+      .select()
+      .from(journalEntries)
+      .where(and(eq(journalEntries.orgId, orgId), gte(journalEntries.date, query.from), lte(journalEntries.date, query.to), types ? inArray(journalEntries.sourceType, types) : undefined))
+      .orderBy(asc(journalEntries.date), asc(journalEntries.createdAt));
+    if (!entries.length) return { from: query.from, to: query.to, entries: [] };
+    const lines = await this.db
+      .select({ line: journalLines, account: { id: accounts.id, code: accounts.code, name: accounts.name }, contactName: contacts.name })
+      .from(journalLines)
+      .innerJoin(accounts, eq(accounts.id, journalLines.accountId))
+      .leftJoin(contacts, eq(contacts.id, journalLines.contactId))
+      .where(inArray(journalLines.entryId, entries.map((e) => e.id)))
+      .orderBy(asc(journalLines.entryId), sql`${journalLines.debit} = 0`, asc(accounts.code));
+    const labels = await this.sources.describe(orgId, entries);
+    return {
+      from: query.from,
+      to: query.to,
+      entries: entries.map((entry) => {
+        const own = lines.filter((l) => l.line.entryId === entry.id);
+        const withContact = own.find((l) => l.line.contactId && l.contactName);
+        return {
+          ...labels.get(`${entry.sourceType}:${entry.sourceId}`)!,
+          entryId: entry.id,
+          date: entry.date,
+          narration: entry.narration,
+          description: narrationDetail(entry.narration),
+          contact: withContact ? { id: withContact.line.contactId!, name: withContact.contactName! } : null,
+          lines: own.map((l) => ({ account: l.account, debit: l.line.debit.toString(), credit: l.line.credit.toString() })),
+        };
+      }),
+    };
+  }
 }
