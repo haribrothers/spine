@@ -42,3 +42,4 @@ export * from "./manual-journals.ts";
 export * from "./reports-catalog.ts";
 export * from "./ledger-reports.ts";
 export * from "./cash-flow.ts";
+export * from "./report-compare.ts";

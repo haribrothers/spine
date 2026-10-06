@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  StatCard,
 } from "@spine/ui";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
@@ -34,15 +35,25 @@ import {
   type TrialBalanceReport,
 } from "./types";
 import { formatMoney } from "../../../lib/money";
-import { budgetUsedLabel } from "@spine/shared";
+import { budgetUsedLabel, PL_COMPARE_LABELS, PL_COMPARE_MODES, changePercent, periodLabel, previousYearEnd, type PlCompareMode } from "@spine/shared";
+import { BsCompareTable, PlCompareTable } from "./compare-tables";
 import { AlertTriangle, OctagonAlert } from "lucide-react";
 import { TaxPaymentDialog, TaxPaymentsList } from "./tax-payment-dialog";
 import { useEntityToast } from "../payments/entity-toast";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
+/** The local calendar date (toISOString would shift it a day in time zones ahead of UTC). */
 function toDateParam(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** "▲ 11.6% vs previous period" for a card; words and an arrow, not colour alone. */
+function cardTrend(current: string, previous: string, against: string): { direction: "up" | "down" | "neutral"; label: string } {
+  const pct = changePercent(BigInt(current), BigInt(previous));
+  if (pct === null) return { direction: "neutral", label: `nothing to compare ${against}` };
+  if (/^-?0\.0$/.test(pct)) return { direction: "neutral", label: `no change ${against}` };
+  return pct.startsWith("-") ? { direction: "down", label: `▼ ${pct.slice(1)}% ${against}` } : { direction: "up", label: `▲ ${pct}% ${against}` };
 }
 
 function startOfYear(): Date {
@@ -101,6 +112,7 @@ export function ProfitAndLossTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drilldown, setDrilldown] = useState<{ accountId: string; code: string; name: string } | null>(null);
+  const [compare, setCompare] = useState<"none" | PlCompareMode>("none");
 
   useEffect(() => {
     apiClient
@@ -111,11 +123,11 @@ export function ProfitAndLossTab() {
       .catch(() => {});
   }, []);
 
-  async function load() {
+  async function load(mode = compare) {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<ProfitAndLossReport>(`/reports/profit-and-loss?from=${toDateParam(from)}&to=${toDateParam(to)}`);
+      const res = await apiClient.get<ProfitAndLossReport>(`/reports/profit-and-loss?from=${toDateParam(from)}&to=${toDateParam(to)}${mode === "none" ? "" : `&compare=${mode}`}`);
       setReport(res);
     } catch (err) {
       setError(ownerOnlyMessage(err));
@@ -139,7 +151,29 @@ export function ProfitAndLossTab() {
           <Label>To</Label>
           <DatePicker value={to} onChange={setTo} />
         </div>
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+        <div className="flex flex-col gap-1.5">
+          <Label id="pl-compare-label">Compare with</Label>
+          <Select
+            value={compare}
+            onValueChange={(v) => {
+              setCompare(v as typeof compare);
+              void load(v as typeof compare);
+            }}
+          >
+            <SelectTrigger className="w-56" aria-labelledby="pl-compare-label">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No comparison</SelectItem>
+              {PL_COMPARE_MODES.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {PL_COMPARE_LABELS[m]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
         {!error && (
@@ -160,7 +194,37 @@ export function ProfitAndLossTab() {
         </Alert>
       )}
 
-      {report && !error && (
+      {report?.comparison && !error && (
+        <div className="flex flex-col gap-4" data-testid="pl-comparison">
+          <p className="text-[14px] text-on-surface-muted" data-testid="pl-compare-subtitle">
+            {report.comparison.mode === "monthly"
+              ? `${periodLabel(report.from, report.to)} by month`
+              : `${periodLabel(report.from, report.to)} compared with ${report.comparison.columns[1]!.label}`}
+          </p>
+          {report.comparison.mode !== "monthly" && (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {(
+                [
+                  ["Total income", report.comparison.totalIncome],
+                  ["Total expenses", report.comparison.totalExpenses],
+                  ["Net profit", report.comparison.netProfit],
+                ] as const
+              ).map(([label, amounts]) => (
+                <StatCard
+                  key={label}
+                  label={label}
+                  value={formatMoney(BigInt(amounts[0]!), currency)}
+                  trend={cardTrend(amounts[0]!, amounts[1]!, report.comparison!.mode === "previous" ? "vs previous period" : "vs last year")}
+                />
+              ))}
+            </div>
+          )}
+          <PlCompareTable comparison={report.comparison} totals={{ income: report.totalIncome, expenses: report.totalExpenses, netProfit: report.netProfit }} currency={currency} />
+          <p className="text-[13px] text-on-surface-muted">Arrows and signs show direction; colour is never the only signal. Choose &quot;Each month&quot; for one column per month plus a total.</p>
+        </div>
+      )}
+
+      {report && !report.comparison && !error && (
         <div className="flex flex-col gap-4 rounded-md border border-border-strong bg-surface p-4">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Income</p>
@@ -215,6 +279,8 @@ export function BalanceSheetTab() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [drilldown, setDrilldown] = useState<{ accountId: string; code: string; name: string } | null>(null);
+  const [compare, setCompare] = useState<"none" | "previous_year_end">("none");
+  const [yearStart, setYearStart] = useState({ month: 1, day: 1 });
 
   useEffect(() => {
     apiClient
@@ -223,13 +289,18 @@ export function BalanceSheetTab() {
         if (res.value?.code) setCurrency(res.value.code);
       })
       .catch(() => {});
+    apiClient
+      .get<{ value: { month: number; day: number } | null }>("/org/settings/financial_year_start")
+      .then((res) => res.value && setYearStart(res.value))
+      .catch(() => {});
   }, []);
 
-  async function load() {
+  async function load(mode = compare) {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get<BalanceSheetReport>(`/reports/balance-sheet?asOf=${toDateParam(asOf)}`);
+      const date = toDateParam(asOf);
+      const res = await apiClient.get<BalanceSheetReport>(`/reports/balance-sheet?asOf=${date}${mode === "none" ? "" : `&compareAsOf=${previousYearEnd(date, yearStart)}`}`);
       setReport(res);
     } catch (err) {
       setError(ownerOnlyMessage(err));
@@ -249,7 +320,25 @@ export function BalanceSheetTab() {
           <Label>As of</Label>
           <DatePicker value={asOf} onChange={setAsOf} />
         </div>
-        <Button variant="secondary" size="sm" onClick={load} disabled={loading}>
+        <div className="flex flex-col gap-1.5">
+          <Label id="bs-compare-label">Compare with</Label>
+          <Select
+            value={compare}
+            onValueChange={(v) => {
+              setCompare(v as typeof compare);
+              void load(v as typeof compare);
+            }}
+          >
+            <SelectTrigger className="w-52" aria-labelledby="bs-compare-label">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No comparison</SelectItem>
+              <SelectItem value="previous_year_end">Previous year end</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button variant="secondary" size="sm" onClick={() => load()} disabled={loading}>
           {loading ? <Spinner size="sm" /> : "Refresh"}
         </Button>
         {!error && (
@@ -270,7 +359,11 @@ export function BalanceSheetTab() {
         </Alert>
       )}
 
-      {report && !error && (
+      {report?.comparison && !error && (
+        <BsCompareTable report={report} comparison={report.comparison} currency={currency} labels={[periodLabel(report.asOf, report.asOf), periodLabel(report.comparison.asOf, report.comparison.asOf)]} />
+      )}
+
+      {report && !report.comparison && !error && (
         <div className="flex flex-col gap-4 rounded-md border border-border-strong bg-surface p-4">
           <div>
             <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-on-surface-muted">Assets</p>

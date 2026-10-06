@@ -3324,6 +3324,19 @@ Regression: General ledger (§136) is unchanged.
 
 Regression: Profit & Loss's net profit for the same range matches Cash Flow's "Net profit".
 
+## 139. Compare profit and loss and the balance sheet (US-RPT-27, Phase 8)
+
+1. As an Owner with income and expenses across two quarters, open Profit & Loss, set From Jul 1 and To Sep 30, Compare with → "Previous period". The subtitle reads "Jul – Sep 2026 compared with Apr – Jun 2026". Cards show Total income, Total expenses and Net profit with "▲/▼ n% vs previous period". The table has Account, "Jul – Sep 2026", "Apr – Jun 2026", Change and Change %, grouped Income / Expenses with totals and Net profit.
+2. Each change carries an arrow and a sign (▲ +, ▼ −); a figure that was zero before shows "—" for Change %. Nothing relies on colour.
+3. "Same period last year": the second column is Jul – Sep 2025 and the cards say "vs last year".
+4. Set Jan 1 – Dec 31 and "Each month": twelve month columns plus Total; no Change columns. Set a range over 24 months: 'Choose 24 months or fewer for "Each month".'
+5. "No comparison": the original Profit & Loss list is back, with drill-down and Export CSV.
+6. Balance Sheet, As of today, Compare with → "Previous year end": columns for today and the last day of the previous financial year (Settings › Financial year), with Change; totals for assets, liabilities, equity and liabilities + equity.
+7. In a time zone ahead of UTC (e.g. Asia/Kolkata), From Jul 1 stays Jul 1 in the subtitle and the columns.
+8. Dark mode: tables, arrows and cards are readable.
+
+Regression: Profit & Loss and Balance Sheet without a comparison look and export as before (§15).
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

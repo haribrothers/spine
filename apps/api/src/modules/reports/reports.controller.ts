@@ -1,4 +1,4 @@
-import { cashFlowQuerySchema, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
+import { balanceSheetQuerySchema, cashFlowQuerySchema, profitAndLossQuerySchema, TOO_MANY_MONTHS, dayBookQuerySchema, generalLedgerQuerySchema, toDecimalString } from "@spine/shared";
 import { BadRequestException, Controller, Get, Query, Res } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import type { Response } from "express";
@@ -123,17 +123,33 @@ export class ReportsController {
   /** S-09.2 — Owner-only per this controller's own doc comment. */
   @Get("profit-and-loss")
   @OrgRoles(["owner"])
-  async profitAndLoss(@Session() session: UserSession, @Query("from") from: string, @Query("to") to: string) {
+  async profitAndLoss(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
-    return this.reportsService.profitAndLoss(orgId, from, to);
+    const parsed = profitAndLossQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the dates and try again.");
+    const { from, to, compare } = parsed.data;
+    const report = await this.reportsService.profitAndLoss(orgId, from, to);
+    if (!compare) return report;
+    // US-RPT-27 — the columns to compare, lined up by account.
+    try {
+      return { ...report, comparison: await this.reportsService.profitAndLossComparison(orgId, from, to, compare) };
+    } catch (err) {
+      if (err instanceof Error && err.message === TOO_MANY_MONTHS) throw new BadRequestException(TOO_MANY_MONTHS);
+      throw err;
+    }
   }
 
   /** S-09.3 — Owner-only, same reasoning as profitAndLoss above. */
   @Get("balance-sheet")
   @OrgRoles(["owner"])
-  async balanceSheet(@Session() session: UserSession, @Query("asOf") asOf: string) {
+  async balanceSheet(@Session() session: UserSession, @Query() query: unknown) {
     const orgId = requireOrgId(session);
-    return this.reportsService.balanceSheet(orgId, asOf);
+    const parsed = balanceSheetQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the date and try again.");
+    const report = await this.reportsService.balanceSheet(orgId, parsed.data.asOf);
+    // US-RPT-27 — "Compare with" → "Previous year end": the same statement on the other date.
+    if (!parsed.data.compareAsOf) return report;
+    return { ...report, comparison: await this.reportsService.balanceSheet(orgId, parsed.data.compareAsOf) };
   }
 
   /** S-09.4 — drill-down behind a P&L/Balance Sheet figure. `@OrgRoles(["owner"])` is a floor (Owner always passes); `ledger.view` additionally lets a Staff user in a granted Team reach this too, even though P&L/Balance Sheet themselves stay Owner-only with no bypass — drilling into raw journal entries is a narrower, more literal "view the ledger" grant than seeing the full financial statements. */

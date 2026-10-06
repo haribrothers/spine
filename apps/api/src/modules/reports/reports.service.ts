@@ -1,4 +1,4 @@
-import { billingFigures, budgetFigures, type MoneyInOutReport } from "@spine/shared";
+import { billingFigures, budgetFigures, comparePeriods, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
 import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
@@ -417,6 +417,35 @@ export class ReportsService {
       totalIncome: totalIncome.toString(),
       totalExpenses: totalExpenses.toString(),
       netProfit: (totalIncome - totalExpenses).toString(),
+    };
+  }
+
+  /**
+   * US-RPT-27 — the same Profit & Loss for each comparison column, lined up
+   * by account. Accounts with nothing in any column are left out.
+   */
+  async profitAndLossComparison(orgId: string, from: string, to: string, mode: PlCompareMode): Promise<ProfitAndLossComparison> {
+    const columns = comparePeriods(from, to, mode);
+    const reports = await Promise.all(columns.map((c) => this.profitAndLoss(orgId, c.from, c.to)));
+    const lineUp = (pick: (r: ProfitAndLossReport) => ReportAccountLine[]): CompareLine[] => {
+      const byId = new Map<string, CompareLine>();
+      reports.forEach((r, i) => {
+        for (const l of pick(r)) {
+          const line = byId.get(l.accountId!) ?? { accountId: l.accountId!, code: l.code, name: l.name, amounts: columns.map(() => "0") };
+          line.amounts[i] = l.amount;
+          byId.set(l.accountId!, line);
+        }
+      });
+      return [...byId.values()].sort((a, b) => a.code.localeCompare(b.code));
+    };
+    return {
+      mode,
+      columns,
+      income: lineUp((r) => r.income),
+      expenses: lineUp((r) => r.expenses),
+      totalIncome: reports.map((r) => r.totalIncome),
+      totalExpenses: reports.map((r) => r.totalExpenses),
+      netProfit: reports.map((r) => r.netProfit),
     };
   }
 

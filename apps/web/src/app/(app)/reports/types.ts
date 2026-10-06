@@ -1,3 +1,5 @@
+import type { ProfitAndLossComparison } from "@spine/shared";
+
 export interface ReportAccountLine {
   accountId?: string;
   code: string;
@@ -13,6 +15,8 @@ export interface ProfitAndLossReport {
   totalIncome: string;
   totalExpenses: string;
   netProfit: string;
+  /** US-RPT-27 — with `?compare=`. */
+  comparison?: ProfitAndLossComparison;
 }
 
 export interface BalanceSheetReport {
@@ -24,6 +28,8 @@ export interface BalanceSheetReport {
   totalLiabilities: string;
   totalEquity: string;
   totalLiabilitiesAndEquity: string;
+  /** US-RPT-27 — the same statement on `?compareAsOf=`. */
+  comparison?: BalanceSheetReport;
 }
 
 export interface AccountDrilldownEntry {

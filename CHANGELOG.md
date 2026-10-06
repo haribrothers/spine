@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-RPT-27: compare profit and loss across periods (Phase 8)
+
+- **Profit & Loss › "Compare with"**: "Previous period", "Same period last year" or "Each month". The first two add the other period's column plus "Change" and "Change %", with cards for Total income, Total expenses and Net profit ("▲ 11.6% vs previous period"); the subtitle reads "Jul – Sep 2026 compared with Apr – Jun 2026". "Each month" shows one column per month plus "Total" (up to 24 months).
+- **Direction is never colour alone**: changes read "▲ +$6,059.53" / "▼ −$1,324.53" and "▲ +16.8%"; a change against zero shows "—".
+- **Balance Sheet › "Compare with" → "Previous year end"** shows both dates side by side with the change, using Settings › Financial year.
+- Whole-month ranges compare whole months (Jul–Sep with Apr–Jun; Mar with Feb); other ranges compare the same number of days.
+- Report dates are now sent as the local calendar date; time zones ahead of UTC no longer shift From/To a day earlier.
+- API: `GET /reports/profit-and-loss?compare=`, `GET /reports/balance-sheet?compareAsOf=`. Access is unchanged (Owner) until US-RPT-36.
+
 ### 2026-10-06 — US-RPT-26: see where cash came from and where it went (Phase 8)
 
 - **Reports › Cash Flow** (`/reports/cash-flow`, under "Business overview"): "Cash at start", "Net change" (with ▲/▼ and words, not colour alone) and "Cash at end" cards, then "Operating activities" (net profit adjusted for receivables and retention, payables, tax, customer advances, card balances and other working capital), "Investing activities" (fixed assets, one line per account) and "Financing activities" (capital, drawings, loans, one line per account), each with its net total. This quarter to today by default.
