@@ -3480,6 +3480,15 @@ Regression: the Payables page without ?overdue=1 lists every open bill as before
 5. Staff without "View banking": no Accounts card.
 6. Dark mode and phone width: names truncate, balances stay readable.
 
+## 152. Ready to bill on the dashboard (US-DASH-24, Phase 8)
+
+1. In a new organisation, Ready to bill reads "Nothing waiting to be billed."
+2. Complete two milestones on a job without invoicing them. The card shows "Completed milestones not invoiced · 2" and their total. Click it: a list of jobs with their milestone count and amount; a job opens on its Milestones tab. Invoice one milestone: the count drops.
+3. Approve two billable expenses and one that isn't billable. "Approved billable expenses not billed · 2" shows what they'd invoice for, tax included. Click it: Expenses shows only those two, with "Showing approved billable expenses not yet on an invoice." and "Show all".
+4. Bill one expense onto an invoice: the count drops to 1.
+5. A cancelled job's completed milestones aren't counted.
+6. Staff without "View receivables": no Ready to bill card.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

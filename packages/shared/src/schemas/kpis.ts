@@ -83,3 +83,11 @@ export interface RetentionHeld {
   jobCount: number;
   jobs: { id: string; number: string | null; name: string; held: string }[];
 }
+
+/** US-DASH-24 — work done that could be invoiced today. Amounts are minor units. */
+export interface UnbilledWork {
+  /** Completed milestones not yet invoiced, by job; null when Jobs & field is switched off (D-154). */
+  milestones: { count: number; amount: string; jobs: { id: string; name: string; number: string | null; count: number; amount: string }[] } | null;
+  /** Approved billable expenses not yet on an invoice, at what they'd invoice for (amount + tax). */
+  billableExpenses: { count: number; amount: string };
+}

@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-DASH-24: see work not yet billed (Phase 8)
+
+- **Dashboard › Ready to bill** card (D-160): "Completed milestones not invoiced <n>" with their total, and "Approved billable expenses not billed <n>" with what they'd invoice for (amount + tax). Nothing to bill: "Nothing waiting to be billed."
+- The milestones line opens a list of the jobs holding them, each opening the job's Milestones tab; the expenses line opens Expenses filtered to approved billable expenses not yet on an invoice ("Show all" clears it).
+- When Jobs & field is switched off (Settings › Modules, Phase 9), only billable expenses show.
+- Members without "View receivables" don't get the card.
+- API: `GET /dashboard/unbilled`.
+
 ### 2026-10-06 — US-DASH-23: see each bank, cash and card balance (Phase 8)
 
 - **Dashboard › Accounts** card (D-160): every active bank, cash and card account with a type icon (named for screen readers), its balance — a card's reads "<amount> owed" — and "Reconciled to <date>" or "Not reconciled". A name opens the account's register; "Banking" opens Banking.

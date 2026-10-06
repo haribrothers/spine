@@ -1,9 +1,9 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { and, eq, inArray, isNotNull, isNull, ne, sql } from "drizzle-orm";
-import type { RetentionHeld } from "@spine/shared";
+import type { RetentionHeld, UnbilledWork } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, catalogItems, contacts, journalEntries, journalLines, jobs, quotes, settings } from "../../db/schema";
+import { accounts, catalogItems, contacts, expenses, journalEntries, journalLines, jobs, milestones, quotes, settings } from "../../db/schema";
 
 const CHECKLIST_DISMISSED_KEY = "dashboard_checklist_dismissed";
 
@@ -86,6 +86,40 @@ export class DashboardService {
    * from journal lines grouped by job (never a parallel calculation), with
    * the three jobs holding the most.
    */
+  /**
+   * US-DASH-24 — what could be invoiced today: completed milestones not yet
+   * invoiced (on jobs that aren't cancelled), by job, and approved billable
+   * expenses not yet billed, at what they'd invoice for (amount + tax, as
+   * billing an expense does). Milestones are left out when Jobs & field is
+   * switched off (settings `modules.jobsField === false`, D-154).
+   */
+  async unbilled(orgId: string): Promise<UnbilledWork> {
+    const [modules] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "modules")));
+    const jobsOn = (modules?.value as { jobsField?: boolean } | undefined)?.jobsField !== false;
+
+    let milestoneWork: UnbilledWork["milestones"] = null;
+    if (jobsOn) {
+      const rows = await this.db
+        .select({ jobId: jobs.id, name: jobs.name, number: jobs.number, count: sql<number>`count(*)::int`, amount: sql<string>`sum(${milestones.resolvedAmount})` })
+        .from(milestones)
+        .innerJoin(jobs, eq(jobs.id, milestones.jobId))
+        .where(and(eq(jobs.orgId, orgId), eq(milestones.status, "completed"), isNull(milestones.invoicedInvoiceId), ne(jobs.status, "cancelled")))
+        .groupBy(jobs.id, jobs.name, jobs.number)
+        .orderBy(sql`sum(${milestones.resolvedAmount}) desc`);
+      milestoneWork = {
+        count: rows.reduce((s, r) => s + r.count, 0),
+        amount: rows.reduce((s, r) => s + BigInt(r.amount), 0n).toString(),
+        jobs: rows.map((r) => ({ id: r.jobId, name: r.name, number: r.number, count: r.count, amount: BigInt(r.amount).toString() })),
+      };
+    }
+
+    const [billable] = await this.db
+      .select({ count: sql<number>`count(*)::int`, amount: sql<string>`coalesce(sum(${expenses.amount} + ${expenses.taxAmount}), 0)` })
+      .from(expenses)
+      .where(and(eq(expenses.orgId, orgId), eq(expenses.status, "approved"), eq(expenses.isBillable, true), isNull(expenses.billedOnInvoiceLineId)));
+    return { milestones: milestoneWork, billableExpenses: { count: billable?.count ?? 0, amount: BigInt(billable?.amount ?? "0").toString() } };
+  }
+
   async retentionHeld(orgId: string): Promise<RetentionHeld> {
     const held = sql<string>`sum(${journalLines.debit} - ${journalLines.credit})`;
     const rows = await this.db

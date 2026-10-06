@@ -90,6 +90,14 @@ export class DashboardController {
     return this.kpis.list(requireOrgId(session), session.user.id);
   }
 
+  /** US-DASH-24 (D-160) — completed milestones not invoiced and approved billable expenses not billed. */
+  @Get("unbilled")
+  @OrgRoles(["owner", "staff"])
+  @RequireCapability("reports.view_receivables")
+  async getUnbilled(@Session() session: UserSession) {
+    return this.dashboardService.unbilled(requireOrgId(session));
+  }
+
   /** Dismissing hides the card for every Owner in the organisation, so only Owners can do it (US-ONB-12). */
   /** US-DASH-20 — retention held, by job (1150 Retention Receivable). */
   @Get("retention")

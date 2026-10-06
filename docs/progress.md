@@ -384,7 +384,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-DASH-21 · See what I owe vendors on the dashboard
 - [x] US-DASH-22 · See where money goes
 - [x] US-DASH-23 · See each bank, cash and card balance
-- [ ] US-DASH-24 · See work not yet billed
+- [x] US-DASH-24 · See work not yet billed
 - [ ] US-DASH-25 · See tax owed this period
 - [ ] US-DASH-26 · Switch dashboard profit between accrual and cash
 - [x] US-OPS-33 · Attach files to bills, invoices and other records
