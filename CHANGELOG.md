@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-06 — US-PUR-26: record a refund from a vendor (Phase 8)
+
+- **"Record refund"** on an open vendor credit (`VendorRefundDialog`): "Amount" (up to the balance, prefilled with it), "Date", "Paid into" (money account), "Method" and "Reference". Over the balance: "This credit has <amount> left to refund.".
+- **Posting** (P25): Dr the money account / Cr 2000 AP, contact-tagged; the credit's balance drops, "Used" at zero. The register reads "Vendor refund".
+- **Delete**: "Delete refund" in "Refunds from the vendor" posts the reversal dated today and gives the balance back.
+- **Database limit**: the deferred trigger now counts live refunds with applications, so together they never exceed the credit (invariant 9).
+- **Migration 0087**: `vendor_refunds` and the trigger update.
+- **API.** `POST /vendor-credits/:id/refunds`, `DELETE /vendor-refunds/:id` (`vendor_credits.apply`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-26.http.integration.test.ts` (4): over the balance refused; P25 lines, balance and Used, the register's rows; deleting reverses and returns the balance; the database refuses refunds beyond the credit.
+- `apps/e2e/tests/us-pur-26.spec.ts` (1): the dialog's limit message, recording into Bank Account, and deleting the refund.
+
 ### 2026-10-06 — US-PUR-25: apply a vendor credit to bills (Phase 8)
 
 - **"Apply to bills"** on an open vendor credit (`ApplyVendorCreditDialog`): the vendor's open bills oldest first, with "Amount to apply" prefilled oldest first from the credit's balance; "You can apply up to <amount> to this bill." over a bill's balance.

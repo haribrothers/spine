@@ -24,4 +24,6 @@ export interface VendorCredit {
   lines?: (Omit<VendorBillLine, "billId"> & { vendorCreditId: string })[];
   /** US-PUR-25 — where the credit has been used. */
   allocations?: { id: string; billId: string; billNumber: string; amount: string; createdAt: string }[];
+  /** US-PUR-26 — money the vendor paid back. */
+  refunds?: { id: string; amount: string; date: string; method: string; reference: string | null; deletedAt: string | null; moneyAccountName: string }[];
 }

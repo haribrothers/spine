@@ -13,6 +13,7 @@ import { HistorySection } from "../../../components/history-section";
 import { Row } from "./vendor-credit-builder";
 import type { VendorCredit } from "./types";
 import { ApplyVendorCreditDialog } from "./apply-vendor-credit-dialog";
+import { VendorRefundDialog } from "./vendor-refund-dialog";
 
 /** Draft grey, Open blue, Used green, Void red — always with the word, never colour alone. */
 export function VendorCreditStatusChip({ status }: { status: VendorCreditStatus }) {
@@ -36,6 +37,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const canRecord = useCapability("vendor_credits.record");
   const canApply = useCapability("vendor_credits.apply");
   const [applyOpen, setApplyOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const canEdit = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.edit_own", others: "vendor_credits.edit_others" });
   const canDelete = useCanEditOwnership(credit?.createdByUserId ?? null, { own: "vendor_credits.delete_own", others: "vendor_credits.delete_others" });
 
@@ -129,6 +131,11 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               Apply to bills
             </Button>
           )}
+          {credit.status === "open" && canApply && (
+            <Button variant="secondary" onClick={() => setRefundOpen(true)} disabled={busy}>
+              Record refund
+            </Button>
+          )}
           {isDraft && canRecord && (
             <Button onClick={() => act(() => apiClient.post(`/vendor-credits/${credit.id}/record`))} disabled={busy}>
               {busy ? <Spinner size="sm" /> : "Record"}
@@ -175,6 +182,32 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         </Card>
       )}
 
+      {(credit.refunds ?? []).length > 0 && (
+        <Card className="flex flex-col gap-3" data-testid="vendor-refunds">
+          <h2 className="text-[15px] font-semibold text-on-surface">Refunds from the vendor</h2>
+          {credit.refunds!.map((r) => (
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 text-[14px]">
+              <span className={r.deletedAt ? "text-on-surface-muted line-through" : "text-on-surface"}>
+                {day(r.date)} · {r.moneyAccountName}
+                {r.reference ? ` · ${r.reference}` : ""}
+              </span>
+              <span className="flex items-center gap-2">
+                <span className="tabular-nums text-on-surface">{formatMoney(BigInt(r.amount), credit.currency)}</span>
+                {r.deletedAt ? (
+                  <span className="text-on-surface-muted">Deleted</span>
+                ) : (
+                  canApply && (
+                    <Button variant="ghost" size="sm" aria-label={`Delete refund of ${formatMoney(BigInt(r.amount), credit.currency)}`} onClick={() => act(() => apiClient.delete(`/vendor-refunds/${r.id}`))} disabled={busy}>
+                      Delete refund
+                    </Button>
+                  )
+                )}
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
+
       <AttachmentsSection entityType="vendor_credit" entityId={credit.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
@@ -186,6 +219,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
         {credit.status !== "draft" && <Row label="Left to use" value={formatMoney(balance, credit.currency)} />}
       </Card>
       <ApplyVendorCreditDialog open={applyOpen} onOpenChange={setApplyOpen} credit={credit} onApplied={load} />
+      <VendorRefundDialog open={refundOpen} onOpenChange={setRefundOpen} credit={credit} onRecorded={load} />
     </div>
   );
 }

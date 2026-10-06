@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, ParseUUIDPipe, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { applyVendorCreditSchema, createVendorCreditSchema, updateVendorCreditSchema } from "@spine/shared";
+import { applyVendorCreditSchema, createVendorCreditSchema, createVendorRefundSchema, updateVendorCreditSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -76,5 +76,27 @@ export class VendorCreditsController {
   @UseInterceptors(IdempotencyInterceptor)
   async removeAllocation(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Param("allocationId", ParseUUIDPipe) allocationId: string) {
     return this.credits.removeAllocation(requireOrgId(session), session.user.id, id, allocationId);
+  }
+
+  /** US-PUR-26 — record money the vendor paid back (P25). */
+  @Post(":id/refunds")
+  @RequireCapability("vendor_credits.apply")
+  @UseInterceptors(IdempotencyInterceptor)
+  async recordRefund(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string, @Body() body: unknown) {
+    return this.credits.recordRefund(requireOrgId(session), session.user.id, id, parse(createVendorRefundSchema, body));
+  }
+}
+
+/** US-PUR-26 — `DELETE /vendor-refunds/:id` reverses a vendor refund. */
+@Controller("vendor-refunds")
+@OrgRoles(["owner", "staff"])
+export class VendorRefundsController {
+  constructor(private readonly credits: VendorCreditsService) {}
+
+  @Delete(":id")
+  @RequireCapability("vendor_credits.apply")
+  @UseInterceptors(IdempotencyInterceptor)
+  async remove(@Session() session: UserSession, @Param("id", ParseUUIDPipe) id: string) {
+    return this.credits.deleteRefund(requireOrgId(session), session.user.id, id);
   }
 }

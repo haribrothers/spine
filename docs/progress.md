@@ -353,7 +353,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-18 · Let a Team refund customers
 - [x] US-PUR-24 · Record a credit from a vendor
 - [x] US-PUR-25 · Apply a vendor credit to bills
-- [ ] US-PUR-26 · Record a refund from a vendor
+- [x] US-PUR-26 · Record a refund from a vendor
 - [ ] US-PUR-27 · Void a vendor credit
 - [ ] US-PUR-28 · Let a Team manage vendor credits
 - [ ] US-PUR-29 · Set up a recurring bill

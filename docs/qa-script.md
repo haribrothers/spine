@@ -3040,6 +3040,16 @@ Regression: Vendor Bills, recording bills and the bill line editor are unchanged
 
 Regression: bills without credits read and pay exactly as before.
 
+## 116. Refund from a vendor (US-PUR-26, Phase 8)
+
+1. On an open $400.00 vendor credit, "Record refund": "Amount" starts at $400.00, with "Date", "Paid into" (last used or default), "Method" and "Reference". Enter $400.01: "This credit has $400.00 left to refund.".
+2. Record $150.00 into Bank Account with reference EFT-88: "Refunds from the vendor" lists it, and the credit reads "Open — $250.00 to use". Bank Account's register shows "Vendor refund" money in; Balance Sheet: Accounts Payable up by $150.00.
+3. Refund the rest: the credit is "Used".
+4. "Delete refund": it shows "Deleted", the balance comes back, the credit is "Open" again, and the register gets a "Vendor refund deleted" row dated today.
+5. As Staff without "Apply and refund vendor credits", "Record refund" and "Delete refund" aren't shown; the API returns 403.
+
+Regression: applying credits to bills still works alongside refunds; the two together can't exceed the credit.
+
 ## Known gaps — don't file these as bugs
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no

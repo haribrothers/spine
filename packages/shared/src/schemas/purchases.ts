@@ -160,3 +160,12 @@ export type VendorCreditStatus = keyof typeof VENDOR_CREDIT_STATUS_LABELS;
 export const applyVendorCreditSchema = z.object({
   allocations: z.array(z.object({ billId: uuidSchema, amount: z.coerce.bigint().positive("Enter an amount greater than zero.") })).min(1, "Choose at least one bill."),
 });
+
+/** `POST /vendor-credits/:id/refunds` (US-PUR-26). */
+export const createVendorRefundSchema = z.object({
+  amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+  date: z.coerce.date(),
+  moneyAccountId: uuidSchema.optional().nullable(),
+  method: vendorPaymentMethodSchema,
+  reference: z.string().trim().max(120).optional().nullable(),
+});

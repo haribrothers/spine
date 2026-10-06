@@ -454,3 +454,38 @@ export const vendorCreditAllocations = pgTable(
     index("vendor_credit_allocations_bill_idx").on(table.billId),
   ],
 );
+
+/**
+ * US-PUR-26 (D-141) — money a vendor paid back against a credit. Posts P25
+ * (Dr the money account / Cr 2000 AP) and lowers the credit's balance;
+ * deleting posts the reversal and gives the balance back. The credit's
+ * applications plus live refunds never exceed it (trigger, invariant 9).
+ */
+export const vendorRefunds = pgTable(
+  "vendor_refunds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    vendorCreditId: uuid("vendor_credit_id")
+      .notNull()
+      .references(() => vendorCredits.id),
+    moneyAccountId: uuid("money_account_id")
+      .notNull()
+      .references(() => moneyAccounts.id),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    date: date("date", { mode: "date" }).notNull(),
+    method: vendorPaymentMethodEnum("method").notNull(),
+    reference: text("reference"),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => journalEntries.id),
+    reversalEntryId: uuid("reversal_entry_id").references(() => journalEntries.id),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [check("vendor_refunds_positive", sql`${table.amount} > 0`), index("vendor_refunds_credit_idx").on(table.vendorCreditId)],
+);

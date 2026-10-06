@@ -53,7 +53,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P23 | Customer refund (US-PAY-17); deleting it reverses it, dated the day it's deleted (`customer_refund_delete`) | `customer_refund` | 2200 Customer Advances (contact-tagged) | The money account (contact-tagged) |
 | P24 | Vendor credit recorded (US-PUR-24, [D-141](12-decisions.md)) / voided (US-PUR-27) | `vendor_credit` / `vendor_credit_void` | 2000 AP (total, contact-tagged) · Void: reverses P24 | Expense/COGS per line account (net; a line with no account uses 6900 Other Expenses), 1200 Input Tax — every line contact-tagged and tagged with the credit's job, so the job's cost drops |
 | P24a | Vendor credit applied to a bill (US-PUR-25) | — | *Nothing posted* — credit and bill both sit in 2000 AP for the vendor; an allocation row moves the open amounts | |
-| P25 | Refund received from a vendor (US-PUR-26) | `vendor_refund` | The money account | 2000 AP (contact-tagged) |
+| P25 | Refund received from a vendor (US-PUR-26); deleting it reverses it, dated the day it's deleted (`vendor_refund_delete`) | `vendor_refund` | The money account (contact-tagged) | 2000 AP (contact-tagged) |
 | P26 | Tax payment recorded (US-TAX-08, [D-143](12-decisions.md)) | `tax_payment` | 2100 Output Tax Payable (paid + input tax used) | 1200 Input Tax Receivable (input tax used), the money account (paid) |
 | P27 | Tax refund received (US-TAX-08) | `tax_refund` | The money account | 1200 Input Tax Receivable |
 | P28 | Recurring bill run (US-PUR-30) | — | Nothing new: a recorded bill posts P11; a draft posts nothing until recorded | |

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { formatMoney, type createVendorCreditSchema, type updateVendorCreditSchema } from "@spine/shared";
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
@@ -5,7 +6,9 @@ import type { z } from "zod";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, contacts, vendorBills, vendorCreditAllocations, vendorCreditLines, vendorCredits } from "../../db/schema";
+import { accounts, contacts, moneyAccounts, vendorBills, vendorCreditAllocations, vendorCreditLines, vendorCredits, vendorRefunds } from "../../db/schema";
+import { orgClock } from "../../common/org-clock";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 import { orgMoneySettings } from "../../common/money-format";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -35,6 +38,7 @@ export class VendorCreditsService {
     private readonly ledger: LedgerService,
     private readonly numbering: NumberingService,
     private readonly taxResolver: TaxResolverService,
+    private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -68,7 +72,13 @@ export class VendorCreditsService {
       .innerJoin(vendorBills, eq(vendorBills.id, vendorCreditAllocations.billId))
       .where(eq(vendorCreditAllocations.vendorCreditId, id))
       .orderBy(asc(vendorCreditAllocations.createdAt), asc(vendorBills.date), asc(vendorBills.billNumber));
-    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, lines, allocations };
+    const refunds = await this.db
+      .select({ id: vendorRefunds.id, amount: vendorRefunds.amount, date: vendorRefunds.date, method: vendorRefunds.method, reference: vendorRefunds.reference, deletedAt: vendorRefunds.deletedAt, moneyAccountName: moneyAccounts.name })
+      .from(vendorRefunds)
+      .innerJoin(moneyAccounts, eq(moneyAccounts.id, vendorRefunds.moneyAccountId))
+      .where(eq(vendorRefunds.vendorCreditId, id))
+      .orderBy(asc(vendorRefunds.createdAt));
+    return { ...row.credit, contactName: row.contactName, billNumber: row.billNumber, lines, allocations, refunds };
   }
 
   async getHistory(orgId: string, id: string) {
@@ -244,6 +254,57 @@ export class VendorCreditsService {
       await this.auditLog.record(tx, { orgId, actorUserId, action: "application_removed", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() }] });
     });
     return this.getOne(orgId, id);
+  }
+
+  /** US-PUR-26 — the vendor paid some of the credit back: P25 (Dr money account / Cr 2000 AP), and the balance drops. */
+  async recordRefund(orgId: string, actorUserId: string, id: string, input: { amount: bigint; date: Date; moneyAccountId?: string | null; method: "cash" | "bank_transfer" | "cheque" | "card" | "upi" | "other"; reference?: string | null }) {
+    await this.db.transaction(async (tx) => {
+      const [credit] = await tx.select().from(vendorCredits).where(and(eq(vendorCredits.orgId, orgId), eq(vendorCredits.id, id))).for("update");
+      if (!credit) throw new NotFoundException("Vendor credit not found");
+      if (credit.status !== "open") throw new BadRequestException("Only an open vendor credit can be refunded.");
+      if (input.amount > credit.balanceAmount) {
+        const { locale } = await orgMoneySettings(this.db, orgId);
+        throw new BadRequestException(`This credit has ${formatMoney(credit.balanceAmount, credit.currency, locale)} left to refund.`);
+      }
+      const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
+      const refundId = randomUUID();
+      const ap = await this.ledger.resolveSystemAccount(tx, orgId, "accountsPayable");
+      const entryId = await this.ledger.postEntry(tx, {
+        orgId,
+        date: new Date(input.date).toISOString().slice(0, 10),
+        narration: `Refund from vendor against ${credit.number}`,
+        sourceType: "vendor_refund",
+        sourceId: refundId,
+        lines: [
+          { accountId: moneyAccount.accountId, debit: input.amount, credit: 0n, contactId: credit.contactId },
+          { accountId: ap, debit: 0n, credit: input.amount, contactId: credit.contactId },
+        ],
+      });
+      await tx.insert(vendorRefunds).values({ id: refundId, orgId, vendorCreditId: id, moneyAccountId: moneyAccount.id, amount: input.amount, date: input.date, method: input.method, reference: input.reference || null, entryId, createdByUserId: actorUserId });
+      const balance = credit.balanceAmount - input.amount;
+      await tx.update(vendorCredits).set({ balanceAmount: balance, status: balance === 0n ? "used" : "open", updatedAt: new Date() }).where(eq(vendorCredits.id, id));
+      await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "refund", moneyAccount.id);
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "refunded", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "balanceAmount", from: credit.balanceAmount.toString(), to: balance.toString() }] });
+    });
+    return this.getOne(orgId, id);
+  }
+
+  /** US-PUR-26 — deleting a refund posts the reversal (dated today) and gives the credit its balance back. */
+  async deleteRefund(orgId: string, actorUserId: string, refundId: string) {
+    let creditId = "";
+    await this.db.transaction(async (tx) => {
+      const [refund] = await tx.select().from(vendorRefunds).where(and(eq(vendorRefunds.orgId, orgId), eq(vendorRefunds.id, refundId))).for("update");
+      if (!refund) throw new NotFoundException("Refund not found");
+      if (refund.deletedAt) throw new BadRequestException("This refund has already been deleted.");
+      creditId = refund.vendorCreditId;
+      const [credit] = await tx.select().from(vendorCredits).where(eq(vendorCredits.id, refund.vendorCreditId)).for("update");
+      const reversalEntryId = await this.ledger.reverseEntry(tx, refund.entryId, { orgId, date: orgClock().date, narration: "Vendor refund deleted", sourceType: "vendor_refund_delete", sourceId: refundId });
+      await tx.update(vendorRefunds).set({ deletedAt: new Date(), reversalEntryId, updatedAt: new Date() }).where(eq(vendorRefunds.id, refundId));
+      const balance = credit!.balanceAmount + refund.amount;
+      await tx.update(vendorCredits).set({ balanceAmount: balance, status: credit!.status === "void" ? "void" : "open", updatedAt: new Date() }).where(eq(vendorCredits.id, credit!.id));
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "refund_deleted", entityType: "vendor_credit", entityId: credit!.id, contactId: credit!.contactId, changes: [{ field: "balanceAmount", from: credit!.balanceAmount.toString(), to: balance.toString() }] });
+    });
+    return this.getOne(orgId, creditId);
   }
 
   private async load(orgId: string, id: string) {

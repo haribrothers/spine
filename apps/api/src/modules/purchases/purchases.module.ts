@@ -12,7 +12,7 @@ import { ExpenseCategoriesController } from "./expense-categories.controller";
 import { ExpenseCategoriesService } from "./expense-categories.service";
 import { ExpensesController } from "./expenses.controller";
 import { ExpensesService } from "./expenses.service";
-import { VendorCreditsController } from "./vendor-credits.controller";
+import { VendorCreditsController, VendorRefundsController } from "./vendor-credits.controller";
 import { VendorCreditsService } from "./vendor-credits.service";
 import { VendorPaymentsController } from "./vendor-payments.controller";
 import { VendorPaymentsService } from "./vendor-payments.service";
@@ -38,7 +38,7 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  */
 @Module({
   imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
-  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController],
+  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
   providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
 })

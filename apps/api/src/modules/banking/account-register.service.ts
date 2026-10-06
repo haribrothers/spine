@@ -4,7 +4,7 @@ import { alias } from "drizzle-orm/pg-core";
 import type { AccountRegister, AccountRegisterQuery, AccountRegisterRow } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
+import { accounts, bankTransactions, bankTransfers, contacts, customerRefunds, expenses, vendorRefunds, journalEntries, journalLines, moneyAccounts, payments, vendorPayments } from "../../db/schema";
 import { MoneyAccountsService } from "./money-accounts.service";
 
 /** What each kind of entry is called in a register. Unknown kinds read "Journal entry". */
@@ -15,6 +15,8 @@ const SOURCE_LABELS: Record<string, string> = {
   vendor_payment_delete: "Vendor payment deleted",
   expense: "Expense",
   customer_refund: "Refund",
+  vendor_refund: "Vendor refund",
+  vendor_refund_delete: "Vendor refund deleted",
   customer_refund_delete: "Refund deleted",
   bank_transfer: "Transfer",
   bank_transfer_delete: "Transfer deleted",
@@ -188,6 +190,15 @@ export class AccountRegisterService {
         .from(customerRefunds)
         .where(and(eq(customerRefunds.orgId, orgId), inArray(customerRefunds.id, refundIds)));
       for (const row of rows) for (const type of refundTypes) out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt) });
+    }
+    const vendorRefundTypes = ["vendor_refund", "vendor_refund_delete"];
+    const vendorRefundIds = ids(vendorRefundTypes);
+    if (vendorRefundIds.length) {
+      const rows = await this.db
+        .select({ id: vendorRefunds.id, reference: vendorRefunds.reference, deletedAt: vendorRefunds.deletedAt })
+        .from(vendorRefunds)
+        .where(and(eq(vendorRefunds.orgId, orgId), inArray(vendorRefunds.id, vendorRefundIds)));
+      for (const row of rows) for (const type of vendorRefundTypes) out.set(`${type}:${row.id}`, { number: null, reference: row.reference, deleted: Boolean(row.deletedAt) });
     }
     const transactionIds = ids(["bank_transaction", "bank_transaction_delete"]);
     if (transactionIds.length) {
