@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-ONB-20: industry templates for more kinds of business (Phase 9)
+
+- **Four new templates:** the Template step and Settings › Industry template now list Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency and Professional services, alongside Construction / Contracting, General Services and Generic. Each says what it sets up.
+- **Accounts and categories:** each new template adds its own cost accounts and six expense categories, once, as Construction does (D-193). For example:
+  - Trades adds 5700 Parts & Consumables, 5710 Tools & Equipment and 5720 Vehicle Running.
+  - Professional services adds 5900 Research & Subscriptions and 6450 Professional Indemnity Insurance.
+- **Existing setup wins:** an account code or category name already in use is kept, and the note on Expenses › Categories says so, naming the template.
+- **Modules:** Professional services starts with Jobs & field off, like Generic. The others start with everything on.
+- **For developers:** `INDUSTRY_TEMPLATES` in `@spine/shared` drives the step, the API seed (`IndustryTemplateService.seedTemplate`) and the note. `industry_template_seed` records which template ran.
+
 ### 2026-10-08 — US-ONB-17: demo data stays out of my numbers and books (Phase 9)
 
 - **Own number series:** demo documents are numbered `DEMO-INV-0001`, `DEMO-QUO-0001`, `DEMO-JOB-001` and so on. Your own first invoice is still `INV-0001`, with or without demo data loaded.

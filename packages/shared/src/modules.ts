@@ -170,9 +170,12 @@ export function ownedByOffModule(modules: ModuleSettings | null | undefined, kin
   return MODULE_KEYS.some((k) => !isOn(modules, k) && (MODULES[k][kind] as readonly string[]).includes(key));
 }
 
-/** US-ONB-14 — the modules an industry template starts with: Generic starts without jobs; the others with everything. */
+/** Templates that start without Jobs & field (US-ONB-14, US-ONB-20). */
+export const TEMPLATES_WITHOUT_JOBS: readonly string[] = ["generic", "professional_services"];
+
+/** US-ONB-14 — the modules an industry template starts with: Generic and Professional services start without jobs; the others with everything. */
 export function templateModules(template: string): ModuleSettings {
-  return { ...DEFAULT_MODULES, jobsField: template !== "generic" };
+  return { ...DEFAULT_MODULES, jobsField: !TEMPLATES_WITHOUT_JOBS.includes(template) };
 }
 
 export const GENERIC_JOBS_OFF_NOTE = "Jobs are switched off — turn them on in Settings › Modules if you need them.";

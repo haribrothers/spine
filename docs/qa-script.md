@@ -4160,6 +4160,26 @@ Use the GST business from section 175.
    - The payment reminder preview (US-INV-18) names a `DEMO-INV-…` invoice on a demo business.
    - Voiding a demo invoice and deleting a demo payment still post reversing entries; both go when the demo is deleted.
 
+## 186. Industry templates for more kinds of business (US-ONB-20, Phase 9)
+
+1. Sign up and choose "Set up my business". The Template step lists, in order:
+   - Construction / Contracting, Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency, Professional services, General Services and Generic.
+   - Each has a line saying what it sets up.
+2. Pick Professional services:
+   - The step says "Jobs are switched off — turn them on in Settings › Modules if you need them.". Continue.
+   - The sidebar has no Jobs.
+   - Expenses › Categories says "Set up by the Professional services template: 6 new categories and accounts 5900 Research & Subscriptions and 6450 Professional Indemnity Insurance. …".
+   - It lists Subscriptions & research (5900), Associates & subcontractors (5100), Professional fees (6400), Insurance (6450), Travel (6300) and Office supplies (6900).
+3. On another new business, pick Trades:
+   - Every module is on.
+   - Accounts 5700, 5710 and 5720 and their six categories exist.
+4. Settings › Industry template, switch to IT services & agency and save:
+   - Its categories are added, and the Trades categories stay.
+   - Modules don't change.
+   - Saving IT services again adds nothing.
+5. Rename account 5600 to "Showroom Stock" before choosing Interior design & fit-out. The note keeps it: "Kept your existing account 5600 · Showroom Stock".
+6. Regression: Construction still sets up 5300–5500 and its six categories (section 1 of US-ONB-13); Generic still starts without Jobs (section 184 step 9).
+
 ## Known gaps — don't file these as bugs
 
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).

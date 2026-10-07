@@ -400,7 +400,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-17 · Keep demo data out of my real numbers and books
 - [ ] US-ONB-18 · Choose the country and industry of the demo business
 - [ ] US-ONB-19 · Explore an Indian GST business
-- [ ] US-ONB-20 · Start from a template for my industry
+- [x] US-ONB-20 · Start from a template for my industry
 - [ ] US-ONB-21 · Explore a VAT or GST business in my country
 - [x] US-INV-25 · Set my UPI ID for payments
 - [x] US-INV-26 · Show a UPI QR code on invoices

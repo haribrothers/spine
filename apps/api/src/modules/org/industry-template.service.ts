@@ -1,25 +1,25 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { CONSTRUCTION_ACCOUNTS, CONSTRUCTION_CATEGORIES, industryTemplateSchema, templateModules, type TemplateSeedResult } from "@spine/shared";
+import { INDUSTRY_TEMPLATES, industryTemplateSchema, templateModules, type IndustryTemplateValue, type TemplateSeedResult } from "@spine/shared";
 import { MODULES_KEY, forgetModules } from "../../common/modules";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { accounts, expenseCategories, settings } from "../../db/schema";
 
-/** Where the last Construction seed is kept, for the note on Expenses › Categories. */
+/** Where the last template seed is kept, for the note on Expenses › Categories. */
 export const TEMPLATE_SEED_KEY = "industry_template_seed";
 
 /**
- * US-ONB-13 (D-129) — choosing Construction / Contracting sets up its cost
- * accounts (5300, 5400, 5500) and six expense categories, once. Existing
- * codes and names win and are reported as kept; running it again creates
- * nothing; switching template never deletes or remaps anything.
+ * US-ONB-13 (D-129), US-ONB-20 (D-193) — choosing a template sets up its
+ * cost accounts and expense categories, once. Existing codes and names win
+ * and are reported as kept; running it again creates nothing; switching
+ * template never deletes or remaps anything.
  */
 @Injectable()
 export class IndustryTemplateService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
-  /** Saves the template and, for Construction, seeds in the same transaction. */
+  /** Saves the template and seeds its accounts and categories in the same transaction. */
   async set(orgId: string, actorUserId: string, value: unknown): Promise<{ key: string; value: unknown; seeded?: TemplateSeedResult }> {
     const parsed = industryTemplateSchema.safeParse(value);
     if (!parsed.success) throw new BadRequestException("Pick one of the industry templates.");
@@ -34,21 +34,28 @@ export class IndustryTemplateService {
         await tx.insert(settings).values({ orgId, key: MODULES_KEY, value: templateModules(parsed.data.template) });
         forgetModules(orgId);
       }
-      if (parsed.data.template !== "construction") return { key: "industry_template", value: parsed.data };
-      const seeded = await this.seedConstruction(tx, orgId, actorUserId);
+      const definition = INDUSTRY_TEMPLATES[parsed.data.template];
+      if (!definition.accounts.length && !definition.categories.length) return { key: "industry_template", value: parsed.data };
+      const seeded = await this.seedTemplate(tx, orgId, actorUserId, parsed.data.template);
       return { key: "industry_template", value: parsed.data, seeded };
     });
   }
 
+  /** US-ONB-13 — kept for callers that only ever meant Construction. */
   async seedConstruction(tx: Database | Transaction, orgId: string, actorUserId: string | null): Promise<TemplateSeedResult> {
+    return this.seedTemplate(tx, orgId, actorUserId, "construction");
+  }
+
+  async seedTemplate(tx: Database | Transaction, orgId: string, actorUserId: string | null, template: IndustryTemplateValue): Promise<TemplateSeedResult> {
+    const { accounts: templateAccounts, categories: templateCategories } = INDUSTRY_TEMPLATES[template];
     const [previous] = await tx.select().from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, TEMPLATE_SEED_KEY)));
     const before = (previous?.value as TemplateSeedResult | undefined) ?? { accounts: [], categories: [], kept: [] };
-    const result: TemplateSeedResult = { accounts: [], categories: [], kept: [] };
+    const result: TemplateSeedResult = { template, accounts: [], categories: [], kept: [] };
 
-    const codes = [...new Set([...CONSTRUCTION_ACCOUNTS.map((a) => a.code), ...CONSTRUCTION_CATEGORIES.map((c) => c.accountCode)])];
+    const codes = [...new Set([...templateAccounts.map((a) => a.code), ...templateCategories.map((c) => c.accountCode)])];
     const existing = await tx.select().from(accounts).where(and(eq(accounts.orgId, orgId), inArray(accounts.code, codes)));
     const byCode = new Map(existing.map((a) => [a.code, a]));
-    for (const seed of CONSTRUCTION_ACCOUNTS) {
+    for (const seed of templateAccounts) {
       const found = byCode.get(seed.code);
       if (found) {
         if (found.name !== seed.name) result.kept.push(`Kept your existing account ${found.code} · ${found.name}`);
@@ -59,13 +66,13 @@ export class IndustryTemplateService {
       result.accounts.push(`${seed.code} · ${seed.name}`);
     }
 
-    const names = CONSTRUCTION_CATEGORIES.map((c) => c.name.toLowerCase());
+    const names = templateCategories.map((c) => c.name.toLowerCase());
     const existingCategories = await tx
       .select({ name: expenseCategories.name })
       .from(expenseCategories)
       .where(and(eq(expenseCategories.orgId, orgId), inArray(sql`lower(${expenseCategories.name})`, names)));
     const taken = new Map(existingCategories.map((c) => [c.name.toLowerCase(), c.name]));
-    for (const seed of CONSTRUCTION_CATEGORIES) {
+    for (const seed of templateCategories) {
       const found = taken.get(seed.name.toLowerCase());
       if (found) {
         // A category this template made last time isn't "yours" — say nothing about it.
