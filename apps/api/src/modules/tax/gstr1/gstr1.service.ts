@@ -4,10 +4,15 @@ import type { SupplyClass, SupplyType } from "@spine/shared";
 import { DATABASE } from "../../../db/db.module";
 import type { Database } from "../../../db/client";
 import { contacts, creditNoteLines, creditNotes, invoiceLines, invoices } from "../../../db/schema";
+import { orgLocale, formatMoneyForPdf } from "../../../common/money-format";
 import { AuditLogService } from "../../audit/audit-log.service";
+import { appUrl } from "../../email/email-layout";
+import { ReportsService } from "../../reports/reports.service";
 import { RateBook } from "../line-tax-components";
 import { TaxProfileService } from "../tax-profile.service";
 import { buildGstr1Tables, gstr1Json, tableFigures, type Gstr1Contact, type Gstr1Input, type Gstr1Line } from "./gstr1-build";
+import { gstr1Problems } from "./gstr1-problems";
+import { gstr1Workbook } from "./gstr1-workbook";
 import { parseGstr1Period, type Gstr1Period } from "./period";
 
 export const GSTR1_NOT_SET_UP = "Set up GST first: add your GSTIN and state in Settings › GST.";
@@ -30,6 +35,7 @@ export class Gstr1Service {
     @Inject(DATABASE) private readonly db: Database,
     private readonly taxProfile: TaxProfileService,
     private readonly audit: AuditLogService,
+    private readonly reports: ReportsService,
   ) {}
 
   async input(orgId: string, period: Gstr1Period): Promise<Gstr1Input> {
@@ -121,7 +127,7 @@ export class Gstr1Service {
           placeOfSupply: note.placeOfSupply,
           supplyType,
           lines: noteLineRows.filter((l) => l.creditNoteId === note.id).map((l) => lineOf(l, supplyType)),
-          original: original ? invoiceOf(original) : { number: "", date: "", value: 0n, contact: contactOf(note.contactId), placeOfSupply: null, supplyType, lines: [] },
+          original: original ? invoiceOf(original) : { id: note.invoiceId, number: "", date: "", value: 0n, contact: contactOf(note.contactId), placeOfSupply: null, supplyType, lines: [] },
         };
       }),
       issued: [
@@ -131,17 +137,27 @@ export class Gstr1Service {
     };
   }
 
-  /** What the page shows: counts and values per table, and the documents issued. */
-  async summary(orgId: string, periodParam: unknown) {
+  /** Everything one request needs: the documents, the tables, their figures and the problems (US-TAX-17). */
+  private async build(orgId: string, periodParam: unknown) {
     const period = parseGstr1Period(periodParam);
     const input = await this.input(orgId, period);
     const tables = buildGstr1Tables(input);
     const figures = tableFigures(tables);
+    // US-TAX-17: the file's tax must equal the Tax Summary's tax collected for the period.
+    const taxSummaryTax = BigInt((await this.reports.taxSummary(orgId, period.from, period.to)).taxCollected);
+    const locale = await orgLocale(this.db, orgId);
+    const problems = gstr1Problems(input, { fileTax: figures.totalTax, taxSummaryTax, from: period.from, to: period.to }, (paise) => formatMoneyForPdf(paise, "INR", locale));
+    return { period, input, tables, figures, taxSummaryTax, problems, json: gstr1Json(input, tables) };
+  }
+
+  /** What the page shows: counts and values per table, the documents issued and what to fix first. */
+  async summary(orgId: string, periodParam: unknown) {
+    const { period, input, tables, figures, taxSummaryTax, problems, json } = await this.build(orgId, periodParam);
     const asText = (f: { count: number; taxableValue: bigint; tax: bigint }) => ({ count: f.count, taxableValue: f.taxableValue.toString(), tax: f.tax.toString() });
     return {
       period,
       gstin: input.gstin,
-      schemaVersion: gstr1Json(input, tables).version,
+      schemaVersion: json.version,
       tables: {
         b2b: asText(figures.b2b),
         b2cl: asText(figures.b2cl),
@@ -154,8 +170,19 @@ export class Gstr1Service {
         docs: tables.docs,
       },
       totals: { documents: input.issued.length, taxableValue: figures.totalTaxable.toString(), tax: figures.totalTax.toString() },
+      taxSummaryTax: taxSummaryTax.toString(),
+      totalsMatchTaxSummary: figures.totalTax === taxSummaryTax,
+      problems,
       footer: GSTR1_FOOTER,
     };
+  }
+
+  /** US-TAX-17 — the review workbook: one sheet per table plus "Problems", the same figures as the JSON. */
+  async xlsx(orgId: string, actorUserId: string, periodParam: unknown): Promise<{ filename: string; body: Buffer }> {
+    const { period, input, problems, json } = await this.build(orgId, periodParam);
+    const body = await gstr1Workbook(json, input, problems, GSTR1_FOOTER, appUrl(""));
+    await this.audit.record(this.db, { orgId, actorUserId, action: "downloaded", entityType: "gstr1_export", entityId: orgId, contactId: null, changes: { period: period.label, format: "Excel" } });
+    return { filename: `GSTR1_${input.gstin}_${period.fp}.xlsx`, body };
   }
 
   /** The JSON file, named for the GSTIN and period; downloading it is audited. */

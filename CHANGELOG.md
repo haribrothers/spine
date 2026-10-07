@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-17: check GSTR-1 figures before uploading (Phase 9)
+
+- The GSTR-1 page lists what to fix before uploading, under "Fix these before you upload". Each problem has a link to fix it:
+  - A registered customer with no GSTIN → "Open contact".
+  - Lines with no HSN/SAC → "Open invoice".
+  - Invoices with no place of supply → "Open invoice".
+  - Tax in the file that doesn't match the Tax Summary's tax collected → "Open Tax Summary".
+- A credit note's problems open its invoice, where credit notes are shown.
+- New cards:
+  - "Problems" shows the count.
+  - The "Tax" card says "equals the Tax Summary", or shows the Tax Summary's figure when the two differ.
+- "Download Excel" gives `GSTR1_<GSTIN>_<MMYYYY>.xlsx`:
+  - One sheet per GSTR-1 table (b2b, b2cl, b2cs, cdnr, cdnur, exp, exemp, hsn(b2b), hsn(b2c), docs), plus "Problems" with the footer.
+  - It's built from the JSON, so the figures are the same.
+- Excel downloads are audited, like JSON ones.
+- Q-20 is open: invoices post to the ledger on the day they're issued, so a backdated invoice makes the totals check differ.
+
 ### 2026-10-07 — US-TAX-16: export GSTR-1 for the GST portal (Phase 9)
 
 - Reports › Tax › GSTR-1 appears for businesses with an Indian GST profile.

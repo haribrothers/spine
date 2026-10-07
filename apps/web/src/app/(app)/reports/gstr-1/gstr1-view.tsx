@@ -1,14 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Download } from "lucide-react";
-import { Alert, AlertDescription, Button, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, StatementTable } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, ReportFilter, ReportToolbar, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, StatCard, StatementTable } from "@spine/ui";
 import { FINANCIAL_STATEMENTS_NO_ACCESS } from "@spine/shared";
 import { formatMoney } from "../../../../lib/money";
 import { useCurrency } from "../analysis-shared";
 import { ReportFootnote, ReportKpis, useReport } from "../report-kit";
 import { useReportDetail } from "../report-shell";
-import type { Gstr1DocumentRange, Gstr1Summary } from "./types";
+import type { Gstr1DocumentRange, Gstr1Problem, Gstr1Summary } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -45,9 +46,34 @@ function documentsText(docs: readonly Gstr1DocumentRange[]): string {
   return [...invoices, ...(notes ? [count(notes, "credit note", "credit notes")] : [])].join(", ") || "No documents issued";
 }
 
+/** US-TAX-17 — what to fix before uploading, each with a link to the record. */
+function ProblemsPanel({ problems }: { problems: Gstr1Problem[] }) {
+  return (
+    <Card data-testid="gstr1-problems">
+      <CardHeader>
+        <CardTitle className="text-[15px]">Fix these before you upload</CardTitle>
+        <CardDescription>{count(problems.length, "problem", "problems")}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ul className="divide-y divide-border border-t border-border">
+          {problems.map((p) => (
+            <li key={`${p.kind}-${p.recordId ?? "totals"}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-[14px] text-on-surface">
+              <span>{p.label}</span>
+              <Link href={p.href} className="font-medium text-primary hover:underline">
+                {p.action}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </CardContent>
+    </Card>
+  );
+}
+
 /**
  * US-TAX-16 (D-148) — GSTR-1 for a month or a quarter: what's in each table,
- * and the JSON file for the GST portal's offline tool. Spine prepares the
+ * and the JSON file for the GST portal's offline tool. US-TAX-17 adds what
+ * to fix first, the Tax Summary check and the Excel workbook. Spine prepares the
  * file; it never files the return.
  */
 export function Gstr1View() {
@@ -114,12 +140,21 @@ export function Gstr1View() {
         actions={
           data &&
           !error && (
-            <Button asChild>
-              <a href={`${API_URL}/exports/gstr1?period=${period}&format=json`} data-testid="gstr1-download-json">
-                <Download size={14} aria-hidden="true" />
-                Download JSON
-              </a>
-            </Button>
+            <>
+              {/* US-TAX-17: the same figures as a workbook, one sheet per table plus Problems. */}
+              <Button variant="secondary" asChild>
+                <a href={`${API_URL}/exports/gstr1?period=${period}&format=xlsx`} data-testid="gstr1-download-xlsx">
+                  <Download size={14} aria-hidden="true" />
+                  Download Excel
+                </a>
+              </Button>
+              <Button asChild>
+                <a href={`${API_URL}/exports/gstr1?period=${period}&format=json`} data-testid="gstr1-download-json">
+                  <Download size={14} aria-hidden="true" />
+                  Download JSON
+                </a>
+              </Button>
+            </>
           )
         }
       />
@@ -132,11 +167,23 @@ export function Gstr1View() {
 
       {data && t && !error && (
         <>
-          <ReportKpis count={3} data-testid="gstr1-cards">
+          <ReportKpis count={4} data-testid="gstr1-cards">
             <StatCard label="Documents" value={String(data.totals.documents)} trend={{ direction: "neutral", label: documentsText(t.docs) }} />
             <StatCard label="Taxable value" value={money(data.totals.taxableValue)} trend={{ direction: "neutral", label: "Across every table" }} />
-            <StatCard label="Tax" value={money(data.totals.tax)} trend={{ direction: "neutral", label: "In the file, after credit notes" }} />
+            {/* US-TAX-17: the file's tax against the Tax Summary's tax collected. */}
+            <StatCard
+              label="Tax"
+              value={money(data.totals.tax)}
+              trend={data.totalsMatchTaxSummary ? { direction: "up", label: "equals the Tax Summary" } : { direction: "down", label: `Tax Summary says ${money(data.taxSummaryTax)}` }}
+            />
+            <StatCard
+              label="Problems"
+              value={String(data.problems.length)}
+              trend={data.problems.length ? { direction: "down", label: "fix before uploading" } : { direction: "up", label: "Nothing to fix" }}
+            />
           </ReportKpis>
+
+          {data.problems.length > 0 && <ProblemsPanel problems={data.problems} />}
 
           <StatementTable
             data-testid="gstr1-tables"

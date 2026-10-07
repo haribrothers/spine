@@ -3942,7 +3942,34 @@ Use an Indian business with GSTIN 29AAACK0000A1ZK (Karnataka), and issue documen
 8. As Staff without "View financial statements" the page says you don't have access. Field users can't open it.
 9. The audit log shows "GSTR-1 file · Downloaded" with the period and format.
 
+## 176. GSTR-1 checks and Excel (US-TAX-17, Phase 9)
+
+Use the GST business from section 175.
+
+1. Create the problems:
+   - Issue an invoice this month to a consumer, with one line that has no HSN/SAC (choose "Issue anyway").
+   - In a test database, clear a registered customer's GSTIN after invoicing them.
+2. Open GSTR-1 for this month:
+   - The "Problems" card shows the count and "fix before uploading".
+   - "Fix these before you upload" lists "Registered customer with no GSTIN — <name>" with "Open contact", and "1 line with no HSN/SAC — INV-…" with "Open invoice".
+   - Each link opens the right record.
+3. With nothing wrong:
+   - The panel is gone.
+   - The Problems card says "Nothing to fix".
+   - The Tax card says "equals the Tax Summary". Compare it with Reports › Tax Summary for the same month: tax collected is the same figure.
+4. Issue an invoice today, backdated to last month, then open last month (Q-20):
+   - The Tax card shows "Tax Summary says ₹…".
+   - The panel lists "Tax in the file (₹…) doesn't match tax collected on the Tax Summary (₹…)" with "Open Tax Summary".
+5. Download Excel (`GSTR1_<GSTIN>_<MMYYYY>.xlsx`):
+   - The sheets are b2b, b2cl, b2cs, cdnr, cdnur, exp, exemp, hsn(b2b), hsn(b2c), docs and Problems.
+   - Totals per sheet match the page and the JSON.
+   - Problems ends with the footer.
+6. The audit log shows a GSTR-1 file download for each of JSON and Excel.
+7. Regression: Tax Summary figures are unchanged (section 174).
+
 ## Known gaps — don't file these as bugs
+
+- An invoice backdated to an earlier month posts to the ledger on the day it's issued, so GSTR-1 for its month flags that the tax doesn't match the Tax Summary ([Q-20](prd/13-risks-open-questions.md)).
 
 - GSTR-1 goods lines use the unit `OTH` in the HSN summary because Spine's lines have no unit yet, and services use `NA` (D-184). Shipping bill details aren't captured, so exports have none. Advances received (Table 11) and amendments to earlier returns aren't in the file.
 

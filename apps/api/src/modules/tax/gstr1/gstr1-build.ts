@@ -47,7 +47,7 @@ export interface Gstr1Invoice {
 
 export interface Gstr1CreditNote extends Gstr1Invoice {
   /** The invoice it credits, wherever its period. */
-  original: Pick<Gstr1Invoice, "number" | "date" | "value" | "contact" | "placeOfSupply" | "supplyType" | "lines">;
+  original: Pick<Gstr1Invoice, "id" | "number" | "date" | "value" | "contact" | "placeOfSupply" | "supplyType" | "lines">;
 }
 
 /** A numbered document issued in the period, for "Documents issued" (Table 13). */

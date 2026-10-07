@@ -407,7 +407,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TAX-14 · Add HSN or SAC codes to items and lines
 - [x] US-TAX-15 · Print GST details on invoices and credit notes
 - [x] US-TAX-16 · Export GSTR-1 for the GST portal
-- [ ] US-TAX-17 · Check GSTR-1 figures before uploading
+- [x] US-TAX-17 · Check GSTR-1 figures before uploading
 - [x] US-RPT-37 · See tax collected and paid by rate and tax type
 - [ ] US-RPT-38 · Export my books for Tally
 - [ ] US-RPT-39 · Map my accounts to Tally groups
