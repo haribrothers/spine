@@ -1,11 +1,12 @@
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
-import { percentageOf, resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
+import { percentageOf, resolveDocumentLayout, type ResolvedDocumentLayout, amountInWords } from "@spine/shared";
 import type { invoices, invoiceLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
 import { DocumentLinesTable } from "./document-lines";
+import { AmountInWordsLine, SignatureBlock } from "./document-extras";
 
 export interface InvoicePdfBusinessProfile {
   name: string;
@@ -33,6 +34,8 @@ export function invoiceTitle(invoice: { supplyType: string | null }, title: stri
 }
 
 export interface InvoicePdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -123,7 +126,7 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, layout: givenLayout }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, layout: givenLayout }: InvoicePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "invoice");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
@@ -225,6 +228,8 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           )}
         </View>
 
+        {layout.amountInWords && <AmountInWordsLine words={amountInWords(invoice.totalAmount - invoice.retentionAmount, invoice.currency)} />}
+
         {paymentInstructions && (
           <View style={styles.howToPay} wrap={false}>
             <Text style={styles.howToPayTitle}>How to pay</Text>
@@ -244,6 +249,8 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             {renderRichTextForPdf(invoice.termsAndConditions, { paragraph: styles.footerParagraph, text: styles.footerText })}
           </View>
         )}
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

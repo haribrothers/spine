@@ -4,7 +4,7 @@ import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { payments, paymentAllocations } from "../../db/schema";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
-import { LayoutTextBlocks } from "./document-extras";
+import { LayoutTextBlocks, SignatureBlock } from "./document-extras";
 
 export interface PaymentPdfBusinessProfile {
   name: string;
@@ -19,6 +19,8 @@ export interface PaymentPdfAllocationRow {
 }
 
 export interface PaymentPdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -121,7 +123,7 @@ function formatDate(value: Date | string | null): string {
  * to (if any), not catalogue lines, since that's the information a
  * recipient actually needs from a receipt.
  */
-export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale, branding, layout: givenLayout }: PaymentPdfData) {
+export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: PaymentPdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "receipt");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = payment.currency;
@@ -199,6 +201,8 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
         )}
 
         <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

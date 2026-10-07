@@ -1,4 +1,4 @@
-import { resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
+import { resolveDocumentLayout, type ResolvedDocumentLayout, amountInWords } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { quotes, quoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
@@ -6,6 +6,7 @@ import { renderRichTextForPdf } from "./rich-text-to-pdf";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
 import { DocumentLinesTable } from "./document-lines";
+import { AmountInWordsLine, SignatureBlock } from "./document-extras";
 
 export interface QuotePdfBusinessProfile {
   name: string;
@@ -15,6 +16,8 @@ export interface QuotePdfBusinessProfile {
 }
 
 export interface QuotePdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -89,7 +92,7 @@ function formatDate(value: Date | string | null): string {
  * app uses the same formatter), never a hand-rolled division, so this template can never
  * silently misplace a decimal point.
  */
-export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding, layout: givenLayout }: QuotePdfData) {
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: QuotePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "quote");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = quote.currency;
@@ -154,6 +157,8 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
         </View>
 
+        {layout.amountInWords && <AmountInWordsLine words={amountInWords(quote.totalAmount, quote.currency)} />}
+
         {/* notes/termsAndConditions are HTML now (RichTextEditor) — React-PDF's
             <Text> only accepts plain strings/nested <Text>, so this walks the
             editor's own small tag set into Text/View/Link rather than
@@ -171,6 +176,8 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
             {renderRichTextForPdf(quote.termsAndConditions, { paragraph: styles.footerParagraph, text: styles.footerText })}
           </View>
         )}
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

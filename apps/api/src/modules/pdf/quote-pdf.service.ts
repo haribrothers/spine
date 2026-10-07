@@ -6,7 +6,8 @@ import type { Database } from "../../db/client";
 import { quotes, quoteLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
+import { loadSignatureDataUri } from "./signature";
+import { resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { QuotePdfDocument, type QuotePdfBusinessProfile } from "./quote-pdf.template";
 
@@ -57,9 +58,13 @@ export class QuotePdfService {
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
+    // US-SET-17–US-SET-19: Settings › Documents.
+    const savedLayout = await this.settings.get<DocumentLayout>(orgId, "document_layout");
+    const layout = resolveDocumentLayout(savedLayout, "quote");
     const buffer = await renderToBuffer(
       QuotePdfDocument({
-        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "quote"),
+        layout,
+        signatureDataUri: await loadSignatureDataUri(this.files, orgId, savedLayout, layout),
         quote: row.quote,
         lines,
         contactName: row.contactName,

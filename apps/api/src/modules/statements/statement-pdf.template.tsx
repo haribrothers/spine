@@ -4,7 +4,7 @@ import type { Statement } from "@spine/shared";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "../pdf/document-branding";
 import { PDF_FONT_FAMILY } from "../pdf/pdf-fonts";
-import { LayoutTextBlocks } from "../pdf/document-extras";
+import { LayoutTextBlocks, SignatureBlock } from "../pdf/document-extras";
 
 export interface StatementPdfBusiness {
   name: string;
@@ -13,6 +13,8 @@ export interface StatementPdfBusiness {
 }
 
 export interface StatementPdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, title… */
   layout?: ResolvedDocumentLayout;
   statement: Statement;
@@ -96,7 +98,7 @@ function initials(name: string): string {
  * payments and credits. Underneath, what's still owed by age (US-PAY-15)
  * and the "How to pay" block when payment instructions are set (US-INV-16).
  */
-export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding, layout: givenLayout }: StatementPdfData) {
+export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: StatementPdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "statement");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const fmt = (amount: string) => formatMoneyForPdf(BigInt(amount), statement.currency, locale);
@@ -178,6 +180,8 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
         )}
 
         <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
       </Page>

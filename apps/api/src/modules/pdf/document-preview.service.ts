@@ -5,6 +5,8 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { orgMoneySettings } from "../../common/money-format";
 import { SettingsService } from "../org/settings.service";
+import { FilesService } from "../files/files.service";
+import { loadSignatureDataUri } from "./signature";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 import { PaymentPdfDocument } from "./payment-pdf.template";
@@ -36,6 +38,7 @@ export class DocumentPreviewService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly settings: SettingsService,
+    private readonly files: FilesService,
   ) {}
 
   async render(orgId: string, type: DocumentType, input: DocumentLayout): Promise<Buffer> {
@@ -46,7 +49,8 @@ export class DocumentPreviewService {
     const profile = (await this.settings.get<TaxProfile>(orgId, "tax_profile")) ?? {};
     const gst = profile.country === "IN" && typeof profile.stateCode === "string";
     const lines = sampleLines(currency) as never;
-    const common = { business, branding, locale, layout, contactName: "Lakeview Homes", contactEmail: "accounts@lakeview.example" };
+    const signatureDataUri = await loadSignatureDataUri(this.files, orgId, input, layout);
+    const common = { business, branding, locale, layout, signatureDataUri, contactName: "Lakeview Homes", contactEmail: "accounts@lakeview.example" };
     // A GST business previews its GST columns (US-TAX-15): the documents carry a supply type.
     const supply = { placeOfSupply: gst ? (profile.stateCode as string) : null, supplyType: gst ? ("intra" as const) : null };
 
@@ -85,6 +89,7 @@ export class DocumentPreviewService {
             branding,
             locale,
             layout,
+            signatureDataUri,
             statement: {
               contactId: "c",
               contactName: "Lakeview Homes",

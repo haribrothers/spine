@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery, resolveDocumentLayout } from "@spine/shared";
+import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { activities } from "../../db/schema";
@@ -11,6 +11,7 @@ import { loadEmailBrand } from "../email/email-brand";
 import { emailMoney, renderEmail } from "../email/email-layout";
 import { statementEmail } from "../email/email-templates";
 import { FilesService } from "../files/files.service";
+import { loadSignatureDataUri } from "../pdf/signature";
 import { SettingsService } from "../org/settings.service";
 import { StatementPdfDocument, statementPeriodLabel, type StatementPdfBusiness } from "./statement-pdf.template";
 import { StatementsService } from "./statements.service";
@@ -37,7 +38,11 @@ export class StatementDocumentsService {
     const business = await this.settings.get<StatementPdfBusiness & { logoUrl?: string }>(orgId, "business_profile");
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.logo(orgId, business.logoUrl) : undefined;
-    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding, layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "statement") }));
+    // US-SET-17–US-SET-19: Settings › Documents.
+    const savedLayout = await this.settings.get<DocumentLayout>(orgId, "document_layout");
+    const layout = resolveDocumentLayout(savedLayout, "statement");
+    const signatureDataUri = await loadSignatureDataUri(this.files, orgId, savedLayout, layout);
+    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding, layout, signatureDataUri }));
     const slug = statement.contactName.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "customer";
     return {
       buffer,

@@ -6,8 +6,9 @@ import type { Database } from "../../db/client";
 import { contacts, creditNoteLines, creditNotes, invoices } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
+import { loadSignatureDataUri } from "./signature";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
-import { resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
+import { resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -46,9 +47,13 @@ export class CreditNotePdfService {
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
+    // US-SET-17–US-SET-19: Settings › Documents.
+    const savedLayout = await this.settings.get<DocumentLayout>(orgId, "document_layout");
+    const layout = resolveDocumentLayout(savedLayout, "credit_note");
     const buffer = await renderToBuffer(
       CreditNotePdfDocument({
-        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "credit_note"),
+        layout,
+        signatureDataUri: await loadSignatureDataUri(this.files, orgId, savedLayout, layout),
         creditNote: row.creditNote,
         lines,
         invoiceNumber: row.invoiceNumber,

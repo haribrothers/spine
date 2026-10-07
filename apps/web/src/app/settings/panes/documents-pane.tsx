@@ -73,7 +73,8 @@ export function DocumentsPane() {
   }
 
   const current = resolveDocumentLayout(layout, type);
-  const update = (patch: DocumentTypeLayout) => setLayout({ ...layout, [type]: { ...layout[type], ...patch } });
+  // From the latest state, so two changes in a row (upload, then tick) both stick.
+  const update = (patch: DocumentTypeLayout) => setLayout((l) => (l ? { ...l, [type]: { ...l[type], ...patch } } : l));
 
   async function save() {
     const parsed = documentLayoutSchema.safeParse(layout);
@@ -130,13 +131,29 @@ export function DocumentsPane() {
               <div className="grid grid-cols-2 gap-2">
                 {COLUMN_LABELS.filter((c) => (!c.gstOnly || gst) && !(c.key === "discount" && type === "credit_note")).map((c) => (
                   <label key={c.key} className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
-                    <Checkbox checked={current.columns[c.key]} onCheckedChange={(v) => update({ columns: { ...layout[type]?.columns, [c.key]: v === true } })} />
+                    <Checkbox checked={current.columns[c.key]} onCheckedChange={(v) => update({ columns: { ...current.columns, [c.key]: v === true } })} />
                     {c.label}
                   </label>
                 ))}
               </div>
+              <div className="mt-1 flex flex-col gap-2">
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
+                  <Checkbox checked={current.taxSummary} onCheckedChange={(v) => update({ taxSummary: v === true })} />
+                  Tax summary table
+                </label>
+                <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
+                  <Checkbox checked={current.amountInWords} onCheckedChange={(v) => update({ amountInWords: v === true })} />
+                  Amount in words
+                </label>
+              </div>
             </fieldset>
           )}
+          <SignatureOption
+            checked={current.signature}
+            fileId={layout.signatureFileId ?? null}
+            onCheckedChange={(signature) => update({ signature })}
+            onFileChange={(signatureFileId) => setLayout((l) => (l ? { ...l, signatureFileId } : l))}
+          />
           <FormField
             label="Default terms"
             helperText={type === "quote" || type === "invoice" ? "New drafts start with these; change them on each document." : "Printed on every one."}
@@ -163,6 +180,73 @@ export function DocumentsPane() {
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />
+    </div>
+  );
+}
+
+/**
+ * US-SET-19 — the signature printed above "Authorised signatory —
+ * <business>" on the document types that tick it. One image for all of
+ * them: PNG or JPEG.
+ */
+function SignatureOption({
+  checked,
+  fileId,
+  onCheckedChange,
+  onFileChange,
+}: {
+  checked: boolean;
+  fileId: string | null;
+  onCheckedChange: (checked: boolean) => void;
+  onFileChange: (fileId: string | null) => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    if (!["image/png", "image/jpeg"].includes(file.type)) {
+      setError("Upload a PNG or JPEG image.");
+      return;
+    }
+    setUploading(true);
+    setError(null);
+    try {
+      const uploaded = await apiClient.upload<{ id: string }>("/files", file);
+      onFileChange(uploaded.id);
+      onCheckedChange(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not upload the signature.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="flex cursor-pointer items-center gap-2 text-[13px] text-on-surface">
+        <Checkbox checked={checked && fileId !== null} disabled={fileId === null} onCheckedChange={(v) => onCheckedChange(v === true)} />
+        Signature
+      </label>
+      <p className="text-[12px] text-on-surface-muted">
+        {fileId ? "Shown above “Authorised signatory” on the documents that tick it. Issued PDFs keep the one they were issued with." : "Upload a PNG or JPEG of your signature to print it on documents."}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <input ref={input} type="file" accept="image/png,image/jpeg" className="sr-only" aria-label="Signature image" onChange={(e) => e.target.files?.[0] && void upload(e.target.files[0])} />
+        <Button type="button" variant="secondary" size="sm" disabled={uploading} onClick={() => input.current?.click()}>
+          {uploading ? <Spinner size="sm" /> : fileId ? "Replace signature" : "Upload signature"}
+        </Button>
+        {fileId && (
+          <Button type="button" variant="ghost" size="sm" onClick={() => onFileChange(null)}>
+            Remove signature
+          </Button>
+        )}
+      </div>
+      {error && (
+        <p role="alert" className="text-[12px] text-overdue">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

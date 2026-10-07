@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-19: add a signature and the amount in words (Phase 9)
+
+- **Signature:** Settings › Documents takes a PNG or JPEG signature ("Upload signature", "Replace signature", "Remove signature").
+  - Each document type can show it with "Signature". It prints above "Authorised signatory — <business name>" on quotes, invoices, credit notes, receipts and statements.
+  - Removing it leaves new PDFs without it; issued PDFs keep theirs.
+  - The image is served through its owning setting (D-117): Owner and Staff can open it, Field can't.
+  - The file-integrity list names it "Signature on documents".
+- **Amount in words:** prints the total in the organisation's currency on quotes, invoices (the amount due) and credit notes.
+  - Rupees use lakh and crore: "Rupees Two Lakh Forty-One Thousand Nine Hundred Only", "… and Fifty Paise Only".
+  - Other currencies: "Twelve thousand five hundred dollars and fifty cents".
+  - `amountInWords` is in `@spine/shared` and tested for both styles.
+- Settings › Documents also gains the "Tax summary table" option listed under US-SET-17. It prints from US-TAX-15.
+- Fixed: two changes in quick succession in the Documents pane (upload a signature, then tick it) could lose the first.
+
 ### 2026-10-07 — US-SET-18: set each document's title, terms and notes (Phase 9)
 
 - Each Settings › Documents tab now has a "Title" (e.g. "Quotation", "Estimate"), "Default terms" and "Default notes".

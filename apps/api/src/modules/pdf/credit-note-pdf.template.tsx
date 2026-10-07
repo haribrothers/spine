@@ -1,4 +1,4 @@
-import { resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
+import { resolveDocumentLayout, type ResolvedDocumentLayout, amountInWords } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { creditNotes, creditNoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
@@ -6,9 +6,11 @@ import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pageP
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
 import { DocumentLinesTable } from "./document-lines";
-import { LayoutTextBlocks } from "./document-extras";
+import { AmountInWordsLine, LayoutTextBlocks, SignatureBlock } from "./document-extras";
 
 export interface CreditNotePdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -79,7 +81,7 @@ function formatDate(value: Date | string | null): string {
  * it's against, the reason, the lines and the total credited. Rendered
  * from the credit note's own snapshot only.
  */
-export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri, locale, branding, layout: givenLayout }: CreditNotePdfData) {
+export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contactName, contactEmail, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: CreditNotePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "credit_note");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = creditNote.currency;
@@ -141,7 +143,11 @@ export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contac
           </View>
         </View>
 
+        {layout.amountInWords && <AmountInWordsLine words={amountInWords(creditNote.totalAmount, creditNote.currency)} />}
+
         <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

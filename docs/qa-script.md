@@ -3811,6 +3811,21 @@ Regression: existing quote, invoice, credit note, receipt and statement PDFs loo
 5. Clear a title: the default title prints again.
 6. In an Indian GST business, the Invoices and Credit notes tabs show Title "Tax Invoice" / "Credit Note", greyed out, with "Set by your GST settings". GST invoices print TAX INVOICE.
 
+## 170. Signature and amount in words (US-SET-19, Phase 9)
+
+1. Settings › Documents:
+   - Signature is greyed out until a signature is uploaded.
+   - "Upload signature" takes a PNG or JPEG; a PDF is refused with "Upload a PNG or JPEG image.".
+   - After uploading, Signature is ticked for this tab.
+2. Tick Signature on Invoices and Statements only, tick "Amount in words" on Invoices, and save.
+3. A draft invoice's PDF shows the signature above "Authorised signatory — <business name>". Under the totals: "Amount in words: Rupees … Only" for INR, or "… dollars and … cents" for USD.
+4. A quote's PDF has no signature (not ticked). A statement shows it.
+5. Issue an invoice, then "Remove signature" and save:
+   - New invoices have no signature.
+   - The issued one still does.
+6. As Staff, the signature image opens from its file link; as Field, it doesn't.
+7. Rupee check: ₹2,41,900.00 reads "Rupees Two Lakh Forty-One Thousand Nine Hundred Only"; ₹12,500.50 reads "Rupees Twelve Thousand Five Hundred and Fifty Paise Only".
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
