@@ -5,25 +5,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { MoneyAccount } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
 import { accounts, member, user } from "../../db/schema";
+import { pdfText } from "../../test-utils/pdf-text";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 
 type Who = { cookie: string; userId: string };
 
-/** Every text string drawn in a PDF, in order (react-pdf writes hex strings into Flate-compressed streams). */
-function pdfText(buf: Buffer): string {
-  let out = "";
-  for (const m of buf.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-    let content: string;
-    try {
-      content = inflateSync(Buffer.from(m[1]!, "latin1")).toString("latin1");
-    } catch {
-      continue;
-    }
-    for (const h of content.matchAll(/<([0-9a-fA-F]+)>/g)) out += Buffer.from(h[1]!, "hex").toString("latin1");
-    out += "\n";
-  }
-  return out;
-}
 
 /** The first page's width and height in points. */
 function pageSize(buf: Buffer): [number, number] {

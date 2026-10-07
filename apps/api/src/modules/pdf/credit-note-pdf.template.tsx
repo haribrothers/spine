@@ -3,6 +3,7 @@ import type { creditNotes, creditNoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
+import { PDF_FONT_FAMILY } from "./pdf-fonts";
 
 export interface CreditNotePdfData {
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -21,7 +22,7 @@ export interface CreditNotePdfData {
 // A copy of invoice-pdf.template.tsx's StyleSheet, kept separate for the
 // same reason that file gives: each document's layout can change on its own.
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   businessBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
   logo: { width: 48, height: 48, objectFit: "contain", marginRight: 10 },

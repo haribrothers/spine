@@ -4,6 +4,7 @@ import type { invoices, invoiceLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
+import { PDF_FONT_FAMILY } from "./pdf-fonts";
 
 export interface InvoicePdfBusinessProfile {
   name: string;
@@ -47,7 +48,7 @@ export interface InvoicePdfData {
 // invoices.ts's schema itself is a deliberate duplicate of quotes.ts rather
 // than a shared base.
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   businessBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
   logo: { width: 48, height: 48, objectFit: "contain", marginRight: 10 },

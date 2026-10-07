@@ -414,7 +414,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-SET-17 · Choose paper size and columns for each document
 - [ ] US-SET-18 · Set each document's title, terms and notes
 - [ ] US-SET-19 · Add a signature and the amount in words
-- [ ] US-SET-20 · Show every character on PDFs
+- [x] US-SET-20 · Show every character on PDFs
 - [ ] US-SET-21 · Edit the text of each customer email
 - [ ] US-SET-22 · Preview an email and reset it to the default
 - [ ] US-SET-23 · Switch optional modules on or off

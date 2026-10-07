@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-20: show every character on PDFs (Phase 9)
+
+- Every PDF now prints in Noto Sans, falling back to Noto Sans Devanagari: quotes, invoices, credit notes, receipts, statements and report exports. Before, they used the built-in Helvetica.
+  - ₹ and every other currency symbol print, along with accented Latin, Greek, Cyrillic and Hindi (Devanagari) names.
+  - Money keeps its true minus sign, and INR shows "₹1,20,247.50" instead of "INR 1,20,247.50" (D-151 replaces D-123).
+- The fonts ship in `apps/api/assets/fonts` with their SIL Open Font Licence (`OFL.txt`). `pdf-fonts.ts` registers them once, with italics for rich-text notes, and turns off mid-word hyphenation.
+- Scripts the fonts don't cover yet (Tamil, Telugu, Kannada, Bengali, Chinese, Arabic) print as missing glyphs. The US-SET-20 test lists what is and isn't covered; more Indian scripts follow in v1.1.
+- Issued PDFs stored before this change keep their old look (D-083).
+- New test helper `src/test-utils/pdf-text.ts` reads drawn text back through each embedded font's ToUnicode map. The US-SET-10 and US-RPT-33 tests use it.
+
 ### 2026-10-07 — Exports under LUT, rates that carry their supply type, and recurring and variation-order lines that follow the customer's state (D-181–D-183, Phase 9)
 
 The owner's answers to Q-18 and Q-19, plus closing the recurring and variation-order gap left by US-TAX-13.

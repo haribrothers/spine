@@ -2,6 +2,7 @@ import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/render
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { payments, paymentAllocations } from "../../db/schema";
+import { PDF_FONT_FAMILY } from "./pdf-fonts";
 
 export interface PaymentPdfBusinessProfile {
   name: string;
@@ -44,7 +45,7 @@ const METHOD_LABELS: Record<string, string> = {
 // can diverge independently later without a shared-styles change quietly
 // touching every document type at once.
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   businessBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
   logo: { width: 48, height: 48, objectFit: "contain", marginRight: 10 },

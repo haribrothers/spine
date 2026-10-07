@@ -8,26 +8,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createInvoiceSchema } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
 import { contacts, creditNotes, member, payments, quotes, user } from "../../db/schema";
+import { pdfText } from "../../test-utils/pdf-text";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { loadEmailBrand } from "../email/email-brand";
 import { InvoicesService } from "../invoices/invoices.service";
 import { IssuedPdfService } from "./issued-pdf.service";
 
-/** Every text string drawn in a PDF, in order (react-pdf writes hex strings into Flate-compressed streams). */
-function pdfText(buf: Buffer): string {
-  let out = "";
-  for (const m of buf.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-    let content: string;
-    try {
-      content = inflateSync(Buffer.from(m[1]!, "latin1")).toString("latin1");
-    } catch {
-      continue;
-    }
-    for (const h of content.matchAll(/<([0-9a-fA-F]+)>/g)) out += Buffer.from(h[1]!, "hex").toString("latin1");
-    out += "\n";
-  }
-  return out;
-}
 
 /** True when some content stream sets the fill colour to `hex` (`r g b scn` in DeviceRGB, within rounding). */
 function usesFill(buf: Buffer, hex: string): boolean {

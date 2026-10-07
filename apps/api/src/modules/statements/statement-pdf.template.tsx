@@ -2,6 +2,7 @@ import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/render
 import type { Statement } from "@spine/shared";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "../pdf/document-branding";
+import { PDF_FONT_FAMILY } from "../pdf/pdf-fonts";
 
 export interface StatementPdfBusiness {
   name: string;
@@ -19,7 +20,7 @@ export interface StatementPdfData {
 
 // Same fonts and colours as the invoice PDF (PDFs are always light).
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 14, borderBottomWidth: 2, marginBottom: 18 },
   businessBlock: { flexDirection: "row", alignItems: "center" },
   logo: { width: 32, height: 32, objectFit: "contain", marginRight: 8 },

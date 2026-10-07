@@ -1,30 +1,31 @@
 import { Document, Image, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { minorUnitExponent } from "@spine/shared";
 import type { ReportCell, ReportColumnKind, ReportDocument } from "./report-document";
+import { PDF_FONT_FAMILY } from "../../pdf/pdf-fonts";
 
 /**
  * US-RPT-33 (D-144, D-100) — one PDF template for every report: logo,
  * business name, report name and range or date at the top; the table; and
  * a footer on every page with the basis, "Prepared <date>" and page
  * numbers. Always light. Landscape when a report has more than five
- * amount columns. Helvetica until Phase 9's fonts (D-151).
+ * amount columns. Printed in the bundled Noto fonts (D-151).
  */
 const INK = "#1a1a1a";
 const MUTED = "#555555";
 const RULE = "#d4d4d4";
 
 const styles = StyleSheet.create({
-  page: { paddingTop: 36, paddingBottom: 56, paddingHorizontal: 36, fontFamily: "Helvetica", fontSize: 9, color: INK, backgroundColor: "#ffffff" },
+  page: { paddingTop: 36, paddingBottom: 56, paddingHorizontal: 36, fontFamily: PDF_FONT_FAMILY, fontSize: 9, color: INK, backgroundColor: "#ffffff" },
   header: { flexDirection: "row", alignItems: "center", marginBottom: 14, gap: 12 },
   logo: { maxHeight: 40, maxWidth: 120, objectFit: "contain" },
   business: { fontSize: 10, color: MUTED },
-  title: { fontSize: 16, fontFamily: "Helvetica-Bold", marginTop: 2 },
+  title: { fontSize: 16, fontFamily: PDF_FONT_FAMILY, fontWeight: 700, marginTop: 2 },
   subtitle: { fontSize: 10, color: MUTED, marginTop: 2 },
   headRow: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: INK, paddingBottom: 4, marginBottom: 2 },
   row: { flexDirection: "row", paddingVertical: 3, borderBottomWidth: 0.5, borderBottomColor: RULE },
   headingRow: { flexDirection: "row", paddingTop: 8, paddingBottom: 3 },
   grandRow: { flexDirection: "row", paddingVertical: 4, borderTopWidth: 1, borderTopColor: INK, marginTop: 2 },
-  bold: { fontFamily: "Helvetica-Bold" },
+  bold: { fontFamily: PDF_FONT_FAMILY, fontWeight: 700 },
   cell: { paddingRight: 6 },
   note: { fontSize: 8, color: MUTED, marginTop: 10 },
   footer: { position: "absolute", bottom: 24, left: 36, right: 36, flexDirection: "row", justifyContent: "space-between", fontSize: 8, color: MUTED },

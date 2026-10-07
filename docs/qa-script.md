@@ -3768,6 +3768,18 @@ Regression: lines and totals save as before.
 3. New invoice: pick Exempt on a line and Supply type becomes Exempt. Pick VAT 0% and it becomes Zero-rated.
 4. Add a catalogue item with tax Exempt: its supply type becomes Exempt.
 
+## 167. Every character on PDFs (US-SET-20, Phase 9)
+
+1. In an INR business, add a customer named "राम कुमार शर्मा" and an item named "Café Ελληνικά".
+2. Issue an invoice to them and download the PDF:
+   - Money reads "₹2,41,900.00" (never "INR").
+   - The customer name prints in Devanagari, and the item name's accents and Greek print correctly.
+   - A credit note shows its negative amounts with a minus sign.
+3. Download the quote, credit note, receipt and statement PDFs and a report PDF (Profit & Loss): all use the same font, and ₹ prints everywhere.
+4. A Tamil name prints as missing glyphs; that's expected until v1.1.
+5. Copy text from the PDF in a viewer: "Profit" pastes as "Profit" (ligatures map back).
+6. Invoices issued before this change still download with their old look.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
