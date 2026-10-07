@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput } from "@spine/ui";
-import { computeDocumentLine, type SupplyClass, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { LineTaxWarning } from "../../../components/place-of-supply";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -121,7 +122,13 @@ export function VendorBillLineEditor({
   lines,
   onChange,
   currency,
+  supplyType = null,
+  flaggedKeys,
 }: {
+  /** US-TAX-13 — picks each item's intra- or inter-state tax. */
+  supplyType?: SupplyType | null;
+  /** US-TAX-13 — lines changed by hand when the place of supply changed. */
+  flaggedKeys?: Set<string>;
   lines: EditableVendorBillLine[];
   onChange: (lines: EditableVendorBillLine[]) => void;
   currency: string;
@@ -206,8 +213,8 @@ export function VendorBillLineEditor({
       unitPriceAmount: BigInt(item.defaultPriceAmount),
       accountId: item.expenseAccountId,
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
-      taxRateId: item.defaultTaxRateId,
-      taxGroupId: item.defaultTaxGroupId,
+      // US-TAX-13: the item's inter-state tax outside my state.
+      ...itemTaxFor(item, supplyType),
     });
   }
 
@@ -308,6 +315,7 @@ export function VendorBillLineEditor({
                       <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => updateLine(index, { isTaxInclusive: v === true })} />
                       <span className="text-[13px] text-on-surface">Price includes tax</span>
                     </label>
+                    {flaggedKeys?.has(line.key) && <LineTaxWarning />}
                     {showsSupplyType(line.supplyClass, taxPercent) && (
                       <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />
                     )}

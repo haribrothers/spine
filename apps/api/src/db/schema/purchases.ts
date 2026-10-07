@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { jobs } from "./jobs";
-import { taxRates, taxGroups, supplyClassEnum } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 import { accounts, journalEntries } from "./ledger";
 import { files } from "./files";
 import { moneyAccounts } from "./banking";
@@ -69,6 +69,9 @@ export const vendorBills = pgTable(
     /** US-PUR-30 (D-159) — the recurring bill and run date that created this bill; unique together, so a date is created once. */
     recurringBillId: uuid("recurring_bill_id").references((): AnyPgColumn => recurringBills.id, { onDelete: "set null" }),
     recurringRunOn: date("recurring_run_on", { mode: "string" }),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -460,6 +463,9 @@ export const vendorCredits = pgTable(
     entryId: uuid("entry_id").references(() => journalEntries.id),
     voidEntryId: uuid("void_entry_id").references(() => journalEntries.id),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

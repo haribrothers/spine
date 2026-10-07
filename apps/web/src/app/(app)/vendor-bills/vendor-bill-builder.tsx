@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, VendorBillLineEditor, type EditableVendorBillLine } from "./vendor-bill-line-editor";
 import type { JobOption, TaxGroupOption, TaxRateOption, VendorBill } from "./types";
@@ -67,6 +68,8 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
   const [dueDate, setDueDate] = useState<Date | undefined>(bill?.dueDate ? new Date(bill.dueDate) : undefined);
   const [notes, setNotes] = useState(bill?.notes ?? "");
   const [lines, setLines] = useState<EditableVendorBillLine[]>(bill ? toEditableLines(bill) : [blankLine()]);
+  // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
+  const pos = usePlaceOfSupply({ contactId, initial: bill ? bill.placeOfSupply : undefined, lines, setLines, direction: "purchase" });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -115,6 +118,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
   function buildPayload() {
     return {
       contactId,
+      placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       jobId: jobId === NO_JOB ? null : jobId,
       billNumber,
       currency,
@@ -195,12 +199,15 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
           <FormField label="Due date">
             {() => <DatePicker value={dueDate} onChange={setDueDate} />}
           </FormField>
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
         </div>
       </Card>
 
+      <PlaceOfSupplyNotice notice={pos.notice} />
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
       </Card>
 
       <Card className="flex flex-col gap-4">

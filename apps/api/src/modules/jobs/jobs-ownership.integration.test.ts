@@ -18,6 +18,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { PeriodsService } from "../ledger/periods.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for the own/others capability split extended to Jobs
@@ -77,7 +78,7 @@ describe("Jobs & Milestones ownership split (requires local Postgres)", () => {
     const ledger = new LedgerService(db, new PeriodsService(db));
     const taxResolver = new TaxResolverService(db);
     const conversionGuard = new QuoteConversionGuardService(db, new SettingsService(db));
-    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
+    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
 
     jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     milestonesService = new MilestonesService(db, auditLog, invoices, notifications);

@@ -1,6 +1,6 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS } from "@spine/shared";
+import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -274,6 +274,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {invoice.contactName ?? "Unknown contact"}
               {invoice.dueDate && <> · Due {new Date(invoice.dueDate).toLocaleDateString()}</>}
+              {/* US-TAX-13: the place of supply snapshotted on the document. */}
+              {invoice.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(invoice.placeOfSupply)}{invoice.supplyType ? ` (${SUPPLY_TYPE_LABELS[invoice.supplyType].toLowerCase()})` : ""}</>}
             </p>
           </div>
 

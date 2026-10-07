@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
   Button,
   Checkbox,
+  Combobox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,6 +36,7 @@ import {
   TAX_COUNTRIES,
   TAX_TYPE_LABELS,
   taxCountryLabel,
+  type TaxChoice,
   type TaxCountry,
   type TaxGroupScope,
   type TaxProfileUpdate,
@@ -203,7 +205,63 @@ export function TaxPane() {
       <TaxRatesSection rates={rates} country={country} onChanged={reload} onSaved={() => setSaved(true)} />
       <TaxGroupsSection groups={groups} rates={rates.filter((r) => !r.archivedAt)} onChanged={reload} onSaved={() => setSaved(true)} />
 
+      {country === "IN" && (
+        <DefaultTaxPreference
+          rates={rates.filter((r) => !r.archivedAt)}
+          groups={groups.filter((g) => !g.archivedAt)}
+          intra={(taxProfile.defaultIntraTax as TaxChoice | null | undefined) ?? null}
+          inter={(taxProfile.defaultInterTax as TaxChoice | null | undefined) ?? null}
+          onSave={async (patch) => {
+            const res = await apiClient.put<TaxProfileUpdate>("/org/tax/profile", patch);
+            setTaxProfile(res.profile);
+            setSaved(true);
+          }}
+        />
+      )}
+
       <SavedToast open={saved} onOpenChange={setSaved} />
+    </div>
+  );
+}
+
+/**
+ * US-TAX-13 — the intra- and inter-state taxes a new catalogue item starts
+ * with (India). Each item can still pick its own.
+ */
+function DefaultTaxPreference({
+  rates,
+  groups,
+  intra,
+  inter,
+  onSave,
+}: {
+  rates: TaxRate[];
+  groups: TaxGroup[];
+  intra: TaxChoice | null;
+  inter: TaxChoice | null;
+  onSave: (patch: { defaultIntraTax?: TaxChoice; defaultInterTax?: TaxChoice }) => Promise<void>;
+}) {
+  const options = [
+    { value: "", label: "No tax" },
+    ...groups.map((g) => ({ value: `group:${g.id}`, label: g.name })),
+    ...rates.map((r) => ({ value: `rate:${r.id}`, label: r.name })),
+  ];
+  const token = (t: TaxChoice | null) => (t?.taxRateId ? `rate:${t.taxRateId}` : t?.taxGroupId ? `group:${t.taxGroupId}` : "");
+  const choice = (value: string): TaxChoice => ({ taxRateId: value.startsWith("rate:") ? value.slice(5) : null, taxGroupId: value.startsWith("group:") ? value.slice(6) : null });
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Default tax preference</h3>
+      <p className="text-[13px] text-on-surface-muted">New catalogue items start with these. Spine uses the intra-state tax in your state and the inter-state tax elsewhere.</p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-1.5">
+          <Label id="default-intra-label">Intra-state</Label>
+          <Combobox aria-labelledby="default-intra-label" options={options} value={token(intra)} onValueChange={(v) => void onSave({ defaultIntraTax: choice(v) })} placeholder="No tax" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label id="default-inter-label">Inter-state</Label>
+          <Combobox aria-labelledby="default-inter-label" options={options} value={token(inter)} onValueChange={(v) => void onSave({ defaultInterTax: choice(v) })} placeholder="No tax" />
+        </div>
+      </div>
     </div>
   );
 }

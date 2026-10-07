@@ -92,6 +92,10 @@ export class CatalogService {
       : null;
     const taxPercent = resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? 0;
     const supplyClass = itemSupplyClass(taxPercent, input.supplyClass);
+    // US-TAX-13: the inter-state tax must be one of the org's rates or groups.
+    if (input.interTaxRateId || input.interTaxGroupId) {
+      await this.taxResolver.resolve(orgId, { taxRateId: input.interTaxRateId, taxGroupId: input.interTaxGroupId });
+    }
 
     const created = await this.db.transaction(async (tx) => {
       const [item] = await tx
@@ -105,6 +109,8 @@ export class CatalogService {
           defaultPriceAmount: input.defaultPriceAmount,
           defaultPriceCurrency: input.defaultPriceCurrency,
           defaultTaxRatePercentage: taxPercent,
+          interTaxRateId: input.interTaxRateId ?? null,
+          interTaxGroupId: input.interTaxGroupId ?? null,
           supplyClass,
           defaultTaxRateId: input.defaultTaxRateId ?? null,
           defaultTaxGroupId: input.defaultTaxGroupId ?? null,
@@ -155,6 +161,11 @@ export class CatalogService {
       : null;
     const taxPercent = resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? existing.defaultTaxRatePercentage;
     const supplyClass = itemSupplyClass(taxPercent, input.supplyClass ?? existing.supplyClass);
+    if (input.interTaxRateId !== undefined || input.interTaxGroupId !== undefined) {
+      const rateId = input.interTaxRateId !== undefined ? input.interTaxRateId : existing.interTaxRateId;
+      const groupId = input.interTaxGroupId !== undefined ? input.interTaxGroupId : existing.interTaxGroupId;
+      if (rateId || groupId) await this.taxResolver.resolve(orgId, { taxRateId: rateId, taxGroupId: groupId });
+    }
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -173,6 +184,8 @@ export class CatalogService {
               : {}),
           ...(input.defaultTaxRateId !== undefined ? { defaultTaxRateId: input.defaultTaxRateId } : {}),
           ...(input.defaultTaxGroupId !== undefined ? { defaultTaxGroupId: input.defaultTaxGroupId } : {}),
+          ...(input.interTaxRateId !== undefined ? { interTaxRateId: input.interTaxRateId } : {}),
+          ...(input.interTaxGroupId !== undefined ? { interTaxGroupId: input.interTaxGroupId } : {}),
           ...(input.incomeAccountId !== undefined ? { incomeAccountId: input.incomeAccountId } : {}),
           ...(input.expenseAccountId !== undefined ? { expenseAccountId: input.expenseAccountId } : {}),
           supplyClass,

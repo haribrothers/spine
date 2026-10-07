@@ -1,6 +1,6 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS } from "@spine/shared";
+import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -181,6 +181,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {bill.contactName ?? "Unknown vendor"}
               {bill.dueDate && <> · Due {new Date(bill.dueDate).toLocaleDateString()}</>}
+              {/* US-TAX-13: the place of supply snapshotted on the document. */}
+              {bill.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(bill.placeOfSupply)}{bill.supplyType ? ` (${SUPPLY_TYPE_LABELS[bill.supplyType].toLowerCase()})` : ""}</>}
             </p>
           </div>
 

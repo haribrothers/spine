@@ -1,6 +1,6 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS } from "@spine/shared";
+import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -364,6 +364,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {quote.contactName ?? "Unknown contact"} · Version {quote.version}
               {quote.validUntil && <> · Valid until {new Date(quote.validUntil).toLocaleDateString()}</>}
+              {/* US-TAX-13: the place of supply snapshotted on the document. */}
+              {quote.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(quote.placeOfSupply)}{quote.supplyType ? ` (${SUPPLY_TYPE_LABELS[quote.supplyType].toLowerCase()})` : ""}</>}
             </p>
           </div>
 

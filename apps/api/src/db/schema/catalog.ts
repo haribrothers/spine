@@ -74,6 +74,9 @@ export const catalogItems = pgTable(
     /** At most one of these two is set — enforced at the service layer, same convention as quote_lines/invoice_lines. */
     defaultTaxRateId: uuid("default_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     defaultTaxGroupId: uuid("default_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    /** US-TAX-13 — the inter-state counterpart of the default (intra-state) tax; at most one. */
+    interTaxRateId: uuid("inter_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    interTaxGroupId: uuid("inter_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     /** US-TAX-11 — copied to each line made from the item. */
     supplyClass: supplyClassEnum("supply_class").notNull().default("taxable"),
     incomeAccountId: uuid("income_account_id").references(() => accounts.id, { onDelete: "restrict" }),

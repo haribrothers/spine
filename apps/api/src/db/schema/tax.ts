@@ -27,6 +27,9 @@ export const taxGroupScopeEnum = pgEnum("tax_group_scope", ["intra", "inter", "a
 /** US-TAX-11 (D-147) — why a line has no tax: zero-rated, exempt or outside GST/VAT. */
 export const supplyClassEnum = pgEnum("supply_class", ["taxable", "zero_rated", "exempt", "non_taxable"]);
 
+/** US-TAX-13 (D-146) — intra-state (CGST + SGST), inter-state (IGST) or export; null without GST. */
+export const supplyTypeEnum = pgEnum("supply_type", ["intra", "inter", "export"]);
+
 export const taxRates = pgTable(
   "tax_rates",
   {

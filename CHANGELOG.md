@@ -80,6 +80,30 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-13: pick intra- or inter-state GST automatically (Phase 9)
+
+- In an Indian business with a GST state, quotes, invoices, vendor bills and vendor credits have a "Place of supply".
+  - It comes from the customer's site or shipping address, else billing, else the contact's state. An overseas customer gets "Other countries (96)".
+  - The hint says where it came from and which tax applies, for example "From the site address · Inter-state, so items use their IGST rate."
+  - It can be changed.
+  - Vendor bills and vendor credits use the vendor's state.
+  - A credit note takes its invoice's.
+- The supply type follows the place of supply:
+  - The business's own state is intra-state.
+  - Another state, or an SEZ unit, is inter-state.
+  - An overseas customer is an export, which charges IGST (Q-18 still asks whether LUT exports are needed).
+- Adding a catalogue item uses its intra-state tax in my state and its inter-state tax elsewhere.
+- Changing the place of supply on a draft between intra- and inter-state switches every line still on its item's tax.
+  - Lines changed by hand, and taxed one-off lines, keep their tax and show "Check this line's tax — the place of supply changed."
+  - A banner sums up what happened: "The place of supply changed to Karnataka (29): 1 line switched to CGST + SGST; 1 line you changed by hand keeps its tax — check it."
+- Catalogue items in India have "Intra-state tax" and "Inter-state tax".
+  - New items start from Settings › Tax › "Default tax preference".
+  - Choosing India sets that preference to GST 18% and IGST 18%.
+- The place of supply and supply type are saved on every draft and frozen when the quote is sent, the invoice or credit note issued, or the bill or vendor credit recorded. Detail pages show them.
+- Migration `0103`: `place_of_supply` and `supply_type` on quotes, invoices, credit notes, vendor bills and vendor credits, plus `inter_tax_rate_id` and `inter_tax_group_id` on catalogue items.
+- The rules (`supplyTypeFor`, `placeOfSupplyFor`, `itemTaxFor`, `switchLineTaxes`) are in `@spine/shared` with unit tests. The API uses them through `PlaceOfSupplyService`.
+- Fixed an older bug: updating a draft quote, invoice, credit note, vendor bill or vendor credit without sending its lines cleared them. A partial invoice update also reset its type to Standard, and a partial expense update reset its tax, who paid and billable. Update schemas no longer apply create-time defaults.
+
 ### 2026-10-07 — US-TAX-12: record my GSTIN and state, and each customer's (Phase 9)
 
 - New Settings › GST pane, shown when the tax country is India. It asks for GSTIN, State, Legal name, Trade name, Registered on and Return period.

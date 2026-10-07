@@ -12,6 +12,7 @@ import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 const PROVENANCE = { ipAddress: "127.0.0.1", userAgent: "vitest" };
 
@@ -49,7 +50,7 @@ describe("PublicQuotesService respond() owner notifications (requires local Post
     const fakePush = { isConfigured: () => false };
     const notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
 
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, notificationsService);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, new PlaceOfSupplyService(db), notificationsService);
     publicQuotesService = new PublicQuotesService(db, tokens, auditLog, notificationsService, settings);
 
     const ownerEmail = `qrespond-owner-${randomUUID()}@example.com`;

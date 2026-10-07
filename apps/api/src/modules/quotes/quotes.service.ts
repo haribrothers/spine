@@ -13,6 +13,7 @@ import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
@@ -202,6 +203,7 @@ export class QuotesService {
     private readonly queue: QueueService,
     private readonly publicTokens: QuotePublicTokenService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -393,11 +395,19 @@ export class QuotesService {
     const currency = input.currency ?? existing.currency;
     const totals = input.lines !== undefined ? await computeQuoteTotals(orgId, currency, input.lines, this.taxResolver) : null;
     const threshold = await this.getThreshold(orgId);
+    // US-TAX-13: a new contact (or a draft saved before GST was set up) takes the contact's place of supply.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "sale",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(quotes)
         .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
@@ -525,7 +535,15 @@ export class QuotesService {
         // for the window between this commit and the queue worker actually
         // picking the job up. The worker (quote-email.worker.ts) owns every
         // subsequent transition to "sent"/"failed".
-        .set({ status: "sent", number, sentAt: new Date(), emailStatus: "pending", updatedAt: new Date() })
+        .set({
+          status: "sent",
+          number,
+          sentAt: new Date(),
+          emailStatus: "pending",
+          updatedAt: new Date(),
+          // US-TAX-13: snapshotted when sent.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
+        })
         .where(eq(quotes.id, id));
 
       await this.auditLog.record(tx, {
@@ -617,6 +635,8 @@ export class QuotesService {
           notes: existing.notes,
           termsAndConditions: existing.termsAndConditions,
           createdByUserId: actorUserId,
+          placeOfSupply: existing.placeOfSupply,
+          supplyType: existing.supplyType,
           // A revision of a demo quote must itself be demo data — otherwise
           // it would survive DemoDataService.deleteAll's isDemo-scoped
           // cleanup as an orphaned real-looking row.
@@ -711,6 +731,8 @@ export class QuotesService {
           termsAndConditions: source.termsAndConditions,
           createdByUserId: actorUserId,
           isDemo: source.isDemo,
+          placeOfSupply: source.placeOfSupply,
+          supplyType: source.supplyType,
         })
         .returning();
       if (sourceLines.length) {
@@ -985,6 +1007,8 @@ export class QuotesService {
 
     const totals = await computeQuoteTotals(orgId, input.currency, input.lines, this.taxResolver);
     const threshold = await this.getThreshold(orgId);
+    // US-TAX-13: the place of supply given, else the contact's.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
 
     const created = await this.db.transaction(async (tx) => {
       const [quote] = await tx
@@ -1006,6 +1030,7 @@ export class QuotesService {
           termsAndConditions: input.termsAndConditions ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
         })
         .returning();
 

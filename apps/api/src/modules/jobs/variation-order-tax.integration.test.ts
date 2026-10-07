@@ -20,6 +20,7 @@ import { TaxResolverService } from "../tax/tax-resolver.service";
 import { JobsService } from "./jobs.service";
 import { MilestonesService } from "./milestones.service";
 import { VariationOrdersService } from "./variation-orders.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for the variation-order line editor's tax rate/group
@@ -60,8 +61,8 @@ describe("Variation order tax (requires local Postgres)", () => {
     const taxResolver = new TaxResolverService(db);
     const conversionGuard = new QuoteConversionGuardService(db, settings);
     const ledger = new LedgerService(db, new PeriodsService(db));
-    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
-    const quotesService = new QuotesService(db, auditLog, numbering, settings, queue, publicTokens, taxResolver, notifications);
+    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
+    const quotesService = new QuotesService(db, auditLog, numbering, settings, queue, publicTokens, taxResolver, new PlaceOfSupplyService(db), notifications);
     const jobsService = new JobsService(db, auditLog, conversionGuard, notifications, numbering);
     const milestonesService = new MilestonesService(db, auditLog, invoices, notifications);
     variationOrdersService = new VariationOrdersService(db, auditLog, quotesService, jobsService, milestonesService);

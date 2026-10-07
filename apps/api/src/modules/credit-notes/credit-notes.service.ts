@@ -188,6 +188,10 @@ export class CreditNotesService {
       );
     }
 
+    // US-TAX-13: a credit note corrects its invoice, so it has the invoice's place of supply.
+    if (input.placeOfSupply && input.placeOfSupply !== invoice.placeOfSupply) {
+      throw new BadRequestException("A credit note has its invoice's place of supply. Change the invoice instead.");
+    }
     const totals = computeCreditNoteTotals(invoice.currency, input.lines);
 
     const created = await this.db.transaction(async (tx) => {
@@ -204,6 +208,8 @@ export class CreditNotesService {
           totalAmount: totals.totalAmount,
           createdByUserId: actorUserId,
           isDemo,
+          placeOfSupply: invoice.placeOfSupply,
+          supplyType: invoice.supplyType,
         })
         .returning();
 

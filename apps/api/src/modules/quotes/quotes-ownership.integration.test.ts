@@ -14,6 +14,7 @@ import { QuotePublicTokenService } from "./quote-public-token.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PushService } from "../notifications/push.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for the own/others capability split extended to
@@ -74,7 +75,7 @@ describe("Quotes ownership split (requires local Postgres)", () => {
       new SettingsService(db),
       new QueueService(db),
       new QuotePublicTokenService(db),
-      new TaxResolverService(db),
+      new TaxResolverService(db), new PlaceOfSupplyService(db),
       new NotificationsService(db, new QueueService(db), new PushService(db)),
     );
 

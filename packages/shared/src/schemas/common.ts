@@ -16,3 +16,6 @@ export const orgScopedSchema = z.object({
   updatedAt: z.coerce.date(),
   createdBy: uuidSchema,
 });
+
+/** US-TAX-13 — a GST state code ("29") or "96" for other countries. */
+export const placeOfSupplySchema = z.string().regex(/^\d{2}$/, "Choose a place of supply from the list.");

@@ -1,5 +1,5 @@
 import { files } from "./files";
-import { supplyClassEnum } from "./tax";
+import { supplyClassEnum, supplyTypeEnum } from "./tax";
 import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
@@ -75,6 +75,9 @@ export const creditNotes = pgTable(
     /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
     issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { files } from "./files";
-import { taxRates, taxGroups, supplyClassEnum } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 
 /**
  * PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8).
@@ -175,6 +175,9 @@ export const quotes = pgTable(
     emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
     /** Same demo-data marker as contacts.isDemo/catalogItems.isDemo — see contacts.ts's isDemo comment. */
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
 import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const creditNoteLineTypeSchema = z.enum(["item", "heading", "text"]);
@@ -31,7 +31,10 @@ export const createCreditNoteSchema = z.object({
   invoiceId: uuidSchema,
   reason: z.string().optional().nullable(),
   lines: z.array(creditNoteLineInputSchema).default([]),
+  /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
+  placeOfSupply: placeOfSupplySchema.optional().nullable(),
 });
 
 /** A draft-only update — see CreditNotesService.update's own guard against editing an issued credit note. */
-export const updateCreditNoteSchema = createCreditNoteSchema.omit({ invoiceId: true }).partial();
+// Without the create default: a partial update must not clear the lines.
+export const updateCreditNoteSchema = createCreditNoteSchema.omit({ invoiceId: true }).partial().extend({ lines: z.array(creditNoteLineInputSchema).optional() });

@@ -20,6 +20,7 @@ import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { PeriodsService } from "../ledger/periods.service";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for `GET /expenses/:id/history`,
@@ -65,11 +66,11 @@ describe("Purchases history (requires local Postgres)", () => {
     const taxResolver = new TaxResolverService(db);
     const queue = new QueueService(db);
     const notifications = new NotificationsService(db, queue, new PushService(db));
-    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver);
+    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver, new PlaceOfSupplyService(db));
 
     expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices, new MoneyAccountsService(db, auditLog));
     expenseCategoriesService = new ExpenseCategoriesService(db, auditLog);
-    vendorBillsService = new VendorBillsService(db, auditLog, ledger, taxResolver);
+    vendorBillsService = new VendorBillsService(db, auditLog, ledger, taxResolver, new PlaceOfSupplyService(db));
     vendorPaymentsService = new VendorPaymentsService(db, auditLog, numbering, ledger, new MoneyAccountsService(db, auditLog));
 
     const ownerEmail = `purchases-history-owner-${randomUUID()}@example.com`;

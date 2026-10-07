@@ -41,6 +41,8 @@ export class TaxProfileService {
       const added = preset ? await this.seed(tx, orgId, actorUserId, preset) : 0;
       const given = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
       const profile: TaxProfile = { ...(await this.read<TaxProfile>(tx, orgId, PROFILE_KEY)), ...given };
+      // US-TAX-13: India starts with GST 18% within the state and IGST 18% across states.
+      if (input.country === "IN" && !profile.defaultIntraTax && !profile.defaultInterTax) Object.assign(profile, await this.indiaDefaults(tx, orgId));
       if (profile.registrationNumber && profile.stateCode) {
         const message = gstinError(profile.registrationNumber, profile.stateCode);
         if (message) throw new BadRequestException(message);
@@ -53,6 +55,16 @@ export class TaxProfileService {
       if (profile.country === "IN" && input.stateCode && isUnionTerritory(input.stateCode)) await this.restoreUnionTerritoryGroups(tx, orgId);
       return { profile, added };
     });
+  }
+
+  /** US-TAX-13 — the seeded "GST 18%" group and "IGST 18%" rate as the default tax preference. */
+  private async indiaDefaults(tx: Transaction, orgId: string): Promise<Partial<TaxProfile>> {
+    const [group] = await tx.select({ id: taxGroups.id }).from(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "GST 18%")));
+    const [rate] = await tx.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.name, "IGST 18%")));
+    return {
+      ...(group ? { defaultIntraTax: { taxRateId: null, taxGroupId: group.id } } : {}),
+      ...(rate ? { defaultInterTax: { taxRateId: rate.id, taxGroupId: null } } : {}),
+    };
   }
 
   /**

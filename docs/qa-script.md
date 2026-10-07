@@ -3699,6 +3699,37 @@ Use a valid GSTIN such as 29AAACK0000A1ZK (Karnataka) or 33AABCU9603R1ZU (Tamil 
 
 Regression: the return period (Settings › Tax) and the dashboard's "Tax this period" still follow each other; contact create, edit and import work as before outside India.
 
+## 164. Place of supply (US-TAX-13, Phase 9)
+
+Set up an Indian business with GST state Karnataka (29). Its rates come from the India preset.
+
+1. Settings › Tax: "Default tax preference" shows Intra-state "GST 18%" and Inter-state "IGST 18%".
+2. Catalogue › Add item:
+   - "Intra-state tax" ("Same state as your business.") is GST 18% and "Inter-state tax" ("Another state, export or SEZ.") is IGST 18%.
+   - Save "Modular kitchen" with both.
+3. Add a customer with a billing address in Karnataka and a site address in Tamil Nadu.
+4. New invoice for that customer:
+   - "Place of supply" reads "Tamil Nadu (33)" with "From the site address · Inter-state, so items use their IGST rate."
+   - Add "Modular kitchen": its tax is IGST 18%.
+   - Add it again and change that line's tax to GST 5% by hand.
+5. Change Place of supply to Karnataka (29):
+   - The banner reads "The place of supply changed to Karnataka (29): 1 line switched to CGST + SGST; 1 line you changed by hand keeps its tax — check it."
+   - Line 1 shows GST 18%.
+   - Line 2 keeps GST 5% and shows "Check this line's tax — the place of supply changed."
+6. Save and issue: the invoice page reads "Place of supply Karnataka (29) (intra-state)". Change the customer's address: the issued invoice doesn't change.
+7. An overseas customer gets "Other countries (96)" and IGST (export). An SEZ customer is inter-state.
+8. Vendor bill from a vendor in Maharashtra: the place of supply is Maharashtra (27) and the bill is inter-state. A vendor in Karnataka is intra-state.
+9. Credit note on an issued invoice: it has the invoice's place of supply.
+10. Outside India, or in an Indian business with no GST state: there's no Place of supply field and documents behave as before.
+11. Keyboard: Place of supply is labelled and reachable by Tab; the banner and line warnings are announced. Dark mode: the banner and the warnings are readable.
+
+Regression:
+- Saving a draft keeps all its lines.
+- Converting a quote keeps its place of supply.
+- Recurring schedules and variation orders work as before.
+
+Known gap: recurring schedules and variation orders have no Place of supply field. Items added there use their intra-state tax, so check the tax on lines for out-of-state customers.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

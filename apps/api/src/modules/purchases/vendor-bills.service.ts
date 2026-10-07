@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { attachmentCounts } from "../attachments/attachments.service";
 
 export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
@@ -179,6 +180,7 @@ export class VendorBillsService {
     private readonly auditLog: AuditLogService,
     private readonly ledger: LedgerService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string; jobId?: string }) {
@@ -254,6 +256,8 @@ export class VendorBillsService {
     }
 
     const totals = await computeBillTotals(orgId, input.currency, input.lines, this.taxResolver);
+    // US-TAX-13: the vendor's state, unless one is given.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "purchase");
 
     const created = await this.db.transaction(async (tx) => {
       const [bill] = await tx
@@ -275,6 +279,7 @@ export class VendorBillsService {
           isDemo,
           recurringBillId: recurring?.recurringBillId ?? null,
           recurringRunOn: recurring?.recurringRunOn ?? null,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
         })
         .returning();
 
@@ -312,11 +317,19 @@ export class VendorBillsService {
 
     const currency = input.currency ?? existing.currency;
     const totals = input.lines !== undefined ? await computeBillTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    // US-TAX-13: the vendor's state decides intra- or inter-state; a new vendor (or a draft from before GST) takes the vendor's.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "purchase",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(vendorBills)
         .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
           ...(input.billNumber !== undefined ? { billNumber: input.billNumber } : {}),
@@ -433,7 +446,14 @@ export class VendorBillsService {
 
       const [row] = await tx
         .update(vendorBills)
-        .set({ status: "recorded", recordedAt, journalEntryId, updatedAt: recordedAt })
+        .set({
+          status: "recorded",
+          recordedAt,
+          journalEntryId,
+          updatedAt: recordedAt,
+          // US-TAX-13: snapshotted when recorded.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "purchase", tx)),
+        })
         .where(eq(vendorBills.id, id))
         .returning();
 

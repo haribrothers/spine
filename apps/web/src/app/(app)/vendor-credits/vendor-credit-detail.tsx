@@ -22,7 +22,7 @@ import {
   Spinner,
   StatusChip,
 } from "@spine/ui";
-import { VENDOR_CREDIT_STATUS_LABELS, type VendorCreditStatus } from "@spine/shared";
+import { VENDOR_CREDIT_STATUS_LABELS, type VendorCreditStatus, placeOfSupplyLabel } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
@@ -117,6 +117,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
           </div>
           <p className="text-[13px] text-on-surface-muted">
             {credit.contactName} · their {credit.vendorReference} · {day(credit.date)}
+            {credit.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(credit.placeOfSupply)}</>}
             {credit.billId && (
               <>
                 {" · against "}

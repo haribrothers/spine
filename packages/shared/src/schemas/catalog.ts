@@ -38,6 +38,9 @@ export const createCatalogItemSchema = z.object({
   defaultTaxGroupId: uuidSchema.optional().nullable(),
   incomeAccountId: uuidSchema.optional().nullable(),
   expenseAccountId: uuidSchema.optional().nullable(),
+  /** US-TAX-13 — the item's inter-state tax (e.g. IGST 18%); the default tax above is its intra-state tax. At most one. */
+  interTaxRateId: uuidSchema.optional().nullable(),
+  interTaxGroupId: uuidSchema.optional().nullable(),
   /** US-TAX-11 — copied to each line; an item with tax is always taxable. */
   supplyClass: z.enum(SUPPLY_CLASSES).optional(),
 });

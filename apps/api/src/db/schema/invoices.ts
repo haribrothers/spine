@@ -7,7 +7,7 @@ import { files } from "./files";
 import { quotes } from "./quotes";
 import { journalEntries } from "./ledger";
 import { jobs, milestones } from "./jobs";
-import { taxRates, taxGroups, supplyClassEnum } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 
 /**
  * PRD F5 — Invoicing (Phase 2 · Money In). Stage 1 scope: standard invoice
@@ -161,6 +161,9 @@ export const invoices = pgTable(
      * gapless `number` is, D-007).
      */
     progressClaimNo: integer("progress_claim_no"),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

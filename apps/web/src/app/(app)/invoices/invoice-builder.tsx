@@ -19,6 +19,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "./invoice-line-editor";
 import type { Invoice, InvoiceType, TaxGroupOption, TaxRateOption } from "./types";
@@ -81,6 +82,8 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [terms, setTerms] = useState(invoice?.termsAndConditions ?? "");
   const [lines, setLines] = useState<EditableInvoiceLine[]>(invoice ? toEditableLines(invoice) : [blankLine()]);
+  // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
+  const pos = usePlaceOfSupply({ contactId, initial: invoice ? invoice.placeOfSupply : undefined, lines, setLines });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -122,6 +125,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   function buildPayload() {
     return {
       contactId,
+      placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       type,
       currency,
       issueDate: issueDate ? issueDate.toISOString().slice(0, 10) : null,
@@ -202,12 +206,15 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
           <FormField label="Due date" helperText="Drives the overdue flag once issued.">
             {() => <DatePicker value={dueDate} onChange={setDueDate} />}
           </FormField>
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
         </div>
       </Card>
 
+      <PlaceOfSupplyNotice notice={pos.notice} />
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} />
+        <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
       </Card>
 
       <Card className="flex flex-col gap-4">

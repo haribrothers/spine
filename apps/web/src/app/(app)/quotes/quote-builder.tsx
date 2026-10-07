@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, RichTextEditor, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
 import type { Quote, TaxGroupOption, TaxRateOption } from "./types";
@@ -92,6 +93,8 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   const [notes, setNotes] = useState(quote?.notes ?? "");
   const [terms, setTerms] = useState(quote?.termsAndConditions ?? "");
   const [lines, setLines] = useState<EditableQuoteLine[]>(quote ? toEditableLines(quote) : [blankLine()]);
+  // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
+  const pos = usePlaceOfSupply({ contactId, initial: quote ? quote.placeOfSupply : undefined, lines, setLines });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -133,6 +136,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   function buildPayload(lines: EditableQuoteLine[]) {
     return {
       contactId,
+      placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       currency,
       validUntil: validUntil ? validUntil.toISOString().slice(0, 10) : null,
       notes: notes || null,
@@ -197,12 +201,15 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
           <FormField label="Valid until" helperText="Quote shows as expired after this date.">
             {() => <DatePicker value={validUntil} onChange={setValidUntil} />}
           </FormField>
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
         </div>
       </Card>
 
+      <PlaceOfSupplyNotice notice={pos.notice} />
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} />
+        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
       </Card>
 
       <Card className="flex flex-col gap-4">

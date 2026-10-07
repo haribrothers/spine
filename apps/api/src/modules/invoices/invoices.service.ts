@@ -14,6 +14,7 @@ import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 
@@ -195,6 +196,7 @@ export class InvoicesService {
     private readonly queue: QueueService,
     private readonly conversionGuard: QuoteConversionGuardService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -321,6 +323,8 @@ export class InvoicesService {
     }
 
     const totals = await computeInvoiceTotals(orgId, input.currency, withoutTaxIfAdvance(input.lines, input.type), this.taxResolver);
+    // US-TAX-13: the place of supply given, else the contact's.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -344,6 +348,7 @@ export class InvoicesService {
           isDemo,
           recurringInvoiceId: recurring?.recurringInvoiceId ?? null,
           recurringRunOn: recurring?.recurringRunOn ?? null,
+          ...{ placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType },
         })
         .returning();
 
@@ -403,6 +408,8 @@ export class InvoicesService {
       contactId: quote.contactId,
       type: "standard",
       currency: quote.currency,
+      // US-TAX-13: the quote's place of supply carries over.
+      placeOfSupply: quote.placeOfSupply ?? undefined,
       issueDate: null,
       dueDate: null,
       notes: quote.notes ?? null,
@@ -659,11 +666,19 @@ export class InvoicesService {
         ? (await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, id)).orderBy(invoiceLines.sortOrder)).map((l) => ({ ...l, type: l.type }))
         : undefined);
     const totals = lines !== undefined ? await computeInvoiceTotals(orgId, currency, withoutTaxIfAdvance(lines, type), this.taxResolver) : null;
+    // US-TAX-13: a new contact (or a draft saved before GST was set up) takes the contact's place of supply.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "sale",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(invoices)
         .set({
+          ...{ placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType },
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.type !== undefined ? { type: input.type } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
@@ -874,6 +889,8 @@ export class InvoicesService {
           status: "issued",
           number,
           issuedAt,
+          // US-TAX-13: snapshotted at issue.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
           issueDate: existing.issueDate ?? issuedAt,
           journalEntryId,
           paymentInstructions,

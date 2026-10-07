@@ -31,6 +31,9 @@ export interface Quote {
   id: string;
   orgId: string;
   contactId: string;
+  /** US-TAX-13 — GST place of supply and the supply type it gave. */
+  placeOfSupply: string | null;
+  supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   number: string | null;
   status: QuoteStatus;
@@ -94,6 +97,9 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  /** US-TAX-13 — the inter-state counterpart of the default tax. */
+  interTaxRateId?: string | null;
+  interTaxGroupId?: string | null;
   supplyClass: SupplyClass;
   archivedAt: string | null;
 }

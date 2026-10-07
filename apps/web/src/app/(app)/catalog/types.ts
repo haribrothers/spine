@@ -13,6 +13,9 @@ export interface CatalogItem {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  /** US-TAX-13 — the inter-state counterpart of the default tax. */
+  interTaxRateId: string | null;
+  interTaxGroupId: string | null;
   /** US-TAX-11 — copied to each line made from the item. */
   supplyClass: SupplyClass;
   incomeAccountId: string | null;

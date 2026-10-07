@@ -2,6 +2,9 @@ import { z } from "zod";
 import { TAX_COUNTRIES } from "../tax/presets/types.ts";
 import { GSTIN_INVALID_MESSAGE, gstState, gstinError, normaliseGstin } from "../tax/gst.ts";
 
+/** US-TAX-13 — a default tax: one rate or one group. */
+export const taxChoiceSchema = z.object({ taxRateId: z.string().uuid().nullable(), taxGroupId: z.string().uuid().nullable() });
+
 /** US-DASH-25 — Settings › Tax › "Return period" (`settings.tax_profile.returnPeriod`, monthly by default). */
 export const RETURN_PERIODS = ["monthly", "quarterly"] as const;
 export type ReturnPeriod = (typeof RETURN_PERIODS)[number];
@@ -22,6 +25,9 @@ export const taxProfileSchema = z
     stateCode: z.string().nullable().optional(),
     /** YYYY-MM-DD. */
     registeredOn: z.string().nullable().optional(),
+    /** US-TAX-13 — Settings › Tax › "Default tax preference" for new catalogue items. */
+    defaultIntraTax: taxChoiceSchema.nullable().optional(),
+    defaultInterTax: taxChoiceSchema.nullable().optional(),
   })
   .passthrough();
 export type TaxProfile = z.infer<typeof taxProfileSchema>;
@@ -49,6 +55,8 @@ export const putTaxProfileSchema = z
       .optional(),
     registeredOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Enter the date as YYYY-MM-DD.").nullable().optional(),
     returnPeriod: z.enum(RETURN_PERIODS, { message: "Choose Monthly or Quarterly." }).optional(),
+    defaultIntraTax: taxChoiceSchema.nullable().optional(),
+    defaultInterTax: taxChoiceSchema.nullable().optional(),
   })
   .superRefine((v, ctx) => {
     // The GSTIN's first two digits must be the state chosen with it.

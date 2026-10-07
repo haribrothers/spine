@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
 import { bundleLines, useBundles } from "../../../lib/bundles";
-import { computeDocumentLine, type SupplyClass, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { LineTaxWarning } from "../../../components/place-of-supply";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -111,7 +112,13 @@ export function InvoiceLineEditor({
   lines,
   onChange,
   currency,
+  supplyType = null,
+  flaggedKeys,
 }: {
+  /** US-TAX-13 — picks each item's intra- or inter-state tax. */
+  supplyType?: SupplyType | null;
+  /** US-TAX-13 — lines changed by hand when the place of supply changed. */
+  flaggedKeys?: Set<string>;
   lines: EditableInvoiceLine[];
   onChange: (lines: EditableInvoiceLine[]) => void;
   currency: string;
@@ -192,8 +199,8 @@ export function InvoiceLineEditor({
       description: item.description ?? "",
       unitPriceAmount: BigInt(item.defaultPriceAmount),
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
-      taxRateId: item.defaultTaxRateId,
-      taxGroupId: item.defaultTaxGroupId,
+      // US-TAX-13: the item's inter-state tax outside my state.
+      ...itemTaxFor(item, supplyType),
     });
   }
 
@@ -224,7 +231,7 @@ export function InvoiceLineEditor({
                 </button>
               </div>
 
-              <div className="flex-1">
+              <div className="flex flex-1 flex-col gap-2">
                 {line.type === "item" ? (
                   <ItemLineFields
                     line={line}
@@ -241,6 +248,7 @@ export function InvoiceLineEditor({
                 ) : (
                   <NonItemLineFields line={line} onChange={(patch) => updateLine(index, patch)} />
                 )}
+                {flaggedKeys?.has(line.key) && <LineTaxWarning />}
               </div>
 
               <button

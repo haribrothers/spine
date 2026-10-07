@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { formatMoney } from "../../../lib/money";
 import { AttachmentsSection, attachPending, type PendingAttachment } from "../../../components/attachments-section";
 import { ContactPicker } from "../vendor-bills/contact-picker";
@@ -53,6 +54,8 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
   const [date, setDate] = useState<Date | undefined>(credit?.date ? new Date(`${credit.date.slice(0, 10)}T00:00:00`) : new Date());
   const [notes, setNotes] = useState(credit?.notes ?? "");
   const [lines, setLines] = useState<EditableVendorBillLine[]>(credit?.lines?.length ? toEditable(credit.lines) : [blankLine()]);
+  // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
+  const pos = usePlaceOfSupply({ contactId, initial: credit ? credit.placeOfSupply : undefined, lines, setLines, direction: "purchase" });
   const [bills, setBills] = useState<VendorBill[]>([]);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -125,6 +128,7 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
     try {
       const payload = {
         contactId,
+        placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
         vendorReference: vendorReference.trim(),
         billId: billId === NO_BILL ? null : billId,
         jobId: jobId === NO_JOB ? null : jobId,
@@ -184,12 +188,15 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           <FormField label="Job" helperText="Lowers this job's cost once recorded.">
             {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
           </FormField>
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
         </div>
       </Card>
 
+      <PlaceOfSupplyNotice notice={pos.notice} />
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
       </Card>
 
       <Card className="flex flex-col gap-4">
