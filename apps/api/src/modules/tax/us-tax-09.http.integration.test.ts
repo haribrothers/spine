@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { isValidElement, type ReactElement, type ReactNode } from "react";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createInvoiceSchema, type TaxProfile, type TaxProfileUpdate } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
@@ -107,7 +107,7 @@ describe("US-TAX-09 · start with my country's tax rates (requires local Postgre
   });
 
   it("changing country later adds the new preset's rates and keeps every existing rate unchanged", async () => {
-    const [mine] = await db.select().from(taxRates).where(eq(taxRates.name, "CGST 9%"));
+    const [mine] = await db.select().from(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.name, "CGST 9%")));
     const before = await rates(owner);
     const res = await setCountry(owner, "GB");
     expect(res.added).toBe(4);
