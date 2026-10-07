@@ -41,7 +41,7 @@ test.describe("US-TAX-09", () => {
     await expect(pane.getByText("Changing country adds that country's rates. Existing rates are never changed or deleted.")).toBeVisible();
     await expect(pane.getByText("CGST 9%", { exact: true })).toBeVisible();
     await expect(pane.getByText("CGST (9%) + SGST (9%) · Intra-state")).toBeVisible();
-    await expect(pane.getByText("IGST 18%", { exact: true })).toBeVisible();
+    await expect(pane.getByText("18% · IGST")).toBeVisible();
 
     await pane.getByRole("combobox", { name: "Country" }).click();
     await page.getByRole("option", { name: "United Kingdom (VAT)" }).click();
