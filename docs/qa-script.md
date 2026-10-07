@@ -3847,6 +3847,18 @@ Use an Indian business with GST state Karnataka (29) and GSTIN 29AAACK0000A1ZK.
 7. Issue a credit note on the first invoice: CREDIT NOTE, with the same GST details and "Against invoice INV-… dated …".
 8. In a business without GST: PDFs look as before (Subtotal, Discount, Tax; no GSTIN or place of supply). Ticking "Tax summary table" there gives a summary by rate.
 
+## 172. UPI ID for payments (US-INV-25, Phase 9)
+
+1. In an INR business, open Settings › Payment instructions:
+   - A "UPI" section shows "UPI ID" (placeholder "e.g. riverstone@okhdfc") and "Payee name" (placeholder: the business name).
+   - "Show a UPI QR code on invoices" is greyed out until a UPI ID is entered.
+   - The footer reads "Issued invoices keep the instructions and QR code they were issued with — …".
+2. Enter "river stone@okhdfc" and save: "Enter a UPI ID like name@bank.". Try "riverstone" as well: same message.
+3. Enter "riverstone@okhdfc": the QR switch turns on. Save, reload and reopen the pane: the ID and the switch are kept.
+4. Turn the switch off, save, reload: it stays off.
+5. In a USD business, the pane shows only "How customers can pay"; there are no UPI fields.
+6. Regression: the payment instructions text still saves, and more than 600 characters is still refused (section for US-INV-16).
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

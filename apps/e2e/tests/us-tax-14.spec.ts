@@ -50,6 +50,6 @@ test.describe("US-TAX-14", () => {
     const warning = page.getByRole("alertdialog");
     await expect(warning.getByText("1 line has no HSN/SAC code. GSTR-1 needs them.", { exact: false })).toBeVisible();
     await warning.getByRole("button", { name: "Issue anyway" }).click();
-    await expect(page.getByText("Invoice issued")).toBeVisible();
+    await expect(page.getByText("Invoice issued", { exact: true })).toBeVisible();
   });
 });

@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-INV-25: set my UPI ID for payments (Phase 9)
+
+- Settings › Payment instructions has a UPI section when the business's currency is INR. It holds:
+  - "UPI ID" (e.g. riverstone@okhdfc).
+  - "Payee name", which defaults to the business name.
+  - A "Show a UPI QR code on invoices" switch, on once a UPI ID is saved.
+- A UPI ID without an "@", or with spaces, is refused with "Enter a UPI ID like name@bank." in the pane and by the API (400).
+- Other currencies don't show the UPI fields.
+- `business_profile` gains `upiId`, `upiPayeeName` and `showUpiQr`. `upiPaymentUri` (`@spine/shared`) builds the `upi://pay` link that the QR code will encode (D-150, US-INV-26).
+
 ### 2026-10-07 — US-TAX-15: print GST details on invoices and credit notes (Phase 9)
 
 - With GST on (the document has a supply type), the invoice PDF follows the GST rules:
