@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
-import { computeDocumentLine } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -45,6 +45,7 @@ interface ComputedLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -111,6 +112,7 @@ async function computeQuoteTotals(
           taxRateId: null,
           taxGroupId: null,
           isTaxInclusive: false,
+          supplyClass: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -123,6 +125,10 @@ async function computeQuoteTotals(
             rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: line.taxRatePercentage,
           };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
 
       // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
       const computed = computeDocumentLine({
@@ -160,6 +166,7 @@ async function computeQuoteTotals(
         unitPriceCurrency: currency,
         discountPercentage: line.discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive: line.isTaxInclusive,
@@ -634,6 +641,7 @@ export class QuotesService {
             taxRateId: line.taxRateId,
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
+            supplyClass: line.supplyClass,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -722,6 +730,7 @@ export class QuotesService {
             taxRateId: line.taxRateId,
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
+            supplyClass: line.supplyClass,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -1037,6 +1046,7 @@ async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

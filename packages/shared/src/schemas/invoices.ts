@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const invoiceLineTypeSchema = z.enum(["item", "heading", "text"]);
 export const invoiceTypeSchema = z.enum(["standard", "advance", "progress", "retention_release"]);
@@ -19,6 +20,8 @@ export const invoiceLineInputSchema = z.object({
   taxRateId: uuidSchema.optional().nullable(),
   taxGroupId: uuidSchema.optional().nullable(),
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
 });
 
 /**

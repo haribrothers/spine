@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { jobs } from "./jobs";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum } from "./tax";
 import { accounts, journalEntries } from "./ledger";
 import { files } from "./files";
 import { moneyAccounts } from "./banking";
@@ -111,6 +111,8 @@ export const vendorBillLines = pgTable(
     /** The Expense/COGS account this line's pre-tax amount debits at record() time — resolved from the catalog item's own expenseAccountId at add-time, then snapshotted; nullable only for heading/text lines. */
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -185,6 +187,8 @@ export const recurringBillLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -484,6 +488,8 @@ export const vendorCreditLines = pgTable(
     unitPriceCurrency: text("unit_price_currency").notNull(),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

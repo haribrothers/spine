@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const quoteLineTypeSchema = z.enum(["item", "heading", "text"]);
 
@@ -34,6 +35,8 @@ export const quoteLineInputSchema = z.object({
   taxGroupId: uuidSchema.optional().nullable(),
   /** S-08.2 — whether this line's unitPriceAmount is entered tax-inclusive. Defaults to the org's own setting client-side; always explicit on the wire. */
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
 });
 
 /**

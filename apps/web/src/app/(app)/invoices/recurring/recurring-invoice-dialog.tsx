@@ -68,6 +68,7 @@ function toEditableLines(schedule: RecurringInvoice): EditableInvoiceLine[] {
     taxRateId: line.taxRateId,
     taxGroupId: line.taxGroupId,
     isTaxInclusive: line.isTaxInclusive,
+    supplyClass: line.supplyClass,
   }));
 }
 
@@ -205,6 +206,7 @@ export function RecurringInvoiceDialog({
           taxRateId: l.taxRateId,
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
+          supplyClass: l.supplyClass,
         })),
     };
     setSaving(true);

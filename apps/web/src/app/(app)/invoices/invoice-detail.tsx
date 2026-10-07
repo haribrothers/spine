@@ -1,5 +1,6 @@
 "use client";
 
+import { SUPPLY_CLASS_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -416,6 +417,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                     {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), invoice.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                    {/* US-TAX-11: the supply type snapshotted on the line. */}
+                    {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
                   </p>
                 )}
               </div>

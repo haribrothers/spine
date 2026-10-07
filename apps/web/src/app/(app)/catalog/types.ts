@@ -1,3 +1,4 @@
+import type { SupplyClass } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/catalog.ts's row shape — apps/web has no generated SDK yet (packages/sdk is still empty), so this is hand-written to match the API's JSON response shape, following contacts/types.ts's own precedent. */
 export interface CatalogItem {
   id: string;
@@ -12,6 +13,8 @@ export interface CatalogItem {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  /** US-TAX-11 — copied to each line made from the item. */
+  supplyClass: SupplyClass;
   incomeAccountId: string | null;
   expenseAccountId: string | null;
   createdByUserId: string | null;

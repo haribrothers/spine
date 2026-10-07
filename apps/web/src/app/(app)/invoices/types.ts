@@ -1,3 +1,4 @@
+import type { SupplyClass } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/invoices.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following quotes/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type InvoiceStatus = "draft" | "issued" | "void";
 /** `opening` (US-RPT-17): brought in from the old system — its old number, no lines, no PDF. */
@@ -22,6 +23,7 @@ export interface InvoiceLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -105,6 +107,7 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  supplyClass: SupplyClass;
   archivedAt: string | null;
 }
 

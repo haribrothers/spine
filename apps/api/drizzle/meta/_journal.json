@@ -708,6 +708,13 @@
       "when": 1791346547819,
       "tag": "0100_tax_types",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1791347587677,
+      "tag": "0101_supply_class",
+      "breakpoints": true
     }
   ]
 }

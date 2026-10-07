@@ -34,6 +34,7 @@ function toEditableLines(quote: Quote): EditableQuoteLine[] {
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
     }));
 }
 
@@ -149,6 +150,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
         taxRateId: line.taxRateId,
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
+        supplyClass: line.supplyClass,
         sortOrder: index,
       })),
     };

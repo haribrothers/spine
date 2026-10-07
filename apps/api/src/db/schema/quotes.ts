@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { files } from "./files";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum } from "./tax";
 
 /**
  * PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8).
@@ -243,6 +243,8 @@ export const quoteLines = pgTable(
      * explicitly) has this at 0.
      */
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
     /** Provenance only, snapshot semantics — never re-read for totals. At most one of taxRateId/taxGroupId is set; enforced at the service layer. */
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),

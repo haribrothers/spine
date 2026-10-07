@@ -50,6 +50,7 @@
 | Q-16 | When a customer certifies less than a progress claim, should Spine record the claimed and certified amounts on the invoice? Today the office issues a credit note for the difference after issue, or edits the draft before issuing | Keep credit notes · Record a certified amount on the draft before issue (claimed amount kept for reference) · Add a certification step after issue that raises the credit note automatically | Before the next construction round | Product owner + accountant |
 | Q-17 | Should statement import ship ready-made column mappings for common Indian banks (HDFC, ICICI, SBI, Axis, Kotak)? | No, map by hand · Ship presets for the five banks | Phase 8 (US-BANK-07) | Product owner |
 | Q-18 | For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1? | WPAY only in 1.0 · Add LUT in Phase 9 | Phase 9 (US-TAX-13, US-TAX-16) | Product owner + accountant |
+| Q-19 | A 0% rate defaults a line to zero-rated (D-147), so picking the UK preset's "Exempt" rate on a line without a catalogue item shows "Zero-rated" until the person changes it. Should a 0% rate carry the supply class it implies? | Keep D-147 (the item or the person sets it) · Add `tax_rates.supply_class` for 0% rates, set by the presets | Before the Tax Summary by class (US-RPT-37) | Product owner + accountant |
 
 ## Design follow-ups
 

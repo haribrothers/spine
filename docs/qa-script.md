@@ -3647,6 +3647,29 @@ Regression:
 - Return period is kept when Country changes.
 - Existing businesses keep their rates and invoice title until they choose a country.
 
+## 162. Supply types (US-TAX-11, Phase 9)
+
+1. Catalogue › Add item:
+   - "Supply type" offers Taxable, Zero-rated, Exempt and "Non-taxable (outside GST/VAT)".
+   - The hint reads "Zero-rated, exempt and non-taxable items have no tax and are reported separately."
+   - Choosing a default tax switches it to Taxable.
+   - Exempt with a tax shows "An exempt line has no tax. Change the supply type to Taxable to add tax." and Save is refused.
+2. Save "Design consultation" as Exempt with no tax.
+3. New invoice:
+   - A blank line shows "Supply type: Zero-rated".
+   - Pick "Design consultation": Supply type reads Exempt.
+   - Pick a rate on that line: the message appears in red under Supply type. Saving is refused with the same message.
+4. Change the line's Supply type to Taxable: the message and the field go away. Remove the tax: Supply type comes back, reading Zero-rated.
+5. Do the same on a quote, a vendor bill, a vendor credit, a recurring invoice, a recurring bill and a variation order.
+6. Issue the invoice with an exempt line: the invoice page shows "· Exempt" after the line's details. Edit the catalogue item to Zero-rated: the issued invoice still shows Exempt.
+7. Save a quote with an exempt line as a bundle, then add the bundle to a new quote: the line is Exempt.
+8. Keyboard: Tab reaches Supply type, which is announced as "Supply type"; the message is read out when it appears. Dark mode is readable.
+
+Regression:
+- Lines with tax look as before, with no extra field.
+- Totals, issuing and PDFs are unchanged.
+- Converting a quote to an invoice keeps each line's supply type.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

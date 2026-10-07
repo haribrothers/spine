@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine, percentageOf, type BulkResult } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult } from "@spine/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -34,6 +34,7 @@ interface ComputedLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -60,6 +61,7 @@ interface InvoiceLineTotalInput {
   taxRateId?: string | null;
   taxGroupId?: string | null;
   isTaxInclusive?: boolean;
+  supplyClass?: SupplyClass | null;
 }
 
 /**
@@ -111,6 +113,7 @@ export async function computeInvoiceTotals(
           taxRateId: null,
           taxGroupId: null,
           isTaxInclusive: false,
+          supplyClass: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -129,6 +132,10 @@ export async function computeInvoiceTotals(
             rates: taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: taxRatePercentage,
           };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
 
       // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
       const computed = computeDocumentLine({ quantity, unitPriceAmount, discountPercentage, currency, rates: resolved.rates, inclusive: isTaxInclusive });
@@ -152,6 +159,7 @@ export async function computeInvoiceTotals(
         unitPriceCurrency: currency,
         discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive,
@@ -412,6 +420,7 @@ export class InvoicesService {
         taxRateId: line.taxRateId,
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
+        supplyClass: line.supplyClass,
       })),
     };
 
@@ -1255,6 +1264,7 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

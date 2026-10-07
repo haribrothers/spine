@@ -24,6 +24,9 @@ export const taxTypeEnum = pgEnum("tax_type", ["cgst", "sgst", "utgst", "igst", 
 /** US-TAX-10 — whether a group applies within the business's state, across states, or either. */
 export const taxGroupScopeEnum = pgEnum("tax_group_scope", ["intra", "inter", "any"]);
 
+/** US-TAX-11 (D-147) — why a line has no tax: zero-rated, exempt or outside GST/VAT. */
+export const supplyClassEnum = pgEnum("supply_class", ["taxable", "zero_rated", "exempt", "non_taxable"]);
+
 export const taxRates = pgTable(
   "tax_rates",
   {

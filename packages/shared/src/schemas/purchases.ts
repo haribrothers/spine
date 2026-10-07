@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const vendorBillLineTypeSchema = z.enum(["item", "heading", "text"]);
 
@@ -18,6 +19,8 @@ export const vendorBillLineInputSchema = z.object({
   taxRateId: uuidSchema.optional().nullable(),
   taxGroupId: uuidSchema.optional().nullable(),
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
 });
 
 /** PRD F7 (S-07.1) — a draft vendor bill. Every money total is absent — always server-computed, never trusted from the client, same as createInvoiceSchema/createQuoteSchema. */

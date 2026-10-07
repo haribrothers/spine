@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
 import { bundleLines, useBundles } from "../../../lib/bundles";
-import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, type SupplyClass, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, InvoiceLineType, TaxGroupOption, TaxRateOption } from "./types";
@@ -25,6 +26,8 @@ export interface EditableInvoiceLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
+  supplyClass: SupplyClass | null;
 }
 
 let keySeq = 0;
@@ -47,6 +50,7 @@ export function blankLine(type: InvoiceLineType = "item"): EditableInvoiceLine {
     taxRateId: null,
     taxGroupId: null,
     isTaxInclusive: false,
+    supplyClass: type === "item" ? "zero_rated" : null,
   };
 }
 
@@ -147,7 +151,9 @@ export function InvoiceLineEditor({
 
   function updateLine(index: number, patch: Partial<EditableInvoiceLine>) {
     const next = lines.slice();
-    next[index] = { ...next[index]!, ...patch };
+    const merged = { ...next[index]!, ...patch };
+    // US-TAX-11: the supply type follows the tax and the catalogue item.
+    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId));
     onChange(next);
   }
 
@@ -289,6 +295,7 @@ function ItemLineFields({
   onChange: (patch: Partial<EditableInvoiceLine>) => void;
 }) {
   const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+  const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
   const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
 
   function applyTaxSelection(value: string) {
@@ -360,6 +367,9 @@ function ItemLineFields({
           <span className="text-[13px] text-on-surface">Price includes tax</span>
         </label>
       </div>
+      {showsSupplyType(line.supplyClass, taxPercent) && (
+        <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+      )}
     </div>
   );
 }

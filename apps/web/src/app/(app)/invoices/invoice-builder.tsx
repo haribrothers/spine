@@ -49,6 +49,7 @@ function toEditableLines(invoice: Invoice): EditableInvoiceLine[] {
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
     }));
 }
 
@@ -140,6 +141,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
         taxRateId: line.taxRateId,
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
+        supplyClass: line.supplyClass,
         sortOrder: index,
       })),
     };

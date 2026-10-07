@@ -1,3 +1,4 @@
+import type { SupplyClass } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/quotes.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following contacts/catalog's own precedent. */
 export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected";
 export type QuoteLineType = "item" | "heading" | "text";
@@ -20,6 +21,7 @@ export interface QuoteLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -92,6 +94,7 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  supplyClass: SupplyClass;
   archivedAt: string | null;
 }
 

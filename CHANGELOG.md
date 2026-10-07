@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-11: mark supplies as zero-rated, exempt or outside tax (Phase 9)
+
+- Catalogue items have a "Supply type": Taxable, Zero-rated, Exempt or "Non-taxable (outside GST/VAT)". An item with tax is always Taxable.
+- Every document line carries a supply type: quotes, invoices, credit notes, vendor bills, vendor credits, recurring schedules, bundles and variation orders.
+  - A line with no tax shows "Supply type". It comes from the item, else Zero-rated, and can be changed.
+  - A line that gains tax becomes Taxable.
+- An exempt or non-taxable line with a rate shows "An exempt line has no tax. Change the supply type to Taxable to add tax." The API refuses it with the same message.
+- Lines snapshot their supply type. Issued documents keep it, and their detail pages show it after the tax (for example "· Exempt").
+- Migration `0101` adds `supply_class` to `catalog_items` and every line table. Existing item lines with tax become taxable and the rest zero-rated. Heading and text lines have none.
+- New `SupplyTypeField` in `apps/web/src/components`, shared by the quote, invoice, vendor bill and variation-order line editors.
+- Open question Q-19: should a 0% rate such as the UK's "Exempt" imply its supply type?
+
 ### 2026-10-07 — US-TAX-09: start with my country's tax rates (Phase 9)
 
 - The setup wizard's Tax step now asks "Where is your business registered for tax?". The choices are India (GST), United Kingdom (VAT), Australia (GST), New Zealand (GST), United Arab Emirates (VAT), Saudi Arabia (VAT) and "Another country — I'll add my own rates". The currency picked in the step before chooses the starting answer. "Another country" goes on to the single default-rate step, as before.

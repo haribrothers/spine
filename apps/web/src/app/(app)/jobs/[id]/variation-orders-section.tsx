@@ -88,6 +88,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
           taxRateId: l.taxRateId,
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
+          supplyClass: l.supplyClass,
         })),
       });
       setCreateOpen(false);

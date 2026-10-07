@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createCatalogItemSchema, updateCatalogItemSchema } from "@spine/shared";
+import { lineSupplyClass, supplyClassTaxError, type SupplyClass, type createCatalogItemSchema, type updateCatalogItemSchema } from "@spine/shared";
 import { and, asc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -8,6 +8,13 @@ import { catalogItems } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+
+/** US-TAX-11 — an item with tax is taxable; an exempt or non-taxable item can't carry tax. */
+function itemSupplyClass(taxPercent: number, requested: SupplyClass | undefined): SupplyClass {
+  const error = supplyClassTaxError(requested, taxPercent);
+  if (error) throw new BadRequestException(error);
+  return lineSupplyClass(taxPercent, requested);
+}
 
 export type CreateCatalogItemInput = z.infer<typeof createCatalogItemSchema>;
 export type UpdateCatalogItemInput = z.infer<typeof updateCatalogItemSchema>;
@@ -83,6 +90,8 @@ export class CatalogService {
     const resolvedTax = input.defaultTaxRateId || input.defaultTaxGroupId
       ? await this.taxResolver.resolve(orgId, { taxRateId: input.defaultTaxRateId, taxGroupId: input.defaultTaxGroupId })
       : null;
+    const taxPercent = resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? 0;
+    const supplyClass = itemSupplyClass(taxPercent, input.supplyClass);
 
     const created = await this.db.transaction(async (tx) => {
       const [item] = await tx
@@ -95,7 +104,8 @@ export class CatalogService {
           category: input.category ?? null,
           defaultPriceAmount: input.defaultPriceAmount,
           defaultPriceCurrency: input.defaultPriceCurrency,
-          defaultTaxRatePercentage: resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? 0,
+          defaultTaxRatePercentage: taxPercent,
+          supplyClass,
           defaultTaxRateId: input.defaultTaxRateId ?? null,
           defaultTaxGroupId: input.defaultTaxGroupId ?? null,
           incomeAccountId: input.incomeAccountId ?? null,
@@ -143,6 +153,8 @@ export class CatalogService {
           taxGroupId: input.defaultTaxGroupId !== undefined ? input.defaultTaxGroupId : existing.defaultTaxGroupId,
         })
       : null;
+    const taxPercent = resolvedTax?.blendedPercentage ?? input.defaultTaxRatePercentage ?? existing.defaultTaxRatePercentage;
+    const supplyClass = itemSupplyClass(taxPercent, input.supplyClass ?? existing.supplyClass);
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
@@ -163,6 +175,7 @@ export class CatalogService {
           ...(input.defaultTaxGroupId !== undefined ? { defaultTaxGroupId: input.defaultTaxGroupId } : {}),
           ...(input.incomeAccountId !== undefined ? { incomeAccountId: input.incomeAccountId } : {}),
           ...(input.expenseAccountId !== undefined ? { expenseAccountId: input.expenseAccountId } : {}),
+          supplyClass,
           updatedAt: new Date(),
         })
         .where(eq(catalogItems.id, id))

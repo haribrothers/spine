@@ -15,7 +15,7 @@ const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD
 const NO_JOB = "__none__";
 const NO_BILL = "__none__";
 
-function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive">[]): EditableVendorBillLine[] {
+function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive" | "supplyClass">[]): EditableVendorBillLine[] {
   return lines
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -32,6 +32,7 @@ function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "c
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
     }));
 }
 
@@ -143,6 +144,7 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           taxRateId: line.taxRateId,
           taxGroupId: line.taxGroupId,
           isTaxInclusive: line.isTaxInclusive,
+          supplyClass: line.supplyClass,
           sortOrder: index,
         })),
       };

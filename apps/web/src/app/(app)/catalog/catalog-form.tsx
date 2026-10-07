@@ -14,7 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@spine/ui";
+import { SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { supplyClassForTax } from "../../../components/supply-type-field";
 import type { AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
 
 const NO_ACCOUNT = "none";
@@ -69,6 +71,7 @@ export function CatalogForm({
   const [taxSelection, setTaxSelection] = useState(() =>
     item?.defaultTaxRateId ? `rate:${item.defaultTaxRateId}` : item?.defaultTaxGroupId ? `group:${item.defaultTaxGroupId}` : NO_TAX,
   );
+  const [supplyClass, setSupplyClass] = useState<SupplyClass>(item?.supplyClass ?? "zero_rated");
   const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
   const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
@@ -133,6 +136,7 @@ export function CatalogForm({
         defaultPriceCurrency: currency,
         defaultTaxRateId: taxSelection.startsWith("rate:") ? taxSelection.slice(5) : null,
         defaultTaxGroupId: taxSelection.startsWith("group:") ? taxSelection.slice(6) : null,
+        supplyClass,
         incomeAccountId: incomeAccountId === NO_ACCOUNT ? undefined : incomeAccountId,
         expenseAccountId: expenseAccountId === NO_ACCOUNT ? undefined : expenseAccountId,
       };
@@ -145,6 +149,14 @@ export function CatalogForm({
       onSubmittingChange?.(false);
     }
   }
+
+  /** US-TAX-11 — the rate the chosen tax adds up to. */
+  function taxPercentOf(selection: string): number {
+    if (selection.startsWith("rate:")) return taxRates.find((r) => r.id === selection.slice(5))?.rate ?? 0;
+    if (selection.startsWith("group:")) return taxGroups.find((g) => g.id === selection.slice(6))?.taxRates.reduce((sum, r) => sum + r.rate, 0) ?? 0;
+    return 0;
+  }
+  const supplyError = supplyClassTaxError(supplyClass, taxPercentOf(taxSelection));
 
   const incomeAccounts = accounts?.income ?? [];
   const expenseAccounts = accounts?.expense ?? [];
@@ -230,7 +242,37 @@ export function CatalogForm({
 
       <FormField label="Default tax" helperText="Pre-fills a new quote/invoice line for this item; editable per line.">
         {(field) => (
-          <Combobox {...field} options={taxOptions} value={taxSelection} onValueChange={setTaxSelection} placeholder="No tax" />
+          <Combobox
+            {...field}
+            options={taxOptions}
+            value={taxSelection}
+            onValueChange={(v) => {
+              setTaxSelection(v);
+              setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v)));
+            }}
+            placeholder="No tax"
+          />
+        )}
+      </FormField>
+
+      <FormField
+        label="Supply type"
+        helperText="Zero-rated, exempt and non-taxable items have no tax and are reported separately."
+        errorText={supplyError ?? undefined}
+      >
+        {(field) => (
+          <Select value={supplyClass} onValueChange={(v) => setSupplyClass(v as SupplyClass)}>
+            <SelectTrigger {...field}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPLY_CLASSES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {SUPPLY_CLASS_LABELS[c]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </FormField>
 

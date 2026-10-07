@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput } from "@spine/ui";
-import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, type SupplyClass, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { AccountOption, CatalogItemOption, TaxGroupOption, TaxRateOption } from "./types";
@@ -37,6 +38,8 @@ export interface EditableVendorBillLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
+  supplyClass: SupplyClass | null;
 }
 
 let keySeq = 0;
@@ -59,6 +62,7 @@ export function blankLine(): EditableVendorBillLine {
     taxRateId: null,
     taxGroupId: null,
     isTaxInclusive: false,
+    supplyClass: "zero_rated",
   };
 }
 
@@ -169,7 +173,9 @@ export function VendorBillLineEditor({
 
   function updateLine(index: number, patch: Partial<EditableVendorBillLine>) {
     const next = lines.slice();
-    next[index] = { ...next[index]!, ...patch };
+    const merged = { ...next[index]!, ...patch };
+    // US-TAX-11: the supply type follows the tax and the catalogue item.
+    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId));
     onChange(next);
   }
 
@@ -210,6 +216,7 @@ export function VendorBillLineEditor({
       <div className="flex flex-col gap-3">
         {lines.map((line, index) => {
           const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+          const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
           const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
 
           function applyTaxSelection(value: string) {
@@ -301,6 +308,9 @@ export function VendorBillLineEditor({
                       <Checkbox checked={line.isTaxInclusive} onCheckedChange={(v) => updateLine(index, { isTaxInclusive: v === true })} />
                       <span className="text-[13px] text-on-surface">Price includes tax</span>
                     </label>
+                    {showsSupplyType(line.supplyClass, taxPercent) && (
+                      <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />
+                    )}
                   </div>
                 </div>
 

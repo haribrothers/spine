@@ -36,6 +36,7 @@ function toEditableLines(bill: VendorBill): EditableVendorBillLine[] {
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
     }));
 }
 
@@ -133,6 +134,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
         taxRateId: line.taxRateId,
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
+        supplyClass: line.supplyClass,
         sortOrder: index,
       })),
     };

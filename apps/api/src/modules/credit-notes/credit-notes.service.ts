@@ -2,7 +2,7 @@ import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
-import { computeDocumentLine, formatMoney } from "@spine/shared";
+import { computeDocumentLine, formatMoney, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -28,6 +28,7 @@ interface ComputedLine {
   unitPriceAmount: bigint;
   unitPriceCurrency: string;
   taxRatePercentage: number;
+  supplyClass: SupplyClass | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -66,11 +67,16 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
         unitPriceAmount: 0n,
         unitPriceCurrency: currency,
         taxRatePercentage: 0,
+        supplyClass: null,
         lineSubtotalAmount: 0n,
         lineTaxAmount: 0n,
         lineTotalAmount: 0n,
       };
     }
+
+    // US-TAX-11: an exempt or non-taxable line carries no tax.
+    const supplyError = supplyClassTaxError(line.supplyClass, line.taxRatePercentage);
+    if (supplyError) throw new BadRequestException(supplyError);
 
     // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
     const computed = computeDocumentLine({
@@ -97,6 +103,7 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
       unitPriceAmount: line.unitPriceAmount,
       unitPriceCurrency: currency,
       taxRatePercentage: line.taxRatePercentage,
+      supplyClass: lineSupplyClass(line.taxRatePercentage, line.supplyClass),
       lineSubtotalAmount: netAmount,
       lineTaxAmount: taxResult.taxAmount.amount,
       lineTotalAmount: taxResult.total.amount,

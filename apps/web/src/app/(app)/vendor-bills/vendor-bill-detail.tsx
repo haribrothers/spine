@@ -1,5 +1,6 @@
 "use client";
 
+import { SUPPLY_CLASS_LABELS } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -240,6 +241,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                   <p className="text-[12px] text-on-surface-muted">
                     {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), bill.currency)}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                    {/* US-TAX-11: the supply type snapshotted on the line. */}
+                    {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
                   </p>
                 )}
               </div>
@@ -315,6 +318,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             taxRateId: l.taxRateId,
             taxGroupId: l.taxGroupId,
             isTaxInclusive: l.isTaxInclusive,
+            supplyClass: l.supplyClass,
           })),
         }}
         onSaved={() => {
