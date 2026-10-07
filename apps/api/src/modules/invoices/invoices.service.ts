@@ -820,7 +820,10 @@ export class InvoicesService {
 
       const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
       const issuedAt = new Date();
-      const issueDateStr = issuedAt.toISOString().slice(0, 10);
+      // D-185 (Q-20): the entry is dated on the invoice's issue date, so a backdated invoice lands in the
+      // same period in the ledger, the Tax Summary and GSTR-1. A date in a closed period is refused.
+      const issueDate = existing.issueDate ?? issuedAt;
+      const issueDateStr = issueDate.toISOString().slice(0, 10);
 
       let journalEntryId: string | null = null;
       if (!isAdvance) {
@@ -902,7 +905,7 @@ export class InvoicesService {
           issuedAt,
           // US-TAX-13: snapshotted at issue.
           ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
-          issueDate: existing.issueDate ?? issuedAt,
+          issueDate,
           journalEntryId,
           paymentInstructions,
           upiQrAmount,

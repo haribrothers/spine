@@ -80,6 +80,13 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — D-185: invoices post on their issue date (Phase 9)
+
+- Issuing an invoice now dates its journal entry on the invoice's issue date (today when none was set), not on the day it's issued. A backdated invoice lands in its own month in the ledger, P&L, the Tax Summary and GSTR-1, so the GSTR-1 totals check agrees.
+- An issue date inside a closed fiscal period is refused with the closed-period message.
+- Voids still reverse on the day they're voided. Credit notes, which have no date of their own, post on the day they're issued.
+- This closes Q-20 (D-185). The posting rules gain invariant 8.
+
 ### 2026-10-07 — US-TAX-17: check GSTR-1 figures before uploading (Phase 9)
 
 - The GSTR-1 page lists what to fix before uploading, under "Fix these before you upload". Each problem has a link to fix it:

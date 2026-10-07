@@ -65,6 +65,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 2. Each journal line is one-sided: exactly one of debit/credit is non-zero (`journal_lines_one_sided` check).
 3. The trial balance balances after every simulated workflow (`ledger-integrity` integration test).
 4. No posting is dated inside a closed fiscal period.
+8. An invoice (P1–P3) posts on its issue date, which defaults to the day it's issued; a backdated one lands in its own period, and one dated in a closed period is refused. Credit notes are dated, and post, on the day they're issued ([D-185](12-decisions.md)).
 5. An issued invoice's reversal (P9) mirrors its original lines exactly, including job and contact tags.
 6. Allocations never exceed the payment amount or the invoice balance (DB trigger), for customer and vendor payments alike.
 7. Reports (P&L, Balance Sheet, Trial Balance, Cash Flow, general ledger, day book, AR/AP aging, job profitability, sales and purchase analysis) read `journal_lines`, never documents. Tax Summary's per-rate breakdown, GSTR-1 and the Tally export read document lines for rate, HSN/SAC and place of supply ([D-031](12-decisions.md), [D-148](12-decisions.md), [D-149](12-decisions.md)); their totals must equal the ledger's tax accounts for the same period (tested).

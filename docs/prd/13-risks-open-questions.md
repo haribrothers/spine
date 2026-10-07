@@ -51,7 +51,7 @@
 | Q-17 | Should statement import ship ready-made column mappings for common Indian banks (HDFC, ICICI, SBI, Axis, Kotak)? | No, map by hand · Ship presets for the five banks | Phase 8 (US-BANK-07) | Product owner |
 | Q-18 | ~~For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1?~~ — closed by [D-181](12-decisions.md): a per-business "We export under LUT" setting | — | — | — |
 | Q-19 | ~~Should a 0% rate carry the supply class it implies?~~ — closed by [D-182](12-decisions.md): yes, `tax_rates.supply_class` | — | — | — |
-| Q-20 | An invoice posts to the ledger on the day it's issued, not on its issue date, so a backdated invoice lands in a different period in the Tax Summary (ledger) than in GSTR-1 (issue date), and US-TAX-17 flags the totals. Should invoices (and credit notes) post on their document date instead? | Owner | Open |
+| Q-20 | ~~An invoice posts to the ledger on the day it's issued, not on its issue date, so a backdated invoice lands in a different period in the Tax Summary (ledger) than in GSTR-1 (issue date), and US-TAX-17 flags the totals. Should invoices (and credit notes) post on their document date instead?~~ — closed by [D-185](12-decisions.md): invoices post on their issue date | Owner | Closed |
 
 ## Design follow-ups
 

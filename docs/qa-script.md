@@ -3957,19 +3957,31 @@ Use the GST business from section 175.
    - The panel is gone.
    - The Problems card says "Nothing to fix".
    - The Tax card says "equals the Tax Summary". Compare it with Reports › Tax Summary for the same month: tax collected is the same figure.
-4. Issue an invoice today, backdated to last month, then open last month (Q-20):
+4. Issue an invoice today, backdated to last month, then open last month: the Tax card still says "equals the Tax Summary" (D-185).
+5. In a test database, post output tax to 2100 with no document behind it, then reopen the month:
    - The Tax card shows "Tax Summary says ₹…".
    - The panel lists "Tax in the file (₹…) doesn't match tax collected on the Tax Summary (₹…)" with "Open Tax Summary".
-5. Download Excel (`GSTR1_<GSTIN>_<MMYYYY>.xlsx`):
+6. Download Excel (`GSTR1_<GSTIN>_<MMYYYY>.xlsx`):
    - The sheets are b2b, b2cl, b2cs, cdnr, cdnur, exp, exemp, hsn(b2b), hsn(b2c), docs and Problems.
    - Totals per sheet match the page and the JSON.
    - Problems ends with the footer.
-6. The audit log shows a GSTR-1 file download for each of JSON and Excel.
-7. Regression: Tax Summary figures are unchanged (section 174).
+7. The audit log shows a GSTR-1 file download for each of JSON and Excel.
+8. Regression: Tax Summary figures are unchanged (section 174).
+
+## 177. Invoices post on their issue date (D-185, Phase 9)
+
+1. Create a draft invoice with an issue date last month and issue it.
+2. Open Journals or the general ledger: the invoice's entry is dated last month, not today.
+3. Profit & Loss and Tax Summary for last month include it; this month's don't.
+4. Close last month's fiscal period, then try to issue another invoice dated in it: it's refused with "Cannot post a journal entry dated … — that date falls within a closed fiscal period".
+5. An invoice with no issue date still posts today.
+6. Regression:
+   - Voiding an invoice still reverses it on the day it's voided.
+   - Credit notes post on the day they're issued.
+   - Receivables aging is unchanged.
 
 ## Known gaps — don't file these as bugs
 
-- An invoice backdated to an earlier month posts to the ledger on the day it's issued, so GSTR-1 for its month flags that the tax doesn't match the Tax Summary ([Q-20](prd/13-risks-open-questions.md)).
 
 - GSTR-1 goods lines use the unit `OTH` in the HSN summary because Spine's lines have no unit yet, and services use `NA` (D-184). Shipping bill details aren't captured, so exports have none. Advances received (Table 11) and amendments to earlier returns aren't in the file.
 
