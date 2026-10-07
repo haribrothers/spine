@@ -1,7 +1,27 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Button, FormField, Input, Spinner, Textarea } from "@spine/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  FormField,
+  Input,
+  Spinner,
+  Textarea,
+} from "@spine/ui";
 import {
   DEFAULT_EMAIL_TEMPLATES,
   EMAIL_PLACEHOLDERS_BY_TYPE,
@@ -31,6 +51,11 @@ export function EmailsPane() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US-SET-22 — preview, a test to myself, and Spine's own words back.
+  const [preview, setPreview] = useState<{ subject: string; html: string; source: string } | null>(null);
+  const [busy, setBusy] = useState<"preview" | "test" | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const lastField = useRef<"subject" | "body">("body");
@@ -89,7 +114,40 @@ export function EmailsPane() {
     update({ [field]: value.slice(0, start) + token + value.slice(end) });
   };
 
-  async function save() {
+  async function showPreview() {
+    setBusy("preview");
+    setError(null);
+    try {
+      setPreview(await apiClient.post<{ subject: string; html: string; source: string }>(`/org/settings/email_templates/${type}/preview`, current));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The preview didn't load. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function sendTest() {
+    setBusy("test");
+    setError(null);
+    setStatus(null);
+    try {
+      const result = await apiClient.post<{ sentTo: string }>(`/org/settings/email_templates/${type}/test`, current);
+      setStatus(`Test sent to ${result.sentTo}. Only you get it.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "The test wasn't sent. Try again.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function resetToDefault() {
+    const next = { ...templates!, [type]: DEFAULT_EMAIL_TEMPLATES[type] };
+    setTemplates(next);
+    await save(next);
+  }
+
+  async function save(all: Templates | null = templates) {
+    const templates = all;
     if (!templates) return;
     if (invalid) {
       setType(invalid);
@@ -168,6 +226,20 @@ export function EmailsPane() {
               </button>
             ))}
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="secondary" onClick={() => void showPreview()} disabled={busy !== null || Boolean(subjectError || bodyError)}>
+              {busy === "preview" ? <Spinner size="sm" /> : "Preview"}
+            </Button>
+            <Button variant="secondary" onClick={() => void sendTest()} disabled={busy !== null || Boolean(subjectError || bodyError)}>
+              {busy === "test" ? <Spinner size="sm" /> : "Send me a test"}
+            </Button>
+            <Button variant="ghost" onClick={() => setConfirmReset(true)} disabled={same(current, DEFAULT_EMAIL_TEMPLATES[type])}>
+              Reset to default
+            </Button>
+          </div>
+          <p aria-live="polite" className="text-[13px] text-on-surface-muted">
+            {status}
+          </p>
         </div>
       </div>
 
@@ -183,6 +255,32 @@ export function EmailsPane() {
         </Button>
       </div>
       <SavedToast open={saved} onOpenChange={setSaved} />
+      <Dialog open={preview !== null} onOpenChange={(open) => !open && setPreview(null)}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>{preview?.subject}</DialogTitle>
+            <DialogDescription>
+              {preview?.source === "Sample details" ? "Made with sample details — there's no document of this kind yet." : `Made from ${preview?.source}. Nothing is sent.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogBody>
+            {/* Emails are always light (D-067), so the preview is too. */}
+            {preview && <iframe title={`Preview of the ${EMAIL_TEMPLATE_LABELS[type].toLowerCase()} email`} srcDoc={preview.html} sandbox="" className="h-[60vh] w-full rounded-md border border-border bg-white" />}
+          </DialogBody>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Reset the {EMAIL_TEMPLATE_LABELS[type].toLowerCase()} email?</AlertDialogTitle>
+            <AlertDialogDescription>Spine&apos;s original subject and message come back and are saved. Your other emails keep their words.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep my text</AlertDialogCancel>
+            <AlertDialogAction onClick={() => void resetToDefault()}>Reset to default</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

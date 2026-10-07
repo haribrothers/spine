@@ -4068,6 +4068,21 @@ Use the GST business from section 175.
     - Emails sent before the change are unchanged.
     - Staff without "Send" don't see the dialogs.
 
+## 182. Preview, test and reset an email (US-SET-22, Phase 9)
+
+1. Settings › Emails › Receipt: change the subject without saving and press Preview:
+   - The email shows in the branded layout, light even in dark mode.
+   - It's made from your latest payment ("Made from RCP-… · <customer>"), or sample details when there are none.
+2. Close the preview: Settings stays open.
+3. Press "Send me a test": "Test sent to <your email>. Only you get it." The email arrives at your address only, subject "[Test] …". The customer gets nothing.
+4. Without SMTP set up: "Email isn't set up yet, so a test can't be sent. Ask an Owner to set up email."
+5. Save, then press "Reset to default":
+   - "Reset the receipt email?" asks first.
+   - Confirming brings back "{business_name} sent you a receipt ({document_number})", saved.
+   - Reset is greyed out when the email is already Spine's.
+6. Preview a quote whose message uses `{link}`: it shows an example link.
+7. Staff can't preview or send tests (403).
+
 ## Known gaps — don't file these as bugs
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.

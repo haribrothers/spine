@@ -32,7 +32,7 @@ export class EmailDocumentsService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   /** The email for a document, in the given words (the saved template when absent). Statements are drafted by their own dialog's route. */
-  async build(orgId: string, type: Exclude<EmailTemplateType, "statement">, id: string, text?: EmailTemplateText): Promise<BuiltEmail> {
+  async build(orgId: string, type: Exclude<EmailTemplateType, "statement">, id: string, text?: EmailTemplateText, link: string = LINK_KEPT): Promise<BuiltEmail> {
     const brand = await loadEmailBrand(this.db, orgId);
     const words = text ?? (await loadEmailText(this.db, orgId, type));
     const base = { businessName: brand.name, locale: brand.locale };
@@ -40,7 +40,7 @@ export class EmailDocumentsService {
       const [row] = await this.db.select({ quote: quotes, name: contacts.name, email: contacts.email }).from(quotes).leftJoin(contacts, eq(quotes.contactId, contacts.id)).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
       if (!row) throw new NotFoundException("Quote not found");
       // A draft quote gets its number when it's sent, so its draft keeps {document_number} for the send to fill.
-      const template = quoteEmail({ ...base, contactName: row.name, number: row.quote.number ?? "{document_number}", total: row.quote.totalAmount, currency: row.quote.currency, validUntil: row.quote.validUntil, link: LINK_KEPT, text: words });
+      const template = quoteEmail({ ...base, contactName: row.name, number: row.quote.number ?? "{document_number}", total: row.quote.totalAmount, currency: row.quote.currency, validUntil: row.quote.validUntil, link, text: words });
       return { template, to: row.email, hasPdf: true, source: `${row.quote.number ?? "Draft quote"} · ${row.name ?? "Customer"}` };
     }
     if (type === "invoice" || type === "reminder") {
@@ -107,13 +107,13 @@ export class EmailDocumentsService {
   }
 
   /** The email with made-up details, for a preview when there's no real document yet. */
-  sample(brand: EmailBrand, type: EmailTemplateType, text: EmailTemplateText): BuiltEmail {
+  sample(brand: EmailBrand, type: EmailTemplateType, text: EmailTemplateText, link: string = LINK_KEPT): BuiltEmail {
     const base = { businessName: brand.name, locale: brand.locale, contactName: "Alan Brooks" };
     const currency = brand.currency ?? "USD";
     const due = new Date(Date.now() + 14 * DAY);
     const template =
       type === "quote"
-        ? quoteEmail({ ...base, number: "QUO-0000", total: 454_250n, currency, validUntil: due, link: LINK_KEPT, text })
+        ? quoteEmail({ ...base, number: "QUO-0000", total: 454_250n, currency, validUntil: due, link, text })
         : type === "invoice" || type === "reminder"
           ? invoiceEmail({ ...base, number: "INV-0000", currency, total: 454_250n, retention: 0n, balanceDue: 454_250n, dueDate: type === "reminder" ? new Date(Date.now() - 7 * DAY) : due, reminder: type === "reminder" ? { daysOverdue: 7 } : undefined, text })
           : type === "receipt"

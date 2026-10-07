@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-22: preview an email and reset it to the default (Phase 9)
+
+- Settings › Emails has three new buttons for the email you're editing (saved or not):
+  - **Preview** shows it in the branded layout, always light, made from the most recent document of that kind ("Made from INV-0042 · Lakeview Homes"). With no such document, or for statements, it uses sample details. Quotes show an example link.
+  - **Send me a test** emails it to you only, with "[Test]" before the subject.
+  - **Reset to default** asks first, then brings back Spine's subject and message and saves; your other emails keep their words.
+- API: `POST /org/settings/email_templates/:type/preview` and `/test` (Owner-only).
+
 ### 2026-10-07 — US-SET-21: edit the text of each customer email (Phase 9)
 
 - Settings › Emails lists the six customer emails: Quote, Invoice, Payment reminder, Receipt, Credit note and Statement. Each shows its subject and the first line of its message.
