@@ -14,6 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@spine/ui";
+import type { GstTreatment } from "@spine/shared";
+import { ContactGstFields, contactGstError, useTaxCountry } from "./contact-gst-fields";
 import { apiClient } from "../../../lib/api-client";
 import { ContactLogo } from "./contact-logo";
 import type { Contact, ContactType, SpineFile } from "./types";
@@ -52,12 +54,21 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [taxId, setTaxId] = useState("");
+  // US-TAX-12 — GST treatment and GSTIN for an Indian business.
+  const taxCountry = useTaxCountry();
+  const [gstTreatment, setGstTreatment] = useState<GstTreatment | null>(null);
+  const [stateCode, setStateCode] = useState<string | null>(null);
+  const [showGstErrors, setShowGstErrors] = useState(false);
   const [website, setWebsite] = useState("");
   const [logoFileId, setLogoFileId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (taxCountry === "IN" && contactGstError(gstTreatment, taxId, stateCode)) {
+      setShowGstErrors(true);
+      return;
+    }
     onSubmittingChange?.(true);
     setError(null);
     try {
@@ -68,6 +79,8 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
         email: email || undefined,
         phone: phone || undefined,
         taxId: taxId || undefined,
+        gstTreatment: taxCountry === "IN" ? (gstTreatment ?? undefined) : undefined,
+        stateCode: taxCountry === "IN" ? (stateCode ?? undefined) : undefined,
         website: website || undefined,
         logoFileId: logoFileId || undefined,
       });
@@ -137,9 +150,21 @@ export function ContactForm({ formId, onSubmittingChange, onSuccess }: { formId:
         {(field) => <Input {...field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
       </FormField>
 
-      <FormField label="Tax ID" helperText="Useful for invoicing a business contact.">
-        {(field) => <Input {...field} value={taxId} onChange={(e) => setTaxId(e.target.value)} />}
-      </FormField>
+      {taxCountry === "IN" ? (
+        <ContactGstFields
+                treatment={gstTreatment}
+                gstin={taxId}
+                stateCode={stateCode}
+                onTreatmentChange={setGstTreatment}
+                onGstinChange={setTaxId}
+                onStateCodeChange={setStateCode}
+                showErrors={showGstErrors}
+              />
+      ) : (
+        <FormField label="Tax ID" helperText="Useful for invoicing a business contact.">
+          {(field) => <Input {...field} value={taxId} onChange={(e) => setTaxId(e.target.value)} />}
+        </FormField>
+      )}
 
       <FormField label="Website">
         {(field) => <Input {...field} type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />}

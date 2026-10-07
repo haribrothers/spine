@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
 import type { TaxCountry, TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { ThemeToggle } from "../../components/theme-toggle";
@@ -14,6 +14,7 @@ import { CurrencyLocaleStep, type CurrencyLocaleValue } from "./steps/currency-l
 import { FinancialYearStep, type FinancialYearValue } from "./steps/financial-year-step";
 import { TaxRateStep, type TaxRateValue } from "./steps/tax-rate-step";
 import { TaxCountryStep, taxCountryForCurrency } from "./steps/tax-country-step";
+import { GstRegistrationForm } from "../settings/panes/gst-pane";
 import { NumberingStep, type NumberingSequenceValue } from "./steps/numbering-step";
 import { ChartOfAccountsStep, type AccountsByType } from "./steps/chart-of-accounts-step";
 import { InviteTeamStep, type MemberRole } from "./steps/invite-team-step";
@@ -279,13 +280,16 @@ function FiscalYearStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
  */
 function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
   const [country, setCountry] = useState<TaxCountry | null>(null);
-  const [phase, setPhase] = useState<"country" | "rate">("country");
+  const [profile, setProfile] = useState<TaxProfile>({});
+  const [phase, setPhase] = useState<"country" | "rate" | "gst">("country");
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([apiClient.get<TaxProfile>("/org/tax/profile"), apiClient.get<{ value: { code?: string } | null }>("/org/settings/currency")])
-      .then(([profile, currency]) => {
-        if (!cancelled) setCountry(profile.country ?? taxCountryForCurrency(currency.value?.code));
+      .then(([saved, currency]) => {
+        if (cancelled) return;
+        setProfile(saved);
+        setCountry(saved.country ?? taxCountryForCurrency(currency.value?.code));
       })
       .catch(() => {
         if (!cancelled) setCountry("other");
@@ -295,6 +299,23 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
     };
   }, []);
 
+  if (phase === "gst") {
+    // US-TAX-12 — India's GST registration comes next (US-TAX-09).
+    return (
+      <StepCard title="GST details" description="Your GST registration. Spine uses your state to pick intra- or inter-state tax.">
+        <GstRegistrationForm
+          initial={profile}
+          onSaved={onSaved}
+          saveLabel="Continue"
+          secondary={
+            <Button type="button" variant="ghost" onClick={onSaved}>
+              Not registered yet — skip this step
+            </Button>
+          }
+        />
+      </StepCard>
+    );
+  }
   if (phase === "rate") {
     return (
       <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
@@ -310,8 +331,10 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
         <TaxCountryStep
           initialValue={country}
           onSave={async (v) => {
-            await apiClient.put("/org/tax/profile", { country: v });
+            const res = await apiClient.put<{ profile: TaxProfile }>("/org/tax/profile", { country: v });
+            setProfile(res.profile);
             if (v === "other") setPhase("rate");
+            else if (v === "IN") setPhase("gst");
             else onSaved();
           }}
           onSkip={onSkip}

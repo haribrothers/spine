@@ -32,6 +32,8 @@ import {
   TabsTrigger,
 } from "@spine/ui";
 import { ArrowLeft } from "lucide-react";
+import { GST_TREATMENT_LABELS, gstStateLabel, gstinRequired, type GstTreatment } from "@spine/shared";
+import { ContactGstFields, contactGstError, useTaxCountry } from "./contact-gst-fields";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { Activity, Contact, ContactType, Lead, SpineFile } from "./types";
@@ -97,6 +99,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [taxId, setTaxId] = useState("");
+  // US-TAX-12 — GST treatment and GSTIN for an Indian business.
+  const taxCountry = useTaxCountry();
+  const [gstTreatment, setGstTreatment] = useState<GstTreatment | null>(null);
+  const [stateCode, setStateCode] = useState<string | null>(null);
+  const [showGstErrors, setShowGstErrors] = useState(false);
   const [website, setWebsite] = useState("");
 
   const { show: showToast, toast } = useEntityToast();
@@ -172,11 +179,18 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     setEmail(contact.email ?? "");
     setPhone(contact.phone ?? "");
     setTaxId(contact.taxId ?? "");
+    setGstTreatment(contact.gstTreatment);
+    setStateCode(contact.stateCode);
+    setShowGstErrors(false);
     setWebsite(contact.website ?? "");
     setEditing(true);
   }
 
   async function handleSaveEdit() {
+    if (taxCountry === "IN" && contactGstError(gstTreatment, taxId, stateCode)) {
+      setShowGstErrors(true);
+      return;
+    }
     setSaving(true);
     try {
       await apiClient.put(`/contacts/${contactId}`, {
@@ -186,6 +200,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         email: email || null,
         phone: phone || null,
         taxId: taxId || null,
+        ...(taxCountry === "IN" ? { gstTreatment, stateCode } : {}),
         website: website || null,
       });
       setEditing(false);
@@ -309,9 +324,15 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             <p className="text-[13px] text-on-surface-muted">
               {contact.email ?? "No email"} {contact.phone ? `· ${contact.phone}` : ""}
             </p>
+            {/* US-TAX-12 — GST treatment, GSTIN and state for an Indian business. */}
+            {contact.gstTreatment && (
+              <p className="text-[13px] text-on-surface-muted">
+                {[GST_TREATMENT_LABELS[contact.gstTreatment], contact.stateCode ? gstStateLabel(contact.stateCode) : null].filter(Boolean).join(" · ")}
+              </p>
+            )}
             {(contact.taxId || contact.website) && (
               <p className="text-[13px] text-on-surface-muted">
-                {contact.taxId ? `Tax ID: ${contact.taxId}` : ""}
+                {contact.taxId ? `${gstinRequired(contact.gstTreatment) ? "GSTIN" : "Tax ID"}: ${contact.taxId}` : ""}
                 {contact.taxId && contact.website ? " · " : ""}
                 {contact.website ? (
                   <a href={contact.website} target="_blank" rel="noreferrer" className="hover:text-primary hover:underline">
@@ -439,9 +460,21 @@ export function ContactDetail({ contactId }: { contactId: string }) {
               {(field) => <Input {...field} type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />}
             </FormField>
 
-            <FormField label="Tax ID">
-              {(field) => <Input {...field} value={taxId} onChange={(e) => setTaxId(e.target.value)} />}
-            </FormField>
+            {taxCountry === "IN" ? (
+              <ContactGstFields
+                treatment={gstTreatment}
+                gstin={taxId}
+                stateCode={stateCode}
+                onTreatmentChange={setGstTreatment}
+                onGstinChange={setTaxId}
+                onStateCodeChange={setStateCode}
+                showErrors={showGstErrors}
+              />
+            ) : (
+              <FormField label="Tax ID">
+                {(field) => <Input {...field} value={taxId} onChange={(e) => setTaxId(e.target.value)} />}
+              </FormField>
+            )}
 
             <FormField label="Website">
               {(field) => <Input {...field} type="url" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://" />}

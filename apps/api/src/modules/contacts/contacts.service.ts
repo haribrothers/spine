@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { addressInputSchema, contactPersonInputSchema, createContactSchema, updateContactSchema } from "@spine/shared";
+import { gstinError, gstinRequired, gstinStateCode, normaliseGstin, type GstTreatment, type addressInputSchema, type contactPersonInputSchema, type createContactSchema, type updateContactSchema } from "@spine/shared";
 import { and, asc, desc, eq, ilike, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -12,6 +12,19 @@ export type CreateContactInput = z.infer<typeof createContactSchema>;
 export type UpdateContactInput = z.infer<typeof updateContactSchema>;
 type ContactPersonInput = z.infer<typeof contactPersonInputSchema>;
 type AddressInput = z.infer<typeof addressInputSchema>;
+
+/**
+ * US-TAX-12 (D-146) — a registered or SEZ contact needs a valid GSTIN in
+ * the state chosen with it; a blank state is filled from the GSTIN.
+ */
+function contactGst(treatment: GstTreatment | null | undefined, taxId: string | null | undefined, stateCode: string | null | undefined): { taxId: string | null; stateCode: string | null } {
+  if (!gstinRequired(treatment)) return { taxId: taxId ?? null, stateCode: stateCode ?? null };
+  if (!taxId?.trim()) throw new BadRequestException("Enter the GSTIN — it's needed for a registered business or SEZ.");
+  const gstin = normaliseGstin(taxId);
+  const error = gstinError(gstin, stateCode || null);
+  if (error) throw new BadRequestException(error);
+  return { taxId: gstin, stateCode: stateCode || gstinStateCode(gstin) };
+}
 
 /**
  * Contacts CRUD, including nested contact-persons/addresses. Nested data is
@@ -82,6 +95,7 @@ export class ContactsService {
    */
   async create(orgId: string, actorUserId: string, input: CreateContactInput) {
     const duplicates = await this.findDuplicates(orgId, input.email ?? null, input.phone ?? null);
+    const gst = contactGst(input.gstTreatment, input.taxId, input.stateCode);
 
     const created = await this.db.transaction(async (tx) => {
       const [contact] = await tx
@@ -94,7 +108,9 @@ export class ContactsService {
           email: input.email ?? null,
           phone: input.phone ?? null,
           notes: input.notes ?? null,
-          taxId: input.taxId ?? null,
+          taxId: gst.taxId,
+          gstTreatment: input.gstTreatment ?? null,
+          stateCode: gst.stateCode,
           website: input.website ?? null,
           logoFileId: input.logoFileId ?? null,
           createdByUserId: actorUserId,
@@ -142,6 +158,7 @@ export class ContactsService {
               line2: address.line2 ?? null,
               city: address.city ?? null,
               state: address.state ?? null,
+              stateCode: address.stateCode ?? null,
               postalCode: address.postalCode ?? null,
               country: address.country ?? null,
               isPrimary: address.isPrimary ?? false,
@@ -242,6 +259,15 @@ export class ContactsService {
       input.addresses !== undefined ? this.db.select().from(addresses).where(eq(addresses.contactId, id)) : Promise.resolve([]),
     ]);
 
+    const gstTouched = input.gstTreatment !== undefined || input.taxId !== undefined || input.stateCode !== undefined;
+    const gst = gstTouched
+      ? contactGst(
+          input.gstTreatment !== undefined ? input.gstTreatment : existing.gstTreatment,
+          input.taxId !== undefined ? input.taxId : existing.taxId,
+          input.stateCode !== undefined ? input.stateCode : existing.stateCode,
+        )
+      : null;
+
     await this.db.transaction(async (tx) => {
       await tx
         .update(contacts)
@@ -252,7 +278,8 @@ export class ContactsService {
           ...(input.email !== undefined ? { email: input.email } : {}),
           ...(input.phone !== undefined ? { phone: input.phone } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
-          ...(input.taxId !== undefined ? { taxId: input.taxId } : {}),
+          ...(gst ? { taxId: gst.taxId, stateCode: gst.stateCode } : {}),
+          ...(input.gstTreatment !== undefined ? { gstTreatment: input.gstTreatment } : {}),
           ...(input.website !== undefined ? { website: input.website } : {}),
           ...(input.logoFileId !== undefined ? { logoFileId: input.logoFileId } : {}),
           ...(input.remindersPaused !== undefined ? { remindersPaused: input.remindersPaused } : {}),
@@ -323,6 +350,7 @@ export class ContactsService {
                 line2: address.line2 ?? null,
                 city: address.city ?? null,
                 state: address.state ?? null,
+                stateCode: address.stateCode ?? null,
                 postalCode: address.postalCode ?? null,
                 country: address.country ?? null,
                 isPrimary: address.isPrimary ?? false,

@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-12: record my GSTIN and state, and each customer's (Phase 9)
+
+- New Settings › GST pane, shown when the tax country is India. It asks for GSTIN, State, Legal name, Trade name, Registered on and Return period.
+  - The GSTIN is checked for format and check character: "This GSTIN isn't valid — check the 15 characters."
+  - Its first two digits must match the state: "This GSTIN belongs to <state>."
+  - Typing the GSTIN fills in the state.
+  - The pane notes that Spine never files returns or connects to the GST portal.
+- The setup wizard opens the same form as "GST details" right after India is chosen. "Not registered yet — skip this step" moves on.
+- A business in a union territory without a legislature gets its "GST n% (UT)" groups (CGST + UTGST) and their rates restored. The 12% and 28% groups stay archived.
+- Contacts in an Indian business have:
+  - "GST treatment": Registered business, Unregistered business, Consumer, Overseas or Special economic zone.
+  - GSTIN, required for registered and SEZ contacts.
+  - A State, which the GSTIN fills in when it's blank.
+  - The contact page header shows the treatment, state and GSTIN.
+- Each address has a State, as the place of supply comes from it.
+- Contact import maps GSTIN and State columns. A GSTIN marks the contact registered. A state can be its code or name. A bad GSTIN or an unknown state flags the row.
+- Migration `0102`: `contacts.gst_treatment`, `contacts.state_code` (D-146: contacts carry a state) and `addresses.state_code`. `PUT /org/tax/profile` now takes the GST fields.
+- Request bodies that fail validation (`ZodValidationPipe`) now answer with the first problem as `message`, plus the full list as `issues`. Before, `message` was the issue list, which the web showed as "[object Object]".
+- GSTIN and state-code helpers are in `@spine/shared` (`tax/gst.ts`).
+
 ### 2026-10-07 — US-TAX-11: mark supplies as zero-rated, exempt or outside tax (Phase 9)
 
 - Catalogue items have a "Supply type": Taxable, Zero-rated, Exempt or "Non-taxable (outside GST/VAT)". An item with tax is always Taxable.

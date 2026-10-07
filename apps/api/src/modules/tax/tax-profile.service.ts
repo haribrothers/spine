@@ -1,6 +1,6 @@
-import { Inject, Injectable } from "@nestjs/common";
-import { taxPreset, type TaxCountry, type TaxPreset, type TaxProfile, type TaxProfileUpdate } from "@spine/shared";
-import { and, eq, sql } from "drizzle-orm";
+import { BadRequestException, Inject, Injectable } from "@nestjs/common";
+import { gstinError, isUnionTerritory, taxPreset, type PutTaxProfileInput, type TaxPreset, type TaxProfile, type TaxProfileUpdate } from "@spine/shared";
+import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { settings, taxGroupRates, taxGroups, taxRates } from "../../db/schema";
@@ -28,20 +28,50 @@ export class TaxProfileService {
     return (await this.settings.get<TaxProfile>(orgId, PROFILE_KEY)) ?? {};
   }
 
-  async setCountry(orgId: string, actorUserId: string, country: TaxCountry): Promise<TaxProfileUpdate> {
+  /**
+   * Saves the fields given and keeps the rest. A country seeds its preset
+   * (US-TAX-09); the GSTIN must belong to the state (US-TAX-12), and a
+   * union-territory business gets its CGST + UTGST groups back.
+   */
+  async update(orgId: string, actorUserId: string, input: PutTaxProfileInput): Promise<TaxProfileUpdate> {
     return this.db.transaction(async (tx) => {
       // Two saves at once would both see the rates missing and add them twice.
       await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`tax_profile:${orgId}`}))`);
-      const preset = taxPreset(country);
+      const preset = input.country ? taxPreset(input.country) : null;
       const added = preset ? await this.seed(tx, orgId, actorUserId, preset) : 0;
-      const profile: TaxProfile = { ...(await this.read<TaxProfile>(tx, orgId, PROFILE_KEY)), country };
+      const given = Object.fromEntries(Object.entries(input).filter(([, v]) => v !== undefined));
+      const profile: TaxProfile = { ...(await this.read<TaxProfile>(tx, orgId, PROFILE_KEY)), ...given };
+      if (profile.registrationNumber && profile.stateCode) {
+        const message = gstinError(profile.registrationNumber, profile.stateCode);
+        if (message) throw new BadRequestException(message);
+      }
       await this.write(tx, orgId, PROFILE_KEY, profile);
       if (preset?.invoiceTitle) {
         const layout = (await this.read<Record<string, Record<string, unknown> | undefined>>(tx, orgId, DOCUMENT_LAYOUT_KEY)) ?? {};
         await this.write(tx, orgId, DOCUMENT_LAYOUT_KEY, { ...layout, invoice: { ...layout.invoice, title: preset.invoiceTitle } });
       }
+      if (profile.country === "IN" && input.stateCode && isUnionTerritory(input.stateCode)) await this.restoreUnionTerritoryGroups(tx, orgId);
       return { profile, added };
     });
+  }
+
+  /**
+   * US-TAX-12 — a union territory without a legislature charges CGST +
+   * UTGST: restore each "GST n% (UT)" group (and its rates) whose
+   * "GST n%" group is in use.
+   */
+  private async restoreUnionTerritoryGroups(tx: Transaction, orgId: string): Promise<void> {
+    const groups = await tx.select().from(taxGroups).where(eq(taxGroups.orgId, orgId));
+    const active = new Set(groups.filter((g) => g.archivedAt === null).map((g) => g.name));
+    const restore = groups.filter((g) => g.archivedAt !== null && g.name.endsWith(" (UT)") && active.has(g.name.slice(0, -5)));
+    if (!restore.length) return;
+    const ids = restore.map((g) => g.id);
+    await tx.update(taxGroups).set({ archivedAt: null, updatedAt: new Date() }).where(inArray(taxGroups.id, ids));
+    const rateIds = (await tx.select({ id: taxGroupRates.taxRateId }).from(taxGroupRates).where(inArray(taxGroupRates.taxGroupId, ids))).map((r) => r.id);
+    await tx
+      .update(taxRates)
+      .set({ archivedAt: null, updatedAt: new Date() })
+      .where(and(eq(taxRates.orgId, orgId), inArray(taxRates.id, rateIds), isNotNull(taxRates.archivedAt)));
   }
 
   /** Adds the preset's missing rates and groups; returns how many rates it added. */

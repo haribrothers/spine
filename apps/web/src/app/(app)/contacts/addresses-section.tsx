@@ -31,6 +31,8 @@ import { Pencil, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import type { Address, AddressType, Contact } from "./types";
+import { GST_STATES, gstState, gstStateLabel } from "@spine/shared";
+import { useTaxCountry } from "./contact-gst-fields";
 
 const TYPE_OPTIONS: AddressType[] = ["billing", "shipping", "site", "other"];
 
@@ -44,6 +46,7 @@ type AddressInput = {
   state: string | null;
   postalCode: string | null;
   country: string | null;
+  stateCode: string | null;
   isPrimary: boolean;
 };
 
@@ -73,13 +76,16 @@ export function AddressesSection({
   const [type, setType] = useState<AddressType>("billing");
   const [line1, setLine1] = useState("");
   const [city, setCity] = useState("");
+  // US-TAX-12 — each address's GST state, which decides the place of supply.
+  const taxCountry = useTaxCountry();
+  const [stateCode, setStateCode] = useState("");
   const [saving, setSaving] = useState(false);
   const canManage = useCapability("contacts.manage_addresses");
 
   const addresses = contact.addresses ?? [];
 
   function toInput(a: Address): AddressInput {
-    return { id: a.id, type: a.type, line1: a.line1, line2: a.line2, city: a.city, state: a.state, postalCode: a.postalCode, country: a.country, isPrimary: a.isPrimary };
+    return { id: a.id, type: a.type, line1: a.line1, line2: a.line2, city: a.city, state: a.state, postalCode: a.postalCode, country: a.country, stateCode: a.stateCode, isPrimary: a.isPrimary };
   }
 
   async function persist(next: AddressInput[]) {
@@ -97,6 +103,7 @@ export function AddressesSection({
     setType("billing");
     setLine1("");
     setCity("");
+    setStateCode("");
     setOpen(true);
   }
 
@@ -105,13 +112,16 @@ export function AddressesSection({
     setType(address.type);
     setLine1(address.line1);
     setCity(address.city ?? "");
+    setStateCode(address.stateCode ?? "");
     setOpen(true);
   }
 
   async function handleSave() {
+    // In India the state name follows the chosen GST state.
+    const gst = taxCountry === "IN" ? { stateCode: stateCode || null, state: gstState(stateCode)?.name ?? null } : {};
     const next = editingId
-      ? addresses.map(toInput).map((a) => (a.id === editingId ? { ...a, type, line1, city: city || null } : a))
-      : [...addresses.map(toInput), { type, line1, line2: null, city: city || null, state: null, postalCode: null, country: null, isPrimary: addresses.length === 0 }];
+      ? addresses.map(toInput).map((a) => (a.id === editingId ? { ...a, type, line1, city: city || null, ...gst } : a))
+      : [...addresses.map(toInput), { type, line1, line2: null, city: city || null, state: null, postalCode: null, country: null, stateCode: null, isPrimary: addresses.length === 0, ...gst }];
     await persist(next);
     setOpen(false);
     if (!editingId) onCreated?.();
@@ -134,6 +144,7 @@ export function AddressesSection({
                   {" "}
                   · {address.line1}
                   {address.city ? `, ${address.city}` : ""}
+                  {address.stateCode ? `, ${gstStateLabel(address.stateCode)}` : ""}
                 </span>
               </div>
               {canManage && (
@@ -209,6 +220,24 @@ export function AddressesSection({
             <FormField label="City">
               {(field) => <Input {...field} value={city} onChange={(e) => setCity(e.target.value)} />}
             </FormField>
+            {taxCountry === "IN" && (
+              <FormField label="State" helperText="The site or shipping address's state is the place of supply.">
+                {(field) => (
+                  <Select value={stateCode} onValueChange={setStateCode}>
+                    <SelectTrigger {...field} className="w-full">
+                      <SelectValue placeholder="Choose a state" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GST_STATES.map((st) => (
+                        <SelectItem key={st.code} value={st.code}>
+                          {st.name} ({st.code})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+            )}
           </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setOpen(false)}>

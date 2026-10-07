@@ -54,12 +54,12 @@ export class TaxController {
     return this.taxProfile.get(requireOrgId(session));
   }
 
-  /** US-TAX-09 — choosing a country adds its preset's rates; existing rates are kept. */
+  /** US-TAX-09 — choosing a country adds its preset's rates; existing rates are kept. US-TAX-12 — the GST registration. */
   @Put("profile")
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
   async putProfile(@Session() session: UserSession, @Body(new ZodValidationPipe(putTaxProfileSchema)) body: z.infer<typeof putTaxProfileSchema>): Promise<TaxProfileUpdate> {
-    return this.taxProfile.setCountry(requireOrgId(session), session.user.id, body.country);
+    return this.taxProfile.update(requireOrgId(session), session.user.id, body);
   }
 
   @Get("default-rate")

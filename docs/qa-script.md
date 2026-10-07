@@ -3670,6 +3670,35 @@ Regression:
 - Totals, issuing and PDFs are unchanged.
 - Converting a quote to an invoice keeps each line's supply type.
 
+## 163. GST registration and contacts' GST details (US-TAX-12, Phase 9)
+
+Use a valid GSTIN such as 29AAACK0000A1ZK (Karnataka) or 33AABCU9603R1ZU (Tamil Nadu). 29AAACK0000A1ZL has a wrong check character.
+
+1. Wizard, India: the next card is "GST details".
+   - Type 29AAACK0000A1ZL: "This GSTIN isn't valid — check the 15 characters."
+   - Fix the last character to K: State fills as "Karnataka (29)".
+   - Fill Legal name and press Continue: the Numbering step opens.
+   - "Not registered yet — skip this step" also moves on.
+2. Settings: "GST" is listed under Tax for an Indian business and is absent for any other.
+   - The pane shows what you saved.
+   - Choose State "Tamil Nadu (33)": "This GSTIN belongs to Karnataka." appears and Save is refused.
+3. Save a Chandigarh (04) GSTIN in a new Indian business. Settings › Tax: "GST 18% (UT)" and the other in-use "(UT)" groups are no longer archived; "GST 12% (UT)" and "GST 28% (UT)" are.
+4. Contacts › Add contact (Indian business):
+   - "GST treatment" lists the five treatments.
+   - Registered business with no GSTIN: Save shows "Enter the GSTIN — it's needed for a registered business or SEZ."
+   - Type a valid GSTIN: State fills in, with "State filled from the GSTIN."
+   - Save: the contact page header reads "Registered business · Karnataka (29)" and "GSTIN: …".
+5. Edit the contact to Consumer: the GSTIN is no longer required. Overseas: the field reads "Tax ID" and accepts any text.
+6. Addresses › Add address: "State" lists the GST states. The saved address reads "…, Tamil Nadu (33)".
+7. Contacts › Import a CSV with "GSTIN" and "State" columns: they map by themselves.
+   - A state can be "29" or "Karnataka".
+   - A bad GSTIN or an unknown state flags its row.
+   - Imported rows with a GSTIN are registered businesses with the state filled in.
+8. In a business outside India: contacts show "Tax ID" as before, addresses have no State picker, and there's no GST pane.
+9. Keyboard and screen reader: every field is labelled; errors are announced. Dark mode is readable.
+
+Regression: the return period (Settings › Tax) and the dashboard's "Tax this period" still follow each other; contact create, edit and import work as before outside India.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

@@ -1,7 +1,7 @@
 import type { ContactType } from "../types";
 
 /** Spine fields a CSV column can be mapped to. `"skip"` means "don't map this column to anything." */
-export const IMPORT_FIELDS = ["name", "type", "isCompany", "email", "phone", "notes", "taxId", "website"] as const;
+export const IMPORT_FIELDS = ["name", "type", "isCompany", "email", "phone", "notes", "taxId", "gstin", "stateCode", "website"] as const;
 export type ImportField = (typeof IMPORT_FIELDS)[number];
 
 export const IMPORT_FIELD_LABELS: Record<ImportField, string> = {
@@ -12,6 +12,9 @@ export const IMPORT_FIELD_LABELS: Record<ImportField, string> = {
   phone: "Phone",
   notes: "Notes",
   taxId: "Tax ID",
+  // US-TAX-12 — a GSTIN makes the contact a registered business.
+  gstin: "GSTIN",
+  stateCode: "State",
   website: "Website",
 };
 
@@ -30,6 +33,9 @@ export interface ImportRow {
   phone: string | null;
   notes: string | null;
   taxId: string | null;
+  /** US-TAX-12 — set when a GSTIN column is mapped. */
+  gstTreatment: "registered" | null;
+  stateCode: string | null;
   website: string | null;
   errors: string[];
   duplicateOf: string[]; // names of existing contacts this row matches by email/phone

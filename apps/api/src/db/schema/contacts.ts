@@ -32,6 +32,9 @@ export const contactTypeEnum = pgEnum("contact_type", ["customer", "vendor", "bo
  * contacts, not just ones with ledger history — simpler and consistent
  * rather than branching behavior on "does this contact have documents yet."
  */
+/** US-TAX-12 (D-146) — how GST applies to a contact. */
+export const gstTreatmentEnum = pgEnum("gst_treatment", ["registered", "unregistered", "consumer", "overseas", "sez"]);
+
 export const contacts = pgTable(
   "contacts",
   {
@@ -52,6 +55,10 @@ export const contacts = pgTable(
      * `contact_persons.title` already covers job title, so no change there.
      */
     taxId: text("tax_id"),
+    /** US-TAX-12 (D-146) — GST treatment in India (`taxId` then holds the GSTIN); null elsewhere. */
+    gstTreatment: gstTreatmentEnum("gst_treatment"),
+    /** US-TAX-12 — the contact's GST state code; filled from a registered contact's GSTIN when blank. */
+    stateCode: text("state_code"),
     website: text("website"),
     /**
      * Optional logo/avatar — a plain nullable FK to `files.id`, following
@@ -148,6 +155,8 @@ export const addresses = pgTable(
     line2: text("line2"),
     city: text("city"),
     state: text("state"),
+    /** US-TAX-12 — two-digit GST state code in India (the place of supply); a free region code elsewhere. */
+    stateCode: text("state_code"),
     postalCode: text("postal_code"),
     country: text("country"),
     isPrimary: boolean("is_primary").notNull().default(false),

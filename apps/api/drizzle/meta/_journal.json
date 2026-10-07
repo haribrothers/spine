@@ -715,6 +715,13 @@
       "when": 1791347587677,
       "tag": "0101_supply_class",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1791348477127,
+      "tag": "0102_gst_registration",
+      "breakpoints": true
     }
   ]
 }

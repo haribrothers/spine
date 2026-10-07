@@ -129,6 +129,8 @@ export function ImportContactsDialog({
           phone: r.phone,
           notes: r.notes,
           taxId: r.taxId,
+          gstTreatment: r.gstTreatment ?? undefined,
+          stateCode: r.stateCode ?? undefined,
           website: r.website,
         })),
       });
@@ -417,6 +419,8 @@ function autoMapColumns(columns: string[]): ColumnMapping {
     phone: ["phone", "phonenumber", "mobile", "tel"],
     notes: ["notes", "note", "comment", "comments"],
     taxId: ["taxid", "vatid", "vatnumber", "taxnumber"],
+    gstin: ["gstin", "gstnumber", "gstno", "gst"],
+    stateCode: ["state", "statecode", "gststate", "placeofsupply"],
     website: ["website", "url", "site"],
   };
   const mapping: ColumnMapping = {};

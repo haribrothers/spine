@@ -29,7 +29,9 @@ test.describe("US-TAX-09", () => {
     await expect(page.getByText("CGST, SGST, IGST and cess at the current slabs. GST details come next.")).toBeVisible();
     await radios.getByText("India (GST)", { exact: true }).click();
     await page.getByRole("button", { name: "Continue", exact: true }).click();
-    await expect(page.getByRole("button", { name: "Skip to dashboard" })).toBeVisible();
+    // GST settings open next (US-TAX-12).
+    await expect(page.getByText("GST details", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Not registered yet — skip this step" }).click();
     await page.getByRole("button", { name: "Skip to dashboard" }).click();
     await page.waitForURL("**/dashboard");
 
