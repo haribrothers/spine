@@ -3907,7 +3907,44 @@ Use an Indian business (GSTIN 29AAACK0000A1ZK, Karnataka) for Jul 1 to today.
    - Recording and deleting tax payments still updates the list and cards (section for US-TAX-08).
    - The dashboard tax card still opens this report for its period (US-DASH-25).
 
+## 175. GSTR-1 export (US-TAX-16, Phase 9)
+
+Use an Indian business with GSTIN 29AAACK0000A1ZK (Karnataka), and issue documents dated last month:
+
+- Invoices:
+  - A registered Karnataka customer, ₹1,80,000 at GST 18% with HSN 9403.
+  - A consumer, ₹10,000 at GST 18%.
+  - A Tamil Nadu consumer, ₹1,20,000 at IGST 18%.
+  - An overseas customer, at IGST 18%.
+  - A line marked exempt.
+- A credit note against an invoice from the month before.
+- One invoice voided.
+
+1. Reports lists GSTR-1 under Tax. A USD business doesn't see it.
+2. Open GSTR-1:
+   - The subtitle reads "<Month Year> · GSTIN 29AAACK0000A1ZK".
+   - The cards show documents with the invoice range, taxable value and tax.
+3. Check the tables:
+   - B2B has the registered invoice.
+   - B2CL has the ₹1,20,000 Tamil Nadu sale.
+   - B2CS has the small consumer sale.
+   - CDNR has the credit note, as a negative.
+   - Exports has the overseas sale.
+   - Nil, exempt and non-GST has the exempt value.
+   - The HSN summary shows a count of codes.
+   - Documents issued shows the invoice range and "1 void".
+4. The footer reads "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal."
+5. Download JSON. The file is named `GSTR1_29AAACK0000A1ZK_<MMYYYY>.json` and has `"version": "GST3.2.4"`. In it:
+   - The credit note in `cdnr` has `inum` and `idt` from the earlier invoice.
+   - `doc_issue` counts the voided invoice in `cancel`.
+6. **Manual, outside Spine:** import the JSON into the GST offline tool. It opens without schema errors, and its totals match the page.
+7. Switch Filing to Quarterly: the periods read like "Jul – Sep 2026", and the figures cover the three months.
+8. As Staff without "View financial statements" the page says you don't have access. Field users can't open it.
+9. The audit log shows "GSTR-1 file · Downloaded" with the period and format.
+
 ## Known gaps — don't file these as bugs
+
+- GSTR-1 goods lines use the unit `OTH` in the HSN summary because Spine's lines have no unit yet, and services use `NA` (D-184). Shipping bill details aren't captured, so exports have none. Advances received (Table 11) and amendments to earlier returns aren't in the file.
 
 - A deposit is applied to the final invoice with "Apply credit" after the invoice is issued, so that invoice's UPI QR code asks for the full amount (US-INV-26). Reminders then say what clears it. There's no QR code only when the balance is already nothing at issue.
 

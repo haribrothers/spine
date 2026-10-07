@@ -9,6 +9,7 @@ import { REPORTS, REPORT_GROUPS, canOpenReport, matchesReportSearch, type Report
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
+import { useTaxCountry } from "../contacts/contact-gst-fields";
 
 /** US-DASH-14's old `?tab=` links, now pages of their own. */
 const OLD_TABS: Record<string, string> = {
@@ -43,7 +44,9 @@ export function ReportsCenter() {
       .catch(() => {});
   }, []);
 
-  const visible = useMemo(() => REPORTS.filter((r) => canOpenReport(r, role, capabilities)), [role, capabilities]);
+  // US-TAX-16: a country's own reports (GSTR-1) show only to businesses taxed there.
+  const taxCountry = useTaxCountry();
+  const visible = useMemo(() => REPORTS.filter((r) => canOpenReport(r, role, capabilities) && (!r.country || r.country === taxCountry)), [role, capabilities, taxCountry]);
   const shown = visible.filter((r) => matchesReportSearch(r, query));
   const favouriteReports = favourites.map((slug) => visible.find((r) => r.slug === slug)).filter((r): r is ReportEntry => Boolean(r) && matchesReportSearch(r!, query));
 

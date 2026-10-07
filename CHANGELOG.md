@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-16: export GSTR-1 for the GST portal (Phase 9)
+
+- Reports › Tax › GSTR-1 appears for businesses with an Indian GST profile.
+- Choose Monthly or Quarterly and a period. The page shows:
+  - Documents issued, taxable value and tax.
+  - Counts and values for B2B, B2CL, B2CS, CDNR, CDNUR, Exports, Nil/exempt/non-GST, the HSN summary and Documents issued.
+- "Download JSON" gives `GSTR1_<GSTIN>_<MMYYYY>.json` in the GST portal's GSTR-1 upload format:
+  - It carries the GSTIN, the return period and the schema version (`GST3.2.4`).
+  - B2B, B2CL, B2CS, CDNR, CDNUR, EXP, NIL, HSN (split B2B/B2C) and Documents issued are all included.
+- Credit notes against invoices from earlier periods carry the original invoice's number and date.
+- Documents issued lists each invoice and credit-note series with totals and voided counts.
+- The footer reads "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal."
+- Every download is in the audit log.
+- `GET /exports/gstr1` needs "View financial statements" (Owners always; never Field).
+- The mapping lives in one module (`apps/api/src/modules/tax/gstr1/`) with fixture tests per table. D-184 records how documents map.
+
 ### 2026-10-07 — US-RPT-37: see tax collected and paid by rate and tax type (Phase 9)
 
 - Reports › Tax Summary now shows both sides:
