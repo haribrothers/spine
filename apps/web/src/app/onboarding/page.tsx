@@ -235,6 +235,7 @@ function TemplateStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: ()
   return (
     <IndustryTemplateStep
       initialValue={value.template}
+      modulesNote="onboarding"
       onSave={async (template) => {
         await apiClient.put("/org/settings/industry_template", { value: { template } });
         onSaved();

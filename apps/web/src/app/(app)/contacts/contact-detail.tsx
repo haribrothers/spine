@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -86,6 +87,8 @@ export function ContactDetail({ contactId }: { contactId: string }) {
   const router = useRouter();
   const [contact, setContact] = useState<Contact | null>(null);
   const [leads, setLeads] = useState<Lead[] | null>(null);
+  // US-SET-24: no leads while Leads & meetings is switched off.
+  const leadsOn = useModule("leadsMeetings");
   const [activities, setActivities] = useState<Activity[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -146,7 +149,11 @@ export function ContactDetail({ contactId }: { contactId: string }) {
     // apps/api/src/modules/contacts/leads.controller.ts) — filtering
     // client-side here rather than adding a server-side param this pass
     // doesn't otherwise need, since a single contact's lead count is small.
-    apiClient.get<Lead[]>("/leads").then((rows) => setLeads(rows.filter((l) => l.contactId === contactId)));
+    apiClient
+      .get<Lead[]>("/leads")
+      .then((rows) => setLeads(rows.filter((l) => l.contactId === contactId)))
+      // US-SET-24: Leads & meetings switched off.
+      .catch(() => setLeads([]));
   }
 
   function reloadActivities() {
@@ -497,7 +504,7 @@ export function ContactDetail({ contactId }: { contactId: string }) {
           <TabsTrigger value="timeline">Timeline</TabsTrigger>
           <TabsTrigger value="persons">Contact persons</TabsTrigger>
           <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="leads">Leads</TabsTrigger>
+          {leadsOn && <TabsTrigger value="leads">Leads</TabsTrigger>}
           <TabsTrigger value="activities">Activities</TabsTrigger>
           <TabsTrigger value="attachments">Attachments</TabsTrigger>
         </TabsList>
@@ -519,14 +526,16 @@ export function ContactDetail({ contactId }: { contactId: string }) {
             onCreated={() => showToast("Address added", "The new address has been saved.")}
           />
         </TabsContent>
-        <TabsContent value="leads">
-          <LeadsSection
-            contactId={contactId}
-            leads={leads}
-            onChanged={reloadLeads}
-            onCreated={() => showToast("Lead added", "The new lead has been saved.")}
-          />
-        </TabsContent>
+        {leadsOn && (
+          <TabsContent value="leads">
+            <LeadsSection
+              contactId={contactId}
+              leads={leads}
+              onChanged={reloadLeads}
+              onCreated={() => showToast("Lead added", "The new lead has been saved.")}
+            />
+          </TabsContent>
+        )}
         <TabsContent value="activities">
           <ActivitiesSection
             contactId={contactId}

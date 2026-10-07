@@ -1,3 +1,4 @@
+import { moduleOn } from "../../common/modules";
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { EmailJobOverride } from "../email/email-text";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
@@ -527,7 +528,8 @@ export class QuotesService {
       if (existing.status !== "draft") {
         throw new BadRequestException("Only a draft quote can be sent");
       }
-      if (existing.discountRequiresApproval && !existing.approvedByUserId) {
+      // D-154: with Approvals switched off, discounts need no approval.
+      if (existing.discountRequiresApproval && !existing.approvedByUserId && (await moduleOn(tx, orgId, "approvals"))) {
         throw new BadRequestException("This quote's discount requires owner approval before it can be sent");
       }
 

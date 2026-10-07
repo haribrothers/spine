@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import {
   Alert,
@@ -106,6 +107,7 @@ export function ReconcileCreateDrawer({
     return list.filter((o) => o.allowed);
   }, [isIn, canPayment, canRecordBanking, canVendorPayment, canCreateExpense, canApproveExpense, isOwner, others.length]);
 
+  const jobsOn = useModule("jobsField");
   const [kind, setKind] = useState<Kind | null>(null);
   const [openForm, setOpenForm] = useState<Kind | null>(null);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
@@ -235,23 +237,26 @@ export function ReconcileCreateDrawer({
                     </Select>
                   )}
                 </FormField>
-                <FormField label="Job" helperText="Optional — counts as job cost.">
-                  {(field) => (
-                    <Select value={jobId} onValueChange={setJobId}>
-                      <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value={NO_JOB}>No job</SelectItem>
-                        {jobs.map((j) => (
-                          <SelectItem key={j.id} value={j.id}>
-                            {j.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                </FormField>
+                {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+                {jobsOn && (
+                  <FormField label="Job" helperText="Optional — counts as job cost.">
+                    {(field) => (
+                      <Select value={jobId} onValueChange={setJobId}>
+                        <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value={NO_JOB}>No job</SelectItem>
+                          {jobs.map((j) => (
+                            <SelectItem key={j.id} value={j.id}>
+                              {j.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </FormField>
+                )}
                 <FormField label="Paid from" required>
                   {() => <p className="py-2 text-[14px] text-on-surface">{account.name}</p>}
                 </FormField>

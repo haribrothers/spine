@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, BellRing, Building2, FileText, Files, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Mail, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
+import { AlarmClock, BellRing, Building2, FileText, Files, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Mail, ToggleRight, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
 import { BrandingPane } from "../app/settings/panes/branding-pane";
@@ -12,6 +12,9 @@ import { TaxPane } from "../app/settings/panes/tax-pane";
 import { GstPane } from "../app/settings/panes/gst-pane";
 import { DocumentsPane } from "../app/settings/panes/documents-pane";
 import { EmailsPane } from "../app/settings/panes/emails-pane";
+import { ModulesPane } from "../app/settings/panes/modules-pane";
+import { useModules } from "../lib/modules-context";
+import { ownedByOffModule } from "@spine/shared";
 import type { TaxProfile } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
@@ -55,6 +58,8 @@ const SECTIONS: SettingsSection[] = [
   // US-SET-21
   { key: "emails", label: "Emails", icon: <Mail size={16} />, render: () => <EmailsPane /> },
   { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
+  // US-SET-23
+  { key: "modules", label: "Modules", icon: <ToggleRight size={16} />, render: () => <ModulesPane /> },
   { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
   {
     key: "quote-conversion-guard",
@@ -125,7 +130,12 @@ export function SettingsDialog({
       .then((p) => setCountry(p.country ?? null))
       .catch(() => {});
   }, [open, activeKey]);
-  const sections = useMemo(() => SECTIONS.filter((s) => !s.country || s.country === country || s.key === activeKey), [country, activeKey]);
+  // US-SET-24: a switched-off module's settings panes are gone.
+  const { modules } = useModules();
+  const sections = useMemo(
+    () => SECTIONS.filter((s) => (!s.country || s.country === country || s.key === activeKey) && !ownedByOffModule(modules, "settingsPanes", s.key)),
+    [country, activeKey, modules],
+  );
   useEffect(() => {
     if (open && initialKey && SECTIONS.some((s) => s.key === initialKey)) setActiveKey(initialKey);
   }, [open, initialKey]);

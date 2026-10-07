@@ -394,7 +394,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 9 · Tax, documents and setup
 
-- [ ] US-ONB-14 · Start with the modules my industry needs
+- [x] US-ONB-14 · Start with the modules my industry needs
 - [ ] US-ONB-15 · Open a setup page that shows what's left
 - [ ] US-ONB-16 · Go from each setup card to its setting and its guide
 - [x] US-INV-25 · Set my UPI ID for payments
@@ -417,9 +417,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-20 · Show every character on PDFs
 - [x] US-SET-21 · Edit the text of each customer email
 - [x] US-SET-22 · Preview an email and reset it to the default
-- [ ] US-SET-23 · Switch optional modules on or off
-- [ ] US-SET-24 · Hide everything a switched-off module owns
-- [ ] US-SET-25 · Switch a module back on with nothing lost
+- [x] US-SET-23 · Switch optional modules on or off (the "AI assistant" row lands with US-AI-01)
+- [x] US-SET-24 · Hide everything a switched-off module owns
+- [x] US-SET-25 · Switch a module back on with nothing lost
 - [ ] US-AI-01 · Switch the AI assistant on or off
 - [ ] US-AI-02 · Connect a local or cloud AI provider
 - [ ] US-AI-03 · Choose which AI features are on

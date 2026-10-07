@@ -1,3 +1,5 @@
+import { ownedByOffModule } from "@spine/shared";
+import { loadModules } from "../../common/modules";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
@@ -87,6 +89,8 @@ export class NotificationsService {
     },
   ): Promise<void> {
     const { recipientRoles, recipientUserIds } = params;
+    // US-SET-24: nothing about a switched-off module is sent.
+    if (params.inApp && ownedByOffModule(await loadModules(this.db, orgId), "notifications", params.inApp.type)) return;
     const useDefaultRole = !recipientRoles && !recipientUserIds;
     const roleFilter = useDefaultRole ? ["owner"] : recipientRoles;
     try {

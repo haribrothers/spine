@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea } from "@spine/ui";
@@ -61,6 +62,7 @@ function toEditableLines(bill: VendorBill): EditableVendorBillLine[] {
  */
 export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
   const router = useRouter();
+  const jobsOn = useModule("jobsField");
   const [contactId, setContactId] = useState(bill?.contactId ?? "");
   const [jobId, setJobId] = useState(bill?.jobId ?? NO_JOB);
   const [billNumber, setBillNumber] = useState(bill?.billNumber ?? "");
@@ -189,9 +191,12 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
           <FormField label="Bill number" required helperText="The vendor's own number — not system-generated.">
             {(field) => <Input {...field} value={billNumber} onChange={(e) => setBillNumber(e.target.value)} placeholder="e.g. INV-1042" />}
           </FormField>
-          <FormField label="Job" helperText="Optional — flows into job costing once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
-          </FormField>
+          {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+          {jobsOn && (
+            <FormField label="Job" helperText="Optional — flows into job costing once recorded.">
+              {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+            </FormField>
+          )}
           <FormField label="Currency" required>
             {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} />}
           </FormField>

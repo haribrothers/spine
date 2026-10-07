@@ -29,6 +29,7 @@ import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
+import { useModule, useModules } from "../../../lib/modules-context";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { SaveBundleDialog } from "./save-bundle-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
@@ -153,6 +154,9 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   // US-SET-21: "Send Quote" and "Email again" open the send dialog, which starts from the Quote email template.
   const [sendDialog, setSendDialog] = useState<"send" | "resend" | null>(null);
+  // US-SET-24: no jobs while Jobs & field is switched off.
+  const jobsOn = useModule("jobsField");
+  const approvalsOn = useModules().modules?.approvals !== false;
 
   async function handleMarkAsSent(email: EmailOverride) {
     if (!quote) return;
@@ -335,7 +339,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   // exclusive: a quote can become a job, an invoice, or both.
   const canConvertToInvoice = quote.status === "accepted";
   const canConvertToJob = quote.status === "accepted" && hasCreateJobCapability;
-  const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId;
+  // D-154: with Approvals switched off, discounts need no approval.
+  const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId && approvalsOn;
 
   return (
     <div className="flex flex-col gap-6">
@@ -411,7 +416,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {busy ? <Spinner size="sm" /> : "Convert to invoice"}
               </Button>
             )}
-            {canConvertToJob && (
+            {canConvertToJob && jobsOn && (
               <Button variant="secondary" onClick={() => handleConvertToJob()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Convert to job"}
               </Button>

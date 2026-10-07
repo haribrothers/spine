@@ -1,6 +1,6 @@
 import { Banknote, BarChart3, BookOpen, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, History, Inbox, Landmark, LayoutDashboard, Package, Receipt, ReceiptText, Shield, Target, Undo2, UserCog, Users, Wallet } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
-import type { Capability } from "@spine/shared";
+import { DEFAULT_MODULES, moduleForPage, type Capability, type ModuleSettings } from "@spine/shared";
 
 /**
  * The app's sidebar sections, shared across every routed page. Extracted
@@ -155,7 +155,22 @@ const REPORT_CAPABILITIES: Capability[] = [
  * hidden until their capabilities have loaded, so nothing appears and then
  * vanishes. A convenience only: every page's API still refuses on its own.
  */
-export function navSectionsFor(role: string | null, capabilities: Partial<Record<Capability, boolean>> | null): AppShellNavSection[] {
+export function navSectionsFor(role: string | null, capabilities: Partial<Record<Capability, boolean>> | null, modules: ModuleSettings | null = DEFAULT_MODULES): AppShellNavSection[] {
+  // US-SET-24: a switched-off module's items are gone (and hidden until the switches have loaded).
+  const withoutOffModules = (sections: AppShellNavSection[]) =>
+    sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          const key = moduleForPage(item.href);
+          return !key || modules?.[key] === true;
+        }),
+      }))
+      .filter((section) => section.items.length > 0);
+  return withoutOffModules(sectionsForRole(role, capabilities));
+}
+
+function sectionsForRole(role: string | null, capabilities: Partial<Record<Capability, boolean>> | null): AppShellNavSection[] {
   if (role === "owner") return [...NAV_SECTIONS, TEAM_NAV_SECTION];
   if (role === "field") return FIELD_NAV_SECTIONS;
   const has = (capability: Capability) => capabilities?.[capability] === true;

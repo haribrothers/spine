@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea } from "@spine/ui";
@@ -47,6 +48,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
  */
 export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
   const router = useRouter();
+  const jobsOn = useModule("jobsField");
   const [contactId, setContactId] = useState(credit?.contactId ?? "");
   const [vendorReference, setVendorReference] = useState(credit?.vendorReference ?? "");
   const [billId, setBillId] = useState(credit?.billId ?? NO_BILL);
@@ -187,9 +189,12 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           <FormField label="Date" required>
             {() => <DatePicker value={date} onChange={setDate} />}
           </FormField>
-          <FormField label="Job" helperText="Lowers this job's cost once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
-          </FormField>
+          {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+          {jobsOn && (
+            <FormField label="Job" helperText="Lowers this job's cost once recorded.">
+              {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+            </FormField>
+          )}
           {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
       </Card>

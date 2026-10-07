@@ -12,6 +12,9 @@ import { SearchButton, SearchPalette } from "./search-palette";
 import { NotificationBell } from "./notification-bell";
 import { StorageBanner } from "./storage-banner";
 import { CapabilitiesProvider, useCapabilities } from "../lib/capabilities-context";
+import { ModulesProvider, useModules } from "../lib/modules-context";
+import { ModuleOff } from "./module-off";
+import { moduleForPage } from "@spine/shared";
 import { navSectionsFor } from "../lib/nav-sections";
 import { pageAccessFor } from "../lib/page-access";
 import { RoleProvider } from "../lib/role-context";
@@ -73,7 +76,9 @@ export function AppLayout(props: AppLayoutProps) {
   return (
     <RoleProvider value={props.role}>
       <CapabilitiesProvider>
-        <AppLayoutShell {...props} />
+        <ModulesProvider>
+          <AppLayoutShell {...props} />
+        </ModulesProvider>
         <PermissionToast />
         <SessionExpiredDialog email={props.userEmail} />
       </CapabilitiesProvider>
@@ -83,8 +88,12 @@ export function AppLayout(props: AppLayoutProps) {
 
 function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLayoutProps) {
   const { capabilities } = useCapabilities();
-  const sections = navSectionsFor(role, capabilities);
+  const { modules } = useModules();
+  // US-SET-24: the sidebar waits for the module switches, so nothing appears late or vanishes.
+  const sections = modules ? navSectionsFor(role, capabilities, modules) : [];
   const pathname = usePathname();
+  // US-SET-24: a page of a switched-off module says so instead of loading.
+  const offModule = modules ? moduleForPage(pathname ?? "") : null;
   // US-OPS-12: a page this person can't open is replaced by the no-access
   // page before it mounts, so none of its data is ever requested.
   const access = pageAccessFor(pathname ?? "", role, capabilities);
@@ -139,7 +148,9 @@ function AppLayoutShell({ role, userName, userEmail, isOwner, children }: AppLay
         }
       />
       <AppShellContent fullWidth={fullWidth} banner={isOwner ? <StorageBanner /> : null}>
-        {access.state === "allowed" ? (
+        {offModule && modules && !modules[offModule] ? (
+          <ModuleOff module={offModule} />
+        ) : access.state === "allowed" ? (
           children
         ) : access.state === "denied" ? (
           <NoAccess pageName={access.pageName} ownerOnly={access.ownerOnly} fixedRole={access.fixedRole} />

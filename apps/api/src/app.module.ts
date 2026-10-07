@@ -1,3 +1,4 @@
+import { ModuleGuard } from "./auth/module.guard";
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ZodExceptionFilter } from "./common/zod-exception.filter";
@@ -93,6 +94,8 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     // self-registers its own AuthGuard as a global APP_GUARD) so AuthGuard
     // runs first and populates request.session before this guard reads it
     // — see CapabilityGuard's own doc comment for the full reasoning.
+    // US-SET-24: a switched-off module's routes answer MODULE_OFF before any capability check.
+    { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
     // A body that fails its schema is a 400 with a readable message, not a 500.
     { provide: APP_FILTER, useClass: ZodExceptionFilter },

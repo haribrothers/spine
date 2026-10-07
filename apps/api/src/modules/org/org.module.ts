@@ -1,3 +1,5 @@
+import { ModulesController } from "./modules.controller";
+import { ModulesService } from "./modules.service";
 import { AuditModule } from "../audit/audit.module";
 import { Module } from "@nestjs/common";
 import { TeamsModule } from "../teams/teams.module";
@@ -16,8 +18,8 @@ import { QuoteConversionGuardService } from "./quote-conversion-guard.service";
 
 @Module({
   imports: [TeamsModule, AuditModule],
-  controllers: [SettingsController, AccountsController, InvitationsController, PublicInvitationsController, PublicSignupController, PublicPasswordResetController, MembersController],
-  providers: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService],
-  exports: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService],
+  controllers: [ModulesController, SettingsController, AccountsController, InvitationsController, PublicInvitationsController, PublicSignupController, PublicPasswordResetController, MembersController],
+  providers: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService, ModulesService],
+  exports: [SettingsService, AccountsService, MembersService, QuoteConversionGuardService, IndustryTemplateService, ModulesService],
 })
 export class OrgModule {}

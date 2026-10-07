@@ -80,6 +80,31 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-23, US-SET-24, US-SET-25, US-ONB-14: optional modules (Phase 9)
+
+- **Settings › Modules** (Owner) lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents". Each has a switch, a description of what it includes, and the date it was switched off. A note says the core is always on.
+- Switching a module off asks first: what disappears, and "Nothing is deleted. Switch it back on any time and everything is where you left it."
+- "Jobs & field" can't go off while anyone uses the field app ("<n> people use the field app. Change their role or deactivate them first.").
+- Changes are audited.
+- **Approvals off:** a submitted expense is approved and posted at once, and quote discounts need no approval.
+- **A switched-off module leaves no trace.** It disappears from:
+  - The sidebar, dashboard widgets and attention rows.
+  - The Today card and the digest.
+  - Search's Jobs group, notifications and settings panes.
+  - Reports (Job profitability) and the Teams privilege matrix.
+  - Job pickers, "Convert to job" and a contact's Leads tab.
+- A direct link shows "<Module> is switched off. An owner can switch it on in Settings › Modules.". Its API answers 403 `{ error: "MODULE_OFF" }`, from the web and the mobile app alike.
+- **Recurring documents off:** no recurring invoices or bills are created.
+- **Switching back on:** records, Team grants and settings return as they were. Recurring schedules resume from their next future date, and missed dates are skipped ("Recurring documents were off from <date> to <date>; missed dates were skipped."). Expenses approved while Approvals was off stay approved.
+- **US-ONB-14:**
+  - Construction / Contracting and General Services start with every module on.
+  - Generic starts with Jobs & field off; the wizard says "Jobs are switched off — turn them on in Settings › Modules if you need them."
+  - Changing the template later leaves modules as they are; Settings says so.
+  - Businesses that existed before modules keep everything on (migration `0107`).
+- **For developers:**
+  - One map (`packages/shared/src/modules.ts`) drives the API's `ModuleGuard` and the web's `useModules`. D-190 records the details.
+  - The "AI assistant" row arrives with Settings › AI (US-AI-01).
+
 ### 2026-10-07 — D-189: email messages are rich text (Phase 9)
 
 - The Message in Settings › Emails, the send dialogs and the statement dialog is now the rich text editor: paragraphs, bold, italics, bullet and numbered lists, and links. The Insert buttons put placeholders where the cursor is in the message, as they do in the subject.

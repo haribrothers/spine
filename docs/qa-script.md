@@ -4098,7 +4098,48 @@ Use the GST business from section 175.
    - Default emails look as before.
    - Quote notes and terms editors work as before.
 
+## 184. Optional modules (US-SET-23, US-SET-24, US-SET-25, US-ONB-14, Phase 9)
+
+1. Settings › Modules, as an Owner:
+   - It lists Leads & meetings, Jobs & field, Approvals and Recurring documents, each with a switch and its description.
+   - The note reads "Contacts, quotes, invoices, payments, purchases, banking, tax and reports are always on."
+   - Staff don't see the pane, and `PUT /org/modules` answers 403 for them.
+2. Switch Approvals off:
+   - The confirmation names what disappears and says "Nothing is deleted. …".
+   - "Keep it on" leaves the switch alone. "Switch off", then Save.
+3. With Approvals off:
+   - A Field user's new expense shows Approved, and its entry is in the ledger.
+   - A quote with a 40% discount sends without approval.
+   - The "awaiting approval" attention row is gone.
+4. With an active Field user, switch Jobs & field off and save: "1 person uses the field app. Change their role or deactivate them first." The switch stays on.
+5. Deactivate the Field user, then switch Jobs & field and Leads & meetings off. Check:
+   - The sidebar has no Jobs, Pipeline or Meetings.
+   - `/jobs` and `/meetings` show "<Module> is switched off. An owner can switch it on in Settings › Modules."
+   - The dashboard has no jobs or pipeline widgets, and Today has no meetings or milestones.
+   - Search finds no jobs.
+   - Settings has no Pipeline stages, Upcoming meetings or Meeting reminders.
+   - Reports has no Job profitability.
+   - Teams › Privileges has no Manage Jobs, Leads or Meetings.
+   - Bills, expenses, journals and bank matches have no Job field.
+   - Quotes have no "Convert to job", and contacts have no Leads tab.
+6. On the mobile app, a Field user's job screens get "Jobs & field is switched off …" (API 403 `MODULE_OFF`).
+7. Switch Recurring documents off: no recurring invoices or bills are created that morning. Modules shows "Switched off <date> — schedules are paused."
+8. Switch everything back on:
+   - Jobs, leads, meetings, Team grants and settings are as they were.
+   - The save says "Recurring documents were off from <date> to <date>; missed dates were skipped."
+   - Schedules show their next future date, and nothing is back-filled.
+   - Expenses approved while Approvals was off stay approved; new ones wait for approval.
+9. US-ONB-14:
+   - A new business choosing Generic in the wizard sees "Jobs are switched off — turn them on in Settings › Modules if you need them." and starts without Jobs.
+   - Construction or General Services starts with everything on.
+   - Settings › Industry template says "Modules stay as they are. Change them in Settings › Modules.", and changing it doesn't touch modules.
+10. Regression:
+    - An existing business has every module on.
+    - Owners' and Staff's sidebars still match their rights (US-TEAM-18).
+
 ## Known gaps — don't file these as bugs
+
+- Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

@@ -29,6 +29,7 @@ export function TemplatePane() {
       <IndustryTemplateStep
         initialValue={value.template}
         saveLabel="Save"
+        modulesNote="settings"
         onSave={async (template) => {
           await apiClient.put("/org/settings/industry_template", { value: { template } });
           setSaved(true);

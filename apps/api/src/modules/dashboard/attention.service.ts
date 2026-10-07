@@ -1,3 +1,5 @@
+import { ownedByOffModule } from "@spine/shared";
+import { loadModules } from "../../common/modules";
 import { Inject, Injectable } from "@nestjs/common";
 import { budgetFigures, type AttentionItem, type AttentionKind, type AttentionRecord } from "@spine/shared";
 import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
@@ -49,9 +51,11 @@ export class AttentionService {
     if (role !== "owner" && role !== "staff" && role !== "field") return [];
     const currency = await this.currency(orgId);
     const today = orgClock().date;
+    // US-SET-24: rows a switched-off module owns don't show.
+    const modules = await loadModules(this.db, orgId);
     if (role === "field") {
       const fieldRows = [await this.milestonesDue(orgId, userId, today, currency), await this.expensesRejected(orgId, userId, currency)];
-      return fieldRows.filter((r) => r.count > 0);
+      return fieldRows.filter((r) => r.count > 0 && !ownedByOffModule(modules, "attention", r.kind));
     }
     const can = await getEffectiveCapabilities(this.db, { orgId, userId });
 
@@ -65,7 +69,7 @@ export class AttentionService {
       can["reports.view_job_profitability"] ? await this.jobsOverBudget(orgId, currency) : null,
       role === "staff" ? await this.followupsOverdue(orgId, userId, currency) : null,
     ];
-    return rows.filter((r): r is AttentionItem => r !== null && r.count > 0);
+    return rows.filter((r): r is AttentionItem => r !== null && r.count > 0 && !ownedByOffModule(modules, "attention", r.kind));
   }
 
   private item(kind: AttentionKind, count: number, currency: string, items: AttentionRecord[]): AttentionItem {

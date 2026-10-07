@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import { CONSTRUCTION_ACCOUNTS, CONSTRUCTION_CATEGORIES, industryTemplateSchema, type TemplateSeedResult } from "@spine/shared";
+import { CONSTRUCTION_ACCOUNTS, CONSTRUCTION_CATEGORIES, industryTemplateSchema, templateModules, type TemplateSeedResult } from "@spine/shared";
+import { MODULES_KEY, forgetModules } from "../../common/modules";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
@@ -27,6 +28,12 @@ export class IndustryTemplateService {
         .insert(settings)
         .values({ orgId, key: "industry_template", value: parsed.data })
         .onConflictDoUpdate({ target: [settings.orgId, settings.key], set: { value: parsed.data, updatedAt: new Date() } });
+      // US-ONB-14 (D-154): the template sets modules only for an organisation that has never saved them.
+      const [modules] = await tx.select({ key: settings.key }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, MODULES_KEY)));
+      if (!modules) {
+        await tx.insert(settings).values({ orgId, key: MODULES_KEY, value: templateModules(parsed.data.template) });
+        forgetModules(orgId);
+      }
       if (parsed.data.template !== "construction") return { key: "industry_template", value: parsed.data };
       const seeded = await this.seedConstruction(tx, orgId, actorUserId);
       return { key: "industry_template", value: parsed.data, seeded };

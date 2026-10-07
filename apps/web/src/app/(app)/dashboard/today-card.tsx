@@ -1,5 +1,6 @@
 "use client";
 
+import { useModules } from "../../../lib/modules-context";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, Spinner, cn } from "@spine/ui";
@@ -22,23 +23,28 @@ const BAR: Record<TodayKind, string> = {
  */
 export function TodayCard({ className }: { className?: string }) {
   const [entries, setEntries] = useState<TodayEntry[] | null>(null);
+  const { modules } = useModules();
 
   useEffect(() => {
+    if (!modules) return;
     const safe = <T,>(path: string) => apiClient.get<T[]>(path).catch(() => [] as T[]);
+    // US-SET-24: nothing from a switched-off module.
     void Promise.all([
-      safe<TodayMeeting>("/meetings/upcoming?withinDays=14"),
-      safe<TodayMilestone>("/jobs/milestones/due?withinDays=7"),
+      modules.leadsMeetings ? safe<TodayMeeting>("/meetings/upcoming?withinDays=14") : Promise.resolve([] as TodayMeeting[]),
+      modules.jobsField ? safe<TodayMilestone>("/jobs/milestones/due?withinDays=7") : Promise.resolve([] as TodayMilestone[]),
       safe<TodayFollowup>("/activities/overdue?includeToday=true"),
     ]).then(([meetings, milestones, followups]) => setEntries(buildToday({ meetings, milestones, followups, now: new Date() })));
-  }, []);
+  }, [modules]);
 
   return (
     <Card className={cn("flex flex-col gap-2", className)} data-testid="today-card">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[16px] font-semibold text-on-surface">Today</h2>
-        <Link href="/meetings?view=day" className="text-[13px] text-primary hover:underline">
-          Open calendar
-        </Link>
+        {modules?.leadsMeetings && (
+          <Link href="/meetings?view=day" className="text-[13px] text-primary hover:underline">
+            Open calendar
+          </Link>
+        )}
       </div>
       {!entries ? (
         <div className="flex justify-center py-6">

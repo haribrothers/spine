@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import {
@@ -67,6 +68,8 @@ export function JournalDialog({
   const [lines, setLines] = useState<JournalLineDraft[]>([blank(), blank()]);
   const [accounts, setAccounts] = useState<{ value: string; label: string }[]>([]);
   const [jobs, setJobs] = useState<{ id: string; name: string; number: string | null }[]>([]);
+  // US-SET-24: no Job column while Jobs & field is switched off.
+  const jobsOn = useModule("jobsField");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,7 +162,7 @@ export function JournalDialog({
                   <th className="px-3 py-2 font-medium">Description</th>
                   <th className="px-3 py-2 text-right font-medium">Debit</th>
                   <th className="px-3 py-2 text-right font-medium">Credit</th>
-                  <th className="px-3 py-2 font-medium">Job</th>
+                  {jobsOn && <th className="px-3 py-2 font-medium">Job</th>}
                   <th className="px-1 py-2">
                     <span className="sr-only">Remove</span>
                   </th>
@@ -180,22 +183,24 @@ export function JournalDialog({
                     <td className="w-32 px-3 py-2">
                       <MoneyInput aria-label={`Credit, line ${i + 1}`} value={l.credit} onValueChange={(v) => update(l.key, { credit: v })} currency={currency} />
                     </td>
-                    <td className="min-w-36 px-3 py-2">
-                      <Select value={l.jobId} onValueChange={(v) => update(l.key, { jobId: v })}>
-                        <SelectTrigger aria-label={`Job, line ${i + 1}`}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={NO_JOB}>—</SelectItem>
-                          {jobs.map((j) => (
-                            <SelectItem key={j.id} value={j.id}>
-                              {j.number ? `${j.number} · ` : ""}
-                              {j.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </td>
+                    {jobsOn && (
+                      <td className="min-w-36 px-3 py-2">
+                        <Select value={l.jobId} onValueChange={(v) => update(l.key, { jobId: v })}>
+                          <SelectTrigger aria-label={`Job, line ${i + 1}`}>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={NO_JOB}>—</SelectItem>
+                            {jobs.map((j) => (
+                              <SelectItem key={j.id} value={j.id}>
+                                {j.number ? `${j.number} · ` : ""}
+                                {j.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
+                    )}
                     <td className="px-1 py-2">
                       {lines.length > 2 && (
                         <Button variant="ghost" size="icon" aria-label={`Remove line ${i + 1}`} onClick={() => setLines((ls) => ls.filter((x) => x.key !== l.key))}>

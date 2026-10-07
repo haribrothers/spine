@@ -1,3 +1,5 @@
+import { capabilitiesOff } from "@spine/shared";
+import { loadModules } from "../common/modules";
 import { ForbiddenException } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { CAPABILITIES, type Capability } from "@spine/shared";
@@ -190,7 +192,19 @@ export async function requireOwnershipCapability(
  * Staff, since calling it `CAPABILITIES.length` times would be
  * `CAPABILITIES.length` separate queries for what's really one join.
  */
+/**
+ * US-SET-24 (D-154) — what this member can use now: a switched-off module's
+ * capabilities read as false. Their Team grants are kept (and come back with
+ * the module); the module's routes are refused by `ModuleGuard` either way.
+ */
 export async function getEffectiveCapabilities(db: Database, actor: { orgId: string; userId: string }): Promise<Record<Capability, boolean>> {
+  const granted = await grantedCapabilities(db, actor);
+  const off = capabilitiesOff(await loadModules(db, actor.orgId));
+  if (off.size === 0) return granted;
+  return Object.fromEntries(Object.entries(granted).map(([c, on]) => [c, on && !off.has(c as Capability)])) as Record<Capability, boolean>;
+}
+
+async function grantedCapabilities(db: Database, actor: { orgId: string; userId: string }): Promise<Record<Capability, boolean>> {
   const allFalse = Object.fromEntries(CAPABILITIES.map((c) => [c, false])) as Record<Capability, boolean>;
 
   const [membership] = await db

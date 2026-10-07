@@ -1,3 +1,4 @@
+import { orgsWithModuleOff } from "../../common/modules";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { createInvoiceSchema, occurrenceAfter, scheduleFinished } from "@spine/shared";
 import { and, asc, count, eq, lte } from "drizzle-orm";
@@ -54,8 +55,11 @@ export class RecurringInvoiceRunService {
       .from(recurringInvoices)
       .where(and(eq(recurringInvoices.status, "active"), lte(recurringInvoices.nextRunOn, today)))
       .orderBy(asc(recurringInvoices.nextRunOn));
+    // Skipped while Recurring documents is switched off (D-154); schedules keep their dates.
+    const off = await orgsWithModuleOff(this.db, "recurring");
     const created: string[] = [];
     for (const schedule of due) {
+      if (off.has(schedule.orgId)) continue;
       try {
         const id = await this.runSchedule(schedule, today);
         if (id) created.push(id);

@@ -750,6 +750,13 @@
       "when": 1791363932747,
       "tag": "0106_upi_qr_amount",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1791388915673,
+      "tag": "0107_modules_for_existing_installs",
+      "breakpoints": true
     }
   ]
 }

@@ -55,7 +55,9 @@ export type AuditEntityType =
   // US-TAX-16: GSTR-1 files downloaded (entity id is the organisation's).
   | "gstr1_export"
   // US-RPT-38: Tally exports downloaded (entity id is the organisation's).
-  | "tally_export";
+  | "tally_export"
+  // US-SET-23: modules switched on or off (entity id is the organisation's).
+  | "modules";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

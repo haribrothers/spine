@@ -62,7 +62,11 @@ export function TimelineSection({ contactId }: { contactId: string }) {
   useEffect(() => {
     apiClient.get<QuoteSummary[]>(`/quotes?contactId=${contactId}`).then(setQuotes);
     apiClient.get<Activity[]>(`/activities?contactId=${contactId}`).then(setActivities);
-    apiClient.get<Meeting[]>(`/meetings?contactId=${contactId}`).then(setMeetings);
+    // US-SET-24: no meetings while Leads & meetings is switched off.
+    apiClient
+      .get<Meeting[]>(`/meetings?contactId=${contactId}`)
+      .then(setMeetings)
+      .catch(() => setMeetings([]));
   }, [contactId]);
 
   const items = useMemo<TimelineItemData[] | null>(() => {
