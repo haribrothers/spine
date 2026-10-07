@@ -409,7 +409,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TAX-16 · Export GSTR-1 for the GST portal
 - [x] US-TAX-17 · Check GSTR-1 figures before uploading
 - [x] US-RPT-37 · See tax collected and paid by rate and tax type
-- [ ] US-RPT-38 · Export my books for Tally
+- [x] US-RPT-38 · Export my books for Tally
 - [x] US-RPT-39 · Map my accounts to Tally groups
 - [x] US-SET-17 · Choose paper size and columns for each document
 - [x] US-SET-18 · Set each document's title, terms and notes

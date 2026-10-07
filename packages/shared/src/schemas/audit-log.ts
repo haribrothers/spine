@@ -45,6 +45,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   opening_balances: "Opening balances",
   manual_journal: "Journal",
   gstr1_export: "GSTR-1 file",
+  tally_export: "Tally export",
 };
 
 function sentenceCase(key: string): string {

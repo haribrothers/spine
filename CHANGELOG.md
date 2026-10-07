@@ -80,6 +80,24 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-RPT-38: export my books for Tally (Phase 9)
+
+- Reports › Export to Tally (Accountant group): choose From and To and press "Export". A ZIP downloads with `masters.xml`, `vouchers.xml` and `README.txt`.
+- The README says how to import (Gateway of Tally › Import › Masters, then Transactions; Tally.ERP 9's menus too) and lists the accounts still on their default group.
+- The page shows:
+  - Ledgers, vouchers, and the number of accounts on default groups (with "review the mapping").
+  - Each Spine document with its Tally voucher type and count.
+- Masters: every account used in the range is a ledger under its mapped group (US-RPT-39). Customers are under Sundry Debtors and vendors under Sundry Creditors, bill-wise, with address, state, GSTIN and GST registration type.
+- Vouchers come from the ledger (one per journal entry, always balanced):
+  - Invoices → Sales; bills → Purchase.
+  - Customer payments and money in → Receipt; vendor payments, refunds, expenses and money out → Payment.
+  - Transfers → Contra.
+  - Journals, opening balances and voids → Journal.
+  - Credit notes → Credit Note; vendor credits → Debit Note.
+- Bill-wise references name the invoice or bill (New Ref, Agst Ref, or On Account).
+- Downloads are audited. `GET /exports/tally` needs "View financial statements".
+- Sample files for an import check are in `docs/samples/tally/`; a test keeps them equal to what the export writes. D-186 and R-16 record the format choices.
+
 ### 2026-10-07 — US-RPT-39: map my accounts to Tally groups (Phase 9)
 
 - Reports › Export to Tally › Account mapping lists every account with its code, its Spine type and a "Tally group" picker of Tally's predefined groups. You can filter by account type and search.

@@ -53,7 +53,9 @@ export type AuditEntityType =
   // US-RPT-20/21: manual journals posted and reversed.
   | "manual_journal"
   // US-TAX-16: GSTR-1 files downloaded (entity id is the organisation's).
-  | "gstr1_export";
+  | "gstr1_export"
+  // US-RPT-38: Tally exports downloaded (entity id is the organisation's).
+  | "tally_export";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

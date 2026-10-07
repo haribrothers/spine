@@ -14,6 +14,8 @@ import { OrgModule } from "../org/org.module";
 import { ReportExportService } from "./export/report-export.service";
 import { TallyController } from "./tally/tally.controller";
 import { TallyMappingService } from "./tally/tally-mapping.service";
+import { TallyExportService } from "./tally/tally-export.service";
+import { AuditModule } from "../audit/audit.module";
 
 /**
  * PRD F9 (Phase 2 · Money In half) — S-06.7 / S-09.5's receivables-with-
@@ -22,9 +24,9 @@ import { TallyMappingService } from "./tally/tally-mapping.service";
  * module rather than a new one.
  */
 @Module({
-  imports: [NotificationsModule, OrgModule, FilesModule],
+  imports: [NotificationsModule, OrgModule, FilesModule, AuditModule],
   controllers: [ReportsController, TallyController],
-  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService, ReportExportService, TallyMappingService],
+  providers: [ReportsService, LedgerIntegrityService, LedgerReportsService, LedgerSourcesService, CashFlowService, AnalysisReportsService, RegistersService, CashBasisService, ReportExportService, TallyMappingService, TallyExportService],
   exports: [ReportsService, LedgerSourcesService, ReportExportService, AnalysisReportsService, CashBasisService],
 })
 export class ReportsModule {}

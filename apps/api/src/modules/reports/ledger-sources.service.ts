@@ -158,6 +158,7 @@ export class LedgerSourcesService {
         sourceId: ref.sourceId,
         label: f?.number ? `${name} ${f.number}` : name,
         href: isOpeningBalance ? "/opening-balances" : (f?.href ?? null),
+        number: f?.number ?? null,
       });
     }
     return out;

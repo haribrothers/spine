@@ -3995,7 +3995,37 @@ Use the GST business from section 175.
 6. As Staff with "View financial statements" the pickers are read-only and the page says "Only an Owner can change the mapping." Field users can't open it.
 7. Check light and dark mode, and that the pickers work by keyboard.
 
+## 179. Export to Tally (US-RPT-38, Phase 9)
+
+1. In a business with, this month:
+   - An issued invoice, and a customer payment against it.
+   - A credit note.
+   - A recorded bill, and a vendor payment against it.
+   - A vendor credit.
+   - A transfer.
+   - An approved expense.
+   - A manual journal.
+2. Reports › Export to Tally (Accountant group):
+   - The subtitle reads "A file your accountant imports into TallyPrime or Tally.ERP 9."
+   - From defaults to 1 April for a rupee business (1 January otherwise).
+3. The cards show ledgers, vouchers and "Accounts on default groups" with "review the mapping".
+4. The table lists each Spine document with its Tally voucher type (Sales, Purchase, Receipt, Payment, Contra, Journal, Credit Note, Debit Note) and count, with a total.
+5. "Account mapping" opens the mapping (section 178). Change Rent to Direct Expenses and save, then come back.
+6. Press Export. `tally-<from>-<to>.zip` downloads with masters.xml, vouchers.xml and README.txt.
+7. Check the files:
+   - Every account used is a LEDGER under its group (Rent under Direct Expenses).
+   - Customers are under Sundry Debtors and vendors under Sundry Creditors, with address, state and GSTIN.
+   - Invoices are Sales with a New Ref bill; payments are Receipt with an Agst Ref to the invoice.
+   - The README lists the accounts on defaults.
+8. **Manual, outside Spine, before each release:**
+   - Import `docs/samples/tally/masters.xml`, then `vouchers.xml`, into a test company in TallyPrime 6.x or 7.x and in Tally.ERP 9. Both import without errors (R-16).
+   - Then import a real export and compare Tally's Trial Balance with Spine's for the same dates.
+9. As Staff with "View financial statements" you can export but not change the mapping. Field users can't open it.
+10. The audit log shows "Tally export · Downloaded".
+
 ## Known gaps — don't file these as bugs
+
+- The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.
 
 
 - GSTR-1 goods lines use the unit `OTH` in the HSN summary because Spine's lines have no unit yet, and services use `NA` (D-184). Shipping bill details aren't captured, so exports have none. Advances received (Table 11) and amendments to earlier returns aren't in the file.
