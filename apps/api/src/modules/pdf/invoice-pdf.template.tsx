@@ -7,6 +7,9 @@ import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pageP
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
 import { DocumentLinesTable } from "./document-lines";
 import { AmountInWordsLine, SignatureBlock } from "./document-extras";
+import { ExportNote, GstCustomerLines, GstTotalsRows, PlaceOfSupplyBlock } from "./gst-blocks";
+import type { GstPdfContext } from "./gst-document";
+import { TaxSummaryTable } from "./tax-summary";
 
 export interface InvoicePdfBusinessProfile {
   name: string;
@@ -27,15 +30,19 @@ export function invoicePaymentInstructions(invoice: { status: string; paymentIns
 
 /**
  * The invoice's printed title: Settings › Documents' title, unless GST
- * applies — then GST's own "Tax Invoice" wins (US-SET-18, US-TAX-15).
+ * applies — then GST's own wins (US-SET-18, US-TAX-15): "Tax Invoice", or
+ * "Bill of Supply" when every line is exempt or non-taxable.
  */
-export function invoiceTitle(invoice: { supplyType: string | null }, title: string): string {
-  return (invoice.supplyType ? "Tax Invoice" : title).toUpperCase();
+export function invoiceTitle(invoice: { supplyType: string | null }, title: string, billOfSupply = false): string {
+  if (!invoice.supplyType) return title.toUpperCase();
+  return billOfSupply ? "BILL OF SUPPLY" : "TAX INVOICE";
 }
 
 export interface InvoicePdfData {
   /** US-SET-19 — the signature image, when this document type shows it. */
   signatureDataUri?: string;
+  /** US-TAX-15 — GSTINs, place of supply and the tax split, for a GST invoice; absent otherwise. */
+  gst?: GstPdfContext | null;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -126,7 +133,7 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, layout: givenLayout }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, gst, layout: givenLayout }: InvoicePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "invoice");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
@@ -145,11 +152,13 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             {logoDataUri && <Image src={logoDataUri} style={styles.logo} />}
             <View>
               <Text style={styles.businessName}>{business?.name ?? "Your business"}</Text>
-              {business?.address && <Text style={styles.businessMeta}>{business.address}</Text>}
+              {(business?.address || gst?.business.gstin) && (
+                <Text style={styles.businessMeta}>{[business?.address, gst?.business.gstin ? `GSTIN ${gst.business.gstin}` : null].filter(Boolean).join(" · ")}</Text>
+              )}
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : invoiceTitle(invoice, layout.title)}</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : invoiceTitle(invoice, layout.title, gst?.billOfSupply)}</Text>
             <Text style={styles.docNumber}>{invoice.number ?? "DRAFT"}</Text>
             {claimLabel && <Text style={styles.docNumber}>{claimLabel}</Text>}
           </View>
@@ -160,7 +169,13 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             <Text style={styles.sectionLabel}>Billed to</Text>
             <Text style={styles.contactName}>{contactName ?? "—"}</Text>
             {contactEmail && <Text style={styles.businessMeta}>{contactEmail}</Text>}
+            {gst && <GstCustomerLines gst={gst} />}
           </View>
+          {gst && (
+            <View style={styles.metaCol}>
+              <PlaceOfSupplyBlock gst={gst} />
+            </View>
+          )}
           <View style={styles.metaCol}>
             <Text style={styles.sectionLabel}>Date issued</Text>
             <Text style={styles.lineName}>{formatDate(invoice.issuedAt ?? invoice.issueDate ?? invoice.createdAt)}</Text>
@@ -173,23 +188,31 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
           </View>
         </View>
 
-        <DocumentLinesTable lines={lines} columns={layout.columns} fmt={fmt} showHsn={invoice.supplyType !== null} showDiscount={true} />
+        {gst && <ExportNote gst={gst} />}
+
+        <DocumentLinesTable lines={lines} columns={layout.columns} fmt={fmt} showHsn={invoice.supplyType !== null} showDiscount={!gst} gstTaxes={gst?.lineTaxes} />
 
         <View style={styles.totalsBlock}>
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Subtotal</Text>
-            <Text style={styles.totalsValue}>{fmt(invoice.subtotalAmount)}</Text>
-          </View>
-          {invoice.discountAmount > 0n && (
-            <View style={styles.totalsRow}>
-              <Text style={styles.totalsLabel}>Discount</Text>
-              <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.discountAmount))}</Text>
-            </View>
+          {gst ? (
+            <GstTotalsRows lines={lines} gst={gst} fmt={fmt} />
+          ) : (
+            <>
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Subtotal</Text>
+                <Text style={styles.totalsValue}>{fmt(invoice.subtotalAmount)}</Text>
+              </View>
+              {invoice.discountAmount > 0n && (
+                <View style={styles.totalsRow}>
+                  <Text style={styles.totalsLabel}>Discount</Text>
+                  <Text style={styles.totalsValue}>{fmt(-BigInt(invoice.discountAmount))}</Text>
+                </View>
+              )}
+              <View style={styles.totalsRow}>
+                <Text style={styles.totalsLabel}>Tax</Text>
+                <Text style={styles.totalsValue}>{fmt(invoice.taxAmount)}</Text>
+              </View>
+            </>
           )}
-          <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabel}>Tax</Text>
-            <Text style={styles.totalsValue}>{fmt(invoice.taxAmount)}</Text>
-          </View>
           <View style={styles.grandTotalRow}>
             <Text style={styles.grandTotalLabel}>Total</Text>
             <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(invoice.totalAmount)}</Text>
@@ -229,6 +252,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
         </View>
 
         {layout.amountInWords && <AmountInWordsLine words={amountInWords(invoice.totalAmount - invoice.retentionAmount, invoice.currency)} />}
+        {layout.taxSummary && <TaxSummaryTable lines={lines} fmt={fmt} gstTaxes={gst?.lineTaxes} />}
 
         {paymentInstructions && (
           <View style={styles.howToPay} wrap={false}>

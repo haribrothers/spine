@@ -80,6 +80,22 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-15: print GST details on invoices and credit notes (Phase 9)
+
+- With GST on (the document has a supply type), the invoice PDF follows the GST rules:
+  - It's titled "TAX INVOICE", or "BILL OF SUPPLY" when every line is exempt or non-taxable.
+  - The header shows the business's address and GSTIN.
+  - "Billed to" adds the customer's address and their GSTIN when they're registered or an SEZ unit.
+  - A "Place of supply" block reads, for example, "Karnataka (29) · Intra-state supply" (or Inter-state supply, or Export).
+  - Each line shows its HSN/SAC, a "Taxable value", and its tax split into CGST and SGST (or UTGST, or IGST, plus any cess). Column headings carry the rate when every line has the same one, e.g. "CGST 9%".
+  - The totals list the taxable value and each tax instead of subtotal, discount and tax.
+- Exports say "Supply meant for export with payment of IGST", or "… under LUT without payment of IGST" (D-181), with the overseas address.
+- Credit notes show the same GST details, plus the original invoice's number and date.
+- With "Tax summary table" on (Settings › Documents), an HSN-wise summary follows the lines: taxable value, each tax and the total tax. Without GST, the summary is by rate.
+- Without a GST profile nothing changes: the PDF keeps its Subtotal/Discount/Tax totals and its title.
+- A line's tax is split in proportion to its rates and always adds back up to the line's tax (`splitLineTax` in `@spine/shared`).
+- The PDF test helper now reads each stream by its declared length, because compressed bytes can contain "endobj". This also steadies the US-SET-10 and US-RPT-33 checks.
+
 ### 2026-10-07 — US-SET-19: add a signature and the amount in words (Phase 9)
 
 - **Signature:** Settings › Documents takes a PNG or JPEG signature ("Upload signature", "Replace signature", "Remove signature").

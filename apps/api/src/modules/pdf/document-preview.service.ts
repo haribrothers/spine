@@ -1,6 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout, type DocumentType, type TaxProfile } from "@spine/shared";
+import { resolveDocumentBranding, resolveDocumentLayout, splitLineTax, type DocumentLayout, type DocumentType, type TaxProfile } from "@spine/shared";
+import type { GstPdfContext } from "./gst-document";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { orgMoneySettings } from "../../common/money-format";
@@ -53,6 +54,18 @@ export class DocumentPreviewService {
     const common = { business, branding, locale, layout, signatureDataUri, contactName: "Lakeview Homes", contactEmail: "accounts@lakeview.example" };
     // A GST business previews its GST columns (US-TAX-15): the documents carry a supply type.
     const supply = { placeOfSupply: gst ? (profile.stateCode as string) : null, supplyType: gst ? ("intra" as const) : null };
+    const halves = [{ taxType: "cgst" as const, rate: 9 }, { taxType: "sgst" as const, rate: 9 }];
+    const gstContext: GstPdfContext | null = gst
+      ? {
+          business: { gstin: (profile.registrationNumber as string) ?? null, stateCode: profile.stateCode as string, legalName: (profile.legalName as string) ?? null },
+          customer: { gstin: null, address: "8 Indiranagar 2nd Stage, Bengaluru 560038", country: null },
+          placeOfSupply: profile.stateCode as string,
+          supplyType: "intra",
+          exportUnderLut: false,
+          lineTaxes: { a: splitLineTax(3240000n, halves), b: splitLineTax(405000n, halves) },
+          billOfSupply: false,
+        }
+      : null;
 
     switch (type) {
       case "quote":
@@ -62,6 +75,7 @@ export class DocumentPreviewService {
           InvoicePdfDocument({
             ...common,
             lines,
+            gst: gstContext,
             invoice: { id: "i", number: "INV-0142", type: "standard", status: "issued", currency, issueDate: "2026-10-05", dueDate: "2026-10-20", issuedAt: NOW, createdAt: NOW, amountPaid: 0n, creditedAmount: 0n, retentionAmount: 0n, paymentInstructions: business.paymentInstructions ?? null, notes: layout.notes || null, termsAndConditions: layout.terms || null, ...supply, ...TOTALS } as never,
           }),
         );
@@ -71,6 +85,8 @@ export class DocumentPreviewService {
             ...common,
             lines: (lines as { discountPercentage: number }[]).map((l) => ({ ...l, discountPercentage: undefined })) as never,
             invoiceNumber: "INV-0142",
+            invoiceDate: "2026-10-05",
+            gst: gstContext,
             creditNote: { id: "c", number: "CN-0007", status: "issued", currency, date: "2026-10-12", issuedAt: NOW, createdAt: NOW, reason: "Two cabinet doors returned", ...supply, ...TOTALS, discountAmount: 0n } as never,
           }),
         );

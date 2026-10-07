@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { inflateSync } from "node:zlib";
 import { eq, inArray } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { MoneyAccount } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
 import { accounts, member, user } from "../../db/schema";
-import { pdfText } from "../../test-utils/pdf-text";
+import { pdfStreams, pdfText } from "../../test-utils/pdf-text";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 
 type Who = { cookie: string; userId: string };
@@ -85,14 +84,7 @@ describe("US-RPT-33 · download any report as a PDF (requires local Postgres)", 
   it("is light: white page, dark text", async () => {
     const { buf } = await pdf(`/reports/trial-balance?asOf=2026-12-31&format=pdf`);
     expect(pdfText(buf)).toContain("Trial Balance");
-    let fills = "";
-    for (const m of buf.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-      try {
-        fills += inflateSync(Buffer.from(m[1]!, "latin1")).toString("latin1");
-      } catch {
-        // not a content stream
-      }
-    }
+    const fills = pdfStreams(buf).join("\n");
     expect(fills).toMatch(/1 1 1 (rg|scn)/);
     expect(fills).not.toMatch(/0\.0\d+ 0\.0\d+ 0\.0\d+ (rg|scn)[\s\S]*re f/);
   });

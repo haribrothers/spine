@@ -7,6 +7,7 @@ import { contacts, creditNoteLines, creditNotes, invoices } from "../../db/schem
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
 import { loadSignatureDataUri } from "./signature";
+import { loadGstContext } from "./gst-document";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
 import { resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
@@ -25,7 +26,7 @@ export class CreditNotePdfService {
 
   async render(orgId: string, creditNoteId: string): Promise<{ buffer: Buffer; filename: string }> {
     const [row] = await this.db
-      .select({ creditNote: creditNotes, invoiceNumber: invoices.number, contactName: contacts.name, contactEmail: contacts.email })
+      .select({ creditNote: creditNotes, invoiceNumber: invoices.number, invoiceDate: invoices.issueDate, contactName: contacts.name, contactEmail: contacts.email })
       .from(creditNotes)
       .leftJoin(invoices, eq(creditNotes.invoiceId, invoices.id))
       .leftJoin(contacts, eq(creditNotes.contactId, contacts.id))
@@ -57,6 +58,9 @@ export class CreditNotePdfService {
         creditNote: row.creditNote,
         lines,
         invoiceNumber: row.invoiceNumber,
+        invoiceDate: row.invoiceDate,
+        // US-TAX-15: the same GST details as its invoice.
+        gst: await loadGstContext(this.db, orgId, row.creditNote, lines),
         contactName: row.contactName,
         contactEmail: row.contactEmail,
         business,

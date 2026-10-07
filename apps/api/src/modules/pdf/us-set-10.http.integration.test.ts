@@ -2,13 +2,12 @@ import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { inflateSync } from "node:zlib";
 import { and, eq, inArray, isNull } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createInvoiceSchema } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
 import { contacts, creditNotes, member, payments, quotes, user } from "../../db/schema";
-import { pdfText } from "../../test-utils/pdf-text";
+import { pdfStreams, pdfText } from "../../test-utils/pdf-text";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { loadEmailBrand } from "../email/email-brand";
 import { InvoicesService } from "../invoices/invoices.service";
@@ -18,13 +17,7 @@ import { IssuedPdfService } from "./issued-pdf.service";
 /** True when some content stream sets the fill colour to `hex` (`r g b scn` in DeviceRGB, within rounding). */
 function usesFill(buf: Buffer, hex: string): boolean {
   const want = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  for (const m of buf.toString("latin1").matchAll(/stream\r?\n([\s\S]*?)\r?\nendstream/g)) {
-    let content: string;
-    try {
-      content = inflateSync(Buffer.from(m[1]!, "latin1")).toString("latin1");
-    } catch {
-      continue;
-    }
+  for (const content of pdfStreams(buf)) {
     for (const c of content.matchAll(/([\d.]+) ([\d.]+) ([\d.]+) (?:rg|scn)\b/g)) {
       if ([1, 2, 3].every((i) => Math.abs(Number(c[i]) - want[i - 1]!) < 0.01)) return true;
     }

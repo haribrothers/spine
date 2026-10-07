@@ -3826,6 +3826,27 @@ Regression: existing quote, invoice, credit note, receipt and statement PDFs loo
 6. As Staff, the signature image opens from its file link; as Field, it doesn't.
 7. Rupee check: ₹2,41,900.00 reads "Rupees Two Lakh Forty-One Thousand Nine Hundred Only"; ₹12,500.50 reads "Rupees Twelve Thousand Five Hundred and Fifty Paise Only".
 
+## 171. GST invoices and credit notes (US-TAX-15, Phase 9)
+
+Use an Indian business with GST state Karnataka (29) and GSTIN 29AAACK0000A1ZK.
+
+1. Invoice a registered Karnataka customer for two items on GST 18% with HSN codes, issue it and open the PDF:
+   - It's titled TAX INVOICE.
+   - Your GSTIN prints beside your address; their address and GSTIN print under their name.
+   - "Place of supply: Karnataka (29) · Intra-state supply".
+   - Columns: HSN/SAC, Qty, Unit price, Taxable value, CGST 9%, SGST 9%, Amount.
+   - Totals: Taxable value, CGST 9%, SGST 9%, Total.
+   - The CGST and SGST amounts add up to the line's tax.
+2. Invoice a Maharashtra customer with IGST 18%: "Inter-state supply" and an IGST 18% column; no CGST.
+3. Mix 5% and 18% lines: the CGST/SGST headings drop the rate, and each cell shows its own rate under the amount.
+4. Export to an overseas customer:
+   - "Supply meant for export with payment of IGST", with their full overseas address and "Other countries (96)".
+   - With "We export under LUT" on (Settings › GST), it reads "… under LUT without payment of IGST".
+5. Invoice with only exempt and non-taxable lines: BILL OF SUPPLY.
+6. Settings › Documents › Invoices › tick "Tax summary table": an HSN/SAC table follows the lines (Taxable value, CGST, SGST, Total tax).
+7. Issue a credit note on the first invoice: CREDIT NOTE, with the same GST details and "Against invoice INV-… dated …".
+8. In a business without GST: PDFs look as before (Subtotal, Discount, Tax; no GSTIN or place of supply). Ticking "Tax summary table" there gives a summary by rate.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
