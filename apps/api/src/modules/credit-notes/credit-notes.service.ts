@@ -346,7 +346,7 @@ export class CreditNotesService {
       const toAr = existing.totalAmount < balance ? existing.totalAmount : balance > 0n ? balance : 0n;
       const excess = existing.totalAmount - toAr;
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "credit_note");
+      const number = await this.numbering.allocateNumber(tx, orgId, "credit_note", { demo: existing.isDemo });
       const issuedAt = new Date();
       const dateStr = issuedAt.toISOString().slice(0, 10);
 

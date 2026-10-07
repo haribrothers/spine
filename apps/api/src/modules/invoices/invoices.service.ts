@@ -576,7 +576,7 @@ export class InvoicesService {
     }
 
     const result = await this.db.transaction(async (tx) => {
-      const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
+      const number = await this.numbering.allocateNumber(tx, orgId, "invoice", { demo: job.isDemo });
       const issuedAt = new Date();
       const issueDateStr = issuedAt.toISOString().slice(0, 10);
 
@@ -819,7 +819,7 @@ export class InvoicesService {
         throw new BadRequestException("Cannot issue an invoice with a zero or negative total");
       }
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
+      const number = await this.numbering.allocateNumber(tx, orgId, "invoice", { demo: existing.isDemo });
       const issuedAt = new Date();
       // D-185 (Q-20): the entry is dated on the invoice's issue date, so a backdated invoice lands in the
       // same period in the ledger, the Tax Summary and GSTR-1. A date in a closed period is refused.

@@ -2,7 +2,7 @@ import { BadRequestException, Inject, Injectable, InternalServerErrorException }
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, journalEntries, journalLines, moneyAccounts } from "../../db/schema";
+import { accounts, bankReconciliations, bankStatementLineMatches, bankStatementLines, creditNotes, expenses, invoices, journalEntries, journalLines, moneyAccounts, payments, vendorBills, vendorPayments } from "../../db/schema";
 import { RECONCILED_ENTRY_LOCKED } from "@spine/shared";
 import { orgMoneySettings } from "../../common/money-format";
 import { PeriodsService } from "./periods.service";
@@ -43,7 +43,23 @@ export interface PostEntryInput {
   sourceType: string;
   sourceId: string;
   lines: PostingLine[];
+  /** US-ONB-17 (D-191) — set by a reversal from its original; otherwise read from the source document. */
+  isDemo?: boolean;
 }
+
+/**
+ * US-ONB-17 (D-191) — the documents that can be demo data, by the source
+ * type they post under. Voids, deletes and credit applied post under the
+ * document's own type with a suffix and the document's id.
+ */
+const DEMO_SOURCES = [
+  { prefix: "credit_note", table: creditNotes },
+  { prefix: "vendor_payment", table: vendorPayments },
+  { prefix: "vendor_bill", table: vendorBills },
+  { prefix: "invoice", table: invoices },
+  { prefix: "payment", table: payments },
+  { prefix: "expense", table: expenses },
+] as const;
 
 /**
  * The one place that writes `journal_entries`/`journal_lines` — every
@@ -147,6 +163,7 @@ export class LedgerService {
       );
     }
 
+    const isDemo = input.isDemo ?? (await this.isDemoSource(tx, input.sourceType, input.sourceId));
     const [entry] = await tx
       .insert(journalEntries)
       .values({
@@ -155,6 +172,7 @@ export class LedgerService {
         narration: input.narration ?? null,
         sourceType: input.sourceType,
         sourceId: input.sourceId,
+        isDemo,
       })
       .returning();
 
@@ -191,8 +209,10 @@ export class LedgerService {
       throw new InternalServerErrorException(`Cannot reverse journal entry ${originalEntryId} — it has no lines`);
     }
     await this.releaseFromReconciliations(tx, reversal.orgId, originalLines);
+    const [original] = await tx.select({ isDemo: journalEntries.isDemo }).from(journalEntries).where(eq(journalEntries.id, originalEntryId));
 
     const reversedEntryId = await this.postEntry(tx, {
+      isDemo: original?.isDemo ?? false,
       orgId: reversal.orgId,
       date: reversal.date,
       narration: reversal.narration,
@@ -210,6 +230,14 @@ export class LedgerService {
     await tx.update(journalEntries).set({ reversedById: reversedEntryId }).where(eq(journalEntries.id, originalEntryId));
 
     return reversedEntryId;
+  }
+
+  /** Whether the document an entry is posted for is demo data (US-ONB-17). */
+  private async isDemoSource(tx: Transaction, sourceType: string, sourceId: string): Promise<boolean> {
+    const source = DEMO_SOURCES.find((s) => sourceType === s.prefix || sourceType.startsWith(`${s.prefix}_`));
+    if (!source) return false;
+    const [row] = await tx.select({ isDemo: source.table.isDemo }).from(source.table).where(eq(source.table.id, sourceId));
+    return row?.isDemo ?? false;
   }
 
   /**

@@ -533,7 +533,7 @@ export class QuotesService {
         throw new BadRequestException("This quote's discount requires owner approval before it can be sent");
       }
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "quote");
+      const number = await this.numbering.allocateNumber(tx, orgId, "quote", { demo: existing.isDemo });
       await tx
         .update(quotes)
         // emailStatus: "pending" here, not left null — the detail page

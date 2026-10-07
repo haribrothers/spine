@@ -7,7 +7,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums 
 - Business tables carry `id uuid` (random), `org_id` (→ `organization`, every query is scoped by it), `created_at`, `updated_at`. Better Auth tables (`user`, `session`, `account`, `verification`, `organization`, `member`, `invitation`, `jwks`) use text ids.
 - Money: `*_amount bigint` in minor units + a `currency` / `*_currency` text code ([D-004](12-decisions.md)). Quantities and percentages: `numeric` by decision; today several are `real` (rates, quantities, discount/tax percentages, retention, milestone amounts) until US-TAX-07 migrates them.
 - Ownership: the stable creator column is `created_by_user_id` (`submitted_by_user_id` for expenses, `organizer_user_id` for meetings). It is set once and never reassigned ([D-018](12-decisions.md)). Reassignable people fields (`leads.owner_user_id`, `activities.assigned_to_user_id`) never decide edit rights.
-- Demo data: `is_demo boolean` marks seeded rows so "Delete all demo data" removes exactly them.
+- Demo data: `is_demo boolean` marks seeded rows so "Delete all demo data" removes exactly them. A quote, invoice, payment, credit note, vendor bill, vendor payment or job saved for a demo contact, and an expense on a demo job, is demo too (trigger, US-ONB-17). Demo documents number from their own series and their journal entries carry `is_demo`, so deleting demo data leaves nothing in the books or the number series ([D-191](12-decisions.md)).
 - Soft states over deletes: master data is archived (`archived_at`); financial documents are never deleted once issued — only voided or credited.
 - Settings are key/value rows in `settings` (`org_id`, `key`, `value jsonb`). Keys in use: `business_profile`, `industry_template`, `currency`, `default_tax_rate`, `prices_include_tax`, `discount_approval_threshold`, `quote_conversion_guard`, `dashboard_meetings_scope`, `meeting_reminder_lead_minutes`, `industry_template_seed` (US-ONB-13: what the Construction template last set up, `{ accounts, categories, kept }`), plus onboarding/checklist state.
 
@@ -20,7 +20,7 @@ PostgreSQL 16, Drizzle schema in `apps/api/src/db/schema/` (56 tables, 29 enums 
 | I3 | Each journal line is one-sided | Check `journal_lines_one_sided` |
 | I4 | Payment allocations never exceed the payment amount or the invoice balance | Trigger (`0020_payment_allocation_limits.sql`) |
 | I5 | Vendor payment allocations never exceed the payment or the bill balance | Trigger (`0029_vendor_payment_allocation_limits.sql`) |
-| I6 | Document numbers are unique per org and type and allocated under a row lock | `number_sequences` + service transaction |
+| I6 | Document numbers are unique per org and type and allocated under a row lock; demo documents count in their own `is_demo` series (D-191) | `number_sequences` + service transaction |
 | I7 | `(meeting_id, occurrence_date)` is unique in `meeting_occurrence_exceptions` | Unique constraint |
 | I8 | Issued invoices, sent quotes, recorded vendor bills and issued credit notes are never updated except status/void fields | Service layer (tested) |
 | I9 | Milestone percentages on a job total 100 before any write | Service layer (tested) |
@@ -140,6 +140,9 @@ New schema the stories require. Each is created by the story named; until then i
 | `ai_requests` (new) | `id`, `org_id`, `user_id`, `feature` (`read_document`/`draft_email`/`draft_quote_lines`/`bank_suggestions`), `entity_type?`, `entity_id?`, `provider`, `model`, `input_tokens`, `output_tokens`, `duration_ms`, `outcome` (`ok`/`error`/`timeout`/`budget`/`rate_limited`), `error_code?`, `created_at`; index (`org_id`, `created_at`). No prompt or reply text | US-AI-04, US-AI-06 |
 | `vendor_bills`, `expenses`, `quotes` | `ai_assisted boolean not null default false` (saved after AI filled fields) | US-AI-08, US-AI-09, US-AI-13 |
 | `bank_statement_line_matches` | `suggested_by` (`rules`/`ai`/`person`, default `person`) | US-AI-14 |
+| `number_sequences` | `is_demo boolean not null default false`; the unique key becomes (`org_id`, `document_type`, `is_demo`). A demo row's prefix is `DEMO-` before the real series' prefix. Migration `0108` | US-ONB-17 |
+| `journal_entries` | `is_demo boolean not null default false`, set by `LedgerService.postEntry` from the source document (a reversal copies its original's) and never changed. The immutability triggers allow deleting an `is_demo` entry and its lines only while `spine.deleting_demo` is on ("Delete all demo data"); migration `0108` flagged the entries of demo documents already loaded | US-ONB-17 |
+| `quotes`, `invoices`, `payments`, `credit_notes`, `vendor_bills`, `vendor_payments`, `jobs`, `expenses` | `BEFORE INSERT OR UPDATE OF contact_id` trigger `inherit_demo_from_contact` (expenses: `OF job_id`, `inherit_demo_from_job`): a row for a demo contact (or on a demo job) is demo; a draft moved to another contact takes that contact's flag | US-ONB-17 |
 
 Mobile-only, on the device (not in Postgres): `cache_*` tables (jobs, milestones, contacts, expenses, fetched_at) and `outbox` (`id` = idempotency key, `kind`, `payload`, `file_uri`, `status`, `attempts`, `last_error`, `created_at`) in the app's SQLite database ([02-architecture §Offline sync](02-architecture.md#offline-sync-mobile)).
 
@@ -211,7 +214,7 @@ PRD S-10.12 (added 2026-08-08) — one row per browser/device push subscription,
 
 One row per (org, document type). Allocating the next number requires a row lock (`SELECT ... FOR UPDATE`) inside the issuing transaction so numbers stay gapless — see §6.5. Drafts never touch this table.
 
-`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `document_type` text (not null) · `prefix` text (not null) · `padding` integer (not null, default 4) · `year_token` text · `next_value` integer (not null, default 1) · `updated_at` timestamp (not null, default now)
+`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `document_type` text (not null) · `prefix` text (not null) · `padding` integer (not null, default 4) · `year_token` text · `next_value` integer (not null, default 1) · `is_demo` boolean (not null, default false) · `updated_at` timestamp (not null, default now)
 
 #### `audit_log`
 

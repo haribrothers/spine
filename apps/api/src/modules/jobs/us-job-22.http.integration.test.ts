@@ -88,11 +88,13 @@ describe("US-JOB-22 · number every job (requires local Postgres)", () => {
     const statements = readFileSync(path.resolve(__dirname, "../../../drizzle/0061_job_numbers.sql"), "utf8")
       .split("--> statement-breakpoint")
       .filter((s) => !/ALTER TABLE|CREATE UNIQUE INDEX/.test(s));
-    // Scoped to this test's organisation so other test data is left alone.
+    // Scoped to this test's organisation so other test data is left alone. Migration 0108 (US-ONB-17)
+    // added `is_demo` to the sequences' unique key since, so the replayed upsert names it too.
     const scoped = (statement: string) =>
       statement
         .replace(/WHERE j\.number IS NULL/, `WHERE j.number IS NULL AND j.org_id = '${o.orgId}'`)
-        .replace(/FROM jobs\nGROUP BY org_id/, `FROM jobs\nWHERE org_id = '${o.orgId}'\nGROUP BY org_id`);
+        .replace(/FROM jobs\nGROUP BY org_id/, `FROM jobs\nWHERE org_id = '${o.orgId}'\nGROUP BY org_id`)
+        .replace("ON CONFLICT (org_id, document_type)", "ON CONFLICT (org_id, document_type, is_demo)");
     for (const statement of statements) await db.execute(sql.raw(scoped(statement)));
 
     const numberOf = async (id: string) => (await db.select().from(jobs).where(eq(jobs.id, id)))[0]!.number;

@@ -49,6 +49,7 @@ Legacy: S-10.10
 - **Given** a demo-seeded instance with no users, **when** the first person signs up, **then** they become Primary Owner of the demo organisation and land on the dashboard with onboarding marked skipped ([D-086](../prd/12-decisions.md)).
 - **Given** `SEED_DEMO=true` and existing data, **when** the API starts, **then** it does nothing and logs that demo seeding was skipped.
 - **Given** `SEED_DEMO` unset, **when** the API starts, **then** no demo data is created.
+- **Given** `SEED_DEMO=IN:interior_design` (a country and an industry from D-192), **when** the API starts on an empty database, **then** it loads that demo business; `SEED_DEMO=true` loads the default (United States, Construction / Contracting).
 
 **Implementation notes**
 - Today `SEED_DEMO` is in `.env.example` but not read by any code.

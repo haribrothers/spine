@@ -73,6 +73,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 9. Vendor credit allocations plus vendor refunds never exceed the credit; customer refunds never exceed the customer's credit (DB triggers, like invariant 6).
 10. A journal line matched in a finished reconciliation belongs to no other reconciliation, and its source document can't be voided or deleted until that reconciliation is undone ([D-158](12-decisions.md)). Enforced centrally in `LedgerService.reverseEntry` (every void and delete reverses through it): a line with `reconciliation_id` set → 400 "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."; a line matched only in a reconciliation still in progress is unmatched instead. `reconciliation_id` is the only journal-line column the immutability trigger lets change (US-BANK-10, tested).
 11. Cash-basis figures are computed at report time from the accrual ledger and payment allocations; nothing is posted twice ([D-138](12-decisions.md)).
+12. An entry posted for a demo document (or reversing one) carries `is_demo`. Only "Delete all demo data" removes entries, and only those; every other entry is immutable, in that transaction too ([D-191](12-decisions.md), US-ONB-17, tested).
 
 ## Open points
 

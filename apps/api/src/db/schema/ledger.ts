@@ -53,6 +53,12 @@ export const journalEntries = pgTable(
     sourceType: text("source_type").notNull(),
     sourceId: uuid("source_id").notNull(),
     reversedById: uuid("reversed_by_id"),
+    /**
+     * US-ONB-17 (D-191) — posted for a demo document. Set when written and
+     * never changed; only "Delete all demo data" may delete such an entry
+     * (the immutability triggers allow it while `spine.deleting_demo` is on).
+     */
+    isDemo: boolean("is_demo").notNull().default(false),
     totalDebits: bigint("total_debits", { mode: "bigint" }).notNull().default(sql`0`),
     totalCredits: bigint("total_credits", { mode: "bigint" }).notNull().default(sql`0`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

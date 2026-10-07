@@ -53,7 +53,7 @@ export class NumberingService {
   constructor(@Inject(DATABASE) private readonly db: Database) {}
 
   async listSequences(orgId: string) {
-    const rows = await this.db.select().from(numberSequences).where(eq(numberSequences.orgId, orgId));
+    const rows = await this.db.select().from(numberSequences).where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.isDemo, false)));
     const byType = new Map(rows.map((row) => [row.documentType, row]));
     // Always return one entry per canonical document type, defaulted if the
     // org hasn't configured it yet, so the wizard step has something to
@@ -69,6 +69,7 @@ export class NumberingService {
           padding: NUMBERING_DEFAULTS[documentType].padding,
           yearToken: null,
           nextValue: 1,
+          isDemo: false,
           updatedAt: null,
         }
       );
@@ -90,7 +91,7 @@ export class NumberingService {
     const [existing] = await this.db
       .select()
       .from(numberSequences)
-      .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType)));
+      .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType), eq(numberSequences.isDemo, false)));
 
     if (existing) {
       const [updated] = await this.db
@@ -137,25 +138,31 @@ export class NumberingService {
    * — a fresh org that skipped the numbering onboarding step must still be
    * able to issue its first quote.
    */
-  async allocateNumber(tx: Transaction, orgId: string, documentType: NumberingDocumentType): Promise<string> {
+  async allocateNumber(tx: Transaction, orgId: string, documentType: NumberingDocumentType, options: { demo?: boolean } = {}): Promise<string> {
+    const demo = options.demo ?? false;
     const [locked] = await tx
       .select()
       .from(numberSequences)
-      .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType)))
+      .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType), eq(numberSequences.isDemo, demo)))
       .for("update");
+
+    // US-ONB-17 (D-191): a demo document counts in its own series,
+    // "DEMO-" before the real series' prefix, so the real one never moves.
+    let template = { prefix: NUMBERING_DEFAULTS[documentType].prefix, padding: NUMBERING_DEFAULTS[documentType].padding };
+    if (!locked && demo) {
+      const [real] = await tx
+        .select({ prefix: numberSequences.prefix, padding: numberSequences.padding })
+        .from(numberSequences)
+        .where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.documentType, documentType), eq(numberSequences.isDemo, false)));
+      template = { prefix: `DEMO-${real?.prefix ?? template.prefix}`, padding: real?.padding ?? template.padding };
+    }
 
     const current =
       locked ??
       (
         await tx
           .insert(numberSequences)
-          .values({
-            orgId,
-            documentType,
-            prefix: NUMBERING_DEFAULTS[documentType].prefix,
-            padding: NUMBERING_DEFAULTS[documentType].padding,
-            nextValue: 1,
-          })
+          .values({ orgId, documentType, prefix: template.prefix, padding: template.padding, nextValue: 1, isDemo: demo })
           .returning()
       )[0];
 

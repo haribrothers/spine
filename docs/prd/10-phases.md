@@ -692,7 +692,7 @@ Total: 422 stories.
 
 **Goal:** An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails and modules that fit it.
 
-**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); and the optional AI assistant — Settings › AI with a local or cloud provider, per-feature switches, a monthly budget, `ai.use`, AI audit — with four features: reading bills and receipts, drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173).
+**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); demo businesses by country and industry that leave no trace when deleted, and four more industry templates (D-191–D-193); and the optional AI assistant — Settings › AI with a local or cloud provider, per-feature switches, a monthly budget, `ai.use`, AI audit — with four features: reading bills and receipts, drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173).
 
 **Done when:**
 - An India-preset organisation issues intra-state, inter-state, export and bill-of-supply invoices whose PDFs pass a GST checklist review, and the GSTR-1 JSON for the month validates in the GST offline tool with totals equal to the Tax Summary.
@@ -709,6 +709,11 @@ Total: 422 stories.
 - US-ONB-14 · Start with the modules my industry needs (P2)
 - US-ONB-15 · Open a setup page that shows what's left (P1)
 - US-ONB-16 · Go from each setup card to its setting and its guide (P2)
+- US-ONB-17 · Keep demo data out of my real numbers and books (P1)
+- US-ONB-18 · Choose the country and industry of the demo business (P1)
+- US-ONB-19 · Explore an Indian GST business (P1)
+- US-ONB-20 · Start from a template for my industry (P1)
+- US-ONB-21 · Explore a VAT or GST business in my country (P2)
 
 *Invoicing & credit notes*
 

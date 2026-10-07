@@ -569,6 +569,7 @@ Routes the stories add. Each is created by the story named.
 | AI | POST | `/ai/draft-email { type, documentId, tone?: friendly\|formal\|firm }` → `{ subject, body }` (placeholders kept) | `ai.use` + the document's send capability | US-AI-11, US-AI-12 |
 | AI | POST | `/ai/draft-quote-lines { text (≤ 4,000 chars), currency }` → `{ lines: [{ catalogItemId?, bundleId?, name, description, quantity }] }` | `ai.use` + `quotes.edit_own` | US-AI-13 |
 | AI | POST | `/ai/bank-suggestions { reconciliationId }` → `[{ statementLineId, rankedJournalLineIds, reason, create?: { kind, accountId?, contactId?, reason } }]` | `ai.use` + `banking.reconcile` | US-AI-14 |
+| ONB | DELETE | `/demo-data` also deletes the demo's journal entries and number series, and returns `kept: { contacts }` — demo contacts left because the person's own records use them (D-191) | roles: owner | US-ONB-17 |
 | AI | — | Every `/ai/*` route: 403 `MODULE_OFF` when AI is off, 403 `AI_FEATURE_OFF` when the feature is off, 429 `AI_RATE_LIMIT` ("Too many AI requests. Try again in a few minutes."), 409 `AI_BUDGET_USED` ("AI is paused until <date> — this month's budget is used up."), 503 `AI_UNAVAILABLE`, 504 on a 30-second timeout. All are read-only and don't take `Idempotency-Key` (no writes) | — | US-AI-07 |
 
 ### Events added by the feature files

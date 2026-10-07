@@ -757,6 +757,13 @@
       "when": 1791388915673,
       "tag": "0107_modules_for_existing_installs",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1791399108981,
+      "tag": "0108_demo_isolation",
+      "breakpoints": true
     }
   ]
 }

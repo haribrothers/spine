@@ -101,6 +101,8 @@ before considering that work's QA "done."
    membership). Re-running **Load demo data** afterward should succeed
    cleanly (idempotent — no "already exists" errors), including for
    Sarah/Marcus (their accounts are reused, not recreated).
+   Since US-ONB-17, deletion also removes the demo's journal entries and
+   number series (section 185).
 
 ---
 
@@ -4136,6 +4138,27 @@ Use the GST business from section 175.
 10. Regression:
     - An existing business has every module on.
     - Owners' and Staff's sidebars still match their rights (US-TEAM-18).
+
+## 185. Demo data stays out of my numbers and books (US-ONB-17, Phase 9)
+
+1. On a fresh business, load demo data. Its documents are numbered from their own series:
+   - `DEMO-QUO-…`, `DEMO-INV-…`, `DEMO-CRN-0001`, `DEMO-RCP-…`, `DEMO-VPY-0001`, `DEMO-EXP-…` and `DEMO-JOB-001` to `003`.
+   - The Day book shows only demo entries.
+2. Add a customer of your own, invoice them and issue it: it's `INV-0001`.
+3. Invoice a demo customer (say Priya Nair) and issue it: it's the next `DEMO-INV-…` number.
+4. Record a vendor credit of your own for the demo vendor Apex Timber Supply (leave it as a draft).
+5. Settings › Data › "Delete all demo data":
+   - The confirmation says it deletes "… and the entries they made in your books. Your own records stay.".
+   - Afterwards the pane says "No demo data is currently loaded." and "Kept 1 demo contact that your own records use.".
+6. After deleting, check:
+   - Trial Balance, Profit and Loss, General ledger and Day book show only your own `INV-0001`.
+   - The Tax Summary, GSTR-1 (India) and the Tally export have nothing from the demo.
+   - Jobs is empty, and Contacts shows only your customer and Apex Timber Supply.
+7. Load demo data again: its invoices start at `DEMO-INV-0001`. Your next own invoice is `INV-0002`.
+8. Regression:
+   - Section 1 step 7 (load demo data) still seeds everything it lists, now with `DEMO-` numbers.
+   - The payment reminder preview (US-INV-18) names a `DEMO-INV-…` invoice on a demo business.
+   - Voiding a demo invoice and deleting a demo payment still post reversing entries; both go when the demo is deleted.
 
 ## Known gaps — don't file these as bugs
 

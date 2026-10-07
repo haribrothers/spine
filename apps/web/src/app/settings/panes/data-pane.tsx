@@ -17,30 +17,18 @@ import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 
 /**
- * Owner-only bulk-delete of every record the onboarding "load demo data"
- * option created (contacts, catalogue items, quotes, invoices, and
- * payments tagged `isDemo: true` — see apps/api/src/modules/demo-data).
- * Behind an AlertDialog since it's destructive and irreversible, matching
- * this component's own "reach for this specifically when an action can't
- * be undone" doc comment. Real records are never touched — the API
- * filters by `isDemo`, not by any client-supplied selection.
- *
- * One edge case worth knowing (see DemoDataService.deleteAll's own doc
- * comment): a demo contact that had an issued or paid demo invoice posted
- * real, immutable ledger history against it, so that ONE contact record
- * can be left behind even after "delete all demo data" succeeds — its
- * invoice/payment rows are still fully removed. This isn't surfaced as a
- * separate warning here since it's the same behavior a real contact with
- * real ledger history already has (offer deactivation instead), and
- * `hasDemoData` deliberately doesn't key off leftover demo contacts (see
- * DemoDataService.status), so this pane still correctly reports "no demo
- * data" afterward rather than looking stuck.
+ * Owner-only Settings › Data. "Delete all demo data" removes every row
+ * tagged `isDemo`, the journal entries they posted and the demo number
+ * series (US-ONB-17, D-191); the API picks the rows, never the client. A
+ * demo contact that one of the person's own records uses is kept, and the
+ * pane says so.
  */
 export function DataPane() {
   const [status, setStatus] = useState<{ hasDemoData: boolean } | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [done, setDone] = useState(false);
+  const [keptContacts, setKeptContacts] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +43,8 @@ export function DataPane() {
   async function handleDelete() {
     setDeleting(true);
     try {
-      await apiClient.delete("/demo-data");
+      const result = await apiClient.delete<{ kept?: { contacts: number } }>("/demo-data");
+      setKeptContacts(result?.kept?.contacts ?? 0);
       setStatus({ hasDemoData: false });
       setDone(true);
     } finally {
@@ -77,8 +66,8 @@ export function DataPane() {
       <div className="flex flex-col gap-1">
         <h2 className="text-[15px] font-semibold text-on-surface">Demo data</h2>
         <p className="text-[13px] text-on-surface-muted">
-          Sample contacts, catalogue items, quotes, invoices, and payments loaded from onboarding, for evaluating Spine before entering
-          real data.
+          A sample business to explore Spine before you enter your own. Deleting it removes every demo record, its document numbers and its
+          entries in your books.
         </p>
       </div>
 
@@ -93,8 +82,13 @@ export function DataPane() {
           </Button>
         </div>
       ) : (
-        <div className="rounded-md border border-border bg-surface p-4">
+        <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-4">
           <span className="text-[13px] text-on-surface-muted">No demo data is currently loaded.</span>
+          {keptContacts > 0 && (
+            <span role="status" className="text-[13px] text-on-surface-muted">
+              {keptContactsMessage(keptContacts)}
+            </span>
+          )}
         </div>
       )}
 
@@ -103,8 +97,8 @@ export function DataPane() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete all demo data?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently deletes every sample contact, catalogue item, quote, invoice, and payment loaded during onboarding. This
-              cannot be undone.
+              This permanently deletes every demo contact, item, quote, invoice, payment, bill, expense, job and meeting, and the entries they
+              made in your books. Your own records stay. This can&apos;t be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -119,4 +113,9 @@ export function DataPane() {
       <SavedToast open={done} onOpenChange={setDone} />
     </div>
   );
+}
+
+/** "Kept 1 demo contact that your own records use." */
+export function keptContactsMessage(n: number): string {
+  return `Kept ${n} demo ${n === 1 ? "contact" : "contacts"} that your own records use.`;
 }

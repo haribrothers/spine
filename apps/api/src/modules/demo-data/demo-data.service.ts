@@ -1,7 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
-import type { Database } from "../../db/client";
+import type { Database, Transaction } from "../../db/client";
 import { activities, addresses, catalogItems, contactPersons, contacts, invoices, invoiceLines, jobs, journalLines, leads, leadStages, payments, quotes, settings, taxRates, taxGroups, vendorBills, expenses, expenseCategories, vendorPayments, accounts, meetings as meetingsTable, creditNotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuotesService } from "../quotes/quotes.service";
@@ -24,7 +24,8 @@ import { VariationOrdersService } from "../jobs/variation-orders.service";
 import { FilesService } from "../files/files.service";
 import { TeamsService } from "../teams/teams.service";
 import { auth } from "../../auth/auth";
-import { member, organization, teamMemberships, user } from "../../db/schema";
+import { bankStatementLineMatches, bankStatementLines, journalEntries, member, numberSequences, organization, teamMemberships, user } from "../../db/schema";
+import type { AuditEntityType } from "../audit/audit-log.service";
 
 /**
  * S-12.8/F12 — "load demo data" now also seeds the org's own identity
@@ -54,6 +55,24 @@ import { member, organization, teamMemberships, user } from "../../db/schema";
  * round trip end-to-end, not producing a visually convincing demo photo —
  * this is dev/demo seed data, not marketing material.
  */
+/** `settings.demo_data` — which demo is loaded, and the setup it added (D-192). */
+export const DEMO_DATA_KEY = "demo_data";
+export interface DemoDataSetting {
+  country?: string;
+  industry?: string;
+  businessName?: string;
+  createdTaxRateIds?: string[];
+  createdTaxGroupIds?: string[];
+}
+
+const isForeignKeyViolation = (e: unknown) => {
+  const err = e as { code?: string; cause?: { code?: string } } | null;
+  return err?.code === "23503" || err?.cause?.code === "23503";
+};
+const swallowForeignKey = (e: unknown) => {
+  if (!isForeignKeyViolation(e)) throw e;
+};
+
 const PLACEHOLDER_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
@@ -1740,408 +1759,155 @@ export class DemoDataService {
   }
 
   /**
-   * Hard-deletes every row tagged `isDemo: true` for this org. Deleting a
-   * demo contact cascades onto its contact_persons/addresses/leads/
-   * activities automatically (see this class's own top comment on why
-   * those tables carry no `isDemo` column of their own); deleting a demo
-   * quote/invoice cascades onto its own `quote_lines`/`invoice_lines` the
-   * same way.
+   * US-ONB-17 (D-191) — removes every demo row, the journal entries posted
+   * for them and the demo number series, in one transaction, so nothing
+   * from the demo is left in any report, export or series. This is the one
+   * place journal entries are deleted: `spine.deleting_demo` lets the
+   * immutability triggers delete entries flagged `is_demo`, and nothing else.
    *
-   * Deletion order matters and is now stricter than it was before Phase 2:
-   * **payments, then invoices, then quotes, then contacts, then catalogue
-   * items.** `payment_allocations.invoiceId` is `onDelete: "restrict"`
-   * (payments.ts's own schema comment), so a demo payment allocated
-   * against a demo invoice must go first. `invoices.contactId`/
-   * `quotes.contactId` are both `onDelete: "restrict"` too, so both
-   * document types must go before their contact.
-   *
-   * Unlike quotes (which never post to the ledger), a demo invoice that
-   * was issued or paid DID post real, immutable `journal_lines` rows
-   * (§6.3 — journal entries/lines can never be deleted, only reversed).
-   * Deleting the `invoices`/`payments` rows themselves is still fine —
-   * `journal_lines`/`journal_entries` reference their source document by
-   * `sourceId` alone (a plain uuid column, no FK — see ledger.ts), not the
-   * other way around, so removing an invoice doesn't touch its journal
-   * history; that history simply becomes a permanent, correctly-labeled
-   * record of a demo transaction that happened, exactly as it would for a
-   * real one. The one thing this means: a demo CONTACT referenced by that
-   * now-permanent journal history (`journal_lines.contact_id`, also
-   * `onDelete: "restrict"`) genuinely cannot be hard-deleted afterward —
-   * the same "blocked if referenced" check this method already had
-   * defensively (for a hypothetical future module) is now a real,
-   * expected outcome for any demo contact that had an issued/paid demo
-   * invoice: its financial-document rows (invoice, payment) ARE removed,
-   * but the contact record itself is left behind, matching exactly how a
-   * real contact with real ledger history behaves (ContactsService.delete
-   * offers deactivation instead). Since every demo invoice/payment row is
-   * itself always removed regardless (only the CONTACT can get stuck),
-   * `status()` below checking for a leftover demo contact would report
-   * `hasDemoData: true` forever after a single issued/paid demo invoice
-   * existed even once — so `status()` deliberately checks demo
-   * quotes/invoices/catalog items only, not contacts, matching what a
-   * fresh "load demo data" click actually needs to know ("is there a full
-   * demo dataset to clear before reseeding", not "is there any leftover
-   * row anywhere").
+   * Each document goes in its own savepoint: one that something of the
+   * person's own still uses (a refund of a demo payment, say) is kept, with
+   * its entries and its contact, instead of failing the whole deletion.
+   * Children go before the parents that restrict them: payments before the
+   * invoices they're allocated to, credit notes before their invoices,
+   * documents before their jobs and contacts.
    */
   async deleteAll(orgId: string, actorUserId: string) {
-    const demoVendorPayments = await this.db
-      .select({ id: vendorPayments.id, number: vendorPayments.number, contactId: vendorPayments.contactId })
-      .from(vendorPayments)
-      .where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.isDemo, true)));
-    const demoVendorBills = await this.db
-      .select({ id: vendorBills.id, billNumber: vendorBills.billNumber, contactId: vendorBills.contactId })
-      .from(vendorBills)
-      .where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.isDemo, true)));
-    const demoExpenses = await this.db
-      .select({ id: expenses.id, number: expenses.number })
-      .from(expenses)
-      .where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true)));
-    const demoPayments = await this.db
-      .select({ id: payments.id, number: payments.number, contactId: payments.contactId })
-      .from(payments)
-      .where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true)));
-    // credit_notes.invoiceId is onDelete: "restrict" (credit-notes.ts's
-    // own schema comment on why) — must be removed before the invoices
-    // below, same "child before restrict-parent" ordering this method
-    // already follows for payments/vendor payments.
-    const demoCreditNotes = await this.db
-      .select({ id: creditNotes.id, number: creditNotes.number, contactId: creditNotes.contactId })
-      .from(creditNotes)
-      .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true)));
-    const demoInvoices = await this.db
-      .select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId })
-      .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true)));
-    const demoMeetings = await this.db
-      .select({ id: meetingsTable.id, title: meetingsTable.title, contactId: meetingsTable.contactId })
-      .from(meetingsTable)
-      .where(and(eq(meetingsTable.orgId, orgId), eq(meetingsTable.isDemo, true)));
-    // Revokes org access only — the underlying user/account login row is
-    // never touched, per member.isDemo's own schema comment.
-    const demoMembers = await this.db
-      .select({ id: member.id, userId: member.userId })
-      .from(member)
-      .where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)));
-    const demoQuotes = await this.db
-      .select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId })
-      .from(quotes)
-      .where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true)));
-    const demoJobs = await this.db
-      .select({ id: jobs.id, name: jobs.name, contactId: jobs.contactId })
-      .from(jobs)
-      .where(and(eq(jobs.orgId, orgId), eq(jobs.isDemo, true)));
-    const demoContacts = await this.db
-      .select({ id: contacts.id, name: contacts.name })
-      .from(contacts)
-      .where(and(eq(contacts.orgId, orgId), eq(contacts.isDemo, true)));
-    const demoItems = await this.db
-      .select({ id: catalogItems.id, name: catalogItems.name })
-      .from(catalogItems)
-      .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)));
+    return this.db.transaction(async (tx) => {
+      await tx.execute(sql`select set_config('spine.deleting_demo', 'on', true)`);
+      const kept = new Set<string>();
 
-    const {
-      paymentsDeleted,
-      invoicesDeleted,
-      quotesDeleted,
-      jobsDeleted,
-      contactsDeleted,
-      catalogItemsDeleted,
-      vendorPaymentsDeleted,
-      vendorBillsDeleted,
-      expensesDeleted,
-      creditNotesDeleted,
-      meetingsDeleted,
-      membersDeleted,
-    } = await this.db.transaction(async (tx) => {
-      // Vendor payments first — vendor_payment_allocations.billId is
-      // onDelete: "restrict" (mirrors payment_allocations.invoiceId), so a
-      // demo vendor bill with any allocation against it can't be
-      // hard-deleted until the allocating payment is gone first.
-      let vendorPaymentsDeleted = 0;
-      for (const vendorPayment of demoVendorPayments) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "vendor_payment",
-          entityId: vendorPayment.id,
-          contactId: vendorPayment.contactId,
-          changes: [{ field: "number", from: vendorPayment.number, to: null }],
-        });
-        await tx.delete(vendorPayments).where(eq(vendorPayments.id, vendorPayment.id));
-        vendorPaymentsDeleted++;
+      /** Deletes one row in a savepoint; false (and kept) when something of the person's own still points at it. */
+      const remove = async (id: string, run: (sp: Transaction) => Promise<unknown>, audit: { entityType: AuditEntityType; contactId: string | null; field: string; from: string | null }) => {
+        try {
+          await tx.transaction(async (sp) => {
+            await run(sp);
+            await this.auditLog.record(sp, { orgId, actorUserId, action: "deleted", entityType: audit.entityType, entityId: id, contactId: audit.contactId, changes: [{ field: audit.field, from: audit.from, to: null }] });
+          });
+          return true;
+        } catch (error) {
+          if (!isForeignKeyViolation(error)) throw error;
+          kept.add(id);
+          return false;
+        }
+      };
+      const count = async <R extends { id: string }>(rows: R[], each: (row: R) => Promise<boolean>) => {
+        let n = 0;
+        for (const row of rows) if (await each(row)) n++;
+        return n;
+      };
+
+      const vendorPaymentsDeleted = await count(
+        await tx.select({ id: vendorPayments.id, number: vendorPayments.number, contactId: vendorPayments.contactId }).from(vendorPayments).where(and(eq(vendorPayments.orgId, orgId), eq(vendorPayments.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(vendorPayments).where(eq(vendorPayments.id, r.id)), { entityType: "vendor_payment", contactId: r.contactId, field: "number", from: r.number }),
+      );
+      const paymentsDeleted = await count(
+        await tx.select({ id: payments.id, number: payments.number, contactId: payments.contactId }).from(payments).where(and(eq(payments.orgId, orgId), eq(payments.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(payments).where(eq(payments.id, r.id)), { entityType: "payment", contactId: r.contactId, field: "number", from: r.number }),
+      );
+      const creditNotesDeleted = await count(
+        await tx.select({ id: creditNotes.id, number: creditNotes.number, contactId: creditNotes.contactId }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(creditNotes).where(eq(creditNotes.id, r.id)), { entityType: "credit_note", contactId: r.contactId, field: "number", from: r.number }),
+      );
+      const invoicesDeleted = await count(
+        await tx.select({ id: invoices.id, number: invoices.number, contactId: invoices.contactId }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(invoices).where(eq(invoices.id, r.id)), { entityType: "invoice", contactId: r.contactId, field: "number", from: r.number }),
+      );
+      const vendorBillsDeleted = await count(
+        await tx.select({ id: vendorBills.id, billNumber: vendorBills.billNumber, contactId: vendorBills.contactId }).from(vendorBills).where(and(eq(vendorBills.orgId, orgId), eq(vendorBills.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(vendorBills).where(eq(vendorBills.id, r.id)), { entityType: "vendor_bill", contactId: r.contactId, field: "billNumber", from: r.billNumber }),
+      );
+      const expensesDeleted = await count(
+        await tx.select({ id: expenses.id, number: expenses.number }).from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(expenses).where(eq(expenses.id, r.id)), { entityType: "expense", contactId: null, field: "number", from: r.number }),
+      );
+      const quotesDeleted = await count(
+        await tx.select({ id: quotes.id, number: quotes.number, contactId: quotes.contactId }).from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(quotes).where(eq(quotes.id, r.id)), { entityType: "quote", contactId: r.contactId, field: "number", from: r.number }),
+      );
+
+      // The demo's journal entries, except those of a document that was kept.
+      // A bank statement line matched to one goes back to unmatched first.
+      const demoEntries = (await tx.select({ id: journalEntries.id, sourceId: journalEntries.sourceId }).from(journalEntries).where(and(eq(journalEntries.orgId, orgId), eq(journalEntries.isDemo, true)))).filter((e) => !kept.has(e.sourceId));
+      const entryIds = demoEntries.map((e) => e.id);
+      if (entryIds.length) {
+        const lineIds = (await tx.select({ id: journalLines.id }).from(journalLines).where(inArray(journalLines.entryId, entryIds))).map((l) => l.id);
+        const matched = lineIds.length ? await tx.select({ statementLineId: bankStatementLineMatches.statementLineId }).from(bankStatementLineMatches).where(inArray(bankStatementLineMatches.journalLineId, lineIds)) : [];
+        if (matched.length) {
+          const statementLineIds = [...new Set(matched.map((m) => m.statementLineId))];
+          await tx.delete(bankStatementLineMatches).where(inArray(bankStatementLineMatches.statementLineId, statementLineIds));
+          await tx.update(bankStatementLines).set({ status: "unmatched", reconciliationId: null }).where(inArray(bankStatementLines.id, statementLineIds));
+        }
+        await tx.delete(journalEntries).where(inArray(journalEntries.id, entryIds));
       }
 
-      let vendorBillsDeleted = 0;
-      for (const bill of demoVendorBills) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "vendor_bill",
-          entityId: bill.id,
-          contactId: bill.contactId,
-          changes: [{ field: "billNumber", from: bill.billNumber, to: null }],
-        });
-        await tx.delete(vendorBills).where(eq(vendorBills.id, bill.id));
-        vendorBillsDeleted++;
+      const jobsDeleted = await count(
+        await tx.select({ id: jobs.id, name: jobs.name, contactId: jobs.contactId }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(jobs).where(eq(jobs.id, r.id)), { entityType: "job", contactId: r.contactId, field: "name", from: r.name }),
+      );
+      const meetingsDeleted = await count(
+        await tx.select({ id: meetingsTable.id, title: meetingsTable.title, contactId: meetingsTable.contactId }).from(meetingsTable).where(and(eq(meetingsTable.orgId, orgId), eq(meetingsTable.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(meetingsTable).where(eq(meetingsTable.id, r.id)), { entityType: "meeting", contactId: r.contactId, field: "title", from: r.title }),
+      );
+      const demoContacts = await tx.select({ id: contacts.id, name: contacts.name }).from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.isDemo, true)));
+      const contactsDeleted = await count(demoContacts, (r) => remove(r.id, (sp) => sp.delete(contacts).where(eq(contacts.id, r.id)), { entityType: "contact", contactId: null, field: "name", from: r.name }));
+      const catalogItemsDeleted = await count(
+        await tx.select({ id: catalogItems.id, name: catalogItems.name }).from(catalogItems).where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true))),
+        (r) => remove(r.id, (sp) => sp.delete(catalogItems).where(eq(catalogItems.id, r.id)), { entityType: "catalog_item", contactId: null, field: "name", from: r.name }),
+      );
+
+      // What the demo itself added to the organisation's setup: the tax
+      // rates and group it created (recorded when it was loaded; Riverstone
+      // from before then is found by name), once nothing uses them.
+      const loaded = await this.settingsService.get<DemoDataSetting>(orgId, DEMO_DATA_KEY);
+      const groupIds = loaded?.createdTaxGroupIds ?? (await tx.select({ id: taxGroups.id }).from(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "Sales Tax + Surcharge")))).map((g) => g.id);
+      const rateIds = loaded?.createdTaxRateIds ?? (await tx.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])))).map((r) => r.id);
+      for (const id of groupIds) await tx.transaction((sp) => sp.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.id, id)))).catch(swallowForeignKey);
+      for (const id of rateIds) await tx.transaction((sp) => sp.delete(taxRates).where(and(eq(taxRates.orgId, orgId), eq(taxRates.id, id)))).catch(swallowForeignKey);
+      if (!loaded) {
+        // Riverstone loaded before US-ONB-20 made its own categories outside a template.
+        await tx
+          .delete(expenseCategories)
+          .where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.name, ["Fuel & Vehicle", "Site Meals", "Tools & Small Equipment"])))
+          .catch(swallowForeignKey);
       }
 
-      let expensesDeleted = 0;
-      for (const expense of demoExpenses) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "expense",
-          entityId: expense.id,
-          contactId: null,
-          changes: [{ field: "number", from: expense.number, to: null }],
-        });
-        await tx.delete(expenses).where(eq(expenses.id, expense.id));
-        expensesDeleted++;
-      }
+      // The demo Staff and Field people lose access here; their logins stay (member.isDemo's own comment).
+      const membersDeleted = (await tx.delete(member).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true))).returning({ id: member.id })).length;
 
-      let paymentsDeleted = 0;
-      for (const payment of demoPayments) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "payment",
-          entityId: payment.id,
-          contactId: payment.contactId,
-          changes: [{ field: "number", from: payment.number, to: null }],
-        });
-        await tx.delete(payments).where(eq(payments.id, payment.id));
-        paymentsDeleted++;
-      }
-
-      let creditNotesDeleted = 0;
-      for (const creditNote of demoCreditNotes) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "credit_note",
-          entityId: creditNote.id,
-          contactId: creditNote.contactId,
-          changes: [{ field: "number", from: creditNote.number, to: null }],
-        });
-        await tx.delete(creditNotes).where(eq(creditNotes.id, creditNote.id));
-        creditNotesDeleted++;
-      }
-
-      let invoicesDeleted = 0;
-      for (const invoice of demoInvoices) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "invoice",
-          entityId: invoice.id,
-          contactId: invoice.contactId,
-          changes: [{ field: "number", from: invoice.number, to: null }],
-        });
-        await tx.delete(invoices).where(eq(invoices.id, invoice.id));
-        invoicesDeleted++;
-      }
-
-      let quotesDeleted = 0;
-      for (const quote of demoQuotes) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "quote",
-          entityId: quote.id,
-          contactId: quote.contactId,
-          changes: [{ field: "number", from: quote.number, to: null }],
-        });
-        await tx.delete(quotes).where(eq(quotes.id, quote.id));
-        quotesDeleted++;
-      }
-
-      // Same "blocked if referenced" pattern as demoContacts below —
-      // journal_lines.jobId is onDelete: "restrict" (ledger.ts's own
-      // comment), so a job that had ANY progress invoice issued against it
-      // (which posts journal_lines with jobId set) can never be
-      // hard-deleted, exactly matching how a contact with real ledger
-      // history behaves. Every demo job created via seedJobs above except
-      // the "active" one (milestones defined, nothing invoiced yet) will
-      // hit this and be left in place — cascades onto milestones/
-      // job_photos/job_notes/job_variation_orders regardless (all
-      // onDelete: "cascade" off jobs.id, per jobs.ts) for the ones that DO
-      // get removed.
-      let jobsDeleted = 0;
-      for (const job of demoJobs) {
-        const [referenced] = await tx.select().from(journalLines).where(eq(journalLines.jobId, job.id)).limit(1);
-        if (referenced) continue;
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "job",
-          entityId: job.id,
-          contactId: job.contactId,
-          changes: [{ field: "name", from: job.name, to: null }],
-        });
-        await tx.delete(jobs).where(eq(jobs.id, job.id));
-        jobsDeleted++;
-      }
-
-      let contactsDeleted = 0;
-      for (const contact of demoContacts) {
-        const [referenced] = await tx.select().from(journalLines).where(eq(journalLines.contactId, contact.id)).limit(1);
-        if (referenced) continue;
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "contact",
-          entityId: contact.id,
-          contactId: null,
-          changes: [{ field: "name", from: contact.name, to: null }],
-        });
-        await tx.delete(contacts).where(eq(contacts.id, contact.id));
-        contactsDeleted++;
-      }
-
-      let catalogItemsDeleted = 0;
-      for (const item of demoItems) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "catalog_item",
-          entityId: item.id,
-          contactId: null,
-          changes: [{ field: "name", from: item.name, to: null }],
-        });
-        await tx.delete(catalogItems).where(eq(catalogItems.id, item.id));
-        catalogItemsDeleted++;
-      }
-
-      // Cleans up seed()'s "Sales Tax" + "State Surcharge" tax_rates rows
-      // and the "Sales Tax + Surcharge" group (see seed()'s own comment)
-      // once every catalog item/quote/invoice line that referenced a rate
-      // is already gone above — those FKs are all `onDelete: "set null"`,
-      // so nothing blocks this. The group is deleted FIRST: its own
-      // `tax_group_rates` join rows reference `tax_rates` with `onDelete:
-      // "restrict"`, so a rate used by a still-existing group can't be
-      // removed until the group (and its cascade-deleted join rows) is
-      // gone. Deliberately not tracked in this method's own return/count
-      // (unlike catalogItems etc.) since it's a byproduct of demo cleanup,
-      // not a document type users think of as "demo data" — same
-      // reasoning `status()` below already applies to why it only checks
-      // quotes/invoices/catalog items.
-      await tx.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "Sales Tax + Surcharge")));
-      await tx.delete(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])));
-
-      // Same "clean up by name, not an isDemo flag" convention as the
-      // "Sales Tax" tax rate above — expense_categories has no isDemo
-      // column (org-configuration, not a document type, same reasoning
-      // tax_rates itself isn't isDemo-flagged either). Every expense
-      // referencing one of these is already gone (deleted above), so
-      // nothing blocks this.
-      await tx
-        .delete(expenseCategories)
-        .where(and(eq(expenseCategories.orgId, orgId), inArray(expenseCategories.name, ["Fuel & Vehicle", "Site Meals", "Tools & Small Equipment"])));
-
-      let meetingsDeleted = 0;
-      for (const meeting of demoMeetings) {
-        await this.auditLog.record(tx, {
-          orgId,
-          actorUserId,
-          action: "deleted",
-          entityType: "meeting",
-          entityId: meeting.id,
-          contactId: meeting.contactId,
-          changes: [{ field: "title", from: meeting.title, to: null }],
-        });
-        await tx.delete(meetingsTable).where(eq(meetingsTable.id, meeting.id));
-        meetingsDeleted++;
-      }
-
-      // Revokes this org's access for the demo Staff/Field member ONLY —
-      // team_memberships.memberId is onDelete: "cascade" off member.id
-      // (teams.ts), so no separate cleanup needed there. The underlying
-      // user/account login row is deliberately left alone, per
-      // member.isDemo's own schema comment — a demo user can still log in
-      // afterward, they simply no longer belong to this org.
-      // No AuditLogService.record call here — same reason seedDemoUsers'
-      // own comment gives: audit_log.entity_id is a strict uuid column,
-      // member.id is a plain Better-Auth text id, not a UUID.
-      let membersDeleted = 0;
-      for (const demoMember of demoMembers) {
-        await tx.delete(member).where(eq(member.id, demoMember.id));
-        membersDeleted++;
-      }
+      // A demo loaded again starts its series at 0001.
+      await tx.delete(numberSequences).where(and(eq(numberSequences.orgId, orgId), eq(numberSequences.isDemo, true)));
+      await tx.delete(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, DEMO_DATA_KEY)));
 
       return {
-        paymentsDeleted,
-        invoicesDeleted,
-        quotesDeleted,
-        jobsDeleted,
         contactsDeleted,
         catalogItemsDeleted,
+        quotesDeleted,
+        invoicesDeleted,
+        paymentsDeleted,
+        jobsDeleted,
         vendorPaymentsDeleted,
         vendorBillsDeleted,
         expensesDeleted,
         creditNotesDeleted,
         meetingsDeleted,
         membersDeleted,
+        kept: { contacts: demoContacts.length - contactsDeleted },
       };
     });
-
-    // Every count here is the actual number of rows removed inside the
-    // transaction above, not demoX.length — contacts/jobs can be skipped
-    // when referenced by a permanent (onDelete: "restrict") journal_lines
-    // row, so length would overcount for those; the rest can't currently
-    // diverge but are tracked the same way so this can't silently regress.
-    return {
-      contactsDeleted,
-      catalogItemsDeleted,
-      quotesDeleted,
-      invoicesDeleted,
-      paymentsDeleted,
-      jobsDeleted,
-      vendorPaymentsDeleted,
-      vendorBillsDeleted,
-      expensesDeleted,
-      creditNotesDeleted,
-      meetingsDeleted,
-      membersDeleted,
-    };
   }
 
   /**
-   * See deleteAll's own doc comment on why this deliberately doesn't check
-   * for a leftover demo contact — the same reasoning excludes jobs too: a
-   * demo job with any issued progress invoice can never be hard-deleted
-   * (journal_lines.jobId is onDelete: "restrict"), so checking for one
-   * here would report `hasDemoData: true` forever after a single such job
-   * ever existed, even right after a successful deleteAll. Checking
-   * catalog items/quotes/invoices is sufficient — those three are always
-   * fully removable, so their absence already means "nothing left to
-   * clear."
+   * Whether demo data is loaded: the demo recorded when it was loaded, or —
+   * for one loaded before that — any demo catalogue item, quote or invoice.
+   * A demo contact kept because the person's own records use it doesn't count.
    */
   async status(orgId: string) {
-    const [demoItem] = await this.db
-      .select({ id: catalogItems.id })
-      .from(catalogItems)
-      .where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true)))
-      .limit(1);
-    const [demoQuote] = await this.db
-      .select({ id: quotes.id })
-      .from(quotes)
-      .where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true)))
-      .limit(1);
-    const [demoInvoice] = await this.db
-      .select({ id: invoices.id })
-      .from(invoices)
-      .where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true)))
-      .limit(1);
+    const loaded = await this.settingsService.get<DemoDataSetting>(orgId, DEMO_DATA_KEY);
+    if (loaded) return { hasDemoData: true };
+    const [demoItem] = await this.db.select({ id: catalogItems.id }).from(catalogItems).where(and(eq(catalogItems.orgId, orgId), eq(catalogItems.isDemo, true))).limit(1);
+    const [demoQuote] = await this.db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.isDemo, true))).limit(1);
+    const [demoInvoice] = await this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.isDemo, true))).limit(1);
     return { hasDemoData: Boolean(demoItem || demoQuote || demoInvoice) };
   }
 }

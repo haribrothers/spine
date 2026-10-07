@@ -349,7 +349,7 @@ export class ExpensesService {
       // P15 credits the account the approver chose, else the one the expense carries, else the default (US-BANK-03).
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, moneyAccountId ?? existing.moneyAccountId);
       if (moneyAccountId) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "expense", moneyAccount.id);
-      const number = await this.numbering.allocateNumber(tx, orgId, "expense");
+      const number = await this.numbering.allocateNumber(tx, orgId, "expense", { demo: existing.isDemo });
       const approvedAt = new Date();
       const dateStr = new Date(existing.date).toISOString().slice(0, 10);
 

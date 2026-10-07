@@ -1,4 +1,5 @@
 import { loadEmailBrand } from "../email/email-brand";
+import { contactIsDemo } from "../../common/demo";
 import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 import { renderEmail } from "../email/email-layout";
 import { paymentConfirmationEmail, receiptEmail } from "../email/email-templates";
@@ -255,7 +256,9 @@ export class PaymentsService {
     const created = await this.db.transaction(async (tx) => {
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
       const resolvedBankAccountId = moneyAccount.accountId;
-      const number = await this.numbering.allocateNumber(tx, orgId, "receipt");
+      // US-ONB-17: a payment from a demo customer is demo too, in the demo series.
+      const demo = isDemo || (await contactIsDemo(tx, input.contactId));
+      const number = await this.numbering.allocateNumber(tx, orgId, "receipt", { demo });
 
       const [payment] = await tx
         .insert(payments)

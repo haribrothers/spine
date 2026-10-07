@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-ONB-17: demo data stays out of my numbers and books (Phase 9)
+
+- **Own number series:** demo documents are numbered `DEMO-INV-0001`, `DEMO-QUO-0001`, `DEMO-JOB-001` and so on. Your own first invoice is still `INV-0001`, with or without demo data loaded.
+- **Demo spreads to new records:** anything saved for a demo contact (a quote, invoice, payment, credit note, bill, vendor payment or job), or an expense on a demo job, is demo too, and goes with the demo data.
+- **"Delete all demo data" leaves no trace.** It now also removes:
+  - The journal entries the demo posted, so every report, the Tax Summary, GSTR-1 and the Tally export are as if it never existed.
+  - The demo number series, so loading demo data again starts at 0001.
+  - Demo contacts and jobs. One that a record of your own uses (a refund or a vendor credit, say) is kept, and Settings › Data says "Kept 1 demo contact that your own records use.".
+- **Ledger rules unchanged for real entries.** Only demo entries can be deleted, and only by that one action. The database refuses every other delete or change, inside that action too (D-191 amends the immutability rule for demo rows only).
+- **For developers:**
+  - Migration `0108`: `number_sequences.is_demo`, `journal_entries.is_demo`, the demo-inheritance triggers and the narrowed immutability triggers. It also flags the entries of demo documents already loaded.
+  - `NumberingService.allocateNumber(…, { demo })`; `LedgerService.postEntry` reads the flag from the source document.
+  - Demo invoices in tests now match `DEMO-INV-…`.
+
 ### 2026-10-07 — US-SET-23, US-SET-24, US-SET-25, US-ONB-14: optional modules (Phase 9)
 
 - **Settings › Modules** (Owner) lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents". Each has a switch, a description of what it includes, and the date it was switched off. A note says the core is always on.
