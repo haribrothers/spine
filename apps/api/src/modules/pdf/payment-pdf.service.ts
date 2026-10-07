@@ -6,7 +6,7 @@ import type { Database } from "../../db/client";
 import { payments, paymentAllocations, invoices, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { resolveDocumentBranding } from "@spine/shared";
+import { resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { PaymentPdfDocument, type PaymentPdfBusinessProfile } from "./payment-pdf.template";
 
@@ -52,6 +52,7 @@ export class PaymentPdfService {
 
     const buffer = await renderToBuffer(
       PaymentPdfDocument({
+        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "receipt"),
         payment: row.payment,
         contactName: row.contactName,
         contactEmail: row.contactEmail,

@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery } from "@spine/shared";
+import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery, resolveDocumentLayout } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { activities } from "../../db/schema";
@@ -37,7 +37,7 @@ export class StatementDocumentsService {
     const business = await this.settings.get<StatementPdfBusiness & { logoUrl?: string }>(orgId, "business_profile");
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.logo(orgId, business.logoUrl) : undefined;
-    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding }));
+    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding, layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "statement") }));
     const slug = statement.contactName.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "customer";
     return {
       buffer,

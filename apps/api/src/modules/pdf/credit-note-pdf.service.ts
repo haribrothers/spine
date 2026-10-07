@@ -7,7 +7,7 @@ import { contacts, creditNoteLines, creditNotes, invoices } from "../../db/schem
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
 import { CreditNotePdfDocument } from "./credit-note-pdf.template";
-import { resolveDocumentBranding } from "@spine/shared";
+import { resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -48,6 +48,7 @@ export class CreditNotePdfService {
 
     const buffer = await renderToBuffer(
       CreditNotePdfDocument({
+        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "credit_note"),
         creditNote: row.creditNote,
         lines,
         invoiceNumber: row.invoiceNumber,

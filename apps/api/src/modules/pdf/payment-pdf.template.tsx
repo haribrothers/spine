@@ -1,3 +1,4 @@
+import { resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
@@ -17,6 +18,8 @@ export interface PaymentPdfAllocationRow {
 }
 
 export interface PaymentPdfData {
+  /** US-SET-17 (D-152) — Settings › Documents: paper size, title… */
+  layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
   branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
@@ -117,7 +120,8 @@ function formatDate(value: Date | string | null): string {
  * to (if any), not catalogue lines, since that's the information a
  * recipient actually needs from a receipt.
  */
-export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale, branding }: PaymentPdfData) {
+export function PaymentPdfDocument({ payment, contactName, contactEmail, allocations, business, logoDataUri, locale, branding, layout: givenLayout }: PaymentPdfData) {
+  const layout = givenLayout ?? resolveDocumentLayout(null, "receipt");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = payment.currency;
   const fmt = (amount: bigint) => formatMoneyForPdf(amount, currency, locale);
@@ -125,7 +129,7 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
 
   return (
     <Document title={payment.number ?? "Receipt"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+      <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
         <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
@@ -136,7 +140,7 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={[styles.docTitle, { color: brand.color }]}>RECEIPT</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{layout.title.toUpperCase()}</Text>
             <Text style={styles.docNumber}>{payment.number ?? "—"}</Text>
           </View>
         </View>

@@ -6,7 +6,7 @@ import type { Database } from "../../db/client";
 import { invoices, invoiceLines, contacts, jobs } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { progressClaimLabel, resolveDocumentBranding } from "@spine/shared";
+import { progressClaimLabel, resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -52,6 +52,7 @@ export class InvoicePdfService {
 
     const buffer = await renderToBuffer(
       InvoicePdfDocument({
+        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "invoice"),
         invoice: row.invoice,
         lines,
         contactName: row.contactName,
@@ -61,7 +62,6 @@ export class InvoicePdfService {
         locale: await orgLocale(this.db, orgId),
         branding,
         claimLabel: await this.claimLabel(row.invoice),
-        title: (await this.settings.get<{ invoice?: { title?: string } }>(orgId, "document_layout"))?.invoice?.title,
       }),
     );
 

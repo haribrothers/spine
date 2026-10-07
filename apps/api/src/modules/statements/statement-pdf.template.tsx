@@ -1,3 +1,4 @@
+import { resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { Statement } from "@spine/shared";
 import { formatMoneyForPdf } from "../../common/money-format";
@@ -11,6 +12,8 @@ export interface StatementPdfBusiness {
 }
 
 export interface StatementPdfData {
+  /** US-SET-17 (D-152) — Settings › Documents: paper size, title… */
+  layout?: ResolvedDocumentLayout;
   statement: Statement;
   business: StatementPdfBusiness | null;
   logoDataUri?: string;
@@ -92,7 +95,8 @@ function initials(name: string): string {
  * payments and credits. Underneath, what's still owed by age (US-PAY-15)
  * and the "How to pay" block when payment instructions are set (US-INV-16).
  */
-export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding }: StatementPdfData) {
+export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding, layout: givenLayout }: StatementPdfData) {
+  const layout = givenLayout ?? resolveDocumentLayout(null, "statement");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const fmt = (amount: string) => formatMoneyForPdf(BigInt(amount), statement.currency, locale);
   const money = (amount: string) => (amount === "0" ? "" : fmt(amount));
@@ -100,7 +104,7 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
 
   return (
     <Document title={`Statement — ${statement.contactName}`} author={businessName}>
-      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+      <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
         <DocumentAccentBar color={brand.color} />
         <View style={[styles.header, { borderBottomColor: brand.color }]}>
           <View style={styles.businessBlock}>
@@ -111,7 +115,7 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
             </View>
           </View>
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>STATEMENT</Text>
+            <Text style={styles.title}>{layout.title.toUpperCase()}</Text>
             <Text style={styles.period}>{statementPeriodLabel(statement.from, statement.to)}</Text>
           </View>
         </View>

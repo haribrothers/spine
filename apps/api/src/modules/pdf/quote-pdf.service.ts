@@ -6,7 +6,7 @@ import type { Database } from "../../db/client";
 import { quotes, quoteLines, contacts } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { resolveDocumentBranding } from "@spine/shared";
+import { resolveDocumentBranding, resolveDocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { QuotePdfDocument, type QuotePdfBusinessProfile } from "./quote-pdf.template";
 
@@ -59,6 +59,7 @@ export class QuotePdfService {
 
     const buffer = await renderToBuffer(
       QuotePdfDocument({
+        layout: resolveDocumentLayout(await this.settings.get(orgId, "document_layout"), "quote"),
         quote: row.quote,
         lines,
         contactName: row.contactName,

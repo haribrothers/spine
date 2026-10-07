@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-17: choose paper size and columns for each document (Phase 9)
+
+- New Settings › Documents has a tab for each of Quotes, Invoices, Credit notes, Receipts and Statements. Each tab has its options beside a live preview: a sample PDF with the business's name, branding and currency, refreshed a moment after each change.
+- "Paper size" can be A4 or Letter for every document type.
+- Quotes, invoices and credit notes can show or hide these columns:
+  - "Quantity and unit" (the quantity and unit price columns).
+  - "Discount" (a new per-line column; credit notes have no discounts).
+  - "HSN/SAC" (only when GST is on).
+  - "Tax per line".
+- With Discount hidden, a discounted line prints its discounted unit price. "Hidden columns don't change any amounts."
+- Saved options apply to drafts and to documents issued from then on. Issued PDFs never change (D-083).
+- The setting is validated strictly (`documentLayoutSchema`): an unknown option is refused.
+- New `GET /org/settings/document_layout/preview` (Owner) renders the unsaved options.
+- Quote, invoice and credit-note PDFs share a new `DocumentLinesTable`. The invoice title from the tax preset (US-TAX-09) now comes from the same resolved layout.
+
 ### 2026-10-07 — US-SET-20: show every character on PDFs (Phase 9)
 
 - Every PDF now prints in Noto Sans, falling back to Noto Sans Devanagari: quotes, invoices, credit notes, receipts, statements and report exports. Before, they used the built-in Helvetica.

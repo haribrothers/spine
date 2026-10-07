@@ -3780,6 +3780,25 @@ Regression: lines and totals save as before.
 5. Copy text from the PDF in a viewer: "Profit" pastes as "Profit" (ligatures map back).
 6. Invoices issued before this change still download with their old look.
 
+## 168. Paper size and columns (US-SET-17, Phase 9)
+
+1. Settings › Documents:
+   - The text reads "Choose what each document shows. The preview updates as you change options."
+   - Tabs: Quotes, Invoices, Credit notes, Receipts, Statements. Invoices is open, with a sample invoice in the preview.
+2. Change Paper size to Letter: the preview's page gets shorter and wider.
+3. Columns:
+   - Untick Discount: the Disc. column goes, and the discounted line's unit price drops (12,500.00 → 11,250.00) while its amount stays the same.
+   - Untick "Quantity and unit": Qty and Unit price go.
+   - Untick "Tax per line": the Tax column goes.
+   - Totals never change.
+4. Save, then issue an invoice: its PDF is Letter with those columns hidden. Change the options again: the issued invoice's PDF doesn't change, but a draft's preview does.
+5. Credit notes: no Discount option. Receipts and Statements: Paper size only.
+6. In an Indian GST business, "HSN/SAC" appears among the columns.
+7. As Staff: Settings isn't available, and the preview and save routes answer 403.
+8. Keyboard: tabs move with the arrow keys; every checkbox is labelled. The preview is a light PDF in dark mode too.
+
+Regression: existing quote, invoice, credit note, receipt and statement PDFs look as before when no options are saved.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

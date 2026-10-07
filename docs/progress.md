@@ -411,7 +411,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-RPT-37 · See tax collected and paid by rate and tax type
 - [ ] US-RPT-38 · Export my books for Tally
 - [ ] US-RPT-39 · Map my accounts to Tally groups
-- [ ] US-SET-17 · Choose paper size and columns for each document
+- [x] US-SET-17 · Choose paper size and columns for each document
 - [ ] US-SET-18 · Set each document's title, terms and notes
 - [ ] US-SET-19 · Add a signature and the amount in words
 - [x] US-SET-20 · Show every character on PDFs

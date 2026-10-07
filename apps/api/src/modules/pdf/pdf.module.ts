@@ -6,6 +6,8 @@ import { CreditNotePdfService } from "./credit-note-pdf.service";
 import { IssuedPdfService } from "./issued-pdf.service";
 import { InvoicePdfService } from "./invoice-pdf.service";
 import { PaymentPdfService } from "./payment-pdf.service";
+import { DocumentPreviewService } from "./document-preview.service";
+import { DocumentLayoutController } from "./document-layout.controller";
 
 /**
  * PRD F3 Stage 2 (S-03.3) / F5 Stage 1 (S-05.7 PDF half) / F6 (S-06.6) —
@@ -19,7 +21,8 @@ import { PaymentPdfService } from "./payment-pdf.service";
  */
 @Module({
   imports: [OrgModule, FilesModule],
-  providers: [QuotePdfService, InvoicePdfService, PaymentPdfService, CreditNotePdfService, IssuedPdfService],
+  controllers: [DocumentLayoutController],
+  providers: [QuotePdfService, InvoicePdfService, PaymentPdfService, CreditNotePdfService, IssuedPdfService, DocumentPreviewService],
   exports: [QuotePdfService, InvoicePdfService, PaymentPdfService, CreditNotePdfService, IssuedPdfService],
 })
 export class PdfModule {}
