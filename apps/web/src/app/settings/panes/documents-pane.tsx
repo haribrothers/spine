@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Button, Checkbox, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, Tabs, TabsList, TabsTrigger } from "@spine/ui";
+import { Button, Checkbox, FormField, Input, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, Tabs, TabsList, TabsTrigger, Textarea } from "@spine/ui";
 import {
+  DOCUMENT_NOTES_TOO_LONG,
+  DOCUMENT_TERMS_TOO_LONG,
+  DOCUMENT_TEXT_MAX,
   DOCUMENT_TYPES,
   DOCUMENT_TYPE_LABELS,
   LINE_DOCUMENT_TYPES,
@@ -38,6 +41,9 @@ function encodeLayout(layout: DocumentLayout): string {
  * US-SET-17 (D-152) — Settings › Documents: per document type, the paper
  * size and the columns, beside a live preview with sample data. Issued
  * PDFs are stored, so changes apply to documents issued from now on.
+ * US-SET-18 — the title, and the terms and notes new drafts start with
+ * (credit notes, receipts and statements print them as they are). A GST
+ * invoice or credit note keeps the title GST requires (US-TAX-15).
  */
 export function DocumentsPane() {
   const [layout, setLayout] = useState<DocumentLayout | null>(null);
@@ -106,7 +112,18 @@ export function DocumentsPane() {
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_240px]">
         <div className="flex flex-col gap-4">
-          <PaperSizeField value={current.paperSize} onChange={(paperSize) => update({ paperSize })} />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <PaperSizeField value={current.paperSize} onChange={(paperSize) => update({ paperSize })} />
+            {gst && (type === "invoice" || type === "credit_note") ? (
+              <FormField label="Title" helperText="Set by your GST settings">
+                {(field) => <Input {...field} value={type === "invoice" ? "Tax Invoice" : "Credit Note"} disabled />}
+              </FormField>
+            ) : (
+              <FormField label="Title" helperText="e.g. Quotation, Tax Invoice, Estimate">
+                {(field) => <Input {...field} maxLength={60} value={layout[type]?.title ?? current.title} onChange={(e) => update({ title: e.target.value })} />}
+              </FormField>
+            )}
+          </div>
           {LINE_DOCUMENT_TYPES.includes(type) && (
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-1 text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">Columns</legend>
@@ -120,6 +137,16 @@ export function DocumentsPane() {
               </div>
             </fieldset>
           )}
+          <FormField
+            label="Default terms"
+            helperText={type === "quote" || type === "invoice" ? "New drafts start with these; change them on each document." : "Printed on every one."}
+            errorText={current.terms.length > DOCUMENT_TEXT_MAX ? DOCUMENT_TERMS_TOO_LONG : undefined}
+          >
+            {(field) => <Textarea {...field} rows={3} value={current.terms} onChange={(e) => update({ terms: e.target.value })} />}
+          </FormField>
+          <FormField label="Default notes" errorText={current.notes.length > DOCUMENT_TEXT_MAX ? DOCUMENT_NOTES_TOO_LONG : undefined}>
+            {(field) => <Textarea {...field} rows={3} value={current.notes} onChange={(e) => update({ notes: e.target.value })} />}
+          </FormField>
         </div>
         <DocumentPreview type={type} layout={layout} />
       </div>

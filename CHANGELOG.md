@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-18: set each document's title, terms and notes (Phase 9)
+
+- Each Settings › Documents tab now has a "Title" (e.g. "Quotation", "Estimate"), "Default terms" and "Default notes".
+  - A blank title prints the default.
+  - Terms or notes over 2,000 characters show "Keep terms under 2,000 characters." and aren't saved.
+- New quotes and invoices start with the default terms and notes, which can be changed on each document. Drafts that already have text keep it.
+- Credit notes, receipts and statements have no notes of their own, so they print the default notes and terms under their content.
+- With GST on, an invoice is titled "Tax Invoice" and a credit note "Credit Note" whatever the setting says. Their Title field reads "Set by your GST settings" and can't be changed. US-TAX-15 adds "Bill of Supply".
+
 ### 2026-10-07 — US-SET-17: choose paper size and columns for each document (Phase 9)
 
 - New Settings › Documents has a tab for each of Quotes, Invoices, Credit notes, Receipts and Statements. Each tab has its options beside a live preview: a sample PDF with the business's name, branding and currency, refreshed a moment after each change.

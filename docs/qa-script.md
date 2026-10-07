@@ -3799,6 +3799,18 @@ Regression: lines and totals save as before.
 
 Regression: existing quote, invoice, credit note, receipt and statement PDFs look as before when no options are saved.
 
+## 169. Document titles, terms and notes (US-SET-18, Phase 9)
+
+1. Settings › Documents › Quotes:
+   - Title "Quotation", Default terms "Valid for 30 days.", Default notes "Prices include delivery.".
+   - The preview shows QUOTATION.
+   - Save.
+2. Type 2,001 characters in Default terms: "Keep terms under 2,000 characters." shows and Save is refused.
+3. New quote: Notes and Terms start with the defaults. Change them, save, and the quote keeps your text. Editing an existing quote doesn't bring the defaults back.
+4. Credit notes, Receipts and Statements: set terms and notes. Their PDFs and previews print them under the content.
+5. Clear a title: the default title prints again.
+6. In an Indian GST business, the Invoices and Credit notes tabs show Title "Tax Invoice" / "Credit Note", greyed out, with "Set by your GST settings". GST invoices print TAX INVOICE.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

@@ -4,6 +4,7 @@ import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
 import type { payments, paymentAllocations } from "../../db/schema";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
+import { LayoutTextBlocks } from "./document-extras";
 
 export interface PaymentPdfBusinessProfile {
   name: string;
@@ -196,6 +197,8 @@ export function PaymentPdfDocument({ payment, contactName, contactEmail, allocat
             <Text style={styles.footerText}>{payment.notes}</Text>
           </View>
         )}
+
+        <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

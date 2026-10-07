@@ -24,6 +24,14 @@ export function invoicePaymentInstructions(invoice: { status: string; paymentIns
   return text?.trim() || null;
 }
 
+/**
+ * The invoice's printed title: Settings › Documents' title, unless GST
+ * applies — then GST's own "Tax Invoice" wins (US-SET-18, US-TAX-15).
+ */
+export function invoiceTitle(invoice: { supplyType: string | null }, title: string): string {
+  return (invoice.supplyType ? "Tax Invoice" : title).toUpperCase();
+}
+
 export interface InvoicePdfData {
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
@@ -138,7 +146,7 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : layout.title.toUpperCase()}</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{invoice.type === "advance" ? "DEPOSIT INVOICE" : invoiceTitle(invoice, layout.title)}</Text>
             <Text style={styles.docNumber}>{invoice.number ?? "DRAFT"}</Text>
             {claimLabel && <Text style={styles.docNumber}>{claimLabel}</Text>}
           </View>

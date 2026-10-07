@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, RichTextEditor, Spinner } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useDocumentDefaults } from "../../../lib/document-defaults";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, QuoteLineEditor, type EditableQuoteLine } from "./quote-line-editor";
@@ -93,6 +94,8 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   const [validUntil, setValidUntil] = useState<Date | undefined>(quote?.validUntil ? new Date(quote.validUntil) : undefined);
   const [notes, setNotes] = useState(quote?.notes ?? "");
   const [terms, setTerms] = useState(quote?.termsAndConditions ?? "");
+  // US-SET-18 — a new quote starts with the default terms and notes.
+  useDocumentDefaults("quote", !quote, setNotes, setTerms);
   const [lines, setLines] = useState<EditableQuoteLine[]>(quote ? toEditableLines(quote) : [blankLine()]);
   // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
   const pos = usePlaceOfSupply({ contactId, initial: quote ? quote.placeOfSupply : undefined, lines, setLines });

@@ -6,6 +6,7 @@ import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pageP
 import type { InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 import { PDF_FONT_FAMILY } from "./pdf-fonts";
 import { DocumentLinesTable } from "./document-lines";
+import { LayoutTextBlocks } from "./document-extras";
 
 export interface CreditNotePdfData {
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
@@ -97,7 +98,7 @@ export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contac
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={[styles.docTitle, { color: brand.color }]}>{layout.title.toUpperCase()}</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{(creditNote.supplyType ? "Credit Note" : layout.title).toUpperCase()}</Text>
             <Text style={styles.docNumber}>{creditNote.number ?? "DRAFT"}</Text>
           </View>
         </View>
@@ -139,6 +140,8 @@ export function CreditNotePdfDocument({ creditNote, lines, invoiceNumber, contac
             <Text style={[styles.grandTotalValue, { color: brand.color }]}>{fmt(creditNote.totalAmount)}</Text>
           </View>
         </View>
+
+        <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

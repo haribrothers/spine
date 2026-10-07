@@ -19,6 +19,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { useDocumentDefaults } from "../../../lib/document-defaults";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "./invoice-line-editor";
@@ -82,6 +83,8 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
   const [dueDate, setDueDate] = useState<Date | undefined>(invoice?.dueDate ? new Date(invoice.dueDate) : undefined);
   const [notes, setNotes] = useState(invoice?.notes ?? "");
   const [terms, setTerms] = useState(invoice?.termsAndConditions ?? "");
+  // US-SET-18 — a new invoice starts with the default terms and notes.
+  useDocumentDefaults("invoice", !invoice, setNotes, setTerms);
   const [lines, setLines] = useState<EditableInvoiceLine[]>(invoice ? toEditableLines(invoice) : [blankLine()]);
   // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
   const pos = usePlaceOfSupply({ contactId, initial: invoice ? invoice.placeOfSupply : undefined, lines, setLines });

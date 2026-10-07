@@ -4,6 +4,7 @@ import type { Statement } from "@spine/shared";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "../pdf/document-branding";
 import { PDF_FONT_FAMILY } from "../pdf/pdf-fonts";
+import { LayoutTextBlocks } from "../pdf/document-extras";
 
 export interface StatementPdfBusiness {
   name: string;
@@ -175,6 +176,8 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
             <Text style={styles.howToPayText}>{business.paymentInstructions.trim()}</Text>
           </View>
         )}
+
+        <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
 
         <DocumentFooterLine footer={brand.footer} />
       </Page>
