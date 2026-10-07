@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
+  Alert,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -28,7 +29,17 @@ import {
   Switch,
 } from "@spine/ui";
 import { MoreHorizontal, Plus } from "lucide-react";
-import { GENERAL_TAX_TYPES, INDIA_TAX_TYPES, TAX_TYPE_LABELS, type TaxGroupScope, type TaxType } from "@spine/shared";
+import {
+  GENERAL_TAX_TYPES,
+  INDIA_TAX_TYPES,
+  TAX_COUNTRIES,
+  TAX_TYPE_LABELS,
+  taxCountryLabel,
+  type TaxCountry,
+  type TaxGroupScope,
+  type TaxProfileUpdate,
+  type TaxType,
+} from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 
@@ -70,6 +81,8 @@ export function TaxPane() {
   const [saved, setSaved] = useState(false);
   // US-DASH-25 — the period the dashboard's "Tax this period" covers.
   const [taxProfile, setTaxProfile] = useState<Record<string, unknown> & { returnPeriod?: "monthly" | "quarterly" }>({});
+  // US-TAX-09 — how many rates the last country change added.
+  const [added, setAdded] = useState<number | null>(null);
 
   async function reload() {
     const [ratesRes, groupsRes, inclusiveRes] = await Promise.all([
@@ -90,7 +103,7 @@ export function TaxPane() {
       .catch(() => {});
   }, []);
 
-  const country = typeof taxProfile.country === "string" ? taxProfile.country : "other";
+  const country: TaxCountry = (TAX_COUNTRIES as readonly string[]).includes(taxProfile.country as string) ? (taxProfile.country as TaxCountry) : "other";
 
   if (!rates || !groups || !inclusive) {
     return (
@@ -126,6 +139,39 @@ export function TaxPane() {
             setSaved(true);
           }}
         />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <h3 id="tax-country-label" className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted">
+          Country
+        </h3>
+        <Select
+          value={country}
+          onValueChange={async (v) => {
+            const res = await apiClient.put<TaxProfileUpdate>("/org/tax/profile", { country: v });
+            setTaxProfile(res.profile);
+            setAdded(res.added);
+            await reload();
+            setSaved(true);
+          }}
+        >
+          <SelectTrigger aria-labelledby="tax-country-label" aria-describedby="tax-country-help">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {TAX_COUNTRIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {taxCountryLabel(c)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p id="tax-country-help" className="text-[12px] text-on-surface-muted">
+          Changing country adds that country&apos;s rates. Existing rates are never changed or deleted.
+        </p>
+        {added !== null && added > 0 && (
+          <Alert variant="success">Added {added} rates. Your existing rates are unchanged — archive the ones you no longer use.</Alert>
+        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-strong bg-surface p-3">

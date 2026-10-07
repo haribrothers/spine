@@ -1,14 +1,18 @@
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { Body, Controller, Get, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { putTaxProfileSchema, type TaxProfile, type TaxProfileUpdate } from "@spine/shared";
+import type { z } from "zod";
 import type { Response } from "express";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { sendCsv, toCsv } from "../../common/csv";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
+import { ZodValidationPipe } from "../../common/zod-validation.pipe";
 import { requireOrgId } from "../org/settings.controller";
 import { SettingsService } from "../org/settings.service";
 import { ReportExportService } from "../reports/export/report-export.service";
 import { taxSummaryDocument } from "../reports/export/report-documents";
 import { ReportsService } from "../reports/reports.service";
+import { TaxProfileService } from "./tax-profile.service";
 
 const DEFAULT_TAX_RATE_KEY = "default_tax_rate";
 const PRICES_INCLUDE_TAX_KEY = "prices_include_tax";
@@ -41,7 +45,22 @@ export class TaxController {
     private readonly settingsService: SettingsService,
     private readonly reportsService: ReportsService,
     private readonly exporter: ReportExportService,
+    private readonly taxProfile: TaxProfileService,
   ) {}
+
+  /** US-TAX-09 — the tax country and registration. Any member reads it: lines pick tax from it. */
+  @Get("profile")
+  async getProfile(@Session() session: UserSession): Promise<TaxProfile> {
+    return this.taxProfile.get(requireOrgId(session));
+  }
+
+  /** US-TAX-09 — choosing a country adds its preset's rates; existing rates are kept. */
+  @Put("profile")
+  @OrgRoles(["owner"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async putProfile(@Session() session: UserSession, @Body(new ZodValidationPipe(putTaxProfileSchema)) body: z.infer<typeof putTaxProfileSchema>): Promise<TaxProfileUpdate> {
+    return this.taxProfile.setCountry(requireOrgId(session), session.user.id, body.country);
+  }
 
   @Get("default-rate")
   async getDefaultRate(@Session() session: UserSession) {

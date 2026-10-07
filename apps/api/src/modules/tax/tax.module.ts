@@ -8,11 +8,12 @@ import { TaxRatesService } from "./tax-rates.service";
 import { TaxGroupsController } from "./tax-groups.controller";
 import { TaxGroupsService } from "./tax-groups.service";
 import { TaxResolverService } from "./tax-resolver.service";
+import { TaxProfileService } from "./tax-profile.service";
 
 @Module({
   imports: [OrgModule, AuditModule, ReportsModule],
   controllers: [TaxController, TaxRatesController, TaxGroupsController],
-  providers: [TaxRatesService, TaxGroupsService, TaxResolverService],
-  exports: [TaxRatesService, TaxGroupsService, TaxResolverService],
+  providers: [TaxRatesService, TaxGroupsService, TaxResolverService, TaxProfileService],
+  exports: [TaxRatesService, TaxGroupsService, TaxResolverService, TaxProfileService],
 })
 export class TaxModule {}

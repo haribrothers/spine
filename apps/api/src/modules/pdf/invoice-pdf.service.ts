@@ -61,6 +61,7 @@ export class InvoicePdfService {
         locale: await orgLocale(this.db, orgId),
         branding,
         claimLabel: await this.claimLabel(row.invoice),
+        title: (await this.settings.get<{ invoice?: { title?: string } }>(orgId, "document_layout"))?.invoice?.title,
       }),
     );
 

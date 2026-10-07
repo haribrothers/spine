@@ -80,6 +80,21 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-09: start with my country's tax rates (Phase 9)
+
+- The setup wizard's Tax step now asks "Where is your business registered for tax?". The choices are India (GST), United Kingdom (VAT), Australia (GST), New Zealand (GST), United Arab Emirates (VAT), Saudi Arabia (VAT) and "Another country — I'll add my own rates". The currency picked in the step before chooses the starting answer. "Another country" goes on to the single default-rate step, as before.
+- India creates GST at 0, 0.25, 3, 5, 12, 18, 28 and 40% (32 rates):
+  - Each slab gets CGST, SGST and UTGST halves, plus IGST at the full rate.
+  - The halves are grouped as "GST 18%" and so on (intra-state). The single IGST rate is the inter-state counterpart.
+  - The 12% and 28% slabs are created archived, since the 22 September 2025 rates no longer use them.
+  - The UTGST rates and their "GST n% (UT)" groups are created archived. A business in a union territory restores them.
+  - No cess rates are created; the Cess type is ready for when it's needed.
+- The UK gets "VAT 20%", "VAT 5%", "VAT 0%" and "Exempt", and invoices are titled "VAT invoice".
+- Australia (10%), New Zealand (15%), the UAE (5%) and Saudi Arabia (15%) each get their standard rate, a zero rate and "Exempt", and invoices are titled "Tax invoice".
+- Settings › Tax › Country changes the country later. The new preset's rates are added and existing rates are never changed or deleted. Spine then shows "Added <n> rates. Your existing rates are unchanged — archive the ones you no longer use."
+- Seeding twice adds nothing. A rate the owner already has with the same name and percentage is reused, not duplicated.
+- New `GET /org/tax/profile` and `PUT /org/tax/profile { country }` → `{ profile, added }`. The presets are data in `packages/shared/src/tax/presets`. The invoice PDF prints `document_layout.invoice.title`.
+
 ### 2026-10-07 — US-TAX-10: give each rate a tax type (Phase 9)
 
 - Each tax rate now has a tax type. For India, "Add rate" and "Edit rate" offer CGST, SGST, UTGST, IGST and Cess. Elsewhere they offer VAT, GST, Sales tax or Other. Rate rows read "9% · CGST".

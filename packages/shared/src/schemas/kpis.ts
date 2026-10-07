@@ -1,4 +1,4 @@
-import { z } from "zod";
+import type { ReturnPeriod } from "./tax-profile.ts";
 /**
  * US-DASH-14 (D-089) — the dashboard's key figures, each with the last 8
  * weeks and a comparison with last month. Which figures a member gets is
@@ -96,13 +96,6 @@ export interface UnbilledWork {
   /** Approved billable expenses not yet on an invoice, at what they'd invoice for (amount + tax). */
   billableExpenses: { count: number; amount: string };
 }
-
-/** US-DASH-25 — Settings › Tax › "Return period" (`settings.tax_profile.returnPeriod`, monthly by default). */
-export const RETURN_PERIODS = ["monthly", "quarterly"] as const;
-export type ReturnPeriod = (typeof RETURN_PERIODS)[number];
-export const taxProfileSchema = z
-  .object({ returnPeriod: z.enum(RETURN_PERIODS, { message: "Choose Monthly or Quarterly." }).optional() })
-  .passthrough();
 
 /** US-DASH-25 — tax for the current return period. Amounts are minor units. */
 export interface TaxPeriod {

@@ -3620,6 +3620,33 @@ Regression:
 
 Regression: adding, editing, archiving and restoring rates and groups works as before; quote and invoice lines still pick rates and groups.
 
+## 161. Start with my country's tax rates (US-TAX-09, Phase 9)
+
+1. Sign up a new business and go through the wizard. Pick INR on the Currency step. On the Tax step:
+   - The question reads "Where is your business registered for tax? …".
+   - India (GST) is chosen and reads "CGST, SGST, IGST and cess at the current slabs. GST details come next."
+   - The other choices are listed with their own lines, ending with "Another country — I'll add my own rates".
+2. Continue with India, then open Settings › Tax:
+   - Country reads "India (GST)".
+   - The rates include "CGST 9%" (9% · CGST), "SGST 9%" and "IGST 18%".
+   - The groups include "GST 18%", reading "CGST (9%) + SGST (9%) · Intra-state".
+   - "GST 12%", "GST 28%", "IGST 12%", "IGST 28%" and every "(UT)" group show "Archived".
+3. Change Country to United Kingdom (VAT):
+   - "Added 4 rates. Your existing rates are unchanged — archive the ones you no longer use." appears.
+   - VAT 20%, VAT 5%, VAT 0% and Exempt are listed.
+   - Every GST rate is still there, unchanged.
+4. Create and issue an invoice: the PDF is titled "VAT INVOICE". A deposit invoice still reads "DEPOSIT INVOICE".
+5. Change Country to United Kingdom again: nothing is added, and no duplicate rates appear.
+6. In a new business, pick Australia, New Zealand, the UAE and Saudi Arabia in turn:
+   - Each adds its standard rate (10%, 15%, 5%, 15%), a zero rate and Exempt.
+   - The invoice title becomes "TAX INVOICE".
+7. In a new business, pick "Another country": the next screen is "Default tax rate" with Tax name and Rate, as before.
+8. Keyboard: arrow keys move between countries, Continue works with Enter, and the Country menu is announced as "Country". Dark mode is readable.
+
+Regression:
+- Return period is kept when Country changes.
+- Existing businesses keep their rates and invoice title until they choose a country.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

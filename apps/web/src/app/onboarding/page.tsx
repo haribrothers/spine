@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
+import type { TaxCountry, TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { BusinessProfileStep, type BusinessProfileValue } from "./steps/business-profile-step";
@@ -12,6 +13,7 @@ import { IndustryTemplateStep, type IndustryTemplate } from "./steps/industry-te
 import { CurrencyLocaleStep, type CurrencyLocaleValue } from "./steps/currency-locale-step";
 import { FinancialYearStep, type FinancialYearValue } from "./steps/financial-year-step";
 import { TaxRateStep, type TaxRateValue } from "./steps/tax-rate-step";
+import { TaxCountryStep, taxCountryForCurrency } from "./steps/tax-country-step";
 import { NumberingStep, type NumberingSequenceValue } from "./steps/numbering-step";
 import { ChartOfAccountsStep, type AccountsByType } from "./steps/chart-of-accounts-step";
 import { InviteTeamStep, type MemberRole } from "./steps/invite-team-step";
@@ -143,11 +145,7 @@ export default function OnboardingPage() {
         </StepCard>
       )}
 
-      {step === "tax" && (
-        <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
-          <TaxStepBody onSaved={() => setStep("numbering")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+      {step === "tax" && <TaxStepBody onSaved={() => setStep("numbering")} onSkip={handleSkip} />}
 
       {step === "numbering" && (
         <StepCard title="Document numbering" description="Prefix and starting number for each document type.">
@@ -275,7 +273,55 @@ function FiscalYearStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
   );
 }
 
+/**
+ * US-TAX-09 — pick the tax country first; a preset country gets its rates.
+ * "Another country" goes on to the single default rate, as before (US-ONB-06).
+ */
 function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+  const [country, setCountry] = useState<TaxCountry | null>(null);
+  const [phase, setPhase] = useState<"country" | "rate">("country");
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([apiClient.get<TaxProfile>("/org/tax/profile"), apiClient.get<{ value: { code?: string } | null }>("/org/settings/currency")])
+      .then(([profile, currency]) => {
+        if (!cancelled) setCountry(profile.country ?? taxCountryForCurrency(currency.value?.code));
+      })
+      .catch(() => {
+        if (!cancelled) setCountry("other");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (phase === "rate") {
+    return (
+      <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
+        <DefaultTaxRateBody onSaved={onSaved} onSkip={onSkip} />
+      </StepCard>
+    );
+  }
+  return (
+    <StepCard title="Tax" description="Where is your business registered for tax? Spine sets up your country's rates — change them any time in Settings › Tax.">
+      {country === null ? (
+        <StepLoading />
+      ) : (
+        <TaxCountryStep
+          initialValue={country}
+          onSave={async (v) => {
+            await apiClient.put("/org/tax/profile", { country: v });
+            if (v === "other") setPhase("rate");
+            else onSaved();
+          }}
+          onSkip={onSkip}
+        />
+      )}
+    </StepCard>
+  );
+}
+
+function DefaultTaxRateBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
   const [value, setValue] = useState<TaxRateValue>({ name: "Tax", percentage: 0 });
   const [ready, setReady] = useState(false);
 
