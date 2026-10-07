@@ -35,7 +35,9 @@ test.describe("US-TAX-10", () => {
     await dialog.getByRole("combobox", { name: "Rates" }).click();
     await page.getByRole("option", { name: "CGST 9% (9%)" }).click();
     await page.getByRole("option", { name: "SGST 9% (9%)" }).click();
-    await page.keyboard.press("Escape");
+    // Close the rates list without risking the form: Escape could close the whole form under load.
+    await dialog.getByLabel("Name").click();
+    await expect(page.getByRole("listbox")).toHaveCount(0);
     await dialog.getByRole("button", { name: "Save" }).click();
     await expect(pane.getByText("CGST (9%) + SGST (9%) · Intra-state")).toBeVisible();
 
@@ -44,7 +46,9 @@ test.describe("US-TAX-10", () => {
     await dialog.getByRole("combobox", { name: "Rates" }).click();
     await page.getByRole("option", { name: "CGST 9% (9%)" }).click();
     await page.getByRole("option", { name: "IGST 5% (5%)" }).click();
-    await page.keyboard.press("Escape");
+    // Close the rates list without risking the form: Escape could close the whole form under load.
+    await dialog.getByLabel("Name").click();
+    await expect(page.getByRole("listbox")).toHaveCount(0);
     await dialog.getByRole("button", { name: "Save" }).click();
     await expect(dialog.getByText("A GST group is CGST + SGST (or UTGST) at the same rate, optionally with cess.")).toBeVisible();
   });

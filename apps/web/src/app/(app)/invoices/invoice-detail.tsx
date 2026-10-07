@@ -158,6 +158,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     await handleIssue(false);
   }
 
+  const issueWithCredit = () => handleIssue(true);
+
   async function handleIssue(applyCredit: boolean) {
     if (!invoice) return;
     setMissingHsn(0);
@@ -601,7 +603,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void offerCreditOrIssue()}>Issue anyway</AlertDialogAction>
+            <AlertDialogAction onClick={offerCreditOrIssue}>Issue anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -619,7 +621,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <Button variant="secondary" onClick={() => void handleIssue(false)}>
               Issue without credit
             </Button>
-            <AlertDialogAction onClick={() => void handleIssue(true)}>Apply credit and issue</AlertDialogAction>
+            <AlertDialogAction onClick={issueWithCredit}>Apply credit and issue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -4049,13 +4049,18 @@ Use the GST business from section 175.
 2. Open Invoice and set the subject to "Invoice {document_number} from {business_name}" using the Insert buttons (they go where the cursor is).
 3. `{link}` is offered only on Quote, and `{due_status}` only on Payment reminder.
 4. Type `{invoice_no}`: "{invoice_no} isn't a placeholder Spine knows. Use one from the list." Save is refused until it's fixed.
-5. Write a message with a blank line between paragraphs and a web address; save ("Your changes have been saved.").
+5. The Message is a rich text editor (bold, italic, lists, link). In it:
+   - Use Insert to add `{customer_name}` at the cursor.
+   - Make a word bold, add a bullet list and a web address.
+   - Save: "Your changes have been saved."
 6. On an issued invoice, press "Email invoice". The send dialog:
    - To is the customer's email.
    - The subject and message are your template with this invoice's number, amount and dates.
    - "Attach the invoice PDF" is ticked.
 7. Change the subject and send. The email arrives:
-   - With your subject, your paragraphs and a clickable link.
+   - With your subject, and your paragraphs, bold word and list as you formatted them.
+   - The web address is a clickable link.
+   - The plain-text part shows "• " bullets.
    - Inside the branded layout: heading, details, payment instructions and the PDF.
    - The next "Email invoice" starts from the saved template again.
 8. Untick "Attach the invoice PDF": the email has no PDF.
@@ -4082,6 +4087,16 @@ Use the GST business from section 175.
    - Reset is greyed out when the email is already Spine's.
 6. Preview a quote whose message uses `{link}`: it shows an example link.
 7. Staff can't preview or send tests (403).
+
+## 183. Rich text email messages (D-189, Phase 9)
+
+1. In Settings › Emails, the Send dialogs and the statement dialog, Message is a rich text editor. It has Bold, Italic, Bullet list, Numbered list and Link, and screen readers announce it as "Message".
+2. Paste formatted text from a web page: only bold, italics, lists, links and paragraphs remain.
+3. Send an email with a link to `javascript:…` (via the API): the link text arrives without a link.
+4. A customer named `<b>Test</b>` is greeted as written, not in bold.
+5. Regression:
+   - Default emails look as before.
+   - Quote notes and terms editors work as before.
 
 ## Known gaps — don't file these as bugs
 

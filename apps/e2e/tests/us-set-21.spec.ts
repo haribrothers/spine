@@ -45,11 +45,26 @@ test.describe("US-SET-21", () => {
     await expect(subject).toHaveValue("Invoice {document_number} from {business_name}");
     await expect(editor.getByRole("button", { name: "{link}" })).toHaveCount(0);
 
-    const body = editor.getByLabel("Message");
-    await body.fill("Hi {customer_name},\n\nYour invoice {invoice_no} is attached.");
+    // D-189: the message is a rich text editor.
+    const body = editor.getByRole("textbox", { name: "Message" });
+    await body.click();
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("Your invoice {invoice_no} is attached.");
     await expect(editor).toContainText("{invoice_no} isn't a placeholder Spine knows. Use one from the list.");
     await expectNoAxeViolations(page);
-    await body.fill("Hi {customer_name},\n\nYour invoice {document_number} for {amount} is attached.\n\nThanks for choosing us,\n{business_name}");
+    await page.keyboard.press("ControlOrMeta+a");
+    await page.keyboard.type("Hi ");
+    await editor.getByRole("button", { name: "{customer_name}" }).click();
+    await page.keyboard.type(",");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("Your invoice {document_number} for {amount} is ");
+    await page.keyboard.press("ControlOrMeta+b");
+    await page.keyboard.type("attached");
+    await page.keyboard.press("ControlOrMeta+b");
+    await page.keyboard.type(".");
+    await page.keyboard.press("Enter");
+    await page.keyboard.type("Thanks for choosing us, {business_name}");
+    await expect(body).toContainText("Hi {customer_name},");
     await dialog.getByRole("button", { name: "Save", exact: true }).click();
     await expect(page.getByText("Your changes have been saved.").first()).toBeVisible();
     await page.keyboard.press("Escape");
@@ -60,7 +75,7 @@ test.describe("US-SET-21", () => {
     await expect(dialog.getByRole("heading", { name: `Email invoice ${invoice.number}` })).toBeVisible();
     await expect(dialog.getByLabel("To")).toHaveValue(customerEmail);
     await expect(dialog.getByLabel("Subject")).toHaveValue(`Invoice ${invoice.number} from Riverstone Builders`);
-    await expect(dialog.getByLabel("Message")).toHaveValue(/Your invoice INV-\d+ for \$1,000\.00 is attached\./);
+    await expect(dialog.getByRole("textbox", { name: "Message" })).toContainText(/Your invoice INV-\d+ for \$1,000\.00 is attached\./);
     await expect(dialog.getByRole("checkbox", { name: "Attach the invoice PDF" })).toBeChecked();
     // Let the dialog finish fading in before checking contrast.
     await dialog.evaluate((el) => Promise.all((el as unknown as { getAnimations(o: { subtree: boolean }): { finished: Promise<unknown> }[] }).getAnimations({ subtree: true }).map((a) => a.finished)));
@@ -70,6 +85,8 @@ test.describe("US-SET-21", () => {
     await expect(page.getByText("Emailing invoice").first()).toBeVisible();
     const sent = await waitForEmail((e) => e.to.some((t) => t.address === customerEmail));
     expect(sent.subject).toBe(`Your kitchen invoice ${invoice.number}`);
-    expect(sent.html).toContain("Thanks for choosing us,<br>Riverstone Builders");
+    expect(sent.html).toContain("Hi Alan,");
+    expect(sent.html).toContain("for $1,000.00 is <strong>attached</strong>.");
+    expect(sent.html).toContain("Thanks for choosing us, Riverstone Builders");
   });
 });

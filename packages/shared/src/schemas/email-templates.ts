@@ -38,34 +38,63 @@ export const EMAIL_PLACEHOLDERS_BY_TYPE: Record<EmailTemplateType, readonly Emai
 
 export interface EmailTemplateText {
   subject: string;
+  /** D-189 — the message as HTML from the rich text editor (p, strong, em, lists, links). Plain text from before is read as paragraphs. */
   body: string;
+}
+
+const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+
+/** Plain text as the editor's HTML: blank lines start paragraphs, single line breaks stay. */
+export function plainTextToHtml(text: string): string {
+  return text
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br>")}</p>`)
+    .join("");
+}
+
+/** A message as HTML, whether it was written in the editor or is plain text from before D-189. */
+export function emailBodyHtml(body: string): string {
+  return /^\s*</.test(body) ? body : plainTextToHtml(body);
+}
+
+/** A message's words without the HTML, e.g. to tell whether it's empty. */
+export function emailBodyText(body: string): string {
+  return body
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|li)>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
 }
 
 /** Spine's own words: what an email says until an Owner changes it, and what "Reset to default" brings back. */
 export const DEFAULT_EMAIL_TEMPLATES: Record<EmailTemplateType, EmailTemplateText> = {
   quote: {
     subject: "{business_name} sent you a quote ({document_number})",
-    body: "Hi {customer_name},\n\nHere's our quote. You can read it, accept it or decline it online — no account needed.",
+    body: "<p>Hi {customer_name},</p><p>Here's our quote. You can read it, accept it or decline it online — no account needed.</p>",
   },
   invoice: {
     subject: "{business_name} sent you an invoice ({document_number})",
-    body: "Hi {customer_name},\n\nHere's invoice {document_number} from {business_name}, attached as a PDF.",
+    body: "<p>Hi {customer_name},</p><p>Here's invoice {document_number} from {business_name}, attached as a PDF.</p>",
   },
   reminder: {
     subject: "Reminder: invoice {document_number} {due_status}",
-    body: "Hi {customer_name},\n\nThis is a friendly reminder that invoice {document_number} {due_status}. If you've already paid, thank you — please ignore this email.",
+    body: "<p>Hi {customer_name},</p><p>This is a friendly reminder that invoice {document_number} {due_status}. If you've already paid, thank you — please ignore this email.</p>",
   },
   receipt: {
     subject: "{business_name} sent you a receipt ({document_number})",
-    body: "Hi {customer_name},\n\nHere's your receipt for a payment of {amount}, attached as a PDF.",
+    body: "<p>Hi {customer_name},</p><p>Here's your receipt for a payment of {amount}, attached as a PDF.</p>",
   },
   credit_note: {
     subject: "{business_name} sent you a credit note ({document_number})",
-    body: "Hi {customer_name},\n\nHere's credit note {document_number} for {amount}, attached as a PDF.",
+    body: "<p>Hi {customer_name},</p><p>Here's credit note {document_number} for {amount}, attached as a PDF.</p>",
   },
   statement: {
     subject: "Your statement from {business_name} ({document_number})",
-    body: "Hi {customer_name},\n\nHere's your statement for {document_number}, attached as a PDF. It lists every invoice, payment and credit in that time.",
+    body: "<p>Hi {customer_name},</p><p>Here's your statement for {document_number}, attached as a PDF. It lists every invoice, payment and credit in that time.</p>",
   },
 };
 
@@ -90,9 +119,10 @@ const textSchema = (type: EmailTemplateType) =>
   z
     .object({
       subject: z.string().trim().min(1, "Enter a subject.").max(200, "Keep the subject under 200 characters."),
-      body: z.string().trim().min(1, "Enter a message.").max(5000, "Keep the message under 5,000 characters."),
+      body: z.string().trim().max(20000, "Keep the message shorter."),
     })
     .superRefine((value, ctx) => {
+      if (!emailBodyText(value.body)) ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["body"], message: "Enter a message." });
       for (const field of ["subject", "body"] as const) {
         const name = unknownPlaceholder(value[field], type);
         if (name !== null) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: unknownPlaceholderMessage(name) });
@@ -120,7 +150,12 @@ export function resolveEmailTemplate(saved: Partial<Record<EmailTemplateType, Em
 export const emailOverrideSchema = z.object({
   to: z.string().trim().email("Enter an email address like name@example.com.").optional(),
   subject: z.string().trim().min(1, "Enter a subject.").max(200, "Keep the subject under 200 characters.").optional(),
-  message: z.string().trim().min(1, "Enter a message.").max(5000, "Keep the message under 5,000 characters.").optional(),
+  message: z
+    .string()
+    .trim()
+    .max(20000, "Keep the message shorter.")
+    .refine((m) => Boolean(emailBodyText(m)), "Enter a message.")
+    .optional(),
   attachPdf: z.boolean().optional(),
 });
 export type EmailOverride = z.infer<typeof emailOverrideSchema>;

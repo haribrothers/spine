@@ -31,6 +31,7 @@ export class EmailTemplatePreviewController {
   ) {}
 
   @Post(":type/preview")
+  @UseInterceptors(IdempotencyInterceptor)
   async preview(@Session() session: UserSession, @Param("type") type: string, @Body() body: unknown) {
     const orgId = requireOrgId(session);
     const { kind, text } = this.parse(type, body);

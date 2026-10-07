@@ -1,5 +1,6 @@
-import { DEFAULT_EMAIL_TEMPLATES, fillPlaceholders, type EmailPlaceholder, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
-import { appUrl, emailDate, emailMoney, firstName, type EmailContent } from "./email-layout";
+import { DEFAULT_EMAIL_TEMPLATES, emailBodyHtml, fillPlaceholders, type EmailPlaceholder, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
+import { splitGreeting } from "./email-html";
+import { appUrl, emailDate, emailMoney, escapeHtml, firstName, type EmailContent } from "./email-layout";
 
 /**
  * US-NTF-11 — the wording of every email Spine sends, one function each,
@@ -20,20 +21,15 @@ const REPLY_NOTE = "Questions? Reply to this email.";
 /**
  * US-SET-21 (D-153) — an email's words from its template (the saved one,
  * one edited in a "Send" dialog, or Spine's default), placeholders filled.
- * Blank lines split paragraphs; a short first line ending in a comma
- * ("Hi Alan,") is the greeting.
+ * A short first paragraph ending in a comma ("Hi Alan,") is the greeting.
  */
 export function fromTemplate(type: EmailTemplateType, text: EmailTemplateText | undefined, values: Partial<Record<EmailPlaceholder, string>>) {
   const t = text ?? DEFAULT_EMAIL_TEMPLATES[type];
   const subject = fillPlaceholders(t.subject, values).replace(/\s+/g, " ").trim();
-  const blocks = fillPlaceholders(t.body, values)
-    .replace(/\r\n/g, "\n")
-    .split(/\n{2,}/)
-    .map((b) => b.trim())
-    .filter(Boolean);
-  const first = blocks[0];
-  const greeting = blocks.length > 1 && first && !first.includes("\n") && first.length <= 80 && first.endsWith(",") ? blocks.shift() : undefined;
-  return { subject, greeting, paragraphs: blocks, values };
+  // D-189: the message is the editor's HTML; values go in escaped.
+  const escaped = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, escapeHtml(v ?? "")])) as Partial<Record<EmailPlaceholder, string>>;
+  const { greeting, rest } = splitGreeting(fillPlaceholders(emailBodyHtml(t.body), escaped));
+  return { subject, greeting, bodyHtml: rest, values };
 }
 
 export function quoteEmail(d: {
@@ -59,7 +55,7 @@ export function quoteEmail(d: {
     link: d.link ?? "",
   });
   // Without a page to open, Spine's default says the PDF is attached instead.
-  const paragraphs = !d.text && !d.link ? ["Here's our quote, attached as a PDF."] : words.paragraphs;
+  const bodyHtml = !d.text && !d.link ? "<p>Here's our quote, attached as a PDF.</p>" : words.bodyHtml;
   return {
     subject: words.subject,
     values: words.values,
@@ -67,7 +63,8 @@ export function quoteEmail(d: {
       preheader: `${d.businessName} sent you a quote (${d.number}).`,
       heading: "Your quote is ready",
       greeting: words.greeting,
-      paragraphs,
+      bodyHtml,
+      paragraphs: [],
       facts: [
         { label: "Quote", value: d.number },
         { label: "Total", value: total },
@@ -132,8 +129,8 @@ export function invoiceEmail(d: {
       preheader: state ? `Invoice ${d.number} ${state}.` : `${d.businessName} sent you an invoice (${d.number}).`,
       heading: state ? `Invoice ${d.number} ${state}` : "Your invoice is ready",
       greeting: words.greeting,
+      bodyHtml: words.bodyHtml,
       paragraphs: [
-        ...words.paragraphs,
         ...(paid ? ["This invoice is already paid in full — nothing is owing."] : []),
         // US-INV-26: the stored PDF's QR code keeps the amount at issue; say what clears it now.
         ...(state && !paid && d.upiQrAmount != null && d.upiQrAmount !== d.balanceDue
@@ -216,7 +213,8 @@ export function receiptEmail(d: {
     content: {
       heading: "Your receipt",
       greeting: words.greeting,
-      paragraphs: words.paragraphs,
+      bodyHtml: words.bodyHtml,
+      paragraphs: [],
       facts: [
         { label: "Receipt", value: d.number },
         { label: "Amount", value: amount },
@@ -246,7 +244,8 @@ export function creditNoteEmail(d: {
       preheader: `${d.businessName} sent you a credit note (${d.number}).`,
       heading: "Your credit note",
       greeting: words.greeting,
-      paragraphs: words.paragraphs,
+      bodyHtml: words.bodyHtml,
+      paragraphs: [],
       facts: [
         { label: "Credit note", value: d.number },
         ...(d.invoiceNumber ? [{ label: "Against invoice", value: d.invoiceNumber }] : []),
@@ -284,7 +283,8 @@ export function statementEmail(d: {
     content: {
       heading: "Your statement",
       greeting: words.greeting,
-      paragraphs: words.paragraphs,
+      bodyHtml: words.bodyHtml,
+      paragraphs: [],
       facts: [
         { label: "Period", value: d.period },
         { label: "Balance due", value: balance },

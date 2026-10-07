@@ -1,3 +1,4 @@
+import { renderEmailBody } from "./email-html";
 import { formatMoney } from "@spine/shared";
 import type { SendEmailInput } from "./email.service";
 
@@ -42,6 +43,8 @@ export interface EmailContent {
   /** "Hi Alan," */
   greeting?: string;
   paragraphs: string[];
+  /** D-189 — the message from a template, as HTML from the rich text editor; shown before `paragraphs`, made safe and styled at render. */
+  bodyHtml?: string;
   facts?: { label: string; value: string }[];
   /** Short titled lists under the facts, e.g. the digest's "Today" and "Yesterday" (US-NTF-13). */
   sections?: { title: string; lines: string[] }[];
@@ -108,6 +111,15 @@ export function renderEmail(brand: EmailBrand, content: EmailContent): RenderedE
     ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr><td style="border-radius:8px;background:${color};"><a href="${escapeHtml(content.button.url)}" style="display:inline-block;padding:11px 22px;color:${c.onPrimary};font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">${escapeHtml(content.button.label)}</a></td></tr></table>`
     : "";
 
+  const paragraphStyle = `margin:0 0 16px;color:${c.text};font-size:15px;line-height:1.6;`;
+  const body = content.bodyHtml
+    ? renderEmailBody(content.bodyHtml, {
+        paragraph: paragraphStyle,
+        list: `margin:0 0 16px;padding-left:24px;color:${c.text};font-size:15px;line-height:1.6;`,
+        item: "margin:0 0 4px;",
+        link: "color:inherit;text-decoration:underline;",
+      })
+    : null;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escapeHtml(content.heading)}</title></head>
 <body style="margin:0;padding:0;background:${c.canvas};${font};">
@@ -118,7 +130,7 @@ ${content.preheader ? `<div style="display:none;max-height:0;overflow:hidden;">$
 <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;"><tr>${logo}<td style="vertical-align:middle;color:${c.text};font-size:18px;font-weight:600;">${escapeHtml(brand.name)}</td></tr></table>
 <h1 style="margin:0 0 16px;color:${c.text};font-size:24px;line-height:1.3;">${escapeHtml(content.heading)}</h1>
 ${content.greeting ? `<p style="margin:0 0 4px;color:${c.text};font-size:15px;line-height:1.6;">${escapeHtml(content.greeting)}</p>` : ""}
-${content.paragraphs.map((p) => `<p style="margin:0 0 16px;color:${c.text};font-size:15px;line-height:1.6;">${multiline(p)}</p>`).join("\n")}
+${[...(body ? [body.html] : []), ...content.paragraphs.map((p) => `<p style="${paragraphStyle}">${multiline(p)}</p>`)].join("\n")}
 ${facts}${sections}${callout}${button}
 ${content.note ? `<p style="margin:0 0 20px;color:${c.muted};font-size:13px;line-height:1.5;">${multiline(content.note)}</p>` : ""}
 </td></tr>
@@ -133,6 +145,7 @@ ${content.note ? `<p style="margin:0 0 20px;color:${c.muted};font-size:13px;line
     content.heading,
     "",
     ...(content.greeting ? [content.greeting] : []),
+    ...(body?.textBlocks ?? []).flatMap((p) => [p, ""]),
     ...content.paragraphs.flatMap((p) => [p, ""]),
     ...(content.facts?.length ? [...content.facts.map((f) => `${f.label}: ${f.value}`), ""] : []),
     ...(content.sections ?? []).filter((s) => s.lines.length > 0).flatMap((s) => [`${s.title}:`, ...s.lines, ""]),

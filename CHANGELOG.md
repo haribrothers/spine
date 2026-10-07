@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — D-189: email messages are rich text (Phase 9)
+
+- The Message in Settings › Emails, the send dialogs and the statement dialog is now the rich text editor: paragraphs, bold, italics, bullet and numbered lists, and links. The Insert buttons put placeholders where the cursor is in the message, as they do in the subject.
+- Sending keeps the formatting with the email's own styles and makes it safe: only those tags survive, links only to web or mail addresses, and values like the customer's name go in escaped.
+- The plain-text version lists bullets and shows each link's address.
+- Messages saved as plain text still read as paragraphs. Spine's default emails look exactly as before.
+- `RichTextEditor` gains `onReady` (insert text at the cursor), `onFocus` and `aria-label` (named, it's a multi-line text box); its doc page, design-system page and a11y test are updated.
+
 ### 2026-10-07 — US-SET-22: preview an email and reset it to the default (Phase 9)
 
 - Settings › Emails has three new buttons for the email you're editing (saved or not):

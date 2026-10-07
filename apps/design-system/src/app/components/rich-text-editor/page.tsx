@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { RichTextContent, RichTextEditor } from "@spine/ui";
+import { useRef, useState } from "react";
+import { RichTextContent, RichTextEditor, type RichTextEditorHandle } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/components/doc-page";
@@ -9,6 +9,24 @@ import { ApiTable, DocLead, DocSection, DocTitle, FeatureList } from "@/componen
 function RichTextEditorDemo() {
   const [value, setValue] = useState("<p>Payment due within <strong>14 days</strong> of invoice date.</p>");
   return <RichTextEditor value={value} onValueChange={setValue} placeholder="Terms & conditions…" />;
+}
+
+/** An "Insert" menu outside the editor, as Settings › Emails uses for placeholders (D-189). */
+function RichTextEditorInsertDemo() {
+  const [value, setValue] = useState("<p>Hi ,</p><p>Your invoice is attached.</p>");
+  const handle = useRef<RichTextEditorHandle | null>(null);
+  return (
+    <div className="flex flex-col gap-2">
+      <RichTextEditor value={value} onValueChange={setValue} onReady={(h) => (handle.current = h)} />
+      <div className="flex gap-2">
+        {["{customer_name}", "{document_number}"].map((p) => (
+          <button key={p} type="button" className="rounded border border-border px-2 font-mono text-[12px]" onMouseDown={(e) => e.preventDefault()} onClick={() => handle.current?.insertText(p)}>
+            {p}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function RichTextContentDemo() {
@@ -21,12 +39,22 @@ export default function RichTextEditorPage() {
       <DocTitle>RichTextEditor</DocTitle>
       <DocLead>
         Basic rich text — bold, italic, bullet/numbered lists, links. For a quote's notes or terms &
-        conditions, where plain text reads flat but a full document editor would be overkill.
+        conditions and the message of a customer email, where plain text reads flat but a full document editor would be overkill.
       </DocLead>
 
       <ComponentPreview>
         <RichTextEditorDemo />
       </ComponentPreview>
+
+      <DocSection id="insert" title="Inserting text from outside">
+        <DocLead>
+          `onReady` hands back `insertText`, which puts text at the cursor — the email templates' placeholder menu uses it. Keep the
+          cursor by preventing the button's mouse-down default.
+        </DocLead>
+        <ComponentPreview>
+          <RichTextEditorInsertDemo />
+        </ComponentPreview>
+      </DocSection>
 
       <DocSection id="features" title="Features">
         <FeatureList
@@ -58,6 +86,9 @@ export default () => {
             { prop: "onValueChange", type: "(html: string) => void" },
             { prop: "placeholder", type: "string" },
             { prop: "disabled", type: "boolean", defaultValue: "false" },
+            { prop: "aria-label", type: "string" },
+            { prop: "onReady", type: "(handle: { insertText(text): void; focus(): void }) => void" },
+            { prop: "onFocus", type: "() => void" },
             { prop: "error", type: "boolean", defaultValue: "false" },
             { prop: "id / aria-invalid / aria-required / aria-describedby", type: "passed through to the editable region" },
           ]}

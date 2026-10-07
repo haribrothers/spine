@@ -1,15 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Alert, AlertDescription, Button, Checkbox, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, Spinner, Textarea } from "@spine/ui";
-import { unknownPlaceholder, unknownPlaceholderMessage, type EmailDraft, type EmailOverride } from "@spine/shared";
+import { Alert, AlertDescription, Button, Checkbox, Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, FormField, Input, RichTextEditor, Spinner } from "@spine/ui";
+import { emailBodyText, unknownPlaceholder, unknownPlaceholderMessage, type EmailDraft, type EmailOverride } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 /**
  * US-SET-21 (D-153) — the "Send" dialog for a customer email: To, Subject
- * and Message start from the email's template with the document's details
+ * and Message (rich text, D-189) start from the email's template with the document's details
  * filled in, and can be changed for this one email. `onSend` gets only what
  * the dialog holds; the caller posts it to the document's send route.
  */
@@ -68,7 +68,7 @@ export function SendEmailDialog({
   };
   const toError = !to.trim() ? "Enter an email address." : EMAIL.test(to.trim()) ? undefined : "Enter an email address like name@example.com.";
   const subjectError = !subject.trim() ? "Enter a subject." : placeholderError(subject);
-  const messageError = !message.trim() ? "Enter a message." : placeholderError(message);
+  const messageError = !emailBodyText(message) ? "Enter a message." : placeholderError(message);
 
   async function send() {
     setTouched(true);
@@ -111,7 +111,17 @@ export function SendEmailDialog({
                 {(field) => <Input {...field} required={false} maxLength={200} value={subject} onChange={(e) => setSubject(e.target.value)} />}
               </FormField>
               <FormField label="Message" helperText="Starts from your template in Settings › Emails. Changes here apply to this email only." errorText={touched || placeholderError(message) ? messageError : undefined}>
-                {(field) => <Textarea {...field} rows={9} value={message} onChange={(e) => setMessage(e.target.value)} />}
+                {(field) => (
+                  <RichTextEditor
+                    id={field.id}
+                    aria-describedby={field["aria-describedby"]}
+                    aria-invalid={field["aria-invalid"]}
+                    aria-label="Message"
+                    className="[&_.ProseMirror]:min-h-40"
+                    value={message}
+                    onValueChange={setMessage}
+                  />
+                )}
               </FormField>
               {draft.hasPdf && pdfLabel && (
                 <label className="flex min-h-11 cursor-pointer items-center gap-2 text-[14px] text-on-surface">

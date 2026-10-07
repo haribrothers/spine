@@ -19,12 +19,15 @@ import {
   DialogTitle,
   FormField,
   Input,
+  RichTextEditor,
   Spinner,
-  Textarea,
+  type RichTextEditorHandle,
 } from "@spine/ui";
 import {
   DEFAULT_EMAIL_TEMPLATES,
   EMAIL_PLACEHOLDERS_BY_TYPE,
+  emailBodyHtml,
+  emailBodyText,
   EMAIL_TEMPLATE_LABELS,
   EMAIL_TEMPLATE_TYPES,
   unknownPlaceholder,
@@ -37,8 +40,8 @@ import { SavedToast } from "../saved-toast";
 
 type Templates = Record<EmailTemplateType, EmailTemplateText>;
 
-const firstLine = (body: string) => body.split("\n").map((l) => l.trim()).find(Boolean) ?? "";
-const same = (a: EmailTemplateText, b: EmailTemplateText) => a.subject.trim() === b.subject.trim() && a.body.trim() === b.body.trim();
+const firstLine = (body: string) => emailBodyText(body).split("\n").map((l) => l.trim()).find(Boolean) ?? "";
+const same = (a: EmailTemplateText, b: EmailTemplateText) => a.subject.trim() === b.subject.trim() && emailBodyHtml(a.body).trim() === emailBodyHtml(b.body).trim();
 
 /**
  * US-SET-21 (D-153) — Settings › Emails: the subject and message of each
@@ -57,24 +60,33 @@ export function EmailsPane() {
   const [status, setStatus] = useState<string | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
   const subjectRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  // D-189: the message is rich text; placeholders go in through the editor's handle.
+  const bodyEditor = useRef<RichTextEditorHandle | null>(null);
   const lastField = useRef<"subject" | "body">("body");
   // Where the cursor goes once an inserted placeholder is on screen.
-  const pendingCursor = useRef<{ field: "subject" | "body"; at: number } | null>(null);
+  const pendingCursor = useRef<{ at: number } | null>(null);
 
   useLayoutEffect(() => {
     const pending = pendingCursor.current;
     if (!pending) return;
     pendingCursor.current = null;
-    const el = pending.field === "subject" ? subjectRef.current : bodyRef.current;
-    el?.focus();
-    el?.setSelectionRange(pending.at, pending.at);
+    subjectRef.current?.focus();
+    subjectRef.current?.setSelectionRange(pending.at, pending.at);
   });
 
   useEffect(() => {
     apiClient
       .get<{ value: Partial<Templates> | null }>("/org/settings/email_templates")
-      .then((res) => setTemplates(Object.fromEntries(EMAIL_TEMPLATE_TYPES.map((t) => [t, res.value?.[t] ?? DEFAULT_EMAIL_TEMPLATES[t]])) as Templates))
+      .then((res) =>
+        setTemplates(
+          Object.fromEntries(
+            EMAIL_TEMPLATE_TYPES.map((t) => {
+              const text = res.value?.[t] ?? DEFAULT_EMAIL_TEMPLATES[t];
+              return [t, { subject: text.subject, body: emailBodyHtml(text.body) }];
+            }),
+          ) as Templates,
+        ),
+      )
       .catch(() => setTemplates({ ...DEFAULT_EMAIL_TEMPLATES }));
   }, []);
 
@@ -93,25 +105,28 @@ export function EmailsPane() {
   })();
   const bodyError = (() => {
     const name = unknownPlaceholder(current.body, type);
-    return name === null ? (current.body.trim() ? undefined : "Enter a message.") : unknownPlaceholderMessage(name);
+    return name === null ? (emailBodyText(current.body) ? undefined : "Enter a message.") : unknownPlaceholderMessage(name);
   })();
   const invalid = EMAIL_TEMPLATE_TYPES.find((t) => {
     const x = templates[t];
-    return unknownPlaceholder(x.subject, t) !== null || unknownPlaceholder(x.body, t) !== null || !x.subject.trim() || !x.body.trim();
+    return unknownPlaceholder(x.subject, t) !== null || unknownPlaceholder(x.body, t) !== null || !x.subject.trim() || !emailBodyText(x.body);
   });
 
   const update = (patch: Partial<EmailTemplateText>) => setTemplates((all) => (all ? { ...all, [type]: { ...all[type], ...patch } } : all));
 
   /** Puts the placeholder where the cursor was in the subject or message. */
   const insert = (placeholder: string) => {
-    const field = lastField.current;
-    const el = field === "subject" ? subjectRef.current : bodyRef.current;
-    const value = current[field];
+    const token = `{${placeholder}}`;
+    if (lastField.current === "body") {
+      bodyEditor.current?.insertText(token);
+      return;
+    }
+    const el = subjectRef.current;
+    const value = current.subject;
     const start = el?.selectionStart ?? value.length;
     const end = el?.selectionEnd ?? value.length;
-    const token = `{${placeholder}}`;
-    pendingCursor.current = { field, at: start + token.length };
-    update({ [field]: value.slice(0, start) + token + value.slice(end) });
+    pendingCursor.current = { at: start + token.length };
+    update({ subject: value.slice(0, start) + token + value.slice(end) });
   };
 
   async function showPreview() {
@@ -209,8 +224,22 @@ export function EmailsPane() {
               />
             )}
           </FormField>
-          <FormField label="Message" helperText="Blank lines start a new paragraph. Web addresses become links." errorText={bodyError}>
-            {(field) => <Textarea {...field} ref={bodyRef} rows={9} value={current.body} onFocus={() => (lastField.current = "body")} onChange={(e) => update({ body: e.target.value })} />}
+          <FormField label="Message" helperText="Bold, italics, lists and links show in the email. Web addresses become links." errorText={bodyError}>
+            {(field) => (
+              <RichTextEditor
+                key={type}
+                id={field.id}
+                aria-describedby={field["aria-describedby"]}
+                aria-invalid={field["aria-invalid"]}
+                aria-label="Message"
+                error={Boolean(bodyError)}
+                className="[&_.ProseMirror]:min-h-44"
+                value={current.body}
+                onValueChange={(body) => update({ body })}
+                onFocus={() => (lastField.current = "body")}
+                onReady={(handle) => (bodyEditor.current = handle)}
+              />
+            )}
           </FormField>
           <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Insert a placeholder">
             <span className="text-[13px] font-semibold text-on-surface">Insert</span>
@@ -277,7 +306,7 @@ export function EmailsPane() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Keep my text</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void resetToDefault()}>Reset to default</AlertDialogAction>
+            <AlertDialogAction onClick={resetToDefault}>Reset to default</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

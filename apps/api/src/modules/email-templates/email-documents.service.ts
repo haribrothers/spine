@@ -1,11 +1,12 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
 import { and, desc, eq, isNotNull } from "drizzle-orm";
-import { fillPlaceholders, type EmailDraft, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
+import { emailBodyHtml, fillPlaceholders, type EmailDraft, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { contacts, creditNotes, invoices, payments, quotes } from "../../db/schema";
 import { loadEmailBrand } from "../email/email-brand";
 import type { EmailBrand } from "../email/email-layout";
+import { escapeHtml } from "../email/email-layout";
 import { creditNoteEmail, invoiceEmail, quoteEmail, receiptEmail, statementEmail, type EmailTemplate } from "../email/email-templates";
 import { loadEmailText } from "../email/email-text";
 
@@ -132,7 +133,8 @@ export function draftOf(type: EmailTemplateType, text: EmailTemplateText, built:
     type,
     to: built.to,
     subject: fillPlaceholders(text.subject, values).replace(/\s+/g, " ").trim(),
-    message: fillPlaceholders(text.body, values).trim(),
+    // D-189: the message is the editor's HTML, with values escaped.
+    message: fillPlaceholders(emailBodyHtml(text.body), Object.fromEntries(Object.entries(values).map(([k, v]) => [k, escapeHtml(v ?? "")]))).trim(),
     hasPdf: built.hasPdf,
   };
 }

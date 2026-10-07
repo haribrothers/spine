@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { EmailDraft } from "@spine/shared";
+import { emailBodyText, type EmailDraft } from "@spine/shared";
 import {
   Alert,
   AlertDescription,
@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
-  Textarea,
+  RichTextEditor,
 } from "@spine/ui";
 import {
   NO_INVOICES_YET,
@@ -139,7 +139,7 @@ export function StatementDialog({
     setBusy("send");
     setError(null);
     try {
-      const result = await apiClient.post<{ sentTo: string }>(`/contacts/${contactId}/statement/send`, { ...range, mode, email: email.trim(), subject: subject.trim() || null, message: message.trim() || null });
+      const result = await apiClient.post<{ sentTo: string }>(`/contacts/${contactId}/statement/send`, { ...range, mode, email: email.trim(), subject: subject.trim() || null, message: emailBodyText(message) ? message : null });
       onSent(result.sentTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the statement.");
@@ -234,12 +234,13 @@ export function StatementDialog({
           </FormField>
           <FormField label="Message" helperText="Starts from your template in Settings › Emails. Changes here apply to this email only.">
             {(field) => (
-              <Textarea
-                {...field}
-                rows={6}
+              <RichTextEditor
+                id={field.id}
+                aria-describedby={field["aria-describedby"]}
+                aria-label="Message"
                 value={message}
-                onChange={(e) => {
-                  setMessage(e.target.value);
+                onValueChange={(html) => {
+                  setMessage(html);
                   setEdited(true);
                 }}
               />
