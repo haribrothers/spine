@@ -126,4 +126,11 @@ export interface TaxSummaryReport {
   collectedByRate: { name: string; percentage: number; taxableAmount: string; amount: string }[];
   adjustments: { taxableAmount: string; amount: string } | null;
   totalTaxable: string;
+  /** US-RPT-37 */
+  paidByRate: { name: string; percentage: number; taxableAmount: string; amount: string }[];
+  paidAdjustments: { amount: string } | null;
+  totalPaidTaxable: string;
+  byTaxType: { rows: { taxType: string; label: string; collected: string; paid: string; net: string }[]; total: { collected: string; paid: string; net: string } };
+  bySupplyClass: { supplyClass: "zero_rated" | "exempt" | "non_taxable"; label: string; sales: string; purchases: string }[];
+  payments: { paid: string; refunded: string; stillToPay: string };
 }

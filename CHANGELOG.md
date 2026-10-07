@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-RPT-37: see tax collected and paid by rate and tax type (Phase 9)
+
+- Reports › Tax Summary now shows both sides:
+  - A fourth card, "Paid to the tax authority", says what's still to pay.
+  - "By tax type": collected, paid and net. A GST business always sees CGST, SGST, IGST and cess (SGST reads "SGST/UTGST" when there's UTGST); elsewhere VAT, GST, sales tax or tax.
+  - "Paid by rate", beside "Collected by rate": bills, approved expenses and money out with tax, less vendor credits.
+  - "Supply class": zero-rated, exempt and non-taxable sales and purchases (D-147).
+- The totals equal the ledger: tax collected is 2100's credits and tax paid is 1200's debits for the range. Anything the documents don't explain (voids of earlier documents, removed documents) shows as an adjustment row.
+- "Paid to the tax authority" counts tax payments dated in the range or for a period that overlaps it, as the tax payments list does (US-TAX-08). Still to pay is net payable, less payments, plus refunds.
+- The CSV, Excel and PDF exports carry the new sections.
+- The Tax Summary and the GST invoice PDF now share one module that splits each line's tax by type (`RateBook`, `loadTaxBreakdown`). GSTR-1 will use it too.
+
 ### 2026-10-07 — US-INV-26: show a UPI QR code on invoices (Phase 9)
 
 - When an INR invoice is issued with a UPI ID saved and "Show a UPI QR code on invoices" on, its PDF's "How to pay" box shows:

@@ -1,7 +1,8 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { gstinRequired, legacyGstRates, splitLineTax, type SupplyType, type TaxComponent, type TaxProfile, type TaxType } from "@spine/shared";
+import { and, eq } from "drizzle-orm";
+import { gstinRequired, type SupplyType, type TaxComponent, type TaxProfile } from "@spine/shared";
 import type { Database } from "../../db/client";
-import { addresses, contacts, settings, taxGroupRates, taxRates } from "../../db/schema";
+import { addresses, contacts, settings } from "../../db/schema";
+import { RateBook } from "../tax/line-tax-components";
 
 /** What a GST invoice or credit note prints beyond an ordinary one (US-TAX-15). */
 export interface GstPdfContext {
@@ -54,27 +55,9 @@ export async function loadGstContext(
   const billing = contactAddresses.find((a) => a.type === "billing" && a.isPrimary) ?? contactAddresses.find((a) => a.type === "billing") ?? contactAddresses[0];
 
   const items = lines.filter((l) => l.type === "item");
-  const rateIds = [...new Set(items.map((l) => l.taxRateId).filter((id): id is string => Boolean(id)))];
-  const groupIds = [...new Set(items.map((l) => l.taxGroupId).filter((id): id is string => Boolean(id)))];
-  const links = groupIds.length ? await db.select().from(taxGroupRates).where(inArray(taxGroupRates.taxGroupId, groupIds)) : [];
-  const allRateIds = [...new Set([...rateIds, ...links.map((l) => l.taxRateId)])];
-  const rateRows = allRateIds.length ? await db.select().from(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.id, allRateIds))) : [];
-  const rateOf = (id: string) => rateRows.find((r) => r.id === id);
-  const asGst = (type: TaxType): TaxType => (type === "other" || type === "vat" || type === "gst" || type === "sales_tax" ? (doc.supplyType === "intra" ? "cgst" : "igst") : type);
-
+  const book = await RateBook.load(db, orgId, items);
   const lineTaxes: Record<string, TaxComponent[]> = {};
-  for (const line of items) {
-    let rates: { taxType: TaxType; rate: number }[];
-    if (line.taxRateId && rateOf(line.taxRateId)) {
-      const r = rateOf(line.taxRateId)!;
-      rates = r.taxType === "other" ? legacyGstRates(r.rate, doc.supplyType) : [{ taxType: asGst(r.taxType), rate: r.rate }];
-    } else if (line.taxGroupId) {
-      rates = links.filter((l) => l.taxGroupId === line.taxGroupId).flatMap((l) => (rateOf(l.taxRateId) ? [{ taxType: asGst(rateOf(l.taxRateId)!.taxType), rate: rateOf(l.taxRateId)!.rate }] : []));
-    } else {
-      rates = legacyGstRates(line.taxRatePercentage, doc.supplyType);
-    }
-    lineTaxes[line.id] = splitLineTax(line.lineTaxAmount, rates);
-  }
+  for (const line of items) lineTaxes[line.id] = book.components(line, doc.supplyType);
 
   return {
     business: {

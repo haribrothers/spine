@@ -162,8 +162,26 @@ export function taxSummaryDocument(report: TaxSummaryReport): Doc {
       ...report.collectedByRate.map((r): ReportRow => ({ cells: [r.name, r.taxableAmount, r.amount] })),
       ...(report.adjustments ? [{ cells: ["Adjustments from credit notes and voided invoices", report.adjustments.taxableAmount, report.adjustments.amount] }] : []),
       { cells: ["Total collected", report.totalTaxable, report.taxCollected], style: "total" },
-      { cells: ["Tax paid", null, report.taxPaid] },
+      // US-RPT-37: the paid side, by tax type and supply class, and what's been paid to the tax authority.
+      { cells: ["Paid by rate", null, null], style: "heading" },
+      ...report.paidByRate.map((r): ReportRow => ({ cells: [r.name, r.taxableAmount, r.amount] })),
+      ...(report.paidAdjustments ? [{ cells: ["Adjustments from voided bills and removed documents", null, report.paidAdjustments.amount] }] : []),
+      { cells: ["Tax paid", report.totalPaidTaxable, report.taxPaid], style: "total" },
       { cells: ["Net payable", null, report.netTaxPayable], style: "grand" },
+      { cells: ["Paid to the tax authority", null, report.payments.paid] },
+      ...(report.payments.refunded !== "0" ? [{ cells: ["Refunded by the tax authority", null, report.payments.refunded] }] : []),
+      { cells: ["Still to pay", null, report.payments.stillToPay], style: "total" },
+      { cells: ["By tax type", null, null], style: "heading" },
+      ...report.byTaxType.rows.flatMap((r): ReportRow[] => [
+        { cells: [`${r.label} collected`, null, r.collected] },
+        { cells: [`${r.label} paid`, null, r.paid] },
+        { cells: [`${r.label} net`, null, r.net], style: "total" },
+      ]),
+      { cells: ["By supply class", null, null], style: "heading" },
+      ...report.bySupplyClass.flatMap((r): ReportRow[] => [
+        { cells: [`${r.label} sales`, r.sales, null] },
+        { cells: [`${r.label} purchases`, r.purchases, null] },
+      ]),
     ],
   };
 }

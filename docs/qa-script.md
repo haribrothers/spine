@@ -3880,6 +3880,33 @@ Use an INR business with UPI ID "kaveriinteriors@okhdfc", payee name "Kaveri Int
    - In a USD business, invoice PDFs and emails look as before (section for US-INV-15).
    - Reminders for invoices without a QR code don't mention one.
 
+## 174. Tax Summary by rate, tax type and supply class (US-RPT-37, Phase 9)
+
+Use an Indian business (GSTIN 29AAACK0000A1ZK, Karnataka) for Jul 1 to today.
+
+1. Issue an invoice in Karnataka for ₹1,80,000 at GST 18% plus a ₹10,000 exempt line. Issue one to a Mumbai customer for ₹1,00,000 at IGST 18% plus a ₹5,000 zero-rated line.
+2. Issue a ₹10,000 credit note at 18% on the first invoice.
+3. Record:
+   - A bill for ₹50,000 at GST 18%, ₹12,000 exempt and ₹8,400 non-taxable.
+   - A ₹5,000 vendor credit at GST 18%.
+   - An approved expense with ₹1,800 IGST.
+   - Money out of ₹5,900 at GST 18%.
+4. Record a ₹10,000 tax payment for Q3.
+5. Open Reports › Tax Summary:
+   - The cards read: Tax collected ₹48,600.00, Tax paid ₹10,800.00, Net payable ₹37,800.00, and Paid to the tax authority ₹10,000.00 with "Still to pay ₹27,800.00".
+   - "By tax type": CGST ₹15,300 / ₹4,500 / ₹10,800; SGST the same; IGST ₹18,000 / ₹1,800 / ₹16,200; Cess ₹0. The total row matches the cards.
+   - "Collected by rate": GST 18% ₹32,400 and IGST 18% ₹18,000, then the credit-note adjustment.
+   - "Paid by rate": GST 18% ₹9,000 (taxable ₹50,000) and IGST 18% ₹1,800.
+   - "Supply class":
+     - Zero-rated: ₹5,000 sales.
+     - Exempt: ₹10,000 sales and ₹12,000 purchases.
+     - Non-taxable: ₹8,400 purchases.
+6. Export as Excel: the paid side, tax types, supply classes and payments are all there.
+7. In a USD business, "By tax type" lists the business's own tax types; the other tables work the same.
+8. Regression:
+   - Recording and deleting tax payments still updates the list and cards (section for US-TAX-08).
+   - The dashboard tax card still opens this report for its period (US-DASH-25).
+
 ## Known gaps — don't file these as bugs
 
 - A deposit is applied to the final invoice with "Apply credit" after the invoice is issued, so that invoice's UPI QR code asks for the full amount (US-INV-26). Reminders then say what clears it. There's no QR code only when the balance is already nothing at issue.

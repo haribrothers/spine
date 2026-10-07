@@ -796,6 +796,8 @@ export function TrialBalanceTab() {
  * US-RPT-14 (D-057) — tax collected and paid for a period, with a per-rate
  * breakdown, for filing. Collected is from the ledger (after credit notes
  * and voids); the per-rate rows come from issued invoices' lines (D-031).
+ * US-RPT-37 adds the paid side by rate, collected/paid/net by tax type,
+ * supply classes and what's been paid to the tax authority.
  */
 export function TaxSummaryTab() {
   // Recording tax payments stays Owner-only (US-TAX-08); reading the summary is "View financial statements" (US-RPT-36).
@@ -839,27 +841,74 @@ export function TaxSummaryTab() {
 
       {report && !error && (
         <>
-          <ReportKpis count={3} data-testid="tax-summary-cards">
+          <ReportKpis count={4} data-testid="tax-summary-cards">
             <StatCard label="Tax collected" value={money(report.taxCollected)} trend={{ direction: "neutral", label: "On issued invoices, after credit notes" }} />
-            <StatCard label="Tax paid" value={money(report.taxPaid)} trend={{ direction: "neutral", label: "On recorded vendor bills and approved expenses" }} />
+            <StatCard label="Tax paid" value={money(report.taxPaid)} trend={{ direction: "neutral", label: "On bills, expenses and money out, less vendor credits" }} />
             <StatCard label="Net payable" value={money(report.netTaxPayable)} trend={{ direction: "neutral", label: "Collected minus paid" }} />
+            {/* US-RPT-37: tax payments recorded for the range (US-TAX-08). */}
+            <StatCard label="Paid to the tax authority" value={money(report.payments.paid)} trend={{ direction: "neutral", label: `Still to pay ${money(report.payments.stillToPay)}` }} />
           </ReportKpis>
 
+          {/* US-RPT-37: collected, paid and net by tax type. */}
           <StatementTable
-            data-testid="tax-summary-table"
+            data-testid="tax-summary-by-type"
             columns={[
-              { key: "name", header: "Collected by rate" },
-              { key: "taxable", header: "Taxable amount", align: "right" },
-              { key: "tax", header: "Tax", align: "right" },
+              { key: "name", header: "Tax type" },
+              { key: "collected", header: "Collected", align: "right" },
+              { key: "paid", header: "Paid", align: "right" },
+              { key: "net", header: "Net", align: "right" },
             ]}
             rows={[
-              ...(report.collectedByRate.length === 0 && !report.adjustments ? [{ kind: "empty" as const, key: "none", label: "No tax collected in this range." }] : []),
-              ...report.collectedByRate.map((row) => ({ kind: "line" as const, key: row.name, cells: { name: row.name, taxable: money(row.taxableAmount), tax: money(row.amount) } })),
-              ...(report.adjustments
-                ? [{ kind: "line" as const, key: "adjustments", cells: { name: "Adjustments from credit notes and voided invoices", taxable: money(report.adjustments.taxableAmount), tax: money(report.adjustments.amount) } }]
-                : []),
-              { kind: "total", key: "total", cells: { name: "Total collected", taxable: money(report.totalTaxable), tax: money(report.taxCollected) } },
+              ...(report.byTaxType.rows.length === 0 ? [{ kind: "empty" as const, key: "none", label: "No tax collected or paid in this range." }] : []),
+              ...report.byTaxType.rows.map((row) => ({ kind: "line" as const, key: row.taxType, cells: { name: row.label, collected: money(row.collected), paid: money(row.paid), net: money(row.net) } })),
+              { kind: "total", key: "total", cells: { name: "Total", collected: money(report.byTaxType.total.collected), paid: money(report.byTaxType.total.paid), net: money(report.byTaxType.total.net) } },
             ]}
+          />
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <StatementTable
+              data-testid="tax-summary-table"
+              columns={[
+                { key: "name", header: "Collected by rate" },
+                { key: "taxable", header: "Taxable amount", align: "right" },
+                { key: "tax", header: "Tax", align: "right" },
+              ]}
+              rows={[
+                ...(report.collectedByRate.length === 0 && !report.adjustments ? [{ kind: "empty" as const, key: "none", label: "No tax collected in this range." }] : []),
+                ...report.collectedByRate.map((row) => ({ kind: "line" as const, key: row.name, cells: { name: row.name, taxable: money(row.taxableAmount), tax: money(row.amount) } })),
+                ...(report.adjustments
+                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: "Adjustments from credit notes and voided invoices", taxable: money(report.adjustments.taxableAmount), tax: money(report.adjustments.amount) } }]
+                  : []),
+                { kind: "total", key: "total", cells: { name: "Total collected", taxable: money(report.totalTaxable), tax: money(report.taxCollected) } },
+              ]}
+            />
+            <StatementTable
+              data-testid="tax-summary-paid"
+              columns={[
+                { key: "name", header: "Paid by rate" },
+                { key: "taxable", header: "Taxable amount", align: "right" },
+                { key: "tax", header: "Tax", align: "right" },
+              ]}
+              rows={[
+                ...(report.paidByRate.length === 0 && !report.paidAdjustments ? [{ kind: "empty" as const, key: "none", label: "No tax paid in this range." }] : []),
+                ...report.paidByRate.map((row) => ({ kind: "line" as const, key: row.name, cells: { name: row.name, taxable: money(row.taxableAmount), tax: money(row.amount) } })),
+                ...(report.paidAdjustments
+                  ? [{ kind: "line" as const, key: "adjustments", cells: { name: "Adjustments from voided bills and removed documents", taxable: "—", tax: money(report.paidAdjustments.amount) } }]
+                  : []),
+                { kind: "total", key: "total", cells: { name: "Total paid", taxable: money(report.totalPaidTaxable), tax: money(report.taxPaid) } },
+              ]}
+            />
+          </div>
+
+          {/* US-RPT-37 (D-147): supplies that carry no tax, by class. */}
+          <StatementTable
+            data-testid="tax-summary-supply-class"
+            columns={[
+              { key: "name", header: "Supply class" },
+              { key: "sales", header: "Sales", align: "right" },
+              { key: "purchases", header: "Purchases", align: "right" },
+            ]}
+            rows={report.bySupplyClass.map((row) => ({ kind: "line" as const, key: row.supplyClass, cells: { name: row.label, sales: money(row.sales), purchases: money(row.purchases) } }))}
           />
           {isOwner && <TaxPaymentsList from={report.from} to={report.to} currency={currency} version={paymentsVersion} onChanged={() => setPaymentsVersion((v) => v + 1)} />}
           <ReportFootnote>Spine produces the numbers for your return; it doesn&apos;t file it. Owners, and members with &quot;View financial statements&quot;, can see this report.</ReportFootnote>

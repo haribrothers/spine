@@ -9,7 +9,7 @@ test.describe("US-RPT-14", () => {
     await expect(cards).toContainText("Tax collected");
     await expect(cards).toContainText("On issued invoices, after credit notes");
     await expect(cards).toContainText("Tax paid");
-    await expect(cards).toContainText("On recorded vendor bills and approved expenses");
+    await expect(cards).toContainText("On bills, expenses and money out, less vendor credits");
     await expect(cards).toContainText("Net payable");
 
     const table = page.getByTestId("tax-summary-table");

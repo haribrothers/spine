@@ -1,6 +1,6 @@
 import { billingFigures, budgetFigures, comparePeriods, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte, notInArray, or, sql } from "drizzle-orm";
 import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
 import { billedByJob, costByJob } from "../jobs/job-costing.service";
 import { orgClock } from "../../common/org-clock";
@@ -8,18 +8,18 @@ import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import {
   invoices,
-  invoiceLines,
   contacts,
   accounts,
   journalEntries,
   journalLines,
-  taxRates,
-  taxGroups,
   vendorBills,
   jobs,
   creditNotes,
+  settings,
+  taxPayments,
 } from "../../db/schema";
 import { cashAccountCodes } from "../banking/cash-accounts";
+import { loadTaxBreakdown, type TaxBreakdownLine } from "../tax/tax-breakdown";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -328,7 +328,8 @@ export class ReportsService {
     // Debits increase Input Tax Receivable (tax paid) — same net convention.
     const taxPaid = paidRows.reduce((sum, r) => sum + r.line.debit - r.line.credit, 0n);
 
-    const collectedByRate = await this.taxCollectedByRate(orgId, from, to);
+    const breakdown = await loadTaxBreakdown(this.db, orgId, from, to);
+    const collectedByRate = byRate(breakdown.filter((l) => l.source === "invoice"));
     const attributedTax = collectedByRate.reduce((sum, r) => sum + BigInt(r.amount), 0n);
     const attributedTaxable = collectedByRate.reduce((sum, r) => sum + BigInt(r.taxableAmount), 0n);
 
@@ -342,16 +343,53 @@ export class ReportsService {
     const adjustments =
       adjustmentTax !== 0n || adjustmentTaxable !== 0n ? { taxableAmount: adjustmentTaxable.toString(), amount: adjustmentTax.toString() } : null;
 
+    // US-RPT-37: the paid side by rate — bills, expenses and money out, less vendor credits.
+    const paidByRate = byRate(breakdown.filter((l) => l.side === "purchases"));
+    const attributedPaid = paidByRate.reduce((sum, r) => sum + BigInt(r.amount), 0n);
+    const paidAdjustment = taxPaid - attributedPaid;
+
+    const [profile] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "tax_profile")));
+    const gst = (profile?.value as { country?: string } | undefined)?.country === "IN";
+    const net = taxCollected - taxPaid;
+
     return {
       from,
       to,
       taxCollected: taxCollected.toString(),
       taxPaid: taxPaid.toString(),
-      netTaxPayable: (taxCollected - taxPaid).toString(),
+      netTaxPayable: net.toString(),
       collectedByRate,
       adjustments,
       totalTaxable: (attributedTaxable + adjustmentTaxable).toString(),
+      paidByRate,
+      paidAdjustments: paidAdjustment !== 0n ? { amount: paidAdjustment.toString() } : null,
+      totalPaidTaxable: paidByRate.reduce((sum, r) => sum + BigInt(r.taxableAmount), 0n).toString(),
+      byTaxType: byTaxType(breakdown, gst, taxCollected, taxPaid),
+      bySupplyClass: bySupplyClass(breakdown),
+      payments: await this.taxPaymentsFor(orgId, from, to, net),
     };
+  }
+
+  /**
+   * US-RPT-37 — what was paid to (or refunded by) the tax authority for the
+   * range: payments dated in it or for a period that overlaps it, as the
+   * tax payments list shows them (US-TAX-08). "Still to pay" is net payable
+   * less what was paid, plus refunds received.
+   */
+  private async taxPaymentsFor(orgId: string, from: string, to: string, net: bigint): Promise<TaxSummaryReport["payments"]> {
+    const rows = await this.db
+      .select({ kind: taxPayments.kind, amount: taxPayments.amount })
+      .from(taxPayments)
+      .where(
+        and(
+          eq(taxPayments.orgId, orgId),
+          isNull(taxPayments.deletedAt),
+          or(and(gte(taxPayments.date, from), lte(taxPayments.date, to)), and(lte(taxPayments.periodFrom, to), gte(taxPayments.periodTo, from))),
+        ),
+      );
+    const paid = rows.filter((r) => r.kind === "payment").reduce((sum, r) => sum + r.amount, 0n);
+    const refunded = rows.filter((r) => r.kind === "refund").reduce((sum, r) => sum + r.amount, 0n);
+    return { paid: paid.toString(), refunded: refunded.toString(), stillToPay: (net - paid + refunded).toString() };
   }
 
   /**
@@ -904,63 +942,71 @@ export class ReportsService {
       );
     return -(BigInt(credited?.total ?? "0") + BigInt(voided?.total ?? "0"));
   }
+}
 
-  private async taxCollectedByRate(orgId: string, from: string, to: string): Promise<TaxByRateRow[]> {
-    const lineRows = await this.db
-      .select({ line: invoiceLines })
-      .from(invoiceLines)
-      .innerJoin(invoices, eq(invoiceLines.invoiceId, invoices.id))
-      .where(
-        and(
-          eq(invoices.orgId, orgId),
-          eq(invoices.status, "issued"),
-          gte(invoices.issueDate, new Date(from)),
-          lte(invoices.issueDate, new Date(to)),
-        ),
-      );
+const byAmountDesc = <T extends { amount: bigint }>(a: T, b: T) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0);
 
-    const taxRateIds = Array.from(new Set(lineRows.map((r) => r.line.taxRateId).filter((id): id is string => Boolean(id))));
-    const taxGroupIds = Array.from(new Set(lineRows.map((r) => r.line.taxGroupId).filter((id): id is string => Boolean(id))));
-
-    const rateNames = taxRateIds.length
-      ? await this.db.select({ id: taxRates.id, name: taxRates.name }).from(taxRates).where(inArray(taxRates.id, taxRateIds))
-      : [];
-    const groupNames = taxGroupIds.length
-      ? await this.db.select({ id: taxGroups.id, name: taxGroups.name }).from(taxGroups).where(inArray(taxGroups.id, taxGroupIds))
-      : [];
-    const rateNameById = new Map(rateNames.map((r) => [r.id, r.name]));
-    const groupNameById = new Map(groupNames.map((g) => [g.id, g.name]));
-
-    const buckets = new Map<string, { key: string; name: string; percentage: number; taxable: bigint; amount: bigint }>();
-    for (const { line } of lineRows) {
-      if (line.lineTaxAmount === 0n) continue;
-
-      let key: string;
-      let name: string;
-      if (line.taxRateId) {
-        key = `rate:${line.taxRateId}`;
-        name = rateNameById.get(line.taxRateId) ?? "Deleted rate";
-      } else if (line.taxGroupId) {
-        key = `group:${line.taxGroupId}`;
-        name = groupNameById.get(line.taxGroupId) ?? "Deleted group";
-      } else {
-        key = `flat:${line.taxRatePercentage}`;
-        name = `${line.taxRatePercentage}% tax`;
-      }
-
-      const existing = buckets.get(key);
-      if (existing) {
-        existing.amount += line.lineTaxAmount;
-        existing.taxable += line.lineSubtotalAmount;
-      } else {
-        buckets.set(key, { key, name, percentage: line.taxRatePercentage, taxable: line.lineSubtotalAmount, amount: line.lineTaxAmount });
-      }
-    }
-
-    return Array.from(buckets.values())
-      .sort((a, b) => (b.amount > a.amount ? 1 : b.amount < a.amount ? -1 : 0))
-      .map((b) => ({ name: b.name, percentage: b.percentage, taxableAmount: b.taxable.toString(), amount: b.amount.toString() }));
+/** Tax and taxable amount by rate or group, largest tax first; lines without tax are left out. */
+function byRate(lines: readonly TaxBreakdownLine[]): TaxByRateRow[] {
+  const buckets = new Map<string, { name: string; percentage: number; taxable: bigint; amount: bigint }>();
+  for (const line of lines) {
+    if (line.tax === 0n) continue;
+    const bucket = buckets.get(line.rate.key) ?? { name: line.rate.name, percentage: line.rate.percentage, taxable: 0n, amount: 0n };
+    bucket.taxable += line.taxable;
+    bucket.amount += line.tax;
+    buckets.set(line.rate.key, bucket);
   }
+  return [...buckets.values()].sort(byAmountDesc).map((b) => ({ name: b.name, percentage: b.percentage, taxableAmount: b.taxable.toString(), amount: b.amount.toString() }));
+}
+
+const TAX_TYPE_ROWS: Record<string, string> = { cgst: "CGST", sgst: "SGST", igst: "IGST", cess: "Cess", vat: "VAT", gst: "GST", sales_tax: "Sales tax", other: "Tax" };
+const GST_ROWS = ["cgst", "sgst", "igst", "cess"];
+
+/**
+ * US-RPT-37 — collected, paid and net by tax type. A GST business always
+ * sees CGST, SGST (with UTGST, labelled "SGST/UTGST" when there is any),
+ * IGST and cess; elsewhere, the types that occur. Whatever the documents
+ * don't explain (voids of earlier documents, removed documents) is an
+ * "Adjustments" row, so the total always equals the ledger's.
+ */
+function byTaxType(lines: readonly TaxBreakdownLine[], gst: boolean, collected: bigint, paid: bigint): TaxSummaryReport["byTaxType"] {
+  const sums = new Map<string, { collected: bigint; paid: bigint }>(gst ? GST_ROWS.map((k) => [k, { collected: 0n, paid: 0n }]) : []);
+  let utgst = false;
+  for (const line of lines) {
+    for (const c of line.components) {
+      if (c.taxType === "utgst") utgst = true;
+      const key = c.taxType === "utgst" ? "sgst" : c.taxType;
+      const row = sums.get(key) ?? { collected: 0n, paid: 0n };
+      if (line.side === "sales") row.collected += c.amount;
+      else row.paid += c.amount;
+      sums.set(key, row);
+    }
+  }
+  const order = [...GST_ROWS, "vat", "gst", "sales_tax", "other"];
+  const rows = [...sums.entries()]
+    .sort(([a], [b]) => order.indexOf(a) - order.indexOf(b))
+    .map(([key, v]) => ({ taxType: key, label: key === "sgst" && utgst ? "SGST/UTGST" : (TAX_TYPE_ROWS[key] ?? key), collected: v.collected, paid: v.paid }));
+  const restCollected = collected - rows.reduce((sum, r) => sum + r.collected, 0n);
+  const restPaid = paid - rows.reduce((sum, r) => sum + r.paid, 0n);
+  if (restCollected !== 0n || restPaid !== 0n) rows.push({ taxType: "adjustments", label: "Adjustments", collected: restCollected, paid: restPaid });
+  return {
+    rows: rows.map((r) => ({ taxType: r.taxType, label: r.label, collected: r.collected.toString(), paid: r.paid.toString(), net: (r.collected - r.paid).toString() })),
+    total: { collected: collected.toString(), paid: paid.toString(), net: (collected - paid).toString() },
+  };
+}
+
+const SUPPLY_CLASS_ROWS = [
+  { supplyClass: "zero_rated", label: "Zero-rated" },
+  { supplyClass: "exempt", label: "Exempt" },
+  { supplyClass: "non_taxable", label: "Non-taxable" },
+] as const;
+
+/** US-RPT-37 (D-147) — zero-rated, exempt and non-taxable sales and purchases, net of credit notes and vendor credits. */
+function bySupplyClass(lines: readonly TaxBreakdownLine[]): TaxSummaryReport["bySupplyClass"] {
+  return SUPPLY_CLASS_ROWS.map(({ supplyClass, label }) => {
+    const of = (side: TaxBreakdownLine["side"]) => lines.filter((l) => l.side === side && l.supplyClass === supplyClass).reduce((sum, l) => sum + l.taxable, 0n);
+    return { supplyClass, label, sales: of("sales").toString(), purchases: of("purchases").toString() };
+  });
 }
 
 export interface TaxByRateRow {
@@ -995,6 +1041,17 @@ export interface TaxSummaryReport {
   adjustments: { taxableAmount: string; amount: string } | null;
   /** Taxable amount across the rows and adjustments. */
   totalTaxable: string;
+  /** US-RPT-37 — tax paid by rate: bills, approved expenses and money out, less vendor credits. */
+  paidByRate: TaxByRateRow[];
+  /** Input tax the documents in the range don't explain (voids of earlier bills, removed documents); null when there's none. */
+  paidAdjustments: { amount: string } | null;
+  totalPaidTaxable: string;
+  /** US-RPT-37 — collected, paid and net by tax type; `total` equals tax collected, tax paid and net payable. */
+  byTaxType: { rows: { taxType: string; label: string; collected: string; paid: string; net: string }[]; total: { collected: string; paid: string; net: string } };
+  /** US-RPT-37 — zero-rated, exempt and non-taxable values, sales and purchases. */
+  bySupplyClass: { supplyClass: "zero_rated" | "exempt" | "non_taxable"; label: string; sales: string; purchases: string }[];
+  /** US-RPT-37 — paid to and refunded by the tax authority for the range, and what's still to pay. */
+  payments: { paid: string; refunded: string; stillToPay: string };
 }
 
 export interface ReportAccountLine {
