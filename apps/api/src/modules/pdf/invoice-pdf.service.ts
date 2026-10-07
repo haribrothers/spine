@@ -8,6 +8,7 @@ import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
 import { loadSignatureDataUri } from "./signature";
 import { loadGstContext } from "./gst-document";
+import { loadUpiQr } from "./upi-qr";
 import { progressClaimLabel, resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
@@ -70,6 +71,11 @@ export class InvoicePdfService {
         claimLabel: await this.claimLabel(row.invoice),
         // US-TAX-15: GSTINs, place of supply and the tax split for a GST invoice.
         gst: await loadGstContext(this.db, orgId, row.invoice, lines),
+        // US-INV-26: the UPI QR code beside the payment instructions.
+        upiQr: await loadUpiQr(
+          { ...row.invoice, balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount },
+          business,
+        ),
       }),
     );
 

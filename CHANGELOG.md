@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-INV-26: show a UPI QR code on invoices (Phase 9)
+
+- When an INR invoice is issued with a UPI ID saved and "Show a UPI QR code on invoices" on, its PDF's "How to pay" box shows:
+  - A QR code.
+  - "Scan to pay ₹<balance due> with any UPI app · <UPI ID> · note <invoice number>".
+  - The payment instructions.
+- The code is a `upi://pay` link with the payee name (default: the business name), the amount and the invoice number as the note (D-150), rendered with `qrcode` (MIT).
+- The QR is part of the stored PDF (D-083): `invoices.upi_qr_amount` keeps the amount it asks for, and invoice responses carry `upiQrAmount`. There's no QR when nothing is due at issue, the setting is off, or the invoice isn't in rupees. Draft PDFs preview the QR they'd get.
+- Reminder emails state the current balance and, when it differs from the QR code's amount, add "The QR code on the attached invoice is for <original>; pay <balance> to clear it."
+- Nothing is recorded automatically when someone pays by scanning. Record the payment, or find it when you reconcile.
+- Migration `0106_upi_qr_amount`.
+
 ### 2026-10-07 — US-INV-25: set my UPI ID for payments (Phase 9)
 
 - Settings › Payment instructions has a UPI section when the business's currency is INR. It holds:

@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult, upiQrAmountFor, type BusinessProfile } from "@spine/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -876,6 +876,12 @@ export class InvoicesService {
         .from(settings)
         .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
       const paymentInstructions = (profile?.value as { paymentInstructions?: string } | undefined)?.paymentInstructions?.trim() || null;
+      // US-INV-26: the balance the PDF's UPI QR code asks for, kept so reminders can say when it's changed.
+      const upiQrAmount = upiQrAmountFor(
+        profile?.value as BusinessProfile | undefined,
+        existing.currency,
+        existing.totalAmount - existing.retentionAmount - existing.amountPaid - existing.creditedAmount,
+      );
 
       // US-JOB-29 (D-128): a progress invoice on a job gets the job's next claim number, under the job row lock.
       let progressClaimNo: number | null = null;
@@ -899,6 +905,7 @@ export class InvoicesService {
           issueDate: existing.issueDate ?? issuedAt,
           journalEntryId,
           paymentInstructions,
+          upiQrAmount,
           progressClaimNo,
           updatedAt: issuedAt,
         })

@@ -9,6 +9,7 @@ import { DocumentLinesTable } from "./document-lines";
 import { AmountInWordsLine, SignatureBlock } from "./document-extras";
 import { ExportNote, GstCustomerLines, GstTotalsRows, PlaceOfSupplyBlock } from "./gst-blocks";
 import type { GstPdfContext } from "./gst-document";
+import type { UpiQr } from "./upi-qr";
 import { TaxSummaryTable } from "./tax-summary";
 
 export interface InvoicePdfBusinessProfile {
@@ -17,6 +18,9 @@ export interface InvoicePdfBusinessProfile {
   address?: string;
   industry?: string;
   paymentInstructions?: string;
+  upiId?: string;
+  upiPayeeName?: string;
+  showUpiQr?: boolean;
 }
 
 /**
@@ -43,6 +47,8 @@ export interface InvoicePdfData {
   signatureDataUri?: string;
   /** US-TAX-15 — GSTINs, place of supply and the tax split, for a GST invoice; absent otherwise. */
   gst?: GstPdfContext | null;
+  /** US-INV-26 — the UPI QR code, for an INR invoice with something due; absent otherwise. */
+  upiQr?: UpiQr | null;
   /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
   layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
@@ -101,6 +107,9 @@ const styles = StyleSheet.create({
   balanceDueValue: { fontSize: 10, fontWeight: 700, color: "#b91c1c" },
   footer: { marginTop: 28 },
   howToPay: { marginTop: 20, padding: 10, borderWidth: 1, borderColor: "#E7E5E0", borderRadius: 4, backgroundColor: "#FAFAF9" },
+  howToPayRow: { flexDirection: "row", alignItems: "center" },
+  upiQr: { width: 72, height: 72, marginRight: 12, borderWidth: 1, borderColor: "#E7E5E0" },
+  howToPayText: { flex: 1 },
   howToPayTitle: { fontSize: 9, fontWeight: 700, marginBottom: 4, color: "#211F1A" },
   footerLabel: { fontSize: 8, color: "#888888", textTransform: "uppercase", marginBottom: 3, letterSpacing: 0.5 },
   footerText: { fontSize: 9, color: "#333333", lineHeight: 1.4 },
@@ -133,7 +142,7 @@ function formatDate(value: Date | string | null): string {
  * invoice-specific additions: due date instead of "valid until", and a
  * highlighted balance-due row when the invoice isn't fully paid.
  */
-export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, gst, layout: givenLayout }: InvoicePdfData) {
+export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, business, logoDataUri, locale, branding, claimLabel, signatureDataUri, gst, upiQr, layout: givenLayout }: InvoicePdfData) {
   const layout = givenLayout ?? resolveDocumentLayout(null, "invoice");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = invoice.currency;
@@ -254,10 +263,16 @@ export function InvoicePdfDocument({ invoice, lines, contactName, contactEmail, 
         {layout.amountInWords && <AmountInWordsLine words={amountInWords(invoice.totalAmount - invoice.retentionAmount, invoice.currency)} />}
         {layout.taxSummary && <TaxSummaryTable lines={lines} fmt={fmt} gstTaxes={gst?.lineTaxes} />}
 
-        {paymentInstructions && (
-          <View style={styles.howToPay} wrap={false}>
-            <Text style={styles.howToPayTitle}>How to pay</Text>
-            <Text style={styles.footerText}>{paymentInstructions}</Text>
+        {(paymentInstructions || upiQr) && (
+          <View style={[styles.howToPay, upiQr ? { borderLeftWidth: 3, borderLeftColor: brand.color } : {}]} wrap={false}>
+            <View style={styles.howToPayRow}>
+              {upiQr && <Image style={styles.upiQr} src={upiQr.dataUri} />}
+              <View style={styles.howToPayText}>
+                <Text style={styles.howToPayTitle}>How to pay</Text>
+                {upiQr && <Text style={styles.footerText}>{`Scan to pay ${fmt(upiQr.amount)} with any UPI app · ${upiQr.upiId} · note ${upiQr.note}`}</Text>}
+                {paymentInstructions && <Text style={styles.footerText}>{paymentInstructions}</Text>}
+              </View>
+            </View>
           </View>
         )}
 

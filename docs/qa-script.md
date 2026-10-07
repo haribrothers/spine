@@ -3859,7 +3859,30 @@ Use an Indian business with GST state Karnataka (29) and GSTIN 29AAACK0000A1ZK.
 5. In a USD business, the pane shows only "How customers can pay"; there are no UPI fields.
 6. Regression: the payment instructions text still saves, and more than 600 characters is still refused (section for US-INV-16).
 
+## 173. UPI QR code on invoices (US-INV-26, Phase 9)
+
+Use an INR business with UPI ID "kaveriinteriors@okhdfc", payee name "Kaveri Interiors Pvt Ltd", the QR switch on and payment instructions set.
+
+1. Open a draft invoice's PDF. The "How to pay" box shows a QR code and "Scan to pay ₹… with any UPI app · kaveriinteriors@okhdfc · note Draft invoice", above the payment instructions.
+2. Issue an invoice for ₹2,41,900.00 and open its PDF. It reads "Scan to pay ₹2,41,900.00 with any UPI app · kaveriinteriors@okhdfc · note INV-…".
+3. Scan the code with a UPI app (don't pay):
+   - The payee is Kaveri Interiors Pvt Ltd.
+   - The amount is 241900.00.
+   - The note is the invoice number.
+4. Check that nothing was recorded: the invoice is still unpaid, and Payments has nothing new.
+5. Record a ₹41,900 payment against it:
+   - The PDF still shows ₹2,41,900.00.
+   - Send a reminder. The email shows "Balance due ₹2,00,000.00" and "The QR code on the attached invoice is for ₹2,41,900.00; pay ₹2,00,000.00 to clear it."
+6. Turn the QR switch off and issue another invoice: "How to pay" shows only the instructions.
+7. Issue an invoice in USD: no QR code.
+8. Clear the payment instructions with the QR switch on: "How to pay" shows only the QR line.
+9. Regression:
+   - In a USD business, invoice PDFs and emails look as before (section for US-INV-15).
+   - Reminders for invoices without a QR code don't mention one.
+
 ## Known gaps — don't file these as bugs
+
+- A deposit is applied to the final invoice with "Apply credit" after the invoice is issued, so that invoice's UPI QR code asks for the full amount (US-INV-26). Reminders then say what clears it. There's no QR code only when the balance is already nothing at issue.
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
 

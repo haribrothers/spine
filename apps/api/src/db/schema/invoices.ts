@@ -128,6 +128,13 @@ export const invoices = pgTable(
      * (they show the current setting) and when none was set.
      */
     paymentInstructions: text("payment_instructions"),
+    /**
+     * US-INV-26 (D-150) — the balance due at issue, which the issued PDF's
+     * UPI QR code asks for. Null when the PDF has no QR code (not INR, no
+     * UPI ID, the setting off, or nothing due). Reminders compare it with
+     * the current balance.
+     */
+    upiQrAmount: bigint("upi_qr_amount", { mode: "bigint" }),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set once, in the same transaction as the status flip to `issued` — never touched again (an issued invoice is immutable). */
     issuedAt: timestamp("issued_at", { withTimezone: true }),

@@ -119,6 +119,7 @@ export class InvoiceRemindersService {
           dueDate: inv.dueDate,
           reminder: { daysOverdue: Math.floor((Date.now() - new Date(inv.dueDate!).getTime()) / DAY) },
           paymentInstructions: inv.paymentInstructions,
+          upiQrAmount: inv.upiQrAmount,
         })
       : invoiceEmail({
           businessName: brand.name,

@@ -63,6 +63,8 @@ export function invoiceEmail(d: {
   paymentInstructions?: string | null;
   /** US-JOB-29 — "Progress claim 3 · JOB-002". */
   claimLabel?: string | null;
+  /** US-INV-26 — what the attached PDF's UPI QR code asks for, if it has one. */
+  upiQrAmount?: bigint | null;
 }): EmailTemplate {
   const paid = d.balanceDue <= 0n;
   const instructions = d.paymentInstructions?.trim();
@@ -89,6 +91,12 @@ export function invoiceEmail(d: {
           ? `This is a friendly reminder that invoice ${d.number} ${days !== null && days > 0 ? "was due" : "is due"}${dueOn ? ` on ${dueOn}` : ""}. If you've already paid, thank you — please ignore this email.`
           : `Here's invoice ${d.number} from ${d.businessName}, attached as a PDF.`,
         ...(paid ? ["This invoice is already paid in full — nothing is owing."] : []),
+        // US-INV-26: the stored PDF's QR code keeps the amount at issue; say what clears it now.
+        ...(state && !paid && d.upiQrAmount != null && d.upiQrAmount !== d.balanceDue
+          ? [
+              `The QR code on the attached invoice is for ${emailMoney(d.upiQrAmount, d.currency, d.locale)}; pay ${emailMoney(d.balanceDue, d.currency, d.locale)} to clear it.`,
+            ]
+          : []),
       ],
       facts: [
         { label: "Invoice", value: d.number },

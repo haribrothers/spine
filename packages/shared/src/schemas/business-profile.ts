@@ -48,3 +48,18 @@ export function upiPaymentUri(input: { upiId: string; payeeName: string; amount:
   ];
   return `upi://pay?${params.map(([k, v]) => `${k}=${encodeURIComponent(v!)}`).join("&")}`;
 }
+
+/**
+ * US-INV-26 (D-150) — what an invoice's UPI QR code asks for: its balance
+ * due, when the invoice is in rupees, a UPI ID is saved, "Show a UPI QR code
+ * on invoices" is on (the default once an ID is saved), and something is due.
+ * Null means no QR code.
+ */
+export function upiQrAmountFor(
+  profile: { upiId?: string | null; showUpiQr?: boolean | null } | null | undefined,
+  currency: string,
+  balanceDue: bigint,
+): bigint | null {
+  if (currency !== "INR" || !profile?.upiId?.trim() || profile.showUpiQr === false || balanceDue <= 0n) return null;
+  return balanceDue;
+}

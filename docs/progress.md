@@ -398,7 +398,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-ONB-15 · Open a setup page that shows what's left
 - [ ] US-ONB-16 · Go from each setup card to its setting and its guide
 - [x] US-INV-25 · Set my UPI ID for payments
-- [ ] US-INV-26 · Show a UPI QR code on invoices
+- [x] US-INV-26 · Show a UPI QR code on invoices
 - [x] US-TAX-09 · Start with my country's tax rates
 - [x] US-TAX-10 · Give each rate a tax type
 - [x] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax

@@ -129,6 +129,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
       reminder: isReminder ? { daysOverdue } : undefined,
       // US-INV-15: the instructions kept with the invoice when it was issued.
       paymentInstructions: invoice.paymentInstructions,
+      upiQrAmount: invoice.upiQrAmount,
     });
     const email = renderEmail(brand, template.content);
 
