@@ -132,4 +132,10 @@ describe("US-TAX-13 · pick intra- or inter-state GST automatically (requires lo
     const c = await json<{ id: string }>(await as("POST", "/contacts", { type: "customer", name: "London Ltd" }));
     expect(await json<Doc>(await as("POST", "/invoices", { contactId: c.id, currency: "GBP", lines: [line] }))).toMatchObject({ placeOfSupply: null, supplyType: null });
   });
+
+  it("keeps whether the business exports under LUT (D-181)", async () => {
+    expect((await json<{ profile: TaxProfile }>(await call("PUT", "/org/tax/profile", { exportUnderLut: true }))).profile.exportUnderLut).toBe(true);
+    expect(await invoice(contact.overseas!)).toMatchObject({ placeOfSupply: "96", supplyType: "export" });
+    expect((await call("PUT", "/org/tax/profile", { exportUnderLut: "yes" })).status).toBe(400);
+  });
 });

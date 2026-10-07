@@ -74,13 +74,26 @@ export interface ItemTaxes {
   interTaxGroupId?: string | null;
 }
 
+/** D-181 — how the business exports: with IGST (the default) or under LUT, zero-rated with no IGST. */
+export interface ExportOptions {
+  exportUnderLut?: boolean;
+}
+
+/** The tax a supply type calls for: intra-state, inter-state, or none (an export under LUT). */
+function taxSide(supplyType: SupplyType | null, options: ExportOptions): "intra" | "inter" | "none" {
+  if (supplyType === "export") return options.exportUnderLut ? "none" : "inter";
+  return supplyType === "inter" ? "inter" : "intra";
+}
+
 /**
  * The tax an item brings to a line: its inter-state tax for an inter-state
- * sale or export (when it has one), else its default.
+ * sale or an export with IGST (when it has one), no tax for an export under
+ * LUT (D-181), else its default.
  */
-export function itemTaxFor(item: ItemTaxes, supplyType: SupplyType | null): TaxChoice {
-  const inter = supplyType === "inter" || supplyType === "export";
-  if (inter && (item.interTaxRateId || item.interTaxGroupId)) return { taxRateId: item.interTaxRateId ?? null, taxGroupId: item.interTaxGroupId ?? null };
+export function itemTaxFor(item: ItemTaxes, supplyType: SupplyType | null, options: ExportOptions = {}): TaxChoice {
+  const side = taxSide(supplyType, options);
+  if (side === "none") return { taxRateId: null, taxGroupId: null };
+  if (side === "inter" && (item.interTaxRateId || item.interTaxGroupId)) return { taxRateId: item.interTaxRateId ?? null, taxGroupId: item.interTaxGroupId ?? null };
   return { taxRateId: item.defaultTaxRateId, taxGroupId: item.defaultTaxGroupId };
 }
 
@@ -89,19 +102,22 @@ function sameTax(a: TaxChoice, b: TaxChoice): boolean {
 }
 
 /**
- * US-TAX-13 — when a draft's place of supply moves between intra- and
- * inter-state, lines still on their item's tax switch to the item's other
+ * US-TAX-13 — when a draft's place of supply moves to a supply type that
+ * calls for other tax (intra-state, inter-state, or none for an export
+ * under LUT), lines still on their item's tax switch to the item's other
  * tax; lines whose tax was changed by hand (or that have no item) keep it
- * and are flagged so the person checks them.
+ * and are flagged so the person checks them. A switched line's supply
+ * class follows: no tax makes a taxable line zero-rated, tax makes a
+ * zero-rated one taxable.
  */
-export function switchLineTaxes<L extends TaxChoice & { key: string; type: string; catalogItemId: string | null }>(
+export function switchLineTaxes<L extends TaxChoice & { key: string; type: string; catalogItemId: string | null; supplyClass?: string | null }>(
   lines: readonly L[],
   items: readonly (ItemTaxes & { id: string })[],
   from: SupplyType | null,
   to: SupplyType | null,
+  options: ExportOptions = {},
 ): { lines: L[]; switched: number; flagged: string[] } {
-  const interOf = (t: SupplyType | null) => t === "inter" || t === "export";
-  if (interOf(from) === interOf(to)) return { lines: [...lines], switched: 0, flagged: [] };
+  if (taxSide(from, options) === taxSide(to, options)) return { lines: [...lines], switched: 0, flagged: [] };
   let switched = 0;
   const flagged: string[] = [];
   const next = lines.map((line) => {
@@ -112,12 +128,14 @@ export function switchLineTaxes<L extends TaxChoice & { key: string; type: strin
       if (hasTax) flagged.push(line.key);
       return line;
     }
-    const before = itemTaxFor(item, from);
-    const after = itemTaxFor(item, to);
+    const before = itemTaxFor(item, from, options);
+    const after = itemTaxFor(item, to, options);
     if (sameTax(line, before)) {
       if (sameTax(before, after)) return line;
       switched += 1;
-      return { ...line, ...after };
+      const taxed = Boolean(after.taxRateId || after.taxGroupId);
+      const supplyClass = line.supplyClass === undefined ? {} : { supplyClass: !taxed && line.supplyClass === "taxable" ? "zero_rated" : taxed && line.supplyClass === "zero_rated" ? "taxable" : line.supplyClass };
+      return { ...line, ...after, ...supplyClass };
     }
     if (!sameTax(line, after)) flagged.push(line.key);
     return line;

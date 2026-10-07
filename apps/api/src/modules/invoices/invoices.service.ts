@@ -163,7 +163,7 @@ export async function computeInvoiceTotals(
         unitPriceCurrency: currency,
         discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
-        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
         hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,

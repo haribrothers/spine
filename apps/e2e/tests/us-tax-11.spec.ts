@@ -41,4 +41,23 @@ test.describe("US-TAX-11", () => {
     await expect(page.getByText("An exempt line has no tax. Change the supply type to Taxable to add tax.")).toHaveCount(0);
     await expect(page.getByRole("combobox", { name: "Supply type" })).toHaveCount(0);
   });
+
+  test("picking a 0% rate gives the line the supply type the rate carries (D-182)", async ({ page }) => {
+    await signUpNewOrg(page, { name: "Vat Owner", email: `e2e-tax-11b-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
+    await page.request.put(`${API_URL}/org/tax/profile`, { headers: { "Idempotency-Key": randomUUID() }, data: { country: "GB" } });
+
+    // The rate dialog says what a 0% rate means.
+    await page.goto("/dashboard?settings=tax");
+    const pane = page.getByRole("dialog").getByTestId("settings-pane");
+    await expect(pane.getByText("0% · VAT · Exempt")).toBeVisible();
+    await expect(pane.getByText("0% · VAT · Zero-rated")).toBeVisible();
+
+    await page.goto("/invoices/new");
+    await page.getByRole("combobox").filter({ hasText: "No tax" }).click();
+    await page.getByRole("option", { name: "Exempt (0%)" }).click();
+    await expect(page.getByRole("combobox", { name: "Supply type" })).toHaveText("Exempt");
+    await page.getByRole("combobox").filter({ hasText: "Exempt (0%)" }).click();
+    await page.getByRole("option", { name: "VAT 0% (0%)" }).click();
+    await expect(page.getByRole("combobox", { name: "Supply type" })).toHaveText("Zero-rated");
+  });
 });

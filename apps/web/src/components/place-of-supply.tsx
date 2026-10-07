@@ -77,6 +77,7 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
 
   const businessState = profile?.country === "IN" && typeof profile.stateCode === "string" ? profile.stateCode : null;
   const active = businessState !== null;
+  const exportUnderLut = profile?.exportUnderLut === true;
   const typeOf = useCallback(
     (pos: string | null) => supplyTypeFor({ businessState, placeOfSupply: pos, treatment: contact?.gstTreatment, direction }),
     [businessState, contact, direction],
@@ -87,7 +88,7 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
     (next: string | null, nextSource: PlaceOfSupplySource | null, previousType: SupplyType | null, nextType: SupplyType | null) => {
       setPlaceOfSupply(next);
       setSource(nextSource);
-      const result = switchLineTaxes(lines, items, previousType, nextType);
+      const result = switchLineTaxes(lines, items, previousType, nextType, { exportUnderLut });
       if (result.switched === 0 && result.flagged.length === 0) {
         setNotice(null);
         setFlagged(new Set());
@@ -95,14 +96,14 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
       }
       setLines(result.lines);
       setFlagged(new Set(result.flagged));
-      const to = nextType === "intra" ? "CGST + SGST" : "IGST";
+      const to = nextType === "intra" ? "CGST + SGST" : nextType === "export" && exportUnderLut ? "no tax (export under LUT)" : "IGST";
       const parts = [
         result.switched ? `${result.switched} ${result.switched === 1 ? "line" : "lines"} switched to ${to}` : null,
         result.flagged.length ? `${result.flagged.length} ${result.flagged.length === 1 ? "line you changed by hand keeps its" : "lines you changed by hand keep their"} tax — check ${result.flagged.length === 1 ? "it" : "them"}` : null,
       ].filter(Boolean);
       setNotice(`The place of supply changed to ${placeOfSupplyLabel(next)}: ${parts.join("; ")}.`);
     },
-    [items, lines, setLines],
+    [items, lines, setLines, exportUnderLut],
   );
 
   // A new contact brings its own place of supply.
@@ -132,6 +133,8 @@ export function usePlaceOfSupply<L extends SwitchableLine>({
     active,
     placeOfSupply,
     supplyType,
+    /** D-181 — exports are zero-rated with no IGST. */
+    exportUnderLut,
     source,
     notice,
     flagged,
@@ -145,13 +148,15 @@ export function PlaceOfSupplyField({
   onChange,
   source,
   supplyType,
+  exportUnderLut = false,
 }: {
   value: string | null;
   onChange: (value: string) => void;
   source: PlaceOfSupplySource | null;
   supplyType: SupplyType | null;
+  exportUnderLut?: boolean;
 }) {
-  const kind = supplyType === "intra" ? "Intra-state, so items use their CGST + SGST rate." : supplyType === "export" ? "Export, so items use their IGST rate." : supplyType === "inter" ? "Inter-state, so items use their IGST rate." : undefined;
+  const kind = supplyType === "intra" ? "Intra-state, so items use their CGST + SGST rate." : supplyType === "export" ? (exportUnderLut ? "Export under LUT, so items have no IGST." : "Export, so items use their IGST rate.") : supplyType === "inter" ? "Inter-state, so items use their IGST rate." : undefined;
   const helper = [source ? SOURCE_LABELS[source] : null, kind].filter(Boolean).join(" · ") || "The state the supply is made to.";
   return (
     <FormField label="Place of supply" required helperText={helper}>

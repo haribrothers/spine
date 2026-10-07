@@ -39,6 +39,7 @@ import {
   type RecurringMode,
 } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
 import { formatMoney } from "../../../../lib/money";
 import { ContactPicker } from "../contact-picker";
 import { blankLine, computeLinePreview, InvoiceLineEditor, type EditableInvoiceLine } from "../invoice-line-editor";
@@ -111,6 +112,8 @@ export function RecurringInvoiceDialog({
   const [dueDays, setDueDays] = useState(14);
   const [mode, setMode] = useState<RecurringMode>("issue_and_email");
   const [lines, setLines] = useState<EditableInvoiceLine[]>([blankLine()]);
+  // D-183 — no place-of-supply field: the contact's address picks intra- or inter-state tax; each run takes the contact's place of supply then.
+  const pos = usePlaceOfSupply({ contactId, lines, setLines });
   const [editingLines, setEditingLines] = useState(false);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -351,7 +354,8 @@ export function RecurringInvoiceDialog({
                   </Button>
                 )}
               </div>
-              <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} />
+              <PlaceOfSupplyNotice notice={pos.notice} />
+              <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
               {problems.lines && <p className="text-[13px] text-overdue">{problems.lines}</p>}
             </div>
           ) : (

@@ -28,6 +28,8 @@ export const taxProfileSchema = z
     /** US-TAX-13 — Settings › Tax › "Default tax preference" for new catalogue items. */
     defaultIntraTax: taxChoiceSchema.nullable().optional(),
     defaultInterTax: taxChoiceSchema.nullable().optional(),
+    /** D-181 — exports go out under LUT: zero-rated, no IGST. */
+    exportUnderLut: z.boolean().optional(),
   })
   .passthrough();
 export type TaxProfile = z.infer<typeof taxProfileSchema>;
@@ -57,6 +59,7 @@ export const putTaxProfileSchema = z
     returnPeriod: z.enum(RETURN_PERIODS, { message: "Choose Monthly or Quarterly." }).optional(),
     defaultIntraTax: taxChoiceSchema.nullable().optional(),
     defaultInterTax: taxChoiceSchema.nullable().optional(),
+    exportUnderLut: z.boolean().optional(),
   })
   .superRefine((v, ctx) => {
     // The GSTIN's first two digits must be the state chosen with it.

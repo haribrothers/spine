@@ -17,6 +17,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
 import { useCapability } from "../../../../lib/capabilities-context";
 import type { Job, JobVariationOrder } from "../types";
 import { blankVariationLine, VariationOrderLineEditor, type EditableVariationLine } from "./variation-order-line-editor";
@@ -46,6 +47,8 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
   const [error, setError] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
   const [lines, setLines] = useState<EditableVariationLine[]>([blankVariationLine()]);
+  // D-183 — no place-of-supply field: the job customer's address picks intra- or inter-state tax.
+  const pos = usePlaceOfSupply({ contactId: job.contactId, lines, setLines });
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
@@ -89,6 +92,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
           supplyClass: l.supplyClass,
+          hsnSac: l.hsnSac || null,
         })),
       });
       setCreateOpen(false);
@@ -188,7 +192,8 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
                 <AlertDescription>{createError}</AlertDescription>
               </Alert>
             )}
-            <VariationOrderLineEditor lines={lines} onChange={setLines} currency={job.currency} />
+            <PlaceOfSupplyNotice notice={pos.notice} />
+            <VariationOrderLineEditor lines={lines} onChange={setLines} currency={job.currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} />
           </DialogBody>
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)} disabled={saving}>

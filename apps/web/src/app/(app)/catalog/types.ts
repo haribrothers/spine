@@ -34,6 +34,8 @@ export interface TaxRateOption {
   name: string;
   rate: number;
   isCompound: boolean;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: SupplyClass | null;
   archivedAt: string | null;
 }
 

@@ -9,6 +9,8 @@ export interface PresetRate {
   /** Percentage, e.g. 9 for 9%. */
   rate: number;
   taxType: TaxType;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: "zero_rated" | "exempt";
   /** Created archived: the law no longer uses it. */
   archived?: boolean;
 }

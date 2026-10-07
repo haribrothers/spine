@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
-import { Button, DatePicker, FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import { Button, Checkbox, DatePicker, FormField, Input, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
 import { GST_STATES, gstinError, gstinStateCode, normaliseGstin, type ReturnPeriod, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
@@ -33,6 +33,8 @@ export function GstRegistrationForm({
   const [tradeName, setTradeName] = useState(typeof initial.tradeName === "string" ? initial.tradeName : "");
   const [registeredOn, setRegisteredOn] = useState<Date | undefined>(typeof initial.registeredOn === "string" ? new Date(`${initial.registeredOn}T00:00:00`) : undefined);
   const [returnPeriod, setReturnPeriod] = useState<ReturnPeriod>(initial.returnPeriod ?? "monthly");
+  // D-181 — exports under LUT are zero-rated with no IGST.
+  const [exportUnderLut, setExportUnderLut] = useState(initial.exportUnderLut === true);
   const [touched, setTouched] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +64,7 @@ export function GstRegistrationForm({
         tradeName: tradeName.trim() || null,
         registeredOn: registeredOn ? toIsoDate(registeredOn) : null,
         returnPeriod,
+        exportUnderLut,
       });
       onSaved(res.profile);
     } catch (err) {
@@ -117,6 +120,13 @@ export function GstRegistrationForm({
           )}
         </FormField>
       </div>
+      <label htmlFor="gst-export-lut" className="flex cursor-pointer items-start gap-2">
+        <Checkbox id="gst-export-lut" checked={exportUnderLut} onCheckedChange={(v) => setExportUnderLut(v === true)} className="mt-0.5" />
+        <span className="flex flex-col">
+          <span className="text-[13px] font-medium text-on-surface">We export under LUT</span>
+          <span className="text-[12px] text-on-surface-muted">Exports go out zero-rated, with no IGST. Leave this off to charge IGST on exports.</span>
+        </span>
+      </label>
       <p className="text-[13px] text-on-surface-muted">Spine prepares GST invoices and a GSTR-1 file to upload. It never files your return or connects to the GST portal.</p>
       {error && <p className="text-[13px] text-overdue">{error}</p>}
       <div className="flex items-center justify-between gap-2">

@@ -70,4 +70,53 @@ test.describe("US-TAX-13", () => {
     await page.waitForURL(/\/invoices\/[0-9a-f-]{36}$/);
     await expect(page.getByText("Place of supply Karnataka (29) (intra-state)")).toBeVisible();
   });
+
+  test("exports under LUT carry no IGST, and recurring invoices follow the customer's state (D-181, D-183)", async ({ page }) => {
+    await signUpNewOrg(page, { name: "Exporter", email: `e2e-tax-13b-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
+    const send = async <T>(method: "post" | "put", path: string, data: unknown) =>
+      (await (await page.request[method](`${API_URL}${path}`, { headers: { "Idempotency-Key": randomUUID() }, data })).json()) as T;
+    await send("put", "/org/tax/profile", { country: "IN" });
+    await send("put", "/org/tax/profile", { registrationNumber: "29AAACK0000A1ZK", stateCode: "29", legalName: "Kaveri Exports" });
+    const groups = (await (await page.request.get(`${API_URL}/tax-groups`)).json()) as { id: string; name: string }[];
+    const rates = (await (await page.request.get(`${API_URL}/tax-rates`)).json()) as { id: string; name: string }[];
+    await send("post", "/catalog-items", { name: "Teak chair", unit: "each", defaultPriceAmount: "500000", defaultPriceCurrency: "INR", defaultTaxGroupId: groups.find((g) => g.name === "GST 18%")!.id, interTaxRateId: rates.find((r) => r.name === "IGST 18%")!.id });
+    await send("post", "/contacts", { type: "customer", isCompany: true, name: "Oslo Interiors AS", gstTreatment: "overseas", taxId: "NO123456789" });
+    await send("post", "/contacts", { type: "customer", isCompany: true, name: "Chennai Homes", gstTreatment: "unregistered", addresses: [{ type: "billing", line1: "Anna Salai", stateCode: "33" }] });
+
+    // Settings › GST: "We export under LUT".
+    await page.goto("/dashboard?settings=gst");
+    const pane = page.getByRole("dialog").getByTestId("settings-pane");
+    await pane.getByLabel("Legal name").fill("Kaveri Exports");
+    await pane.getByRole("checkbox", { name: /We export under LUT/ }).check();
+    await pane.getByRole("button", { name: "Save" }).click();
+    await expect(page.getByText("Saved").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+
+    const pickItem = async (scope: import("@playwright/test").Locator) => {
+      const item = scope.getByRole("combobox", { name: "Item" }).first();
+      await item.click();
+      await item.fill("Teak");
+      await page.getByRole("listbox", { name: "Catalogue matches" }).getByRole("option", { name: /^Teak chair/ }).click();
+    };
+
+    await page.goto("/invoices/new");
+    await page.getByRole("combobox").filter({ hasText: "Select a contact…" }).click();
+    await page.getByPlaceholder("Search…").fill("Oslo");
+    await page.getByRole("option", { name: /Oslo Interiors AS/ }).click();
+    await expect(page.getByRole("combobox", { name: "Place of supply" })).toHaveText("Other countries (96)");
+    await expect(page.getByText("The customer is overseas · Export under LUT, so items have no IGST.")).toBeVisible();
+    await pickItem(page.locator("main"));
+    await expect(page.getByRole("combobox").filter({ hasText: /IGST|GST 18%/ })).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: "Supply type" })).toHaveText("Zero-rated");
+
+    // A recurring invoice for an out-of-state customer uses the item's IGST.
+    await page.goto("/invoices/recurring");
+    await page.getByRole("button", { name: "+ New recurring invoice" }).first().click();
+    const dialog = page.getByRole("dialog", { name: "New recurring invoice" });
+    await dialog.getByRole("combobox").filter({ hasText: "Select a contact…" }).click();
+    await page.getByPlaceholder("Search…").fill("Chennai");
+    await page.getByRole("option", { name: /Chennai Homes/ }).click();
+    await pickItem(dialog);
+    await expect(dialog.getByRole("combobox").filter({ hasText: "IGST 18%" })).toHaveCount(1);
+  });
 });

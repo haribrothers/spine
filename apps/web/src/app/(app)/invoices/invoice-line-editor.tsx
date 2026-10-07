@@ -117,11 +117,14 @@ export function InvoiceLineEditor({
   onChange,
   currency,
   supplyType = null,
+  exportUnderLut = false,
   flaggedKeys,
   showHsn = false,
 }: {
   /** US-TAX-13 — picks each item's intra- or inter-state tax. */
   supplyType?: SupplyType | null;
+  /** D-181 — exports under LUT have no IGST. */
+  exportUnderLut?: boolean;
   /** US-TAX-13 — lines changed by hand when the place of supply changed. */
   flaggedKeys?: Set<string>;
   /** US-TAX-14 — show HSN/SAC on item lines (GST is on). */
@@ -167,7 +170,7 @@ export function InvoiceLineEditor({
     const next = lines.slice();
     const merged = { ...next[index]!, ...patch };
     // US-TAX-11: the supply type follows the tax and the catalogue item.
-    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId));
+    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
     onChange(next);
   }
 
@@ -207,7 +210,7 @@ export function InvoiceLineEditor({
       unitPriceAmount: BigInt(item.defaultPriceAmount),
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
       // US-TAX-13: the item's inter-state tax outside my state.
-      ...itemTaxFor(item, supplyType),
+      ...itemTaxFor(item, supplyType, { exportUnderLut }),
       // US-TAX-14: the item's HSN/SAC code, changeable on the line.
       hsnSac: item.hsnSac ?? "",
     });

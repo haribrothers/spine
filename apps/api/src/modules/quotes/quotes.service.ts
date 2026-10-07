@@ -169,7 +169,7 @@ async function computeQuoteTotals(
         unitPriceCurrency: currency,
         discountPercentage: line.discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
-        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
         hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,

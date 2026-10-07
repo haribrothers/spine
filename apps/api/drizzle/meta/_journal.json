@@ -736,6 +736,13 @@
       "when": 1791350331612,
       "tag": "0104_hsn_sac",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1791353590673,
+      "tag": "0105_rate_supply_class",
+      "breakpoints": true
     }
   ]
 }

@@ -203,7 +203,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
           <FormField label="Valid until" helperText="Quote shows as expired after this date.">
             {() => <DatePicker value={validUntil} onChange={setValidUntil} />}
           </FormField>
-          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
       </Card>
 
@@ -211,7 +211,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
+        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

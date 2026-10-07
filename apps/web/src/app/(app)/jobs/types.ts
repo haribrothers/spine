@@ -109,6 +109,9 @@ export interface VariationOrderCatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  interTaxRateId?: string | null;
+  interTaxGroupId?: string | null;
+  hsnSac?: string | null;
   supplyClass: SupplyClass;
   archivedAt: string | null;
 }
@@ -119,6 +122,8 @@ export interface TaxRateOption {
   name: string;
   rate: number;
   isCompound: boolean;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: SupplyClass | null;
   archivedAt: string | null;
 }
 

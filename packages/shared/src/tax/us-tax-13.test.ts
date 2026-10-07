@@ -80,4 +80,23 @@ describe("US-TAX-13 · pick intra- or inter-state GST automatically", () => {
       expect(switchLineTaxes(lines, [ITEM], "inter", "export")).toEqual({ lines, switched: 0, flagged: [] });
     });
   });
+
+  describe("exports under LUT (D-181)", () => {
+    const lut = { exportUnderLut: true };
+    it("an item brings no tax to an export under LUT, and IGST otherwise", () => {
+      expect(itemTaxFor(ITEM, "export", lut)).toEqual({ taxRateId: null, taxGroupId: null });
+      expect(itemTaxFor(ITEM, "inter", lut)).toEqual({ taxRateId: "igst18", taxGroupId: null });
+      expect(itemTaxFor(ITEM, "export")).toEqual({ taxRateId: "igst18", taxGroupId: null });
+    });
+
+    it("moving a line to an export under LUT drops its tax and makes it zero-rated; moving back restores it", () => {
+      const lines = [{ key: "a", type: "item", catalogItemId: "kitchen", taxRateId: "igst18", taxGroupId: null, supplyClass: "taxable" }];
+      const exported = switchLineTaxes(lines, [ITEM], "inter", "export", lut);
+      expect(exported.lines[0]).toMatchObject({ taxRateId: null, taxGroupId: null, supplyClass: "zero_rated" });
+      expect(exported.switched).toBe(1);
+      expect(switchLineTaxes(exported.lines, [ITEM], "export", "intra", lut).lines[0]).toMatchObject({ taxGroupId: "gst18", supplyClass: "taxable" });
+      // Without LUT, inter-state and export charge the same tax.
+      expect(switchLineTaxes(lines, [ITEM], "inter", "export").switched).toBe(0);
+    });
+  });
 });

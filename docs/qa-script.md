@@ -3728,7 +3728,11 @@ Regression:
 - Converting a quote keeps its place of supply.
 - Recurring schedules and variation orders work as before.
 
-Known gap: recurring schedules and variation orders have no Place of supply field. Items added there use their intra-state tax, so check the tax on lines for out-of-state customers.
+12. Exports under LUT (D-181): tick Settings › GST › "We export under LUT" and save.
+    - A new invoice for an overseas customer shows "The customer is overseas · Export under LUT, so items have no IGST."
+    - An item added has no tax and is Zero-rated.
+    - Untick it: a new invoice for that customer charges IGST 18%.
+13. Recurring invoice, recurring bill and variation order (D-183): for a customer in Tamil Nadu, an item added uses IGST 18%; for one in Karnataka, GST 18%. Changing the schedule's customer between them switches the lines and shows the banner.
 
 ## 165. HSN and SAC codes (US-TAX-14, Phase 9)
 
@@ -3756,6 +3760,13 @@ Use an Indian business with a GST state, as in section 164.
 9. Keyboard: HSN/SAC is labelled; errors are announced. Dark mode is readable.
 
 Regression: lines and totals save as before.
+
+## 166. 0% rates and their supply type (D-182, Phase 9)
+
+1. In a UK business, Settings › Tax lists "VAT 0%" as "0% · VAT · Zero-rated" and "Exempt" as "0% · VAT · Exempt".
+2. Add a 0% rate: "Lines with this rate are" offers Zero-rated, Exempt and "Non-taxable (outside GST/VAT)". A rate above 0% doesn't ask.
+3. New invoice: pick Exempt on a line and Supply type becomes Exempt. Pick VAT 0% and it becomes Zero-rated.
+4. Add a catalogue item with tax Exempt: its supply type becomes Exempt.
 
 ## Known gaps — don't file these as bugs
 

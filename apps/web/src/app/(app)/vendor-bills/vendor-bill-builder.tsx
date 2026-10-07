@@ -201,7 +201,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
           <FormField label="Due date">
             {() => <DatePicker value={dueDate} onChange={setDueDate} />}
           </FormField>
-          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} />}
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
       </Card>
 
@@ -209,7 +209,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

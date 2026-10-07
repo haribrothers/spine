@@ -174,4 +174,11 @@ describe("US-TAX-09 · start with my country's tax rates (requires local Postgre
     expect(render("advance")).toContain("DEPOSIT INVOICE");
     expect(textOf(InvoicePdfDocument({ invoice: invoice!, lines, contactName: "Alan Brooks", contactEmail: null, business: null }))).toContain("INVOICE");
   });
+
+  it("the preset's 0% rates say whether they're zero-rated or exempt (D-182)", async () => {
+    const fresh = await newOwner("classes");
+    await setCountry(fresh, "GB");
+    const all = await json<(Rate & { supplyClass: string | null })[]>(await call(fresh, "GET", "/tax-rates"));
+    expect(Object.fromEntries(all.map((r) => [r.name, r.supplyClass]))).toEqual({ "VAT 20%": null, "VAT 5%": null, "VAT 0%": "zero_rated", Exempt: "exempt" });
+  });
 });

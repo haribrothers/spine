@@ -42,6 +42,8 @@ export const taxRates = pgTable(
     rate: numeric("rate", { precision: 18, scale: 4, mode: "number" }).notNull(),
     isCompound: boolean("is_compound").notNull().default(false),
     taxType: taxTypeEnum("tax_type").notNull().default("other"),
+    /** D-182 — the supply class a 0% rate gives its lines; null for a rate above 0% (and a 0% rate means zero-rated). */
+    supplyClass: supplyClassEnum("supply_class"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

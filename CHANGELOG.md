@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — Exports under LUT, rates that carry their supply type, and recurring and variation-order lines that follow the customer's state (D-181–D-183, Phase 9)
+
+The owner's answers to Q-18 and Q-19, plus closing the recurring and variation-order gap left by US-TAX-13.
+
+- **Exports under LUT (D-181):** Settings › GST › "We export under LUT".
+  - When it's on, an export's place-of-supply hint reads "Export under LUT, so items have no IGST.", and lines added from items have no tax and are zero-rated.
+  - Changing a draft's place of supply to or from an export switches those lines.
+  - When it's off, exports charge IGST as before.
+- **0% rates carry their supply type (D-182):** a 0% rate now says whether its lines are zero-rated, exempt or non-taxable ("Lines with this rate are" in the rate dialog).
+  - Rate rows read "0% · VAT · Exempt".
+  - Picking the rate on a line gives the line that type.
+  - The presets mark "Exempt" exempt and their other 0% rate zero-rated. Migration `0105` adds `tax_rates.supply_class` and backfills the preset rates.
+  - The API uses the rate's class when a line doesn't name one.
+- **Recurring schedules and variation orders (D-183):** their line editors work out intra- or inter-state from the contact's addresses, pick each item's matching tax, and switch lines when the contact changes, with the same banner as invoices.
+  - Recurring invoices and bills also show HSN/SAC.
+  - Variation orders copy the item's HSN/SAC code.
+  - Each invoice a schedule creates takes the contact's place of supply at that time.
+- Q-18 and Q-19 are closed.
+
 ### 2026-10-07 — US-TAX-14: add HSN or SAC codes to items and lines (Phase 9)
 
 - In an Indian business, catalogue items have an "HSN/SAC code": 4, 6 or 8 digits, otherwise "Enter 4, 6 or 8 digits.".

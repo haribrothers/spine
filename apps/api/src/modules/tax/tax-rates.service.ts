@@ -52,7 +52,7 @@ export class TaxRatesService {
     return this.db.transaction(async (tx) => {
       const [row] = await tx
         .insert(taxRates)
-        .values({ orgId, name: input.name, rate: input.rate, isCompound: input.isCompound ?? false, taxType: input.taxType ?? "other" })
+        .values({ orgId, name: input.name, rate: input.rate, isCompound: input.isCompound ?? false, taxType: input.taxType ?? "other", supplyClass: input.rate === 0 ? (input.supplyClass ?? null) : null })
         .returning();
       if (!row) {
         throw new BadRequestException("Failed to create tax rate");
@@ -80,6 +80,10 @@ export class TaxRatesService {
           ...(input.rate !== undefined ? { rate: input.rate } : {}),
           ...(input.isCompound !== undefined ? { isCompound: input.isCompound } : {}),
           ...(input.taxType !== undefined ? { taxType: input.taxType } : {}),
+          // D-182: only a 0% rate carries a supply class.
+          ...(input.rate !== undefined || input.supplyClass !== undefined
+            ? { supplyClass: (input.rate ?? existing.rate) === 0 ? (input.supplyClass !== undefined ? input.supplyClass : existing.supplyClass) : null }
+            : {}),
           updatedAt: new Date(),
         })
         .where(eq(taxRates.id, id))

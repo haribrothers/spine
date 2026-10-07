@@ -11,11 +11,14 @@ export function lineTaxPercent(rates: readonly { percent: number | string }[]): 
 
 /**
  * US-TAX-11 — keeps a line's supply type in step with its tax: a line that
- * gains tax becomes taxable; one that loses it takes its item's type, else
- * zero-rated. Exempt and non-taxable stay put so the conflict shows.
+ * gains tax becomes taxable; one that loses it takes its 0% rate's type
+ * (D-182), else keeps an exempt or non-taxable type, else takes its item's,
+ * else zero-rated. Exempt and non-taxable stay put under tax so the
+ * conflict shows.
  */
-export function supplyClassForTax(current: SupplyClass | null, taxPercent: number, itemClass?: SupplyClass | null): SupplyClass {
+export function supplyClassForTax(current: SupplyClass | null, taxPercent: number, itemClass?: SupplyClass | null, rateClass?: SupplyClass | null): SupplyClass {
   if (taxPercent > 0) return current === "exempt" || current === "non_taxable" ? current : "taxable";
+  if (rateClass) return rateClass;
   if (current && current !== "taxable") return current;
   return itemClass && itemClass !== "taxable" ? itemClass : "zero_rated";
 }
@@ -24,16 +27,19 @@ export function supplyClassForTax(current: SupplyClass | null, taxPercent: numbe
  * Applies a line edit and, when it changed the tax or the catalogue item,
  * moves the supply type with it (unless the edit set the supply type itself).
  */
-export function withSupplyClass<L extends { type: string; catalogItemId: string | null; supplyClass: SupplyClass | null }>(
+export function withSupplyClass<L extends { type: string; catalogItemId: string | null; taxRateId: string | null; supplyClass: SupplyClass | null }>(
   line: L,
   patch: Partial<L>,
   taxPercent: number,
   item: { supplyClass: SupplyClass } | undefined,
+  rates: readonly { id: string; supplyClass?: SupplyClass | null }[] = [],
 ): L {
   if (line.type !== "item" || "supplyClass" in patch) return line;
   const pickedItem = "catalogItemId" in patch && item;
   if (!pickedItem && !("taxRateId" in patch || "taxGroupId" in patch || "taxRatePercentage" in patch)) return line;
-  return { ...line, supplyClass: supplyClassForTax(pickedItem ? item.supplyClass : line.supplyClass, taxPercent, item?.supplyClass) };
+  // D-182: a 0% rate says whether it's zero-rated, exempt or outside tax — unless the item just picked says so.
+  const rateClass = pickedItem && item.supplyClass !== "taxable" ? null : (rates.find((r) => r.id === line.taxRateId)?.supplyClass ?? null);
+  return { ...line, supplyClass: supplyClassForTax(pickedItem ? item.supplyClass : line.supplyClass, taxPercent, item?.supplyClass, rateClass) };
 }
 
 /** Shown when a line has no tax, or when its type says it shouldn't. */

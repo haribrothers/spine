@@ -287,7 +287,7 @@ export function CatalogForm({
                 value={taxSelection}
                 onValueChange={(v) => {
                   setTaxSelection(v);
-                  setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v)));
+                  setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
                 }}
                 placeholder="No tax"
               />
@@ -306,7 +306,7 @@ export function CatalogForm({
               value={taxSelection}
               onValueChange={(v) => {
                 setTaxSelection(v);
-                setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v)));
+                setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
               }}
               placeholder="No tax"
             />

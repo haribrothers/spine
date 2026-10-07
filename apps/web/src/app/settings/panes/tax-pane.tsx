@@ -36,6 +36,8 @@ import {
   TAX_COUNTRIES,
   TAX_TYPE_LABELS,
   taxCountryLabel,
+  SUPPLY_CLASS_LABELS,
+  type SupplyClass,
   type TaxChoice,
   type TaxCountry,
   type TaxGroupScope,
@@ -51,6 +53,8 @@ interface TaxRate {
   rate: number;
   isCompound: boolean;
   taxType: TaxType;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass: SupplyClass | null;
   archivedAt: string | null;
 }
 
@@ -342,6 +346,7 @@ function TaxRateRow({ rate, onEdit, onChanged }: { rate: TaxRate; onEdit: () => 
         </span>
         <span className="text-[12px] text-on-surface-muted">
           {rate.rate}% · {TAX_TYPE_LABELS[rate.taxType]}
+          {rate.rate === 0 && rate.supplyClass && ` · ${SUPPLY_CLASS_LABELS[rate.supplyClass]}`}
           {rate.isCompound && " · compound"}
         </span>
       </div>
@@ -394,6 +399,7 @@ function TaxRateDialog({
   const [rateValue, setRateValue] = useState(rate ? String(rate.rate) : "");
   const [isCompound, setIsCompound] = useState(rate?.isCompound ?? false);
   const [taxType, setTaxType] = useState<TaxType>(rate?.taxType ?? defaultTaxType(country));
+  const [supplyClass, setSupplyClass] = useState<SupplyClass>(rate?.supplyClass ?? "zero_rated");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -401,7 +407,7 @@ function TaxRateDialog({
     setSaving(true);
     setError(null);
     try {
-      const body = { name, rate: Number(rateValue), isCompound, taxType };
+      const body = { name, rate: Number(rateValue), isCompound, taxType, supplyClass: Number(rateValue) === 0 ? supplyClass : null };
       if (rate) {
         await apiClient.put(`/tax-rates/${rate.id}`, body);
       } else {
@@ -458,6 +464,26 @@ function TaxRateDialog({
                     : "Reports split tax by type."}
                 </p>
               </div>
+              {rateValue !== "" && Number(rateValue) === 0 && (
+                <div className="flex flex-col gap-1.5">
+                  <Label id="tax-rate-supply-label">Lines with this rate are</Label>
+                  <Select value={supplyClass} onValueChange={(v) => setSupplyClass(v as SupplyClass)}>
+                    <SelectTrigger aria-labelledby="tax-rate-supply-label" aria-describedby="tax-rate-supply-help">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(["zero_rated", "exempt", "non_taxable"] as const).map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {SUPPLY_CLASS_LABELS[c]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p id="tax-rate-supply-help" className="text-[12px] text-on-surface-muted">
+                    Picking this rate on a line gives the line this supply type.
+                  </p>
+                </div>
+              )}
               <label htmlFor="tax-rate-compound" className="flex cursor-pointer items-center gap-2">
                 <Checkbox id="tax-rate-compound" checked={isCompound} onCheckedChange={(v) => setIsCompound(v === true)} />
                 <span className="text-[13px] text-on-surface">

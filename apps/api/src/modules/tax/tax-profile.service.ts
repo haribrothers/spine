@@ -99,7 +99,7 @@ export class TaxProfileService {
       }
       const [row] = await tx
         .insert(taxRates)
-        .values({ orgId, name: rate.name, rate: rate.rate, taxType: rate.taxType, archivedAt: rate.archived ? new Date() : null })
+        .values({ orgId, name: rate.name, rate: rate.rate, taxType: rate.taxType, supplyClass: rate.supplyClass ?? null, archivedAt: rate.archived ? new Date() : null })
         .returning();
       ids.set(rate.name, row!.id);
       added += 1;

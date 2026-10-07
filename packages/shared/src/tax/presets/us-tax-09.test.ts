@@ -85,4 +85,11 @@ describe("US-TAX-09 · start with my country's tax rates", () => {
   it("names every rate once per country", () => {
     for (const preset of TAX_PRESETS) expect(new Set(preset.rates.map((r) => r.name)).size).toBe(preset.rates.length);
   });
+
+  it("marks each 0% rate as zero-rated or exempt (D-182)", () => {
+    for (const preset of TAX_PRESETS.filter((p) => p.country !== "IN")) {
+      expect(preset.rates.find((r) => r.name === "Exempt")?.supplyClass).toBe("exempt");
+      expect(preset.rates.filter((r) => r.rate === 0 && r.name !== "Exempt").every((r) => r.supplyClass === "zero_rated")).toBe(true);
+    }
+  });
 });

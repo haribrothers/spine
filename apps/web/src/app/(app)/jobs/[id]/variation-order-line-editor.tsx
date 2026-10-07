@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
-import { computeDocumentLine, type SupplyClass, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { LineTaxWarning } from "../../../../components/place-of-supply";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
@@ -35,6 +36,8 @@ export interface EditableVariationLine {
   isTaxInclusive: boolean;
   /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
   supplyClass: SupplyClass | null;
+  /** US-TAX-14 — copied from the item. */
+  hsnSac: string;
 }
 
 let keySeq = 0;
@@ -58,6 +61,7 @@ export function blankVariationLine(type: VariationLineType = "item"): EditableVa
     taxGroupId: null,
     isTaxInclusive: false,
     supplyClass: type === "item" ? "zero_rated" : null,
+    hsnSac: "",
   };
 }
 
@@ -103,10 +107,17 @@ export function VariationOrderLineEditor({
   lines,
   onChange,
   currency,
+  supplyType = null,
+  exportUnderLut = false,
+  flaggedKeys,
 }: {
   lines: EditableVariationLine[];
   onChange: (lines: EditableVariationLine[]) => void;
   currency: string;
+  /** D-183 — the job customer's supply type picks each item's intra- or inter-state tax. */
+  supplyType?: SupplyType | null;
+  exportUnderLut?: boolean;
+  flaggedKeys?: Set<string>;
 }) {
   const [catalogItems, setCatalogItems] = useState<VariationOrderCatalogItemOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -147,7 +158,7 @@ export function VariationOrderLineEditor({
     const next = lines.slice();
     const merged = { ...next[index]!, ...patch };
     // US-TAX-11: the supply type follows the tax and the catalogue item.
-    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId));
+    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
     onChange(next);
   }
 
@@ -177,8 +188,8 @@ export function VariationOrderLineEditor({
       description: item.description ?? "",
       unitPriceAmount: BigInt(item.defaultPriceAmount),
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
-      taxRateId: item.defaultTaxRateId,
-      taxGroupId: item.defaultTaxGroupId,
+      ...itemTaxFor(item, supplyType, { exportUnderLut }),
+      hsnSac: item.hsnSac ?? "",
     });
   }
 
@@ -209,7 +220,7 @@ export function VariationOrderLineEditor({
                 </button>
               </div>
 
-              <div className="flex-1">
+              <div className="flex flex-1 flex-col gap-2">
                 {line.type === "item" ? (
                   <ItemLineFields
                     line={line}
@@ -224,6 +235,7 @@ export function VariationOrderLineEditor({
                 ) : (
                   <NonItemLineFields line={line} onChange={(patch) => updateLine(index, patch)} />
                 )}
+                {flaggedKeys?.has(line.key) && <LineTaxWarning />}
               </div>
 
               <button

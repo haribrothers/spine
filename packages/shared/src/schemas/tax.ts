@@ -9,6 +9,8 @@ export const createTaxRateSchema = z.object({
   isCompound: z.boolean().optional(),
   /** US-TAX-10 — CGST, SGST, IGST… (`other` when not given). */
   taxType: z.enum(TAX_TYPES).optional(),
+  /** D-182 — the supply class a 0% rate gives a line (zero-rated, exempt or non-taxable); ignored on a rate above 0%. */
+  supplyClass: z.enum(["zero_rated", "exempt", "non_taxable"]).nullable().optional(),
 });
 
 export const updateTaxRateSchema = createTaxRateSchema.partial();

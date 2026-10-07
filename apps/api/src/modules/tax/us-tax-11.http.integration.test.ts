@@ -134,4 +134,18 @@ describe("US-TAX-11 · mark supplies as zero-rated, exempt or outside tax (requi
     expect(rows.map((r) => r.supplyClass)).toEqual(["exempt"]);
     expect((await json<Doc>(await call("GET", `/invoices/${draft.id}`))).lines[0]!.supplyClass).toBe("exempt");
   });
+
+  it("a 0% rate gives its lines its supply class when they don't name one (D-182); above 0% it carries none", async () => {
+    const exemptRate = await json<{ id: string; supplyClass: string | null }>(await call("POST", "/tax-rates", { name: "Exempt", rate: 0, taxType: "vat", supplyClass: "exempt" }));
+    expect(exemptRate.supplyClass).toBe("exempt");
+    const taxed = await json<{ supplyClass: string | null }>(await call("POST", "/tax-rates", { name: "VAT 20%", rate: 20, supplyClass: "exempt" }));
+    expect(taxed.supplyClass).toBeNull();
+    const draft = await json<Doc>(
+      await invoice([
+        { name: "Insurance", quantity: 1, unitPriceAmount: "1000", taxRateId: exemptRate.id },
+        { name: "Export", quantity: 1, unitPriceAmount: "1000", taxRateId: exemptRate.id, supplyClass: "zero_rated" },
+      ]),
+    );
+    expect(draft.lines.map((l) => l.supplyClass)).toEqual(["exempt", "zero_rated"]);
+  });
 });
