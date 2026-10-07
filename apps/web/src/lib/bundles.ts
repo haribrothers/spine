@@ -19,6 +19,7 @@ export interface BundleLineFields {
   taxGroupId: string | null;
   isTaxInclusive: boolean;
   supplyClass: SupplyClass | null;
+  hsnSac: string;
 }
 
 /** US-QUO-26 — active bundles in the document's currency, for the line picker. */
@@ -60,5 +61,6 @@ export function bundleLines(bundle: CatalogBundle, activeItemIds: Set<string>): 
     taxGroupId: l.taxGroupId,
     isTaxInclusive: l.isTaxInclusive,
     supplyClass: l.supplyClass,
+    hsnSac: l.hsnSac ?? "",
   }));
 }

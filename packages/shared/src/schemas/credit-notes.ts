@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { currencyCodeSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
 import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const creditNoteLineTypeSchema = z.enum(["item", "heading", "text"]);
@@ -17,6 +17,8 @@ export const creditNoteLineInputSchema = z.object({
   taxRatePercentage: z.coerce.number().min(0).max(100).default(0),
   /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
   supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
+  /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
+  hsnSac: hsnSacSchema.optional().nullable(),
 });
 
 /**

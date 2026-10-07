@@ -16,7 +16,7 @@ const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD
 const NO_JOB = "__none__";
 const NO_BILL = "__none__";
 
-function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive" | "supplyClass">[]): EditableVendorBillLine[] {
+function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive" | "supplyClass" | "hsnSac">[]): EditableVendorBillLine[] {
   return lines
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -34,6 +34,7 @@ function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "c
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac ?? "",
     }));
 }
 
@@ -149,6 +150,7 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           taxGroupId: line.taxGroupId,
           isTaxInclusive: line.isTaxInclusive,
           supplyClass: line.supplyClass,
+          hsnSac: line.hsnSac || null,
           sortOrder: index,
         })),
       };
@@ -196,7 +198,7 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

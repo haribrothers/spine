@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@spine/ui";
-import { SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, supplyClassTaxError, type SupplyClass, type TaxChoice, type TaxProfile } from "@spine/shared";
+import { HSN_SAC_MESSAGE, SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, isValidHsnSac, supplyClassTaxError, type SupplyClass, type TaxChoice, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { supplyClassForTax } from "../../../components/supply-type-field";
 import type { AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
@@ -76,6 +76,8 @@ export function CatalogForm({
     item?.interTaxRateId ? `rate:${item.interTaxRateId}` : item?.interTaxGroupId ? `group:${item.interTaxGroupId}` : NO_TAX,
   );
   const [gst, setGst] = useState(false);
+  // US-TAX-14 — the item's HSN (goods) or SAC (services) code.
+  const [hsnSac, setHsnSac] = useState(item?.hsnSac ?? "");
   const [supplyClass, setSupplyClass] = useState<SupplyClass>(item?.supplyClass ?? "zero_rated");
   const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
   const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
@@ -156,6 +158,7 @@ export function CatalogForm({
         defaultTaxGroupId: taxSelection.startsWith("group:") ? taxSelection.slice(6) : null,
         ...(gst
           ? {
+              hsnSac: hsnSac || null,
               interTaxRateId: interSelection.startsWith("rate:") ? interSelection.slice(5) : null,
               interTaxGroupId: interSelection.startsWith("group:") ? interSelection.slice(6) : null,
             }
@@ -263,6 +266,16 @@ export function CatalogForm({
           )}
         </FormField>
       </div>
+
+      {gst && (
+        <FormField
+          label="HSN/SAC code"
+          helperText="4, 6 or 8 digits. Copied to each line; change it there if needed."
+          errorText={hsnSac && !isValidHsnSac(hsnSac) ? HSN_SAC_MESSAGE : undefined}
+        >
+          {(field) => <Input {...field} inputMode="numeric" maxLength={8} value={hsnSac} onChange={(e) => setHsnSac(e.target.value.replace(/\D/g, ""))} />}
+        </FormField>
+      )}
 
       {gst ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

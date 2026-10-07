@@ -321,6 +321,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             taxGroupId: l.taxGroupId,
             isTaxInclusive: l.isTaxInclusive,
             supplyClass: l.supplyClass,
+            hsnSac: l.hsnSac,
           })),
         }}
         onSaved={() => {

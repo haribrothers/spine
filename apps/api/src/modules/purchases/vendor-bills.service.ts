@@ -31,6 +31,7 @@ export interface ComputedLine {
   taxGroupId: string | null;
   isTaxInclusive: boolean;
   supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -80,6 +81,7 @@ export async function computeBillTotals(
           taxGroupId: null,
           isTaxInclusive: false,
           supplyClass: null,
+          hsnSac: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -124,6 +126,7 @@ export async function computeBillTotals(
         accountId: line.accountId ?? null,
         taxRatePercentage: resolved.blendedPercentage,
         supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
+        hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive: line.isTaxInclusive,
@@ -156,6 +159,7 @@ async function insertLines(tx: Transaction, billId: string, lines: ComputedLine[
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

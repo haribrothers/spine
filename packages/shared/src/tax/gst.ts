@@ -118,3 +118,14 @@ export function gstinError(value: string, stateCode?: string | null): string | n
   if (stateCode && stateCode !== own) return `This GSTIN belongs to ${gstState(own)!.name}.`;
   return null;
 }
+
+/** US-TAX-14 — an HSN (goods) or SAC (services) code: 4, 6 or 8 digits. */
+export const HSN_SAC_MESSAGE = "Enter 4, 6 or 8 digits.";
+export function isValidHsnSac(code: string): boolean {
+  return /^(\d{4}|\d{6}|\d{8})$/.test(code);
+}
+
+/** US-TAX-14 — the warning before issuing to a registered business with lines that have no code. */
+export function missingHsnSacMessage(count: number): string {
+  return `${count} ${count === 1 ? "line has" : "lines have"} no HSN/SAC code. GSTR-1 needs them.`;
+}

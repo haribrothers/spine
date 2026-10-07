@@ -29,6 +29,7 @@ interface ComputedLine {
   unitPriceCurrency: string;
   taxRatePercentage: number;
   supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -68,6 +69,7 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
         unitPriceCurrency: currency,
         taxRatePercentage: 0,
         supplyClass: null,
+        hsnSac: null,
         lineSubtotalAmount: 0n,
         lineTaxAmount: 0n,
         lineTotalAmount: 0n,
@@ -104,6 +106,7 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
       unitPriceCurrency: currency,
       taxRatePercentage: line.taxRatePercentage,
       supplyClass: lineSupplyClass(line.taxRatePercentage, line.supplyClass),
+      hsnSac: line.hsnSac ?? null,
       lineSubtotalAmount: netAmount,
       lineTaxAmount: taxResult.taxAmount.amount,
       lineTotalAmount: taxResult.total.amount,

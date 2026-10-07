@@ -211,6 +211,8 @@ export const invoiceLines = pgTable(
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
     supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -314,6 +316,8 @@ export const recurringInvoiceLines = pgTable(
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
     supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

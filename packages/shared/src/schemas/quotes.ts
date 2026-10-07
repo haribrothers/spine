@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { currencyCodeSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
 import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const quoteLineTypeSchema = z.enum(["item", "heading", "text"]);
@@ -37,6 +37,8 @@ export const quoteLineInputSchema = z.object({
   isTaxInclusive: z.boolean().default(false),
   /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
   supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
+  /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
+  hsnSac: hsnSacSchema.optional().nullable(),
 });
 
 /**

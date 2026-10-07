@@ -22,6 +22,7 @@ export interface QuoteLine {
   taxGroupId: string | null;
   isTaxInclusive: boolean;
   supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -100,6 +101,7 @@ export interface CatalogItemOption {
   /** US-TAX-13 — the inter-state counterpart of the default tax. */
   interTaxRateId?: string | null;
   interTaxGroupId?: string | null;
+  hsnSac?: string | null;
   supplyClass: SupplyClass;
   archivedAt: string | null;
 }

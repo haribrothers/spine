@@ -51,6 +51,7 @@ function toEditableLines(invoice: Invoice): EditableInvoiceLine[] {
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac ?? "",
     }));
 }
 
@@ -146,6 +147,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
         supplyClass: line.supplyClass,
+        hsnSac: line.hsnSac || null,
         sortOrder: index,
       })),
     };
@@ -214,7 +216,7 @@ export function InvoiceBuilder({ invoice }: { invoice?: Invoice }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
+        <InvoiceLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

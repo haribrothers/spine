@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-14: add HSN or SAC codes to items and lines (Phase 9)
+
+- In an Indian business, catalogue items have an "HSN/SAC code": 4, 6 or 8 digits, otherwise "Enter 4, 6 or 8 digits.".
+- Document lines on quotes, invoices, vendor bills and vendor credits show "HSN/SAC" next to Supply type when GST is on.
+  - The code is copied from the item and can be changed on the line.
+  - Lines snapshot it, so issued documents keep it.
+  - Recurring schedules, bundles and quote-to-invoice conversion carry it over.
+- Issuing an invoice to a registered business (or SEZ unit) with item lines that have no code asks first: "<n> lines have no HSN/SAC code. GSTR-1 needs them." The choices are "Go back" or "Issue anyway".
+- Catalogue import maps an "HSN/SAC" column. Spaces are dropped, and a bad code fails the row.
+- Migration `0104`: `hsn_sac` on catalogue items and every line table.
+- Any request body that fails its schema now answers 400 with a readable `message` (new global `ZodExceptionFilter`). Before, the 17 controllers that call `schema.parse(body)` answered 500.
+
 ### 2026-10-07 — US-TAX-13: pick intra- or inter-state GST automatically (Phase 9)
 
 - In an Indian business with a GST state, quotes, invoices, vendor bills and vendor credits have a "Place of supply".

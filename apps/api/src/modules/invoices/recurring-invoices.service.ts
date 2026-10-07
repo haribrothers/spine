@@ -49,6 +49,7 @@ function toRecurringInvoice(row: ScheduleRow, contactName: string, lines: LineRo
         taxGroupId: l.taxGroupId,
         isTaxInclusive: l.isTaxInclusive,
         supplyClass: l.supplyClass,
+        hsnSac: l.hsnSac,
       })),
   };
 }
@@ -125,6 +126,7 @@ export class RecurringInvoicesService {
         taxGroupId: l.type === "item" ? (l.taxGroupId ?? null) : null,
         isTaxInclusive: l.type === "item" ? l.isTaxInclusive : false,
         supplyClass: l.type === "item" ? (l.supplyClass ?? null) : null,
+        hsnSac: l.type === "item" ? (l.hsnSac ?? null) : null,
       })),
     );
   }

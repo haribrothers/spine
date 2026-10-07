@@ -35,6 +35,8 @@ export interface CatalogBundleLine {
   isTaxInclusive: boolean;
   /** US-TAX-11 — null on heading and text lines. */
   supplyClass: SupplyClass | null;
+  /** US-TAX-14 */
+  hsnSac: string | null;
 }
 
 export interface CatalogBundle {

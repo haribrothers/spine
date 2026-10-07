@@ -47,6 +47,7 @@ interface ComputedLine {
   taxGroupId: string | null;
   isTaxInclusive: boolean;
   supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -114,6 +115,7 @@ async function computeQuoteTotals(
           taxGroupId: null,
           isTaxInclusive: false,
           supplyClass: null,
+          hsnSac: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -168,6 +170,7 @@ async function computeQuoteTotals(
         discountPercentage: line.discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
         supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass),
+        hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive: line.isTaxInclusive,
@@ -662,6 +665,7 @@ export class QuotesService {
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
             supplyClass: line.supplyClass,
+            hsnSac: line.hsnSac,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -753,6 +757,7 @@ export class QuotesService {
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
             supplyClass: line.supplyClass,
+            hsnSac: line.hsnSac,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -1072,6 +1077,7 @@ async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

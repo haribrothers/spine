@@ -404,7 +404,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
 - [x] US-TAX-12 · Record my GSTIN and state, and each customer's
 - [x] US-TAX-13 · Pick intra- or inter-state GST automatically
-- [ ] US-TAX-14 · Add HSN or SAC codes to items and lines
+- [x] US-TAX-14 · Add HSN or SAC codes to items and lines
 - [ ] US-TAX-15 · Print GST details on invoices and credit notes
 - [ ] US-TAX-16 · Export GSTR-1 for the GST portal
 - [ ] US-TAX-17 · Check GSTR-1 figures before uploading

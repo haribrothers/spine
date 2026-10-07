@@ -149,6 +149,8 @@ export const creditNoteLines = pgTable(
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
     supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),

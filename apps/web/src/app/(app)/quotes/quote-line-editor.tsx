@@ -7,6 +7,7 @@ import { bundleLines, useBundles } from "../../../lib/bundles";
 import { useCapability } from "../../../lib/capabilities-context";
 import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { LineTaxWarning } from "../../../components/place-of-supply";
+import { HsnSacField } from "../../../components/hsn-sac-field";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -30,6 +31,8 @@ export interface EditableQuoteLine {
   isTaxInclusive: boolean;
   /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
   supplyClass: SupplyClass | null;
+  /** US-TAX-14 — the line's HSN/SAC code ("" when none). */
+  hsnSac: string;
   /** US-CAT-06 — a one-off line to add to the catalogue when the quote is saved (it needs a price). Never sent to the server. */
   saveToCatalogue?: boolean;
 }
@@ -55,6 +58,7 @@ export function blankLine(type: QuoteLineType = "item"): EditableQuoteLine {
     taxGroupId: null,
     isTaxInclusive: false,
     supplyClass: type === "item" ? "zero_rated" : null,
+    hsnSac: "",
   };
 }
 
@@ -118,11 +122,14 @@ export function QuoteLineEditor({
   currency,
   supplyType = null,
   flaggedKeys,
+  showHsn = false,
 }: {
   /** US-TAX-13 — picks each item's intra- or inter-state tax. */
   supplyType?: SupplyType | null;
   /** US-TAX-13 — lines changed by hand when the place of supply changed. */
   flaggedKeys?: Set<string>;
+  /** US-TAX-14 — show HSN/SAC on item lines (GST is on). */
+  showHsn?: boolean;
   lines: EditableQuoteLine[];
   onChange: (lines: EditableQuoteLine[]) => void;
   currency: string;
@@ -206,6 +213,8 @@ export function QuoteLineEditor({
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
       // US-TAX-13: the item's inter-state tax outside my state.
       ...itemTaxFor(item, supplyType),
+      // US-TAX-14: the item's HSN/SAC code, changeable on the line.
+      hsnSac: item.hsnSac ?? "",
       saveToCatalogue: false,
     });
   }
@@ -250,6 +259,7 @@ export function QuoteLineEditor({
                     taxRates={taxRates}
                     taxGroups={taxGroups}
                     onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
+                    showHsn={showHsn}
                     onChange={(patch) => updateLine(index, patch)}
                   />
                 ) : (
@@ -298,6 +308,7 @@ function ItemLineFields({
   taxGroups,
   onApplyCatalogItem,
   onChange,
+  showHsn,
 }: {
   line: EditableQuoteLine;
   currency: string;
@@ -310,6 +321,7 @@ function ItemLineFields({
   taxGroups: TaxGroupOption[];
   onApplyCatalogItem: (id: string) => void;
   onChange: (patch: Partial<EditableQuoteLine>) => void;
+  showHsn: boolean;
 }) {
   const preview = computeLinePreview(line, currency, taxRates, taxGroups);
   const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
@@ -392,8 +404,13 @@ function ItemLineFields({
           <span className="text-[13px] text-on-surface">Price includes tax</span>
         </label>
       </div>
-      {showsSupplyType(line.supplyClass, taxPercent) && (
-        <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+      {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
+        <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+          {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />}
+          {showsSupplyType(line.supplyClass, taxPercent) && (
+            <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+          )}
+        </div>
       )}
     </div>
   );

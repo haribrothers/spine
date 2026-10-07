@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput } from "@spine/ui";
 import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
 import { LineTaxWarning } from "../../../components/place-of-supply";
+import { HsnSacField } from "../../../components/hsn-sac-field";
 import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
@@ -41,6 +42,8 @@ export interface EditableVendorBillLine {
   isTaxInclusive: boolean;
   /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
   supplyClass: SupplyClass | null;
+  /** US-TAX-14 — the line's HSN/SAC code ("" when none). */
+  hsnSac: string;
 }
 
 let keySeq = 0;
@@ -64,6 +67,7 @@ export function blankLine(): EditableVendorBillLine {
     taxGroupId: null,
     isTaxInclusive: false,
     supplyClass: "zero_rated",
+    hsnSac: "",
   };
 }
 
@@ -124,11 +128,14 @@ export function VendorBillLineEditor({
   currency,
   supplyType = null,
   flaggedKeys,
+  showHsn = false,
 }: {
   /** US-TAX-13 — picks each item's intra- or inter-state tax. */
   supplyType?: SupplyType | null;
   /** US-TAX-13 — lines changed by hand when the place of supply changed. */
   flaggedKeys?: Set<string>;
+  /** US-TAX-14 — show HSN/SAC on item lines (GST is on). */
+  showHsn?: boolean;
   lines: EditableVendorBillLine[];
   onChange: (lines: EditableVendorBillLine[]) => void;
   currency: string;
@@ -215,6 +222,8 @@ export function VendorBillLineEditor({
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
       // US-TAX-13: the item's inter-state tax outside my state.
       ...itemTaxFor(item, supplyType),
+      // US-TAX-14: the item's HSN/SAC code, changeable on the line.
+      hsnSac: item.hsnSac ?? "",
     });
   }
 
@@ -316,8 +325,13 @@ export function VendorBillLineEditor({
                       <span className="text-[13px] text-on-surface">Price includes tax</span>
                     </label>
                     {flaggedKeys?.has(line.key) && <LineTaxWarning />}
-                    {showsSupplyType(line.supplyClass, taxPercent) && (
-                      <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />
+                    {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
+                      <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+                        {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => updateLine(index, { hsnSac })} />}
+                        {showsSupplyType(line.supplyClass, taxPercent) && (
+                          <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => updateLine(index, { supplyClass })} />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>

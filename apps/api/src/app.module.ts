@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { ZodExceptionFilter } from "./common/zod-exception.filter";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { SessionThrottlerGuard } from "./common/session-throttler.guard";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
@@ -91,6 +92,8 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     // runs first and populates request.session before this guard reads it
     // — see CapabilityGuard's own doc comment for the full reasoning.
     { provide: APP_GUARD, useClass: CapabilityGuard },
+    // A body that fails its schema is a 400 with a readable message, not a 500.
+    { provide: APP_FILTER, useClass: ZodExceptionFilter },
   ],
 })
 export class AppModule {}

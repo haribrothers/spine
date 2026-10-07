@@ -38,6 +38,7 @@ function toEditableLines(bill: VendorBill): EditableVendorBillLine[] {
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac ?? "",
     }));
 }
 
@@ -139,6 +140,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
         supplyClass: line.supplyClass,
+        hsnSac: line.hsnSac || null,
         sortOrder: index,
       })),
     };
@@ -207,7 +209,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

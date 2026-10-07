@@ -95,6 +95,7 @@ export class RecurringInvoiceRunService {
             taxGroupId: l.taxGroupId,
             isTaxInclusive: l.isTaxInclusive,
             supplyClass: l.supplyClass,
+            hsnSac: l.hsnSac,
           })),
         }),
         false,

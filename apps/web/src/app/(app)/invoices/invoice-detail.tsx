@@ -1,11 +1,19 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS } from "@spine/shared";
+import { SUPPLY_CLASS_LABELS, gstinRequired, missingHsnSacMessage, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type GstTreatment } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -117,8 +125,25 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     return () => clearInterval(interval);
   }, [invoice?.emailStatus, load]);
 
+  // US-TAX-14 — lines without an HSN/SAC code on an invoice to a registered business.
+  const [missingHsn, setMissingHsn] = useState(0);
+
+  async function requestIssue() {
+    if (!invoice) return;
+    const missing = (invoice.lines ?? []).filter((l) => l.type === "item" && !l.hsnSac).length;
+    if (missing > 0) {
+      const contact = await apiClient.get<{ gstTreatment: GstTreatment | null }>(`/contacts/${invoice.contactId}`).catch(() => null);
+      if (gstinRequired(contact?.gstTreatment)) {
+        setMissingHsn(missing);
+        return;
+      }
+    }
+    await handleIssue();
+  }
+
   async function handleIssue() {
     if (!invoice) return;
+    setMissingHsn(0);
     setBusy(true);
     setError(null);
     try {
@@ -295,7 +320,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               </Button>
             )}
             {canIssue && (
-              <Button onClick={handleIssue} disabled={busy}>
+              <Button onClick={() => void requestIssue()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Issue Invoice"}
               </Button>
             )}
@@ -537,6 +562,19 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         </DialogContent>
       </Dialog>
 
+
+      <AlertDialog open={missingHsn > 0} onOpenChange={(open) => !open && setMissingHsn(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Issue without HSN/SAC codes?</AlertDialogTitle>
+            <AlertDialogDescription>{missingHsnSacMessage(missingHsn)} Add them on the invoice, or issue it as it is.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={handleIssue}>Issue anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <RecordPaymentDialog
         open={paymentOpen}
         onOpenChange={setPaymentOpen}

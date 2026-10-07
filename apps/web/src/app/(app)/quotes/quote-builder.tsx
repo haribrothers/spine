@@ -36,6 +36,7 @@ function toEditableLines(quote: Quote): EditableQuoteLine[] {
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
       supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac ?? "",
     }));
 }
 
@@ -155,6 +156,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
         supplyClass: line.supplyClass,
+        hsnSac: line.hsnSac || null,
         sortOrder: index,
       })),
     };
@@ -209,7 +211,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
 
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} />
+        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

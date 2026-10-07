@@ -79,6 +79,8 @@ export const catalogItems = pgTable(
     interTaxGroupId: uuid("inter_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     /** US-TAX-11 — copied to each line made from the item. */
     supplyClass: supplyClassEnum("supply_class").notNull().default("taxable"),
+    /** US-TAX-14 — HSN (goods) or SAC (services) code, copied to each line. */
+    hsnSac: text("hsn_sac"),
     incomeAccountId: uuid("income_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     expenseAccountId: uuid("expense_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     /** Same demo-data marker as contacts.isDemo — see that column's comment. */
@@ -152,6 +154,8 @@ export const catalogBundleLines = pgTable(
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
     supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

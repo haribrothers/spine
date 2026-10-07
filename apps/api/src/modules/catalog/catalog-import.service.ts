@@ -1,5 +1,5 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { fromDecimalString, UNKNOWN_ACCOUNT, UNKNOWN_TAX, type CatalogImportResult, type CatalogImportRow, type CatalogImportRowResult } from "@spine/shared";
+import { fromDecimalString, UNKNOWN_ACCOUNT, UNKNOWN_TAX, type CatalogImportResult, type CatalogImportRow, type CatalogImportRowResult, BAD_HSN_SAC, isValidHsnSac } from "@spine/shared";
 import { and, eq, isNull } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -78,6 +78,13 @@ export class CatalogImportService {
         continue;
       }
 
+      // US-TAX-14: "9403", "9403 10 10" — spaces dropped; it must be 4, 6 or 8 digits.
+      const hsnSac = (r.hsnSac ?? "").replace(/\s+/g, "");
+      if (hsnSac && !isValidHsnSac(hsnSac)) {
+        fail(BAD_HSN_SAC(r.hsnSac!));
+        continue;
+      }
+
       seen.add(key(name));
       if (!dryRun) {
         try {
@@ -91,6 +98,7 @@ export class CatalogImportService {
             defaultTaxGroupId: taxGroupId,
             incomeAccountId: incomeAccountId ?? null,
             expenseAccountId: expenseAccountId ?? null,
+            hsnSac: hsnSac || null,
           });
           imported += 1;
         } catch (err) {

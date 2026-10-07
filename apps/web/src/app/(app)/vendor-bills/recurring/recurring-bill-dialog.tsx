@@ -70,6 +70,7 @@ function toEditableLines(lines: RecurringBill["lines"]): EditableVendorBillLine[
     taxGroupId: line.taxGroupId,
     isTaxInclusive: line.isTaxInclusive,
     supplyClass: line.supplyClass,
+    hsnSac: line.hsnSac ?? "",
   }));
 }
 
@@ -237,6 +238,7 @@ export function RecurringBillDialog({
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
           supplyClass: l.supplyClass,
+          hsnSac: l.hsnSac || null,
         })),
     };
     setSaving(true);

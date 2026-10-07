@@ -3730,6 +3730,33 @@ Regression:
 
 Known gap: recurring schedules and variation orders have no Place of supply field. Items added there use their intra-state tax, so check the tax on lines for out-of-state customers.
 
+## 165. HSN and SAC codes (US-TAX-14, Phase 9)
+
+Use an Indian business with a GST state, as in section 164.
+
+1. Catalogue › Add item:
+   - "HSN/SAC code" reads "4, 6 or 8 digits. Copied to each line; change it there if needed.".
+   - Type 94031: "Enter 4, 6 or 8 digits." Type 9403: the message goes.
+   - Save the item.
+2. New invoice for a registered business:
+   - Add the item: the line's HSN/SAC reads 9403. Change it to 940310.
+   - Add a one-off line: its HSN/SAC is empty.
+   - Save.
+3. Issue: "Issue without HSN/SAC codes?" says "1 line has no HSN/SAC code. GSTR-1 needs them."
+   - "Go back" leaves the draft.
+   - "Issue anyway" issues it.
+4. Issue an invoice to a consumer with lines without codes: no question is asked.
+5. Change the item's code: the issued invoice keeps 940310.
+6. Quotes, vendor bills and vendor credits show HSN/SAC the same way. Saving a quote as a bundle and adding the bundle keeps the codes.
+7. Catalogue › Import a CSV with an "HSN/SAC" column:
+   - It maps by itself.
+   - "9403 60" imports as 940360.
+   - "94" fails the row with "HSN/SAC 94: enter 4, 6 or 8 digits."
+8. Outside India there's no HSN/SAC field anywhere.
+9. Keyboard: HSN/SAC is labelled; errors are announced. Dark mode is readable.
+
+Regression: lines and totals save as before.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
