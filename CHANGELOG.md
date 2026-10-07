@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — D-187: apply the customer's credit when issuing; known gaps tidied (Phase 9)
+
+- "Issue Invoice" now asks "Apply this customer's credit?" when the customer has credit (an unallocated payment such as a deposit, or a credit note's spare credit).
+  - "Apply credit and issue" applies it oldest first, up to the balance, before the PDF is drawn. The UPI QR code then asks for what's still owed, and there's no QR code when the credit covers it all.
+  - "Issue without credit" works as before.
+  - It needs "Apply credit" as well as "Issue". The API takes `applyCredit` on `POST /invoices/:id/issue`, and `GET /invoices/:id/available-credit` gives the amount.
+- QA script's known gaps:
+  - Removed six fixed entries: fine-grained permissions on screens, the variation order tax picker, Tax Summary export, the credit notes list, the mobile app, and job cost figures.
+  - Moved deliberate v1 choices under "By design in v1".
+  - Removed the UPI deposit gap (fixed above).
+- Roadmap:
+  - Added GSTR-1 units of measure, shipping bill details, advances (Tables 11A/11B) and amendments.
+  - Removed "Exports under LUT", which shipped in Phase 9 (D-181).
+
 ### 2026-10-07 — US-RPT-38: export my books for Tally (Phase 9)
 
 - Reports › Export to Tally (Accountant group): choose From and To and press "Export". A ZIP downloads with `masters.xml`, `vouchers.xml` and `README.txt`.

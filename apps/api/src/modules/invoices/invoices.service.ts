@@ -793,7 +793,7 @@ export class InvoicesService {
    * issuance sets it, matching how `contactId` is already attached to
    * every line here.
    */
-  async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string) {
+  async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string, options: { afterIssue?: (invoiceId: string) => Promise<unknown> } = {}) {
     const [preCheck] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Invoice not found");
@@ -928,8 +928,25 @@ export class InvoicesService {
       return row;
     });
 
-    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
+    try {
+      // D-187: credit applied as it's issued, before the PDF is drawn, so the UPI QR code asks for what's left.
+      if (options.afterIssue) {
+        await options.afterIssue(result!.id);
+        await this.refreshUpiQrAmount(orgId, result!.id);
+      }
+    } finally {
+      await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
+    }
     return this.getOne(orgId, result!.id);
+  }
+
+  /** US-INV-26 / D-187 — the QR amount for the balance now, while the invoice's PDF hasn't been drawn yet. */
+  private async refreshUpiQrAmount(orgId: string, id: string) {
+    const [invoice] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
+    if (!invoice) return;
+    const [profile] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
+    const upiQrAmount = upiQrAmountFor(profile?.value as BusinessProfile | undefined, invoice.currency, invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount);
+    if (upiQrAmount !== invoice.upiQrAmount) await this.db.update(invoices).set({ upiQrAmount }).where(eq(invoices.id, id));
   }
 
   /**

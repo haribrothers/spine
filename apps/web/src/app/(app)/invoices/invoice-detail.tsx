@@ -138,18 +138,42 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         return;
       }
     }
-    await handleIssue();
+    await offerCreditOrIssue();
   }
 
-  async function handleIssue() {
+  // D-187 — the customer's credit (a deposit, a credit note), offered before issuing so the PDF's UPI QR asks for what's left.
+  const [creditOffer, setCreditOffer] = useState<bigint>(0n);
+
+  async function offerCreditOrIssue() {
     if (!invoice) return;
     setMissingHsn(0);
+    if (hasApplyCreditCapability && invoice.type !== "advance") {
+      const credit = await apiClient.get<{ amount: string }>(`/invoices/${invoice.id}/available-credit`).catch(() => ({ amount: "0" }));
+      if (BigInt(credit.amount) > 0n) {
+        setCreditOffer(BigInt(credit.amount));
+        return;
+      }
+    }
+    await handleIssue(false);
+  }
+
+  async function handleIssue(applyCredit: boolean) {
+    if (!invoice) return;
+    setMissingHsn(0);
+    setCreditOffer(0n);
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/issue`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/issue`, applyCredit ? { applyCredit: true } : undefined);
       setInvoice(updated);
-      showToast("Invoice issued", `${updated.number} has been issued and posted to the ledger.`);
+      const applied = BigInt(updated.amountPaid ?? "0") + BigInt(updated.creditedAmount ?? "0");
+      if (applied > 0n) setPaymentsRefreshKey((key) => key + 1);
+      showToast(
+        "Invoice issued",
+        applied > 0n
+          ? `${updated.number} has been issued and posted to the ledger. ${formatMoney(applied, updated.currency)} of credit was applied.`
+          : `${updated.number} has been issued and posted to the ledger.`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not issue this invoice.");
     } finally {
@@ -571,7 +595,25 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={handleIssue}>Issue anyway</AlertDialogAction>
+            <AlertDialogAction onClick={() => void offerCreditOrIssue()}>Issue anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* D-187 — apply the customer's credit as the invoice is issued. */}
+      <AlertDialog open={creditOffer > 0n} onOpenChange={(open) => !open && setCreditOffer(0n)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply this customer&apos;s credit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {invoice.contactName ?? "This customer"} has {formatMoney(creditOffer, invoice.currency)} of credit from payments and credit notes. Apply it as the invoice is issued, so the invoice — and its UPI QR code, if it has one — asks only for what&apos;s still owed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <Button variant="secondary" onClick={() => void handleIssue(false)}>
+              Issue without credit
+            </Button>
+            <AlertDialogAction onClick={() => void handleIssue(true)}>Apply credit and issue</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

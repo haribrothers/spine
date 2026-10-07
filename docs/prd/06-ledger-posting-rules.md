@@ -33,7 +33,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P4 | Payment received, allocated to invoices | `payment` | The chosen money account (amount; the organisation default when none is chosen, US-BANK-03) | 1100 AR (allocated) |
 | P5 | Payment received, part or all unallocated (deposit / overpayment) | `payment` | The chosen money account (amount) | 1100 AR (allocated part), 2200 Customer Advances (unallocated part) |
 | P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | The chosen money account | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
-| P6 | Sitting credit applied to an invoice — from a payment, or from a credit note's excess (US-PAY-16) | `payment_credit_applied` / `credit_note_credit_applied` | 2200 Customer Advances | 1100 AR (each line tagged with the invoice's job) |
+| P6 | Sitting credit applied to an invoice — from a payment, or from a credit note's excess (US-PAY-16), including as the invoice is issued ([D-187](12-decisions.md)) | `payment_credit_applied` / `credit_note_credit_applied` | 2200 Customer Advances | 1100 AR (each line tagged with the invoice's job) |
 | P7 | Unallocated payment deleted | `payment_delete` | Reverses P4/P5 | |
 | P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (up to the invoice's balance), 2200 Customer Advances (any excess, from Phase 8, [D-142](12-decisions.md)) — every line tagged with the invoice's `job_id` when it has one (US-JOB-27), so job revenue and billed to date drop by the credit |
 | P9 | Invoice voided (with reason) | `invoice_void` | Reverses P1/P2 exactly | |

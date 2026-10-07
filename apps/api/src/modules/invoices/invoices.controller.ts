@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, ForbiddenException, Get, Inject, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { bulkInvoiceIdsSchema, createInvoiceSchema, updateInvoiceSchema, voidInvoiceSchema } from "@spine/shared";
 import type { Response } from "express";
@@ -8,6 +8,10 @@ import { requireOrgId } from "../org/settings.controller";
 import { InvoicesService } from "./invoices.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { InvoiceBulkPdfService } from "./invoice-bulk-pdf.service";
+import { IssueCreditService } from "./issue-credit.service";
+import { hasCapability } from "../../auth/capability.util";
+import { DATABASE } from "../../db/db.module";
+import type { Database } from "../../db/client";
 
 /**
  * PRD §2.1/§9 — Invoices use the own/others capability split:
@@ -31,6 +35,8 @@ export class InvoicesController {
     private readonly invoicesService: InvoicesService,
     private readonly issuedPdf: IssuedPdfService,
     private readonly bulkPdfs: InvoiceBulkPdfService,
+    private readonly issueCredit: IssueCreditService,
+    @Inject(DATABASE) private readonly db: Database,
   ) {}
 
   @Get()
@@ -100,9 +106,24 @@ export class InvoicesController {
   @Post(":id/issue")
   @RequireCapability("invoices.issue")
   @UseInterceptors(IdempotencyInterceptor)
-  async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string } = {}) {
+  async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string; applyCredit?: boolean } = {}) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.issue(orgId, id, session.user.id, body?.revenueAccountId);
+    // D-187: "Apply credit first" needs the same right as "Apply credit".
+    if (body?.applyCredit === true && !(await hasCapability(this.db, { orgId, userId: session.user.id }, "payments.apply_credit"))) {
+      throw new ForbiddenException("You don't have permission to apply credit. Issue it without, or ask an owner.");
+    }
+    return this.invoicesService.issue(orgId, id, session.user.id, body?.revenueAccountId, {
+      afterIssue: body?.applyCredit === true ? (invoiceId) => this.issueCredit.apply(orgId, session.user.id, invoiceId) : undefined,
+    });
+  }
+
+  /** D-187 — the customer's credit an invoice could use when it's issued: `{ amount }` in the invoice's currency. */
+  @Get(":id/available-credit")
+  async availableCredit(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    const invoice = await this.invoicesService.getOne(orgId, id);
+    const sources = await this.issueCredit.available(orgId, invoice.contactId, invoice.currency);
+    return { amount: sources.reduce((sum, s) => sum + s.amount, 0n).toString() };
   }
 
   /** S-05.7 — queues emailing the invoice PDF to its contact. Deliberately separate from `issue` — see InvoicesService.sendEmail's own doc comment. */

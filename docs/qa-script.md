@@ -4023,64 +4023,35 @@ Use the GST business from section 175.
 9. As Staff with "View financial statements" you can export but not change the mapping. Field users can't open it.
 10. The audit log shows "Tally export · Downloaded".
 
+## 180. Apply credit when issuing (D-187, Phase 9)
+
+1. In an INR business with a UPI ID, record a ₹500 payment from Lakeview Homes without allocating it (a deposit).
+2. Create a ₹1,180 draft invoice for them and press "Issue Invoice":
+   - "Apply this customer's credit?" says they have ₹500.00 of credit from payments and credit notes.
+   - It offers "Go back", "Issue without credit" and "Apply credit and issue".
+3. Choose "Apply credit and issue":
+   - The toast ends "₹500.00 of credit was applied."
+   - Balance due is ₹680.00, and the payment shows on the invoice.
+   - The PDF's QR code reads "Scan to pay ₹680.00 with any UPI app".
+4. With credit that covers the whole invoice, the issued PDF has no QR code.
+5. "Issue without credit" leaves the credit alone; "Apply credit" still offers it afterwards (US-PAY-16).
+6. A customer with no credit: Issue goes straight through, with no question.
+7. Staff who can issue but not apply credit:
+   - They aren't asked.
+   - Sending `applyCredit` to the API is refused with "You don't have permission to apply credit. Issue it without, or ask an owner."
+8. A registered customer with lines missing HSN/SAC: the HSN warning comes first, then the credit question.
+
 ## Known gaps — don't file these as bugs
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.
-
-
-- GSTR-1 goods lines use the unit `OTH` in the HSN summary because Spine's lines have no unit yet, and services use `NA` (D-184). Shipping bill details aren't captured, so exports have none. Advances received (Table 11) and amendments to earlier returns aren't in the file.
-
-- A deposit is applied to the final invoice with "Apply credit" after the invoice is issued, so that invoice's UPI QR code asks for the full amount (US-INV-26). Reminders then say what clears it. There's no QR code only when the balance is already nothing at issue.
-
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
+- Session-less signed file links (`/files/<id>?exp=&sig=`) work, but no screen creates one yet; they arrive with the stories that need them.
+- GSTR-1's units of measure, shipping bill details, advances (Tables 11A/11B) and amendments are planned work, not gaps: see [16-roadmap](prd/16-roadmap.md).
 
-- Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
-  screen creates one yet; they arrive with the stories that need them.
-- No client-side fine-grained capability check exists in the web app —
-  every gated page (Quotes, Teams, Jobs) approximates server-side
-  `@RequireCapability` enforcement by checking coarse role (owner/staff/
-  field) client-side. A Staff user whose Team doesn't actually grant a
-  capability will still see the button and get a real 403 from the
-  server on click — that's correct, expected behavior, not a bug to
-  file.
-- Job cost/revenue/margin (§5.8) now shows real **Cost** figures once at
-  least one recorded vendor bill or approved expense is tagged to that
-  job (§11.3/§11.4) — Phase 4 Stage 2 (Purchases & Expenses) closed this
-  gap. A job with no tagged bills/expenses still correctly shows Cost: 0
-  — that's a real zero, not a missing feature.
-- The tax collected/paid report (§10.14, `GET /org/tax/summary`) now
-  lives on Reports › "Tax Summary" (US-RPT-14), not Settings → Tax — it has its own
-  working per-rate breakdown UI that Reports deliberately doesn't
-  duplicate (see CHANGELOG's own note on this). No CSV export on that
-  specific view, unlike every report on the new Reports page. Tax
-  **paid** on that report has a real source (Input Tax Receivable
-  postings from recorded vendor bills, §11.4) but will still read 0 for
-  any org with no recorded vendor bills yet — expected, not a bug.
-- The job **variation order** line editor (`variation-order-line-editor.tsx`)
-  still uses the pre-FEAT-08 flat tax-percentage input, not the new
-  named rate/group picker §10 exercises for Quotes/Invoices/Catalogue —
-  it still computes correctly, just without a tax picker UI. Not yet
-  retrofitted.
-- A variation order's acceptance does NOT automatically fold its value
-  into the job's contract value — applying it (§5.11) is a deliberate,
-  separate manual step. A proactive in-app + email notification now
-  fires when a variation order is accepted (§5.11), but the "Apply to
-  job" click itself is still required and intentionally not automated.
-- Mobile (`apps/mobile`) doesn't exist yet — S-07.2/S-07.3's mobile-native
-  receipt capture and offline expense-submission queueing are Phase 5
-  scope; the web-based expense submission built in §11 covers S-07.2's
-  web half only, per that story's own "web submission this stage" split.
-- No standalone `/credit-notes` list page — credit notes are only
-  reachable from the invoice they correct.
-- Multi-org (one Owner account across several orgs) is explicitly out of
-  scope for v1 — don't test for it.
-- Meeting invites (§6.1) have only two visibility tiers, `private` and
-  `org` — there is no "visible to a specific Team" tier. Explicitly out
-  of scope for v1 per the PRD, not a missing feature.
-- Recurring meetings apply the invite list to the whole series — there's
-  no way to invite someone to just one occurrence of a repeating
-  meeting. Also explicit v1 scope, not a bug.
-- The "starting soon" reminder (§12 step 6) polls every 5 minutes, so a
-  reminder can fire up to ~5 minutes later than its exact configured
-  lead time — this is a deliberate trade-off (see CHANGELOG), not
-  imprecise timing to file as a bug.
+## By design in v1 — don't file these as bugs
+
+- A variation order's acceptance doesn't fold its value into the job's contract value. "Apply to job" (§5.11) is a deliberate, separate step; an in-app and email notification fires when one is accepted.
+- Meeting invites (§6.1) have two visibility tiers, `private` and `org`; there's no "visible to a specific Team" tier.
+- Recurring meetings apply the invite list to the whole series; you can't invite someone to one occurrence.
+- The "starting soon" reminder polls every 5 minutes, so it can fire up to about 5 minutes after its configured lead time.
+- Multi-org (one Owner account across several organisations) is out of scope for v1; don't test for it.

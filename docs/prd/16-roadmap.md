@@ -17,7 +17,6 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 | Accounting | Un-allocate a payment | Move a payment's allocation off an invoice without deleting the payment | Credit notes cover corrections in 1.0 | [D-074](12-decisions.md) |
 | Banking | OFX and QIF statement import | Statement formats beyond CSV | CSV covers Indian banks; OFX/QIF matter more abroad | [D-157](12-decisions.md) |
 | Banking | Bank rules | "When a statement line's description contains X, suggest category Y" while reconciling | Matching and create-from-line come first | Research (Zoho transaction rules) |
-| Tax, India | Exports under LUT | Zero-rated exports without IGST under a Letter of Undertaking, reported as `WOPAY` in GSTR-1 | 1.0 exports carry IGST (`WPAY`) | D-146, D-148 |
 | Tax, India | Reverse charge | Bills and expenses under reverse charge: self-assessed output tax with matching input credit; GSTR-1 flag | Needs posting rules and an accountant's review | Research |
 | Tax, India | Composition scheme | Bill of supply only, no tax collected, composition tax on turnover | Few target users are on it | Research |
 | Tax, India | TDS and TCS | Tax deducted at source on vendor payments and collected on receipts; certificates and reports | Separate law and returns | Research |
@@ -25,6 +24,10 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 | Tax, India | Scheduled rate changes by HSN | Change the GST rate of every item with an HSN code from a date, previewing affected items and recurring documents | Rates change rarely; 1.0 edits rates by hand | Research (Zoho GST rate update) |
 | Tax, India | Cess on items | Compensation cess amounts on items that carry it | Rare for service businesses | US-TAX-10 (cess type exists) |
 | Tax, India | GSTR-3B worksheet | A summary laid out like GSTR-3B, from the Tax Summary | GSTR-1 first; 3B is mostly totals | Research |
+| Tax, India | Units of measure | A unit (GST UQC: NOS, KGS, MTR, SQM…) on catalogue items and document lines, printed on documents and used in GSTR-1's HSN summary instead of `OTH` | The portal accepts `OTH`; units touch every line editor | [D-184](12-decisions.md) |
+| Tax, India | Shipping bill details | Shipping bill number, date and port code on export invoices, written into GSTR-1's exports table | They can be added on the portal once customs issues them | [D-184](12-decisions.md) |
+| Tax, India | Advances in GSTR-1 | Tax on advances received and adjusted (Tables 11A and 11B), from deposits received before the invoice | Deposits carry no tax in 1.0 ([D-075](12-decisions.md)); needs an accountant's review | [D-184](12-decisions.md) |
+| Tax, India | GSTR-1 amendments | Amended tables (B2BA, CDNRA…) for changes to documents from earlier returns | Spine never edits issued documents; corrections go through credit notes, which 1.0 reports | [D-184](12-decisions.md) |
 | Exports | Tally JSON | TallyPrime 7.0's JSON data exchange as an alternative to Tally XML | XML works with every Tally version | [D-149](12-decisions.md) |
 | Documents | More Indian scripts on PDFs | Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, Gurmukhi and Odia fonts | Devanagari and Latin ship in 1.0 | [D-151](12-decisions.md) |
 | Documents | Documents inbox | Upload or forward bills and receipts by email into an inbox, then turn one into a bill or expense | Attachments on records come first | Research (Zoho Documents) |

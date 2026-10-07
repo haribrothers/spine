@@ -176,7 +176,8 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/invoices/:id` | roles: owner, staff — also returns `paymentStatus`, and `job`, `milestone`, `retention { percent, heldOnJob }` for an invoice raised from a job (US-PAY-13, US-JOB-21) | — |
 | PUT | `/invoices/:id` | roles: owner, staff | Yes |
 | GET | `/invoices/:id/history` | roles: owner, staff | — |
-| POST | `/invoices/:id/issue` | roles: owner, staff; `invoices.issue` | Yes |
+| POST | `/invoices/:id/issue` — body `{ revenueAccountId?, applyCredit? }`; `applyCredit: true` applies the customer's credit as it's issued (D-187); 403 "You don't have permission to apply credit. Issue it without, or ask an owner." without `payments.apply_credit` | roles: owner, staff; `invoices.issue` (+ `payments.apply_credit` for `applyCredit`) | Yes |
+| GET | `/invoices/:id/available-credit` → `{ amount }`: the customer's unallocated payments and credit-note credit in the invoice's currency (D-187) | roles: owner, staff | — |
 | GET | `/invoices/:id/pdf` | roles: owner, staff | — |
 | POST | `/invoices/:id/send-email` | roles: owner, staff; `invoices.send` | Yes |
 | POST | `/invoices/:id/send-reminder` | roles: owner, staff; `invoices.send_reminder` | Yes |
