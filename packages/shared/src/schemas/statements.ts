@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { unknownPlaceholder, unknownPlaceholderMessage } from "./email-templates.ts";
 
 /**
  * US-PAY-14/15 — customer statements: every invoice, payment and credit
@@ -53,9 +54,17 @@ export const sendStatementSchema = z
     to: isoDate,
     mode: z.enum(["open", "all"]).default("all"),
     email: z.string().trim().email("Enter an email address to send the statement to."),
-    message: z.string().trim().max(2000, "Keep the message under 2,000 characters.").optional().nullable(),
+    message: z.string().trim().max(5000, "Keep the message under 5,000 characters.").optional().nullable(),
+    /** US-SET-21 — the subject, when the dialog changed it from the "Statement" template. */
+    subject: z.string().trim().min(1, "Enter a subject.").max(200, "Keep the subject under 200 characters.").optional().nullable(),
   })
-  .refine((q) => q.from <= q.to, { message: "Pick an end date after the start date.", path: ["to"] });
+  .refine((q) => q.from <= q.to, { message: "Pick an end date after the start date.", path: ["to"] })
+  .superRefine((q, ctx) => {
+    for (const field of ["subject", "message"] as const) {
+      const name = q[field] ? unknownPlaceholder(q[field]!, "statement") : null;
+      if (name !== null) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message: unknownPlaceholderMessage(name) });
+    }
+  });
 
 export type StatementQuery = z.infer<typeof statementQuerySchema>;
 export type SendStatementInput = z.infer<typeof sendStatementSchema>;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, BellRing, Building2, FileText, Files, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
+import { AlarmClock, BellRing, Building2, FileText, Files, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Mail, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
 import { BrandingPane } from "../app/settings/panes/branding-pane";
@@ -11,6 +11,7 @@ import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
 import { TaxPane } from "../app/settings/panes/tax-pane";
 import { GstPane } from "../app/settings/panes/gst-pane";
 import { DocumentsPane } from "../app/settings/panes/documents-pane";
+import { EmailsPane } from "../app/settings/panes/emails-pane";
 import type { TaxProfile } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
@@ -51,6 +52,8 @@ const SECTIONS: SettingsSection[] = [
   { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
   // US-SET-17–US-SET-19
   { key: "documents", label: "Documents", icon: <Files size={16} />, render: () => <DocumentsPane /> },
+  // US-SET-21
+  { key: "emails", label: "Emails", icon: <Mail size={16} />, render: () => <EmailsPane /> },
   { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
   { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
   {

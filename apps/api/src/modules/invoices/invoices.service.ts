@@ -17,6 +17,7 @@ import { TaxResolverService } from "../tax/tax-resolver.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+import type { EmailJobOverride } from "../email/email-text";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
@@ -968,7 +969,7 @@ export class InvoicesService {
    * on a transient queue issue once the caller has been told sending
    * started.
    */
-  async sendEmail(orgId: string, id: string, actorUserId: string) {
+  async sendEmail(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!existing) {
       throw new NotFoundException("Invoice not found");
@@ -990,7 +991,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id });
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue invoice-send-email job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }
@@ -1084,7 +1085,7 @@ export class InvoicesService {
    * doesn't match S-05.10's own framing ("so following up isn't a
    * chore" implies there's something to follow up ON).
    */
-  async sendReminder(orgId: string, id: string, actorUserId: string) {
+  async sendReminder(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!existing) {
       throw new NotFoundException("Invoice not found");
@@ -1108,7 +1109,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true });
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }

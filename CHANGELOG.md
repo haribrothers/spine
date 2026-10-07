@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-SET-21: edit the text of each customer email (Phase 9)
+
+- Settings › Emails lists the six customer emails: Quote, Invoice, Payment reminder, Receipt, Credit note and Statement. Each shows its subject and the first line of its message.
+- Open one to edit "Subject" and "Message". An Insert menu adds placeholders at the cursor: `{customer_name}`, `{document_number}`, `{amount}`, `{balance_due}`, `{due_date}`, `{business_name}`, `{link}` (quotes) and `{due_status}` (reminders).
+- An unknown placeholder like `{invoice_no}` shows "{invoice_no} isn't a placeholder Spine knows. Use one from the list.", in the pane and from the API.
+- The next email of that kind uses your words inside the branded layout: the heading, details table, payment instructions, button and PDF stay. Emails already sent don't change. Web addresses in a message become links.
+- New send dialog (To, Subject, Message, attach the PDF), starting from the template with the document's details filled in. Changes apply to that one email.
+  - Used by Send quote, Email again, Email invoice, Send reminder and Email receipt.
+  - New: **Email credit note**, from the credit notes on an invoice.
+  - The statement dialog gains a Subject and starts from its template too.
+- Spine's default reminder now reads "invoice INV-0007 is 3 days overdue" (it said "was due on …"); the subject is unchanged. D-188 records the choices.
+- API:
+  - `PUT /org/settings/email_templates`.
+  - `GET /email-drafts/:type/:id` and `GET /contacts/:id/statement/draft`.
+  - Send routes take `{ to?, subject?, message?, attachPdf? }`.
+  - New: `POST /credit-notes/:id/send-email`.
+
 ### 2026-10-07 — D-187: apply the customer's credit when issuing; known gaps tidied (Phase 9)
 
 - "Issue Invoice" now asks "Apply this customer's credit?" when the customer has credit (an unallocated payment such as a deposit, or a credit note's spare credit).

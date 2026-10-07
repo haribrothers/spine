@@ -4041,6 +4041,33 @@ Use the GST business from section 175.
    - Sending `applyCredit` to the API is refused with "You don't have permission to apply credit. Issue it without, or ask an owner."
 8. A registered customer with lines missing HSN/SAC: the HSN warning comes first, then the credit question.
 
+## 181. Customer email templates (US-SET-21, Phase 9)
+
+1. Settings › Emails:
+   - It lists Quote, Invoice, Payment reminder, Receipt, Credit note and Statement, each with its subject and first line.
+   - The text reads "Your own words in the emails customers get. The branded layout around them stays the same."
+2. Open Invoice and set the subject to "Invoice {document_number} from {business_name}" using the Insert buttons (they go where the cursor is).
+3. `{link}` is offered only on Quote, and `{due_status}` only on Payment reminder.
+4. Type `{invoice_no}`: "{invoice_no} isn't a placeholder Spine knows. Use one from the list." Save is refused until it's fixed.
+5. Write a message with a blank line between paragraphs and a web address; save ("Your changes have been saved.").
+6. On an issued invoice, press "Email invoice". The send dialog:
+   - To is the customer's email.
+   - The subject and message are your template with this invoice's number, amount and dates.
+   - "Attach the invoice PDF" is ticked.
+7. Change the subject and send. The email arrives:
+   - With your subject, your paragraphs and a clickable link.
+   - Inside the branded layout: heading, details, payment instructions and the PDF.
+   - The next "Email invoice" starts from the saved template again.
+8. Untick "Attach the invoice PDF": the email has no PDF.
+9. "Send reminder" on an overdue invoice starts from the reminder template: "Reminder: invoice INV-… is N days overdue".
+10. "Send Quote" opens the dialog. `{link}` (and the number, for a draft quote) stays as a placeholder until it's sent; the email has the link.
+11. Email a receipt from a payment, and a credit note from its invoice's Credit notes section (the Email button). Both go with their PDFs.
+12. Send a statement: the dialog's Subject and Message start from the Statement template, with the period and balance filled in.
+13. Regression:
+    - Automatic and bulk reminders still go, using the saved reminder template.
+    - Emails sent before the change are unchanged.
+    - Staff without "Send" don't see the dialogs.
+
 ## Known gaps — don't file these as bugs
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.

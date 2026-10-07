@@ -37,6 +37,7 @@ import { DataExportModule } from "./modules/data-export/data-export.module";
 import { SearchModule } from "./modules/search/search.module";
 import { QueueModule } from "./modules/queue/queue.module";
 import { EmailModule } from "./modules/email/email.module";
+import { EmailTemplatesModule } from "./modules/email-templates/email-templates.module";
 import { PdfModule } from "./modules/pdf/pdf.module";
 
 @Module({
@@ -54,6 +55,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     DbModule,
     QueueModule,
     EmailModule,
+    EmailTemplatesModule,
     PdfModule,
     HealthModule,
     OrgModule,

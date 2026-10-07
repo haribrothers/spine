@@ -9,6 +9,7 @@ import { InvoicesService } from "./invoices.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { InvoiceBulkPdfService } from "./invoice-bulk-pdf.service";
 import { IssueCreditService } from "./issue-credit.service";
+import { parseEmailOverride } from "../email/email-text";
 import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -130,9 +131,10 @@ export class InvoicesController {
   @Post(":id/send-email")
   @RequireCapability("invoices.send")
   @UseInterceptors(IdempotencyInterceptor)
-  async sendEmail(@Session() session: UserSession, @Param("id") id: string) {
+  async sendEmail(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.sendEmail(orgId, id, session.user.id);
+    // US-SET-21: the "Send" dialog may change this one email.
+    return this.invoicesService.sendEmail(orgId, id, session.user.id, parseEmailOverride("invoice", body));
   }
 
   /**
@@ -168,9 +170,9 @@ export class InvoicesController {
   @Post(":id/send-reminder")
   @RequireCapability("invoices.send_reminder")
   @UseInterceptors(IdempotencyInterceptor)
-  async sendReminder(@Session() session: UserSession, @Param("id") id: string) {
+  async sendReminder(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
     const orgId = requireOrgId(session);
-    return this.invoicesService.sendReminder(orgId, id, session.user.id);
+    return this.invoicesService.sendReminder(orgId, id, session.user.id, parseEmailOverride("reminder", body));
   }
 
   /** S-05.8 — void with a required reason; posts a reversing journal entry. */

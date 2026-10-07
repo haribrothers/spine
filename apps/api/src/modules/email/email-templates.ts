@@ -1,3 +1,4 @@
+import { DEFAULT_EMAIL_TEMPLATES, fillPlaceholders, type EmailPlaceholder, type EmailTemplateText, type EmailTemplateType } from "@spine/shared";
 import { appUrl, emailDate, emailMoney, firstName, type EmailContent } from "./email-layout";
 
 /**
@@ -10,9 +11,30 @@ import { appUrl, emailDate, emailMoney, firstName, type EmailContent } from "./e
 export interface EmailTemplate {
   subject: string;
   content: EmailContent;
+  /** US-SET-21 — what each placeholder reads in this email, for a "Send" dialog's draft. */
+  values?: Partial<Record<EmailPlaceholder, string>>;
 }
 
 const REPLY_NOTE = "Questions? Reply to this email.";
+
+/**
+ * US-SET-21 (D-153) — an email's words from its template (the saved one,
+ * one edited in a "Send" dialog, or Spine's default), placeholders filled.
+ * Blank lines split paragraphs; a short first line ending in a comma
+ * ("Hi Alan,") is the greeting.
+ */
+export function fromTemplate(type: EmailTemplateType, text: EmailTemplateText | undefined, values: Partial<Record<EmailPlaceholder, string>>) {
+  const t = text ?? DEFAULT_EMAIL_TEMPLATES[type];
+  const subject = fillPlaceholders(t.subject, values).replace(/\s+/g, " ").trim();
+  const blocks = fillPlaceholders(t.body, values)
+    .replace(/\r\n/g, "\n")
+    .split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  const first = blocks[0];
+  const greeting = blocks.length > 1 && first && !first.includes("\n") && first.length <= 80 && first.endsWith(",") ? blocks.shift() : undefined;
+  return { subject, greeting, paragraphs: blocks, values };
+}
 
 export function quoteEmail(d: {
   locale?: string;
@@ -23,19 +45,32 @@ export function quoteEmail(d: {
   currency: string;
   validUntil: Date | string | null;
   link: string | null;
+  /** US-SET-21 — the saved or edited text; Spine's default when absent. */
+  text?: EmailTemplateText;
 }): EmailTemplate {
+  const total = emailMoney(d.total, d.currency, d.locale);
+  const words = fromTemplate("quote", d.text, {
+    customer_name: firstName(d.contactName),
+    document_number: d.number,
+    amount: total,
+    balance_due: total,
+    due_date: d.validUntil ? emailDate(d.validUntil) : "",
+    business_name: d.businessName,
+    link: d.link ?? "",
+  });
+  // Without a page to open, Spine's default says the PDF is attached instead.
+  const paragraphs = !d.text && !d.link ? ["Here's our quote, attached as a PDF."] : words.paragraphs;
   return {
-    subject: `${d.businessName} sent you a quote (${d.number})`,
+    subject: words.subject,
+    values: words.values,
     content: {
       preheader: `${d.businessName} sent you a quote (${d.number}).`,
       heading: "Your quote is ready",
-      greeting: `Hi ${firstName(d.contactName)},`,
-      paragraphs: [
-        d.link ? "Here's our quote. You can read it, accept it or decline it online — no account needed." : "Here's our quote, attached as a PDF.",
-      ],
+      greeting: words.greeting,
+      paragraphs,
       facts: [
         { label: "Quote", value: d.number },
-        { label: "Total", value: emailMoney(d.total, d.currency, d.locale) },
+        { label: "Total", value: total },
         ...(d.validUntil ? [{ label: "Valid until", value: emailDate(d.validUntil) }] : []),
       ],
       button: d.link ? { label: "View quote", url: d.link } : undefined,
@@ -65,6 +100,8 @@ export function invoiceEmail(d: {
   claimLabel?: string | null;
   /** US-INV-26 — what the attached PDF's UPI QR code asks for, if it has one. */
   upiQrAmount?: bigint | null;
+  /** US-SET-21 — the saved or edited text (the invoice's, or the reminder's); Spine's default when absent. */
+  text?: EmailTemplateText;
 }): EmailTemplate {
   const paid = d.balanceDue <= 0n;
   const instructions = d.paymentInstructions?.trim();
@@ -79,17 +116,24 @@ export function invoiceEmail(d: {
         : days === 0
           ? "is due today"
           : `is due in ${-days} day${days === -1 ? "" : "s"}`;
-  const dueOn = d.dueDate ? emailDate(d.dueDate) : null;
+  const words = fromTemplate(state ? "reminder" : "invoice", d.text, {
+    customer_name: firstName(d.contactName),
+    document_number: d.number,
+    amount: emailMoney(d.total, d.currency, d.locale),
+    balance_due: emailMoney(paid ? 0n : d.balanceDue, d.currency, d.locale),
+    due_date: d.dueDate ? emailDate(d.dueDate) : "",
+    business_name: d.businessName,
+    due_status: state ?? "",
+  });
   return {
-    subject: state ? `Reminder: invoice ${d.number} ${state}` : `${d.businessName} sent you an invoice (${d.number})`,
+    subject: words.subject,
+    values: words.values,
     content: {
       preheader: state ? `Invoice ${d.number} ${state}.` : `${d.businessName} sent you an invoice (${d.number}).`,
       heading: state ? `Invoice ${d.number} ${state}` : "Your invoice is ready",
-      greeting: `Hi ${firstName(d.contactName)},`,
+      greeting: words.greeting,
       paragraphs: [
-        state
-          ? `This is a friendly reminder that invoice ${d.number} ${days !== null && days > 0 ? "was due" : "is due"}${dueOn ? ` on ${dueOn}` : ""}. If you've already paid, thank you — please ignore this email.`
-          : `Here's invoice ${d.number} from ${d.businessName}, attached as a PDF.`,
+        ...words.paragraphs,
         ...(paid ? ["This invoice is already paid in full — nothing is owing."] : []),
         // US-INV-26: the stored PDF's QR code keeps the amount at issue; say what clears it now.
         ...(state && !paid && d.upiQrAmount != null && d.upiQrAmount !== d.balanceDue
@@ -161,23 +205,59 @@ export function receiptEmail(d: {
   number: string;
   amount: bigint;
   currency: string;
+  /** US-SET-21 — the saved or edited text; Spine's default when absent. */
+  text?: EmailTemplateText;
 }): EmailTemplate {
+  const amount = emailMoney(d.amount, d.currency, d.locale);
+  const words = fromTemplate("receipt", d.text, { customer_name: firstName(d.contactName), document_number: d.number, amount, business_name: d.businessName });
   return {
-    subject: `${d.businessName} sent you a receipt (${d.number})`,
+    subject: words.subject,
+    values: words.values,
     content: {
       heading: "Your receipt",
-      greeting: `Hi ${firstName(d.contactName)},`,
-      paragraphs: [`Here's your receipt for a payment of ${emailMoney(d.amount, d.currency, d.locale)}, attached as a PDF.`],
+      greeting: words.greeting,
+      paragraphs: words.paragraphs,
       facts: [
         { label: "Receipt", value: d.number },
-        { label: "Amount", value: emailMoney(d.amount, d.currency, d.locale) },
+        { label: "Amount", value: amount },
       ],
       note: REPLY_NOTE,
     },
   };
 }
 
-/** US-PAY-14 — a customer statement, with the PDF attached and the sender's own message. */
+/** US-SET-21 — a credit note emailed to the customer, with its PDF attached. */
+export function creditNoteEmail(d: {
+  locale?: string;
+  businessName: string;
+  contactName: string | null;
+  number: string;
+  invoiceNumber: string | null;
+  amount: bigint;
+  currency: string;
+  text?: EmailTemplateText;
+}): EmailTemplate {
+  const amount = emailMoney(d.amount, d.currency, d.locale);
+  const words = fromTemplate("credit_note", d.text, { customer_name: firstName(d.contactName), document_number: d.number, amount, business_name: d.businessName });
+  return {
+    subject: words.subject,
+    values: words.values,
+    content: {
+      preheader: `${d.businessName} sent you a credit note (${d.number}).`,
+      heading: "Your credit note",
+      greeting: words.greeting,
+      paragraphs: words.paragraphs,
+      facts: [
+        { label: "Credit note", value: d.number },
+        ...(d.invoiceNumber ? [{ label: "Against invoice", value: d.invoiceNumber }] : []),
+        { label: "Amount", value: amount },
+      ],
+      note: `The credit note is attached as a PDF. ${REPLY_NOTE}`,
+    },
+  };
+}
+
+/** US-PAY-14 — a customer statement, with the PDF attached. US-SET-21: in the template's words, or the sender's own. */
 export function statementEmail(d: {
   locale?: string;
   businessName: string;
@@ -185,15 +265,26 @@ export function statementEmail(d: {
   period: string;
   balanceDue: bigint;
   currency: string;
+  /** A message typed in the send dialog, used as the email's body. */
   message?: string | null;
+  text?: EmailTemplateText;
 }): EmailTemplate {
   const balance = emailMoney(d.balanceDue, d.currency, d.locale);
+  const base = d.text ?? DEFAULT_EMAIL_TEMPLATES.statement;
+  const words = fromTemplate("statement", d.message ? { subject: base.subject, body: d.message } : d.text, {
+    customer_name: firstName(d.contactName),
+    document_number: d.period,
+    amount: balance,
+    balance_due: balance,
+    business_name: d.businessName,
+  });
   return {
-    subject: `Your statement from ${d.businessName} (${d.period})`,
+    subject: words.subject,
+    values: words.values,
     content: {
       heading: "Your statement",
-      greeting: d.message ? undefined : `Hi ${firstName(d.contactName)},`,
-      paragraphs: d.message ? d.message.split(/\n{2,}/) : [`Here's your statement for ${d.period}, attached as a PDF. It lists every invoice, payment and credit in that time.`],
+      greeting: words.greeting,
+      paragraphs: words.paragraphs,
       facts: [
         { label: "Period", value: d.period },
         { label: "Balance due", value: balance },

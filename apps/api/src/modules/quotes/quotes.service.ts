@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import type { EmailJobOverride } from "../email/email-text";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
 import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
@@ -502,7 +503,7 @@ export class QuotesService {
    * needs to know how tokens are minted — it just builds a link with
    * whatever token this method handed it.
    */
-  async send(orgId: string, id: string, actorUserId: string) {
+  async send(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Quote not found");
@@ -564,7 +565,7 @@ export class QuotesService {
     });
 
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
     } catch (err) {
       // Never let a queue-enqueue failure fail an already-committed send —
       // see this method's own doc comment above.
@@ -783,7 +784,7 @@ export class QuotesService {
    * with a fresh public link. Earlier links keep working (US-QUO-22); the
    * PDF is the one stored when it was sent (US-INV-17).
    */
-  async resend(orgId: string, id: string, actorUserId: string) {
+  async resend(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const { token } = await this.db.transaction(async (tx) => {
       const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
       if (!existing) throw new NotFoundException("Quote not found");
@@ -801,7 +802,7 @@ export class QuotesService {
       return this.publicTokens.issue(tx, orgId, id);
     });
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
     }

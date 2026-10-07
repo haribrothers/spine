@@ -415,7 +415,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-18 · Set each document's title, terms and notes
 - [x] US-SET-19 · Add a signature and the amount in words
 - [x] US-SET-20 · Show every character on PDFs
-- [ ] US-SET-21 · Edit the text of each customer email
+- [x] US-SET-21 · Edit the text of each customer email
 - [ ] US-SET-22 · Preview an email and reset it to the default
 - [ ] US-SET-23 · Switch optional modules on or off
 - [ ] US-SET-24 · Hide everything a switched-off module owns

@@ -1,4 +1,7 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import type { EmailDraft } from "@spine/shared";
+import { draftOf } from "../email-templates/email-documents.service";
+import { loadEmailText } from "../email/email-text";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
@@ -54,6 +57,23 @@ export class StatementDocumentsService {
     };
   }
 
+  /** US-SET-21 — what the statement dialog starts from: the "Statement" template with this customer's period and balance. */
+  async draft(orgId: string, contactId: string, query: StatementQuery): Promise<EmailDraft> {
+    const statement = await this.statements.build(orgId, contactId, query);
+    const brand = await loadEmailBrand(this.db, orgId);
+    const text = await loadEmailText(this.db, orgId, "statement");
+    const template = statementEmail({
+      locale: brand.locale,
+      businessName: brand.name,
+      contactName: statement.contactName,
+      period: statementPeriodLabel(query.from, query.to),
+      balanceDue: BigInt(statement.balanceDue),
+      currency: statement.currency,
+      text,
+    });
+    return draftOf("statement", text, { template, to: statement.contactEmail ?? null, hasPdf: true });
+  }
+
   async send(orgId: string, contactId: string, actorUserId: string, input: SendStatementInput): Promise<{ sentTo: string }> {
     const statement = await this.statements.build(orgId, contactId, input);
     if (!statement.hasInvoices) throw new BadRequestException(NO_INVOICES_YET);
@@ -68,7 +88,8 @@ export class StatementDocumentsService {
       period: doc.period,
       balanceDue: doc.balanceDue,
       currency: doc.currency,
-      message: input.message,
+      // US-SET-21: the "Statement" template, with the dialog's subject and message when it changed them.
+      text: await loadEmailText(this.db, orgId, "statement", { subject: input.subject ?? undefined, message: input.message || undefined }),
     });
     const rendered = renderEmail(brand, template.content);
     await this.email.send({

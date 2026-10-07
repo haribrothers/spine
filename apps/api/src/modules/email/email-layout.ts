@@ -31,6 +31,8 @@ export interface EmailBrand {
   footer: string;
   /** For money in the email (Settings › Currency & locale). */
   locale?: string;
+  /** The organisation's currency, for sample emails (US-SET-22). */
+  currency?: string;
 }
 
 export interface EmailContent {
@@ -64,8 +66,11 @@ export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
+/** Escaped text with line breaks kept and web addresses made clickable (D-153). */
 function multiline(value: string): string {
-  return escapeHtml(value).replace(/\r?\n/g, "<br>");
+  return escapeHtml(value)
+    .replace(/\bhttps?:\/\/[^\s<]+[^\s<.,;:!?)'"]/g, (url) => `<a href="${url}" style="color:inherit;text-decoration:underline;">${url}</a>`)
+    .replace(/\r?\n/g, "<br>");
 }
 
 /** "Alan" from "Alan Brooks"; "there" when there's no name. */

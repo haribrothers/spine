@@ -1,6 +1,6 @@
 "use client";
 
-import { SUPPLY_CLASS_LABELS, gstinRequired, missingHsnSacMessage, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type GstTreatment } from "@spine/shared";
+import { SUPPLY_CLASS_LABELS, gstinRequired, missingHsnSacMessage, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type GstTreatment, type EmailOverride } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -35,6 +35,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { ApplyCustomerCreditDialog } from "./apply-customer-credit-dialog";
+import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
@@ -181,12 +182,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     }
   }
 
-  async function handleSendEmail() {
+  // US-SET-21: "Email invoice" and "Send reminder" open the send dialog, starting from their templates.
+  const [sendDialog, setSendDialog] = useState<"invoice" | "reminder" | null>(null);
+
+  async function handleSendEmail(email: EmailOverride) {
     if (!invoice) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`, email);
       setInvoice(updated);
       showToast(
         "Emailing invoice",
@@ -196,17 +200,18 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not email this invoice.");
+      throw err;
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleSendReminder() {
+  async function handleSendReminder(email: EmailOverride) {
     if (!invoice) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`, email);
       setInvoice(updated);
       showToast(
         "Reminder sent",
@@ -214,6 +219,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send this reminder.");
+      throw err;
     } finally {
       setBusy(false);
     }
@@ -364,12 +370,12 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               </Button>
             )}
             {canSendEmail && invoice.type !== "opening" && (
-              <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
+              <Button variant="secondary" onClick={() => setSendDialog("invoice")} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email invoice"}
               </Button>
             )}
             {canSendReminder && (
-              <Button variant="secondary" onClick={handleSendReminder} disabled={busy}>
+              <Button variant="secondary" onClick={() => setSendDialog("reminder")} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Send reminder"}
               </Button>
             )}
@@ -484,7 +490,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       </Card>
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
-      <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
+      <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} canEmail={hasSendCapability} />
       <AttachmentsSection entityType="invoice" entityId={invoice.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
@@ -662,6 +668,18 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         }}
       />
 
+      {sendDialog && (
+        <SendEmailDialog
+          open
+          onOpenChange={(open) => !open && setSendDialog(null)}
+          title={sendDialog === "invoice" ? `Email invoice ${invoice.number ?? ""}`.trim() : `Send payment reminder — ${invoice.number ?? ""}`}
+          description={`${invoice.contactName ?? "Customer"} · ${formatMoney(balanceDue, invoice.currency)} due`}
+          draftPath={`/email-drafts/${sendDialog}/${invoice.id}`}
+          sendLabel={sendDialog === "invoice" ? "Send invoice" : "Send reminder"}
+          pdfLabel="Attach the invoice PDF"
+          onSend={(email) => (sendDialog === "invoice" ? handleSendEmail(email) : handleSendReminder(email))}
+        />
+      )}
       {toast}
     </div>
   );

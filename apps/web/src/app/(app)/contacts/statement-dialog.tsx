@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { EmailDraft } from "@spine/shared";
 import {
   Alert,
   AlertDescription,
@@ -45,11 +46,6 @@ function shortDate(value: string): string {
   return new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10))).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
-function defaultMessage(name: string | null): string {
-  const first = name?.trim().split(/\s+/)[0];
-  return `${first ? `Hi ${first}` : "Hello"}, please find your statement attached. Let us know if anything doesn't match your records.`;
-}
-
 /**
  * US-PAY-14 — "Send a statement" (`ContactStatementDialog`): the period and
  * what to show, a summary for the period, and who it goes to. "Download
@@ -59,15 +55,12 @@ export function StatementDialog({
   open,
   onOpenChange,
   contactId,
-  greetingName,
   contactEmail,
   onSent,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   contactId: string;
-  /** Who the message greets: the person, or a company's main contact person. */
-  greetingName: string | null;
   contactEmail: string | null;
   onSent: (email: string) => void;
 }) {
@@ -77,6 +70,9 @@ export function StatementDialog({
   const [mode, setMode] = useState<StatementMode>("open");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
+  // US-SET-21: subject and message start from the Statement email template, refreshed with the period until edited.
+  const [subject, setSubject] = useState("");
+  const [edited, setEdited] = useState(false);
   const [statement, setStatement] = useState<Statement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"send" | "download" | null>(null);
@@ -85,8 +81,8 @@ export function StatementDialog({
     if (!open) return;
     setError(null);
     setEmail(contactEmail ?? "");
-    setMessage(defaultMessage(greetingName));
-  }, [open, contactEmail, greetingName]);
+    setEdited(false);
+  }, [open, contactEmail]);
 
   const range = useMemo(() => {
     if (period !== "custom") return statementPeriodRange(period, toIsoDate(new Date()));
@@ -94,6 +90,22 @@ export function StatementDialog({
     return { from: toIsoDate(customFrom), to: toIsoDate(customTo) };
   }, [period, customFrom, customTo]);
   const query = range ? `from=${range.from}&to=${range.to}&mode=${mode}` : null;
+
+  useEffect(() => {
+    if (!open || !query || edited) return;
+    let current = true;
+    apiClient
+      .get<EmailDraft>(`/contacts/${contactId}/statement/draft?${query}`)
+      .then((d) => {
+        if (!current) return;
+        setSubject(d.subject);
+        setMessage(d.message);
+      })
+      .catch(() => {});
+    return () => {
+      current = false;
+    };
+  }, [open, contactId, query, edited]);
 
   useEffect(() => {
     if (!open || !query) return;
@@ -127,7 +139,7 @@ export function StatementDialog({
     setBusy("send");
     setError(null);
     try {
-      const result = await apiClient.post<{ sentTo: string }>(`/contacts/${contactId}/statement/send`, { ...range, mode, email: email.trim(), message: message.trim() || null });
+      const result = await apiClient.post<{ sentTo: string }>(`/contacts/${contactId}/statement/send`, { ...range, mode, email: email.trim(), subject: subject.trim() || null, message: message.trim() || null });
       onSent(result.sentTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't send the statement.");
@@ -207,7 +219,32 @@ export function StatementDialog({
           </dl>
 
           <FormField label="To">{(field) => <Input {...field} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@example.com" />}</FormField>
-          <FormField label="Message">{(field) => <Textarea {...field} rows={3} value={message} onChange={(e) => setMessage(e.target.value)} />}</FormField>
+          <FormField label="Subject">
+            {(field) => (
+              <Input
+                {...field}
+                maxLength={200}
+                value={subject}
+                onChange={(e) => {
+                  setSubject(e.target.value);
+                  setEdited(true);
+                }}
+              />
+            )}
+          </FormField>
+          <FormField label="Message" helperText="Starts from your template in Settings › Emails. Changes here apply to this email only.">
+            {(field) => (
+              <Textarea
+                {...field}
+                rows={6}
+                value={message}
+                onChange={(e) => {
+                  setMessage(e.target.value);
+                  setEdited(true);
+                }}
+              />
+            )}
+          </FormField>
           {noInvoices && <p className="text-[13px] text-on-surface-muted">{NO_INVOICES_YET}</p>}
         </DialogBody>
         <DialogFooter>

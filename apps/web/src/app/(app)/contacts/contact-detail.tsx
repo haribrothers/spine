@@ -558,7 +558,6 @@ export function ContactDetail({ contactId }: { contactId: string }) {
         open={statementOpen}
         onOpenChange={setStatementOpen}
         contactId={contactId}
-        greetingName={contact.isCompany ? ((contact.contactPersons ?? []).find((p) => p.isPrimary) ?? contact.contactPersons?.[0])?.name ?? null : contact.name}
         contactEmail={contact.email}
         onSent={(sentTo) => {
           setStatementOpen(false);

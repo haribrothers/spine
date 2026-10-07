@@ -1,4 +1,5 @@
 import { loadEmailBrand } from "../email/email-brand";
+import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 import { renderEmail } from "../email/email-layout";
 import { paymentConfirmationEmail, receiptEmail } from "../email/email-templates";
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
@@ -526,7 +527,7 @@ export class PaymentsService {
    * or needing pg-boss's retry/backoff; mirrors how `sendConfirmation`
    * itself already sends synchronously inline in `create()`.
    */
-  async sendReceiptEmail(orgId: string, paymentId: string): Promise<{ sent: boolean }> {
+  async sendReceiptEmail(orgId: string, paymentId: string, override: EmailJobOverride = {}): Promise<{ sent: boolean }> {
     const [row] = await this.db
       .select({ payment: payments, contactName: contacts.name, contactEmail: contacts.email })
       .from(payments)
@@ -535,7 +536,8 @@ export class PaymentsService {
     if (!row) {
       throw new NotFoundException("Payment not found");
     }
-    if (!row.contactEmail) {
+    const to = override.to ?? row.contactEmail;
+    if (!to) {
       throw new BadRequestException("This contact has no email address on file — cannot send a receipt");
     }
     if (!this.email.isConfigured()) {
@@ -552,15 +554,17 @@ export class PaymentsService {
       number: row.payment.number ?? "your receipt",
       amount: row.payment.amount,
       currency: row.payment.currency,
+      // US-SET-21: the receipt's words, as saved or as edited in the "Send" dialog.
+      text: await loadEmailText(this.db, orgId, "receipt", override),
     });
     const email = renderEmail(brand, template.content);
     await this.email.send({
-      to: row.contactEmail,
+      to,
       fromName: brand.name,
       subject: template.subject,
       text: email.text,
       html: email.html,
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
+      attachments: [...(override.attachPdf === false ? [] : [{ filename, content: buffer, contentType: "application/pdf" }]), ...email.attachments],
     });
 
     return { sent: true };
