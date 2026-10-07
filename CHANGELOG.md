@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-RPT-39: map my accounts to Tally groups (Phase 9)
+
+- Reports › Export to Tally › Account mapping lists every account with its code, its Spine type and a "Tally group" picker of Tally's predefined groups. You can filter by account type and search.
+- The first time, each account is pre-mapped:
+  - By money account: bank → Bank Accounts, cash → Cash-in-Hand, card → Bank OD A/c.
+  - By code: 1000 → Cash-in-Hand; 1200 and 2100 → Duties & Taxes; 1500s → Fixed Assets; 2500 → Loans (Liability); 3200 → Reserves & Surplus.
+  - By type: 4000–4799 → Sales Accounts; other income → Indirect Incomes; 5xxx → Direct Expenses; other expenses → Indirect Expenses; other equity → Capital Account; other assets and liabilities → Current Assets and Current Liabilities.
+- An Owner changes groups and presses "Save mapping"; later exports use them. Members with "View financial statements" can read the mapping but not change it.
+- `GET/PUT /exports/tally/mapping`; the saved groups are in `settings.tally_mapping`.
+
 ### 2026-10-07 — D-185: invoices post on their issue date (Phase 9)
 
 - Issuing an invoice now dates its journal entry on the invoice's issue date (today when none was set), not on the day it's issued. A backdated invoice lands in its own month in the ledger, P&L, the Tax Summary and GSTR-1, so the GSTR-1 totals check agrees.

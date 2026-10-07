@@ -42,6 +42,7 @@ export * from "./bank-reconciliations.ts";
 export * from "./opening-balances.ts";
 export * from "./manual-journals.ts";
 export * from "./reports-catalog.ts";
+export * from "./tally.ts";
 export * from "./ledger-reports.ts";
 export * from "./cash-flow.ts";
 export * from "./report-compare.ts";

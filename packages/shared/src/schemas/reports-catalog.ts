@@ -47,6 +47,7 @@ export const REPORTS: ReportEntry[] = [
   { slug: "general-ledger", label: "General ledger", group: "Accountant", href: "/reports/general-ledger", access: ["ledger.view"], keywords: "gl ledger accounts entries" },
   { slug: "day-book", label: "Day book", group: "Accountant", href: "/reports/day-book", access: ["ledger.view"], keywords: "daybook entries journal ledger" },
   { slug: "journals", label: "Journals", group: "Accountant", href: "/journals", access: ["ledger.view"], keywords: "manual journal adjustments ledger" },
+  { slug: "tally", label: "Export to Tally", group: "Accountant", href: "/reports/tally/mapping", access: ["reports.view_financial_statements"], keywords: "tally tallyprime erp xml import accountant mapping groups" },
 ];
 
 export const FINANCIAL_STATEMENTS_NO_ACCESS = "You don't have access to financial statements. Ask an owner.";

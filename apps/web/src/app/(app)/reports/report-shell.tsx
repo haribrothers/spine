@@ -23,14 +23,16 @@ export function useReportDetail(detail: string | null) {
 }
 
 /** "Income less expenses for a period · Jan 1 – Oct 6, 2026 · Cash basis": the description, the range the filters cover and any detail. */
-function ReportHeader({ label, description, detail }: { label: string; description?: string; detail: string | null }) {
+function ReportHeader({ label, href, description, detail, page }: { label: string; href: string; description?: string; detail: string | null; page?: string }) {
   const range = useCurrentPrintRange();
   const text = [description, range, detail].filter(Boolean).join(" · ");
-  return <AppShellHeader breadcrumb={[{ label: "Reports", href: "/reports" }, { label }]} title={label} description={text || undefined} />;
+  // A report's own sub-page (US-RPT-39: "Reports › Export to Tally › Account mapping").
+  const breadcrumb = page ? [{ label: "Reports", href: "/reports" }, { label, href }, { label: page }] : [{ label: "Reports", href: "/reports" }, { label }];
+  return <AppShellHeader breadcrumb={breadcrumb} title={page ?? label} description={text || undefined} />;
 }
 
 /** US-RPT-23 — one report's page: "Reports › <name>", and the no-access page for anyone who can't open it. */
-export function ReportShell({ slug, description, children }: { slug: string; description?: string; children: React.ReactNode }) {
+export function ReportShell({ slug, description, page, children }: { slug: string; description?: string; page?: { label: string; parentHref: string }; children: React.ReactNode }) {
   const report = REPORTS.find((r) => r.slug === slug)!;
   const role = useMyRole();
   const { capabilities } = useCapabilities();
@@ -50,7 +52,7 @@ export function ReportShell({ slug, description, children }: { slug: string; des
   return (
     <PrintRangeProvider>
       <DetailContext.Provider value={setDetail}>
-        <ReportHeader label={report.label} description={description} detail={detail} />
+        <ReportHeader label={report.label} href={page?.parentHref ?? report.href} description={description} detail={detail} page={page?.label} />
         <PrintHeader />
         <div className="flex flex-col gap-6">{children}</div>
       </DetailContext.Provider>

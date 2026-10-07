@@ -3980,6 +3980,21 @@ Use the GST business from section 175.
    - Credit notes post on the day they're issued.
    - Receivables aging is unchanged.
 
+## 178. Tally account mapping (US-RPT-39, Phase 9)
+
+1. Reports › Export to Tally › Account mapping (`/reports/tally/mapping`):
+   - The breadcrumb reads Reports › Export to Tally › Account mapping.
+   - Each account shows its code, name, Spine type and a Tally group.
+2. Check the defaults:
+   - 1000 Cash in Hand → Cash-in-Hand; your bank account → Bank Accounts; a card account → Bank OD A/c.
+   - 1200 and 2100 → Duties & Taxes; 1500 → Fixed Assets; 2500 → Loans (Liability); 3000 → Capital Account.
+   - 4100 → Sales Accounts; 5000 → Direct Expenses; 6000 → Indirect Expenses.
+3. The picker offers Tally's predefined groups (Bank Accounts … Unsecured Loans).
+4. Filter to Expense and search "Rent".
+5. Change 6000 Rent to Direct Expenses: "Save mapping" turns on. Save: you see "Mapping saved". Reload: it's kept.
+6. As Staff with "View financial statements" the pickers are read-only and the page says "Only an Owner can change the mapping." Field users can't open it.
+7. Check light and dark mode, and that the pickers work by keyboard.
+
 ## Known gaps — don't file these as bugs
 
 
