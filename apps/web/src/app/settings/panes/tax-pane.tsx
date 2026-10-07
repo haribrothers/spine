@@ -28,6 +28,7 @@ import {
   Switch,
 } from "@spine/ui";
 import { MoreHorizontal, Plus } from "lucide-react";
+import { GENERAL_TAX_TYPES, INDIA_TAX_TYPES, TAX_TYPE_LABELS, type TaxGroupScope, type TaxType } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 import { SavedToast } from "../saved-toast";
 
@@ -36,12 +37,14 @@ interface TaxRate {
   name: string;
   rate: number;
   isCompound: boolean;
+  taxType: TaxType;
   archivedAt: string | null;
 }
 
 interface TaxGroup {
   id: string;
   name: string;
+  scope: TaxGroupScope;
   archivedAt: string | null;
   taxRates: TaxRate[];
 }
@@ -86,6 +89,8 @@ export function TaxPane() {
       .then((res) => setTaxProfile(res.value ?? {}))
       .catch(() => {});
   }, []);
+
+  const country = typeof taxProfile.country === "string" ? taxProfile.country : "other";
 
   if (!rates || !groups || !inclusive) {
     return (
@@ -149,7 +154,7 @@ export function TaxPane() {
         </Select>
       </div>
 
-      <TaxRatesSection rates={rates} onChanged={reload} onSaved={() => setSaved(true)} />
+      <TaxRatesSection rates={rates} country={country} onChanged={reload} onSaved={() => setSaved(true)} />
       <TaxGroupsSection groups={groups} rates={rates.filter((r) => !r.archivedAt)} onChanged={reload} onSaved={() => setSaved(true)} />
 
       <SavedToast open={saved} onOpenChange={setSaved} />
@@ -159,10 +164,12 @@ export function TaxPane() {
 
 function TaxRatesSection({
   rates,
+  country,
   onChanged,
   onSaved,
 }: {
   rates: TaxRate[];
+  country: string;
   onChanged: () => Promise<void>;
   onSaved: () => void;
 }) {
@@ -196,6 +203,7 @@ function TaxRatesSection({
       {editing !== null && (
         <TaxRateDialog
           rate={editing === "new" ? null : editing}
+          country={country}
           onClose={() => setEditing(null)}
           onSaved={async () => {
             setEditing(null);
@@ -229,7 +237,8 @@ function TaxRateRow({ rate, onEdit, onChanged }: { rate: TaxRate; onEdit: () => 
           {rate.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">Archived</span>}
         </span>
         <span className="text-[12px] text-on-surface-muted">
-          {rate.rate}% {rate.isCompound && "· compound"}
+          {rate.rate}% · {TAX_TYPE_LABELS[rate.taxType]}
+          {rate.isCompound && " · compound"}
         </span>
       </div>
       <DropdownMenu>
@@ -253,18 +262,34 @@ function TaxRateRow({ rate, onEdit, onChanged }: { rate: TaxRate; onEdit: () => 
   );
 }
 
+/** US-TAX-10 — India picks a GST component; elsewhere a general kind. A rate keeps a type it already has. */
+function taxTypeOptions(country: string, current: TaxType | undefined): TaxType[] {
+  const base = country === "IN" ? [...INDIA_TAX_TYPES] : [...GENERAL_TAX_TYPES];
+  return current && !base.includes(current) ? [...base, current] : base;
+}
+
+function defaultTaxType(country: string): TaxType {
+  if (country === "IN") return "cgst";
+  if (country === "AU" || country === "NZ") return "gst";
+  if (country === "GB" || country === "AE" || country === "SA") return "vat";
+  return "other";
+}
+
 function TaxRateDialog({
   rate,
+  country,
   onClose,
   onSaved,
 }: {
   rate: TaxRate | null;
+  country: string;
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
   const [name, setName] = useState(rate?.name ?? "");
   const [rateValue, setRateValue] = useState(rate ? String(rate.rate) : "");
   const [isCompound, setIsCompound] = useState(rate?.isCompound ?? false);
+  const [taxType, setTaxType] = useState<TaxType>(rate?.taxType ?? defaultTaxType(country));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -272,7 +297,7 @@ function TaxRateDialog({
     setSaving(true);
     setError(null);
     try {
-      const body = { name, rate: Number(rateValue), isCompound };
+      const body = { name, rate: Number(rateValue), isCompound, taxType };
       if (rate) {
         await apiClient.put(`/tax-rates/${rate.id}`, body);
       } else {
@@ -309,6 +334,26 @@ function TaxRateDialog({
                   onChange={(e) => setRateValue(e.target.value)}
                 />
               </div>
+              <div className="flex flex-col gap-1.5">
+                <Label id="tax-rate-type-label">Tax type</Label>
+                <Select value={taxType} onValueChange={(v) => setTaxType(v as TaxType)}>
+                  <SelectTrigger aria-labelledby="tax-rate-type-label" aria-describedby="tax-rate-type-help">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {taxTypeOptions(country, rate?.taxType).map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {TAX_TYPE_LABELS[t]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p id="tax-rate-type-help" className="text-[12px] text-on-surface-muted">
+                  {country === "IN"
+                    ? "Reports and GSTR-1 split tax by type: CGST, SGST, UTGST, IGST, cess."
+                    : "Reports split tax by type."}
+                </p>
+              </div>
               <label htmlFor="tax-rate-compound" className="flex cursor-pointer items-center gap-2">
                 <Checkbox id="tax-rate-compound" checked={isCompound} onCheckedChange={(v) => setIsCompound(v === true)} />
                 <span className="text-[13px] text-on-surface">
@@ -321,7 +366,14 @@ function TaxRateDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={saving || !name || rateValue === ""} onClick={handleSave}>
+          <AlertDialogAction
+            disabled={saving || !name || rateValue === ""}
+            onClick={(e) => {
+              // Stay open until the save succeeds, so a refusal shows here.
+              e.preventDefault();
+              handleSave();
+            }}
+          >
             {saving ? <Spinner size="sm" /> : "Save"}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -414,7 +466,8 @@ function TaxGroupRow({ group, onEdit, onChanged }: { group: TaxGroup; onEdit: ()
           {group.archivedAt && <span className="ml-2 text-[11px] font-normal text-on-surface-muted">Archived</span>}
         </span>
         <span className="text-[12px] text-on-surface-muted">
-          {group.taxRates.map((r) => `${r.name} (${r.rate}%)`).join(" + ") || "No rates"}
+          {group.taxRates.map((r) => `${INDIA_TAX_TYPES.includes(r.taxType) ? TAX_TYPE_LABELS[r.taxType] : r.name} (${r.rate}%)`).join(" + ") || "No rates"}
+          {group.scope !== "any" && ` · ${group.scope === "intra" ? "Intra-state" : "Inter-state"}`}
         </span>
       </div>
       <DropdownMenu>
@@ -499,7 +552,14 @@ function TaxGroupDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={saving || !name || taxRateIds.length === 0} onClick={handleSave}>
+          <AlertDialogAction
+            disabled={saving || !name || taxRateIds.length === 0}
+            onClick={(e) => {
+              // Stay open until the save succeeds, so a refusal shows here.
+              e.preventDefault();
+              handleSave();
+            }}
+          >
             {saving ? <Spinner size="sm" /> : "Save"}
           </AlertDialogAction>
         </AlertDialogFooter>

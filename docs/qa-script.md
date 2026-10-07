@@ -3608,6 +3608,18 @@ Regression:
 - Drill-downs from P&L, Balance Sheet, Trial Balance and Expenses by category still open.
 - Staff without "View ledger / journals" still see figures but no drill-down.
 
+## 160. Tax types (US-TAX-10, Phase 9)
+
+1. As the Owner of a business whose tax country is India (Settings › Tax › Country, from US-TAX-09), open Settings › Tax › Add rate. "Tax type" offers CGST, SGST, UTGST, IGST and Cess, with the hint "Reports and GSTR-1 split tax by type: CGST, SGST, UTGST, IGST, cess."
+2. Add "CGST 9%" (CGST), "SGST 9%" (SGST) and "IGST 18%" (IGST). Each row reads "9% · CGST", "9% · SGST", "18% · IGST".
+3. Add group "GST 18%" from CGST 9% and SGST 9%: the row reads "CGST (9%) + SGST (9%) · Intra-state". A group of IGST 18% alone reads "IGST (18%) · Inter-state".
+4. Try a group of CGST 9% and IGST 18%: the dialog stays open and shows "A GST group is CGST + SGST (or UTGST) at the same rate, optionally with cess." Try CGST 9% with an SGST at another rate: the same message.
+5. In a business outside India, "Tax type" offers VAT, GST, Sales tax and Other, and a group can combine any rates.
+6. A rate created before this change shows "· Other" and still applies on quotes and invoices.
+7. Keyboard: the Tax type menu opens with Enter or Space and is announced as "Tax type". Dark mode is readable.
+
+Regression: adding, editing, archiving and restoring rates and groups works as before; quote and invoice lines still pick rates and groups.
+
 ## Known gaps — don't file these as bugs
 
 - Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.

@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, index, unique, numeric } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, uuid, text, boolean, timestamp, index, unique, numeric } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 
 /**
@@ -18,6 +18,12 @@ import { organization } from "./auth";
  * snapshot their data" rule — editing or archiving a rate here must never
  * alter an existing quote/invoice line.
  */
+/** US-TAX-10 — what kind of tax a rate is; rates from before Phase 9 are `other`. */
+export const taxTypeEnum = pgEnum("tax_type", ["cgst", "sgst", "utgst", "igst", "cess", "vat", "gst", "sales_tax", "other"]);
+
+/** US-TAX-10 — whether a group applies within the business's state, across states, or either. */
+export const taxGroupScopeEnum = pgEnum("tax_group_scope", ["intra", "inter", "any"]);
+
 export const taxRates = pgTable(
   "tax_rates",
   {
@@ -29,6 +35,7 @@ export const taxRates = pgTable(
     /** e.g. 15 for 15%. */
     rate: numeric("rate", { precision: 18, scale: 4, mode: "number" }).notNull(),
     isCompound: boolean("is_compound").notNull().default(false),
+    taxType: taxTypeEnum("tax_type").notNull().default("other"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -54,6 +61,7 @@ export const taxGroups = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    scope: taxGroupScopeEnum("scope").notNull().default("any"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

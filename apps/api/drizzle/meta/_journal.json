@@ -701,6 +701,13 @@
       "when": 1791310843189,
       "tag": "0099_recurring_bills",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1791346547819,
+      "tag": "0100_tax_types",
+      "breakpoints": true
     }
   ]
 }

@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-TAX-10: give each rate a tax type (Phase 9)
+
+- Each tax rate now has a tax type. For India, "Add rate" and "Edit rate" offer CGST, SGST, UTGST, IGST and Cess. Elsewhere they offer VAT, GST, Sales tax or Other. Rate rows read "9% · CGST".
+- Rates from before the upgrade get the type Other and work as before (migration `0100`, `tax_rates.tax_type`).
+- Tax groups gain a scope: intra-state, inter-state or either (`tax_groups.scope`).
+  - For India, a group must be CGST with SGST or UTGST at the same rate, or a single IGST rate, either one with at most one cess rate. Any other mix is refused with "A GST group is CGST + SGST (or UTGST) at the same rate, optionally with cess." The mix sets the scope, and group rows read "CGST (9%) + SGST (9%) · Intra-state".
+  - Outside India, a group can mix any rates, as before.
+- The rate and group dialogs stay open when a save is refused, so the reason shows. Before, they closed and the error was never seen.
+- `/tax-rates` and `/tax-groups` answer 400 for a body that fails validation (was 500).
+
 ### 2026-10-07 — US-RPT-40: every report laid out the same way (Phase 8)
 
 - Every report — the statements, analysis, registers, General ledger, Day book, Job profitability, Tax Summary, Receivables and Payables — now follows one layout (D-180). The header names the range, plus any comparison or basis. Labelled filters sit on the left; Export, then any primary action, sits on the right. Then come one row of KPI cards, a chart where it helps, the table and a footnote.

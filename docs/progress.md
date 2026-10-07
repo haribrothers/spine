@@ -400,7 +400,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-INV-25 · Set my UPI ID for payments
 - [ ] US-INV-26 · Show a UPI QR code on invoices
 - [ ] US-TAX-09 · Start with my country's tax rates
-- [ ] US-TAX-10 · Give each rate a tax type
+- [x] US-TAX-10 · Give each rate a tax type
 - [ ] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
 - [ ] US-TAX-12 · Record my GSTIN and state, and each customer's
 - [ ] US-TAX-13 · Pick intra- or inter-state GST automatically
