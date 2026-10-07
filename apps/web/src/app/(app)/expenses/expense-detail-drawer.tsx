@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -21,9 +21,14 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Input,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { useSession } from "../../../lib/auth-client";
@@ -31,7 +36,10 @@ import { useMyRole } from "../../../lib/role-context";
 import { HistorySection } from "../../../components/history-section";
 import { useEntityToast } from "./entity-toast";
 import { EXPENSE_PAID_BY_LABELS, EXPENSE_STATUS_LABELS, type Expense } from "./types";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
+import { ExpenseForm } from "./expense-form";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -84,6 +92,8 @@ export function ExpenseDetailDrawer({
   const role = useMyRole();
   const [approveOpen, setApproveOpen] = useState(false);
   const [approveComment, setApproveComment] = useState("");
+  const [approveAccountId, setApproveAccountId] = useState("");
+  const isField = role === "field";
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectComment, setRejectComment] = useState("");
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -94,6 +104,14 @@ export function ExpenseDetailDrawer({
     others: "expenses.delete_others",
   });
   const hasBillToCustomerCapability = useCapability("expenses.bill_to_customer");
+  // US-PUR-10 — a submitted expense can be edited by its submitter (or with "edit others'").
+  const hasEditCapability = useCanEditOwnership(expense?.submittedByUserId ?? null, {
+    own: "expenses.edit_own",
+    others: "expenses.edit_others",
+  });
+  const [editOpen, setEditOpen] = useState(false);
+  // Focus comes back to the control that opened the form (the menu item that did is gone).
+  const editTriggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open || !expenseId) {
@@ -112,7 +130,7 @@ export function ExpenseDetailDrawer({
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Expense>(`/expenses/${expense.id}/approve`, { comment: approveComment || null });
+      const updated = await apiClient.post<Expense>(`/expenses/${expense.id}/approve`, { comment: approveComment || null, moneyAccountId: approveAccountId || null });
       setExpense(updated);
       setApproveOpen(false);
       setApproveComment("");
@@ -178,6 +196,9 @@ export function ExpenseDetailDrawer({
   const canApproveNow = canApprove && expense?.status === "submitted" && !isOwnReview;
   const canRejectNow = canReject && expense?.status === "submitted" && !isOwnReview;
   const canDeleteNow = hasDeleteCapability && expense?.status === "submitted";
+  const canEditNow = hasEditCapability && expense?.status === "submitted";
+  // Edit is the main action unless there's a review to make; then it goes under "More".
+  const editInMenu = canEditNow && (canApproveNow || canRejectNow);
   const canBillToCustomer =
     hasBillToCustomerCapability &&
     expense?.status === "approved" &&
@@ -189,7 +210,7 @@ export function ExpenseDetailDrawer({
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle className="flex items-center gap-2">
               {expense?.number ?? "Expense"}
@@ -221,6 +242,7 @@ export function ExpenseDetailDrawer({
                     value={formatMoney(BigInt(expense.taxAmount), expense.currency)}
                   />
                   <Field label="Paid by" value={EXPENSE_PAID_BY_LABELS[expense.paidBy]} />
+                  {!isField && expense.moneyAccount && <Field label="Paid from" value={expense.moneyAccount.name} />}
                   <Field label="Billable" value={expense.isBillable ? (expense.billedOnInvoiceLineId ? "Yes — billed" : "Yes") : "No"} />
                 </div>
 
@@ -280,8 +302,13 @@ export function ExpenseDetailDrawer({
                 )}
               </div>
             )}
+            {expense && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="expense" entityId={expense.id} />
+              </div>
+            )}
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="flex-wrap">
             {expense?.status === "submitted" && isOwnReview && (canApprove || canReject) && (
               <p className="mr-auto text-[13px] text-on-surface-muted" data-testid="self-review-note">
                 Someone else needs to approve your own expense.
@@ -298,15 +325,33 @@ export function ExpenseDetailDrawer({
                 Approve
               </Button>
             )}
-            {canDeleteNow && (
-              <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} disabled={busy}>
-                Delete expense
-              </Button>
-            )}
             {canBillToCustomer && (
               <Button onClick={() => setBillOpen(true)} disabled={busy}>
                 Bill to customer
               </Button>
+            )}
+            {canEditNow && !editInMenu && (
+              <Button ref={editTriggerRef} variant="secondary" onClick={() => setEditOpen(true)} disabled={busy}>
+                Edit
+              </Button>
+            )}
+            {(canDeleteNow || editInMenu) && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button ref={editInMenu ? editTriggerRef : undefined} variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {editInMenu && <DropdownMenuItem onSelect={() => setEditOpen(true)}>Edit</DropdownMenuItem>}
+                  {canDeleteNow && (
+                    <DropdownMenuItem destructive onSelect={() => setConfirmDeleteOpen(true)}>
+                      Delete expense
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close
@@ -326,6 +371,8 @@ export function ExpenseDetailDrawer({
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {/* US-BANK-03: the approver can change the account before it posts. */}
+          {approveOpen && expense && <MoneyAccountPicker form="expense" direction="out" value={approveAccountId} onValueChange={setApproveAccountId} initialId={expense.moneyAccountId} />}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setApproveComment("")}>Cancel</AlertDialogCancel>
             <AlertDialogAction disabled={busy} onClick={handleApprove}>
@@ -391,6 +438,19 @@ export function ExpenseDetailDrawer({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {expense && (
+        <ExpenseForm
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          expense={expense}
+          returnFocusTo={editTriggerRef}
+          onSaved={(updated) => {
+            setExpense(updated);
+            onChanged();
+            showToast("Expense updated", "It's still submitted for approval.");
+          }}
+        />
+      )}
       {toast}
     </>
   );

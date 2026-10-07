@@ -48,6 +48,8 @@ export const EXPORT_TABLES: ExportTable[] = [
   t(schema.invoiceReminders, "Payment reminders sent for invoices."),
   t(schema.recurringInvoices, "Recurring invoice schedules."),
   t(schema.recurringInvoiceLines, "Recurring invoice lines.", { column: "recurringInvoiceId", parent: schema.recurringInvoices }),
+  t(schema.recurringBills, "Recurring bill schedules."),
+  t(schema.recurringBillLines, "Recurring bill lines.", { column: "recurringBillId", parent: schema.recurringBills }),
   t(schema.creditNotes, "Credit notes."),
   t(schema.creditNoteLines, "Credit note lines.", { column: "creditNoteId", parent: schema.creditNotes }),
   t(schema.payments, "Payments received."),
@@ -63,6 +65,9 @@ export const EXPORT_TABLES: ExportTable[] = [
   t(schema.taxGroups, "Tax groups."),
   t(schema.taxGroupRates, "Rates in each tax group.", { column: "taxGroupId", parent: schema.taxGroups }),
   t(schema.accounts, "Chart of accounts."),
+  t(schema.moneyAccounts, "Bank, cash and card accounts, each linked to its ledger account."),
+  t(schema.bankTransfers, "Transfers between your own accounts."),
+  t(schema.bankTransactions, "Money in and out with no invoice or bill."),
   t(schema.journalEntries, "Journal entries (the books)."),
   t(schema.journalLines, "Journal entry lines: account, debit, credit, contact and job.", { column: "entryId", parent: schema.journalEntries }),
   t(schema.fiscalPeriods, "Financial periods."),
@@ -72,6 +77,7 @@ export const EXPORT_TABLES: ExportTable[] = [
   t(schema.teamPrivileges, "What each team may do.", { column: "teamId", parent: schema.teams }),
   t(schema.teamMemberships, "Who is in each team.", { column: "teamId", parent: schema.teams }),
   t(schema.files, "Stored files' names, types and sizes (the files themselves are in files/ when included)."),
+  t(schema.attachments, "Which files are attached to which records, who added them and any removals."),
   t(schema.auditLog, "Every recorded change: who, what and when."),
 ];
 

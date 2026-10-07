@@ -15,7 +15,12 @@ export const CAPABILITIES = [
   "reports.view_receivables",
   "reports.view_payables",
   "reports.view_job_profitability",
+  // US-RPT-23, US-RPT-36 (D-136): the financial statements and analysis reports, read-only.
+  "reports.view_financial_statements",
   "ledger.view",
+  "banking.view",
+  "banking.record",
+  "banking.reconcile",
   "contacts.edit_own",
   "contacts.edit_others",
   "contacts.delete_own",
@@ -57,6 +62,7 @@ export const CAPABILITIES = [
   "payments.delete_others",
   "payments.apply_credit",
   "payments.send_receipt",
+  "payments.refund",
   "credit_notes.edit_own",
   "credit_notes.edit_others",
   "credit_notes.delete_own",
@@ -80,6 +86,14 @@ export const CAPABILITIES = [
   "vendor_bills.delete_others",
   "vendor_bills.record",
   "vendor_bills.void",
+  "vendor_bills.manage_recurring",
+  "vendor_credits.edit_own",
+  "vendor_credits.edit_others",
+  "vendor_credits.delete_own",
+  "vendor_credits.delete_others",
+  "vendor_credits.record",
+  "vendor_credits.apply",
+  "vendor_credits.void",
   "vendor_payments.edit_own",
   "vendor_payments.edit_others",
   "vendor_payments.delete_own",
@@ -138,10 +152,30 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Revenue, cost, and margin across every job.",
     group: "Reports & Ledger",
   },
+  "reports.view_financial_statements": {
+    label: "View financial statements",
+    description: "Read Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary and the sales and purchase reports. Grants nothing that writes.",
+    group: "Reports & Ledger",
+  },
   "ledger.view": {
     label: "View ledger / journals",
     description: "Drill into the journal entries behind a P&L/Balance Sheet figure. P&L, Balance Sheet, revenue trend, and tax summary themselves stay Owner-only regardless of this grant — this only covers the drill-down into raw journal entries.",
     group: "Reports & Ledger",
+  },
+  "banking.view": {
+    label: "View bank balances and registers",
+    description: "Banking: each bank, cash and card account's balance and what moved through it. Without it, payment forms still list the account names (no balances).",
+    group: "Banking",
+  },
+  "banking.record": {
+    label: "Record transfers and other money in or out",
+    description: "Move money between accounts and record money in or out that no invoice, bill or payment covers.",
+    group: "Banking",
+  },
+  "banking.reconcile": {
+    label: "Reconcile accounts",
+    description: "Import bank statements, match them to Spine's entries, and finish or undo reconciliations. Needs View bank balances and registers.",
+    group: "Banking",
   },
   "contacts.edit_own": {
     label: "Create/edit own contacts",
@@ -355,6 +389,11 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     description: "Re-send a payment's receipt PDF to the paying contact on demand.",
     group: "Manage Payments",
   },
+  "payments.refund": {
+    label: "Refund customers",
+    description: "Pay a customer back out of their credit — an unallocated payment or a credit note's excess. Money leaves the bank, so it's its own right.",
+    group: "Manage Payments",
+  },
   "credit_notes.edit_own": {
     label: "Create/edit own credit notes",
     description:
@@ -473,6 +512,46 @@ export const CAPABILITY_LABELS: Record<Capability, { label: string; description:
     label: "Void a vendor bill",
     description: "Reverse a recorded vendor bill's journal entry.",
     group: "Manage Vendor Bills",
+  },
+  "vendor_bills.manage_recurring": {
+    label: "Manage recurring bills",
+    description: "See, set up, change, pause and delete recurring bills — schedules that create, and can record, vendor bills automatically.",
+    group: "Manage Vendor Bills",
+  },
+  "vendor_credits.edit_own": {
+    label: "Create/edit own vendor credits",
+    description: "Create vendor credit drafts, and edit drafts this user created.",
+    group: "Vendor credits",
+  },
+  "vendor_credits.edit_others": {
+    label: "Edit others' vendor credits",
+    description: "Edit a draft vendor credit someone else created.",
+    group: "Vendor credits",
+  },
+  "vendor_credits.delete_own": {
+    label: "Delete own draft vendor credits",
+    description: "Delete a draft vendor credit this user created.",
+    group: "Vendor credits",
+  },
+  "vendor_credits.delete_others": {
+    label: "Delete others' draft vendor credits",
+    description: "Delete a draft vendor credit someone else created.",
+    group: "Vendor credits",
+  },
+  "vendor_credits.record": {
+    label: "Record vendor credits",
+    description: "Record a draft so it lowers what's owed to the vendor (posts to the ledger).",
+    group: "Vendor credits",
+  },
+  "vendor_credits.apply": {
+    label: "Apply and refund vendor credits",
+    description: "Use a vendor credit against the vendor's bills, or record the refund they paid back.",
+    group: "Vendor credits",
+  },
+  "vendor_credits.void": {
+    label: "Void vendor credits",
+    description: "Void a recorded vendor credit that has nothing applied or refunded.",
+    group: "Vendor credits",
   },
   "vendor_payments.edit_own": {
     label: "Create own vendor payments",
@@ -598,6 +677,10 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "reports.view_payables": true,
   "reports.view_job_profitability": true,
   "ledger.view": false,
+  "reports.view_financial_statements": false,
+  "banking.view": false,
+  "banking.record": false,
+  "banking.reconcile": false,
   "contacts.edit_own": true,
   "contacts.edit_others": true,
   "contacts.delete_own": true,
@@ -639,6 +722,7 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "payments.delete_others": true,
   "payments.apply_credit": true,
   "payments.send_receipt": true,
+  "payments.refund": false,
   "credit_notes.edit_own": true,
   "credit_notes.edit_others": true,
   "credit_notes.delete_own": true,
@@ -662,6 +746,14 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "vendor_bills.delete_others": true,
   "vendor_bills.record": true,
   "vendor_bills.void": true,
+  "vendor_bills.manage_recurring": true,
+  "vendor_credits.edit_own": true,
+  "vendor_credits.edit_others": true,
+  "vendor_credits.delete_own": true,
+  "vendor_credits.delete_others": true,
+  "vendor_credits.record": true,
+  "vendor_credits.apply": true,
+  "vendor_credits.void": true,
   "vendor_payments.edit_own": true,
   "vendor_payments.edit_others": true,
   "vendor_payments.delete_own": true,
@@ -685,3 +777,29 @@ export const DEFAULT_TEAM_GRANTS: Record<Capability, boolean> = {
   "meetings.delete_own": true,
   "meetings.delete_others": true,
 };
+
+/**
+ * Capabilities that only make sense with another one (US-BANK-12). Granting
+ * the first grants what it needs; revoking a needed one revokes what
+ * depends on it. Applied by the API when a Team's privileges are saved, so
+ * the matrix and the guard never disagree.
+ */
+export const CAPABILITY_REQUIRES: Partial<Record<Capability, { requires: Capability[]; reason: string }>> = {
+  "banking.reconcile": { requires: ["banking.view"], reason: "Reconciling needs to see the account." },
+};
+
+/** The privilege changes to save once implied ones are added (US-BANK-12). An explicit change in the same request wins. */
+export function withImpliedPrivileges(changes: { capability: Capability; granted: boolean }[]): { capability: Capability; granted: boolean }[] {
+  const result = new Map(changes.map((c) => [c.capability, c.granted]));
+  const explicit = new Set(changes.map((c) => c.capability));
+  for (const { capability, granted } of changes) {
+    if (granted) {
+      for (const needed of CAPABILITY_REQUIRES[capability]?.requires ?? []) if (!explicit.has(needed)) result.set(needed, true);
+    } else {
+      for (const [dependent, rule] of Object.entries(CAPABILITY_REQUIRES) as [Capability, { requires: Capability[] }][]) {
+        if (rule.requires.includes(capability) && !explicit.has(dependent)) result.set(dependent, false);
+      }
+    }
+  }
+  return [...result.entries()].map(([capability, granted]) => ({ capability, granted }));
+}

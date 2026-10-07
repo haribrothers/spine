@@ -34,7 +34,7 @@ export function PaginationBar({
   const end = Math.min(total, page * pageSize);
 
   return (
-    <div className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
+    <div data-print="hide" className={cn("flex flex-wrap items-center justify-between gap-3", className)}>
       <div className="flex items-center gap-2 text-[13px] text-on-surface-muted">
         <span>
           {start}–{end} of {total}

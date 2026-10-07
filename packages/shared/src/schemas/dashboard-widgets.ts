@@ -28,6 +28,16 @@ import type { Capability } from "./permissions.ts";
  * no code path that could accidentally make it draggable.
  */
 export const DASHBOARD_WIDGETS = [
+  // US-DASH-23 — every bank, cash and card balance.
+  { key: "accounts", capability: "banking.view" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-21 — what's owed to vendors, beside receivables (D-160).
+  { key: "payables", capability: "reports.view_payables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-24 — work done that could be invoiced today.
+  { key: "ready-to-bill", capability: "reports.view_receivables" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-25 — tax owed for the current return period.
+  { key: "tax-period", capability: "reports.view_financial_statements" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
+  // US-DASH-22 — the largest expense accounts for a period.
+  { key: "top-expenses", capability: "reports.view_financial_statements" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   { key: "money-in-out", capability: "reports.view_dashboard_summary" as Capability, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   { key: "pipeline-by-stage", capability: null, ownerOnly: false, fieldOnly: false, constructionDefault: false },
   // US-DASH-20 — shown by default only for the Construction template; elsewhere they start hidden.
@@ -107,3 +117,7 @@ export function mergeDashboardLayout(
 
   return ordered;
 }
+
+/** US-DASH-26 (D-138, D-179) — the dashboard's profit basis, kept per member. */
+export const dashboardBasisSchema = z.object({ basis: z.enum(["accrual", "cash"], { message: "Choose Accrual or Cash." }) });
+export type DashboardBasis = z.infer<typeof dashboardBasisSchema>["basis"];

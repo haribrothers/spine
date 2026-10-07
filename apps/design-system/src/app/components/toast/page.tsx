@@ -110,7 +110,15 @@ export default () => (
           Announced via an ARIA live region so screen reader users hear the confirmation
           without it stealing focus from their current task.
         </DocLead>
-        <KeyboardTable rows={[{ keys: "Esc", description: "Closes the toast." }]} />
+        <KeyboardTable
+          rows={[
+            { keys: "Esc (focus on the toast)", description: "Closes the toast." },
+            {
+              keys: "Esc (focus elsewhere)",
+              description: "Closes the toast and passes Escape on, so an open dialog or drawer underneath closes with the same press.",
+            },
+          ]}
+        />
       </DocSection>
     </div>
   );

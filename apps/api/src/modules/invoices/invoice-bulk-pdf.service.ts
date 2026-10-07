@@ -24,7 +24,7 @@ export class InvoiceBulkPdfService {
   async build(orgId: string, ids: string[]): Promise<{ zip: Buffer; filename: string; result: BulkResult }> {
     const unique = [...new Set(ids)];
     const rows = await this.db
-      .select({ id: invoices.id, number: invoices.number, status: invoices.status })
+      .select({ id: invoices.id, number: invoices.number, status: invoices.status, type: invoices.type })
       .from(invoices)
       .where(and(eq(invoices.orgId, orgId), inArray(invoices.id, unique)));
     const byId = new Map(rows.map((r) => [r.id, r]));
@@ -35,6 +35,11 @@ export class InvoiceBulkPdfService {
       const row = byId.get(id);
       if (!row) {
         result.skipped.push({ id, label: null, reason: "Not found." });
+        continue;
+      }
+      // US-RPT-17: an opening invoice has no PDF in Spine.
+      if (row.type === "opening") {
+        result.skipped.push({ id, label: row.number, reason: "It's an opening invoice — Spine has no PDF of it." });
         continue;
       }
       const pdf = row.status === "draft" ? null : await this.issuedPdf.getOrStore(orgId, "invoice", id);

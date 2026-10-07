@@ -335,61 +335,62 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 8 · Books completeness
 
-- [ ] US-BANK-01 · Add my bank, cash and card accounts
-- [ ] US-BANK-02 · See every account's balance and what moved through it
-- [ ] US-BANK-03 · Choose the account money went into or came out of
-- [ ] US-BANK-04 · Move money between my accounts
-- [ ] US-BANK-05 · Record money in or out that has no invoice or bill
-- [ ] US-BANK-06 · Archive an account I no longer use
-- [ ] US-BANK-07 · Import a bank statement
-- [ ] US-BANK-08 · Match statement lines to what's in Spine
-- [ ] US-BANK-09 · Create what's missing from a statement line
-- [ ] US-BANK-10 · Finish a reconciliation when it balances
-- [ ] US-BANK-11 · Review or undo a reconciliation
-- [ ] US-BANK-12 · Let a Team see balances, record money and reconcile
-- [ ] US-CAT-09 · Import catalogue items from a spreadsheet
-- [ ] US-PAY-16 · Keep a credit note's extra as customer credit
-- [ ] US-PAY-17 · Refund a customer
-- [ ] US-PAY-18 · Let a Team refund customers
-- [ ] US-PUR-24 · Record a credit from a vendor
-- [ ] US-PUR-25 · Apply a vendor credit to bills
-- [ ] US-PUR-26 · Record a refund from a vendor
-- [ ] US-PUR-27 · Void a vendor credit
-- [ ] US-PUR-28 · Let a Team manage vendor credits
-- [ ] US-PUR-29 · Set up a recurring bill
-- [ ] US-PUR-30 · Create recurring bills automatically
-- [ ] US-PUR-31 · Pause, edit or stop a recurring bill
-- [ ] US-TAX-08 · Record paying tax and using input tax credit
-- [ ] US-RPT-16 · Set a cutover date and enter opening account balances
-- [ ] US-RPT-17 · Bring in unpaid customer invoices, retention and credit
-- [ ] US-RPT-18 · Bring in unpaid vendor bills and vendor credits
-- [ ] US-RPT-19 · Check and lock my opening balances
-- [ ] US-RPT-20 · Post an adjusting journal
-- [ ] US-RPT-21 · Reverse a journal posted by mistake
-- [ ] US-RPT-22 · See every manual journal
-- [ ] US-RPT-23 · Find every report in one place
-- [ ] US-RPT-24 · See the general ledger
-- [ ] US-RPT-25 · See the day book
-- [ ] US-RPT-26 · See where cash came from and where it went
-- [ ] US-RPT-27 · Compare profit and loss across periods
-- [ ] US-RPT-28 · See sales by customer and by item
-- [ ] US-RPT-29 · See expenses by category and purchases by vendor
-- [ ] US-RPT-30 · See payments received and made in a period
-- [ ] US-RPT-31 · See credit notes, vendor credits and refunds in a period
-- [ ] US-RPT-32 · Export every report to CSV and Excel
-- [ ] US-RPT-33 · Download any report as a PDF
-- [ ] US-RPT-34 · Print any report
-- [ ] US-RPT-35 · See profit and loss on a cash basis
-- [ ] US-RPT-36 · Let my accountant's Team see the financial statements
-- [ ] US-DASH-21 · See what I owe vendors on the dashboard
-- [ ] US-DASH-22 · See where money goes
-- [ ] US-DASH-23 · See each bank, cash and card balance
-- [ ] US-DASH-24 · See work not yet billed
-- [ ] US-DASH-25 · See tax owed this period
-- [ ] US-DASH-26 · Switch dashboard profit between accrual and cash
-- [ ] US-OPS-33 · Attach files to bills, invoices and other records
-- [ ] US-OPS-34 · Open attachments only when I can open the record
-- [ ] US-OPS-35 · Remove an attachment added by mistake
+- [x] US-BANK-01 · Add my bank, cash and card accounts
+- [x] US-BANK-02 · See every account's balance and what moved through it
+- [x] US-BANK-03 · Choose the account money went into or came out of
+- [x] US-BANK-04 · Move money between my accounts
+- [x] US-BANK-05 · Record money in or out that has no invoice or bill
+- [x] US-BANK-06 · Archive an account I no longer use
+- [x] US-BANK-07 · Import a bank statement
+- [x] US-BANK-08 · Match statement lines to what's in Spine
+- [x] US-BANK-09 · Create what's missing from a statement line
+- [x] US-BANK-10 · Finish a reconciliation when it balances
+- [x] US-BANK-11 · Review or undo a reconciliation
+- [x] US-BANK-12 · Let a Team see balances, record money and reconcile
+- [x] US-CAT-09 · Import catalogue items from a spreadsheet
+- [x] US-PAY-16 · Keep a credit note's extra as customer credit
+- [x] US-PAY-17 · Refund a customer
+- [x] US-PAY-18 · Let a Team refund customers
+- [x] US-PUR-24 · Record a credit from a vendor
+- [x] US-PUR-25 · Apply a vendor credit to bills
+- [x] US-PUR-26 · Record a refund from a vendor
+- [x] US-PUR-27 · Void a vendor credit
+- [x] US-PUR-28 · Let a Team manage vendor credits
+- [x] US-PUR-29 · Set up a recurring bill
+- [x] US-PUR-30 · Create recurring bills automatically
+- [x] US-PUR-31 · Pause, edit or stop a recurring bill
+- [x] US-TAX-08 · Record paying tax and using input tax credit
+- [x] US-RPT-16 · Set a cutover date and enter opening account balances
+- [x] US-RPT-17 · Bring in unpaid customer invoices, retention and credit
+- [x] US-RPT-18 · Bring in unpaid vendor bills and vendor credits
+- [x] US-RPT-19 · Check and lock my opening balances
+- [x] US-RPT-20 · Post an adjusting journal
+- [x] US-RPT-21 · Reverse a journal posted by mistake
+- [x] US-RPT-22 · See every manual journal
+- [x] US-RPT-23 · Find every report in one place
+- [x] US-RPT-24 · See the general ledger
+- [x] US-RPT-25 · See the day book
+- [x] US-RPT-26 · See where cash came from and where it went
+- [x] US-RPT-27 · Compare profit and loss across periods
+- [x] US-RPT-28 · See sales by customer and by item
+- [x] US-RPT-29 · See expenses by category and purchases by vendor
+- [x] US-RPT-30 · See payments received and made in a period
+- [x] US-RPT-31 · See credit notes, vendor credits and refunds in a period
+- [x] US-RPT-32 · Export every report to CSV and Excel
+- [x] US-RPT-33 · Download any report as a PDF
+- [x] US-RPT-34 · Print any report
+- [x] US-RPT-35 · See profit and loss on a cash basis
+- [x] US-RPT-36 · Let my accountant's Team see the financial statements
+- [x] US-RPT-40 · See every report laid out the same way
+- [x] US-DASH-21 · See what I owe vendors on the dashboard
+- [x] US-DASH-22 · See where money goes
+- [x] US-DASH-23 · See each bank, cash and card balance
+- [x] US-DASH-24 · See work not yet billed
+- [x] US-DASH-25 · See tax owed this period
+- [x] US-DASH-26 · Switch dashboard profit between accrual and cash
+- [x] US-OPS-33 · Attach files to bills, invoices and other records
+- [x] US-OPS-34 · Open attachments only when I can open the record
+- [x] US-OPS-35 · Remove an attachment added by mistake
 
 ## Phase 9 · Tax, documents and setup
 

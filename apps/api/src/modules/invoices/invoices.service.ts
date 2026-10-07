@@ -1141,6 +1141,10 @@ export class InvoicesService {
     if (!preCheck) {
       throw new NotFoundException("Invoice not found");
     }
+    // US-RPT-17: an opening invoice is removed in Opening balances (while unlocked), or credited.
+    if (preCheck.type === "opening") {
+      throw new BadRequestException("An opening invoice can't be voided. Remove it in Opening balances, or issue a credit note.");
+    }
 
     const result = await this.db.transaction(async (tx) => {
       const [existing] = await tx

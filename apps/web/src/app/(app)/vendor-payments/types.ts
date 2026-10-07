@@ -29,6 +29,9 @@ export interface VendorPayment {
   number: string | null;
   date: string;
   method: PaymentMethod;
+  /** US-BANK-03 — the account the money went into or came out of. */
+  moneyAccountId?: string | null;
+  moneyAccount?: { id: string; name: string } | null;
   reference: string | null;
   currency: string;
   amount: string;

@@ -2,7 +2,7 @@ import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { Body, Controller, Get, Put, Req, UseInterceptors } from "@nestjs/common";
 import {
   changePasswordSchema,
-  dashboardLayoutSchema,
+  dashboardBasisSchema, dashboardLayoutSchema, favouriteReportsSchema,
   notificationPreferencesSchema,
   updateMeetingReminderLeadMinutesSchema,
   updatePreferencesSchema,
@@ -78,6 +78,34 @@ export class UsersController {
   ) {
     await this.usersService.setDashboardLayout(session.user.id, body);
     return { layout: body };
+  }
+
+  /** US-DASH-26 — Accrual or Cash for the dashboard's profit figures, kept with the layout on every device. */
+  @Get("me/dashboard-basis")
+  async getDashboardBasis(@Session() session: UserSession) {
+    return { basis: await this.usersService.getDashboardBasis(session.user.id) };
+  }
+
+  @Put("me/dashboard-basis")
+  @UseInterceptors(IdempotencyInterceptor)
+  async updateDashboardBasis(@Session() session: UserSession, @Body(new ZodValidationPipe(dashboardBasisSchema)) body: z.infer<typeof dashboardBasisSchema>) {
+    await this.usersService.setDashboardBasis(session.user.id, body.basis);
+    return { basis: body.basis };
+  }
+
+  /** US-RPT-23 — the member's favourite reports, on every device. Self-service, like the dashboard layout. */
+  @Get("me/favourite-reports")
+  async getFavouriteReports(@Session() session: UserSession) {
+    return { slugs: await this.usersService.getFavouriteReports(session.user.id) };
+  }
+
+  @Put("me/favourite-reports")
+  @UseInterceptors(IdempotencyInterceptor)
+  async updateFavouriteReports(
+    @Session() session: UserSession,
+    @Body(new ZodValidationPipe(favouriteReportsSchema)) body: z.infer<typeof favouriteReportsSchema>,
+  ) {
+    return { slugs: await this.usersService.setFavouriteReports(session.user.id, body.slugs) };
   }
 
   /** S-10.22 — personal override of the org's default meeting-reminder lead time; `meetingReminderLeadMinutes: null` clears back to "use org default". */

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   AlertDescription,
@@ -18,6 +18,7 @@ import {
   Spinner,
 } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * S-05.6 — "issue a credit note against an invoice for a return or
@@ -46,15 +47,23 @@ export function CreateCreditNoteDialog({
   open,
   onOpenChange,
   invoiceId,
+  invoiceNumber,
+  customerName,
   currency,
-  maxAmount,
+  invoiceTotal,
+  balanceDue,
   onIssued,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   invoiceId: string;
+  invoiceNumber: string | null;
+  customerName: string | null;
   currency: string;
-  maxAmount: bigint;
+  /** With the issued credit notes, the most this one can be (all credits ≤ the invoice). */
+  invoiceTotal: bigint;
+  /** What's left to pay; anything above becomes customer credit (US-PAY-16, D-142). */
+  balanceDue: bigint;
   onIssued: () => void;
 }) {
   const [name, setName] = useState("Credit note");
@@ -62,6 +71,19 @@ export function CreateCreditNoteDialog({
   const [amount, setAmount] = useState<bigint>(0n);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyCredited, setAlreadyCredited] = useState<bigint>(0n);
+
+  useEffect(() => {
+    if (!open) return;
+    apiClient
+      .get<{ status: string; totalAmount: string }[]>(`/credit-notes?invoiceId=${invoiceId}`)
+      .then((notes) => setAlreadyCredited(notes.filter((n) => n.status === "issued").reduce((sum, n) => sum + BigInt(n.totalAmount), 0n)))
+      .catch(() => setAlreadyCredited(0n));
+  }, [open, invoiceId]);
+
+  const maxAmount = invoiceTotal - alreadyCredited;
+  const owed = balanceDue > 0n ? balanceDue : 0n;
+  const excess = amount > owed ? amount - owed : 0n;
 
   async function handleSubmit() {
     setError(null);
@@ -70,7 +92,7 @@ export function CreateCreditNoteDialog({
       return;
     }
     if (amount > maxAmount) {
-      setError("Credit amount cannot exceed the invoice's remaining balance.");
+      setError(`You can credit up to ${formatMoney(maxAmount > 0n ? maxAmount : 0n, currency)} on this invoice.`);
       return;
     }
 
@@ -104,7 +126,7 @@ export function CreateCreditNoteDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Issue a credit note</DialogTitle>
-          <DialogDescription>Reduces what's owed on this invoice without editing the issued document.</DialogDescription>
+          <DialogDescription>Reduces what's owed on this invoice without editing the issued document. Anything above what's owed becomes credit for the customer.</DialogDescription>
         </DialogHeader>
 
         <DialogBody className="flex flex-col gap-4">
@@ -120,9 +142,16 @@ export function CreateCreditNoteDialog({
           <FormField label="Reason" helperText="Shown to the customer on the credit note.">
             {(field) => <Input {...field} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Optional" />}
           </FormField>
-          <FormField label="Amount" required helperText="Up to this invoice's remaining balance.">
+          <FormField label="Amount" required>
             {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
           </FormField>
+          {excess > 0n && (
+            <Alert variant="info" data-testid="credit-split">
+              <AlertDescription>
+                {formatMoney(owed, currency)} reduces what's owed on {invoiceNumber ?? "this invoice"}; {formatMoney(excess, currency)} becomes credit for {customerName ?? "the customer"}.
+              </AlertDescription>
+            </Alert>
+          )}
         </DialogBody>
 
         <DialogFooter>

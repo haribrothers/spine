@@ -19,11 +19,12 @@ test.describe("US-DASH-14", () => {
 
     await row.locator('[data-kpi="overdue"]').click();
     await expect(page).toHaveURL(/\/receivables\?overdue=1/);
-    await expect(page.getByText("Showing overdue invoices only.")).toBeVisible();
+    await expect(page.getByRole("combobox", { name: "Show" })).toHaveText("Overdue only");
 
     await page.goto("/dashboard");
     await page.getByTestId("kpi-row").locator('[data-kpi="cash"]').click();
-    await expect(page).toHaveURL(/\/reports\?tab=bs/);
-    await expect(page.getByRole("tab", { name: "Balance Sheet" })).toHaveAttribute("aria-selected", "true");
+    // US-RPT-23: each report is its own page.
+    await expect(page).toHaveURL(/\/reports\/balance-sheet$/);
+    await expect(page.getByRole("heading", { name: "Balance Sheet" })).toBeVisible();
   });
 });

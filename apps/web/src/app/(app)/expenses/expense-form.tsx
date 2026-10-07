@@ -28,6 +28,8 @@ import {
   ToggleGroupItem,
 } from "@spine/ui";
 import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE } from "@spine/shared";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
+import { useMyRole } from "../../../lib/role-context";
 import { LabourRows, blankLabourRow, headcountOf, rowsTotal, type LabourRow } from "./labour-rows";
 import { apiClient } from "../../../lib/api-client";
 import { EXPENSE_PAID_BY_LABELS, type Expense, type ExpenseCategory, type ExpensePaidBy, type JobOption, type SpineFile, type TaxRateOption } from "./types";
@@ -66,11 +68,14 @@ export function ExpenseForm({
   onOpenChange,
   expense,
   onSaved,
+  returnFocusTo,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   expense?: Expense;
   onSaved: (expense: Expense, mode: "created" | "updated") => void;
+  /** Where focus goes when the form closes — for a form opened from a menu item, which is gone by then. */
+  returnFocusTo?: React.RefObject<HTMLElement | null>;
 }) {
   const [categoryId, setCategoryId] = useState("");
   const [jobId, setJobId] = useState(NO_JOB);
@@ -82,6 +87,9 @@ export function ExpenseForm({
   const canManageCategories = useCanManageExpenseCategories();
   const [description, setDescription] = useState("");
   const [paidBy, setPaidBy] = useState<ExpensePaidBy>("company");
+  const [moneyAccountId, setMoneyAccountId] = useState("");
+  // US-BANK-03: Field don't see accounts; their expenses start on the default and the approver picks.
+  const choosesAccount = useMyRole() !== "field";
   const [receiptFileId, setReceiptFileId] = useState<string | null>(null);
   const [receiptFilename, setReceiptFilename] = useState<string | null>(null);
   const [isBillable, setIsBillable] = useState(false);
@@ -137,6 +145,11 @@ export function ExpenseForm({
     // A category posting to 5200 Direct Labour is preselected; it can be changed.
     if (next === "labour" && labourCategory && (!categoryId || !expense)) setCategoryId(labourCategory.id);
   }
+
+  // US-PUR-23 — if "Headcount × day rate" was chosen before the categories arrived, preselect once they do.
+  useEffect(() => {
+    if (entryMode === "labour" && labourCategory && !categoryId && !expense) setCategoryId(labourCategory.id);
+  }, [entryMode, labourCategory, categoryId, expense]);
 
   useEffect(() => {
     if (expense) return; // only pre-fill the org default currency for a brand-new expense
@@ -212,6 +225,7 @@ export function ExpenseForm({
         taxRateId: taxRateSelection || null,
         description: description || null,
         paidBy,
+        ...(choosesAccount && moneyAccountId ? { moneyAccountId } : {}),
         receiptFileId,
         isBillable,
       };
@@ -229,7 +243,14 @@ export function ExpenseForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent size="lg">
+      <DialogContent
+        size="lg"
+        onCloseAutoFocus={(event) => {
+          if (!returnFocusTo?.current) return;
+          event.preventDefault();
+          returnFocusTo.current.focus();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{expense ? "Edit expense" : "Submit an expense"}</DialogTitle>
           <DialogDescription>
@@ -279,14 +300,14 @@ export function ExpenseForm({
             </FormField>
             {entryMode === "amount" && (
               <FormField label="Amount" required>
-                {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} />}
+                {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={amount} onValueChange={setAmount} currency={currency} />}
               </FormField>
             )}
             <FormField label="Tax rate">
               {() => <Combobox options={taxOptions} value={taxRateSelection} onValueChange={setTaxRateSelection} placeholder="No tax" />}
             </FormField>
             <FormField label="Tax amount" helperText="Included in the amount above, not added on top.">
-              {() => <MoneyInput value={taxAmount} onValueChange={setTaxAmount} currency={currency} />}
+              {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={taxAmount} onValueChange={setTaxAmount} currency={currency} />}
             </FormField>
             <FormField label="Paid by" required>
               {() => (
@@ -304,6 +325,7 @@ export function ExpenseForm({
                 </Select>
               )}
             </FormField>
+            {choosesAccount && <MoneyAccountPicker form="expense" direction="out" value={moneyAccountId} onValueChange={setMoneyAccountId} initialId={expense?.moneyAccountId} />}
           </div>
 
           {entryMode === "labour" && (

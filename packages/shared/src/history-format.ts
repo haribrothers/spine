@@ -47,6 +47,8 @@ const ENTITY_NAMES: Record<string, string> = {
   tax_rate: "a tax rate",
   vendor_bill: "a vendor bill",
   vendor_payment: "a vendor payment",
+  vendor_credit: "a vendor credit",
+  manual_journal: "a journal",
 };
 
 const ACTION_VERBS: Record<string, string> = {
@@ -67,6 +69,19 @@ const ACTION_VERBS: Record<string, string> = {
   rejected: "rejected",
   recorded: "recorded",
   billed: "billed",
+  refunded: "refunded",
+  refund_deleted: "deleted a refund from",
+  // US-BANK-07
+  statement_imported: "imported a statement into",
+  // US-BANK-10/11
+  finished: "finished",
+  undone: "undid",
+  // US-RPT-19
+  locked: "locked",
+  unlocked: "unlocked",
+  credit_applied: "applied credit from",
+  applied: "applied",
+  application_removed: "removed an application of",
   assigned: "assigned",
   unassigned: "unassigned",
   email_queued: "emailed",
@@ -138,6 +153,19 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
   if (entry.action === "statement_sent") {
     const to = changes.find((c) => c.field === "email")?.to;
     return `${actor} sent a statement${to ? ` to ${String(to)}` : ""}`;
+  }
+
+  // US-OPS-33: "Sarah Mendes attached coastal-timber-88213.pdf".
+  if (entry.action === "attachment_added") {
+    const name = changes.find((c) => c.field === "attachment")?.to;
+    return `${actor} attached ${name ? String(name) : "a file"}${own ? "" : ` to ${subject}`}`;
+  }
+
+  // US-OPS-35: "Alex Morgan removed attachment delivery-docket.jpg — Wrong docket".
+  if (entry.action === "attachment_removed") {
+    const name = changes.find((c) => c.field === "attachment")?.from;
+    const reason = changes.find((c) => c.field === "reason")?.to;
+    return `${actor} removed attachment ${name ? String(name) : "a file"}${reason ? ` — ${String(reason)}` : ""}${own ? "" : ` from ${subject}`}`;
   }
 
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".

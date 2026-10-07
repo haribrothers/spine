@@ -19,6 +19,7 @@ import { QuoteConversionGuardService } from "../org/quote-conversion-guard.servi
 import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { PeriodsService } from "../ledger/periods.service";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 
 /**
  * Regression coverage for `GET /expenses/:id/history`,
@@ -66,10 +67,10 @@ describe("Purchases history (requires local Postgres)", () => {
     const notifications = new NotificationsService(db, queue, new PushService(db));
     const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver);
 
-    expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices);
+    expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices, new MoneyAccountsService(db, auditLog));
     expenseCategoriesService = new ExpenseCategoriesService(db, auditLog);
     vendorBillsService = new VendorBillsService(db, auditLog, ledger, taxResolver);
-    vendorPaymentsService = new VendorPaymentsService(db, auditLog, numbering, ledger);
+    vendorPaymentsService = new VendorPaymentsService(db, auditLog, numbering, ledger, new MoneyAccountsService(db, auditLog));
 
     const ownerEmail = `purchases-history-owner-${randomUUID()}@example.com`;
     createdEmails.push(ownerEmail);

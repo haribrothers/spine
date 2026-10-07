@@ -1,24 +1,4 @@
-import {
-  Banknote,
-  BarChart3,
-  CalendarDays,
-  ClipboardList,
-  FileText,
-  HandCoins,
-  HardHat,
-  History,
-  Inbox,
-  LayoutDashboard,
-  Package,
-  Receipt,
-  ReceiptText,
-  Shield,
-  Target,
-  Undo2,
-  UserCog,
-  Users,
-  Wallet,
-} from "lucide-react";
+import { Banknote, BarChart3, BookOpen, CalendarDays, ClipboardList, FileMinus, FileText, HandCoins, HardHat, History, Inbox, Landmark, LayoutDashboard, Package, Receipt, ReceiptText, Shield, Target, Undo2, UserCog, Users, Wallet } from "lucide-react";
 import type { AppShellNavSection } from "@spine/ui";
 import type { Capability } from "@spine/shared";
 
@@ -87,14 +67,25 @@ export const NAV_SECTIONS: AppShellNavSection[] = [
     label: "Purchases",
     items: [
       { href: "/vendor-bills", label: "Vendor Bills", icon: <ClipboardList /> },
+      // US-PUR-24
+      { href: "/vendor-credits", label: "Vendor Credits", icon: <FileMinus /> },
       { href: "/expenses", label: "Expenses", icon: <ReceiptText /> },
       { href: "/vendor-payments", label: "Vendor Payments", icon: <HandCoins /> },
       { href: "/payables", label: "Payables", icon: <Wallet /> },
     ],
   },
   {
+    // US-BANK-01 (D-139): where the money actually sits.
+    label: "Money",
+    items: [{ href: "/banking", label: "Banking", icon: <Landmark /> }],
+  },
+  {
     label: "Reports",
-    items: [{ href: "/reports", label: "Reports", icon: <BarChart3 /> }],
+    items: [
+      { href: "/reports", label: "Reports", icon: <BarChart3 /> },
+      // US-RPT-20–US-RPT-22 (D-134)
+      { href: "/journals", label: "Journals", icon: <BookOpen /> },
+    ],
   },
 ];
 
@@ -142,6 +133,8 @@ export const FIELD_NAV_SECTIONS: AppShellNavSection[] = [
 const ITEM_CAPABILITY: Record<string, Capability> = {
   "/receivables": "reports.view_receivables",
   "/payables": "reports.view_payables",
+  "/banking": "banking.view",
+  "/journals": "ledger.view",
 };
 
 /** The Reports page is shown to Staff who hold any report capability. */
@@ -150,6 +143,9 @@ const REPORT_CAPABILITIES: Capability[] = [
   "reports.view_receivables",
   "reports.view_payables",
   "reports.view_job_profitability",
+  // US-RPT-23
+  "reports.view_financial_statements",
+  "ledger.view",
 ];
 
 /**

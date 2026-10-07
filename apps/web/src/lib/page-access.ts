@@ -21,12 +21,18 @@ const RULES: PageRule[] = [
   // US-PUR-19: more specific than "/expenses", which every role can open.
   { prefix: "/expenses/categories", name: "Expense categories", anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
   { prefix: "/team", name: "Team", ownerOnly: true },
+  // US-RPT-16 (D-137)
+  { prefix: "/opening-balances", name: "Opening balances", ownerOnly: true },
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
   { prefix: "/payables", name: "Payables", anyOf: ["reports.view_payables"] },
+  { prefix: "/banking", name: "Banking", anyOf: ["banking.view"] },
+  // US-RPT-22
+  { prefix: "/journals", name: "Journals", anyOf: ["ledger.view"] },
   {
     prefix: "/reports",
     name: "Reports",
-    anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability"],
+    // US-RPT-23: the Reports page lists whatever reports the person can open.
+    anyOf: ["reports.view_dashboard_summary", "reports.view_receivables", "reports.view_payables", "reports.view_job_profitability", "reports.view_financial_statements", "ledger.view"],
   },
 ];
 
@@ -41,8 +47,11 @@ const PAGE_NAMES: Record<string, string> = {
   "/payments": "Payments",
   "/receivables": "Receivables",
   "/vendor-bills": "Vendor Bills",
+  "/vendor-credits": "Vendor Credits",
   "/vendor-payments": "Vendor Payments",
   "/payables": "Payables",
+  "/banking": "Banking",
+  "/journals": "Journals",
   "/reports": "Reports",
   "/team": "Team",
   "/expenses/categories": "Expense categories",

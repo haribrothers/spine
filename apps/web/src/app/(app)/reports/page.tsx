@@ -1,19 +1,15 @@
 import { Suspense } from "react";
 import { AppShellHeader } from "@spine/ui";
-import { ReportsExplorer } from "./reports-explorer";
+import { ReportsCenter } from "./reports-center";
 
-/** PRD FEAT-09 (S-09.2, S-09.3, S-09.4, S-09.6, S-09.7) — P&L, Balance Sheet, job profitability, drill-down, CSV export. */
+/** US-RPT-23 — every report in one place. Each report is a page under /reports/<slug>. */
 export default function ReportsPage() {
   return (
     <>
-      <AppShellHeader
-        breadcrumb={[{ label: "Reports" }]}
-        title="Reports"
-        description="Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and job profitability, derived from the ledger."
-      />
-      {/* US-DASH-14: reads its starting view from the URL. */}
+      <AppShellHeader breadcrumb={[{ label: "Reports" }]} title="Reports" description="Every report you can open, derived from the ledger." />
+      {/* Reads ?tab= from old links to redirect them. */}
       <Suspense>
-        <ReportsExplorer />
+        <ReportsCenter />
       </Suspense>
     </>
   );

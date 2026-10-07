@@ -1,5 +1,6 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { BankingModule } from "../banking/banking.module";
 import { NumberingModule } from "../numbering/numbering.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { TaxModule } from "../tax/tax.module";
@@ -11,6 +12,8 @@ import { ExpenseCategoriesController } from "./expense-categories.controller";
 import { ExpenseCategoriesService } from "./expense-categories.service";
 import { ExpensesController } from "./expenses.controller";
 import { ExpensesService } from "./expenses.service";
+import { VendorCreditsController, VendorRefundsController } from "./vendor-credits.controller";
+import { VendorCreditsService } from "./vendor-credits.service";
 import { VendorPaymentsController } from "./vendor-payments.controller";
 import { VendorPaymentsService } from "./vendor-payments.service";
 
@@ -33,10 +36,14 @@ import { VendorPaymentsService } from "./vendor-payments.service";
  * (`ExpensesService.createInvoiceFromExpense`) composes a new draft
  * invoice the same way `MilestonesService.invoiceMilestone` does.
  */
+import { RecurringBillsController } from "./recurring-bills.controller";
+import { RecurringBillsService } from "./recurring-bills.service";
+import { RecurringBillRunService } from "./recurring-bill-run.service";
+import { RecurringBillRunWorker } from "./recurring-bill-run.worker";
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
-  controllers: [VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController],
-  providers: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
+  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, TaxModule, NotificationsModule, InvoicesModule],
+  controllers: [RecurringBillsController, VendorBillsController, ExpenseCategoriesController, ExpensesController, VendorPaymentsController, VendorCreditsController, VendorRefundsController],
+  providers: [RecurringBillsService, RecurringBillRunService, RecurringBillRunWorker, VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService, VendorCreditsService],
   exports: [VendorBillsService, ExpenseCategoriesService, ExpensesService, VendorPaymentsService],
 })
 export class PurchasesModule {}

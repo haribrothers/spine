@@ -80,6 +80,788 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-07 — US-RPT-40: every report laid out the same way (Phase 8)
+
+- Every report — the statements, analysis, registers, General ledger, Day book, Job profitability, Tax Summary, Receivables and Payables — now follows one layout (D-180). The header names the range, plus any comparison or basis. Labelled filters sit on the left; Export, then any primary action, sits on the right. Then come one row of KPI cards, a chart where it helps, the table and a footnote.
+- Filters apply as soon as they change; the Refresh button is gone.
+- Profit & Loss, Balance Sheet, Trial Balance and Cash Flow share tabs, and so do General ledger and Day book.
+- New KPI cards:
+  - Profit & Loss: income, expenses, net profit and net margin, plus a chart of income and expenses for each month.
+  - Balance Sheet: assets, liabilities and equity.
+  - Trial Balance: accounts, debits, credits and the difference.
+  - General ledger and Day book: lines or entries, debits and credits.
+  - Job profitability: jobs, contract value, billed to date and margin.
+- Statements are one table with section headings, subtotals and a shaded total row. List reports gain a totals row.
+- Receivables and Payables:
+  - Four cards: Total outstanding, Current, Overdue and 90+ days.
+  - A bar showing all five ages, each with its amount and share.
+  - A "Show: All outstanding / Overdue only" filter in place of the overdue banner.
+- Journals' "New journal" button moved next to Export.
+- New `@spine/ui` components: `ReportToolbar`, `StatementTable` and `SegmentedBar`. `Table` and `DataTable` gain a `footer` totals row.
+- `GET /reports/general-ledger` now returns `totals` covering every listed account.
+
+### 2026-10-07 — Fix: labour expenses preselect Site labour on a slow connection (US-PUR-23)
+
+- Choosing "Headcount × day rate" before the expense categories had loaded left the category empty and never showed "Preselected: posts to 5200 Direct Labour." The form now preselects it as soon as the categories arrive.
+
+### 2026-10-07 — US-CAT-09: import catalogue items from a spreadsheet (Phase 8)
+
+- **Catalogue › "Import"** (`ImportCatalogDialog`): choose a CSV, match its columns to Name, Description, Unit, Price, Tax, Income account and Expense account (guessed from the headings; only Name is required), then **Preview**: the first rows with "Ready", "Duplicate — skipped" or the problem — "Unknown tax <name>", "Unknown account <code>", a missing name or a price that isn't an amount ([D-161](docs/prd/12-decisions.md)).
+- **Import** creates the ready rows; items whose name is already in the catalogue (or repeats in the file) are skipped and listed, never changed. The summary reads "Imported <n> items · skipped <m> duplicates · <k> rows failed", with **"Download failed rows"** (the file's own columns plus "Problem") to fix and import again.
+- Tax is matched to a tax rate or group by name; accounts by code or name. Prices like "$12,500.00" are fine. "HSN/SAC" arrives with Phase 9.
+- Same right as adding an item ("Create/edit own catalogue items"). API: `POST /catalog-items/import` (with `dryRun` for the preview).
+
+### 2026-10-07 — US-PUR-31: pause, edit or stop a recurring bill (Phase 8)
+
+- **Recurring bills › row menu**: Edit, Pause or Resume, and Delete. A paused schedule creates no bills; **Resume** sets the next date to the next future occurrence (dates passed while paused aren't created) and finishes it instead if its end has passed.
+- **Edit** (or click the name) changes lines, amounts and the schedule for future bills only; bills already created are unchanged.
+- **Delete** asks "Delete this schedule? Bills it already created are kept." — the schedule goes, its bills stay.
+- The row menu is shared with recurring invoices (one component for both).
+- API: `POST /recurring-bills/:id/pause`, `/resume`.
+
+### 2026-10-07 — US-PUR-30: create recurring bills automatically (Phase 8)
+
+- **The 6:00 AM run** (queue `recurring-bill-run`, every 15 minutes from 6:00 AM organisation time) creates one bill for each active schedule whose date has come: the schedule's vendor and lines, dated that day, due the set number of days later, numbered "<schedule name> · <date>" and noted "Created by Recurring bill <name>".
+- **"Record the bill"** records it at once (P11). **"Save as a draft"** leaves a draft and tells Owners "Recurring bill ready to review: <name>" (in the app and by email). A bill that can't be recorded is left as a draft the same way.
+- **Exactly once**: each bill carries its schedule and run date, unique together, so a repeated or racing run never makes a second bill for a date. **Missed dates** (server off) are each created once, in order, when Spine starts again ([D-159](docs/prd/12-decisions.md)).
+- When the end condition is met (end date or number of bills), the schedule shows **"Finished"**.
+
+### 2026-10-06 — US-PUR-29: set up a recurring bill (Phase 8)
+
+- **Vendor Bills › "Recurring bills"** (`/vendor-bills/recurring`) lists each schedule's name, vendor, how it repeats, next bill date, amount, status (Active, Paused, Finished) and what a run does. "+ New recurring bill" opens `RecurringBillDialog`: Name, Vendor, lines (each with its expense account), Repeat (weekly, monthly, every 3 months, yearly) and the day, Starts on, Ends (never, on a date, after a number of bills), Due (days after the bill date), Paid from (for reference) and When it runs — "Record the bill" or "Save as a draft for me to check" ([D-159](docs/prd/12-decisions.md)).
+- **"Make recurring"** on a bill opens the dialog with that bill's vendor and lines.
+- New Team privilege **"Manage recurring bills"** (`vendor_bills.manage_recurring`, Manage Vendor Bills group), given to every Team that can already create bills.
+- The bills themselves are created by US-PUR-30; pausing and deleting arrive with US-PUR-31.
+- API: `GET/POST /recurring-bills`, `GET/PUT/DELETE /recurring-bills/:id`; tables `recurring_bills`, `recurring_bill_lines` (migration 0099).
+
+### 2026-10-06 — US-DASH-26: switch dashboard profit between accrual and cash (Phase 8)
+
+- **Dashboard › "Accrual | Cash"** (beside Edit layout, for members who see profit). On Cash, "Profit this month" — its figure, comparison and sparkline — is worked out on the cash basis (D-138, D-178) and says "cash basis" under the figure.
+- **The money chart follows it** ([D-179](docs/prd/12-decisions.md)): Accrual shows "Income and expenses" per month from the ledger; Cash shows "Money in and out" of bank and cash accounts, as before. Accrual is the default, so the chart first reads income and expenses.
+- **The choice is kept** on the member (`user.dashboard_basis`, migration 0098), so it's the same on every device.
+- API: `GET /dashboard/kpis?basis=`, `GET /reports/money-in-out?basis=accrual`, `GET/PUT /users/me/dashboard-basis`.
+
+### 2026-10-06 — US-DASH-25: see tax owed this period (Phase 8)
+
+- **Dashboard › Tax this period** card (D-160): "Collected", "Input tax" and "Net payable" for the current month or quarter, and "<period> · paid <amount>" once a tax payment is recorded for it ("nothing paid yet" until then). The card opens the Tax Summary for that period.
+- **Settings › Tax › "Return period"**: Monthly (default) or Quarterly; the card follows it.
+- The Tax Summary now opens on `?from=&to=` when a link gives them.
+- Members without "View financial statements" don't get the card.
+- API: `GET /dashboard/tax-period`; `settings.tax_profile.returnPeriod`.
+
+### 2026-10-06 — US-DASH-24: see work not yet billed (Phase 8)
+
+- **Dashboard › Ready to bill** card (D-160): "Completed milestones not invoiced <n>" with their total, and "Approved billable expenses not billed <n>" with what they'd invoice for (amount + tax). Nothing to bill: "Nothing waiting to be billed."
+- The milestones line opens a list of the jobs holding them, each opening the job's Milestones tab; the expenses line opens Expenses filtered to approved billable expenses not yet on an invoice ("Show all" clears it).
+- When Jobs & field is switched off (Settings › Modules, Phase 9), only billable expenses show.
+- Members without "View receivables" don't get the card.
+- API: `GET /dashboard/unbilled`.
+
+### 2026-10-06 — US-DASH-23: see each bank, cash and card balance (Phase 8)
+
+- **Dashboard › Accounts** card (D-160): every active bank, cash and card account with a type icon (named for screen readers), its balance — a card's reads "<amount> owed" — and "Reconciled to <date>" or "Not reconciled". A name opens the account's register; "Banking" opens Banking.
+- Members without "View banking" don't get the card (and the API doesn't send them balances).
+- No API change: the card reads `GET /money-accounts` with balances.
+
+### 2026-10-06 — US-DASH-22: see where money goes (Phase 8)
+
+- **Dashboard › Top expenses** card (D-160): the five largest expense accounts as labelled bars with amount and % ("Cost of Materials $12,380.00 · 39.1%"), then "Other". "Period" picks This month, This quarter (default) or This financial year; "Expenses by category" opens the full report.
+- **Click an account** to open its drill-down for that period (Owners, or with "View ledger / journals").
+- No expenses: "No expenses in this period." Each bar carries its name and share as its accessible name; amounts and % are written, so nothing relies on colour.
+- Members without "View financial statements" don't get the card.
+- API: `GET /dashboard/top-expenses?period=`.
+
+### 2026-10-06 — US-DASH-21: see what I owe vendors on the dashboard (Phase 8)
+
+- **Dashboard › Payables** card (D-160): Current, Overdue and Total owed to vendors, a bar of current against overdue (with its figures as its accessible name), "Bills due in the next 7 days <n> · <amount>" and "Oldest overdue <bill> · <n> days". "Payables" opens the Payables page.
+- **Overdue** opens Payables filtered to overdue bills ("Showing overdue bills only. Show all").
+- Members without "View payables" don't get the card (and the API leaves the figure out). It can be moved or hidden with Edit layout like the other cards.
+- API: `GET /dashboard/kpis` gains `payables`.
+
+### 2026-10-06 — US-RPT-36: let my accountant's Team see the financial statements (Phase 8)
+
+- **"View financial statements"** (Team › Privileges › Reports & Ledger, off by default) now opens Profit & Loss, Balance Sheet, Trial Balance, Tax Summary and the revenue trend to a Team, alongside Cash Flow and the sales and purchase reports — they load and export (CSV, Excel, PDF, Print). Owners always can; Field never can, whatever their Teams ([D-136](docs/prd/12-decisions.md)).
+- **Read-only**: a member with it can't post or reverse journals, edit or lock opening balances, close a period, record tax payments or change Settings. On the Tax Summary they don't see "Record tax payment" or the payments list. Account drill-downs on the statements need "View ledger / journals" as well; without it, figures aren't links.
+- **Without it**, the statements show the no-access page: "You don't have access to financial statements. Ask an owner." (instead of "Owner-only report.").
+- API: `GET /reports/profit-and-loss`, `/balance-sheet`, `/trial-balance`, `/revenue-trend`, `/org/tax/summary` and their exports move from `roles: owner` to `@RequireCapability("reports.view_financial_statements")`.
+
+### 2026-10-06 — US-RPT-34: print any report (Phase 8)
+
+- **Export › Print** opens the browser's print dialog. The printout leaves out the sidebar, breadcrumbs, filter bars, buttons, search and pagers, and fills the page with the report: its title, a line with the business name and the range or date, and the table.
+- **Long tables**: printing from Print shows every row, not just the page on screen; column headings repeat on every printed page and rows aren't split. Afterwards the table is back on its page.
+- Prints are black on white whatever the theme. Printing with the browser's own shortcut prints the page as it stands.
+- `@spine/ui/print.css` (imported by the web app) holds the print stylesheet; `printPage()` and Table's print mode come from `@spine/ui`. Design-system pages for Table, DataTable, AppShell, Pagination and PaginationBar say how they print.
+
+### 2026-10-06 — US-RPT-33: download any report as a PDF (Phase 8)
+
+- **Export › PDF** on every report downloads `<report>-<from>-<to>.pdf`: the logo and business name (Settings › Business), the report name, the range or date and the currency at the top; the table with section headings and totals in bold; the basis (accrual or cash), "Prepared <date>" and "Page n of m" in the footer of every page.
+- A report with more than five amount columns (Profit & Loss "Each month", Job profitability) prints landscape.
+- PDFs are always light, whatever the screen's theme (D-100). Helvetica until Phase 9's fonts (D-151).
+- API: `?format=pdf` on every report route, one react-pdf template for all reports.
+
+### 2026-10-06 — US-RPT-32: export every report to CSV and Excel (Phase 8)
+
+- **"Export"** on every report — Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, Job profitability, Receivables, Payables, General ledger, Day book, Journals, the sales and purchase reports, and the payment and credit registers — offers **CSV** and **Excel (.xlsx)**. PDF and Print follow with US-RPT-33 and US-RPT-34.
+- **Files hold what's on screen**: dates, account and source filters, Basis, "Compare with" columns, and the list's search. The general ledger exports every account the filters pick, not just the page.
+- **Excel**: business name, report name, range and currency in the first rows; bold, frozen headings; amounts are real numbers with two decimals (the currency's decimals), percentages as %.
+- **CSV**: plain decimal amounts with the currency in its own column, as before. Files are named `<report>-<from>-<to>` (or `-<date>`).
+- The Tax Summary exports to Excel too. Receivables and Payables keep their CSV columns; their Export menu adds Excel.
+- API: `?format=csv|xlsx` on every report route (`exceljs`, D-144); the `/export.csv` routes stay.
+
+### 2026-10-06 — US-RPT-35: see profit and loss on a cash basis (Phase 8)
+
+- **Profit & Loss › "Basis"**: Accrual (default) or Cash. On Cash the subtitle reads "<range> · Cash basis", cards show "Cash received (income)", "Cash paid (expenses)" and "Net profit (cash basis)" with the accrual figure beside it, and the table lists each account's cash-basis amount.
+- **How it's counted** ([D-138](docs/prd/12-decisions.md), [D-178](docs/prd/12-decisions.md)): income is what customers paid in the range, split across each invoice's income lines in proportion; costs likewise from vendor payments on bills; expenses, journals and money in or out count as posted. A half-paid 1,000.00 services invoice is 500.00 under Sales — Services. Nothing is posted — it's a view.
+- **Opening invoices**: payments on them aren't income, and the page says "Payments on invoices from before <cutover date> aren't counted — that income was in your old books." (likewise for opening bills).
+- Works with "Compare with"; Export CSV carries the basis. Balance Sheet, Trial Balance and Tax Summary have no basis switch. Closes Q-04.
+- API: `GET /reports/profit-and-loss?basis=cash`.
+
+### 2026-10-06 — US-RPT-31: see credit notes, vendor credits and refunds in a period (Phase 8)
+
+- **Reports › Receivables › Credit notes and refunds** (`/reports/credit-notes-and-refunds`): cards for Credited, Applied, Refunded and Still held, then each credit note's number, date, customer, invoice, amount, how much was applied, refunded or is still held. What issuing took off the credit note's own invoice counts as applied.
+- **Vendor credits** (`/reports/vendor-credits`, the second tab): the same for vendor credits, with the vendor's own reference and the bill it was raised against; void credits aren't listed.
+- Numbers, invoices and bills open their documents.
+- **Access.** Credit notes need "View receivables"; vendor credits need "View payables".
+- API: `GET /reports/customer-credits`, `GET /reports/vendor-credits` (`?from=&to=`).
+
+### 2026-10-06 — US-RPT-30: see payments received and made in a period (Phase 8)
+
+- **Reports › Receivables › Payments received** (`/reports/payments-received`): cards for Payments, Received and Held as credit, then each payment's number, date, customer, method, money account, amount and what it was allocated to (invoice numbers, "(opening)" for opening invoices, "Held as credit", amounts refunded). Newest first; search and Columns.
+- **Payments made** (`/reports/payments-made`, the second tab): the same for vendor payments and the bills they paid.
+- **"Account"** narrows either register to one money account. Numbers and allocations open their documents.
+- **Access.** Payments received needs "View receivables"; Payments made needs "View payables"; a tab you can't open isn't shown.
+- API: `GET /reports/payments-received`, `GET /reports/payments-made` (`?from=&to=&moneyAccountId=`).
+
+### 2026-10-06 — US-RPT-29: see expenses by category and purchases by vendor (Phase 8)
+
+- **Reports › Purchases › Expenses by category** (`/reports/expenses-by-category`): "From bills, expenses, journals and money out · <range>", cards for Total expenses, Categories and Largest, then each expense account with a share bar, amount and % of total, largest first. Read from the ledger, so vendor credits and reversals net out.
+- **Purchases by vendor** (the second tab, `/reports/purchases-by-vendor`): each vendor's bill count, amount before tax, tax and total, net of vendor credits; opening bills aren't counted.
+- **Click a category** to open the account drill-down (Owners, or with "View ledger / journals"); **click a vendor** to list their bills, each opening the bill.
+- **Access.** Owners, and Staff with "View financial statements".
+- API: `GET /reports/expenses-by-category`, `GET /reports/purchases-by-vendor` (`?from=&to=`).
+
+### 2026-10-06 — US-RPT-28: see sales by customer and by item (Phase 8)
+
+- **Reports › Sales › Sales by customer** (`/reports/sales-by-customer`): "Net of credit notes · <range>", cards for Customers, Invoices, Sales before tax and Total with tax, then each customer's invoice count, sales before tax, tax, total and % of sales, largest first. Search and Columns as on other lists.
+- **Sales by item** (`/reports/sales-by-item`, the second tab): each catalogue item's quantity, sales before tax and average price, then "Items not from the catalogue" for lines typed by hand. The page says the figures read invoice lines and are before any whole-invoice discount ([D-177](docs/prd/12-decisions.md)).
+- **Click a customer or item** to see its invoices; a number opens the invoice.
+- **Access.** Owners, and Staff with "View financial statements".
+- API: `GET /reports/sales-by-customer`, `GET /reports/sales-by-item` (`?from=&to=`).
+
+### 2026-10-06 — US-RPT-27: compare profit and loss across periods (Phase 8)
+
+- **Profit & Loss › "Compare with"**: "Previous period", "Same period last year" or "Each month". The first two add the other period's column plus "Change" and "Change %", with cards for Total income, Total expenses and Net profit ("▲ 11.6% vs previous period"); the subtitle reads "Jul – Sep 2026 compared with Apr – Jun 2026". "Each month" shows one column per month plus "Total" (up to 24 months).
+- **Direction is never colour alone**: changes read "▲ +$6,059.53" / "▼ −$1,324.53" and "▲ +16.8%"; a change against zero shows "—".
+- **Balance Sheet › "Compare with" → "Previous year end"** shows both dates side by side with the change, using Settings › Financial year.
+- Whole-month ranges compare whole months (Jul–Sep with Apr–Jun; Mar with Feb); other ranges compare the same number of days.
+- Report dates are now sent as the local calendar date; time zones ahead of UTC no longer shift From/To a day earlier.
+- API: `GET /reports/profit-and-loss?compare=`, `GET /reports/balance-sheet?compareAsOf=`. Access is unchanged (Owner) until US-RPT-36.
+
+### 2026-10-06 — US-RPT-26: see where cash came from and where it went (Phase 8)
+
+- **Reports › Cash Flow** (`/reports/cash-flow`, under "Business overview"): "Cash at start", "Net change" (with ▲/▼ and words, not colour alone) and "Cash at end" cards, then "Operating activities" (net profit adjusted for receivables and retention, payables, tax, customer advances, card balances and other working capital), "Investing activities" (fixed assets, one line per account) and "Financing activities" (capital, drawings, loans, one line per account), each with its net total. This quarter to today by default.
+- **Cash is the bank and cash accounts.** "Cash at end equals the total of your bank and cash accounts on <date>. Card accounts are liabilities, not cash." is checked every time; a mismatch is logged as an error and the page says so.
+- **Click a line** to see the accounts behind it.
+- **Access.** Owners, and Staff with "View financial statements". Field never.
+- API: `GET /reports/cash-flow?from=&to=`, indirect method from `journal_lines`. Section mapping in the glossary ("Cash flow sections").
+
+### 2026-10-06 — US-RPT-25: see the day book (Phase 8)
+
+- **Reports › Day book** (`/reports/day-book`, under "Accountant") lists every journal entry in date order: date, source ("Invoice INV-0042", "Payment RCP-0012", "Journal JNL-0003"…), contact · narration, and each line's account, debit and credit, with totals. Today by default.
+- **"Source"** narrows to one kind (Invoices, Credit notes, Payments, Refunds, Bills, Vendor credits, Vendor payments, Expenses, Transfers and money in or out, Tax payments, Journals, Opening balances). "Search entries" matches source, contact, narration and account. Entries are paged, 10 per page by default.
+- **An entry's source opens its document.** Owners, and Staff with "View ledger / journals"; anyone else gets 403.
+- API: `GET /reports/day-book?from=&to=&sourceType=`. Export arrives with US-RPT-32.
+
+### 2026-10-06 — US-RPT-24: see the general ledger (Phase 8)
+
+- **Reports › General ledger** (`/reports/general-ledger`, under "Accountant") shows each account's "Opening balance", one row per entry (date, source and number, contact · description, job, debit, credit, running balance) and "Closing balance" for a period. Balances read Dr or Cr.
+- **Filters.** "From" and "To" (this quarter to today by default), "Accounts" to pick some, and "Hide accounts with no activity" (on by default). Accounts are paged ("1–10 of 14", 10 per page).
+- **A row's source opens its document**: the invoice, bill, payment drawer, expense, journal, bank account or opening balances. The description is the detail after the source (the void reason, the money in/out account, the journal's reason), not the source repeated.
+- **Access.** Owners, and Staff with "View ledger / journals" (`ledger.view`). Anyone else sees the no-access page; the API returns 403.
+- API: `GET /reports/general-ledger?from=&to=&accountIds=&includeInactive=&page=&pageSize=`, read from `journal_lines`. Export arrives with US-RPT-32.
+
+### 2026-10-06 — US-RPT-23: find every report in one place (Phase 8)
+
+- **Reports** (`/reports`) is now the Reports page ("Every report you can open, derived from the ledger."). It groups every report the person can open into "Business overview", "Sales", "Receivables", "Purchases", "Tax", "Jobs" and "Accountant"; reports they can't open aren't listed. Reports join the list as their stories ship (Cash Flow, the sales and purchase reports, General ledger, Day book and so on later in Phase 8; GSTR-1 in Phase 9).
+- **Search** ("Search reports") narrows the list by name, group and keywords; "ledger" finds Trial Balance and Journals.
+- **Favourites.** The star next to a report adds it to "Favourites" at the top. Favourites are kept on the member (`user.favourite_reports`), so they're there on every device.
+- **Report pages.** Each existing report tab is now its own page: `/reports/profit-and-loss`, `/balance-sheet`, `/trial-balance`, `/tax-summary` and `/job-profitability`, with "Reports › <name>" and the no-access page for anyone who can't open it. The dashboard's cards and widgets link straight to them, and old `/reports?tab=` links redirect.
+- **New right: "View financial statements"** (`reports.view_financial_statements`, in the Team matrix under Reports & Ledger, off for every Team; migration 0097). The new reports use it; US-RPT-36 moves P&L, Balance Sheet, Trial Balance and Tax Summary onto it. Staff with it, or with "View ledger / journals", now see Reports in the sidebar.
+- **API**: `GET/PUT /users/me/favourite-reports`.
+
+Tests:
+- `packages/shared/src/us-rpt-23.test.ts` (3): groups and slugs; who can open what; search.
+- `apps/api/src/modules/users/us-rpt-23.http.integration.test.ts` (1): favourites start empty, keep their order, drop unknown or repeated reports, and are per person.
+- `apps/e2e/tests/us-rpt-23.spec.ts` (1): the grouped page, the search, starring, favourites after a reload, opening a favourite, and an old link redirecting.
+- Updated for the new pages: `reports.spec.ts`, `us-ops-12`, `us-ops-26`, `us-rpt-13`, `us-rpt-14`, `us-rpt-15`, `us-tax-08`, `us-dash-14`.
+
+### 2026-10-06 — US-RPT-22: see every manual journal (Phase 8)
+
+- **Reports › Journals:**
+  - The cards show Total journals, Posted, Reversed, and "Posted this year" (since the start of the financial year).
+  - Filters for status (All, Posted, Reversed) and dates, plus a search.
+  - Each journal shows number, date, reason, status ("Posted" or "Reversed"), total and who posted it, newest first.
+  - With none: "No journals yet. Most businesses only need one for year-end adjustments."
+  - The footer note reads "Members with "View ledger / journals" can read journals; only owners post or reverse them."
+- **Read access.** A member with `ledger.view` gets "Journals" in the sidebar and can read the list and each journal, with no "New journal", "Reverse" or "Copy to new journal". Without it, Journals isn't in the sidebar, the page shows no access, and the API returns 403. Field always gets 403.
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-22.http.integration.test.ts` (3): newest first with every field; a `ledger.view` member reads but can't post; Staff without it and Field get 403.
+- `apps/e2e/tests/us-rpt-22.spec.ts` (2):
+  - Owner: the empty state, then the cards, order and status filter.
+  - A Staff member gets Journals only once granted, reads the list and a journal, and sees no New journal, Reverse or Copy.
+
+### 2026-10-06 — US-RPT-21: reverse a journal posted by mistake (Phase 8)
+
+- **"Reverse"** on a posted journal (Owner only) opens "Reverse JNL-000n" ("A reversing entry mirrors every line. The journal stays in the history as Reversed."), with "Reversal date" (today) and "Reason" (required). "Reverse journal" posts the mirror entry on that date. The journal then reads "Reversed", gains a "Reversal" card ("Reversed on <date> by <name>" and the reason), and "Reverse" goes.
+- **Refusals.** A reversal date in a closed period is refused. A journal whose line is on a money account in a finished reconciliation gets "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."
+- **"Copy to new journal"** opens "New journal" with the same reason and lines, to correct and post as a new number.
+- The audit log records the reversal ("reversed a journal", with the reason).
+- **API**: `POST /manual-journals/:id/reverse { date, reason }` (Owner only).
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-21.http.integration.test.ts` (4):
+  - The mirror entry on the chosen date, with its narration and the reason kept; reversing twice refused.
+  - A closed period refused.
+  - A reconciled bank line refused with the reconciliation message.
+  - Staff with `ledger.view` read but can't reverse.
+- `apps/e2e/tests/us-rpt-21.spec.ts` (1): reverse with a reason, the Reversal card, no Reverse afterwards; Copy to new journal with an account changed and posted as JNL-0002; the list shows "Reversed".
+
+### 2026-10-06 — US-RPT-20: post an adjusting journal (Phase 8)
+
+- **Reports › Journals** (new in the sidebar under Reports) lists manual journals, with "New journal" for an Owner.
+- **"New journal"** ("For adjustments no document covers. Journals are never edited — a mistake is reversed.") asks for:
+  - "Date" and "Reason" (required, "e.g. Depreciation for March").
+  - Lines of "Account", "Description", "Debit", "Credit" and optional "Job". "Add line" adds more; a line takes a debit or a credit.
+  - The footer shows total debits and credits, and "Debits and credits must be equal — out by <amount>." until they match. "Post journal" stays disabled until then.
+- **Control accounts** (Accounts Receivable, Retention Receivable, Input Tax, Accounts Payable, Output Tax, Customer Advances, Opening Balance Adjustments) aren't offered, and the API refuses them: "Use invoices, bills, payments or Record tax payment to change <account>." Retained Earnings is allowed for year-end entries.
+- **"Post journal"** numbers it `JNL-0001` (numbering type `journal`, prefix JNL, listed in Settings › Numbering). It posts P21 as entered, job-tagged where chosen, with narration "Journal <number> — <reason>". The report drill-down and money account registers show it as a Journal, linking to it. A date in a closed period is refused ("… falls within a closed fiscal period").
+- After posting, the journal's page opens: number, "Posted", date, reason, who posted it, and the lines.
+- **Migration 0096**: `manual_journals`, `manual_journal_lines`.
+- **API**: `POST /manual-journals` (Owner only; Staff get 403 even with `ledger.view`). `GET /manual-journals`, `/manual-journals/:id` and `/:id/history` need Owner or `ledger.view`.
+
+Tests:
+- `apps/api/src/modules/journals/us-rpt-20.http.integration.test.ts` (5):
+  - JNL-0001 posts P21 as entered, job-tagged, with its narration; Retained Earnings allowed.
+  - "Out by" refusal.
+  - Every control account refused.
+  - A closed period refused.
+  - 403 for Staff with `ledger.view` and for Field.
+- `apps/e2e/tests/us-rpt-20.spec.ts` (1): from the sidebar, control accounts not offered, out-by message and disabled button, post, the journal's page and the list.
+
+### 2026-10-06 — US-RPT-19: check and lock my opening balances (Phase 8)
+
+- **"Review" tab** on Opening balances:
+  - The cards show opening invoices (count and retention), opening bills, credits (customers and vendors) and Opening Balance Adjustments, highlighted while it isn't zero.
+  - Below them, "Trial balance on <the day before the cutover date>", with the 3900 row highlighted when it holds anything.
+- **"Lock opening balances"** asks "Lock opening balances?" ("Spine closes everything up to <date> so nobody changes your starting point. An owner can unlock it later; both are recorded in the audit log."). When adjustments remain, it adds "Opening Balance Adjustments still holds <amount>. Lock anyway?" with "Go back" and "Lock anyway".
+- **Locking** creates a closed fiscal period from Jan 1, 1900 to the day before the cutover date, so nothing more can be posted before it. Every opening screen and route becomes read-only ("Unlock the opening balances to change them."). Settings › Opening balances reads "Locked", which the setup page (US-ONB-15) will read later.
+- **"Unlock"** reopens that period and allows editing again. Locking again reuses the same period.
+- Both are in the audit log ("locked" / "unlocked" Opening balances, with the adjustment at lock time).
+- **API**: `POST /opening-balances/lock`, `POST /opening-balances/unlock` (Owner only).
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-19.http.integration.test.ts` (4):
+  - Can't lock before anything is entered.
+  - Locking creates the closed period and audit row, refuses edits and documents, blocks posting before the cutover date and allows after.
+  - Unlocking reopens the period, edits work again, and locking again reuses the period.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-19.spec.ts` (1): the trial balance, the "Lock anyway?" warning with Go back, lock, read-only tabs, then unlock.
+
+### 2026-10-06 — US-RPT-18: bring in unpaid vendor bills and vendor credits (Phase 8)
+
+- **"Vendor bills" tab** on Opening balances: "Add bill" (Vendor, Bill number, Bill date, Due date, Amount due) and "Import from CSV". The import matches vendors by name, offering "Create these vendors" or "Fix the file", and lists rows it couldn't import. The same vendor and bill number twice: "Bill <number> from <vendor> is already in Spine. Enter each bill once."
+- **Opening bills.** Each posts P20: Dr Opening Balance Adjustments / Cr Accounts Payable for the vendor, dated the day before the cutover date. It's a recorded bill with an "Opening balance" badge in Bills ("Brought in from your old system, so it has no lines…"). It ages on Payables, is paid with a vendor payment, and can't be voided.
+- **"Vendor credits" tab.** "Add credit" (Vendor, Amount, Vendor's credit note number) posts P20: Dr Accounts Payable / Cr Opening Balance Adjustments. It creates an open vendor credit numbered VCR that can be applied to bills or refunded (US-PUR-25, US-PUR-26), and can't be voided.
+- The Account balances tab's Accounts Payable row shows bills less credits. Moving the cutover date moves these entries too.
+- **Migration 0095**: `vendor_bills.is_opening`.
+- **API**: `/opening-balances/bills` (GET/POST/PUT/DELETE, import) and `/opening-balances/vendor-credits` (GET/POST/DELETE), all Owner only.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-18.http.integration.test.ts` (6):
+  - P20 for a bill, the grid total, and the duplicate message.
+  - P20 for a credit, applied to the bill; it can't be removed or voided after that.
+  - The bill paid by a vendor payment can't be changed or voided.
+  - CSV import with unmatched vendors.
+  - Moving the cutover date moves the entries.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-18.spec.ts` (1): CSV import creating a vendor, the opening vendor credit, the payables total on the grid, the bill's badge, no lines and no Void.
+
+### 2026-10-06 — US-RPT-17: bring in unpaid customer invoices, retention and credit (Phase 8)
+
+- **"Customer invoices" tab** on Opening balances:
+  - The cards show Opening invoices, Amount due, Retention held ("on <n> jobs") and Customers not matched ("from the last import").
+  - The list shows invoice number, customer, invoice date, due date, amount due, retention held and job.
+  - **"Add invoice"** asks for Customer, Invoice number, Invoice date, Due date, Amount due, and optionally Retention held with its Job. Edit and Remove work until the invoice is paid or credited.
+  - **"Import from CSV"** maps the columns (customer name, number, dates with their format, amount due, retention, job), checks each row and matches customers by name. When some don't match: "<n> customer names didn't match anyone in Spine: …", with "Create these customers" or "Fix the file". Then "Imported <n> invoices · <m> rows couldn't be imported", listing each failed row.
+  - A number already used gives "Invoice <number> already exists. Use the number from your old system exactly once."
+- **Posting.** An opening invoice posts P18: Dr Accounts Receivable, and Retention Receivable tagged with the job / Cr Opening Balance Adjustments, dated the day before the cutover date.
+- **How opening invoices behave.** They're listed in Invoices with an "Opening balance" badge. They age by due date and can be paid, reminded (the email goes without a PDF) and credited. They have no PDF ("Brought in from your old system, so it has no lines. Attach the original below…") and can't be voided. The job's retention release includes the opening retention.
+- **"Customer credit" tab.** "Add credit" (customer, amount) posts P19: Dr 3900 / Cr Customer Advances. The credit can be applied to the customer's invoices or refunded like any other. It's removed here, not from Payments.
+- **Cutover date.** Moving it moves every opening document's entry to the new day. The Account balances tab's read-only rows now show these totals.
+- **Migration 0094**: invoice type `opening` and `payments.is_opening`.
+- **API**: `/opening-balances/invoices` (GET/POST/PUT/DELETE, import) and `/opening-balances/customer-credits` (GET/POST/DELETE), all Owner only.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-17.http.integration.test.ts` (8):
+  - P18 with and without retention, and the grid's totals.
+  - A duplicate number and a date after the cutover are refused.
+  - An opening invoice is issued and payable but has no PDF, and is locked once paid.
+  - Retention release includes it.
+  - P19 credit, applied; can't be deleted from Payments or voided.
+  - CSV import with unmatched customers, then created; bad rows listed.
+  - Moving the cutover date moves the entries.
+  - Staff get 403.
+- `apps/e2e/tests/us-rpt-17.spec.ts` (1): CSV import with "Create these customers", the list, the duplicate-number message, the receivables total on the grid, customer credit, and the invoice's badge, no PDF and "Record payment".
+
+### 2026-10-06 — US-RPT-16: set a cutover date and enter opening account balances (Phase 8)
+
+- **Settings › Opening balances** (new pane) shows where things stand ("Not started", "Draft — not locked" or "Locked", with the cutover date). Its button opens the new Owner-only page `/opening-balances` ("Bring in what your business had on the day you start using Spine. Your old software's trial balance on that date has every figure you need.").
+- **"Account balances" tab:**
+  - "Cutover date" defaults to the start of the current financial year.
+  - Every account is listed, grouped by type, with "Debit" and "Credit". Entering one side clears the other.
+  - Accounts Receivable, Retention Receivable, Accounts Payable and Customer Advances are read-only, showing "From opening invoices / bills / credit · <total>".
+  - The cards show the cutover date ("balances as of <the day before>"), Debits, Credits and Opening Balance Adjustments.
+  - When debits and credits differ, "Opening Balance Adjustments <amount> — your old books didn't balance, or a figure is missing. The difference sits in Opening Balance Adjustments until you fix it." Saving is still allowed.
+- **Posting.** "Save balances" posts P17, dated the day before the cutover date, with the difference in **3900 Opening Balance Adjustments**. The account is new: seeded at sign-up and added to existing organisations by migration 0093. Saving again reverses the previous entry and posts the new one.
+- **Cutover date check.** A cutover date after documents already in Spine is refused: "<n> documents are dated before the cutover date. Pick a date on or before <earliest>, or move those documents."
+- **Migration 0093**: `opening_balances`, `opening_balance_lines` and account 3900.
+- **API**: `GET/PUT /opening-balances` (Owner only). The audit log records each save.
+- **Settings dialog:** panes can now close it when they link to a page of their own.
+- Not built: the design's "Import trial balance" button. The story doesn't ask for it, so balances are typed in.
+
+Tests:
+- `apps/api/src/modules/opening-balances/us-rpt-16.http.integration.test.ts` (6):
+  - The first-time default date and read-only rows.
+  - P17 dated the day before, with the difference in 3900 and on the Balance Sheet.
+  - Saving again reverses and re-posts.
+  - Document-sourced accounts and 3900 are refused on the grid.
+  - The cutover date can't come after existing documents, and the entry moves with the date.
+  - Staff and Field get 403.
+- `apps/e2e/tests/us-rpt-16.spec.ts` (1): from Settings to the page, the defaults, the read-only rows, entering balances, the adjustment warning, saving and reloading.
+
+### 2026-10-06 — US-BANK-11: review or undo a reconciliation (Phase 8)
+
+- **"Reconciliations"** on an account's register and reconcile page opens `ReconciliationsHistory` at `/banking/<id>/reconciliations` ("Every finished reconciliation of <account>. Only the latest can be undone.").
+  - Three cards show "Reconciled to" (with the closing balance), the number of reconciliations, and "Entries matched".
+  - The table lists statement end date, closing balance, entries matched, finished by, finished, and status ("Latest" or "Finished").
+- **Undo** is offered only on the latest. Older rows read "Undo the later reconciliations first."
+  - The confirmation reads "Undo this reconciliation?" and "Statement to <date> · <n> entries. Its entries go back to unreconciled; nothing is deleted."
+  - Undoing takes the Reconciled tick off its entries, puts its statement lines back to unmatched, and moves "Last reconciled" back. The toast reads "Reconciliation undone".
+  - It's in the audit log ("undid Reconciliation"). The account can then be reconciled to that date again.
+- **API**: `GET /money-accounts/:id/reconciliations` and `POST /bank-reconciliations/:id/undo` (`banking.reconcile`). The audit log phrases "finished" and "undone" reconciliations.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-11.http.integration.test.ts` (4):
+  - The history with who finished each.
+  - Undoing an older one is refused.
+  - Undoing the latest takes off its ticks, unmatches its lines, moves "Last reconciled" back, is audited, and the date can be reconciled again.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-11.spec.ts` (1): the history page, no Undo on the older one, the confirmation, undo and the toast; the register's ticks afterwards.
+
+### 2026-10-06 — US-BANK-10: finish a reconciliation when it balances (Phase 8)
+
+- **"Finish reconciliation"** on the reconcile page is enabled only at a difference of $0.00. Until then the footer reads "Difference <amount> — match or create entries until it's zero."
+- **Finishing** saves the reconciliation, and the page then reads "<Account> is reconciled to <date>. Its entries show the Reconciled tick in the register." The tick goes on:
+  - the matched entries;
+  - on an account's first reconciliation, the entries brought forward before its first statement line;
+  - any entry and reversal that cancel out up to the end date (D-176).
+- **Where it shows.**
+  - The register's Status column now reads "Reconciled" for these.
+  - Banking shows "Last reconciled <date>", and the unreconciled counts exclude reconciled entries.
+  - The audit log records who finished it, the account and the closing balance.
+- **Lock (invariant 10).** Voiding or deleting any document with a reconciled line (payment, vendor payment, expense, transfer, money in/out, refund, tax payment) is refused: "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first." This is checked once, in `LedgerService.reverseEntry`. A document matched only in a reconciliation still in progress can still be deleted; its statement line goes back to unmatched.
+- **Migration 0092**: `journal_lines.reconciliation_id`. The journal-line immutability trigger now allows a change to that column and nothing else.
+- **API**: `POST /bank-reconciliations/:id/finish` (`banking.reconcile`). A later reconciliation must end after the last finished one.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-10.http.integration.test.ts` (7):
+  - Finishing is refused with a difference.
+  - Finishing at zero ticks the matched, brought-forward and cancelled-pair lines; the register, last reconciled date and unreconciled count update, the balance doesn't change, and the audit row is written.
+  - Deleting a reconciled payment or money-out entry is refused with the message.
+  - A later end date is required.
+  - Deleting a document matched in a reconciliation still in progress unmatches its line.
+  - The trigger still refuses other journal-line edits.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-10.spec.ts` (1): Finish disabled with a difference; finish; ticks in the register; "Never reconciled" only on Cash in Hand; deleting the reconciled payment shows the lock message.
+
+### 2026-10-06 — US-BANK-09: create what's missing from a statement line (Phase 8)
+
+- **"Create"** on an unmatched statement line opens `ReconcileCreateDrawer` ("Create from statement line"; "Saving matches the line to the new entry."). "Record it as" offers:
+  - **Money in:** "Customer payment", "Transfer from another account" or "Other money in".
+  - **Money out:** "Vendor payment", "Expense", "Transfer to another account", "Other money out" or "Tax payment".
+- **Who sees which options.** Each option shows only with its right:
+  - Customer payment: `payments.edit_own`. Vendor payment: `vendor_payments.edit_own`. Transfers and other money: `banking.record`.
+  - Tax payment: Owner only.
+  - Expense: Owner with expense rights. An expense posts only once approved, and Staff can't approve their own.
+- **How each option records.**
+  - Payments, transfers, money in/out and tax payments open their normal form, with the line's amount, date and account fixed.
+  - An expense is filled in inside the drawer and approved on save.
+  - When the entry posts, the line is matched to it ("Recorded and matched to <line>.").
+- **Dialog changes.** `NewPaymentDialog`, `NewVendorPaymentDialog`, `TransferDialog`, `MoneyInOutDialog` and `TaxPaymentDialog` accept `prefill`. The two payment dialogs now pass the recorded payment back.
+- **Fix:** the customer and vendor payment dialogs sent the picked date through UTC, which saved the previous day for anyone east of UTC (e.g. India, Australia). They now send the local date.
+- No new routes: the drawer uses the normal create routes, then `PUT /bank-reconciliations/:id/matches`.
+
+Tests:
+- `apps/e2e/tests/us-bank-09.spec.ts` (2):
+  - A customer payment (prefilled, amount locked), an expense and other money out are each created and matched, and the difference reaches $0.00.
+  - A Staff member without "Create/edit own payments" sees no "Customer payment", and no "Expense" or "Tax payment".
+
+### 2026-10-06 — US-BANK-08: match statement lines to what's in Spine (Phase 8)
+
+- **"Reconcile"** on an account's register opens `ReconcileAccount` at `/banking/<id>/reconcile`:
+  - Enter "Statement end date" and "Closing balance on the statement", then "Start reconciling".
+  - Three cards show "Statement closing balance", "Cleared in Spine" ("opening <x> + <n> matched") and "Difference".
+  - Below them sit two lists: the statement lines up to the end date, and "Unreconciled in Spine" (entries on the account up to the end date).
+- **Suggestions.** A line with exactly one Spine entry of the same amount within 3 days shows "Suggested match", with "Match" and "Not this one" (D-158).
+- **Matching by hand.** Select a line, tick the entries that make it up, then "Match". Until they add up, the bar reads "Selected entries add up to <x>; the line is <y>."
+- **Excluding.** "Exclude" asks for a note; the line counts as matched and shows "Excluded — <note>". "Unmatch" and "Include" undo a match or an exclusion.
+- **Saving.** Everything is saved as it's made, so it's all still there after leaving the page.
+- **Opening balance (D-176, new — you chose this).** An account's first reconciliation brings forward Spine's balance before the earliest statement line; later ones start from the last closing balance. An entry and its own reversal (a deleted document) both up to the end date cancel out and aren't offered.
+- **Migration 0091**: `bank_reconciliations`, `bank_statement_line_matches`, and `bank_statement_lines.reconciliation_id`.
+- **API**: `POST/GET /bank-reconciliations`, `GET /bank-reconciliations/:id` and `PUT /bank-reconciliations/:id/matches`, all needing `banking.reconcile`. `AccountRegisterService.describe` labels entries the same way the register does.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-08.http.integration.test.ts` (6):
+  - Brought-forward opening, lines and entries up to the end date, and suggestions.
+  - The mismatch message, then matches and an exclusion saved, with the cleared balance reaching a difference of 0.
+  - A line or entry used twice, or one after the end date, is refused.
+  - Moving the end date earlier drops later matches.
+  - A deleted entry and its reversal cancel out.
+  - 403 for Staff without the right and for Field.
+- `apps/e2e/tests/us-bank-08.spec.ts` (1): suggestions, "Not this one", matching by hand, two entries to one line, excluding with a note, difference $0.00, saved after a reload, and unmatching.
+
+### 2026-10-06 — US-BANK-07: import a bank statement (Phase 8)
+
+- **"Import statement"** on an account's register (for people with "Reconcile accounts") opens `StatementImportDialog`:
+  - Choose a CSV and see its first ten rows.
+  - Map "Date" (with its format: DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD or DD MMM YYYY), "Description", "Reference", and either one "Amount" (money in positive) or "Money in" and "Money out", plus an optional "Balance".
+  - The first time, columns are guessed from common bank headers. After that, the account's saved mapping applies, and you can change it.
+- **Results.** The summary reads "Imported <n> lines · skipped <m> already imported · <k> rows couldn't be read", listing each unreadable row with its reason. Lines already imported (same date, amount and description, ignoring case and spacing) are skipped.
+- **Amounts** accept currency symbols, thousands separators, the true minus sign, brackets and CR/DR suffixes.
+- **Errors:**
+  - A file over 2 MB or 5,000 lines: "Split the statement into smaller files (up to 5,000 lines)."
+  - A file that isn't CSV: "Export the statement from your bank as CSV, then import it here."
+- **Migrations:** 0089 (`bank_statement_imports`, `bank_statement_lines`) and 0090 (the line's row in its file).
+- **API:**
+  - `POST /money-accounts/:id/statement-imports` (multipart `file` + `mapping`), `GET …/statement-lines` and `GET …/statement-mapping`, all needing `banking.reconcile`.
+  - The import is in the audit log ("imported a statement into").
+  - `papaparse` (MIT) is now an API dependency.
+
+Tests:
+- `packages/shared/src/us-bank-07.test.ts` (6): date formats, amount formats, duplicate keys, mapping guesses, mapping rules, the summary.
+- `apps/api/src/modules/banking/us-bank-07.http.integration.test.ts` (4): import with failed rows and the saved mapping; skipping lines already imported; non-CSV, too many rows, too big, and a missing column; 403 without the right and for Field.
+- `apps/e2e/tests/us-bank-07.spec.ts` (1): guessed mapping, preview, summary with an unreadable row, the saved mapping and skips, and the non-CSV and too-big messages.
+
+### 2026-10-06 — Fix: Escape didn't close a drawer or dialog while a toast showed
+
+- Radix treats an open toast as the topmost dismissable layer, so the first Escape only dismissed the toast, even with focus in a drawer or dialog. This affected every drawer and dialog that shows a toast.
+- `Toast` in `@spine/ui` now passes Escape on when focus isn't on the toast. The toast closes, and once it's gone the same Escape reaches the dialog or drawer underneath, so one press closes both. With focus on the toast, Escape still closes only the toast. The design-system Toast page's keyboard table says so.
+- The expense form, opened with "Edit" from a drawer's menu, used to drop focus onto the page when it closed, because the menu item that opened it was gone. Focus now returns to the drawer's "More" (or "Edit") button. `ExpenseForm` gains `returnFocusTo`.
+
+Tests:
+- `packages/ui/src/components/toast.a11y.test.tsx`: Escape with a toast and a dialog open closes both. It fails without the fix.
+- `apps/e2e/tests/us-pur-10.spec.ts`: after saving an edit, focus is on "More actions", and one Escape closes the drawer while the toast still shows.
+
+### 2026-10-06 — Fix: "Edit" was missing on submitted expenses (US-PUR-10)
+
+- US-PUR-10 was ticked in Phase 4. The API (`PUT /expenses/:id`) and the form's edit mode existed, but nothing in the web app ever opened the form on an existing expense. Now:
+  - The expense drawer has "Edit" while an expense is "Submitted" and you can edit it: your own with `expenses.edit_own` (Field always), anyone's with `expenses.edit_others`. It's a button when there's no review to make; when Approve and Reject show, it's under "More". Saving shows "Expense updated", and the expense stays "Submitted".
+  - The Expenses list's row menu has "Edit" for submitted expenses.
+- Editing an approved or rejected expense through the API now returns the story's message: "Only a submitted expense can be edited — an approved expense has already posted to the ledger."
+- The expense form's "Amount" and "Tax amount" fields are now linked to their labels, so screen readers announce them.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-10.http.integration.test.ts` (3):
+  - An edit stays submitted, and a delete works.
+  - Approved and rejected expenses are refused, with the message.
+  - Staff without "edit others'" get 403. Field can edit and delete their own and are refused on others'. The Owner can edit anyone's.
+- `apps/e2e/tests/us-pur-10.spec.ts` (1): edit from the drawer; Edit in the row menu; Edit under "More" on a colleague's expense; no Edit on an approved one.
+- `us-pur-23.spec.ts` matches "Amount" exactly, now that "Tax amount" is labelled.
+
+### 2026-10-06 — Credit note, vendor payment and expense drawers match the payment drawer (Phase 8)
+
+- The credit note, vendor payment and expense drawers are now `size="lg"`. Their footers follow the payment drawer's pattern: History, then the main action, then a "More" menu (shown only when it has something in it), then "Close". The footer wraps at narrow widths.
+  - **Credit note:** "Refund" is the main action when there's credit left and you have the right. "Download PDF" (or "Preview PDF" for a draft) goes under "More". With nothing to refund, the PDF is the main button.
+  - **Vendor payment:** "Delete payment" moves under "More".
+  - **Expense:** "Reject" and "Approve" stay side by side, and so does "Bill to customer". "Delete expense" moves under "More".
+
+Tests:
+- `apps/e2e/tests/us-pur-20.spec.ts` finds "Delete expense" under "More actions". The full e2e suite passes (190).
+
+### 2026-10-06 — Fix: payment drawer buttons overflowed (US-PAY-17, Phase 8)
+
+- With "Refund" added, the payment drawer's footer held seven controls and ran past the drawer's edge. The drawer is now `size="lg"`. Its footer shows History, one main action ("Apply credit" when there's credit to apply, else "Email receipt"), a "More" menu and "Close". The menu holds "Download PDF", "Email receipt" (when it isn't the main action), "Refund" and "Delete payment" (destructive). The footer wraps at narrow widths.
+
+Tests:
+- `apps/e2e/tests/us-pay-17.spec.ts` and `us-pay-18.spec.ts` open "More actions" to reach "Refund".
+
+### 2026-10-06 — US-TAX-08: record paying tax and using input tax credit (Phase 8)
+
+- **"Record tax payment"** on Reports › Tax Summary (Owner only) opens `TaxPaymentDialog`:
+  - The top row shows "Tax collected" for the period, "Input tax available" and "Net payable".
+  - The fields are "Period" (the report's range, last quarter or last month), "Date", "Input tax used", "Amount paid", "Paid from" (last used preselected), "Reference" and a posting preview.
+  - "Input tax used" defaults to the smaller of the input tax available and the tax collected, and "Amount paid" defaults to the net payable.
+  - Using more than is available shows "You have <amount> of input tax to use. Lower the amount."
+  - "Record a tax refund instead" switches the dialog to a refund: Amount, Paid into, Date and Reference.
+- **Posting.**
+  - A payment posts P26: Dr 2100 (paid + input tax used) / Cr 1200 (input tax used) and Cr the money account (paid).
+  - A refund posts P27: Dr the money account / Cr 1200.
+  - Neither can take more from 1200 than it holds on the date (D-175, new). The Tax Summary leaves these entries out, so its figures don't change.
+- **"Tax payments and refunds"** below the Tax Summary lists those paid in the range or covering it. "Delete" posts the reversal dated today, and the row stays, struck through. In money account registers the entries read "Tax payment", "Tax refund", and "Tax payment deleted" or "Tax refund deleted".
+- **Migration 0088**: `tax_payments`.
+- **API.** `GET/POST /tax-payments`, `GET /tax-payments/input-tax-available`, `DELETE /tax-payments/:id` and `POST /tax-refunds`, all Owner-only. Staff (whatever their Team grants) and Field users get 403.
+- Known gap until US-BANK-07: deletes aren't yet blocked once reconciled, because reconciliation doesn't exist yet.
+
+Tests:
+- `apps/api/src/modules/tax/us-tax-08.http.integration.test.ts` (5):
+  - Too much input tax is refused, with the formatted message.
+  - P26 lines, the Tax Summary unchanged, the list, the register label and the audit row.
+  - P27 within the input tax left, and over it refused.
+  - Delete reverses and returns the input tax; deleting twice is refused; the register shows both rows.
+  - Staff and Field get 403 on every route.
+- `apps/e2e/tests/us-tax-08.spec.ts` (1):
+  - The dialog's figures and defaults, the over-limit message and recording.
+  - The list and delete.
+  - A refund via "Record a tax refund instead".
+
+### 2026-10-06 — US-PUR-28: let a Team manage vendor credits (Phase 8)
+
+- **"Vendor credits"** in the privilege matrix: "Create/edit own", "Edit others'", "Delete own draft", "Delete others' draft", "Record", "Apply and refund" and "Void vendor credits". All seven are granted to General Staff, and existing Teams were backfilled from their bill rights (migration 0085, US-PUR-24). Without "Record vendor credits" a draft has no "Record" and the API returns 403. Field users get 403 on every vendor credit route.
+
+Tests:
+- `packages/shared/src/us-pur-28.test.ts` (1): the seven rights, the group and the General Staff defaults.
+- `apps/api/src/modules/purchases/us-pur-28.http.integration.test.ts` (3): General Staff hold all seven; recording returns 403 without the right and 201 with it; Field gets 403 on all twelve routes.
+- `apps/e2e/tests/us-pur-28.spec.ts` (1): the matrix group's seven switches are on; a Staff member without "Record" sees "Edit" but no "Record".
+
+### 2026-10-06 — US-PUR-27: void a vendor credit (Phase 8)
+
+- **"Void"** on an open or used vendor credit asks for a reason, then posts P24's reversal (dated today) and marks it "Void — <reason>"; the list shows "Void" with a zero balance. With applications or refunds it refuses: "Remove its <n> applications and refunds first.". Drafts are deleted instead.
+- **API.** `POST /vendor-credits/:id/void { reason }` (`vendor_credits.void`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-27.http.integration.test.ts` (3): the reversal lines and "Void"; refused with an application and a refund; reason required and 403 without the right.
+- `apps/e2e/tests/us-pur-27.spec.ts` (1): refused with a refund, then voided after deleting it.
+
+### 2026-10-06 — US-PUR-26: record a refund from a vendor (Phase 8)
+
+- **"Record refund"** on an open vendor credit (`VendorRefundDialog`): "Amount" (up to the balance, prefilled with it), "Date", "Paid into" (money account), "Method" and "Reference". Over the balance: "This credit has <amount> left to refund.".
+- **Posting** (P25): Dr the money account / Cr 2000 AP, contact-tagged; the credit's balance drops, "Used" at zero. The register reads "Vendor refund".
+- **Delete**: "Delete refund" in "Refunds from the vendor" posts the reversal dated today and gives the balance back.
+- **Database limit**: the deferred trigger now counts live refunds with applications, so together they never exceed the credit (invariant 9).
+- **Migration 0087**: `vendor_refunds` and the trigger update.
+- **API.** `POST /vendor-credits/:id/refunds`, `DELETE /vendor-refunds/:id` (`vendor_credits.apply`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-26.http.integration.test.ts` (4): over the balance refused; P25 lines, balance and Used, the register's rows; deleting reverses and returns the balance; the database refuses refunds beyond the credit.
+- `apps/e2e/tests/us-pur-26.spec.ts` (1): the dialog's limit message, recording into Bank Account, and deleting the refund.
+
+### 2026-10-06 — US-PUR-25: apply a vendor credit to bills (Phase 8)
+
+- **"Apply to bills"** on an open vendor credit (`ApplyVendorCreditDialog`): the vendor's open bills oldest first, with "Amount to apply" prefilled oldest first from the credit's balance; "You can apply up to <amount> to this bill." over a bill's balance.
+- **Nothing posts** (P24a): the credit and the bills already sit in 2000 AP. Each bill's new `credited_amount` and the credit's balance move; at zero the credit is "Used". "Applied to bills" on the credit lists each, with "Remove" to undo one.
+- **On the bill**: "Credits applied" lists each vendor credit ("VCR-0001 · their CN-4471") and the totals show it. Every bill balance — the bill list and page, payables, the dashboard's attention items, search, and vendor payment checks — is now total − paid − credited. A bill with credits can't be voided until they're removed.
+- **Pay bill**: when the vendor has open credit, the payment dialog says "<Vendor> has <amount> of credit. Apply it first?" with a link.
+- **Database limits** (invariant 9): a deferred trigger keeps a credit's applications within its total and a bill's payments plus credits within its total; the vendor-payment trigger counts credits too; bills check `amount_paid + credited_amount <= total_amount`.
+- **Migration 0086**: `vendor_credit_allocations`, `vendor_bills.credited_amount`, the triggers.
+- **API.** `POST /vendor-credits/:id/apply`, `DELETE /vendor-credits/:id/allocations/:allocationId` (`vendor_credits.apply`).
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-25.http.integration.test.ts` (5): limits on the bill, the credit and another vendor's bills; applying across bills posts nothing and marks the credit Used, the bill lists it; payments, voids and payables respect credits; removing an application; the database refuses credits beyond a bill.
+- `apps/e2e/tests/us-pur-25.spec.ts` (1): the pay-bill note, applying oldest first with the over-balance message, and the bill's "Credits applied".
+
+### 2026-10-06 — US-PUR-24: record a credit from a vendor (Phase 8)
+
+- **Purchases › Vendor Credits** (new): a list with Total, Draft, Open ("<amount> to use") and Used cards, status and vendor filters, and Number, Vendor's number, Vendor, Status (Draft, Open, Used, Void), Date, Amount and Balance.
+- **New vendor credit** (`VendorCreditBuilder`): "Vendor", "Vendor's credit note number", "Against bill" (one of the vendor's recorded bills; its lines and job are copied in to edit down), "Currency", "Date", "Job", lines like a bill's, notes and attachments. Saves as a draft that can be edited or deleted.
+- **Record** (D-141): numbers it `VCR-0001` and posts P24 — Dr 2000 AP for the total; Cr each line's account (6900 when a line has none) and 1200 Input Tax — contact-tagged and tagged with the job, so the job's cost drops. The credit shows "Open — <amount> to use" and can't be edited after; mistakes are voided (US-PUR-27).
+- **Rights**: seven `vendor_credits.*` capabilities (edit own/others, delete own/others, record, apply, void), granted to General Staff by default and backfilled from each Team's matching bill rights; Field never (US-PUR-28 covers the matrix).
+- Vendor credits can hold attachments. Settings › Numbering lists "Vendor Credit" (VCR).
+- **Migration 0085**: `vendor_credits`, `vendor_credit_lines`, the `vendor_credit_status` enum and the capability backfill.
+- **API.** `GET/POST /vendor-credits`, `GET/PUT/DELETE /vendor-credits/:id`, `GET /vendor-credits/:id/history`, `POST /vendor-credits/:id/record`.
+
+Tests:
+- `apps/api/src/modules/purchases/us-pur-24.http.integration.test.ts` (4): recording numbers VCR-0001 and posts P24 with the job and contact on every line, then locks the credit; "against bill" only the vendor's recorded bills; the list's fields and status filter; drafting without the record right and Field refused.
+- `apps/e2e/tests/us-pur-24.spec.ts` (1): a credit against a bill copying its lines, saved, recorded and listed.
+
+### 2026-10-06 — US-PAY-18: let a Team refund customers (Phase 8)
+
+- **"Refund customers"** (`payments.refund`) in the privilege matrix's "Manage Payments" group, off for General Staff and every existing Team (migration 0084, US-PAY-17). Without it, "Refund" is hidden on payments, credit notes and contacts, and `POST`/`DELETE /customer-refunds` return 403; Field always gets 403.
+
+Tests:
+- `packages/shared/src/us-pay-18.test.ts` (1): the label, group and General Staff default.
+- `apps/api/src/modules/payments/us-pay-18.http.integration.test.ts` (1): off for General Staff (403), granted (201), Field 403 either way.
+- `apps/e2e/tests/us-pay-18.spec.ts` (1): the matrix switch off; the Owner sees "Refund", a General Staff member doesn't.
+
+### 2026-10-06 — US-PAY-17: refund a customer (Phase 8)
+
+- **"Refund"** on a payment with unallocated credit, a credit note with credit left (US-PAY-16), and a contact holding credit. `CustomerRefundDialog` asks for "Refund from", "Amount" (up to the credit), "Date", "Paid from" (money account, last used preselected), "Method", "Reference" and "Send refund confirmation". The toast reads "Refunded <amount> to <customer>".
+- **Posting** (P23): Dr 2200 Customer Advances / Cr the money account, both contact-tagged. The source's credit drops in the same transaction, under a lock on it, and database checks keep refunds within it (`payments.refunded_amount`, `credit_notes.credit_remaining_amount`).
+- **Confirmation email**: "We've refunded <amount>", receipt-style. If the customer has no email, email isn't set up, or the send fails, the refund is still saved and the toast says why.
+- **Delete**: "Delete refund" in the source's "Refunds" list posts the reversal dated today and gives the credit back. A payment with refunds can't be deleted until they are.
+- **Elsewhere**: payments' unallocated credit and "Apply credit" are net of refunds; registers read "Refund" / "Refund deleted"; statements show refunds as charge lines.
+- **Migration 0084**: `customer_refunds`, `payments.refunded_amount`, and the `payments.refund` right (off for every Team; US-PAY-18 covers the matrix).
+- **API.** `GET/POST /customer-refunds`, `DELETE /customer-refunds/:id`.
+
+Tests:
+- `apps/api/src/modules/payments/us-pay-17.http.integration.test.ts` (6): a partial refund posts P23, lowers the credit and sends the confirmation; over the credit refused and applying refunded credit refused; deleting reverses and returns the credit, and blocks deleting the payment first; a credit note's excess refunded; refunds and removals on the statement; 403 without `payments.refund`.
+- `apps/e2e/tests/us-pay-17.spec.ts` (1): the dialog from a payment, the toast and email, the refunds list, deleting a refund, and "Refund" on the contact.
+
+### 2026-10-06 — US-PAY-16: keep a credit note's extra as customer credit (Phase 8)
+
+- **Crediting past the balance** (D-142): "Issue credit note" is offered on paid invoices too. When the credit is more than what's left to pay, the dialog reads "<balance> reduces what's owed on <invoice>; <excess> becomes credit for <customer>.". P8 credits 1100 AR up to the balance and 2200 Customer Advances for the rest, kept on the credit note as `creditRemainingAmount` ("Credit for the customer" in its drawer). All credit notes on one invoice can't exceed its total.
+- **Apply credit on an invoice**: a new "Apply credit" dialog on an unpaid invoice lists the customer's credit from unallocated payments and credit notes side by side, prefilled oldest first up to what's owed. A credit note's credit posts P6 (Dr 2200 / Cr 1100, tagged with the invoice's job) and is recorded in `credit_note_allocations`.
+- **Statements** now read 1100 and 2200 together, so a credit note's excess shows as a credit line, applying credit nets out and isn't listed, and the balance due is what's owed less credit held. Customers without credit see no change.
+- **Known edge**: a job's "billed to date" counts only the AR part of a credit note against its invoice; the excess lowers the job's revenue but not its billed figure.
+- **Migration 0083**: `credit_notes.credit_remaining_amount` (never negative) and `credit_note_allocations`.
+- **API.** `POST /credit-notes/:id/apply-credit` (`payments.apply_credit`); credit notes carry `creditRemainingAmount`.
+
+Tests:
+- `apps/api/src/modules/credit-notes/us-pay-16.http.integration.test.ts` (4): a paid invoice's credit all to 2200; a split between 1100 and 2200 and the cap at the invoice total; applying credit (P6) with its limits, another customer's invoice refused, 403 without the right; the statement's credit lines and balance.
+- `apps/e2e/tests/us-pay-16.spec.ts` (1): the split message on a paid invoice, then applying the credit to another invoice.
+
+### 2026-10-06 — US-OPS-35: remove an attachment added by mistake (Phase 8)
+
+- **"Remove"** on each file. On a record that can still be edited (a draft, a submitted expense, a contact), anyone who can edit it removes the file after a plain confirm.
+- **Locked records** (sent quotes, issued invoices and credit notes, recorded bills and payments, reviewed expenses, bank entries): Staff and Field get no "Remove". An Owner removes with a required reason: "This bill is recorded, so only an owner can remove its files, with a reason. The bill's history records it.". The API refuses Staff with 403 and an Owner without a reason with 400.
+- **History** reads "<name> removed attachment <file> — <reason>". The attachment row keeps who removed it, when and why.
+- **Storage**: the stored file is deleted once nothing else uses it; one that is also a receipt or another record's file stays.
+- **New bill**: a file dropped but not yet saved is simply taken off the list.
+- **Migration 0082**: `attachments.file_id` becomes nullable, set null when its file is deleted.
+- **API.** `DELETE /attachments/:id { reason? }`; the web client's `apiClient.delete` can now send a body.
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-35.http.integration.test.ts` (4): a draft's file removed without a reason and deleted from storage, audited; a recorded bill refused for Staff, and for an Owner without a reason, then removed with one and the reason kept; a file still used as a receipt stays; Field on their submitted expense but not an approved one.
+- `packages/shared/src/us-ops-35.test.ts` (1): the history sentence with the reason.
+- `apps/e2e/tests/us-ops-35.spec.ts` (1): the plain confirm on a draft; no Remove for Staff on a recorded bill; the Owner's reason dialog and the history line.
+
+### 2026-10-06 — US-OPS-34: open attachments only when I can open the record (Phase 8)
+
+- **`GET /files/:id`** finds a file's owning record through `attachments` too (D-117) and applies that record's read rule, the same rule `GET /attachments` uses: Owners every record; Staff every record except a bank entry without `banking.view`; Field only their own expenses, never money documents. Anyone else, another organisation included, gets 404. Tested for every record type that holds files today.
+- **Preview and download**: images and PDFs open in the browser; `?download=1` saves them (presigned `s3` links too).
+- **Data export with files**: attached files go under `attachments/<record type>/<record id>/<file id>-<name>`; the rest stay in `files/`. The export also gains `attachments`, `money_accounts`, `bank_transfers` and `bank_transactions`.
+- The storage-integrity warning names attached files ("Attachment on a vendor bill: “…”").
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-34.http.integration.test.ts` (5): Owners read all nine record types inline and as a download; Staff all but a bank entry, which needs `banking.view`; Field only their own expense; another organisation 404 on all; the export's attachments/ paths and new tables.
+- `apps/e2e/tests/us-ops-34.spec.ts` (1): an Owner previews an invoice's file; a Field user sees and opens their expense's file but gets 404 for the invoice's.
+
+### 2026-10-06 — US-OPS-33: attach files to bills, invoices and other records (Phase 8)
+
+- **Attachments** (D-156): an "Attachments" section with "Add files" and a drop zone on quotes, invoices, credit notes, payments, vendor bills, vendor payments, expenses and contacts (Attachments tab); a money in/out entry's register menu › "Attachments" opens it in a drawer. Each file shows its name, size, who added it and when, a thumbnail for images and a badge for PDFs, and opens in the browser or downloads. Refunds, vendor credits, journals and opening documents get the section when those stories ship.
+- **New bill**: files dropped on the "New bill" form upload straight away and are attached when the bill is saved.
+- **Limits**: 10 files a record ("A record can hold up to 10 files. Remove one first."), 10 MB each (`POST /files` now says "This file is over 10 MB. Upload a smaller copy, or split the PDF." instead of "File too large"), and the five types US-OPS-29 accepts.
+- **Rules**: adding needs the record's edit right (Field: their own expenses); reading follows the record's read rule, and anyone else gets a 404. Only a file you uploaded can be attached, and to one record.
+- **Lists**: Vendor Bills and Expenses show a paperclip with the count ("2 attachments" to screen readers).
+- **History**: "<name> attached <file>" on the record.
+- **Download**: `GET /files/:id?download=1` saves the file instead of showing it.
+- **Accessibility fix in `@spine/ui`**: `AlertDescription` is now full-contrast `on-surface`. Its muted text measured 4.37:1 on the critical tint, caught by this story's axe check, so every error alert in the app was slightly below AA.
+- **Migration 0081**: `attachments` and the `attachment_entity` enum.
+- **API.** `GET /attachments`, `POST /attachments`; `attachmentCount` on `GET /vendor-bills` and `GET /expenses`.
+
+Tests:
+- `apps/api/src/modules/attachments/us-ops-33.http.integration.test.ts` (6): adding and listing with name, size and creator, audited; the 11th refused; type and size messages; only your own upload, attached once; edit right to add, read right to list, Field on their own expense, 404 for other records and types; list counts.
+- `packages/shared/src/us-ops-33.test.ts` (2): the history sentence; file sizes.
+- `packages/ui/src/components/us-ops-33.contrast.test.ts` (10): alert text on every tint in both modes.
+- `apps/e2e/tests/us-ops-33.spec.ts` (1): a PDF dropped on a new bill and attached on save, a photo with a thumbnail, the type message, axe, and the paperclip on the list.
+
+### 2026-10-06 — US-BANK-12: let a Team see balances, record money and reconcile (Phase 8)
+
+- **Privilege matrix › Banking**: "View bank balances and registers" (`banking.view`), "Record transfers and other money in or out" (`banking.record`) and "Reconcile accounts" (`banking.reconcile`), off for General Staff (migration 0077 added them to every Team, off).
+- **Reconciling needs viewing**: turning on "Reconcile accounts" turns on "View bank balances and registers"; turning viewing off turns reconciling off. The API applies it when privileges are saved (`withImpliedPrivileges`), and the matrix shows "“View bank balances and registers” turned on too. Reconciling needs to see the account.".
+- **Without `banking.view`**: Banking leaves the sidebar, /banking shows the no-access page and the register API returns 403; payment forms still list account names, without balances.
+- **Field** gets 403 on every banking route (tested route by route) and never sees Banking.
+- **Accessibility**: every switch in the privilege matrix now has an accessible name (the privilege's label, or "Everything in <group>"); they had none.
+
+Tests:
+- `packages/shared/src/us-bank-12.test.ts` (2): the three rights, their labels and General Staff defaults; the implication both ways.
+- `apps/api/src/modules/banking/us-bank-12.http.integration.test.ts` (5): General Staff start off; names-only pickers and a 403 register without `banking.view`; reconcile grants view and revoking view revokes reconcile; `banking.record` unlocks transfers; Field 403 on all twelve banking routes.
+- `apps/e2e/tests/us-bank-12.spec.ts` (2): the matrix group, both implications and their note; Staff without the right get the no-access page but keep the payment picker.
+
+### 2026-10-06 — US-BANK-06: archive an account I no longer use (Phase 8)
+
+- **Archive** (Banking row menu, Owners): an account with money in it is refused with "Move the <balance> out of this account before archiving it."; the default with "Choose another default account first.". Otherwise it leaves the list, the totals and every picker (payments, vendor payments, expenses, transfers, money in/out), and keeps its register.
+- **Archived accounts**: a new "Active accounts" / "Archived accounts" filter on Banking lists archived accounts; "Restore" brings one back unless an active account has taken its name in the meantime.
+- Archiving and restoring are audited. The balance in the message uses the organisation's currency and locale (new `orgMoneySettings` helper).
+- **API.** `POST /money-accounts/:id/archive`, `POST /money-accounts/:id/restore` (Owner-only).
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-06.http.integration.test.ts` (5): a balance refused with its amount; the default refused; archive leaves the pickers but keeps the register, a payment to it is refused, restore brings it back, all audited; restoring over a taken name refused; Staff 403.
+- `apps/e2e/tests/us-bank-06.spec.ts` (1): both refusals, archiving, the archived filter, the payment picker without it, and restoring.
+
+### 2026-10-06 — US-BANK-05: record money in or out that has no invoice or bill (Phase 8)
+
+- **Money in / Money out** (`MoneyInOutDialog`, Banking): the account, "Date", "Category", "Amount", "Contact" (optional), "Tax" (money out only) and "Description". Shortcuts pick the usual categories: Owner's capital, Loan received and Interest received on money in; Owner's drawings, Loan repayment and Bank charges on money out (D-174).
+- **Categories**: any account except the control accounts (1100, 1150, 1200, 2000, 2100, 2200, 3200, 3900) and the money accounts themselves. Searching for one shows "No matching account. Use a payment, bill or tax payment for this."; the API refuses them with the same message (and "Use a transfer between your accounts for this." for a money account).
+- **Posting** (P22): money in is Dr the money account / Cr the category; money out is Dr the category (net), Dr 1200 Input Tax Receivable (any tax, backed out of the amount) / Cr the money account. Every line carries the contact.
+- **Registers** read "Money in — <category>" / "Money out — <category>", with the description as the reference. Row menu › "Delete entry" posts the reversing entry dated today and keeps the entry, marked "Deleted".
+- **Chart of accounts**: new 4800 Interest Received (income) for the "Interest received" shortcut, seeded at sign-up and added to existing organisations that haven't used 4800 (D-174).
+- **Migration 0080**: `bank_transactions` and account 4800.
+- **Access**: `banking.record`; Field never. Audited as "Money in or out".
+- **API.** `POST /bank-transactions`, `DELETE /bank-transactions/:id`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-05.http.integration.test.ts` (6): every shortcut's account exists; money in posts and reads in the register; bank charges with 18% GST split to 6900 and 1200; control accounts, a money account and tax on money in refused; deleting reverses and is audited; `banking.record` needed and Field refused.
+- `apps/e2e/tests/us-bank-05.spec.ts` (1): both dialogs and their shortcuts, the control-account hint, tax backed out of the amount, the register labels, and deleting an entry.
+
+### 2026-10-06 — US-BANK-04: move money between my accounts (Phase 8)
+
+- **Transfer** (`TransferDialog`, Banking › "Transfer"): "From", "To", "Amount", "Date" and "Reference", with "Posts Dr <To> / Cr <From>. Both registers show it." and "Move money". The toast reads "Moved <amount> from <From> to <To>". Paying off a card is a transfer to the card.
+- **Posting** (P22): Dr the destination's ledger account, Cr the source's, dated the transfer's date, in the same transaction as the `bank_transfers` row. A date in a closed period is refused ("… falls within a closed fiscal period"); the same account twice is refused with "Choose two different accounts.".
+- **Registers**: the source reads "Transfer to <To>", the destination "Transfer from <From>", with the reference.
+- **Delete**: the register's row menu › "Delete transfer" posts the reversing entry dated today and keeps the transfer, marked "Deleted", so both balances go back. Reconciled transfers will refuse this once reconciliation ships (US-BANK-10).
+- **Migration 0079**: `bank_transfers`.
+- **Access**: `banking.record` (Owners always; Staff by Team; Field never). Created and deleted transfers are audited as "Transfer".
+- **API.** `POST /bank-transfers`, `DELETE /bank-transfers/:id`; register rows gain `deleted`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-04.http.integration.test.ts` (6): the P22 lines and both registers' rows; a card payoff; the same account refused; a closed period refused; deleting reverses both balances, marks the row and is audited; `banking.record` needed and Field refused.
+- `apps/e2e/tests/us-bank-04.spec.ts` (1): the dialog, the same-account message, the toast, both balances and registers, and deleting from the register.
+
+### 2026-10-06 — US-BANK-03: choose the account money went into or came out of (Phase 8)
+
+- **"Paid into" / "Paid from"** on Record payment (Payments and an invoice), Record vendor payment (including "Pay bill"), the expense form and the approve dialog. It lists the organisation's active bank, cash and card accounts, and starts on the account this person used last on that kind of form ("Last used by you. Change it if the money went into another account."), else the organisation default.
+- **Posting** (P4, P5, P5a, P13, P15; D-140): each posts to the chosen account's ledger account instead of 1010. An expense paid by card credits the card's liability account. No new posting rules.
+- **Expenses**: Owners and Staff choose the account when they enter an expense; a Field user's expense starts on the default (Field never see accounts), and the approver can change it in the approve dialog before it posts. Bulk approve posts each expense to the account it carries.
+- **Read-only afterwards**: a recorded payment, vendor payment or expense shows "Paid into" / "Paid from" beside its method.
+- **Validation**: an archived account, or another organisation's, is refused with "Choose one of your active accounts.".
+- **Migration 0078**: `money_account_id` on payments, vendor payments and expenses, backfilled from the account each one actually posted to (then the default for submitted expenses), and `user.last_money_accounts`.
+- **API.** `moneyAccountId` on `POST /payments`, `POST /vendor-payments`, `POST/PUT /expenses` and `POST /expenses/:id/approve` (replaces the unused `bankAccountId`); detail responses carry `moneyAccount { id, name }`; new `GET /money-accounts/last-used`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-03.http.integration.test.ts` (7): a payment posts to and carries the chosen account and is remembered; the default without a choice; archived and other organisations' accounts refused; a vendor payment from cash; an expense by card credits the card; a Field expense starts on the default and the approver changes it; Field can't list accounts.
+- `apps/e2e/tests/us-bank-03.spec.ts` (1): the default then last-used preselection, the read-only account on the payment, the register balance, and changing an expense's account while approving it.
+
+### 2026-10-06 — US-BANK-02: see every account's balance and what moved through it (Phase 8)
+
+- **Banking list**: each account's name opens its register. New "Reconciliation" ("Never reconciled", or "Reconciled" with the date) and "Unreconciled" ("<n> entries") columns, and "Not yet reconciled" and "Last reconciled" cards at the top.
+- **Account register** (`/banking/<id>`): the title, bank, last four digits, type and ledger code; "Balance in Spine", "Money in" and "Money out" for the range, and "Unreconciled"; From and To dates (this month by default) and "All entries" / "Unreconciled only". One row per journal line on the account, newest first: Date, What ("Payment RCP-0018", "Vendor payment VP-0009", "Expense EXP-0031"), Contact, Reference, Money in, Money out, Balance and Status. The opening balance before the range is shown under the table, and every running balance starts from it, so filtering never changes the figures. Clicking "What" opens the payment, vendor payment or expense.
+- **Cards** read "Paid off" and "Spent", and balances are what's owed.
+- **Empty account**: "Nothing has gone in or out of this account yet."
+- **Read from the ledger** (D-011): the register reads `journal_lines` on the account, never documents, and its balance matches the Balance Sheet for the same date (tested).
+- **Reconciliation not built yet**: until US-BANK-08–US-BANK-10, every entry shows "Not reconciled", every account "Never reconciled", and the unreconciled count is every entry.
+- **Vendor Payments** opens a payment from `?id=<payment>`, as Payments and Expenses do, so register rows can link to it.
+- **API.** `GET /money-accounts/:id/register?from=&to=&unreconciled=` (`banking.view`); `GET /money-accounts` adds `lastReconciledOn` and `unreconciledCount` for callers with `banking.view`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-02.http.integration.test.ts` (7): balances and unreconciled counts on the list; rows with what, contact, reference and running balance; a range starting from the true balance, with and without "unreconciled only"; matching the Balance Sheet on two dates; a card's spent, paid off and owed; an empty account; 403 without `banking.view` and no balances in the names-only list.
+- `apps/e2e/tests/us-bank-02.spec.ts` (1): the list's balance and reconciliation columns, the register row and filter, opening the payment from the register, the empty account and a card's columns.
+
+### 2026-10-06 — US-BANK-01: add my bank, cash and card accounts (Phase 8)
+
+- **Banking** (new "Money" section in the sidebar): every bank, cash and card account with its "Balance in Spine", a "Default" badge, and "Bank and cash" / "Owed on cards" totals. Owners add accounts with "Add account" and edit them from the row menu.
+- **Add account** (`MoneyAccountDialog`): "Type" (Bank account, Cash, Credit card), "Name", "Bank name" and "Last 4 digits" (bank and card only), and "Use as default for new payments". The hint names the ledger account it will create ("Ledger account 1011 · Asset.").
+- **Ledger accounts** (D-140): a bank or cash account takes the next free asset code from 1011 to 1099; a card takes the next free liability code from 2300 to 2399, and its balance is what's owed. Renaming an account renames its ledger account. A name already used by another active account (any case) is refused with "You already have an account called <name>. Choose another name.". Ticking default moves the badge (one default per organisation, enforced by a partial unique index).
+- **Migration 0077**: new `money_accounts` table. 1000 Cash in Hand and 1010 Bank Account become money accounts in every existing organisation, 1010 the default; sign-up seeds the same two. Adds the three banking capabilities (`banking.view`, `banking.record`, `banking.reconcile`), off for every Team (US-BANK-12 finishes the privilege matrix).
+- **Access**: adding and changing accounts is Owner-only (Staff get 403). Any Owner or Staff member can list account names for payment forms; balances need `banking.view`. Field gets 403 on every banking route, and Banking stays out of their sidebar.
+- **Cash figures**: the dashboard's "Cash position" and "Money in and out" now sum every bank and cash account instead of the fixed 1000/1010 pair, so a new bank account counts. Cards aren't cash.
+- **Audit log**: adding and changing an account are recorded as "Money account".
+- **API.** `GET /money-accounts`, `GET /money-accounts/next-codes`, `POST /money-accounts`, `PUT /money-accounts/:id`.
+
+Tests:
+- `apps/api/src/modules/banking/us-bank-01.http.integration.test.ts` (8): the starting accounts; a bank account at 1011 with a zero balance, cash without bank details; a card at 2300 as a liability; duplicate names; moving the default; renaming renames the ledger account and is audited; Staff 403 on create and update; next codes.
+- `apps/e2e/tests/us-bank-01.spec.ts` (1): the starting list, the dialog's fields and hint, adding a bank account and a card, the duplicate-name message, and moving the default.
+
 ### 2026-10-05 — US-OPS-26: use every new screen in dark mode (Phase 7)
 
 - **Sweep**: every Phase 7 screen is checked in light and dark mode, with a screenshot of each attached to the test report and axe (WCAG 2.1 A/AA, contrast included) passing in both. The screens are the Owner and Field dashboards, the search palette, invoices with bulk selection, Settings › Automatic reminders and Data export, the audit log, Activity, Profile › Notifications, recurring invoices, job costing and the job profitability report.

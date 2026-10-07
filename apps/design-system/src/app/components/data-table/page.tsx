@@ -86,6 +86,7 @@ export default () => (
             { prop: "pageSize", type: "number" },
             { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
             { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },
+            { prop: "footer", type: "Partial<Record<string, ReactNode>>", description: "A totals row under every page, keyed by column key (a report's \"Total\"). Columns left out stay blank." },
           ]}
         />
       </DocSection>
@@ -123,6 +124,10 @@ export default () => (
             data={rows}
           />
         </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="printing" title="Printing">
+        <DocLead>The search box and Columns menu are left out of print; the table prints as Table does — every row when printed from a "Print" action, headings repeated, rows kept whole.</DocLead>
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">

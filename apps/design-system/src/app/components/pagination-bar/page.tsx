@@ -102,6 +102,10 @@ const [pageSize, setPageSize] = useState(25);
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="printing" title="Printing">
+        <DocLead>Left out of print (<code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">data-print="hide"</code>), like Pagination.</DocLead>
+      </DocSection>
+
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>
           The rows-per-page control is a native{" "}

@@ -671,6 +671,7 @@ Total: 422 stories.
 - US-RPT-34 · Print any report (P2)
 - US-RPT-35 · See profit and loss on a cash basis (P1)
 - US-RPT-36 · Let my accountant's Team see the financial statements (P1)
+- US-RPT-40 · See every report laid out the same way (P2)
 
 *Dashboard*
 

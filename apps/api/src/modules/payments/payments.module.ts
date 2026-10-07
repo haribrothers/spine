@@ -1,11 +1,14 @@
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
+import { BankingModule } from "../banking/banking.module";
 import { NumberingModule } from "../numbering/numbering.module";
 import { LedgerModule } from "../ledger/ledger.module";
 import { EmailModule } from "../email/email.module";
 import { NotificationsModule } from "../notifications/notifications.module";
 import { OrgModule } from "../org/org.module";
 import { PdfModule } from "../pdf/pdf.module";
+import { CustomerRefundsController } from "./customer-refunds.controller";
+import { CustomerRefundsService } from "./customer-refunds.service";
 import { PaymentsController } from "./payments.controller";
 import { PaymentsService } from "./payments.service";
 
@@ -24,9 +27,9 @@ import { PaymentsService } from "./payments.service";
  * for `PaymentPdfService`.
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, EmailModule, NotificationsModule, OrgModule, PdfModule],
-  controllers: [PaymentsController],
-  providers: [PaymentsService],
+  imports: [AuditModule, BankingModule, NumberingModule, LedgerModule, EmailModule, NotificationsModule, OrgModule, PdfModule],
+  controllers: [PaymentsController, CustomerRefundsController],
+  providers: [PaymentsService, CustomerRefundsService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

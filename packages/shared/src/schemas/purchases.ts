@@ -84,6 +84,8 @@ export const createExpenseSchema = z.object({
   paidBy: expensePaidBySchema.default("company"),
   receiptFileId: uuidSchema.optional().nullable(),
   isBillable: z.boolean().default(false),
+  /** US-BANK-03 — the account it was paid from; omitted means the organisation's default. */
+  moneyAccountId: uuidSchema.optional().nullable(),
   /** US-PUR-23 — "amount" (the default when absent) or "labour", where `amount` must equal the labour rows' total. */
   entryMode: z.enum(["amount", "labour"]).optional(),
   labourLines: z.array(labourLineSchema).max(LABOUR_MAX_ROWS, `Enter up to ${LABOUR_MAX_ROWS} trades.`).optional(),
@@ -95,6 +97,8 @@ export const updateExpenseSchema = createExpenseSchema.partial();
 /** S-07.4 — reject requires a comment; approve's comment is optional. */
 export const reviewExpenseSchema = z.object({
   comment: z.string().optional().nullable(),
+  /** US-BANK-03 — the approver can change the account before approving. */
+  moneyAccountId: uuidSchema.optional().nullable(),
 });
 
 export const rejectExpenseSchema = z.object({
@@ -127,5 +131,41 @@ export const createVendorPaymentSchema = z.object({
   currency: currencyCodeSchema,
   amount: z.coerce.bigint().positive(),
   notes: z.string().optional().nullable(),
+  /** US-BANK-03 — the account the money came out of; omitted means the organisation's default. */
+  moneyAccountId: uuidSchema.optional().nullable(),
   allocations: z.array(vendorPaymentAllocationInputSchema).min(1),
+});
+
+/** US-PUR-24 (D-141) — a vendor credit draft: like a bill, with the vendor's own credit note number and an optional "against bill". */
+export const createVendorCreditSchema = z.object({
+  contactId: uuidSchema,
+  vendorReference: z.string().trim().min(1, "Enter the vendor's credit note number."),
+  billId: uuidSchema.optional().nullable(),
+  jobId: uuidSchema.optional().nullable(),
+  date: z.coerce.date(),
+  currency: currencyCodeSchema,
+  notes: z.string().optional().nullable(),
+  lines: z.array(vendorBillLineInputSchema).default([]),
+});
+export const updateVendorCreditSchema = createVendorCreditSchema.partial();
+
+export const voidVendorCreditSchema = z.object({
+  reason: z.string().trim().min(1, "Give a reason for voiding this credit."),
+});
+
+export const VENDOR_CREDIT_STATUS_LABELS = { draft: "Draft", open: "Open", used: "Used", void: "Void" } as const;
+export type VendorCreditStatus = keyof typeof VENDOR_CREDIT_STATUS_LABELS;
+
+/** `POST /vendor-credits/:id/apply` (US-PUR-25). */
+export const applyVendorCreditSchema = z.object({
+  allocations: z.array(z.object({ billId: uuidSchema, amount: z.coerce.bigint().positive("Enter an amount greater than zero.") })).min(1, "Choose at least one bill."),
+});
+
+/** `POST /vendor-credits/:id/refunds` (US-PUR-26). */
+export const createVendorRefundSchema = z.object({
+  amount: z.coerce.bigint().positive("Enter an amount greater than zero."),
+  date: z.coerce.date(),
+  moneyAccountId: uuidSchema.optional().nullable(),
+  method: vendorPaymentMethodSchema,
+  reference: z.string().trim().max(120).optional().nullable(),
 });

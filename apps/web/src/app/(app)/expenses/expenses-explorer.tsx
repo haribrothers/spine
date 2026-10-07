@@ -51,10 +51,18 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const [statusFilter, setStatusFilter] = useState<string[]>(() => searchParams.get("status")?.split(",").filter(Boolean) ?? []);
   // US-DASH-18: the dashboard links here with ?mine=true, ?id=<expense> (open it) or ?new=1 (the submit form).
   const [mineOnly, setMineOnly] = useState(() => searchParams.get("mine") === "true");
+  // US-DASH-24 — the dashboard's "Ready to bill" opens approved billable expenses not yet on an invoice.
+  const [unbilledOnly, setUnbilledOnly] = useState(() => searchParams.get("billable") === "unbilled");
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [formOpen, setFormOpen] = useState(() => searchParams.get("new") === "1");
   const [selectedExpenseId, setSelectedExpenseId] = useState<string | null>(() => searchParams.get("id"));
+  // US-PUR-10 — the form edits this expense when set, else submits a new one.
+  const [editing, setEditing] = useState<Expense | null>(null);
+  function openNewExpense() {
+    setEditing(null);
+    setFormOpen(true);
+  }
   const { show: showToast, toast } = useEntityToast();
   // US-PUR-21 — bulk approval. Staff can't review their own expenses (D-085); Owners can.
   const role = useMyRole();
@@ -97,9 +105,10 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
 
   const filteredExpenses = useMemo(() => {
     if (!expenses) return null;
-    if (!statusFilter.length) return expenses;
-    return expenses.filter((e) => statusFilter.includes(e.status));
-  }, [expenses, statusFilter]);
+    const billable = unbilledOnly ? expenses.filter((e) => e.status === "approved" && e.isBillable && !e.billedOnInvoiceLineId) : expenses;
+    if (!statusFilter.length) return billable;
+    return billable.filter((e) => statusFilter.includes(e.status));
+  }, [expenses, statusFilter, unbilledOnly]);
 
   function handleSaved(expense: Expense, mode: "created" | "updated") {
     loadExpenses();
@@ -128,6 +137,17 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
         <StatCard label="Rejected" value={stats.rejected === null ? "—" : String(stats.rejected)} />
       </div>
 
+      {unbilledOnly && (
+        <Alert variant="info">
+          <AlertDescription>
+            Showing approved billable expenses not yet on an invoice.{" "}
+            <button type="button" className="font-medium text-primary hover:underline" onClick={() => setUnbilledOnly(false)}>
+              Show all
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
           <MultiSelect
@@ -144,7 +164,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             My expenses only
           </label>
         </div>
-        {canCreate && <Button onClick={() => setFormOpen(true)}>Submit expense</Button>}
+        {canCreate && <Button onClick={() => openNewExpense()}>Submit expense</Button>}
       </div>
 
       {selectedExpenses.length > 0 && (
@@ -199,7 +219,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
               icon={<Receipt />}
               title="No expenses yet"
               description={expensesDescription(canManageCategories)}
-              action={canCreate ? <Button onClick={() => setFormOpen(true)}>Submit expense</Button> : undefined}
+              action={canCreate ? <Button onClick={() => openNewExpense()}>Submit expense</Button> : undefined}
             />
           )}
         </div>
@@ -210,6 +230,10 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
           members={members}
           onDeleted={handleDeleted}
           onOpen={(expense) => setSelectedExpenseId(expense.id)}
+          onEdit={(expense) => {
+            setEditing(expense);
+            setFormOpen(true);
+          }}
           selection={
             canApprove
               ? {
@@ -229,7 +253,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
       )}
       {canApprove && hasOwnSubmitted && <p className="text-[13px] text-on-surface-muted">Your own expenses can&apos;t be selected for approval — someone else approves them.</p>}
 
-      <ExpenseForm open={formOpen} onOpenChange={setFormOpen} onSaved={handleSaved} />
+      <ExpenseForm open={formOpen} onOpenChange={setFormOpen} expense={editing ?? undefined} onSaved={handleSaved} />
       <ExpenseDetailDrawer
         open={selectedExpenseId !== null}
         onOpenChange={(open) => {

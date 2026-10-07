@@ -52,6 +52,10 @@ export default () => <Pagination page={1} pageCount={10} onPageChange={setPage} 
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="printing" title="Printing">
+        <DocLead>Left out of print (<code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">data-print="hide"</code>): a printed table shows its rows, not page controls.</DocLead>
+      </DocSection>
+
       <DocSection id="accessibility" title="Accessibility">
         <DocLead>
           Rendered inside a{" "}

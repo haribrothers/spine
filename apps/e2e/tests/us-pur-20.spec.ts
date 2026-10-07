@@ -25,7 +25,8 @@ test.describe("US-PUR-20", () => {
     await expect(page.getByTestId("self-review-note")).toHaveText("Someone else needs to approve your own expense.");
     await expect(page.getByRole("button", { name: "Approve", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Reject", exact: true })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Delete expense" })).toBeVisible();
+    await page.getByRole("dialog").getByRole("button", { name: "More actions" }).click();
+    await expect(page.getByRole("menuitem", { name: "Delete expense" })).toBeVisible();
     await context.close();
   });
 });

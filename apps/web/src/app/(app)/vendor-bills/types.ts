@@ -25,6 +25,8 @@ export interface VendorBillLine {
 
 export interface VendorBill {
   id: string;
+  /** US-OPS-33 — live attachments, on list rows. */
+  attachmentCount?: number;
   orgId: string;
   contactId: string;
   contactName: string | null;
@@ -32,6 +34,8 @@ export interface VendorBill {
   status: VendorBillStatus;
   /** Vendor-supplied identifier, never system-allocated — see vendorBills' own schema doc comment. */
   billNumber: string;
+  /** US-RPT-18 — brought in from the old system: no lines; removed in Opening balances, never voided. */
+  isOpening?: boolean;
   date: string;
   dueDate: string | null;
   currency: string;
@@ -52,6 +56,9 @@ export interface VendorBill {
   updatedAt: string;
   /** Computed server-side — totalAmount - amountPaid. */
   balanceDue: string;
+  /** US-PUR-25 — vendor credits applied to this bill. */
+  creditedAmount?: string;
+  creditsApplied?: { id: string; vendorCreditId: string; number: string | null; vendorReference: string | null; amount: string }[];
   lines?: VendorBillLine[];
 }
 

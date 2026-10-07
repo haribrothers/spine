@@ -19,6 +19,11 @@ import {
   Input,
   Label,
   MultiSelect,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Spinner,
   Switch,
 } from "@spine/ui";
@@ -60,6 +65,8 @@ export function TaxPane() {
   const [groups, setGroups] = useState<TaxGroup[] | null>(null);
   const [inclusive, setInclusive] = useState<PricesIncludeTaxSetting | null>(null);
   const [saved, setSaved] = useState(false);
+  // US-DASH-25 — the period the dashboard's "Tax this period" covers.
+  const [taxProfile, setTaxProfile] = useState<Record<string, unknown> & { returnPeriod?: "monthly" | "quarterly" }>({});
 
   async function reload() {
     const [ratesRes, groupsRes, inclusiveRes] = await Promise.all([
@@ -74,6 +81,10 @@ export function TaxPane() {
 
   useEffect(() => {
     void reload();
+    apiClient
+      .get<{ value: (Record<string, unknown> & { returnPeriod?: "monthly" | "quarterly" }) | null }>("/org/settings/tax_profile")
+      .then((res) => setTaxProfile(res.value ?? {}))
+      .catch(() => {});
   }, []);
 
   if (!rates || !groups || !inclusive) {
@@ -110,6 +121,32 @@ export function TaxPane() {
             setSaved(true);
           }}
         />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-strong bg-surface p-3">
+        <div>
+          <p className="text-[14px] font-medium text-on-surface" id="return-period-label">
+            Return period
+          </p>
+          <p className="text-[13px] text-on-surface-muted">How often you file tax returns. The dashboard&apos;s &quot;Tax this period&quot; covers this month or this quarter.</p>
+        </div>
+        <Select
+          value={taxProfile.returnPeriod ?? "monthly"}
+          onValueChange={async (v) => {
+            const next = { ...taxProfile, returnPeriod: v as "monthly" | "quarterly" };
+            setTaxProfile(next);
+            await apiClient.put("/org/settings/tax_profile", { value: next });
+            setSaved(true);
+          }}
+        >
+          <SelectTrigger className="w-40" aria-labelledby="return-period-label">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="quarterly">Quarterly</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <TaxRatesSection rates={rates} onChanged={reload} onSaved={() => setSaved(true)} />

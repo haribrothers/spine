@@ -2,10 +2,30 @@
 
 import * as ToastPrimitive from "@radix-ui/react-toast";
 import { X } from "lucide-react";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useRef } from "react";
 import { cn } from "../lib/cn";
 
 export const ToastProvider = ToastPrimitive.Provider;
+
+/**
+ * Re-sends Escape from where it was pressed once the closing toast has left
+ * the page (and with it the top layer), so the dialog or drawer underneath
+ * hears it. Gives up after about a second if the toast never unmounts.
+ */
+function passEscapeOn(toast: Element, from: Element) {
+  const win = toast.ownerDocument.defaultView;
+  if (!win) return;
+  let frames = 0;
+  const step = () => {
+    if (toast.isConnected) {
+      if (++frames < 60) win.requestAnimationFrame(step);
+      return;
+    }
+    // One more frame lets the layer underneath register its Escape listener.
+    win.requestAnimationFrame(() => from.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true })));
+  };
+  win.requestAnimationFrame(step);
+}
 
 export const ToastViewport = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Viewport>,
@@ -31,20 +51,47 @@ ToastViewport.displayName = "ToastViewport";
  * mode per docs/DESIGN.md's dark palette) — pairing it with hardcoded white
  * text used to collapse to ~1.1:1 contrast in dark mode (WCAG AA a11y pass,
  * 2026-08-06).
+ *
+ * Escape: Radix makes an open toast the topmost dismissable layer, so it
+ * would swallow the first Escape even while the person is working in a
+ * dialog or drawer underneath. When focus isn't on the toast, the toast
+ * closes and the same Escape is passed on once it has gone, so the dialog
+ * or drawer closes too — one press does what the person meant. With focus
+ * on the toast, Escape closes only the toast.
  */
 export const Toast = forwardRef<
   React.ElementRef<typeof ToastPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitive.Root>
->(({ className, ...props }, ref) => (
-  <ToastPrimitive.Root
-    ref={ref}
-    className={cn(
-      "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-toast transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
-      className,
-    )}
-    {...props}
-  />
-));
+>(({ className, onEscapeKeyDown, ...props }, ref) => {
+  const localRef = useRef<HTMLLIElement | null>(null);
+  const setRefs = useCallback(
+    (node: HTMLLIElement | null) => {
+      localRef.current = node;
+      if (typeof ref === "function") ref(node);
+      else if (ref) ref.current = node;
+    },
+    [ref],
+  );
+
+  return (
+    <ToastPrimitive.Root
+      ref={setRefs}
+      className={cn(
+        "flex items-center justify-between gap-3 rounded-md bg-inverse-surface px-3.5 py-2.5 text-inverse-on-surface shadow-toast transition-all duration-base data-[state=closed]:opacity-0 data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)]",
+        className,
+      )}
+      onEscapeKeyDown={(event) => {
+        onEscapeKeyDown?.(event);
+        if (event.defaultPrevented) return;
+        const node = localRef.current;
+        const target = event.target instanceof Element ? event.target : null;
+        if (!node || (target && node.contains(target))) return;
+        passEscapeOn(node, target ?? node.ownerDocument.body);
+      }}
+      {...props}
+    />
+  );
+});
 Toast.displayName = "Toast";
 
 export const ToastTitle = forwardRef<

@@ -131,6 +131,21 @@ export function paymentConfirmationEmail(d: {
   };
 }
 
+/** US-PAY-17 — "We've refunded <amount>", receipt-style. */
+export function refundEmail(d: { locale?: string; businessName: string; contactName: string | null; amount: bigint; currency: string; date: string; reference: string | null }): EmailTemplate {
+  const amount = emailMoney(d.amount, d.currency, d.locale);
+  return {
+    subject: `${d.businessName} refunded ${amount}`,
+    content: {
+      heading: `We've refunded ${amount}`,
+      greeting: `Hi ${firstName(d.contactName)},`,
+      paragraphs: [`${d.businessName} has refunded ${amount} to you. It may take a few days to reach your account.`],
+      facts: [{ label: "Amount", value: amount }, { label: "Date", value: d.date }, ...(d.reference ? [{ label: "Reference", value: d.reference }] : [])],
+      note: REPLY_NOTE,
+    },
+  };
+}
+
 export function receiptEmail(d: {
   locale?: string;
   businessName: string;

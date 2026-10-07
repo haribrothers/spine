@@ -8,7 +8,7 @@ import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { payments, paymentAllocations, invoices, contacts, accounts } from "../../db/schema";
+import { payments, paymentAllocations, invoices, contacts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { LedgerService } from "../ledger/ledger.service";
@@ -18,6 +18,7 @@ import { SettingsService } from "../org/settings.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { orgLocale } from "../../common/money-format";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type ApplyPaymentCreditInput = z.infer<typeof applyPaymentCreditSchema>;
@@ -47,6 +48,7 @@ export class PaymentsService {
     private readonly notifications: NotificationsService,
     private readonly settings: SettingsService,
     private readonly issuedPdf: IssuedPdfService,
+    private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
   async list(orgId: string, options: { contactId?: string }) {
@@ -63,7 +65,7 @@ export class PaymentsService {
     return rows.map((r) => ({
       ...r.payment,
       contactName: r.contactName,
-      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount,
+      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
     }));
   }
 
@@ -92,7 +94,7 @@ export class PaymentsService {
     return rows.map((r) => ({
       ...r.payment,
       contactName: r.contactName,
-      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount,
+      unallocatedAmount: r.payment.amount - r.payment.allocatedAmount - r.payment.refundedAmount,
       allocatedToThisInvoice: r.allocatedToThisInvoice,
     }));
   }
@@ -113,10 +115,12 @@ export class PaymentsService {
       .leftJoin(invoices, eq(paymentAllocations.invoiceId, invoices.id))
       .where(eq(paymentAllocations.paymentId, id));
 
+    const refs = await this.moneyAccounts.refs(orgId, [row.payment.moneyAccountId]);
     return {
       ...row.payment,
       contactName: row.contactName,
-      unallocatedAmount: row.payment.amount - row.payment.allocatedAmount,
+      moneyAccount: row.payment.moneyAccountId ? (refs.get(row.payment.moneyAccountId) ?? null) : null,
+      unallocatedAmount: row.payment.amount - row.payment.allocatedAmount - row.payment.refundedAmount,
       allocations: allocations.map((a) => ({
         ...a.allocation,
         invoiceNumber: a.invoiceNumber,
@@ -196,11 +200,10 @@ export class PaymentsService {
    * framing is read here as one entry per payment, not one per §7.2 rule
    * row it happens to touch.
    *
-   * `bankAccountId` is caller-supplied (mirrors InvoicesService.issue's
-   * own `revenueAccountId` — the org's chart of accounts has multiple
-   * cash/bank accounts, code 1000/1010 in the seed, and Stage 1 doesn't
-   * assume which one a given payment landed in) — defaults to the seeded
-   * "Bank Account" (code 1010) if omitted.
+   * `input.moneyAccountId` (US-BANK-03, D-140) is the bank, cash or card
+   * account the money went into — an active one of this organisation's —
+   * and defaults to the organisation's default account when omitted. The
+   * choice is remembered for the person recording it.
    *
    * Each allocation's amount is validated against the invoice's own
    * remaining balance and the payment's own remaining (unallocated)
@@ -216,7 +219,7 @@ export class PaymentsService {
    * rows it created and nothing else. See demo-data.service.ts's
    * `seedInvoices`.
    */
-  async create(orgId: string, actorUserId: string, input: CreatePaymentInput, bankAccountId?: string, isDemo = false) {
+  async create(orgId: string, actorUserId: string, input: CreatePaymentInput, isDemo = false) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -248,9 +251,9 @@ export class PaymentsService {
       }
     }
 
-    const resolvedBankAccountId = bankAccountId ?? (await this.resolveDefaultBankAccount(orgId));
-
     const created = await this.db.transaction(async (tx) => {
+      const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
+      const resolvedBankAccountId = moneyAccount.accountId;
       const number = await this.numbering.allocateNumber(tx, orgId, "receipt");
 
       const [payment] = await tx
@@ -262,12 +265,14 @@ export class PaymentsService {
           date: input.date,
           method: input.method,
           reference: input.reference ?? null,
+          moneyAccountId: moneyAccount.id,
           currency: input.currency,
           amount: input.amount,
           createdByUserId: actorUserId,
           isDemo,
         })
         .returning();
+      if (!isDemo) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "payment", moneyAccount.id);
 
       for (const allocation of input.allocations) {
         await tx.insert(paymentAllocations).values({
@@ -359,7 +364,8 @@ export class PaymentsService {
       throw new NotFoundException("Payment not found");
     }
 
-    const unallocated = payment.amount - payment.allocatedAmount;
+    // US-PAY-17: credit already refunded can't be applied too.
+    const unallocated = payment.amount - payment.allocatedAmount - payment.refundedAmount;
     const totalRequested = input.allocations.reduce((sum, a) => sum + a.amount, 0n);
     if (totalRequested > unallocated) {
       throw new BadRequestException(`Requested ${totalRequested} exceeds this payment's unallocated credit of ${unallocated}`);
@@ -579,9 +585,14 @@ export class PaymentsService {
       own: "payments.delete_own",
       others: "payments.delete_others",
     });
+    // US-RPT-17: opening customer credit is removed in Opening balances, while they're unlocked.
+    if (existing.isOpening) throw new BadRequestException("This is opening credit. Remove it in Settings › Opening balances.");
     // Any allocation, including one to an advance invoice (which doesn't count
     // towards allocatedAmount, US-PAY-13), makes the payment part of history.
     const [allocation] = await this.db.select({ id: paymentAllocations.id }).from(paymentAllocations).where(eq(paymentAllocations.paymentId, id)).limit(1);
+    if (existing.refundedAmount > 0n) {
+      throw new BadRequestException("Delete this payment's refunds first.");
+    }
     if (existing.allocatedAmount > 0n || allocation) {
       throw new BadRequestException("Cannot delete a payment that has been allocated to an invoice");
     }
@@ -611,19 +622,5 @@ export class PaymentsService {
     });
 
     return { id };
-  }
-
-  /** Defaults to the seeded "Bank Account" (code 1010) — see create()'s own doc comment on why bankAccountId is caller-overridable. */
-  private async resolveDefaultBankAccount(orgId: string): Promise<string> {
-    const [row] = await this.db
-      .select({ id: accounts.id })
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), eq(accounts.code, "1010")));
-    if (!row) {
-      throw new BadRequestException(
-        "No bank account found (expected code 1010, 'Bank Account'). Pass bankAccountId explicitly or restore this account.",
-      );
-    }
-    return row.id;
   }
 }

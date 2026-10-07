@@ -27,6 +27,8 @@ import { apiClient } from "../../../lib/api-client";
 import { ContactPicker } from "./contact-picker";
 import { PAYMENT_METHOD_LABELS, type PaymentMethod } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { localIsoDate, prefillDate, type StatementPrefill } from "../../../components/statement-prefill";
+import { MoneyAccountPicker } from "../../../components/money-account-picker";
 
 const METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = (
   Object.entries(PAYMENT_METHOD_LABELS) as [PaymentMethod, string][]
@@ -66,19 +68,26 @@ export function NewVendorPaymentDialog({
   open,
   onOpenChange,
   onRecorded,
+  prefill,
   initialContactId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onRecorded: () => void;
+  /** Gets the recorded payment (US-BANK-09 matches it to a statement line). */
+  onRecorded: (payment?: { id: string }) => void;
+  /** US-BANK-09 — from a statement line: amount, date and account are fixed. */
+  prefill?: StatementPrefill;
   /** US-DASH-13 — "Pay bill" opens the dialog on that bill's vendor. */
   initialContactId?: string;
 }) {
   const [contactId, setContactId] = useState("");
+  // US-PUR-25: the vendor's open credit, offered before paying.
+  const [openCredit, setOpenCredit] = useState<{ total: bigint; vendor: string; href: string } | null>(null);
   const [currency, setCurrency] = useState("USD");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [method, setMethod] = useState<PaymentMethod>("bank_transfer");
   const [reference, setReference] = useState("");
+  const [moneyAccountId, setMoneyAccountId] = useState("");
   const [amount, setAmount] = useState<bigint>(0n);
   const [outstanding, setOutstanding] = useState<OutstandingBill[] | null>(null);
   const [allocations, setAllocations] = useState<AllocationRow[]>([]);
@@ -88,14 +97,28 @@ export function NewVendorPaymentDialog({
   useEffect(() => {
     if (!open) return;
     setContactId(initialContactId ?? "");
-    setAmount(0n);
-    setDate(new Date());
+    setAmount(prefill?.amount ?? 0n);
+    setDate(prefill ? prefillDate(prefill) : new Date());
     setMethod("bank_transfer");
-    setReference("");
+    setReference(prefill?.reference ?? "");
     setOutstanding(null);
     setAllocations([]);
     setError(null);
-  }, [open, initialContactId]);
+  }, [open, initialContactId, prefill]);
+
+  useEffect(() => {
+    if (!open || !contactId) {
+      setOpenCredit(null);
+      return;
+    }
+    apiClient
+      .get<{ id: string; balanceAmount: string; contactName: string | null }[]>(`/vendor-credits?contactId=${contactId}&status=open`)
+      .then((credits) => {
+        const total = credits.reduce((sum, c) => sum + BigInt(c.balanceAmount), 0n);
+        setOpenCredit(total > 0n ? { total, vendor: credits[0]!.contactName ?? "This vendor", href: credits.length === 1 ? `/vendor-credits/${credits[0]!.id}` : "/vendor-credits" } : null);
+      })
+      .catch(() => setOpenCredit(null));
+  }, [open, contactId]);
 
   useEffect(() => {
     if (!open || !contactId) {
@@ -180,17 +203,18 @@ export function NewVendorPaymentDialog({
     }
     setSaving(true);
     try {
-      await apiClient.post("/vendor-payments", {
+      const recorded = await apiClient.post<{ id: string }>("/vendor-payments", {
         contactId,
-        date: date ? date.toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+        date: localIsoDate(date ?? new Date()),
         method,
         reference: reference || null,
+        moneyAccountId: prefill?.moneyAccountId ?? (moneyAccountId || null),
         currency,
         amount: amount.toString(),
         allocations: allocations.filter((a) => a.amount > 0n).map((a) => ({ billId: a.billId, amount: a.amount.toString() })),
       });
       onOpenChange(false);
-      onRecorded();
+      onRecorded(recorded);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not record this payment.");
     } finally {
@@ -216,12 +240,23 @@ export function NewVendorPaymentDialog({
             </Alert>
           )}
 
+          {openCredit && (
+            <Alert variant="info" data-testid="vendor-credit-note">
+              <AlertDescription>
+                {openCredit.vendor} has {formatMoney(openCredit.total, currency)} of credit.{" "}
+                <a href={openCredit.href} className="font-medium text-primary underline">
+                  Apply it first?
+                </a>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FormField label="Vendor" required>
               {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
             </FormField>
             <FormField label="Date" required>
-              {() => <DatePicker value={date} onChange={setDate} />}
+              {() => <DatePicker value={date} onChange={setDate} disabled={Boolean(prefill)} />}
             </FormField>
             <FormField label="Method" required>
               {() => (
@@ -243,8 +278,15 @@ export function NewVendorPaymentDialog({
               {(field) => <Input {...field} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Optional" />}
             </FormField>
             <FormField label="Amount" required>
-              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={!contactId} />}
+              {() => <MoneyInput value={amount} onValueChange={setAmount} currency={currency} disabled={!contactId || Boolean(prefill)} />}
             </FormField>
+            {prefill ? (
+              <FormField label="Paid from" required>
+                {() => <p className="py-2 text-[14px] text-on-surface">{prefill.moneyAccountName}</p>}
+              </FormField>
+            ) : (
+              <MoneyAccountPicker form="vendor_payment" direction="out" value={moneyAccountId} onValueChange={setMoneyAccountId} />
+            )}
           </div>
 
           {contactId && (

@@ -5,6 +5,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { invoices } from "./invoices";
 import { journalEntries } from "./ledger";
+import { moneyAccounts } from "./banking";
 
 /** PRD F6 (S-06.1's own wording: "cash, bank transfer, cheque, card, UPI and 'other'"). */
 export const paymentMethodEnum = pgEnum("payment_method", ["cash", "bank_transfer", "cheque", "card", "upi", "other"]);
@@ -55,15 +56,21 @@ export const payments = pgTable(
     date: date("date", { mode: "date" }).notNull(),
     method: paymentMethodEnum("method").notNull(),
     reference: text("reference"),
+    /** US-BANK-03 (D-140) — the account the money went into. */
+    moneyAccountId: uuid("money_account_id").references(() => moneyAccounts.id, { onDelete: "restrict" }),
     currency: text("currency").notNull(),
     amount: bigint("amount", { mode: "bigint" }).notNull(),
     /** Denormalized running total of `payment_allocations.amount` for this payment — see this table's own doc comment. */
     allocatedAmount: bigint("allocated_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    /** US-PAY-17 — how much of this payment's credit has been refunded; credit left = amount − allocated − refunded. */
+    refundedAmount: bigint("refunded_amount", { mode: "bigint" }).notNull().default(sql`0`),
     notes: text("notes"),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** The journal_entries row this payment's creation posted (§7.2 "Payment received" if any amount was allocated to an invoice at creation time, or "Advance received" if fully unallocated — see PaymentsService.create's own comment on which rule applies and why a single payment can need both in one entry). */
     journalEntryId: uuid("journal_entry_id").references(() => journalEntries.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-RPT-17 (D-137) — a customer's unused credit brought in from the old system: no money account, posts P19. */
+    isOpening: boolean("is_opening").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -71,6 +78,9 @@ export const payments = pgTable(
     check("payments_amount_positive", sql`${table.amount} > 0`),
     check("payments_allocated_not_negative", sql`${table.allocatedAmount} >= 0`),
     check("payments_allocated_not_over_amount", sql`${table.allocatedAmount} <= ${table.amount}`),
+    // US-PAY-17: refunds never take more than the credit left (with allocations).
+    check("payments_refunded_not_negative", sql`${table.refundedAmount} >= 0`),
+    check("payments_allocated_and_refunded_within_amount", sql`${table.allocatedAmount} + ${table.refundedAmount} <= ${table.amount}`),
     index("payments_org_idx").on(table.orgId),
     index("payments_org_demo_idx").on(table.orgId, table.isDemo),
     index("payments_contact_idx").on(table.contactId),

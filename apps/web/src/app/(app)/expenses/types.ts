@@ -15,6 +15,8 @@ export const EXPENSE_PAID_BY_LABELS: Record<ExpensePaidBy, string> = {
 
 export interface Expense {
   id: string;
+  /** US-OPS-33 — live attachments, on list rows. */
+  attachmentCount?: number;
   orgId: string;
   /** Gapless, permanent — allocated at approval time via NumberingService's "expense" document type. Null while submitted/rejected. */
   number: string | null;
@@ -28,6 +30,9 @@ export interface Expense {
   taxRateId: string | null;
   description: string | null;
   paidBy: ExpensePaidBy;
+  /** US-BANK-03 — the account it was (or will be) paid from. */
+  moneyAccountId: string | null;
+  moneyAccount?: { id: string; name: string } | null;
   receiptFileId: string | null;
   status: ExpenseStatus;
   submittedByUserId: string | null;

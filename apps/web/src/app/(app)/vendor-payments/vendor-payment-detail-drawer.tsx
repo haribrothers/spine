@@ -20,14 +20,20 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
 import Link from "next/link";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { PAYMENT_METHOD_LABELS, type VendorPayment } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * Read-only detail Drawer — a vendor payment has no draft/edit lifecycle
@@ -94,7 +100,7 @@ export function VendorPaymentDetailDrawer({
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle>{payment?.number ?? "Payment"}</DrawerTitle>
             <DrawerDescription>{payment?.contactName ?? "—"}</DrawerDescription>
@@ -114,6 +120,7 @@ export function VendorPaymentDetailDrawer({
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Date" value={new Date(payment.date).toLocaleDateString()} />
                   <Field label="Method" value={PAYMENT_METHOD_LABELS[payment.method]} />
+                  {payment.moneyAccount && <Field label="Paid from" value={payment.moneyAccount.name} />}
                   <Field label="Reference" value={payment.reference ?? "—"} />
                   <Field
                     label="Amount"
@@ -149,13 +156,28 @@ export function VendorPaymentDetailDrawer({
                 )}
               </div>
             )}
+            {payment && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="vendor_payment" entityId={payment.id} />
+              </div>
+            )}
           </DrawerBody>
-          <DrawerFooter>
+          <DrawerFooter className="flex-wrap">
             {payment && <HistorySection endpoint={`/vendor-payments/${payment.id}/history`} subjectLabel="this vendor payment" />}
             {canDelete && (
-              <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
-                Delete payment
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                    Delete payment
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close

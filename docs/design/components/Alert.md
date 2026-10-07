@@ -22,6 +22,7 @@ import { Alert, AlertTitle, AlertDescription } from "@spine/ui";
 - Four variants sharing the same background/text pairs as StatusChip's palette, plus info: info, warning, critical, success.
 - A leading icon that defaults per variant (Info/AlertTriangle/AlertCircle/CheckCircle2) so color is never the only signal — pass icon={null} to opt out, or a custom icon to override.
 - critical renders role="alert" (interrupts screen readers, for genuine errors); info/warning/success render role="status" (polite announcement).
+- `AlertTitle` and `AlertDescription` are both full-contrast `on-surface`. Muted text isn't used on alert tints: it measured 4.37:1 on the light critical tint (US-OPS-33).
 
 ## Exports
 

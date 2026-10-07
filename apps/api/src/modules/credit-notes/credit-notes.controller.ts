@@ -1,6 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
+import { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -79,6 +79,16 @@ export class CreditNotesController {
   async issue(@Session() session: UserSession, @Param("id") id: string, @Body() body: { revenueAccountId?: string } = {}) {
     const orgId = requireOrgId(session);
     return this.creditNotesService.issue(orgId, id, session.user.id, body?.revenueAccountId);
+  }
+
+  /** US-PAY-16 (D-142) — applies a credit note's spare credit to the customer's other invoices (P6). */
+  @Post(":id/apply-credit")
+  @RequireCapability("payments.apply_credit")
+  @UseInterceptors(IdempotencyInterceptor)
+  async applyCredit(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const parsed = applyPaymentCreditSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Choose the invoices and amounts to apply.");
+    return this.creditNotesService.applyCredit(requireOrgId(session), session.user.id, id, parsed.data);
   }
 
   /** Only a draft is ever hard-deletable — see CreditNotesService.delete's own comment. */

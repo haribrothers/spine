@@ -1,8 +1,9 @@
-import { pgTable, uuid, text, bigint, timestamp, date, boolean, pgEnum, check, index } from "drizzle-orm/pg-core";
+import { type AnyPgColumn, pgTable, uuid, text, bigint, timestamp, date, boolean, pgEnum, check, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization } from "./auth";
 import { contacts } from "./contacts";
 import { jobs } from "./jobs";
+import { bankReconciliations } from "./banking";
 
 export const accountTypeEnum = pgEnum("account_type", [
   "asset",
@@ -88,6 +89,12 @@ export const journalLines = pgTable(
     contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "restrict" }),
     /** Optional — same job-costing rationale as this column's own doc comment above, and same RESTRICT convention as contactId: a job referenced by posted ledger history must not silently vanish. */
     jobId: uuid("job_id").references(() => jobs.id, { onDelete: "restrict" }),
+    /**
+     * US-BANK-10 (invariant 10) — the finished reconciliation that matched
+     * this line; cleared on undo. The only column the immutability trigger
+     * lets change. A reconciled line's document can't be voided or deleted.
+     */
+    reconciliationId: uuid("reconciliation_id").references((): AnyPgColumn => bankReconciliations.id),
   },
   (table) => [
     check("journal_lines_one_sided", sql`(${table.debit} = 0 OR ${table.credit} = 0) AND (${table.debit} > 0 OR ${table.credit} > 0)`),
@@ -95,6 +102,7 @@ export const journalLines = pgTable(
     index("journal_lines_account_idx").on(table.accountId),
     index("journal_lines_contact_idx").on(table.contactId),
     index("journal_lines_job_idx").on(table.jobId),
+    index("journal_lines_reconciliation_idx").on(table.reconciliationId),
   ],
 );
 

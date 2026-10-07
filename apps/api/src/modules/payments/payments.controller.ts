@@ -80,15 +80,14 @@ export class PaymentsController {
     return this.paymentsService.sendReceiptEmail(orgId, id);
   }
 
-  /** S-06.1/S-06.2/S-06.4/S-06.5 — records a payment, optionally allocating it across invoices in the same call. Optional `bankAccountId` in the body lets the caller pick which cash/bank account received the funds; omitted defaults to "Bank Account". */
+  /** S-06.1/S-06.2/S-06.4/S-06.5 — records a payment, optionally allocating it across invoices in the same call. `moneyAccountId` (US-BANK-03) picks the account the money went into; omitted means the organisation's default. */
   @Post()
   @RequireCapability("payments.edit_own")
   @UseInterceptors(IdempotencyInterceptor)
   async create(@Session() session: UserSession, @Body() body: unknown) {
     const orgId = requireOrgId(session);
-    const { bankAccountId, ...rest } = (body ?? {}) as { bankAccountId?: string };
-    const input = createPaymentSchema.parse(rest);
-    return this.paymentsService.create(orgId, session.user.id, input, bankAccountId);
+    const input = createPaymentSchema.parse(body);
+    return this.paymentsService.create(orgId, session.user.id, input);
   }
 
   /** S-05.5 — applies an existing payment's sitting unallocated credit against one or more invoices not available (or not chosen) when the payment was originally recorded. */

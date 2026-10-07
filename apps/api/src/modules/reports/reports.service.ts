@@ -1,6 +1,7 @@
-import { billingFigures, budgetFigures, type MoneyInOutReport } from "@spine/shared";
+import { billingFigures, budgetFigures, comparePeriods, type CompareLine, type MoneyInOutReport, type PlCompareMode, type ProfitAndLossComparison } from "@spine/shared";
 import { Inject, Injectable } from "@nestjs/common";
-import { and, eq, gte, inArray, lte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, notInArray, sql } from "drizzle-orm";
+import { TAX_SETTLEMENT_SOURCES } from "../tax/tax-payments.service";
 import { billedByJob, costByJob } from "../jobs/job-costing.service";
 import { orgClock } from "../../common/org-clock";
 import { DATABASE } from "../../db/db.module";
@@ -18,6 +19,7 @@ import {
   jobs,
   creditNotes,
 } from "../../db/schema";
+import { cashAccountCodes } from "../banking/cash-accounts";
 
 export type AgingBucket = "current" | "0-30" | "31-60" | "61-90" | "90+";
 
@@ -188,7 +190,7 @@ export class ReportsService {
     let totalOutstanding = 0n;
 
     for (const row of rows) {
-      const balanceDue = row.bill.totalAmount - row.bill.amountPaid;
+      const balanceDue = row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount;
       if (balanceDue <= 0n) continue;
 
       const daysOverdue = daysPastDue(row.bill.dueDate, today);
@@ -296,6 +298,7 @@ export class ReportsService {
               eq(journalLines.accountId, outputTaxAccount.id),
               gte(journalEntries.date, from),
               lte(journalEntries.date, to),
+              notInArray(journalEntries.sourceType, [...TAX_SETTLEMENT_SOURCES]),
             ),
           )
       : [];
@@ -311,10 +314,13 @@ export class ReportsService {
               eq(journalLines.accountId, inputTaxAccount.id),
               gte(journalEntries.date, from),
               lte(journalEntries.date, to),
+              notInArray(journalEntries.sourceType, [...TAX_SETTLEMENT_SOURCES]),
             ),
           )
       : [];
 
+    // US-TAX-08: paying or getting back tax (P26/P27) settles these
+    // accounts; it isn't tax collected or paid, so those entries are left out.
     // Credits increase Output Tax Payable (tax collected); a reversing
     // entry (void) posts an offsetting debit, so summing credit - debit
     // nets out voided invoices automatically rather than double-counting.
@@ -411,6 +417,41 @@ export class ReportsService {
       totalIncome: totalIncome.toString(),
       totalExpenses: totalExpenses.toString(),
       netProfit: (totalIncome - totalExpenses).toString(),
+    };
+  }
+
+  /**
+   * US-RPT-27 — the same Profit & Loss for each comparison column, lined up
+   * by account. Accounts with nothing in any column are left out.
+   */
+  async profitAndLossComparison(
+    orgId: string,
+    from: string,
+    to: string,
+    mode: PlCompareMode,
+    load: (from: string, to: string) => Promise<ProfitAndLossReport> = (f, t) => this.profitAndLoss(orgId, f, t),
+  ): Promise<ProfitAndLossComparison> {
+    const columns = comparePeriods(from, to, mode);
+    const reports = await Promise.all(columns.map((c) => load(c.from, c.to)));
+    const lineUp = (pick: (r: ProfitAndLossReport) => ReportAccountLine[]): CompareLine[] => {
+      const byId = new Map<string, CompareLine>();
+      reports.forEach((r, i) => {
+        for (const l of pick(r)) {
+          const line = byId.get(l.accountId!) ?? { accountId: l.accountId!, code: l.code, name: l.name, amounts: columns.map(() => "0") };
+          line.amounts[i] = l.amount;
+          byId.set(l.accountId!, line);
+        }
+      });
+      return [...byId.values()].sort((a, b) => a.code.localeCompare(b.code));
+    };
+    return {
+      mode,
+      columns,
+      income: lineUp((r) => r.income),
+      expenses: lineUp((r) => r.expenses),
+      totalIncome: reports.map((r) => r.totalIncome),
+      totalExpenses: reports.map((r) => r.totalExpenses),
+      netProfit: reports.map((r) => r.netProfit),
     };
   }
 
@@ -645,8 +686,8 @@ export class ReportsService {
    * S-09.10 — "a dashboard with cash position, receivables, overdue count
    * and month revenue, so one screen tells me how things stand." Reuses
    * `receivables()` for the AR figures (same balance computation, no
-   * second source of truth); cash position sums the two seeded cash/bank
-   * asset accounts' (`1000`/`1010`) lifetime net movement, same
+   * second source of truth); cash position sums every bank and cash money
+   * account's (D-140, `cashAccountCodes`) lifetime net movement, same
    * debit-increases-asset convention as `balanceSheet`; month revenue sums
    * `income`-type journal_lines credits for the current calendar month
    * to date, same convention as `profitAndLoss`.
@@ -655,10 +696,10 @@ export class ReportsService {
     const receivables = await this.receivables(orgId);
     const overdueCount = receivables.invoices.filter((i) => i.bucket !== "current").length;
 
-    const cashAccounts = await this.db
-      .select()
-      .from(accounts)
-      .where(and(eq(accounts.orgId, orgId), inArray(accounts.code, ["1000", "1010"])));
+    const cashCodes = await cashAccountCodes(this.db, orgId);
+    const cashAccounts = cashCodes.length
+      ? await this.db.select().from(accounts).where(and(eq(accounts.orgId, orgId), inArray(accounts.code, cashCodes)))
+      : [];
     const cashAccountIds = cashAccounts.map((a) => a.id);
     const cashLines = cashAccountIds.length
       ? await this.db.select({ debit: journalLines.debit, credit: journalLines.credit }).from(journalLines).where(inArray(journalLines.accountId, cashAccountIds))
@@ -695,21 +736,67 @@ export class ReportsService {
    */
   /**
    * US-DASH-15 — money received and money spent per month, from the cash
-   * and bank accounts' journal lines (1000, 1010; D-011), never from
+   * and bank money accounts' journal lines (D-140, D-011), never from
    * documents. Each entry counts once by its net effect on cash: in when
-   * it adds cash, out when it takes it, so a transfer between the two
-   * accounts counts as neither.
+   * it adds cash, out when it takes it, so a transfer between two
+   * of them counts as neither.
    */
+  /**
+   * US-DASH-26 (D-179) — the money chart on the accrual basis: income and
+   * expenses per month from income and expense journal lines, in the same
+   * shape as money in and out (`in` is income, `out` expenses).
+   */
+  async incomeExpensesByMonth(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
+    const today = orgClock().date;
+    const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
+    const startStr = start.toISOString().slice(0, 10);
+    const rows = await this.db
+      .select({ date: journalEntries.date, type: accounts.type, debit: journalLines.debit, credit: journalLines.credit })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.type, ["income", "expense"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+    const byMonth = new Map<string, { in: bigint; out: bigint }>();
+    for (let i = 0; i < months; i++) {
+      const d = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + i, 1));
+      byMonth.set(d.toISOString().slice(0, 7), { in: 0n, out: 0n });
+    }
+    for (const r of rows) {
+      const month = byMonth.get(r.date.slice(0, 7));
+      if (!month) continue;
+      if (r.type === "income") month.in += r.credit - r.debit;
+      else month.out += r.debit - r.credit;
+    }
+    const totalIn = [...byMonth.values()].reduce((s, v) => s + v.in, 0n);
+    const totalOut = [...byMonth.values()].reduce((s, v) => s + v.out, 0n);
+    const [any] = await this.db
+      .select({ id: journalLines.id })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.type, ["income", "expense"])))
+      .limit(1);
+    return {
+      basis: "accrual",
+      months: [...byMonth.entries()].map(([month, v]) => ({ month, in: v.in.toString(), out: v.out.toString() })),
+      totalIn: totalIn.toString(),
+      totalOut: totalOut.toString(),
+      net: (totalIn - totalOut).toString(),
+      hasActivity: Boolean(any),
+    };
+  }
+
   async moneyInOut(orgId: string, months: 3 | 6 | 12): Promise<MoneyInOutReport> {
     const today = orgClock().date;
     const start = new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1 - (months - 1), 1));
     const startStr = start.toISOString().slice(0, 10);
+    const cashCodes = await cashAccountCodes(this.db, orgId);
     const rows = await this.db
       .select({ entryId: journalEntries.id, date: journalEntries.date, debit: journalLines.debit, credit: journalLines.credit })
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
       .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"]), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, cashCodes), gte(journalEntries.date, startStr), lte(journalEntries.date, today)));
 
     const byEntry = new Map<string, { month: string; net: bigint }>();
     for (const row of rows) {
@@ -736,7 +823,7 @@ export class ReportsService {
       .from(journalLines)
       .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
       .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
-      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, ["1000", "1010"])))
+      .where(and(eq(journalEntries.orgId, orgId), inArray(accounts.code, cashCodes)))
       .limit(1);
     return { months: list, totalIn: totalIn.toString(), totalOut: totalOut.toString(), net: (totalIn - totalOut).toString(), hasActivity: Boolean(anyCash) };
   }

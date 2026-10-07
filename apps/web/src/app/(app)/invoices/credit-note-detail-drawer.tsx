@@ -13,12 +13,21 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { HistorySection } from "../../../components/history-section";
 import type { CreditNote } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
+import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
+import { useCapability } from "../../../lib/capabilities-context";
+import { useEntityToast } from "./entity-toast";
 
 /** US-INV-17 — opened in a new tab: the route streams a PDF, not JSON. */
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
@@ -50,6 +59,11 @@ export function CreditNoteDetailDrawer({
 }) {
   const [creditNote, setCreditNote] = useState<CreditNote | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // US-PAY-17: refund the credit a credit note left the customer.
+  const canRefund = useCapability("payments.refund");
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
     if (!creditNoteId) {
@@ -62,11 +76,16 @@ export function CreditNoteDetailDrawer({
       .get<CreditNote>(`/credit-notes/${creditNoteId}`)
       .then(setCreditNote)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load this credit note."));
-  }, [creditNoteId]);
+  }, [creditNoteId, reloadKey]);
+
+  // The footer keeps one main action visible and the rest under "More" (US-PAY-17 fix).
+  const canRefundNow = Boolean(creditNote && canRefund && BigInt(creditNote.creditRemainingAmount ?? "0") > 0n);
+  const pdfUrl = creditNote ? `${API_URL}/credit-notes/${creditNote.id}/pdf` : "";
+  const pdfLabel = creditNote?.status === "draft" ? "Preview PDF" : "Download PDF";
 
   return (
     <Drawer open={creditNoteId !== null} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent size="lg">
         <DrawerHeader>
           <DrawerTitle>{creditNote?.number ?? "Credit note"}</DrawerTitle>
           <DrawerDescription>{creditNote?.contactName ?? "—"}</DrawerDescription>
@@ -116,6 +135,14 @@ export function CreditNoteDetailDrawer({
                 </span>
               </div>
 
+              {/* US-PAY-16: the part held as customer credit, still to apply or refund. */}
+              {BigInt(creditNote.creditRemainingAmount ?? "0") > 0n && (
+                <div className="flex items-center justify-between text-[13px]">
+                  <span className="text-on-surface-muted">Credit for the customer</span>
+                  <span className="tabular-nums text-on-surface">{formatMoney(BigInt(creditNote.creditRemainingAmount!), creditNote.currency)}</span>
+                </div>
+              )}
+
               {creditNote.invoiceNumber && (
                 <a href={`/invoices/${creditNote.invoiceId}`} className="text-[13px] text-primary hover:underline">
                   View source invoice ({creditNote.invoiceNumber})
@@ -123,21 +150,69 @@ export function CreditNoteDetailDrawer({
               )}
             </div>
           )}
-        </DrawerBody>
-        <DrawerFooter>
-          {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
           {creditNote && (
+            <div className="mt-5">
+              <RefundsSection contactId={creditNote.contactId} sourceId={creditNote.id} refreshKey={reloadKey} canRefund={canRefund} onChanged={() => setReloadKey((k) => k + 1)} />
+            </div>
+          )}
+          {creditNote && (
+            <div className="mt-5">
+              <AttachmentsSection entityType="credit_note" entityId={creditNote.id} />
+            </div>
+          )}
+        </DrawerBody>
+        <DrawerFooter className="flex-wrap">
+          {creditNote && <HistorySection endpoint={`/credit-notes/${creditNote.id}/history`} subjectLabel="this credit note" />}
+          {creditNote && canRefundNow && (
+            <Button variant="secondary" onClick={() => setRefundOpen(true)}>
+              Refund
+            </Button>
+          )}
+          {creditNote && !canRefundNow && (
             <Button variant="secondary" asChild>
-              <a href={`${API_URL}/credit-notes/${creditNote.id}/pdf`} target="_blank" rel="noreferrer">
-                {creditNote.status === "draft" ? "Preview PDF" : "Download PDF"}
+              <a href={pdfUrl} target="_blank" rel="noreferrer">
+                {pdfLabel}
               </a>
             </Button>
+          )}
+          {creditNote && canRefundNow && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions">
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <a href={pdfUrl} target="_blank" rel="noreferrer">
+                      {pdfLabel}
+                    </a>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
           )}
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
             Close
           </Button>
         </DrawerFooter>
       </DrawerContent>
+      {creditNote && (
+        <CustomerRefundDialog
+          open={refundOpen}
+          onOpenChange={setRefundOpen}
+          contactId={creditNote.contactId}
+          contactName={creditNote.contactName ?? "the customer"}
+          currency={creditNote.currency}
+          sourceId={creditNote.id}
+          onRefunded={(refund) => {
+            setReloadKey((k) => k + 1);
+            const { title, description } = refundToast(refund);
+            showToast(title, description);
+          }}
+        />
+      )}
+      {toast}
     </Drawer>
   );
 }

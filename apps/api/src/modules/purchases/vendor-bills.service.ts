@@ -5,16 +5,17 @@ import { and, eq, desc } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { vendorBills, vendorBillLines, contacts, accounts } from "../../db/schema";
+import { vendorBills, vendorBillLines, vendorCreditAllocations, vendorCredits, contacts, accounts } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { attachmentCounts } from "../attachments/attachments.service";
 
 export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
 export type UpdateVendorBillInput = z.infer<typeof updateVendorBillSchema>;
 
-interface ComputedLine {
+export interface ComputedLine {
   sortOrder: number;
   type: "item" | "heading" | "text";
   catalogItemId: string | null;
@@ -49,7 +50,7 @@ interface ComputedTotals {
  * has no discount field, unlike quote/invoice lines; a vendor's own
  * discount, if any, is reflected directly in the unit price.
  */
-async function computeBillTotals(
+export async function computeBillTotals(
   orgId: string,
   currency: string,
   lines: CreateVendorBillInput["lines"],
@@ -187,14 +188,16 @@ export class VendorBillsService {
     let result = rows.map((r) => ({
       ...r.bill,
       contactName: r.contactName,
-      balanceDue: r.bill.totalAmount - r.bill.amountPaid,
+      balanceDue: r.bill.totalAmount - r.bill.amountPaid - r.bill.creditedAmount,
     }));
 
     if (options.status) {
       result = result.filter((b) => b.status === options.status);
     }
 
-    return result;
+    // US-OPS-33: the paperclip on the list.
+    const counts = await attachmentCounts(this.db, orgId, "vendor_bill", result.map((b) => b.id));
+    return result.map((b) => ({ ...b, attachmentCount: counts.get(b.id) ?? 0 }));
   }
 
   async getOne(orgId: string, id: string) {
@@ -213,11 +216,19 @@ export class VendorBillsService {
       .where(eq(vendorBillLines.billId, id))
       .orderBy(vendorBillLines.sortOrder);
 
+    // US-PUR-25: the vendor credits used against this bill.
+    const creditsApplied = await this.db
+      .select({ id: vendorCreditAllocations.id, vendorCreditId: vendorCredits.id, number: vendorCredits.number, vendorReference: vendorCredits.vendorReference, amount: vendorCreditAllocations.amount })
+      .from(vendorCreditAllocations)
+      .innerJoin(vendorCredits, eq(vendorCredits.id, vendorCreditAllocations.vendorCreditId))
+      .where(eq(vendorCreditAllocations.billId, id));
+
     return {
       ...row.bill,
       contactName: row.contactName,
-      balanceDue: row.bill.totalAmount - row.bill.amountPaid,
+      balanceDue: row.bill.totalAmount - row.bill.amountPaid - row.bill.creditedAmount,
       lines,
+      creditsApplied,
     };
   }
 
@@ -227,7 +238,8 @@ export class VendorBillsService {
     return this.auditLog.listForEntity(orgId, "vendor_bill", id);
   }
 
-  async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false) {
+  /** `recurring` (US-PUR-30): the recurring bill and run date that created it — unique together, so a run never makes a second bill for one date. */
+  async create(orgId: string, actorUserId: string, input: CreateVendorBillInput, isDemo = false, recurring?: { recurringBillId: string; recurringRunOn: string }) {
     const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
     if (!contact) {
       throw new BadRequestException("Contact not found");
@@ -253,6 +265,8 @@ export class VendorBillsService {
           notes: input.notes ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          recurringBillId: recurring?.recurringBillId ?? null,
+          recurringRunOn: recurring?.recurringRunOn ?? null,
         })
         .returning();
 
@@ -437,6 +451,8 @@ export class VendorBillsService {
     if (!preCheck) {
       throw new NotFoundException("Vendor bill not found");
     }
+    // US-RPT-18: an opening bill is removed in Opening balances (while unlocked).
+    if (preCheck.isOpening) throw new BadRequestException("An opening bill can't be voided. Remove it in Settings › Opening balances.");
 
     const result = await this.db.transaction(async (tx) => {
       const [existing] = await tx
@@ -452,6 +468,9 @@ export class VendorBillsService {
       }
       if (existing.amountPaid > 0n) {
         throw new BadRequestException("Cannot void a vendor bill with payments allocated against it");
+      }
+      if (existing.creditedAmount > 0n) {
+        throw new BadRequestException("Remove the vendor credits applied to this bill before voiding it.");
       }
       if (!existing.journalEntryId) {
         throw new BadRequestException("This vendor bill has no journal entry to reverse");

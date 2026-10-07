@@ -596,7 +596,9 @@ real, also walk ONE job manually through the full sequence below.
      received."
 3. Go to the standalone **Payments** page. Confirm the payment you just
    recorded appears, with correct Allocated/Unallocated amounts shown.
-4. Open that payment's detail drawer:
+4. Open that payment's detail drawer. The footer shows History, one main
+   action (**Apply credit** when there's credit, else **Email receipt**),
+   **More** and **Close**; everything else is under **More**:
    - Click **Download PDF** — confirm a receipt PDF opens showing the
      payment details and an "Applied to" table if it's allocated to any
      invoice.
@@ -2109,7 +2111,7 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
 ## 29. Trial Balance (US-RPT-13, Phase 6)
 
-1. As Owner, Reports › "Trial Balance": choose "As of", "Refresh". Each
+1. As Owner, Reports › "Trial Balance": choose "As of" (it reloads by itself). Each
    account with a balance shows on its Debit or Credit side; the "Total"
    row's debit and credit match; the status reads "Balanced — total
    debits equal total credits."
@@ -2120,7 +2122,7 @@ job milestones show the same totals as before the upgrade (§4, §7, §11, §5).
 
 ## 30. Tax Summary on Reports (US-RPT-14, Phase 6)
 
-1. As Owner, Reports › "Tax Summary": choose "From"/"To", "Refresh". Cards:
+1. As Owner, Reports › "Tax Summary": choose "From"/"To" (it reloads by itself). Cards:
    "Tax collected" (on issued invoices, after credit notes), "Tax paid" (on
    recorded vendor bills and approved expenses), "Net payable".
 2. "Collected by rate" lists each named rate or group with taxable amount
@@ -2349,7 +2351,7 @@ Regression: disabled buttons, secondary and ghost buttons look as before in both
 
 ## 54. Light page behind white cards (US-OPS-32, Phase 7)
 
-1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Refresh", "Columns") are white with a thin border.
+1. In light mode, open Dashboard, Invoices, Jobs, Pipeline and Reports. The page behind the content is a soft warm grey; cards, tables, the sidebar, filter inputs and outlined buttons ("Edit layout", "Export", "Columns") are white with a thin border.
 2. Open a dialog (Settings, "Record payment") and a drawer: they are white on a dimmed page.
 3. Tab to a button or input on the page and inside a card: the focus ring is blue with a white gap, in both places.
 4. Open a public quote link (or any `/quote/...` link): the page is white, not grey. Download a quote or invoice PDF and open a customer email: both stay white.
@@ -2669,7 +2671,7 @@ Regression: Invoices, Expenses and Vendor Payments opened normally (no query str
 1. As an Owner, the KPI row shows Cash position, Profit this month, Receivables and Overdue. Each has its amount, a small 8-week line and "▲/▼ n% vs last month" (or "No data last month" in a new organisation).
 2. The change is green when good (cash or profit up, receivables or overdue down) and red when not, always with the arrow and sign. Check it in dark mode.
 3. Receivables shows "Current … · overdue …"; Overdue shows "n invoice(s)".
-4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Showing overdue invoices only." ("Show all" clears it).
+4. Click each card: Balance Sheet, P&L, Receivables, and Receivables with "Show" set to "Overdue only" (choose "All outstanding" to clear it).
 5. As a Field user there's no KPI row.
 
 Regression: Reports and Receivables opened from the sidebar look as before; the dashboard below the KPI row is unchanged.
@@ -2857,7 +2859,758 @@ Regression: other dialogs (Settings, confirmations) still return focus as before
 
 Regression: light mode looks as before apart from the slightly darker amber. Shadows under menus and dialogs look the same in light mode.
 
+## 101. Bank, cash and card accounts (US-BANK-01, Phase 8)
+
+1. As an Owner, the sidebar has a "Money" section with "Banking". Open it: the breadcrumb reads "Money › Banking" and the list shows "Bank Account" (marked "Default") and "Cash in Hand", each with "Balance in Spine". An organisation that already had payments shows their real balance on Bank Account.
+2. "Add account": the dialog asks for "Type" ("Bank account", "Cash", "Credit card"), "Name" (placeholder "e.g. HDFC Current"), "Bank name", "Last 4 digits" and "Use as default for new payments". The hint reads "Ledger account 1011 · Asset." Choose "Cash": the bank fields disappear. Choose "Credit card": the hint changes to 2300 and "Liability".
+3. Add "HDFC Current" with a bank name and last 4 digits: the toast reads "Account added", the row shows "HDFC Bank · ••0193" and $0.00. Settings › Chart of accounts lists 1011 HDFC Current under assets.
+4. Add a credit card: its row shows "$0.00 owed" and the "Owed on cards" card counts it.
+5. Add another account called "hdfc current": the dialog shows "You already have an account called hdfc current. Choose another name." and nothing is added.
+6. Add an account with "Use as default for new payments" ticked: it gets the "Default" badge and Bank Account loses it.
+7. Row menu › "Edit": rename the account. The ledger account is renamed too, and Team › Audit log shows "Money account" entries for the add and the change.
+8. As Staff, Banking isn't in the sidebar and /banking shows the no-access page unless their Team has "View bank balances and registers". With it, the list shows balances but no "Add account" or row menu. As a Field user, Banking isn't in the sidebar and /banking shows the no-access page.
+
+Regression: the dashboard's "Cash position" and "Money in and out" now include every bank and cash account (cards excluded); with only the two starting accounts they show the same figures as before. Recording a payment, vendor payment or expense still posts to Bank Account.
+
+## 102. Account register (US-BANK-02, Phase 8)
+
+1. Record a customer payment and a vendor payment, and approve an expense. Open Banking: Bank Account shows the new balance, "Never reconciled" and "3 entries". The cards at the top show "Not yet reconciled" with the total and "Last reconciled" reads "Never".
+2. Click "Bank Account": the breadcrumb reads "Money › Banking › Bank Account" and the line under the title reads "Bank account · ledger 1010". The cards show "Balance in Spine" (as of today), "Money in" and "Money out" for the range, and "Unreconciled".
+3. The table lists newest first: Date, What ("Payment RCP-…", "Vendor payment VP-…", "Expense EXP-…"), Contact, Reference, Money in, Money out, Balance and "Not reconciled". Each balance is the running balance after that row. Below the table: "Opening balance on <from>".
+4. Click a row's "What": the payment, vendor payment or expense opens in its own page.
+5. Move "From" to after the first entry: that entry leaves the list, the opening balance includes it and the running balances don't change. Choose "Unreconciled only": the same rows and balances stay (nothing is reconciled yet).
+6. Compare the balance on the last day of a month with Reports › Balance Sheet for that date: Bank Account matches.
+7. Open a credit card account: the columns read "Paid off" and "Spent", the balance column "Owed", and the first card "Owed on this card".
+8. Open Cash in Hand with nothing on it: "Nothing has gone in or out of this account yet."
+9. As Staff without "View bank balances and registers", /banking/<id> shows the no-access page and `GET /money-accounts/<id>/register` returns 403.
+
+Regression: Vendor Payments opens a payment's drawer from `/vendor-payments?id=<id>`, as Payments and Expenses already did. The Banking list still adds accounts and moves the default.
+
+## 103. Choose the account on payments and expenses (US-BANK-03, Phase 8)
+
+1. Add a second bank account and a credit card in Banking.
+2. Payments › "Record payment": below Amount, "Paid into" lists every active account (cash and card marked) and starts on the default, with "Your organisation's default account. Change it if the money went into another account." Pick the second bank account and record the payment.
+3. Open "Record payment" again: "Paid into" starts on the account you just used and reads "Last used by you. Change it if the money went into another account." Log in as someone else: they still start on the default.
+4. Open the recorded payment: "Paid into" shows its account next to "Method", read-only. The account's register in Banking lists the payment and its balance went up.
+5. Do the same from an invoice's "Record payment", from Vendor Payments › "Record payment" ("Paid from") and from a "Pay bill" link on the dashboard.
+6. Submit an expense as an Owner or Staff member: the form has "Paid from". Choose the credit card. Approve it: the card's register shows it as "Spent" and Banking shows the card's balance as owed.
+7. As a Field user, submit an expense: there's no "Paid from". As an approver, open it: "Paid from" shows the default account. Approve it and, in the approve dialog, change "Paid from" to Cash in Hand: the expense posts to Cash in Hand.
+8. Archive an account in the database (or after US-BANK-06, from Banking) and try to record a payment to it through the API: 400 "Choose one of your active accounts.".
+
+Regression: bulk-approving expenses still works and posts each to the account it carries. Payments, vendor payments and expenses recorded before this change show the account they actually posted to.
+
+## 104. Transfers between accounts (US-BANK-04, Phase 8)
+
+1. As an Owner, Banking › "Transfer" (it's disabled with fewer than two accounts): the dialog "Transfer between accounts" asks for "From" (starts on the default), "To", "Amount", "Date" and "Reference", and the button reads "Move money".
+2. Choose the same account in both: "Choose two different accounts." and nothing is saved.
+3. Move $3,000.00 from Bank Account to a second account with reference "TRF-0004". The line above the buttons reads "Posts Dr <To> / Cr <From>. Both registers show it." The toast reads "Moved $3,000.00 from Bank Account to <To>". Both balances change.
+4. Open each register: one reads "Transfer to <To>" (money out), the other "Transfer from Bank Account" (money in), both with reference TRF-0004.
+5. Pay off a credit card with a transfer from the bank: the card's register shows "Paid off" and what's owed drops.
+6. In the register, the transfer's row menu › "Delete transfer" › confirm: the toast reads "Transfer deleted", the row shows "Deleted", a "Transfer deleted" row dated today reverses it, and both balances are back. Team › Audit log shows "Transfer" created and deleted.
+7. Close a fiscal period, then try a transfer dated inside it: it's refused with "… falls within a closed fiscal period".
+8. As Staff without "Record transfers and other money in or out", there's no "Transfer" button and no row menu, and `POST /bank-transfers` returns 403. As a Field user, 403.
+
+Regression: the Banking list, register filters and opening balance still read correctly with transfers in them; the dashboard's "Money in and out" counts neither side of a transfer between two bank or cash accounts.
+
+## 105. Money in and money out (US-BANK-05, Phase 8)
+
+1. Banking › "Money in": the dialog asks for "Into account", "Date", "Category", "Amount", "Contact" and "Description" (no "Tax"). The shortcuts read "Owner's capital", "Loan received" and "Interest received". Choose "Owner's capital": the category shows "3000 · Owner's Capital". Record $10,000.00: the toast reads "Money in recorded" and Bank Account goes up.
+2. "Money out": the shortcuts read "Owner's drawings", "Loan repayment" and "Bank charges" (6900 Other Expenses). Open the category list and search "Receivable", "Payable", "Tax" or "Advances": nothing is offered and the list reads "No matching account. Use a payment, bill or tax payment for this.". Bank, cash and card accounts aren't offered either (use Transfer).
+3. Bank charges of $11.80 with GST 18%: the amount reads "Includes $1.80 tax, which goes to Input Tax Receivable." After saving, Reports › Balance Sheet shows Input Tax Receivable up by $1.80 and Other Expenses up by $10.00.
+4. The register reads "Money in — Owner's Capital" and "Money out — Other Expenses", with the description as the reference and the contact if one was chosen.
+5. Row menu › "Delete entry" › confirm: the toast reads "Entry deleted", the row shows "Deleted", a "Money out deleted — …" row dated today reverses it, and the balance goes back. Team › Audit log shows "Money in or out" created and deleted.
+6. A new organisation's chart of accounts has 4800 Interest Received; an existing organisation gains it after the upgrade unless code 4800 was already used.
+7. As Staff without "Record transfers and other money in or out", there's no "Money in" / "Money out" and `POST /bank-transactions` returns 403; Field 403.
+
+Regression: Transfer still works and deleting a transfer still reads "Delete transfer". The Chart of accounts settings pane lists 4800 under income.
+
+## 106. Archive a money account (US-BANK-06, Phase 8)
+
+1. Move $1,000.00 into a second account, then its row menu › "Archive": "Move the $1,000.00 out of this account before archiving it." and nothing changes.
+2. Bank Account's row menu › "Archive" (the default): "Choose another default account first.".
+3. Transfer the money back, then "Archive": the toast reads "Account archived" and the account leaves the list. The totals at the top don't count it.
+4. The filter "Active accounts" › "Archived accounts": the account is listed. Its register still opens with its history.
+5. Record payment, Record vendor payment, the expense form, Transfer and Money in/out no longer offer it. Recording a payment to it through the API returns "Choose one of your active accounts.".
+6. Archived accounts › row menu › "Restore": "Account restored", and it's back in the list and the pickers. If you'd since added another account with the same name, restoring says "You already have an account called <name>. Choose another name.".
+7. Team › Audit log shows the account archived and restored. As Staff, there's no row menu and the routes return 403.
+
+Regression: adding, editing and moving the default still work; "Archived accounts" with none reads "No archived accounts".
+
+## 107. Banking rights for a Team (US-BANK-12, Phase 8)
+
+1. As an Owner, Team › Teams › General Staff › Privileges › expand "Banking": "View bank balances and registers", "Record transfers and other money in or out" and "Reconcile accounts", all off. Each switch is announced by its name with a screen reader.
+2. Turn on "Reconcile accounts": "View bank balances and registers" turns on too, and the note reads "“View bank balances and registers” turned on too. Reconciling needs to see the account."
+3. Turn "View bank balances and registers" off: "Reconcile accounts" turns off too, with "“Reconcile accounts” turned off too. Reconciling needs to see the account."
+4. As a General Staff member with banking off: there's no "Money" section in the sidebar and /banking shows "You don't have access to Banking". Record payment still offers "Paid into" with account names.
+5. Turn on "View bank balances and registers": Banking appears with balances, but no Transfer, Money in or Money out. Turn on "Record transfers and other money in or out": those buttons appear and work.
+6. As a Field user, Banking isn't in the sidebar, /banking shows the no-access page, and every banking API route returns 403.
+
+Regression: the rest of the privilege matrix still saves one switch at a time and by group; "Everything in <group>" switches still set the whole group.
+
+## 108. Attachments on records (US-OPS-33, Phase 8)
+
+1. Vendor Bills › "New bill": below the lines there's "Attachments" with a drop zone reading "Drop files here or add files · PDF, JPEG, PNG, WebP or HEIC, up to 10 MB each, 10 per record". Drop a PDF: it's listed with "added when you save". Save: the bill opens with the PDF attached, "added by <you> · <date>".
+2. On the bill, "Add files" › choose a photo: it's listed with a thumbnail, name, size, who added it and when. PDFs show a "PDF" badge. Click the name: it opens in the browser. "Download" saves it.
+3. Add a .txt file: "This file type isn't supported. Upload a photo or a PDF.". Add a file over 10 MB: "This file is over 10 MB. Upload a smaller copy, or split the PDF.".
+4. Add files until there are 10, then one more: "A record can hold up to 10 files. Remove one first." and "Add files" is disabled.
+5. The same section appears on a quote, an invoice, a credit note (drawer), a payment (drawer), a vendor payment (drawer), an expense (drawer) and a contact (Attachments tab). In Banking, a money in/out row's menu › "Attachments" opens a drawer with the section.
+6. Vendor Bills and Expenses lists show a paperclip with the count next to records with files; a screen reader reads "2 attachments".
+7. The record's History reads "<you> attached <file name>".
+8. As Staff who can read but not edit bills, the section shows the files but no "Add files" or drop zone; with no files the section is hidden.
+9. Light and dark mode: the drop zone, badges and any error message are readable (axe passes).
+
+Regression: the expense receipt (separate from attachments) still uploads and opens; contact logos and avatars still upload. Error messages in alerts everywhere now use full-contrast text.
+
+## 109. Who can open attachments (US-OPS-34, Phase 8)
+
+1. As an Owner, attach a PDF to an invoice and a photo to a vendor bill. Click each name: the PDF and the photo open in the browser. "Download" saves them with their original names.
+2. As Staff (any Team), open the same invoice and bill: their files open. Attach a file to a money in/out entry in Banking: Staff without "View bank balances and registers" can't open it (copying its link gives "File not found"); with it, they can.
+3. As a Field user, submit an expense and attach a PDF to it: it's listed in the expense drawer and opens. Paste the invoice attachment's link: "File not found" (404). `GET /attachments?entityType=invoice&entityId=<id>` returns 404 too.
+4. Log in to another organisation and paste any of these links: 404.
+5. Settings › Data export with "Files" ticked: the ZIP has `attachments/<record type>/<record id>/<file id>-<name>` for every attached file, `attachments.csv` listing them, and the new `money_accounts`, `bank_transfers` and `bank_transactions` tables. README.txt counts files/ and attachments/ separately.
+
+Regression: receipts, job photos, logos, avatars and issued PDFs still open for the same people as before (US-OPS-20). The storage-integrity warning names an attached file as "Attachment on a vendor bill: “…”".
+
+## 110. Remove an attachment (US-OPS-35, Phase 8)
+
+1. On a draft bill, a file's "Remove" › the dialog reads "Remove <name>?" and "The file is deleted from Spine. …" with no reason field. "Remove attachment": the file leaves the list, its link gives 404, and History reads "<you> removed attachment <name>".
+2. On a recorded bill, as Staff (even with bill rights): no "Remove". As an Owner: "Remove" › "This bill is recorded, so only an owner can remove its files, with a reason. The bill's history records it." with "Reason". "Remove attachment" stays disabled until a reason is typed. After removing, History reads "<you> removed attachment <name> — <reason>".
+3. The same wording names the record on an issued invoice ("This invoice is issued, …"), a sent quote, a payment, a vendor payment, a reviewed expense and a bank entry.
+4. On the "New bill" form, "Remove" on a file you just dropped takes it off the list straight away (it isn't attached).
+5. As a Field user, remove a file from your submitted expense; once it's approved, "Remove" is gone.
+6. A file that is also an expense's receipt stays readable as the receipt after being removed as an attachment.
+
+Regression: adding files still works after a removal, and the 10-file limit counts only files still attached.
+
+## 111. Credit note excess as customer credit (US-PAY-16, Phase 8)
+
+1. Fully pay an invoice, then "Issue credit note" (now offered on paid invoices) for $300.00: the dialog reads "$0.00 reduces what's owed on INV-…; $300.00 becomes credit for <customer>.". Issue it.
+2. On a part-paid invoice with $200.00 left, credit $500.00: "$200.00 reduces what's owed …; $300.00 becomes credit …". After issuing, the invoice's balance is $0.00, and Reports › Balance Sheet shows Customer Advances up by $300.00.
+3. Try to credit more than the invoice's total (counting earlier credit notes): "You can credit up to <amount> on this invoice.".
+4. The credit note's drawer shows "Credit for the customer $300.00".
+5. Open another unpaid invoice for the same customer: "Apply credit" is there. The dialog lists "Credit note CRN-…" and any unallocated payments, each with what's available, prefilled oldest first up to what's owed. "Apply credit": the toast reads "Credit applied", the balance drops, and the credit note's credit falls.
+6. The customer's statement ("All activity") shows the credit note as a credit line for its full amount; applying the credit adds no line, and the balance due is what's owed less credit held (it can be negative).
+7. As Staff without "Apply credit", "Apply credit" isn't shown and `POST /credit-notes/:id/apply-credit` returns 403.
+
+Regression: a credit note within the balance still reduces only what's owed; Payments' own "Apply credit" still works; statements for customers without credit read as before.
+
+## 112. Refund a customer (US-PAY-17, Phase 8)
+
+1. Record a $500.00 payment from a customer with an email address, allocated to nothing. Open it: "Refund" is under "More" in the drawer's footer.
+2. "Refund": "Refund <customer>" asks for "Refund from" (this payment, "$500.00 of credit"), "Amount" (prefilled $500.00), "Date", "Paid from", "Method", "Reference" and "Send refund confirmation". Refund $200.00 with the confirmation ticked.
+3. The toast reads "Refunded $200.00 to <customer>" and "The customer has been emailed a confirmation."; the email reads "We've refunded $200.00". The payment's unallocated credit is now $300.00, and the drawer lists the refund under "Refunds".
+4. Try to refund $300.01: "You can refund up to $300.00 from this payment.". "Apply credit" also offers only $300.00.
+5. The chosen account's register shows "Refund" as money out. Reports › Balance Sheet: Customer Advances down by $200.00.
+6. "Delete refund": the refund shows "Deleted", the credit is back to $500.00, and the register gets a "Refund deleted" row dated today.
+7. From a credit note with credit left (US-PAY-16), "Refund" works the same and its "Credit for the customer" drops.
+8. On the contact page, "Refund" appears when the customer holds credit and lets you choose which credit to refund.
+9. The customer's statement shows refunds as charge lines ("Refund") and deleted ones as "Refund removed".
+10. Without email set up, the refund still saves and the toast says "Email isn't set up, so no confirmation was sent.".
+11. Deleting a payment that has refunds: "Delete this payment's refunds first.".
+
+Regression: recording, applying and deleting payments without refunds behave as before.
+
+## 113. Refund right for a Team (US-PAY-18, Phase 8)
+
+1. Team › Teams › General Staff › Privileges › "Manage Payments": "Refund customers" is listed and off.
+2. As a General Staff member, open a payment with unallocated credit: "Apply credit" is there but "More" has no "Refund"; a contact holding credit shows no "Refund" either. `POST /customer-refunds` returns 403.
+3. Turn "Refund customers" on: "Refund" appears and works. A Field user still gets 403.
+
+Regression: the other "Manage Payments" switches and the group switch still save.
+
+## 114. Vendor credits (US-PUR-24, Phase 8)
+
+1. Purchases › "Vendor Credits" (new in the sidebar) is empty: "No vendor credits yet". The cards read Total credits, Draft, Open ("<amount> to use") and Used.
+2. "New vendor credit": "Vendor", "Vendor's credit note number" ("Spine gives it a VCR number when recorded"), "Against bill", "Currency", "Date", "Job", lines like a bill's, "Notes", attachments and "Total credit".
+3. Choose a vendor, then "Against bill": only their recorded bills are offered; choosing one copies its lines (edit them down) and its job. "Save as draft".
+4. The draft's page shows "Draft vendor credit", the vendor, "their <number>" and the bill link, with "Edit", "Delete draft" and "Record". "Record": it becomes "VCR-0001", "Open", and "Open — <amount> to use"; Edit and Delete go.
+5. Reports › Balance Sheet: Accounts Payable down by the total; the line accounts and Input Tax down by their parts. With a job, Jobs › Costing shows the job's cost lower.
+6. The list shows Number ("— (unrecorded draft)" for drafts), Vendor's number, Vendor, Status (Draft, Open, Used, Void), Date, Amount and Balance; filter by status and vendor.
+7. As Staff without "Record vendor credits", a draft shows no "Record"; Field users can't open Vendor Credits.
+
+Regression: Vendor Bills, recording bills and the bill line editor are unchanged. Settings › Numbering lists "Vendor Credit" (VCR).
+
+## 115. Apply a vendor credit to bills (US-PUR-25, Phase 8)
+
+1. With an open $400.00 credit for a vendor with two open bills ($300.00 older, $500.00 newer): Vendor Payments › "Record payment", choose the vendor: "<Vendor> has $400.00 of credit. Apply it first?" links to the credit.
+2. On the credit, "Apply to bills": the bills are listed oldest first, prefilled $300.00 then $100.00. Change the first to $301.00: "You can apply up to $300.00 to this bill." Put it back and "Apply credit".
+3. The credit shows "Used" and "Applied to bills" with both bills. The ledger has no new entry (P24a). The older bill's page lists "Credits applied: VCR-0001 · their CN-4471 $300.00", a "Credits applied" total line and balance $0.00; the newer one owes $400.00.
+4. Payables, the dashboard's "due soon" items and search treat credited bills as paid down. Paying more than the newer bill's $400.00 is refused.
+5. "Remove" an application on the credit: the credit is "Open" again and the bill's balance comes back.
+6. Voiding a bill with credits applied: "Remove the vendor credits applied to this bill before voiding it.".
+7. As Staff without "Apply and refund vendor credits", "Apply to bills" isn't shown and the API returns 403.
+
+Regression: bills without credits read and pay exactly as before.
+
+## 116. Refund from a vendor (US-PUR-26, Phase 8)
+
+1. On an open $400.00 vendor credit, "Record refund": "Amount" starts at $400.00, with "Date", "Paid into" (last used or default), "Method" and "Reference". Enter $400.01: "This credit has $400.00 left to refund.".
+2. Record $150.00 into Bank Account with reference EFT-88: "Refunds from the vendor" lists it, and the credit reads "Open — $250.00 to use". Bank Account's register shows "Vendor refund" money in; Balance Sheet: Accounts Payable up by $150.00.
+3. Refund the rest: the credit is "Used".
+4. "Delete refund": it shows "Deleted", the balance comes back, the credit is "Open" again, and the register gets a "Vendor refund deleted" row dated today.
+5. As Staff without "Apply and refund vendor credits", "Record refund" and "Delete refund" aren't shown; the API returns 403.
+
+Regression: applying credits to bills still works alongside refunds; the two together can't exceed the credit.
+
+## 117. Void a vendor credit (US-PUR-27, Phase 8)
+
+1. On a recorded credit with a refund or a bill application, "Void" › enter a reason › "Void credit": "Remove its <n> applications and refunds first." and nothing changes. ("Void credit" stays disabled until a reason is typed.)
+2. Remove the applications and delete the refunds, then void with "Entered twice": the credit reads "Void — Entered twice", Apply and Refund disappear, the list shows "Void" with balance $0.00, and Balance Sheet: Accounts Payable back up by the total (P24 reversed, dated today).
+3. As Staff without "Void vendor credits", "Void" isn't shown and the API returns 403.
+
+Regression: drafts are still deleted, not voided.
+
+## 118. Vendor credit rights for a Team (US-PUR-28, Phase 8)
+
+1. Team › Teams › General Staff › Privileges › "Vendor credits": seven switches, all on. They are "Create/edit own vendor credits", "Edit others' vendor credits", "Delete own draft vendor credits", "Delete others' draft vendor credits", "Record vendor credits", "Apply and refund vendor credits" and "Void vendor credits".
+2. Turn "Record vendor credits" off. As a General Staff member, open a draft vendor credit: "Edit" is there and "Record" isn't. `POST /vendor-credits/:id/record` returns 403.
+3. Turn off "Apply and refund vendor credits": "Apply to bills", "Record refund" and the Remove/Delete refund buttons go. Turn off "Void vendor credits": "Void" goes.
+4. As a Field user, every `/vendor-credits` route and `DELETE /vendor-refunds/:id` return 403, and Vendor Credits isn't in the sidebar.
+
+Regression: the "Manage Vendor Bills" switches still save, and the group switch turns all seven on and off.
+
+## 119. Tax payments and refunds (US-TAX-08, Phase 8)
+
+1. Set up a GST 18% rate. Issue a $100.00 + GST invoice ($18.00 output tax) and record $59.00 of Money out with GST ($9.00 input tax).
+2. Reports › Tax Summary › "Record tax payment". The top row shows Tax collected $18.00, Input tax available $9.00 and Net payable $9.00. "Input tax used" is 9.00 with "You have $9.00 to use." and "Amount paid" is 9.00. The preview reads "Posts Dr Output Tax Payable $18.00 / Cr Input Tax Receivable $9.00 / Cr <account> $9.00."
+3. Change "Period" to last quarter or last month: the figures reload. Change "Input tax used" to 9.01 and "Record payment": "You have $9.00 of input tax to use. Lower the amount."
+4. Set it back to 9.00, add a reference and "Record payment". The toast reads "Tax payment recorded". "Tax payments and refunds" lists "Tax payment for <period> · <account> · <reference>" with "$9.00 + $9.00 input tax". The Tax Summary cards still show $18.00 collected and $9.00 paid.
+5. Banking › the account's register shows "Tax payment" for −$9.00. The Balance Sheet shows Output Tax Payable and Input Tax Receivable both down by the amounts in step 4.
+6. "Delete" on the payment: it's struck through and marked "Deleted". The register shows "Tax payment deleted", and the input tax is available again.
+7. "Record tax payment" › "Record a tax refund instead": "Amount" (defaults to the input tax available), "Paid into", "Date" and "Reference". "Record refund": the toast reads "Tax refund recorded" and the list shows "Tax refund". A refund above the input tax available is refused with the same message.
+8. As Staff, with any grants, the Tax Summary shows no access and `/tax-payments` and `/tax-refunds` return 403. Field gets 403 too.
+
+Regression: the Tax Summary's cards, per-rate table and CSV export are unchanged by tax payments. Money in/out still refuses 1200 and 2100 as categories ("Use a payment, bill or tax payment for this.").
+
+## 120. Payment drawer actions fit (US-PAY-17 fix, Phase 8)
+
+1. Open a payment with unallocated credit as an Owner. The drawer is wider than before. Its footer has, in one row: History, "Apply credit", "More" and "Close".
+2. "More" lists "Download PDF", "Email receipt", "Refund" and "Delete payment" (in red). Each works as before: the PDF opens, the receipt is emailed, the refund dialog opens, and the delete confirmation opens.
+3. Open a fully allocated payment: the main button is "Email receipt", and "More" has "Download PDF" only (no Refund or Delete).
+4. At phone width (390px), the footer stays inside the drawer and wraps if needed. Use the keyboard: Tab to "More", Enter opens it, the arrow keys move through the items, and Escape closes it.
+5. In dark mode, the menu and the red "Delete payment" are readable.
+
+6. The credit note drawer has the same layout:
+   - With credit left: "Refund", with "Download PDF" under "More".
+   - With nothing to refund: "Download PDF" (or "Preview PDF" for a draft) as the button, and no "More".
+7. The vendor payment drawer has "Delete payment" under "More" when the payment can be deleted, and no "More" otherwise.
+8. A submitted expense shows "Reject", "Approve", "More" (with "Delete expense" in red) and "Close". At phone width, "Close" wraps onto a second line inside the drawer. On your own expense, the note "Someone else needs to approve your own expense." still shows.
+
+Regression: the PDF links, refund, delete, approve, reject and bill-to-customer flows work as before.
+
+## 121. Edit a submitted expense (US-PUR-10)
+
+1. As Sarah (Staff), submit an expense and open it. The drawer shows "Edit" and "More" (with "Delete expense"). Click "Edit": the "Edit expense" dialog opens with the expense filled in, under "Only a submitted expense can be edited — an approved expense has already posted to the ledger."
+2. Change the amount and description, then "Save expense". The toast reads "Expense updated", the drawer shows the new figures, and the status is still "Submitted".
+3. On Expenses, the row menu (⋯) for a submitted expense offers "View", "Edit" and "Delete". Approved and rejected rows offer "View" only.
+4. As an Owner, open a colleague's submitted expense: "Reject" and "Approve" show, and "Edit" is under "More".
+5. Open an approved or rejected expense: there's no "Edit". `PUT /expenses/:id` on it returns 400 with the message above.
+6. As Sarah with "Edit others' expenses" off, a colleague's submitted expense has no "Edit", and `PUT` returns 403.
+7. As Marcus (Field), "Edit" works on your own submitted expense. On anyone else's, it's refused.
+8. With a screen reader, the form's "Amount" and "Tax amount" fields are announced by name.
+
+Regression: submitting a new expense still opens a blank "Submit an expense" form, including straight after editing one. Approving, rejecting, deleting and labour entries work as before.
+
+## 122. Escape with a toast showing
+
+1. Open an expense and click "Edit" (under "More" for an Owner). Save the change. The "Expense updated" toast shows, and focus is on the drawer's "More" (or "Edit") button, not lost.
+2. While the toast is still showing, press Escape once: the toast and the drawer both close.
+3. Do the same with a payment: email a receipt, then press Escape while "Receipt sent" shows. The drawer closes with one press.
+4. Press F8 to move focus to a toast, then press Escape: only the toast closes.
+5. With no dialog open (e.g. after deleting an expense from the list), Escape closes the toast and nothing else happens.
+
+Regression: toasts still close on their own, swipe away on touch, and are announced by screen readers. Escape inside a dialog opened over a drawer (e.g. "Apply credit") closes only that dialog.
+
+## 123. Import a bank statement (US-BANK-07, Phase 8)
+
+1. As an Owner, Banking › Bank Account › "Import statement". The dialog reads "Import statement — Bank Account" and asks for a CSV.
+2. Choose a CSV with headers "Txn date, Narration, Ref no., Withdrawal, Deposit, Balance". The file name, row count and size show. "Separate money in and money out columns" is chosen, with Date = Txn date, Description = Narration, Reference = Ref no., Money out = Withdrawal, Money in = Deposit and Balance = Balance. "First rows" shows up to ten rows.
+3. Include a row with the date 31/09/2026 and one with the amount "abc". "Import <n> lines": "Imported <n−2> lines · skipped 0 already imported · 2 rows couldn't be read", and each bad row is listed with its row number and reason. "Done": the toast repeats the summary.
+4. Import a second file that overlaps the first: the mapping is already filled in, and the overlapping lines are counted as "skipped … already imported".
+5. Switch to "One amount column (money in positive)" for a file with a single signed Amount column. Withdrawals written as -58.20, (58.20) or 58.20 DR all import as money out.
+6. Choose a PDF: "Export the statement from your bank as CSV, then import it here." Choose a CSV with more than 5,000 rows, or over 2 MB: "Split the statement into smaller files (up to 5,000 lines)."
+7. As Staff without "Reconcile accounts", there's no "Import statement", and the import routes return 403. Field users get 403. An archived account has no "Import statement".
+8. Team › Audit log shows "imported a statement into Bank Account".
+
+Regression: the register's balances, filters and row menus are unchanged. Contact import still works (it has its own CSV parser).
+
+## 124. Match statement lines (US-BANK-08, Phase 8)
+
+1. Record a payment, a few money-out entries and a capital injection dated before the statement. Import a statement whose lines match them (§123).
+2. Bank Account › "Reconcile". The breadcrumb reads "Money › Banking › Bank Account › Reconcile" and the title "Reconcile Bank Account". Enter the end date and the statement's closing balance, then "Start reconciling".
+3. The cards show the closing balance, "Cleared in Spine" ("opening <x> + 0 matched") and "Difference" in red. The note says the opening balance is Spine's balance before the first statement line.
+4. A line with one Spine entry of the same amount within 3 days reads "Suggested match", with "Match" and "Not this one". "Match": it reads "Matched" and the entry leaves the right-hand list. "Not this one" on another line: the suggestion goes and "Exclude" shows.
+5. Click an unmatched line's description to select it, then tick entries on the right. If they don't add up: "Selected entries add up to <x>; the line is <y>." and "Match" stays disabled. Tick until they add up ("2 entries add up to the line."), then "Match".
+6. "Exclude" on a line: a dialog asks for a note. "Exclude line": it reads "Excluded — <note>" and counts as matched.
+7. As lines match, "Cleared in Spine" and "Difference" update. When the difference is $0.00 the footer reads "Spine agrees with the statement".
+8. Leave the page and come back: the matches and exclusions are still there. "Unmatch" and "Include" undo them.
+9. Change the end date to an earlier day: matches on lines or entries after it are dropped.
+10. Delete a money-out entry, then reconcile to today: neither it nor its reversal is offered.
+11. As Staff without "Reconcile accounts", there's no "Reconcile" button, /banking/<id>/reconcile shows the no-access page, and the routes return 403. Field gets 403.
+
+Regression: the register, statement import and money in/out are unchanged.
+
+## 125. Create from a statement line (US-BANK-09, Phase 8)
+
+1. On the reconcile page (§124), an unmatched line with no suggestion shows "Create" and "Exclude". "Create" on a money-in line: the drawer "Create from statement line" shows "<date> · <description> · +<amount>. Saving matches the line to the new entry." and "Record it as" with "Customer payment", "Transfer from another account" and "Other money in".
+2. "Customer payment" › "Continue": "Record a payment" opens with the amount and date fixed (greyed) and "Paid into" showing this account. Choose the customer and "Record payment". The page reads "Recorded and matched to <line>." and the line is "Matched".
+3. "Create" on a money-out line offers "Vendor payment", "Expense", "Transfer to another account", "Other money out" and "Tax payment" (the last two for an Owner).
+4. "Expense": Amount, Date, Category, Job, "Paid from" (this account) and Description, all in the drawer. "Save and match": the expense is recorded and approved, appears under Expenses as approved, and the line is matched.
+5. "Other money out" › "Continue": the Money out form opens with the account, date and amount fixed. Choose "Bank charges" and record it: the line is matched.
+6. "Transfer to another account": the Transfer form opens with "From" fixed to this account. Choose "To" and "Move money": matched. "Tax payment": the tax payment form opens with the amount fixed and no refund switch.
+7. Cancel any form: the drawer comes back, and nothing is recorded.
+8. As Staff without "Create/edit own payments", "Customer payment" isn't offered. Without "Record transfers and other money in or out", the transfer and other-money options aren't offered. Staff never see "Expense" or "Tax payment". With nothing allowed: "You can't record any of these entries. Ask an owner, or exclude the line."
+9. In a browser set to an Indian or Australian time zone, record a customer payment and a vendor payment: the saved date is the date picked (it used to be the day before).
+
+Regression: Payments, Vendor Payments, Banking's Transfer and Money in/out, and Reports › Tax Summary › "Record tax payment" work as before when opened from their own pages.
+
+## 126. Finish a reconciliation (US-BANK-10, Phase 8)
+
+1. On the reconcile page with a difference, "Finish reconciliation" is disabled and the footer reads "Difference <amount> — match or create entries until it's zero."
+2. Match until the difference is $0.00: the footer reads "Spine agrees with the statement · <n> lines matched." and "Finish reconciliation" is enabled. Click it: "<Account> is reconciled to <date>. Its entries show the Reconciled tick in the register."
+3. The register: matched entries, entries before the first statement line, and any deleted-and-reversed pairs up to the end date read "Reconciled". Later entries read "Not reconciled". The balance is unchanged.
+4. Banking: the account shows the end date under "Last reconciled", and "Last reconciled" at the top shows it. The unreconciled count drops.
+5. Team › Audit log: "<you> finished Reconciliation", with the account and closing balance.
+6. Try to delete a reconciled payment (Payments › drawer › More › Delete payment): "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first." The same goes for a vendor payment, a transfer or money in/out entry (the register has no Delete on reconciled rows), a refund and a tax payment.
+7. Start the next reconciliation with an end date on or before the last one: "Choose a date after <date>, when this account was last reconciled."
+8. In a reconciliation still in progress, match an entry, then delete its document: the deletion works and the statement line is unmatched again.
+9. As Staff without "Reconcile accounts", `POST /bank-reconciliations/:id/finish` returns 403.
+
+Regression: balances, the Balance Sheet and the dashboard's cash figures are the same before and after finishing. Deleting unreconciled documents works as before.
+
+## 127. Review or undo a reconciliation (US-BANK-11, Phase 8)
+
+1. Reconcile an account twice (two month-ends, §124–126). Bank Account › "Reconciliations": the breadcrumb reads "Money › Banking › Bank Account › Reconciliations", and the description reads "Every finished reconciliation of Bank Account. Only the latest can be undone."
+2. The cards: "Reconciled to <latest date>" with its closing balance, "Reconciliations 2 · since <first date>", and "Entries matched" with the total. The table lists both, newest first, with closing balance, entries matched, who finished it and when, and "Latest" or "Finished".
+3. The older row reads "Undo the later reconciliations first." and has no Undo. `POST /bank-reconciliations/<older id>/undo` returns 400 with the same message.
+4. "Undo" on the latest: "Undo this reconciliation?", "Statement to <date> · <n> entries. Its entries go back to unreconciled; nothing is deleted. Its statement lines go back to unmatched." and "Only the most recent reconciliation of an account can be undone." Click "Undo reconciliation": the toast reads "Reconciliation undone", and the older one becomes "Latest".
+5. The register: that reconciliation's entries read "Not reconciled" again. Banking shows the older date under "Last reconciled". The audit log reads "<you> undid Reconciliation".
+6. Their documents can now be deleted. Reconcile to the same date again: its statement lines are offered unmatched.
+7. With no reconciliations: "No reconciliations yet". As Staff without "Reconcile accounts", the page shows no access and the routes return 403.
+
+Regression: finishing and matching (§124–126) work as before.
+
+## 128. Opening account balances (US-RPT-16, Phase 8)
+
+1. As an Owner, Settings › "Opening balances": "Not started" and "Bring in opening balances". Click it: the dialog closes and "Opening balances" opens (breadcrumb "Settings › Opening balances"), with "Account balances".
+2. "Cutover date" is the start of your financial year (Settings › Financial year). The card reads "balances as of <the day before>".
+3. Every account is listed by type. Accounts Receivable and Retention Receivable read "From opening invoices · $0.00", Accounts Payable "From opening bills · $0.00", and Customer Advances "From opening credit · $0.00". There are no inputs on those rows, and Opening Balance Adjustments isn't listed.
+4. Enter a few balances that don't balance. Debits, Credits and "Opening Balance Adjustments <difference>" update as you type, and the warning reads "… your old books didn't balance, or a figure is missing. The difference sits in Opening Balance Adjustments until you fix it." Typing a credit on an account with a debit clears the debit.
+5. "Save balances": "Saved. The Balance Sheet on <day before> shows these balances." Reports › Balance Sheet as of that day shows them, with Opening Balance Adjustments under equity.
+6. Change a figure and save again: the Balance Sheet shows the new figures (the old entry was reversed).
+7. Record any document dated after the cutover date but before a new one you then pick: saving says "<n> documents are dated before the cutover date. Pick a date on or before <earliest>, or move those documents."
+8. Settings › Opening balances now reads "Draft — not locked" with the cutover date. Staff can't open /opening-balances (no access), and the API returns 403.
+
+Regression: Settings' other panes work as before. Settings › Chart of accounts lists 3900 Opening Balance Adjustments (a system account). Money in/out and manual journals can't use it.
+
+## 129. Opening customer invoices and credit (US-RPT-17, Phase 8)
+
+1. Opening balances › "Customer invoices": the cards and "No opening invoices yet." "Add invoice": Customer, Invoice number, Invoice date, Due date, Amount due, Retention held ("Optional — held back on a job until the job is done.") and Job.
+2. Add one dated before the cutover date: it's listed. Add one dated on or after it: "An opening invoice is dated before the cutover date (<date>)." Add one with a number already in Spine: "Invoice <number> already exists. Use the number from your old system exactly once." Retention without a job: "Choose the job the retention is held on."
+3. "Import from CSV" with columns Customer, Invoice no., Invoice date, Due date, Amount due, Retention, Job: the columns are guessed. Pick the date format, then "Import <n> invoices". A name that doesn't match a customer: "<n> customer names didn't match anyone in Spine: …" with "Create these customers" (creates them and imports) or "Fix the file" (closes, nothing imported). Bad rows are listed with the reason.
+4. "Account balances": Accounts Receivable reads "From opening invoices · <total amount due>", and Retention Receivable shows the retention.
+5. Invoices: each opening invoice shows "Opening balance". It ages by its due date on Receivables. Open one: there's no "Download PDF", no "Email invoice" and no "Void". "Brought in from your old system, so it has no lines…". "Record payment", "Send reminder" (no PDF attached) and "Issue credit note" work. Attach the original PDF under Attachments.
+6. Once paid or credited, its row on Opening balances reads "Paid or credited" and can't be edited or removed.
+7. Jobs: the job with opening retention › "Release retention" includes it.
+8. "Customer credit" › "Add credit": choose a customer and an amount. It's listed, and the customer's invoices can use it ("Apply credit"). Payments lists it, but "Delete payment" says "This is opening credit. Remove it in Settings › Opening balances."
+9. Change the cutover date on "Account balances" and save: the Balance Sheet shows the opening invoices and credit on the new day before.
+10. Staff get 403 on every `/opening-balances/…` route.
+
+Regression: ordinary invoices still download their PDF, email with it attached, and void as before.
+
+## 130. Opening vendor bills and vendor credits (US-RPT-18, Phase 8)
+
+1. Opening balances › "Vendor bills" › "Add bill": Vendor, Bill number, Bill date, Due date and Amount due. Save: it's listed. The same vendor and number again: "Bill <number> from <vendor> is already in Spine. Enter each bill once." A bill date on or after the cutover date is refused.
+2. "Import from CSV" (Vendor, Bill no., Bill date, Due date, Amount): an unknown vendor gives "<n> vendor names didn't match anyone in Spine: …", with "Create these vendors" or "Fix the file".
+3. "Vendor credits" › "Add credit": Vendor, Amount and "Vendor's credit note number". It's listed as "VCR-000n · their <number>".
+4. "Account balances": Accounts Payable reads "From opening bills · <bills less credits>".
+5. Bills: each opening bill shows "Opening balance", reads "Brought in from your old system, so it has no lines…", and has no "Void". Payables lists it by due date. Pay it from Vendor Payments.
+6. Vendor Credits: the opening credit is "Open". "Apply to bills" and "Record refund" work, and "Void" says "An opening vendor credit can't be voided. Remove it in Settings › Opening balances."
+7. Once paid or applied, an opening bill or credit can't be edited or removed on Opening balances.
+
+Regression: ordinary bills and vendor credits record, pay, apply and void as before.
+
+## 131. Review and lock opening balances (US-RPT-19, Phase 8)
+
+1. Opening balances › "Review": the cards show the opening invoices, bills, credits and Opening Balance Adjustments, highlighted when it isn't zero. "Trial balance on <day before cutover>" lists every account with a balance and totals that agree.
+2. With adjustments left, "Lock opening balances": the dialog adds "Opening Balance Adjustments still holds <amount>. Lock anyway?" "Go back" closes it. "Lock anyway" locks.
+3. Locked: "Locked on <today>" and "Unlock". On every tab the inputs are disabled, there's no Save, Add or Import, and rows have no Edit or Remove. Settings › Opening balances reads "Locked".
+4. Try to record anything dated before the cutover date (a payment, an expense, money out): "… falls within a closed fiscal period". Dated on or after it works.
+5. Team › Audit log: "<you> locked Opening balances".
+6. "Unlock" › confirm: "Everything up to <date> opens again so the opening balances can be changed." Editing works again, and the audit log shows "unlocked". Lock again: no second period is created.
+7. Staff get 403 on lock and unlock.
+
+Regression: other fiscal periods (Reports › close a period) still close and reopen as before.
+
+## 132. Post an adjusting journal (US-RPT-20, Phase 8)
+
+1. As an Owner, the sidebar's Reports section has "Journals". Open it, then "New journal": "For adjustments no document covers. Journals are never edited — a mistake is reversed." Date (today), Reason ("e.g. Depreciation for March") and two empty lines.
+2. In an Account box, search "Receivable", "Payable", "Tax", "Advances" or "Opening": nothing matching is offered. The note lists those accounts and says to use invoices, bills, payments or Record tax payment.
+3. Enter Other Expenses debit 400.00 and Accumulated Depreciation credit 350.00: the totals read $400.00 and $350.00, the alert reads "Debits and credits must be equal — out by $50.00.", and "Post journal" is disabled. A line with both a debit and a credit keeps only the last one typed.
+4. Make them equal, add a job on one line, then "Post journal". The journal's page opens: "JNL-0001", "Posted", date, reason, "posted by <you>", and the lines with the job.
+5. Reports › P&L / Balance Sheet move by the amounts. The drill-down shows "Journal JNL-0001 — <reason>", linking to the journal. A journal line on a bank account shows in its register as "Journal JNL-0001".
+6. Post one dated inside a closed fiscal period: "… falls within a closed fiscal period".
+7. Settings › Numbering lists "Journal" (JNL). Staff, even with "View ledger / journals", get 403 posting.
+
+Regression: reports, registers and other numbering types are unchanged.
+
+## 133. Reverse a journal (US-RPT-21, Phase 8)
+
+1. Open a posted journal: "Copy to new journal" and "Reverse". "Reverse": "Reverse JNL-000n", with "Reversal date" (today) and "Reason". "Reverse journal" stays disabled until a reason is typed.
+2. Reverse it: the page reads "Reversed", and the Reversal card reads "Reversed on <date> by <you>" with the reason. "Reverse" is gone. Reports are back where they were. The drill-down shows "Journal JNL-000n reversed — <reason>".
+3. Reversal date inside a closed fiscal period: "… falls within a closed fiscal period".
+4. A journal with a line on a bank account reconciled since (§126): "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."
+5. "Copy to new journal": "New journal" opens with the same reason and lines. Change what's wrong and post: it gets the next number.
+6. Team › Audit log: "<you> reversed a journal".
+
+Regression: posting journals (§132) is unchanged.
+
+## 134. The journals list (US-RPT-22, Phase 8)
+
+1. Reports › Journals with none: "No journals yet. Most businesses only need one for year-end adjustments."
+2. After posting and reversing some: the cards read Total journals, Posted, Reversed and "Posted this year" (since the start of the financial year). The list shows number, date, reason, status, total and who posted it, newest first. Search, the Status filter and the From/To dates narrow it.
+3. Footer: "Members with "View ledger / journals" can read journals; only owners post or reverse them."
+4. As Staff without "View ledger / journals": no "Journals" in the sidebar, /journals shows the no-access page, and the API returns 403. Grant it: "Journals" appears, the list and a journal open, and there's no "New journal", "Reverse" or "Copy to new journal". Field gets 403.
+
+Regression: Reports (the tab page) is unchanged and still shown to Staff with any report right.
+
+## 135. Every report in one place (US-RPT-23, Phase 8)
+
+1. As an Owner, Reports: "Every report you can open, derived from the ledger." Cards for Business overview (Profit & Loss, Balance Sheet, Trial Balance), Receivables (Receivables), Purchases (Payables), Tax (Tax Summary), Jobs (Job profitability) and Accountant (Journals). More reports appear as later stories land.
+2. Type "ledger" in "Search reports": only Trial Balance and Journals stay. Clear it: all are back. Type nonsense: "No reports match …".
+3. Star Tax Summary and Profit & Loss: "Favourites" appears at the top with both. Reload, then sign in on another browser: they're still there. Unstar one: it leaves Favourites.
+4. Open each report: the breadcrumb reads "Reports › <name>" and the page works as the old tab did (dates, drill-down, Export CSV); dates apply as they change (US-RPT-40).
+5. The dashboard's Cash and Profit cards open the Balance Sheet and Profit & Loss pages. An old bookmark like /reports?tab=tax lands on Tax Summary.
+6. As Staff with only "View job profitability": Reports lists only Job profitability, and /reports/profit-and-loss shows "Profit & Loss is only available to owners." With "View ledger / journals" only: Reports appears and lists Journals. Field: no Reports.
+7. Team › a Team › Privileges › Reports & Ledger has "View financial statements", off.
+
+Regression: Receivables and Payables still open from the sidebar. The tax payment dialog (§119) still opens from Tax Summary.
+
+## 136. The general ledger (US-RPT-24, Phase 8)
+
+1. As an Owner, Reports › Accountant › General ledger: "Every account's opening balance, entries and closing balance." From is the first day of this quarter, To is today, "Hide accounts with no activity" is ticked.
+2. Post a journal dated last month (Dr 6900, Cr 1510) and one dated today. The ledger updates by itself: 1510 and 6900 show. 6900 reads "Opening balance … Dr" (last month's journal), one row for today's journal with its reason as the description and a running balance, and "Closing balance … Dr"; 1510 reads Cr.
+3. Record a payment and an expense today, then reopen the General ledger: the bank account, Accounts Receivable and the expense account appear; each row's source reads "Payment RCP-…", "Expense EXP-…". Click one: its document opens.
+4. Accounts: pick only 6900: only 6900 shows. Clear it.
+5. Untick "Hide accounts with no activity": every account shows, ten to a page, with "No entries in this period." on the quiet ones; page through with the pager and change "per page".
+6. Set From and To to a month with nothing posted (ticked): "Nothing posted in this period".
+7. As Staff with "View ledger / journals": Reports lists General ledger and it opens. Without it: /reports/general-ledger shows the no-access page. Field: no Reports.
+8. Dark mode: the tables, links and Dr/Cr balances are readable.
+
+Regression: Trial Balance's account drill-down (§29) and the Journals list (§134) are unchanged.
+
+## 137. The day book (US-RPT-25, Phase 8)
+
+1. As an Owner, record money in and post a journal today. Reports › Accountant › Day book: "Every journal entry in date order." From and To are today. Both entries show with their date, source ("Money in", "Journal JNL-…"), contact · narration (the journal's reason) and one row per line — debits first — with Totals equal on both sides.
+2. Source → Journals: only the journal stays. Source → All sources: both are back.
+3. Type the journal's reason in "Search entries": only it stays. Type nonsense: "No entries match your search".
+4. Widen From to the start of the month: older entries appear in date order; page through with the pager.
+5. Click an entry's source: its document opens (invoice, payment drawer, bill, expense, journal, bank account, opening balances).
+6. As Staff with "View ledger / journals": Reports lists Day book and it opens. Without it: the no-access page. Field: no Reports.
+7. Dark mode: the table and links are readable.
+
+Regression: General ledger (§136) is unchanged.
+
+## 138. Cash Flow (US-RPT-26, Phase 8)
+
+1. In a new organisation, record money in to Owner's Capital dated last quarter. Then, today: money out to Fixed Assets, money in to Sales — Services, money out on a card to Travel & Vehicle, and an invoice left unpaid.
+2. Reports › Business overview › Cash Flow: "Where cash came from and where it went." From is the first of this quarter, To is today. "Cash at start" is the capital; "Net change" shows ▼ and "less cash than at the start" when it's negative; "Cash at end" equals the bank account's balance on Banking.
+3. Operating activities: "Net profit", "Increase in receivables and retention" (the unpaid invoice, negative), "Tax collected less paid" (if it carried tax) and "Increase in card balances" (the card spend). Investing: "Fixed Assets" (negative). Financing: nothing in this period. Each section has its "Net cash from …" total, and the totals add up to Net change.
+4. Click "Net profit": a dialog lists Sales — Services and the expense accounts with their amounts. Escape closes it.
+5. The note under the statement reads "Cash at end equals the total of your bank and cash accounts on <To>. Card accounts are liabilities, not cash."
+6. Change the dates to last quarter: the capital shows under Financing as Owner's Capital.
+7. As Staff with "View financial statements": Reports lists Cash Flow and it opens. With only "View ledger / journals": the no-access page. Field: no Reports.
+8. Dark mode: cards, table and the note are readable.
+
+Regression: Profit & Loss's net profit for the same range matches Cash Flow's "Net profit".
+
+## 139. Compare profit and loss and the balance sheet (US-RPT-27, Phase 8)
+
+1. As an Owner with income and expenses across two quarters, open Profit & Loss, set From Jul 1 and To Sep 30, Compare with → "Previous period". The subtitle reads "Jul – Sep 2026 compared with Apr – Jun 2026". Cards show Total income, Total expenses and Net profit with "▲/▼ n% vs previous period". The table has Account, "Jul – Sep 2026", "Apr – Jun 2026", Change and Change %, grouped Income / Expenses with totals and Net profit.
+2. Each change carries an arrow and a sign (▲ +, ▼ −); a figure that was zero before shows "—" for Change %. Nothing relies on colour.
+3. "Same period last year": the second column is Jul – Sep 2025 and the cards say "vs last year".
+4. Set Jan 1 – Dec 31 and "Each month": twelve month columns plus Total; no Change columns. Set a range over 24 months: 'Choose 24 months or fewer for "Each month".'
+5. "No comparison": the original Profit & Loss list is back, with drill-down and Export CSV.
+6. Balance Sheet, As of today, Compare with → "Previous year end": columns for today and the last day of the previous financial year (Settings › Financial year), with Change; totals for assets, liabilities, equity and liabilities + equity.
+7. In a time zone ahead of UTC (e.g. Asia/Kolkata), From Jul 1 stays Jul 1 in the subtitle and the columns.
+8. Dark mode: tables, arrows and cards are readable.
+
+Regression: Profit & Loss and Balance Sheet without a comparison look and export as before (§15).
+
+## 140. Sales by customer and by item (US-RPT-28, Phase 8)
+
+1. Issue invoices this quarter to two customers — one with three of a catalogue item, one with one of it and a hand-typed line — and leave one invoice as a draft.
+2. Reports › Sales › Sales by customer: "Net of credit notes · <range>". Cards show Customers, Invoices (issued only), Sales before tax and Total with tax. Rows are largest first with invoice count, sales before tax, tax, total and % of sales; the percentages add to 100%.
+3. Issue a credit note on the larger customer's invoice and reopen the report: their sales drop by the credit note's amount before tax; Invoices doesn't change.
+4. Click a customer: "Invoices for <name>" lists their invoices with number, date and total; a number opens the invoice.
+5. Tab "Sales by item": the catalogue item shows its quantity (less the credited quantity), sales before tax and average price; "Items not from the catalogue" is last. The note under the table explains where the figures come from.
+6. Click an item: its invoices. Search narrows rows on both tabs.
+7. Pick a range with no invoices: "No sales in this period".
+8. As Staff with "View financial statements": both open. Without it: the no-access page. Field: no Reports.
+9. Dark mode: cards, table and dialog are readable.
+
+Regression: Receivables and the invoice list are unchanged.
+
+## 141. Expenses by category and purchases by vendor (US-RPT-29, Phase 8)
+
+1. This quarter: record a bill to Cost of Materials with tax, a vendor credit against it, an approved expense, money out to Rent and a depreciation journal.
+2. Reports › Purchases › Expenses by category: "From bills, expenses, journals and money out · <range>". Cards: Total expenses, Categories, Largest category (its amount, with its name and % under it). Each expense account shows a share bar, amount and % of total, largest first; the vendor credit has reduced Cost of Materials. The bar has an accessible name with its percentage.
+3. As an Owner, click a category: the account drill-down lists its entries. As Staff with "View financial statements" but not "View ledger / journals", categories aren't links.
+4. Tab "Purchases by vendor": each vendor shows bills, before tax, tax and total, net of the vendor credit, largest first. Opening bills from Opening balances aren't counted.
+5. Click a vendor: "Bills from <vendor>" lists their bills in the range; a number opens the bill.
+6. A range with nothing: "No expenses in this period" / "No bills in this period".
+7. As Staff without "View financial statements": the no-access page. Field: no Reports.
+8. Dark mode: cards, bars, table and dialogs are readable.
+
+Regression: Payables and the vendor bill list are unchanged.
+
+## 142. Payments received and made (US-RPT-30, Phase 8)
+
+1. This quarter: a payment allocated to an invoice into the bank account, a payment with nothing allocated into cash, a payment against an opening invoice, and a vendor payment against a bill.
+2. Reports › Receivables › Payments received: cards show Payments, Received and Held as credit ("1 payment"). Rows are newest first with number, date, customer, method, account, amount and Allocated to — the invoice number, "<number> (opening)" for the opening invoice, "Held as credit" for the unallocated one.
+3. Refund part of the held payment (Payments › Refund) and reopen the report: its row shows "<amount> refunded" and Held as credit drops.
+4. Account → Cash: only the cash payment shows. All accounts: all are back.
+5. Click a payment number: the payment drawer opens. Click an invoice number: the invoice opens.
+6. Tab "Payments made": the vendor payment with its bill; the number opens the vendor payment drawer and the bill number opens the bill.
+7. As Staff with only "View receivables": Payments received opens and the "Payments made" tab isn't shown; /reports/payments-made shows the no-access page. The reverse with only "View payables". Field: no Reports.
+8. Dark mode: cards, table and links are readable.
+
+Regression: the Payments and Vendor Payments lists are unchanged.
+
+## 143. Credit notes, vendor credits and refunds (US-RPT-31, Phase 8)
+
+1. This quarter: a credit note on an unpaid invoice, a credit note on a paid invoice with part of it refunded, and a vendor credit raised against a bill, partly applied to it and partly refunded.
+2. Reports › Receivables › Credit notes and refunds: cards Credited (with the count), Applied, Refunded, Still held. The unpaid invoice's credit note shows its whole amount as Applied; the paid one shows Refunded and Still held. Zero amounts show "—".
+3. Click a credit note number or its invoice: the invoice opens (credit notes show on their invoice).
+4. Tab "Vendor credits": the vendor credit shows "VCR-… · <vendor reference>", the bill, Amount, Applied, Refunded and Still held. Void a different vendor credit: it isn't listed.
+5. A range with none: "No credit notes in this period" / "No vendor credits in this period".
+6. As Staff with only "View receivables": only Credit notes and refunds, no Vendor credits tab; the reverse with only "View payables". Field: no Reports.
+7. Dark mode: cards and table are readable.
+
+Regression: the Credit Notes and Vendor Credits lists are unchanged.
+
+## 144. Profit & Loss on a cash basis (US-RPT-35, Phase 8)
+
+1. Set a cutover date (Settings › Opening balances) at the start of the year and add an opening invoice. This year: pay the opening invoice; issue a 1,000.00 services invoice with no tax and record a 500.00 payment; record a 400.00 bill and pay 100.00 of it; money out to Rent; post a depreciation journal.
+2. Profit & Loss: "Basis" shows Accrual selected. Click Cash: the subtitle reads "<range> · Cash basis"; cards show Cash received (income) 500.00, Cash paid (expenses), and Net profit (cash basis) with "accrual basis: <figure>".
+3. The table shows Sales — Services 500.00, Cost of Materials 100.00, Rent and Depreciation as posted, and "Net profit (cash basis)".
+4. The note reads "Payments on invoices from before <cutover date> aren't counted — that income was in your old books." The explanation under it says the Balance Sheet, Trial Balance and Tax Summary stay on the accrual basis.
+5. Export CSV on Cash: the file is named "profit-and-loss-cash-basis-…" and starts with "Basis … Cash basis".
+6. Compare with → Previous period on Cash: the columns are cash-basis figures and the subtitle ends "· Cash basis". Switch back to Accrual: the accrual figures return.
+7. Balance Sheet, Trial Balance and Tax Summary have no Basis switch.
+8. Keyboard: Tab to Basis and use arrow keys to switch; the selected option is announced. Dark mode is readable.
+
+Regression: Accrual Profit & Loss, its comparison (§139) and Export CSV are unchanged.
+
+## 145. Export every report (US-RPT-32, Phase 8)
+
+1. As an Owner with data this year, open each report from Reports. Each has "Export" offering "CSV" and "Excel (.xlsx)"; the menu works with the keyboard (Enter opens it, arrows move, Escape closes).
+2. Profit & Loss › Export › Excel: the file is named "profit-and-loss-<from>-<to>.xlsx". Rows 1–4 read the business name (Settings › Business), "Profit & Loss", the range with "· Accrual basis", and "Amounts in <currency>". The heading row is bold and stays put when you scroll. Amounts are numbers (they sum in Excel) with two decimals.
+3. Profit & Loss › Export › CSV: "Account,Amount,Currency" with plain decimals like 12345.50.
+4. Compare with → Same period last year, then export: both files have the two period columns, Change and Change %. Basis → Cash: the subtitle row and file name say cash basis.
+5. Balance Sheet with "Previous year end", Trial Balance with "Hide accounts with no balance" unticked, General ledger with two accounts picked, Day book with Source → Journals, Payments received with Account → Cash: each export has exactly those filters.
+6. Type in a list's search (Sales by customer, Payments received, Journals…) and export: only the matching rows are in the file.
+7. Tax Summary exports CSV and Excel. Receivables and Payables: Export › CSV is the same file as before; Excel works too.
+8. As Staff with only "View receivables": Receivables and Payments received export; other reports' routes answer 403.
+
+Regression: the old "Export CSV" downloads (/export.csv links bookmarked from Phase 4–6) still work.
+
+## 146. Report PDFs (US-RPT-33, Phase 8)
+
+1. With a logo and business name in Settings › Business, open Profit & Loss › Export › PDF. The file is "profit-and-loss-<from>-<to>.pdf". The top shows the logo, business name, "Profit & Loss", the range with "· Accrual basis" and "Amounts in <currency>". Sections are headed and totals bold; negative amounts carry a minus sign.
+2. The footer reads "<business> · Accrual basis · Prepared <today>" and "Page 1 of 1". Export a long General ledger: every page has the footer and "Page n of m".
+3. Basis → Cash, then PDF: the subtitle and footer say "Cash basis".
+4. Compare with → Each month over a year, then PDF: the page is landscape and the month columns fit.
+5. Switch the app to dark mode and export again: the PDF is light (white page, dark text).
+6. Remove the logo: the PDF still downloads, without it.
+7. Every other report's Export › PDF downloads a PDF named after the report and its range or date.
+
+Regression: invoice, quote, credit note and receipt PDFs are unchanged.
+
+## 147. Print any report (US-RPT-34, Phase 8)
+
+1. Open Payments received with more than ten payments this quarter. Export › Print: the print preview has no sidebar, breadcrumbs, From/To, Account, Export, search, Columns or pager. It shows "Payments received", a line "<business> · <range>" and every payment, not only the first ten.
+2. Close the preview: the table is back to ten rows a page.
+3. Print a long General ledger or Day book: column headings repeat at the top of every printed page and no row is cut across two pages.
+4. Switch the app to dark mode and print: the preview is black text on white.
+5. Profit & Loss, Balance Sheet ("As of <date>"), Cash Flow, Trial Balance and Tax Summary print with their title and range or date; Receivables and Payables print with the business name.
+6. Use the browser's own print shortcut (Ctrl/Cmd+P) instead: the chrome is still left out; the table prints the page on screen.
+
+Regression: screens look the same as before; tables still page.
+
+## 148. The accountant's Team (US-RPT-36, Phase 8)
+
+1. As an Owner, Team › Teams › a Team › Privileges › Reports & Ledger: "View financial statements" is off. Turn it on (and leave "View ledger / journals" off) for the Team a Staff member is in.
+2. As that Staff member: Reports lists Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary and the sales and purchase reports. Each opens and exports (CSV, Excel, PDF) and prints.
+3. On Profit & Loss, Balance Sheet and Trial Balance the account names aren't links. Turn on "View ledger / journals" too: they open the drill-down.
+4. Tax Summary: no "Record tax payment" button and no payments list; the note says owners and members with "View financial statements" can see it.
+5. As that Staff member, try Journals › New journal, Settings › Opening balances, closing a period and Settings: refused (no button, or "You don't have permission…").
+6. Turn "View financial statements" off: Profit & Loss shows "You don't have access to financial statements. Ask an owner."
+7. As a Field user: none of these reports appear; their URLs show the no-access page.
+
+Regression: Receivables, Payables and Job profitability still follow their own privileges; Owners see everything as before.
+
+## 149. Payables on the dashboard (US-DASH-21, Phase 8)
+
+1. Record two vendor bills: one due a week ago, one due in three days. Dashboard › Payables: Current, Overdue (in the overdue colour, with its amount) and Total; the bar shows the current share; "Bills due in the next 7 days 1 · <amount>"; "Oldest overdue <bill number> · 7 days".
+2. Click Overdue: Payables opens with "Show" set to "Overdue only" and only the overdue bill; "All outstanding" brings the rest back.
+3. Pay the overdue bill: the card's Overdue drops to $0.00 and "Oldest overdue" reads "None".
+4. The KPI row still shows Cash position, Profit this month, Receivables and Overdue — not Payables.
+5. As Staff without "View payables": no Payables card. With it: the card shows.
+6. Edit layout: Payables can be moved and hidden like the other cards.
+7. Dark mode: figures, bar and links are readable; the bar's meaning doesn't rely on colour (amounts are written).
+
+Regression: the Payables page without ?overdue=1 lists every open bill as before.
+
+## 150. Top expenses on the dashboard (US-DASH-22, Phase 8)
+
+1. In a new organisation the Top expenses card reads "No expenses in this period."
+2. Record money out to seven expense accounts this month. The card shows "Top expenses · this quarter" with the five largest as bars, each with its amount and %, and "Other" for the rest; the figures match Reports › Expenses by category for the same dates.
+3. Period → This month, then This financial year: the title and figures follow (the year starts on Settings › Financial year).
+4. As an Owner, click an account name: the drill-down lists its entries for the period. As Staff with "View financial statements" only, names aren't links.
+5. Staff without "View financial statements": no Top expenses card.
+6. Narrow window (phone width): bars sit under their labels and stay readable. Dark mode is readable.
+
+## 151. Accounts on the dashboard (US-DASH-23, Phase 8)
+
+1. Dashboard › Accounts lists Cash in Hand, the bank account and any card or extra bank accounts you've added, each with its icon and balance; archived accounts aren't listed.
+2. Spend on a card account: its balance reads "<amount> owed".
+3. Finish a reconciliation on the bank account (Banking › Reconcile): the card reads "Reconciled to <date>"; the others still say "Not reconciled".
+4. Click an account name: its register opens. "Banking" opens Banking.
+5. Staff without "View banking": no Accounts card.
+6. Dark mode and phone width: names truncate, balances stay readable.
+
+## 152. Ready to bill on the dashboard (US-DASH-24, Phase 8)
+
+1. In a new organisation, Ready to bill reads "Nothing waiting to be billed."
+2. Complete two milestones on a job without invoicing them. The card shows "Completed milestones not invoiced · 2" and their total. Click it: a list of jobs with their milestone count and amount; a job opens on its Milestones tab. Invoice one milestone: the count drops.
+3. Approve two billable expenses and one that isn't billable. "Approved billable expenses not billed · 2" shows what they'd invoice for, tax included. Click it: Expenses shows only those two, with "Showing approved billable expenses not yet on an invoice." and "Show all".
+4. Bill one expense onto an invoice: the count drops to 1.
+5. A cancelled job's completed milestones aren't counted.
+6. Staff without "View receivables": no Ready to bill card.
+
+## 153. Tax this period on the dashboard (US-DASH-25, Phase 8)
+
+1. Record a taxed sale and a taxed purchase this month. Dashboard › Tax this period: Collected, Input tax and Net payable match Reports › Tax Summary for this month; the note reads "<Month Year> · nothing paid yet".
+2. Settings › Tax › Return period → Quarterly. The card now covers this quarter ("Oct – Dec 2026"), with the quarter's figures.
+3. Record a tax payment for the quarter (Tax Summary › Record tax payment): the note reads "… · paid <amount>".
+4. Click the card: the Tax Summary opens with From and To set to the period.
+5. Staff without "View financial statements": no Tax this period card.
+6. Keyboard: Tab reaches the card's link and Enter opens the Tax Summary. Dark mode is readable.
+
+Regression: the Tax Summary opened from Reports still defaults to the start of the year to today.
+
+## 154. Accrual or cash on the dashboard (US-DASH-26, Phase 8)
+
+1. Issue a 1,000.00 invoice this month and record a 500.00 payment on it. Dashboard: "Accrual" is selected; Profit this month is $1,000.00; the money chart is "Income and expenses" with Income and Expenses in the legend and tooltip.
+2. Click "Cash": Profit this month reads $500.00 with "cash basis · …" under it; the chart becomes "Money in and out" (payments received, bills and expenses paid).
+3. Reload, then sign in on another browser: Cash is still selected.
+4. Switch back to Accrual: both figures return.
+5. Staff without "View dashboard summary" don't see the switch (they have no profit figure). Field: no switch.
+6. Keyboard: Tab to the switch, arrow keys change it; the selection is announced. Dark mode is readable.
+
+Regression: Money in and out (§ US-DASH-15) reads exactly as before on Cash, including the 3M/6M/12M range.
+
+## 155. Set up a recurring bill (US-PUR-29, Phase 8)
+
+1. Vendor Bills shows "Recurring bills" beside "New vendor bill". Open it: "No recurring bills yet".
+2. "+ New recurring bill": Name, Vendor, Repeat and On, Starts on (today by default), Ends, Due, Paid from ("Not set" or a money account), When it runs ("Record the bill" selected) and Lines. Save with no lines: "Add at least one line." A line without an expense account: "Choose an expense account on every line." A start date in the past: "Pick today or a later start date."
+3. Save a monthly schedule on the 1st: the list shows it Active with "Monthly · 1st", the next bill date, the amount and "Record".
+4. Open a recorded or draft bill › "Make recurring": the dialog opens with the bill's vendor and lines (collapsed to a summary with "Edit lines"). Name it and save: you land on Recurring bills with the new schedule.
+5. Click a schedule's name: "Edit recurring bill" with its details.
+6. Team › a Team › Privileges › Manage Vendor Bills has "Manage recurring bills"; Teams that create bills have it on. As Staff without it: no "Recurring bills" button, and /vendor-bills/recurring says to ask an Owner. Field: no access.
+7. Dark mode and phone width: the dialog and list are readable.
+
+Regression: Recurring invoices are unchanged.
+
+## 156. Recurring bills run automatically (US-PUR-30, Phase 8)
+
+1. Create a monthly recurring bill starting today on today's day of the month, "Record the bill". After 6:00 AM (or within 15 minutes if it's later), Vendor Bills lists a recorded bill from the vendor dated today, numbered "<name> · <date>", with the schedule's lines, due on the set day and the note "Created by Recurring bill <name>". Payables includes it.
+2. Recurring bills shows the next bill date a month on.
+3. Another schedule set to "Save as a draft for me to check": its bill is a draft, and Owners get "Recurring bill ready to review: <name>" in the bell and by email; the link opens the draft.
+4. Restart the API several times on the same day: still one bill per schedule for today.
+5. With "Ends after 1 bill": after its bill, the schedule shows "Finished" and no next date.
+6. (Developer check) Stop the server over a run date and start it later: each missed date gets its bill once, in date order.
+
+Regression: recurring invoices still create one invoice per due date.
+
+## 157. Pause, edit or stop a recurring bill (US-PUR-31, Phase 8)
+
+1. Recurring bills › a schedule's "…" menu: Edit, Pause, Delete. Pause: the status reads "Paused", Next bill "—", and a toast says it won't create bills until resumed. The 6:00 AM run creates nothing for it.
+2. "…" › Resume: "Active" again, with the next date in the future (no bills for dates passed while paused).
+3. Edit it, change the amount and save: future bills use the new amount; bills it already created keep theirs.
+4. "…" › Delete: "Delete this schedule? Bills it already created are kept." → Delete schedule. The schedule is gone; its bills are still in Vendor Bills.
+5. Keyboard: the menu opens with Enter, arrows move, Escape closes; the confirmation traps focus.
+
+Regression: Recurring invoices' row menu still says "Invoices it already created are kept." and pauses, resumes and deletes as before.
+
+## 158. Import catalogue items (US-CAT-09, Phase 8)
+
+1. Catalogue › Import: "Import catalogue items". Choose a CSV with headings like "Item Name, Description, Unit, Price, Tax, Income Account": the fields are matched to those columns; change one with its menu, or pick "Not in the file". Preview stays disabled until Name is matched.
+2. Include in the file: a good row, a row with a name already in the catalogue, a row repeated in the file, a tax that doesn't exist ("VAT 20%"), an account code that doesn't exist ("9999"), a row with no name and a price of "twelve". Preview: "<n> ready to import · <m> duplicates to skip · <k> rows with problems", with each row flagged ("Unknown tax VAT 20%", "Unknown account 9999", "Name is missing", "Price twelve isn't an amount", "Duplicate — skipped").
+3. "Import <n> items": the summary reads "Imported <n> items · skipped <m> duplicates · <k> rows failed" and lists the duplicates. "Download failed rows" saves "<file>-failed-rows.csv" with the original columns and a "Problem" column.
+4. Done: the new items are in the catalogue with their price, unit, tax and accounts; the existing item is unchanged.
+5. Import the same file again: everything good is now a duplicate; nothing changes.
+6. Staff without "Create/edit own catalogue items": no Import button; the route answers 403.
+7. Keyboard: the file chooser, menus and buttons work with Tab, Enter and Space. Dark mode is readable.
+
+Regression: adding and editing a single item is unchanged; contacts import is unchanged.
+
+## 159. Every report laid out the same way (US-RPT-40, Phase 8)
+
+1. Open each report in turn: Profit & Loss, Balance Sheet, Trial Balance, Cash Flow, Tax Summary, Job profitability, General ledger, Day book, Sales by customer and by item, Expenses by category, Purchases by vendor, Payments received and made, Credit notes and refunds, Vendor credits, Receivables and Payables. Each one shows, in order:
+   - The header. Its description ends with the range ("· Jan 1 – Oct 6, 2026", or "· As of Oct 6, 2026"); Job profitability, Receivables and Payables have no range.
+   - Tabs, where the report has siblings.
+   - The toolbar: labelled 40px filters on the left; Export, then any blue button, on the right, all lined up along the bottom.
+   - One row of three or four KPI cards, all the same height.
+   - A chart, where the report has one.
+   - The table.
+   - One grey footnote.
+2. No report has a Refresh button.
+   - Change From on Sales by customer: the cards and table update by themselves, with a spinner in the toolbar while they load.
+   - Tick or untick "Hide accounts with no balance" on Trial Balance: the list updates.
+   - Pick an account on General ledger: the list updates.
+3. Profit & Loss:
+   - Tabs: Profit & Loss, Balance Sheet, Trial Balance, Cash Flow; each opens its page.
+   - Cards: Total income, Total expenses, Net profit, Net margin.
+   - "Income and expenses by month" charts each month of the range. Choose a range over 24 months and the chart disappears.
+   - Compare with › Previous period: the header adds "compared with …", the cards show "▲/▼ n% vs previous period", and the table gains the other range, Change and Change %.
+   - Basis › Cash: the header ends "· Cash basis".
+4. Balance Sheet:
+   - Cards: Total assets, Total liabilities, Total equity.
+   - The table shows uppercase sections, bold subtotals, and "Total liabilities + equity" on a shaded row.
+5. Trial Balance:
+   - Cards: Accounts, Total debits, Total credits, Difference "$0.00 ✓ balanced".
+   - Search the accounts and use Columns.
+   - The table ends with a shaded Total row, and the footnote reads "Balanced — total debits equal total credits."
+6. Cash Flow: no green banner; the footnote starts "✓ Cash at end equals …". The table ends with "Net change in cash".
+7. Tax Summary: Export sits on the right with "Record tax payment" after it (Owner only). The three cards look like every other report's.
+8. Job profitability:
+   - The "Jobs" filter is labelled.
+   - Cards: Jobs, Contract value, Billed to date, Margin.
+   - The chart sits below the cards.
+   - Status shows as a coloured badge, and the table ends with a Total row.
+9. General ledger:
+   - Tabs: General ledger, Day book.
+   - Cards: Accounts, Lines, Total debits, Total credits. These cover every account, not just the page.
+   - Each account's table ends with a shaded "Closing balance".
+10. Receivables and Payables:
+    - "Show" offers All outstanding and Overdue only.
+    - Cards: Total outstanding, Current, Overdue (n invoices or bills), 90+ days.
+    - "Outstanding by age" splits one bar across Current, 1–30, 31–60, 61–90 and 90+ days, each with its amount and %.
+    - From the dashboard, the Overdue card opens Receivables with Show set to "Overdue only".
+11. Journals: the filters are on the left; Export, then "New journal" (Owner), on the right. There's no button top right.
+12. Dark mode: every report's cards, tables, chart and age bar are readable. At phone width the toolbar wraps and nothing scrolls sideways except wide tables.
+13. Keyboard: Tab reaches every filter, the tabs, Export and the table's buttons. Each filter is announced with its label.
+
+Regression:
+- Export (CSV, Excel, PDF) still downloads what's on screen, search included, and Print still prints every row.
+- Drill-downs from P&L, Balance Sheet, Trial Balance and Expenses by category still open.
+- Staff without "View ledger / journals" still see figures but no drill-down.
+
 ## Known gaps — don't file these as bugs
+
+- Cash-basis Profit & Loss (US-RPT-35, [D-178](prd/12-decisions.md)): retention released on its own invoice and advance invoices offset on a final invoice count only in proportion to payments on the invoice that carries the income lines.
 
 - Session-less signed file links (`/files/<id>?exp=&sig=`) work but no
   screen creates one yet; they arrive with the stories that need them.

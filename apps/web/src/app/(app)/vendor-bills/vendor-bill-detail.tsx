@@ -27,6 +27,9 @@ import { useEntityToast } from "./entity-toast";
 import { VendorPaymentsSection } from "./vendor-payments-section";
 import { VENDOR_BILL_STATUS_LABELS, type VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
+import { useCapability } from "../../../lib/capabilities-context";
+import { RecurringBillDialog } from "./recurring/recurring-bill-dialog";
 
 const STATUS_BADGE_CLASS: Record<VendorBill["status"], string> = {
   draft: "bg-draft-bg text-draft",
@@ -51,6 +54,9 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
+  // US-PUR-29 — "Make recurring" starts a recurring bill from this one.
+  const canManageRecurring = useCapability("vendor_bills.manage_recurring");
+  const [recurringOpen, setRecurringOpen] = useState(false);
   // Record Vendor Payment happens on the standalone /vendor-payments page
   // (see canRecordPayment's own button below) rather than an inline
   // dialog here, since a vendor payment can span several of a vendor's
@@ -139,9 +145,11 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
   const canEdit = bill.status === "draft";
   const canRecord = bill.status === "draft";
-  const canVoid = bill.status === "recorded";
+  const canVoid = bill.status === "recorded" && !bill.isOpening;
   const balanceDue = BigInt(bill.balanceDue);
   const amountPaid = BigInt(bill.amountPaid);
+  // US-PUR-25: vendor credits used against this bill.
+  const credited = BigInt(bill.creditedAmount ?? "0");
   const canRecordPayment = bill.status === "recorded" && balanceDue > 0n;
 
   return (
@@ -167,6 +175,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
             <div className="flex items-center gap-2">
               <h2 className="text-[18px] font-semibold text-on-surface">{bill.billNumber}</h2>
               <Badge className={STATUS_BADGE_CLASS[bill.status]}>{VENDOR_BILL_STATUS_LABELS[bill.status]}</Badge>
+              {bill.isOpening && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
             </div>
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {bill.contactName ?? "Unknown vendor"}
@@ -196,6 +205,11 @@ export function VendorBillDetail({ billId }: { billId: string }) {
                 Void
               </Button>
             )}
+            {canManageRecurring && !bill.isOpening && (
+              <Button variant="secondary" onClick={() => setRecurringOpen(true)} disabled={busy}>
+                Make recurring
+              </Button>
+            )}
             {canEdit && (
               <Button variant="ghost" onClick={handleDelete} disabled={busy}>
                 Delete draft
@@ -215,6 +229,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
+        {bill.isOpening && <p className="text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines. Attach the original bill below to keep it with this one.</p>}
         <div className="flex flex-col divide-y divide-border">
           {(bill.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-start justify-between gap-4 py-2">
@@ -239,6 +254,21 @@ export function VendorBillDetail({ billId }: { billId: string }) {
       </Card>
 
       <VendorPaymentsSection billId={bill.id} refreshKey={paymentsRefreshKey} />
+      {(bill.creditsApplied ?? []).length > 0 && (
+        <Card className="flex flex-col gap-3" data-testid="credits-applied">
+          <h2 className="text-[15px] font-semibold text-on-surface">Credits applied</h2>
+          {bill.creditsApplied!.map((c) => (
+            <div key={c.id} className="flex items-center justify-between gap-3 text-[14px]">
+              <a href={`/vendor-credits/${c.vendorCreditId}`} className="text-primary hover:underline">
+                {c.number}
+                {c.vendorReference ? ` · their ${c.vendorReference}` : ""}
+              </a>
+              <span className="tabular-nums text-on-surface">{formatMoney(BigInt(c.amount), bill.currency)}</span>
+            </div>
+          ))}
+        </Card>
+      )}
+      <AttachmentsSection entityType="vendor_bill" entityId={bill.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={bill.subtotalAmount} currency={bill.currency} />
@@ -249,7 +279,8 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         {amountPaid > 0n && (
           <TotalRow label="Paid" value={formatMoney(-(amountPaid), bill.currency)} currency="" raw />
         )}
-        {amountPaid > 0n && (
+        {credited > 0n && <TotalRow label="Credits applied" value={formatMoney(-credited, bill.currency)} currency="" raw />}
+        {(amountPaid > 0n || credited > 0n) && (
           <div className="border-t border-border pt-2">
             <TotalRow label="Balance due" value={bill.balanceDue} currency={bill.currency} emphasize critical />
           </div>
@@ -263,6 +294,34 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         </Card>
       )}
 
+      <RecurringBillDialog
+        open={recurringOpen}
+        onOpenChange={setRecurringOpen}
+        prefill={{
+          contactId: bill.contactId,
+          currency: bill.currency,
+          name: bill.contactName ?? "",
+          lines: (bill.lines ?? []).map((l) => ({
+            id: l.id,
+            sortOrder: l.sortOrder,
+            type: l.type,
+            catalogItemId: l.catalogItemId,
+            name: l.name,
+            description: l.description,
+            quantity: l.quantity,
+            unitPriceAmount: l.unitPriceAmount,
+            accountId: l.accountId,
+            taxRatePercentage: l.taxRatePercentage,
+            taxRateId: l.taxRateId,
+            taxGroupId: l.taxGroupId,
+            isTaxInclusive: l.isTaxInclusive,
+          })),
+        }}
+        onSaved={() => {
+          setRecurringOpen(false);
+          router.push("/vendor-bills/recurring");
+        }}
+      />
       {/* Void requires a reason; the API rejects an empty one, so this is a required field, not optional. */}
       <Dialog open={voidOpen} onOpenChange={setVoidOpen}>
         <DialogContent>

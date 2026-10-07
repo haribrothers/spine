@@ -20,7 +20,7 @@ export function Pagination({ page, pageCount, onPageChange, className }: Paginat
   const pages = pageWindow(page, pageCount);
 
   return (
-    <nav className={cn("flex items-center gap-1", className)} aria-label="Pagination">
+    <nav data-print="hide" className={cn("flex items-center gap-1", className)} aria-label="Pagination">
       <button
         type="button"
         aria-label="Previous page"

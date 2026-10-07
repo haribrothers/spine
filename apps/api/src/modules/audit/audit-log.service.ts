@@ -32,10 +32,26 @@ export type AuditEntityType =
   | "expense"
   | "vendor_payment"
   | "recurring_invoice"
+  | "recurring_bill"
   // US-SET-11: role and access changes; entity id is the member's user id.
   | "user"
   // US-SET-16: data exports prepared and downloaded.
-  | "data_export";
+  | "data_export"
+  // US-BANK-01: bank, cash and card accounts added, renamed, archived or restored.
+  | "money_account"
+  // US-BANK-04/05: transfers and other money in or out, recorded and deleted.
+  | "bank_transfer"
+  | "bank_transaction"
+  // US-PUR-24: vendor credits.
+  | "vendor_credit"
+  // US-TAX-08: tax paid to or refunded by the authority.
+  | "tax_payment"
+  // US-BANK-10/11: reconciliations finished and undone.
+  | "bank_reconciliation"
+  // US-RPT-16/19: the opening balances (entity id is the organisation's).
+  | "opening_balances"
+  // US-RPT-20/21: manual journals posted and reversed.
+  | "manual_journal";
 
 // Note: public quote-response audit rows (S-03.6) use entityType "quote"
 // with actorUserId: null (the customer isn't a system user) — see

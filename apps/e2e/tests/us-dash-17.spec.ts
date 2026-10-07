@@ -45,10 +45,10 @@ test.describe("US-DASH-17", () => {
     await expect(kpis.locator('[data-kpi="pipeline"]')).toContainText("Open pipeline");
     await expect(kpis.locator('[data-kpi="quotes_won"]')).toContainText("Quotes won this month");
     await expect(kpis.locator('[data-kpi="cash"]')).toHaveCount(0);
-    await expect(staffPage.getByText("Money in and out")).toHaveCount(0);
+    await expect(staffPage.getByTestId("money-in-out")).toHaveCount(0);
 
     // US-TEAM-18: no Team section in the sidebar.
-    await expect(staffPage.getByRole("link", { name: "Invoices", exact: true })).toBeVisible();
+    await expect(staffPage.locator("aside").getByRole("link", { name: "Invoices", exact: true })).toBeVisible();
     await expect(staffPage.getByRole("link", { name: "Teams", exact: true })).toHaveCount(0);
     await expect(staffPage.getByRole("link", { name: "Users", exact: true })).toHaveCount(0);
 

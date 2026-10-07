@@ -1,3 +1,5 @@
+import type { ProfitAndLossComparison } from "@spine/shared";
+
 export interface ReportAccountLine {
   accountId?: string;
   code: string;
@@ -13,6 +15,14 @@ export interface ProfitAndLossReport {
   totalIncome: string;
   totalExpenses: string;
   netProfit: string;
+  /** US-RPT-27 — with `?compare=`. */
+  comparison?: ProfitAndLossComparison;
+  /** US-RPT-35 (D-138). */
+  basis?: "accrual" | "cash";
+  /** On the cash basis: the accrual net profit for the same range. */
+  accrualNetProfit?: string;
+  /** On the cash basis: payments on documents from before the cutover, which aren't counted. */
+  openingExcluded?: { cutoverDate: string; invoices: string; bills: string } | null;
 }
 
 export interface BalanceSheetReport {
@@ -24,6 +34,8 @@ export interface BalanceSheetReport {
   totalLiabilities: string;
   totalEquity: string;
   totalLiabilitiesAndEquity: string;
+  /** US-RPT-27 — the same statement on `?compareAsOf=`. */
+  comparison?: BalanceSheetReport;
 }
 
 export interface AccountDrilldownEntry {
@@ -86,6 +98,9 @@ export const SOURCE_TYPE_ROUTES: Record<string, (sourceId: string) => string> = 
   vendor_payment: (id) => `/vendor-payments/${id}`,
   vendor_payment_delete: (id) => `/vendor-payments/${id}`,
   expense: (id) => `/expenses/${id}`,
+  // US-RPT-20/21
+  manual_journal: (id) => `/journals/${id}`,
+  manual_journal_reversal: (id) => `/journals/${id}`,
   // credit_note deliberately omitted — sourceId is the credit note's own
   // id, and there's no standalone /credit-notes/:id route (invoice-
   // triggered only, per CHANGELOG's own known-gap note), so this falls

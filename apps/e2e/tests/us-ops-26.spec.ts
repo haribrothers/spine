@@ -109,7 +109,7 @@ const SCREENS: { name: string; open: (page: Page) => Promise<void> }[] = [
   {
     name: "job-profitability-report",
     open: async (page) => {
-      await page.goto("/reports?tab=jobs");
+      await page.goto("/reports/job-profitability");
       await expect(page.getByText("Contract, billed and cost by job")).toBeVisible();
     },
   },

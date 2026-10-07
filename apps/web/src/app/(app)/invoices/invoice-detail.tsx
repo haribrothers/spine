@@ -25,6 +25,8 @@ import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
+import { ApplyCustomerCreditDialog } from "./apply-customer-credit-dialog";
+import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
 import { useEntityToast } from "./entity-toast";
@@ -32,6 +34,7 @@ import { PaymentsSection } from "./payments-section";
 import { RecordPaymentDialog } from "./record-payment-dialog";
 import { INVOICE_STATUS_LABELS, PAYMENT_STATUS_LABELS, type Invoice } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
 
 /**
  * `GET /invoices/:id/pdf` streams a binary PDF, not JSON — `apiClient`
@@ -79,6 +82,10 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   const hasSendReminderCapability = useCapability("invoices.send_reminder");
   const hasRecordPaymentCapability = useCapability("payments.edit_own");
   const hasIssueCreditNoteCapability = useCapability("credit_notes.issue");
+  const hasApplyCreditCapability = useCapability("payments.apply_credit");
+  // US-PAY-16: the customer's credit from payments and credit notes, for "Apply credit".
+  const [applyCreditOpen, setApplyCreditOpen] = useState(false);
+  const [customerCredit, setCustomerCredit] = useState<bigint>(0n);
 
   const load = useCallback(() => {
     apiClient
@@ -90,6 +97,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   useEffect(() => {
     load();
   }, [load]);
+
+  // US-PAY-16: whether this customer holds credit to apply, reloaded with the invoice.
+  useEffect(() => {
+    if (!invoice?.contactId || !hasApplyCreditCapability) return;
+    loadCustomerCredit(invoice.contactId)
+      .then((credits) => setCustomerCredit(credits.reduce((sum, c) => sum + c.available, 0n)))
+      .catch(() => setCustomerCredit(0n));
+  }, [invoice, hasApplyCreditCapability]);
 
   // S-05.7's email is sent by a queued worker, out of band from the
   // request that triggered it (see handleSendEmail's own comment) — same
@@ -220,7 +235,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   // posting (S-06.4, record the deposit as an unallocated payment)
   // instead, not through this invoice.
   const canRecordPayment = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasRecordPaymentCapability;
-  const canIssueCreditNote = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasIssueCreditNoteCapability;
+  // US-PAY-16 (D-142): a paid invoice can be credited too; the excess becomes customer credit.
+  const canIssueCreditNote = invoice.status === "issued" && invoice.type !== "advance" && hasIssueCreditNoteCapability;
+  const canApplyCredit = invoice.status === "issued" && balanceDue > 0n && invoice.type !== "advance" && hasApplyCreditCapability && customerCredit > 0n;
   const creditedAmount = BigInt(invoice.creditedAmount);
 
   return (
@@ -247,6 +264,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               <h2 className="text-[18px] font-semibold text-on-surface">{invoice.number ?? "Draft invoice"}</h2>
               <Badge className={STATUS_BADGE_CLASS[invoice.status]}>{INVOICE_STATUS_LABELS[invoice.status]}</Badge>
               {invoice.type === "advance" && <Badge className="bg-draft-bg text-draft">Deposit</Badge>}
+              {invoice.type === "opening" && <Badge className="bg-draft-bg text-draft">Opening balance</Badge>}
               {invoice.isOverdue && <Badge className="bg-overdue-bg text-overdue">Overdue</Badge>}
           {PAYMENT_STATUS_LABELS[invoice.paymentStatus] && (
             <Badge className={invoice.paymentStatus === "paid" ? "bg-paid-bg text-paid" : "bg-due-soon-bg text-due-soon"}>{PAYMENT_STATUS_LABELS[invoice.paymentStatus]}</Badge>
@@ -260,11 +278,14 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
           <div className="flex flex-wrap items-center gap-2">
             <HistorySection endpoint={`/invoices/${invoice.id}/history`} subjectLabel="this invoice" />
-            <Button variant="secondary" asChild>
-              <a href={invoicePdfUrl(invoice.id)} target="_blank" rel="noreferrer">
-                {invoice.status === "draft" ? "Preview PDF" : "Download PDF"}
-              </a>
-            </Button>
+            {/* US-RPT-17: an opening invoice has no PDF in Spine — its attachments hold the original. */}
+            {invoice.type !== "opening" && (
+              <Button variant="secondary" asChild>
+                <a href={invoicePdfUrl(invoice.id)} target="_blank" rel="noreferrer">
+                  {invoice.status === "draft" ? "Preview PDF" : "Download PDF"}
+                </a>
+              </Button>
+            )}
             {canEdit && (
               <Button variant="secondary" asChild>
                 <Link href={`/invoices/${invoice.id}/edit`}>Edit</Link>
@@ -280,12 +301,17 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 Record payment
               </Button>
             )}
+            {canApplyCredit && (
+              <Button variant="secondary" onClick={() => setApplyCreditOpen(true)} disabled={busy}>
+                Apply credit
+              </Button>
+            )}
             {canIssueCreditNote && (
               <Button variant="secondary" onClick={() => setCreditNoteOpen(true)} disabled={busy}>
                 Issue credit note
               </Button>
             )}
-            {canSendEmail && (
+            {canSendEmail && invoice.type !== "opening" && (
               <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email invoice"}
               </Button>
@@ -295,7 +321,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                 {busy ? <Spinner size="sm" /> : "Send reminder"}
               </Button>
             )}
-            {canVoid && (
+            {canVoid && invoice.type !== "opening" && (
               <Button variant="ghost" onClick={() => setVoidOpen(true)} disabled={busy}>
                 Void
               </Button>
@@ -376,6 +402,9 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
+        {invoice.type === "opening" && (
+          <p className="text-[13px] text-on-surface-muted">Brought in from your old system, so it has no lines. Attach the original below to keep it with the invoice.</p>
+        )}
         <div className="flex flex-col divide-y divide-border">
           {(invoice.lines ?? []).map((line) => (
             <div key={line.id} className="flex items-start justify-between gap-4 py-2">
@@ -402,6 +431,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
       <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
+      <AttachmentsSection entityType="invoice" entityId={invoice.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={invoice.subtotalAmount} currency={invoice.currency} />
@@ -520,12 +550,30 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         open={creditNoteOpen}
         onOpenChange={setCreditNoteOpen}
         invoiceId={invoice.id}
+        invoiceNumber={invoice.number}
+        customerName={invoice.contactName ?? null}
         currency={invoice.currency}
-        maxAmount={balanceDue}
+        invoiceTotal={BigInt(invoice.totalAmount)}
+        balanceDue={balanceDue}
         onIssued={() => {
           load();
           setCreditNotesRefreshKey((key) => key + 1);
           showToast("Credit note issued", "The invoice's balance has been updated.");
+        }}
+      />
+
+      <ApplyCustomerCreditDialog
+        open={applyCreditOpen}
+        onOpenChange={setApplyCreditOpen}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.number}
+        contactId={invoice.contactId}
+        currency={invoice.currency}
+        balanceDue={balanceDue}
+        onApplied={(total) => {
+          load();
+          setPaymentsRefreshKey((key) => key + 1);
+          showToast("Credit applied", `${formatMoney(total, invoice.currency)} of credit now counts against ${invoice.number ?? "this invoice"}.`);
         }}
       />
 

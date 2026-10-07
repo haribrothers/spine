@@ -20,8 +20,13 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   Spinner,
 } from "@spine/ui";
+import { MoreHorizontal } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -30,6 +35,8 @@ import { ApplyCreditDialog } from "./apply-credit-dialog";
 import { useEntityToast } from "./entity-toast";
 import { PAYMENT_METHOD_LABELS, type Payment } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection } from "../../../components/attachments-section";
+import { CustomerRefundDialog, RefundsSection, refundToast } from "../../../components/customer-refund-dialog";
 
 /**
  * `GET /payments/:id/pdf` streams a binary PDF, not JSON — same reasoning
@@ -51,6 +58,8 @@ function paymentPdfUrl(paymentId: string): string {
  * (opens the live-rendered receipt directly, same pattern as invoices'
  * "Download PDF") and "Email receipt" (synchronous send, not queued — see
  * PaymentsService.sendReceiptEmail's own doc comment on why).
+ * The footer keeps one main action visible and puts the rest under "More"
+ * so it fits the drawer (US-PAY-17 fix).
  */
 export function PaymentDetailDrawer({
   open,
@@ -131,11 +140,18 @@ export function PaymentDetailDrawer({
   const hasSendReceiptCapability = useCapability("payments.send_receipt");
   const canDelete = payment && payment.allocatedAmount === "0" && hasDeleteCapability;
   const canApplyCredit = payment && payment.unallocatedAmount !== "0" && hasApplyCreditCapability;
+  // US-PAY-17/18: refunds need their own right.
+  const hasRefundCapability = useCapability("payments.refund");
+  const canRefund = payment && payment.unallocatedAmount !== "0" && hasRefundCapability;
+  const [refundOpen, setRefundOpen] = useState(false);
+  const [refundsKey, setRefundsKey] = useState(0);
+  // The footer shows one main action; the rest go in "More actions" so the row fits the drawer.
+  const main = canApplyCredit ? "apply" : hasSendReceiptCapability ? "receipt" : null;
 
   return (
     <>
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent>
+        <DrawerContent size="lg">
           <DrawerHeader>
             <DrawerTitle>{payment?.number ?? "Payment"}</DrawerTitle>
             <DrawerDescription>{payment?.contactName ?? "—"}</DrawerDescription>
@@ -155,6 +171,7 @@ export function PaymentDetailDrawer({
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Date" value={new Date(payment.date).toLocaleDateString()} />
                   <Field label="Method" value={PAYMENT_METHOD_LABELS[payment.method]} />
+                  {payment.moneyAccount && <Field label="Paid into" value={payment.moneyAccount.name} />}
                   <Field label="Reference" value={payment.reference ?? "—"} />
                   <Field
                     label="Amount"
@@ -200,30 +217,62 @@ export function PaymentDetailDrawer({
                 )}
               </div>
             )}
-          </DrawerBody>
-          <DrawerFooter>
-            {payment && <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />}
             {payment && (
-              <Button variant="secondary" asChild>
-                <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">
-                  Download PDF
-                </a>
-              </Button>
+              <div className="mt-5">
+                <RefundsSection
+                  contactId={payment.contactId}
+                  sourceId={payment.id}
+                  refreshKey={refundsKey}
+                  canRefund={hasRefundCapability}
+                  onChanged={() => {
+                    reload();
+                    onChanged?.();
+                    setRefundsKey((k) => k + 1);
+                  }}
+                />
+              </div>
             )}
-            {payment && hasSendReceiptCapability && (
-              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
-                {busy ? <Spinner size="sm" /> : "Email receipt"}
-              </Button>
+            {payment && (
+              <div className="mt-5">
+                <AttachmentsSection entityType="payment" entityId={payment.id} />
+              </div>
             )}
-            {canApplyCredit && (
+          </DrawerBody>
+          <DrawerFooter className="flex-wrap">
+            {payment && <HistorySection endpoint={`/payments/${payment.id}/history`} subjectLabel="this payment" />}
+            {main === "apply" && (
               <Button variant="secondary" onClick={() => setApplyCreditOpen(true)} disabled={busy}>
                 Apply credit
               </Button>
             )}
-            {canDelete && (
-              <Button variant="danger" onClick={() => setConfirmOpen(true)} disabled={busy}>
-                Delete payment
+            {payment && main === "receipt" && (
+              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
+                {busy ? <Spinner size="sm" /> : "Email receipt"}
               </Button>
+            )}
+            {payment && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" aria-label="More actions" disabled={busy}>
+                    <MoreHorizontal size={16} aria-hidden />
+                    More
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <a href={paymentPdfUrl(payment.id)} target="_blank" rel="noreferrer">
+                      Download PDF
+                    </a>
+                  </DropdownMenuItem>
+                  {hasSendReceiptCapability && main !== "receipt" && <DropdownMenuItem onSelect={handleSendReceipt}>Email receipt</DropdownMenuItem>}
+                  {canRefund && <DropdownMenuItem onSelect={() => setRefundOpen(true)}>Refund</DropdownMenuItem>}
+                  {canDelete && (
+                    <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+                      Delete payment
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Close
@@ -232,6 +281,23 @@ export function PaymentDetailDrawer({
         </DrawerContent>
       </Drawer>
 
+      {payment && (
+        <CustomerRefundDialog
+          open={refundOpen}
+          onOpenChange={setRefundOpen}
+          contactId={payment.contactId}
+          contactName={payment.contactName ?? "the customer"}
+          currency={payment.currency}
+          sourceId={payment.id}
+          onRefunded={(refund) => {
+            reload();
+            onChanged?.();
+            setRefundsKey((k) => k + 1);
+            const { title, description } = refundToast(refund);
+            showToast(title, description);
+          }}
+        />
+      )}
       <ApplyCreditDialog
         open={applyCreditOpen}
         onOpenChange={setApplyCreditOpen}

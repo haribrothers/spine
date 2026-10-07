@@ -1,5 +1,5 @@
 import type { Database } from "../client";
-import { accounts, type accountTypeEnum } from "../schema";
+import { accounts, moneyAccounts, type accountTypeEnum } from "../schema";
 
 type AccountType = (typeof accountTypeEnum.enumValues)[number];
 
@@ -33,8 +33,12 @@ export const DEFAULT_CHART_OF_ACCOUNTS: readonly SeedAccount[] = [
   { code: "3000", name: "Owner's Capital", type: "equity", isSystem: false },
   { code: "3100", name: "Owner's Drawings", type: "equity", isSystem: false },
   { code: "3200", name: "Retained Earnings", type: "equity", isSystem: true },
+  // US-RPT-16 (D-137): differences in the opening balances sit here.
+  { code: "3900", name: "Opening Balance Adjustments", type: "equity", isSystem: true },
   { code: "4000", name: "Sales — Goods", type: "income", isSystem: false },
   { code: "4100", name: "Sales — Services", type: "income", isSystem: false },
+  // US-BANK-05 (D-174): the "Interest received" shortcut for money in.
+  { code: "4800", name: "Interest Received", type: "income", isSystem: false },
   { code: "4900", name: "Discounts Given", type: "income", isSystem: false },
   { code: "5000", name: "Cost of Materials", type: "expense", isSystem: false },
   { code: "5100", name: "Subcontractor Costs", type: "expense", isSystem: false },
@@ -48,14 +52,33 @@ export const DEFAULT_CHART_OF_ACCOUNTS: readonly SeedAccount[] = [
   { code: "6900", name: "Other Expenses", type: "expense", isSystem: false },
 ];
 
+/** US-BANK-01 (D-140) — 1000 and 1010 are the organisation's first money accounts; 1010 is the default. */
+const DEFAULT_MONEY_ACCOUNTS = [
+  { code: "1000", kind: "cash", isDefault: false },
+  { code: "1010", kind: "bank", isDefault: true },
+] as const;
+
 export async function seedChartOfAccounts(db: Database, orgId: string): Promise<void> {
-  await db.insert(accounts).values(
-    DEFAULT_CHART_OF_ACCOUNTS.map((account) => ({
+  const rows = await db
+    .insert(accounts)
+    .values(
+      DEFAULT_CHART_OF_ACCOUNTS.map((account) => ({
+        orgId,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        isSystem: account.isSystem,
+      })),
+    )
+    .returning({ id: accounts.id, code: accounts.code, name: accounts.name });
+  const byCode = new Map(rows.map((row) => [row.code, row]));
+  await db.insert(moneyAccounts).values(
+    DEFAULT_MONEY_ACCOUNTS.map((money) => ({
       orgId,
-      code: account.code,
-      name: account.name,
-      type: account.type,
-      isSystem: account.isSystem,
+      accountId: byCode.get(money.code)!.id,
+      kind: money.kind,
+      name: byCode.get(money.code)!.name,
+      isDefault: money.isDefault,
     })),
   );
 }

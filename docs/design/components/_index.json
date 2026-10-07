@@ -265,6 +265,11 @@
     "platform": "Web"
   },
   {
+    "md": "ReportToolbar",
+    "name": "report-toolbar",
+    "platform": "Web"
+  },
+  {
     "md": "Resizable",
     "name": "resizable",
     "platform": "Web"
@@ -277,6 +282,11 @@
   {
     "md": "ScrollArea",
     "name": "scroll-area",
+    "platform": "Web"
+  },
+  {
+    "md": "SegmentedBar",
+    "name": "segmented-bar",
     "platform": "Web"
   },
   {
@@ -312,6 +322,11 @@
   {
     "md": "StatCard",
     "name": "stat-card",
+    "platform": "Web"
+  },
+  {
+    "md": "StatementTable",
+    "name": "statement-table",
     "platform": "Web"
   },
   {

@@ -18,6 +18,8 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   expense: "Expense",
   job: "Job",
   vendor_payment: "Vendor Payment",
+  vendor_credit: "Vendor Credit",
+  journal: "Journal",
 };
 
 export interface NumberingStepProps {

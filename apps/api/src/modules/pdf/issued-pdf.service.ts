@@ -86,6 +86,7 @@ export class IssuedPdfService implements OnModuleInit {
    * (storing it first if it isn't yet), or a live render for a draft.
    */
   async forDownload(orgId: string, kind: IssuedDocumentKind, id: string): Promise<DocumentPdf> {
+    await this.refuseOpeningInvoice(orgId, kind, id);
     return (await this.getOrStore(orgId, kind, id)) ?? this.render(orgId, kind, id);
   }
 
@@ -103,6 +104,13 @@ export class IssuedPdfService implements OnModuleInit {
       await this.queueStore(orgId, kind, id);
       return this.render(orgId, kind, id);
     }
+  }
+
+  /** US-RPT-17 — an opening invoice was issued by the old system; Spine has no PDF of it. */
+  private async refuseOpeningInvoice(orgId: string, kind: IssuedDocumentKind, id: string) {
+    if (kind !== "invoice") return;
+    const [row] = await this.db.select({ type: invoices.type }).from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
+    if (row?.type === "opening") throw new NotFoundException("An opening invoice has no PDF in Spine. Attach the original to the invoice instead.");
   }
 
   /** The stored PDF of an issued document, storing it on first use. Null for a draft. */

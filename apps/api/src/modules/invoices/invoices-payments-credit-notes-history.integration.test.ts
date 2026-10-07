@@ -24,6 +24,7 @@ import { InvoicePdfService } from "../pdf/invoice-pdf.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { FilesService } from "../files/files.service";
+import { MoneyAccountsService } from "../banking/money-accounts.service";
 
 /**
  * Regression coverage for `GET /invoices/:id/history`, `GET /payments/:id/
@@ -78,7 +79,7 @@ describe("Invoices/Payments/Credit Notes history (requires local Postgres)", () 
     );
 
     invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
-    paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf);
+    paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf, new MoneyAccountsService(db, auditLog));
     creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger, queue);
 
     const ownerEmail = `history-owner-${randomUUID()}@example.com`;

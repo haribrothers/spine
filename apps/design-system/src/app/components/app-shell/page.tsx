@@ -202,6 +202,10 @@ export default () => (
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="printing" title="Printing">
+        <DocLead>In print the sidebar, breadcrumbs and buttons are left out and the scrolling shell (<code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">data-print="flow"</code>) becomes normal flow, so a long page prints in full, black on white, whatever the theme.</DocLead>
+      </DocSection>
+
       <DocSection id="accessibility" title="Accessibility">
         <FeatureList
           items={[

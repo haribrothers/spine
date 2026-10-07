@@ -113,6 +113,7 @@ Seeded for every new organisation (`apps/api/src/db/seed/chart-of-accounts.ts`).
 | 3900 | Opening Balance Adjustments ● (Phase 8, D-137) | Equity |
 | 4000 | Sales — Goods | Income |
 | 4100 | Sales — Services | Income |
+| 4800 | Interest Received (Phase 8, D-174) | Income |
 | 4900 | Discounts Given | Income (contra) |
 | 5000 | Cost of Materials | Expense |
 | 5100 | Subcontractor Costs | Expense |
@@ -130,4 +131,4 @@ Seeded for every new organisation (`apps/api/src/db/seed/chart-of-accounts.ts`).
 
 ## Cash flow sections
 
-How the Cash Flow statement (US-RPT-26) classifies accounts, indirect method: net profit, adjusted for movements in 1100, 1150, 1200, 1300, 2000, 2100, 2200, 2400 and card accounts 2300–2399 → **Operating**; movements in 1500 and 1510 (and other fixed-asset accounts the owner adds) → **Investing**; movements in 2500 and other loan accounts, 3000 Owner's Capital and 3100 Owner's Drawings → **Financing**. Bank and cash money accounts (1000–1099) are the cash itself; card accounts are short-term liabilities and sit under Operating, so spending on a card reduces cash only when the card is paid off. A new account follows its type and code range; an Owner can't reclassify one in 1.0.
+How the Cash Flow statement (US-RPT-26) classifies accounts, indirect method: net profit, adjusted for movements in 1100, 1150, 1200, 1300, 2000, 2100, 2200, 2400 and card accounts 2300–2399 → **Operating**; movements in 1500 and 1510 (and other fixed-asset accounts the owner adds) → **Investing**; movements in 2500 and other loan accounts, 3000 Owner's Capital and 3100 Owner's Drawings → **Financing**. Bank and cash money accounts (1000–1099) are the cash itself; card accounts are short-term liabilities and sit under Operating, so spending on a card reduces cash only when the card is paid off. A new account follows its type and code range; an Owner can't reclassify one in 1.0. In code: bank and cash money accounts are cash; card money accounts → "Increase in card balances"; income and expense → "Net profit"; assets 1100–1199 → receivables and retention, 1200–1299 and liabilities 2100–2199 → "Tax collected less paid", 2000–2099 → payables, 2200–2299 → customer advances, other assets below 1500 and other liabilities below 2500 → "Other operating changes"; assets 1500–1999 → Investing, one line per account; liabilities 2500–2999 and all equity → Financing, one line per account. Cash at start plus the net change must equal the bank and cash balances on the To date; a mismatch is logged as an error and the page says so.

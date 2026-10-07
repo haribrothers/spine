@@ -1,5 +1,5 @@
 import { files } from "./files";
-import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { contacts } from "./contacts";
@@ -60,6 +60,12 @@ export const creditNotes = pgTable(
     subtotalAmount: bigint("subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     taxAmount: bigint("tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     totalAmount: bigint("total_amount", { mode: "bigint" }).notNull().default(sql`0`),
+    /**
+     * US-PAY-16 (D-142) — the part of the total that went beyond the
+     * invoice's balance and is held as customer credit in 2200, less what's
+     * since been applied to other invoices or refunded. Never negative.
+     */
+    creditRemainingAmount: bigint("credit_remaining_amount", { mode: "bigint" }).notNull().default(sql`0`),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set once, in the same transaction as the status flip to `issued` — never touched again (an issued credit note is immutable, same as an issued invoice). */
     issuedAt: timestamp("issued_at", { withTimezone: true }),
@@ -77,6 +83,40 @@ export const creditNotes = pgTable(
     index("credit_notes_invoice_idx").on(table.invoiceId),
     index("credit_notes_contact_idx").on(table.contactId),
     index("credit_notes_org_number_idx").on(table.orgId, table.number),
+    check("credit_notes_credit_remaining_not_negative", sql`${table.creditRemainingAmount} >= 0`),
+  ],
+);
+
+/**
+ * US-PAY-16 — a credit note's spare credit applied to another invoice of
+ * the same customer (P6: Dr 2200 Customer Advances / Cr 1100 AR). The
+ * invoice's `credited_amount` rises by `amount`; the credit note's
+ * `credit_remaining_amount` falls by it, never below zero.
+ */
+export const creditNoteAllocations = pgTable(
+  "credit_note_allocations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: text("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    creditNoteId: uuid("credit_note_id")
+      .notNull()
+      .references(() => creditNotes.id),
+    invoiceId: uuid("invoice_id")
+      .notNull()
+      .references(() => invoices.id),
+    amount: bigint("amount", { mode: "bigint" }).notNull(),
+    entryId: uuid("entry_id")
+      .notNull()
+      .references(() => journalEntries.id),
+    createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    check("credit_note_allocations_positive", sql`${table.amount} > 0`),
+    index("credit_note_allocations_credit_note_idx").on(table.creditNoteId),
+    index("credit_note_allocations_invoice_idx").on(table.invoiceId),
   ],
 );
 

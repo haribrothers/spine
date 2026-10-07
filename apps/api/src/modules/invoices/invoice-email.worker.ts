@@ -90,7 +90,8 @@ export class InvoiceEmailWorker implements OnModuleInit {
     scheduledDaysOverdue?: number,
   ): Promise<void> {
     // US-INV-17: attach the PDF stored when the invoice was issued (stored now if it isn't yet).
-    const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
+    // US-RPT-17: an opening invoice has none, so its reminders go without one.
+    const pdf = row.invoice.type === "opening" ? null : await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
 
     if (!row.contactEmail) {
       throw new Error(`Invoice ${invoiceId}'s contact has no email address on file — cannot send`);
@@ -137,7 +138,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
       subject: template.subject,
       text: email.text,
       html: email.html,
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
+      attachments: [...(pdf ? [{ filename: pdf.filename, content: pdf.buffer, contentType: "application/pdf" }] : []), ...email.attachments],
     });
   }
 }

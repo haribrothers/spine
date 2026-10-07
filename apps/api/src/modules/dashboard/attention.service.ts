@@ -231,14 +231,14 @@ export class AttentionService {
   /** Recorded bills with a balance, due today or within 3 days. */
   private async vendorBillsDue(orgId: string, today: string, currency: string): Promise<AttentionItem> {
     const rows = await this.db
-      .select({ id: vendorBills.id, contactId: vendorBills.contactId, number: vendorBills.billNumber, name: contacts.name, balance: sql<string>`(${vendorBills.totalAmount} - ${vendorBills.amountPaid})::text`, dueDate: vendorBills.dueDate })
+      .select({ id: vendorBills.id, contactId: vendorBills.contactId, number: vendorBills.billNumber, name: contacts.name, balance: sql<string>`(${vendorBills.totalAmount} - ${vendorBills.amountPaid} - ${vendorBills.creditedAmount})::text`, dueDate: vendorBills.dueDate })
       .from(vendorBills)
       .leftJoin(contacts, eq(vendorBills.contactId, contacts.id))
       .where(
         and(
           eq(vendorBills.orgId, orgId),
           eq(vendorBills.status, "recorded"),
-          sql`${vendorBills.totalAmount} - ${vendorBills.amountPaid} > 0`,
+          sql`${vendorBills.totalAmount} - ${vendorBills.amountPaid} - ${vendorBills.creditedAmount} > 0`,
           gte(vendorBills.dueDate, new Date(`${today}T00:00:00Z`)),
           lte(vendorBills.dueDate, new Date(`${addDays(today, 3)}T00:00:00Z`)),
         ),

@@ -8,6 +8,7 @@ import { ContactPicker } from "./contact-picker";
 import { blankLine, computeLinePreview, VendorBillLineEditor, type EditableVendorBillLine } from "./vendor-bill-line-editor";
 import type { JobOption, TaxGroupOption, TaxRateOption, VendorBill } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentsSection, attachPending, type PendingAttachment } from "../../../components/attachments-section";
 
 const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD", "NZD", "ZAR"];
 const NO_JOB = "__none__";
@@ -137,6 +138,9 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
     };
   }
 
+  // US-OPS-33: files dropped on a new bill are uploaded now and attached once it's saved.
+  const [pendingFiles, setPendingFiles] = useState<PendingAttachment[]>([]);
+
   async function handleSaveDraft() {
     setError(null);
     if (!contactId) {
@@ -153,6 +157,7 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
       const saved = bill
         ? await apiClient.put<VendorBill>(`/vendor-bills/${bill.id}`, payload)
         : await apiClient.post<VendorBill>("/vendor-bills", payload);
+      if (!bill && pendingFiles.length) await attachPending("vendor_bill", saved.id, pendingFiles);
       router.push(`/vendor-bills/${saved.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save vendor bill.");
@@ -201,6 +206,8 @@ export function VendorBillBuilder({ bill }: { bill?: VendorBill }) {
           {(field) => <Textarea {...field} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes…" />}
         </FormField>
       </Card>
+
+      <AttachmentsSection entityType="vendor_bill" entityId={bill?.id ?? null} pending={pendingFiles} onPendingChange={setPendingFiles} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
         <TotalRow label="Subtotal" value={totals.subtotal} currency={currency} />

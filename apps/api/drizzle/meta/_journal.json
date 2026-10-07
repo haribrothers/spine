@@ -540,6 +540,167 @@
       "when": 1791221601339,
       "tag": "0076_search_trigram",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1791263995115,
+      "tag": "0077_money_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1791265569347,
+      "tag": "0078_money_account_on_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1791266214430,
+      "tag": "0079_bank_transfers",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791266661073,
+      "tag": "0080_bank_transactions",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1791269239952,
+      "tag": "0081_attachments",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1791270410687,
+      "tag": "0082_attachments_file_set_null",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1791271517936,
+      "tag": "0083_credit_note_credit",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1791272053534,
+      "tag": "0084_customer_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1791272905560,
+      "tag": "0085_vendor_credits",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1791273439493,
+      "tag": "0086_vendor_credit_allocations",
+      "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1791273903282,
+      "tag": "0087_vendor_refunds",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1791274587104,
+      "tag": "0088_tax_payments",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1791288638738,
+      "tag": "0089_bank_statement_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1791288799117,
+      "tag": "0090_statement_line_row",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1791289145413,
+      "tag": "0091_bank_reconciliations",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1791290385310,
+      "tag": "0092_journal_line_reconciliation",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1791295937930,
+      "tag": "0093_opening_balances",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1791296531583,
+      "tag": "0094_opening_invoices",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1791297332702,
+      "tag": "0095_opening_bills",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1791298063223,
+      "tag": "0096_manual_journals",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1791300558728,
+      "tag": "0097_favourite_reports",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1791310296834,
+      "tag": "0098_dashboard_basis",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1791310843189,
+      "tag": "0099_recurring_bills",
+      "breakpoints": true
     }
   ]
 }

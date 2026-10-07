@@ -21,6 +21,10 @@ import { PaymentsModule } from "./modules/payments/payments.module";
 import { PurchasesModule } from "./modules/purchases/purchases.module";
 import { LedgerModule } from "./modules/ledger/ledger.module";
 import { ReportsModule } from "./modules/reports/reports.module";
+import { BankingModule } from "./modules/banking/banking.module";
+import { OpeningBalancesModule } from "./modules/opening-balances/opening-balances.module";
+import { JournalsModule } from "./modules/journals/journals.module";
+import { AttachmentsModule } from "./modules/attachments/attachments.module";
 import { TaxModule } from "./modules/tax/tax.module";
 import { NumberingModule } from "./modules/numbering/numbering.module";
 import { FilesModule } from "./modules/files/files.module";
@@ -65,6 +69,10 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     PurchasesModule,
     LedgerModule,
     ReportsModule,
+    BankingModule,
+    OpeningBalancesModule,
+    JournalsModule,
+    AttachmentsModule,
     TaxModule,
     NumberingModule,
     FilesModule,

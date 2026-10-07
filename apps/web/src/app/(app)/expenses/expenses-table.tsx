@@ -5,6 +5,7 @@ import type { MemberRow } from "../../../lib/members";
 import { ExpenseRowActions } from "./expense-row-actions";
 import { EXPENSE_STATUS_LABELS, type Expense, type JobOption } from "./types";
 import { formatMoney } from "../../../lib/money";
+import { AttachmentCount } from "../../../components/attachments-section";
 
 const STATUS_BADGE_CLASS: Record<Expense["status"], string> = {
   submitted: "bg-draft-bg text-draft",
@@ -27,6 +28,7 @@ export function ExpensesTable({
   members,
   onDeleted,
   onOpen,
+  onEdit,
   selection,
 }: {
   expenses: Expense[];
@@ -36,6 +38,7 @@ export function ExpensesTable({
   members: MemberRow[];
   onDeleted: (expense: Expense) => void;
   onOpen: (expense: Expense) => void;
+  onEdit: (expense: Expense) => void;
 }) {
   const jobById = new Map(jobs.map((j) => [j.id, j]));
   const memberByUserId = new Map(members.map((m) => [m.userId, m]));
@@ -74,7 +77,12 @@ export function ExpensesTable({
     {
       key: "category",
       header: "Category",
-      render: (row) => row.categoryName ?? "—",
+      render: (row) => (
+        <span className="flex items-center gap-2">
+          {row.categoryName ?? "—"}
+          <AttachmentCount count={row.attachmentCount} />
+        </span>
+      ),
       sortValue: (row) => row.categoryName ?? "",
     },
     {
@@ -115,7 +123,7 @@ export function ExpensesTable({
       header: "",
       render: (row) => (
         <div className="flex justify-end">
-          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} />
+          <ExpenseRowActions expense={row} onDeleted={onDeleted} onOpen={onOpen} onEdit={onEdit} />
         </div>
       ),
     },
