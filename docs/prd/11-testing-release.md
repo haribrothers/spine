@@ -44,7 +44,7 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 | `concurrency` with `cancel-in-progress` | Superseded runs |
 | E2E waits for `test` (`needs`) | E2E minutes when unit tests already fail |
 | pnpm store, Turbo and Playwright browser caches | Install and rebuild time on re-runs |
-| One production build (in E2E), timeouts of 25 and 30 minutes | Duplicate builds, runaway jobs |
+| One production build (in E2E), timeouts of 35 minutes (unit and integration, raised from 25 in Phase 9 as the suite grew) and 30 (E2E) | Duplicate builds, runaway jobs |
 | Failure-only Playwright report, kept 3 days | Artifact storage |
 
 Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.

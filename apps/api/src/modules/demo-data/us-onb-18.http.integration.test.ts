@@ -40,7 +40,16 @@ describe("US-ONB-18 · choose the country and industry of the demo business (req
     await testApp?.close();
   });
 
-  const pairs = DEMO_COUNTRIES.flatMap((country) => DEMO_INDUSTRIES.map((industry) => [country, industry] as const));
+  // Every India industry (the hand-written GST path), and every other country once with a different
+  // industry each, so every country and every industry loads through the real services. All 35
+  // combinations are checked as plans in @spine/shared (us-onb-18.test.ts), which is where most
+  // content mistakes show; loading all 35 here added a minute and a half to CI.
+  const others = DEMO_COUNTRIES.filter((c) => c !== "IN");
+  const pairs = [
+    ...DEMO_INDUSTRIES.map((industry) => ["IN", industry] as const),
+    ["US", "construction"] as const,
+    ...others.map((country, i) => [country, DEMO_INDUSTRIES[(i + 1) % DEMO_INDUSTRIES.length]!] as const),
+  ];
 
   it.each(pairs)("%s %s loads with its settings, history in date order and reports with figures", async (country, industry) => {
     const { cookie, orgId } = await owner();
