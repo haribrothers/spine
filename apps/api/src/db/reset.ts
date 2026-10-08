@@ -16,88 +16,28 @@ import { createDb } from "./client";
  * demo-only equivalent). CLI-only, guarded by requiring DATABASE_URL to
  * point somewhere and printing exactly what ran.
  *
- * `TABLES` below only ever lists `public`-schema tables (Drizzle's own
- * migrated schema) — pg-boss (`QueueService`, PRD F3 Stage 2/3) manages a
- * wholly separate `pgboss` Postgres schema that this script previously
- * never touched at all, discovered live after a full reset still left old
- * `pgboss.job` rows (referencing orgs/quotes that no longer existed)
- * sitting untouched. `resetPgBossSchema()` below clears that schema's own
- * tables the same way, so "wipe my data" genuinely means all of it, not
- * just the Drizzle-migrated half.
+ * Every table in the `public` schema is truncated, read from `pg_tables`
+ * when it runs rather than kept as a list, so a table added by a later
+ * migration is never left behind. Drizzle's own migration log lives in its
+ * separate `drizzle` schema and is untouched, so no migration replays.
+ * pg-boss (`QueueService`) keeps its jobs in its own `pgboss` schema;
+ * `resetPgBossSchema()` below clears that too, so "wipe my data" genuinely
+ * means all of it.
  */
-const TABLES = [
-  "audit_log",
-  "push_subscriptions",
-  "notifications",
-  "vendor_payment_allocations",
-  "vendor_payments",
-  "vendor_refunds",
-  "vendor_credit_allocations",
-  "vendor_credit_lines",
-  "vendor_credits",
-  "vendor_bill_lines",
-  "vendor_bills",
-  "expenses",
-  "expense_categories",
-  "credit_note_allocations",
-  "credit_note_lines",
-  "credit_notes",
-  "payment_allocations",
-  "payments",
-  "invoice_lines",
-  "invoices",
-  "attachments",
-  "customer_refunds",
-  "bank_transactions",
-  "bank_transfers",
-  "money_accounts",
-  "journal_lines",
-  "journal_entries",
-  "fiscal_periods",
-  "tax_group_rates",
-  "tax_groups",
-  "tax_rates",
-  "accounts",
-  "quote_public_tokens",
-  "quote_events",
-  "quote_lines",
-  "quotes",
-  "job_variation_orders",
-  "job_notes",
-  "job_photos",
-  "milestones",
-  "jobs",
-  "meetings",
-  "catalog_items",
-  "leads",
-  "activities",
-  "addresses",
-  "contact_persons",
-  "contacts",
-  "files",
-  "idempotency_keys",
-  "ledger_integrity_checks",
-  "number_sequences",
-  "settings",
-  "team_privileges",
-  "team_memberships",
-  "teams",
-  "invitation",
-  "member",
-  "session",
-  "account",
-  "verification",
-  "jwks",
-  "organization",
-  "user",
-];
+async function resetPublicSchema(db: ReturnType<typeof createDb>): Promise<number> {
+  const rows = await db.execute<{ tablename: string }>(sql.raw(`SELECT tablename FROM pg_tables WHERE schemaname = 'public';`));
+  if (!rows.length) return 0;
+  // One statement for the whole set: CASCADE and a single TRUNCATE leave the FK ordering to Postgres.
+  const quoted = rows.map((r) => `"public"."${r.tablename}"`).join(", ");
+  await db.execute(sql.raw(`TRUNCATE TABLE ${quoted} RESTART IDENTITY CASCADE;`));
+  return rows.length;
+}
 
 /**
  * Truncates every table pg-boss owns in its own `pgboss` schema. Queried
- * dynamically (not a hardcoded list, unlike `TABLES` above) because pg-boss
+ * dynamically, like the public tables above, because pg-boss
  * creates dated partition tables for `queue_stats` (e.g.
- * `queue_stats_20260807`) on an ongoing basis — a fixed list would silently
- * miss whatever partitions exist by the time this runs. `pg_tables` is
+ * `queue_stats_20260807`) on an ongoing basis. `pg_tables` is
  * queried directly against `information_schema` rather than assuming the
  * schema exists at all — a dev environment that has never booted the API
  * (so `QueueService.onModuleInit` never ran and created it) has no `pgboss`
@@ -132,11 +72,10 @@ async function main() {
   }
 
   const db = createDb(databaseUrl);
-  const quoted = TABLES.map((t) => `"${t}"`).join(", ");
-  await db.execute(sql.raw(`TRUNCATE TABLE ${quoted} RESTART IDENTITY CASCADE;`));
+  const tableCount = await resetPublicSchema(db);
   const pgBossTableCount = await resetPgBossSchema(db);
 
-  console.log(`Truncated ${TABLES.length} tables${pgBossTableCount ? ` + ${pgBossTableCount} pg-boss tables` : " (pg-boss schema not present, skipped)"}.`);
+  console.log(`Truncated ${tableCount} tables${pgBossTableCount ? ` + ${pgBossTableCount} pg-boss tables` : " (pg-boss schema not present, skipped)"}.`);
   process.exit(0);
 }
 

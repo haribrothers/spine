@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — `pnpm db:reset:dev` clears every table (dev tooling)
+
+- **What changed:** the reset now truncates every table in the `public` schema, read from the database each time it runs, instead of a hand-kept list.
+- **Why:** the list had fallen 22 tables behind. Those tables were still emptied through their foreign keys, but a future table without one would have survived a reset.
+- **What stays:** Drizzle's migration log (in its own `drizzle` schema), so no migrations replay.
+
 ### 2026-10-08 — US-ONB-18, US-ONB-19, US-ONB-21: demo businesses by country and industry (Phase 9)
 
 - **Choose your demo:** "Just show me around" on the welcome screen, and "Load demo data" in Settings › Data, open "Explore a demo business":
