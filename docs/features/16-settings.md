@@ -122,7 +122,7 @@ Legacy: S-10.6
 - Data: `audit_log`.
 
 ### US-SET-08 · Remove demo data and keep my real data
-**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 10 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
+**Feature:** F-SET-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** `SettingsDemoData`, `DeleteDemoDataConfirm`
 **As** an owner who evaluated with demo data, **I want** to delete it in one step, **so that** I can start real work in the same install.
 
 Legacy: S-12.8

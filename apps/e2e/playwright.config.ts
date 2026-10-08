@@ -15,6 +15,9 @@ import { defineConfig, devices } from "@playwright/test";
  * manual setup beyond `createdb spine_e2e` once (see .env.e2e's own
  * comment) and docker-compose.dev.yml's `db`/`maildev` services running.
  */
+/** US-ONB-17, US-ONB-18 — specs that load or delete demo data outside `seededOrg`. */
+const DEMO_DATA_SPECS = /us-onb-1[78]\.spec\.ts$/;
+
 export default defineConfig({
   testDir: "./tests",
   globalSetup: "./global-setup.ts",
@@ -33,6 +36,15 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      testIgnore: DEMO_DATA_SPECS,
+    },
+    // Specs that load or delete demo data of their own run last: the demo Staff and Field
+    // logins follow the latest demo, and every other spec expects them in `seededOrg`.
+    {
+      name: "demo-data",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: DEMO_DATA_SPECS,
+      dependencies: ["chromium"],
     },
   ],
   webServer: [

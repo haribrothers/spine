@@ -3,15 +3,19 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
+import type { TaxCountry, TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { ThemeToggle } from "../../components/theme-toggle";
+import { DemoBusinessDialog } from "../../components/demo-business-dialog";
 import { BusinessProfileStep, type BusinessProfileValue } from "./steps/business-profile-step";
 import { WelcomeStep } from "./steps/welcome-step";
 import { IndustryTemplateStep, type IndustryTemplate } from "./steps/industry-template-step";
 import { CurrencyLocaleStep, type CurrencyLocaleValue } from "./steps/currency-locale-step";
 import { FinancialYearStep, type FinancialYearValue } from "./steps/financial-year-step";
 import { TaxRateStep, type TaxRateValue } from "./steps/tax-rate-step";
+import { TaxCountryStep, taxCountryForCurrency } from "./steps/tax-country-step";
+import { GstRegistrationForm } from "../settings/panes/gst-pane";
 import { NumberingStep, type NumberingSequenceValue } from "./steps/numbering-step";
 import { ChartOfAccountsStep, type AccountsByType } from "./steps/chart-of-accounts-step";
 import { InviteTeamStep, type MemberRole } from "./steps/invite-team-step";
@@ -45,6 +49,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   async function markOnboardingStatus(status: { completedSteps?: string[]; skipped?: boolean; completedAt?: string }) {
     await apiClient.put("/org/settings/onboarding_status", { value: status });
@@ -63,10 +68,9 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handleUseDemoDefaults() {
-    setLoading(true);
+  // US-ONB-18: the demo business is chosen in a dialog; once it's loaded, onboarding is skipped.
+  async function handleDemoLoaded() {
     try {
-      await apiClient.post("/demo-data/seed");
       await markOnboardingStatus({ skipped: true });
     } finally {
       goToDashboard();
@@ -114,10 +118,11 @@ export default function OnboardingPage() {
       {step === "welcome" && (
         <WelcomeStep
           onStartManual={() => setStep("profile")}
-          onUseDemoDefaults={handleUseDemoDefaults}
+          onUseDemoDefaults={() => setDemoOpen(true)}
           onSkip={handleSkip}
         />
       )}
+      <DemoBusinessDialog open={demoOpen} onOpenChange={setDemoOpen} onLoaded={handleDemoLoaded} />
 
       {step === "profile" && (
         <StepCard title="Tell us about your business" description="Name, logo and address — shown on quotes and invoices.">
@@ -143,11 +148,7 @@ export default function OnboardingPage() {
         </StepCard>
       )}
 
-      {step === "tax" && (
-        <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
-          <TaxStepBody onSaved={() => setStep("numbering")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+      {step === "tax" && <TaxStepBody onSaved={() => setStep("numbering")} onSkip={handleSkip} />}
 
       {step === "numbering" && (
         <StepCard title="Document numbering" description="Prefix and starting number for each document type.">
@@ -236,6 +237,7 @@ function TemplateStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: ()
   return (
     <IndustryTemplateStep
       initialValue={value.template}
+      modulesNote="onboarding"
       onSave={async (template) => {
         await apiClient.put("/org/settings/industry_template", { value: { template } });
         onSaved();
@@ -275,7 +277,77 @@ function FiscalYearStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
   );
 }
 
+/**
+ * US-TAX-09 — pick the tax country first; a preset country gets its rates.
+ * "Another country" goes on to the single default rate, as before (US-ONB-06).
+ */
 function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+  const [country, setCountry] = useState<TaxCountry | null>(null);
+  const [profile, setProfile] = useState<TaxProfile>({});
+  const [phase, setPhase] = useState<"country" | "rate" | "gst">("country");
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([apiClient.get<TaxProfile>("/org/tax/profile"), apiClient.get<{ value: { code?: string } | null }>("/org/settings/currency")])
+      .then(([saved, currency]) => {
+        if (cancelled) return;
+        setProfile(saved);
+        setCountry(saved.country ?? taxCountryForCurrency(currency.value?.code));
+      })
+      .catch(() => {
+        if (!cancelled) setCountry("other");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (phase === "gst") {
+    // US-TAX-12 — India's GST registration comes next (US-TAX-09).
+    return (
+      <StepCard title="GST details" description="Your GST registration. Spine uses your state to pick intra- or inter-state tax.">
+        <GstRegistrationForm
+          initial={profile}
+          onSaved={onSaved}
+          saveLabel="Continue"
+          secondary={
+            <Button type="button" variant="ghost" onClick={onSaved}>
+              Not registered yet — skip this step
+            </Button>
+          }
+        />
+      </StepCard>
+    );
+  }
+  if (phase === "rate") {
+    return (
+      <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
+        <DefaultTaxRateBody onSaved={onSaved} onSkip={onSkip} />
+      </StepCard>
+    );
+  }
+  return (
+    <StepCard title="Tax" description="Where is your business registered for tax? Spine sets up your country's rates — change them any time in Settings › Tax.">
+      {country === null ? (
+        <StepLoading />
+      ) : (
+        <TaxCountryStep
+          initialValue={country}
+          onSave={async (v) => {
+            const res = await apiClient.put<{ profile: TaxProfile }>("/org/tax/profile", { country: v });
+            setProfile(res.profile);
+            if (v === "other") setPhase("rate");
+            else if (v === "IN") setPhase("gst");
+            else onSaved();
+          }}
+          onSkip={onSkip}
+        />
+      )}
+    </StepCard>
+  );
+}
+
+function DefaultTaxRateBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
   const [value, setValue] = useState<TaxRateValue>({ name: "Tax", percentage: 0 });
   const [ready, setReady] = useState(false);
 

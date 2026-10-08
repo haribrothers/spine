@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Checkbox, Combobox, Input, MoneyInput, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
 import { LineItemPicker, type PickerBundle } from "../../../components/line-item-picker";
 import { bundleLines, useBundles } from "../../../lib/bundles";
-import { computeDocumentLine, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { computeDocumentLine, itemTaxFor, type SupplyClass, type SupplyType, type TaxRate as ComputeTaxRate } from "@spine/shared";
+import { LineTaxWarning } from "../../../components/place-of-supply";
+import { HsnSacField } from "../../../components/hsn-sac-field";
+import { lineTaxPercent, showsSupplyType, SupplyTypeField, withSupplyClass } from "../../../components/supply-type-field";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import type { CatalogItemOption, InvoiceLineType, TaxGroupOption, TaxRateOption } from "./types";
@@ -25,6 +28,10 @@ export interface EditableInvoiceLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — why the line has no tax; null on heading and text lines. */
+  supplyClass: SupplyClass | null;
+  /** US-TAX-14 — the line's HSN/SAC code ("" when none). */
+  hsnSac: string;
 }
 
 let keySeq = 0;
@@ -47,6 +54,8 @@ export function blankLine(type: InvoiceLineType = "item"): EditableInvoiceLine {
     taxRateId: null,
     taxGroupId: null,
     isTaxInclusive: false,
+    supplyClass: type === "item" ? "zero_rated" : null,
+    hsnSac: "",
   };
 }
 
@@ -107,7 +116,19 @@ export function InvoiceLineEditor({
   lines,
   onChange,
   currency,
+  supplyType = null,
+  exportUnderLut = false,
+  flaggedKeys,
+  showHsn = false,
 }: {
+  /** US-TAX-13 — picks each item's intra- or inter-state tax. */
+  supplyType?: SupplyType | null;
+  /** D-181 — exports under LUT have no IGST. */
+  exportUnderLut?: boolean;
+  /** US-TAX-13 — lines changed by hand when the place of supply changed. */
+  flaggedKeys?: Set<string>;
+  /** US-TAX-14 — show HSN/SAC on item lines (GST is on). */
+  showHsn?: boolean;
   lines: EditableInvoiceLine[];
   onChange: (lines: EditableInvoiceLine[]) => void;
   currency: string;
@@ -147,7 +168,9 @@ export function InvoiceLineEditor({
 
   function updateLine(index: number, patch: Partial<EditableInvoiceLine>) {
     const next = lines.slice();
-    next[index] = { ...next[index]!, ...patch };
+    const merged = { ...next[index]!, ...patch };
+    // US-TAX-11: the supply type follows the tax and the catalogue item.
+    next[index] = withSupplyClass(merged, patch, lineTaxPercent(resolveLineTaxRates(merged, taxRates, taxGroups)), catalogItems.find((i) => i.id === merged.catalogItemId), taxRates);
     onChange(next);
   }
 
@@ -186,8 +209,10 @@ export function InvoiceLineEditor({
       description: item.description ?? "",
       unitPriceAmount: BigInt(item.defaultPriceAmount),
       taxRatePercentage: item.defaultTaxRateId || item.defaultTaxGroupId ? 0 : item.defaultTaxRatePercentage,
-      taxRateId: item.defaultTaxRateId,
-      taxGroupId: item.defaultTaxGroupId,
+      // US-TAX-13: the item's inter-state tax outside my state.
+      ...itemTaxFor(item, supplyType, { exportUnderLut }),
+      // US-TAX-14: the item's HSN/SAC code, changeable on the line.
+      hsnSac: item.hsnSac ?? "",
     });
   }
 
@@ -218,7 +243,7 @@ export function InvoiceLineEditor({
                 </button>
               </div>
 
-              <div className="flex-1">
+              <div className="flex flex-1 flex-col gap-2">
                 {line.type === "item" ? (
                   <ItemLineFields
                     line={line}
@@ -230,11 +255,13 @@ export function InvoiceLineEditor({
                     taxRates={taxRates}
                     taxGroups={taxGroups}
                     onApplyCatalogItem={(id) => applyCatalogItem(index, id)}
+                    showHsn={showHsn}
                     onChange={(patch) => updateLine(index, patch)}
                   />
                 ) : (
                   <NonItemLineFields line={line} onChange={(patch) => updateLine(index, patch)} />
                 )}
+                {flaggedKeys?.has(line.key) && <LineTaxWarning />}
               </div>
 
               <button
@@ -276,6 +303,7 @@ function ItemLineFields({
   taxGroups,
   onApplyCatalogItem,
   onChange,
+  showHsn,
 }: {
   line: EditableInvoiceLine;
   currency: string;
@@ -287,8 +315,10 @@ function ItemLineFields({
   taxGroups: TaxGroupOption[];
   onApplyCatalogItem: (id: string) => void;
   onChange: (patch: Partial<EditableInvoiceLine>) => void;
+  showHsn: boolean;
 }) {
   const preview = computeLinePreview(line, currency, taxRates, taxGroups);
+  const taxPercent = lineTaxPercent(resolveLineTaxRates(line, taxRates, taxGroups));
   const taxValue = line.taxRateId ? `rate:${line.taxRateId}` : line.taxGroupId ? `group:${line.taxGroupId}` : "";
 
   function applyTaxSelection(value: string) {
@@ -360,6 +390,14 @@ function ItemLineFields({
           <span className="text-[13px] text-on-surface">Price includes tax</span>
         </label>
       </div>
+      {(showHsn || showsSupplyType(line.supplyClass, taxPercent)) && (
+        <div className={showHsn ? "grid grid-cols-2 items-start gap-2" : "flex flex-col"}>
+          {showHsn && <HsnSacField value={line.hsnSac} onChange={(hsnSac) => onChange({ hsnSac })} />}
+          {showsSupplyType(line.supplyClass, taxPercent) && (
+            <SupplyTypeField value={line.supplyClass} taxPercent={taxPercent} onChange={(supplyClass) => onChange({ supplyClass })} />
+          )}
+        </div>
+      )}
     </div>
   );
 }

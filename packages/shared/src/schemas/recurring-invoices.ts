@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SupplyClass } from "../tax/supply-class.ts";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
 import { invoiceLineInputSchema } from "./invoices.ts";
 
@@ -168,6 +169,10 @@ export interface RecurringInvoiceLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — null on heading and text lines. */
+  supplyClass: SupplyClass | null;
+  /** US-TAX-14 */
+  hsnSac: string | null;
 }
 
 export interface RecurringInvoice {

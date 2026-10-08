@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { createVendorBillSchema, updateVendorBillSchema } from "@spine/shared";
-import { computeDocumentLine } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, eq, desc } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -10,6 +10,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
 import { LedgerService } from "../ledger/ledger.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { attachmentCounts } from "../attachments/attachments.service";
 
 export type CreateVendorBillInput = z.infer<typeof createVendorBillSchema>;
@@ -29,6 +30,8 @@ export interface ComputedLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -77,6 +80,8 @@ export async function computeBillTotals(
           taxRateId: null,
           taxGroupId: null,
           isTaxInclusive: false,
+          supplyClass: null,
+          hsnSac: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -89,6 +94,10 @@ export async function computeBillTotals(
             rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: line.taxRatePercentage,
           };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
 
       // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
       const computed = computeDocumentLine({
@@ -116,6 +125,8 @@ export async function computeBillTotals(
         unitPriceCurrency: currency,
         accountId: line.accountId ?? null,
         taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
+        hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive: line.isTaxInclusive,
@@ -147,6 +158,8 @@ async function insertLines(tx: Transaction, billId: string, lines: ComputedLine[
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,
@@ -171,6 +184,7 @@ export class VendorBillsService {
     private readonly auditLog: AuditLogService,
     private readonly ledger: LedgerService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string; jobId?: string }) {
@@ -246,6 +260,8 @@ export class VendorBillsService {
     }
 
     const totals = await computeBillTotals(orgId, input.currency, input.lines, this.taxResolver);
+    // US-TAX-13: the vendor's state, unless one is given.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "purchase");
 
     const created = await this.db.transaction(async (tx) => {
       const [bill] = await tx
@@ -267,6 +283,7 @@ export class VendorBillsService {
           isDemo,
           recurringBillId: recurring?.recurringBillId ?? null,
           recurringRunOn: recurring?.recurringRunOn ?? null,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
         })
         .returning();
 
@@ -304,11 +321,19 @@ export class VendorBillsService {
 
     const currency = input.currency ?? existing.currency;
     const totals = input.lines !== undefined ? await computeBillTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    // US-TAX-13: the vendor's state decides intra- or inter-state; a new vendor (or a draft from before GST) takes the vendor's.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "purchase",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(vendorBills)
         .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.jobId !== undefined ? { jobId: input.jobId } : {}),
           ...(input.billNumber !== undefined ? { billNumber: input.billNumber } : {}),
@@ -425,7 +450,14 @@ export class VendorBillsService {
 
       const [row] = await tx
         .update(vendorBills)
-        .set({ status: "recorded", recordedAt, journalEntryId, updatedAt: recordedAt })
+        .set({
+          status: "recorded",
+          recordedAt,
+          journalEntryId,
+          updatedAt: recordedAt,
+          // US-TAX-13: snapshotted when recorded.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "purchase", tx)),
+        })
         .where(eq(vendorBills.id, id))
         .returning();
 

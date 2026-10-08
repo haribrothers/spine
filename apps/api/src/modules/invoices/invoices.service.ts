@@ -1,6 +1,6 @@
 import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { createInvoiceSchema, updateInvoiceSchema } from "@spine/shared";
-import { computeDocumentLine, percentageOf, type BulkResult } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass, percentageOf, type BulkResult, upiQrAmountFor, type BusinessProfile } from "@spine/shared";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -14,8 +14,10 @@ import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+import type { EmailJobOverride } from "../email/email-text";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
@@ -34,6 +36,8 @@ interface ComputedLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -60,6 +64,8 @@ interface InvoiceLineTotalInput {
   taxRateId?: string | null;
   taxGroupId?: string | null;
   isTaxInclusive?: boolean;
+  supplyClass?: SupplyClass | null;
+  hsnSac?: string | null;
 }
 
 /**
@@ -111,6 +117,8 @@ export async function computeInvoiceTotals(
           taxRateId: null,
           taxGroupId: null,
           isTaxInclusive: false,
+          supplyClass: null,
+          hsnSac: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -129,6 +137,10 @@ export async function computeInvoiceTotals(
             rates: taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: taxRatePercentage,
           };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
 
       // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
       const computed = computeDocumentLine({ quantity, unitPriceAmount, discountPercentage, currency, rates: resolved.rates, inclusive: isTaxInclusive });
@@ -152,6 +164,8 @@ export async function computeInvoiceTotals(
         unitPriceCurrency: currency,
         discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
+        hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive,
@@ -187,6 +201,7 @@ export class InvoicesService {
     private readonly queue: QueueService,
     private readonly conversionGuard: QuoteConversionGuardService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -313,6 +328,8 @@ export class InvoicesService {
     }
 
     const totals = await computeInvoiceTotals(orgId, input.currency, withoutTaxIfAdvance(input.lines, input.type), this.taxResolver);
+    // US-TAX-13: the place of supply given, else the contact's.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
 
     const created = await this.db.transaction(async (tx) => {
       const [invoice] = await tx
@@ -336,6 +353,7 @@ export class InvoicesService {
           isDemo,
           recurringInvoiceId: recurring?.recurringInvoiceId ?? null,
           recurringRunOn: recurring?.recurringRunOn ?? null,
+          ...{ placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType },
         })
         .returning();
 
@@ -395,6 +413,8 @@ export class InvoicesService {
       contactId: quote.contactId,
       type: "standard",
       currency: quote.currency,
+      // US-TAX-13: the quote's place of supply carries over.
+      placeOfSupply: quote.placeOfSupply ?? undefined,
       issueDate: null,
       dueDate: null,
       notes: quote.notes ?? null,
@@ -412,6 +432,8 @@ export class InvoicesService {
         taxRateId: line.taxRateId,
         taxGroupId: line.taxGroupId,
         isTaxInclusive: line.isTaxInclusive,
+        supplyClass: line.supplyClass,
+        hsnSac: line.hsnSac,
       })),
     };
 
@@ -554,7 +576,7 @@ export class InvoicesService {
     }
 
     const result = await this.db.transaction(async (tx) => {
-      const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
+      const number = await this.numbering.allocateNumber(tx, orgId, "invoice", { demo: job.isDemo });
       const issuedAt = new Date();
       const issueDateStr = issuedAt.toISOString().slice(0, 10);
 
@@ -650,11 +672,19 @@ export class InvoicesService {
         ? (await this.db.select().from(invoiceLines).where(eq(invoiceLines.invoiceId, id)).orderBy(invoiceLines.sortOrder)).map((l) => ({ ...l, type: l.type }))
         : undefined);
     const totals = lines !== undefined ? await computeInvoiceTotals(orgId, currency, withoutTaxIfAdvance(lines, type), this.taxResolver) : null;
+    // US-TAX-13: a new contact (or a draft saved before GST was set up) takes the contact's place of supply.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "sale",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(invoices)
         .set({
+          ...{ placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType },
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.type !== undefined ? { type: input.type } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
@@ -764,7 +794,7 @@ export class InvoicesService {
    * issuance sets it, matching how `contactId` is already attached to
    * every line here.
    */
-  async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string) {
+  async issue(orgId: string, id: string, actorUserId: string, revenueAccountId?: string, options: { afterIssue?: (invoiceId: string) => Promise<unknown> } = {}) {
     const [preCheck] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Invoice not found");
@@ -789,9 +819,12 @@ export class InvoicesService {
         throw new BadRequestException("Cannot issue an invoice with a zero or negative total");
       }
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "invoice");
+      const number = await this.numbering.allocateNumber(tx, orgId, "invoice", { demo: existing.isDemo });
       const issuedAt = new Date();
-      const issueDateStr = issuedAt.toISOString().slice(0, 10);
+      // D-185 (Q-20): the entry is dated on the invoice's issue date, so a backdated invoice lands in the
+      // same period in the ledger, the Tax Summary and GSTR-1. A date in a closed period is refused.
+      const issueDate = existing.issueDate ?? issuedAt;
+      const issueDateStr = issueDate.toISOString().slice(0, 10);
 
       let journalEntryId: string | null = null;
       if (!isAdvance) {
@@ -847,6 +880,12 @@ export class InvoicesService {
         .from(settings)
         .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
       const paymentInstructions = (profile?.value as { paymentInstructions?: string } | undefined)?.paymentInstructions?.trim() || null;
+      // US-INV-26: the balance the PDF's UPI QR code asks for, kept so reminders can say when it's changed.
+      const upiQrAmount = upiQrAmountFor(
+        profile?.value as BusinessProfile | undefined,
+        existing.currency,
+        existing.totalAmount - existing.retentionAmount - existing.amountPaid - existing.creditedAmount,
+      );
 
       // US-JOB-29 (D-128): a progress invoice on a job gets the job's next claim number, under the job row lock.
       let progressClaimNo: number | null = null;
@@ -865,9 +904,12 @@ export class InvoicesService {
           status: "issued",
           number,
           issuedAt,
-          issueDate: existing.issueDate ?? issuedAt,
+          // US-TAX-13: snapshotted at issue.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
+          issueDate,
           journalEntryId,
           paymentInstructions,
+          upiQrAmount,
           progressClaimNo,
           updatedAt: issuedAt,
         })
@@ -887,8 +929,25 @@ export class InvoicesService {
       return row;
     });
 
-    await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
+    try {
+      // D-187: credit applied as it's issued, before the PDF is drawn, so the UPI QR code asks for what's left.
+      if (options.afterIssue) {
+        await options.afterIssue(result!.id);
+        await this.refreshUpiQrAmount(orgId, result!.id);
+      }
+    } finally {
+      await queueIssuedPdf(this.queue, orgId, "invoice", result!.id);
+    }
     return this.getOne(orgId, result!.id);
+  }
+
+  /** US-INV-26 / D-187 — the QR amount for the balance now, while the invoice's PDF hasn't been drawn yet. */
+  private async refreshUpiQrAmount(orgId: string, id: string) {
+    const [invoice] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
+    if (!invoice) return;
+    const [profile] = await this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
+    const upiQrAmount = upiQrAmountFor(profile?.value as BusinessProfile | undefined, invoice.currency, invoice.totalAmount - invoice.retentionAmount - invoice.amountPaid - invoice.creditedAmount);
+    if (upiQrAmount !== invoice.upiQrAmount) await this.db.update(invoices).set({ upiQrAmount }).where(eq(invoices.id, id));
   }
 
   /**
@@ -910,7 +969,7 @@ export class InvoicesService {
    * on a transient queue issue once the caller has been told sending
    * started.
    */
-  async sendEmail(orgId: string, id: string, actorUserId: string) {
+  async sendEmail(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!existing) {
       throw new NotFoundException("Invoice not found");
@@ -932,7 +991,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id });
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue invoice-send-email job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }
@@ -1026,7 +1085,7 @@ export class InvoicesService {
    * doesn't match S-05.10's own framing ("so following up isn't a
    * chore" implies there's something to follow up ON).
    */
-  async sendReminder(orgId: string, id: string, actorUserId: string) {
+  async sendReminder(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [existing] = await this.db.select().from(invoices).where(and(eq(invoices.orgId, orgId), eq(invoices.id, id)));
     if (!existing) {
       throw new NotFoundException("Invoice not found");
@@ -1050,7 +1109,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true });
+      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }
@@ -1255,6 +1314,8 @@ async function insertLines(tx: Transaction, invoiceId: string, lines: ComputedLi
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

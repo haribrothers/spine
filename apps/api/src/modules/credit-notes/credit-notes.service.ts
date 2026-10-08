@@ -2,7 +2,7 @@ import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { applyPaymentCreditSchema, createCreditNoteSchema, updateCreditNoteSchema } from "@spine/shared";
-import { computeDocumentLine, formatMoney } from "@spine/shared";
+import { computeDocumentLine, formatMoney, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -28,6 +28,8 @@ interface ComputedLine {
   unitPriceAmount: bigint;
   unitPriceCurrency: string;
   taxRatePercentage: number;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -66,11 +68,17 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
         unitPriceAmount: 0n,
         unitPriceCurrency: currency,
         taxRatePercentage: 0,
+        supplyClass: null,
+        hsnSac: null,
         lineSubtotalAmount: 0n,
         lineTaxAmount: 0n,
         lineTotalAmount: 0n,
       };
     }
+
+    // US-TAX-11: an exempt or non-taxable line carries no tax.
+    const supplyError = supplyClassTaxError(line.supplyClass, line.taxRatePercentage);
+    if (supplyError) throw new BadRequestException(supplyError);
 
     // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
     const computed = computeDocumentLine({
@@ -97,6 +105,8 @@ function computeCreditNoteTotals(currency: string, lines: CreateCreditNoteInput[
       unitPriceAmount: line.unitPriceAmount,
       unitPriceCurrency: currency,
       taxRatePercentage: line.taxRatePercentage,
+      supplyClass: lineSupplyClass(line.taxRatePercentage, line.supplyClass),
+      hsnSac: line.hsnSac ?? null,
       lineSubtotalAmount: netAmount,
       lineTaxAmount: taxResult.taxAmount.amount,
       lineTotalAmount: taxResult.total.amount,
@@ -181,6 +191,10 @@ export class CreditNotesService {
       );
     }
 
+    // US-TAX-13: a credit note corrects its invoice, so it has the invoice's place of supply.
+    if (input.placeOfSupply && input.placeOfSupply !== invoice.placeOfSupply) {
+      throw new BadRequestException("A credit note has its invoice's place of supply. Change the invoice instead.");
+    }
     const totals = computeCreditNoteTotals(invoice.currency, input.lines);
 
     const created = await this.db.transaction(async (tx) => {
@@ -197,6 +211,8 @@ export class CreditNotesService {
           totalAmount: totals.totalAmount,
           createdByUserId: actorUserId,
           isDemo,
+          placeOfSupply: invoice.placeOfSupply,
+          supplyType: invoice.supplyType,
         })
         .returning();
 
@@ -330,7 +346,7 @@ export class CreditNotesService {
       const toAr = existing.totalAmount < balance ? existing.totalAmount : balance > 0n ? balance : 0n;
       const excess = existing.totalAmount - toAr;
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "credit_note");
+      const number = await this.numbering.allocateNumber(tx, orgId, "credit_note", { demo: existing.isDemo });
       const issuedAt = new Date();
       const dateStr = issuedAt.toISOString().slice(0, 10);
 

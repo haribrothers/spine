@@ -14,7 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@spine/ui";
+import { HSN_SAC_MESSAGE, SUPPLY_CLASSES, SUPPLY_CLASS_LABELS, isValidHsnSac, supplyClassTaxError, type SupplyClass, type TaxChoice, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { supplyClassForTax } from "../../../components/supply-type-field";
 import type { AccountsByType, CatalogItem, TaxGroupOption, TaxRateOption } from "./types";
 
 const NO_ACCOUNT = "none";
@@ -69,6 +71,14 @@ export function CatalogForm({
   const [taxSelection, setTaxSelection] = useState(() =>
     item?.defaultTaxRateId ? `rate:${item.defaultTaxRateId}` : item?.defaultTaxGroupId ? `group:${item.defaultTaxGroupId}` : NO_TAX,
   );
+  // US-TAX-13 — in India an item has an intra-state (above) and an inter-state tax.
+  const [interSelection, setInterSelection] = useState(() =>
+    item?.interTaxRateId ? `rate:${item.interTaxRateId}` : item?.interTaxGroupId ? `group:${item.interTaxGroupId}` : NO_TAX,
+  );
+  const [gst, setGst] = useState(false);
+  // US-TAX-14 — the item's HSN (goods) or SAC (services) code.
+  const [hsnSac, setHsnSac] = useState(item?.hsnSac ?? "");
+  const [supplyClass, setSupplyClass] = useState<SupplyClass>(item?.supplyClass ?? "zero_rated");
   const [incomeAccountId, setIncomeAccountId] = useState(item?.incomeAccountId ?? NO_ACCOUNT);
   const [expenseAccountId, setExpenseAccountId] = useState(item?.expenseAccountId ?? NO_ACCOUNT);
   const [accounts, setAccounts] = useState<AccountsByType | null>(null);
@@ -117,7 +127,20 @@ export function CatalogForm({
       .catch(() => setAccounts(null));
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
     apiClient.get<TaxGroupOption[]>("/tax-groups").then(setTaxGroups).catch(() => {});
-  }, []);
+    apiClient
+      .get<TaxProfile & { defaultIntraTax?: TaxChoice | null; defaultInterTax?: TaxChoice | null }>("/org/tax/profile")
+      .then((profile) => {
+        if (profile.country !== "IN") return;
+        setGst(true);
+        if (item) return;
+        // A new item starts from Settings › Tax › "Default tax preference".
+        const token = (t: TaxChoice | null | undefined) => (t?.taxRateId ? `rate:${t.taxRateId}` : t?.taxGroupId ? `group:${t.taxGroupId}` : NO_TAX);
+        setTaxSelection(token(profile.defaultIntraTax));
+        setInterSelection(token(profile.defaultInterTax));
+        if (profile.defaultIntraTax?.taxRateId || profile.defaultIntraTax?.taxGroupId) setSupplyClass("taxable");
+      })
+      .catch(() => {});
+  }, [item]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -133,6 +156,14 @@ export function CatalogForm({
         defaultPriceCurrency: currency,
         defaultTaxRateId: taxSelection.startsWith("rate:") ? taxSelection.slice(5) : null,
         defaultTaxGroupId: taxSelection.startsWith("group:") ? taxSelection.slice(6) : null,
+        ...(gst
+          ? {
+              hsnSac: hsnSac || null,
+              interTaxRateId: interSelection.startsWith("rate:") ? interSelection.slice(5) : null,
+              interTaxGroupId: interSelection.startsWith("group:") ? interSelection.slice(6) : null,
+            }
+          : {}),
+        supplyClass,
         incomeAccountId: incomeAccountId === NO_ACCOUNT ? undefined : incomeAccountId,
         expenseAccountId: expenseAccountId === NO_ACCOUNT ? undefined : expenseAccountId,
       };
@@ -145,6 +176,14 @@ export function CatalogForm({
       onSubmittingChange?.(false);
     }
   }
+
+  /** US-TAX-11 — the rate the chosen tax adds up to. */
+  function taxPercentOf(selection: string): number {
+    if (selection.startsWith("rate:")) return taxRates.find((r) => r.id === selection.slice(5))?.rate ?? 0;
+    if (selection.startsWith("group:")) return taxGroups.find((g) => g.id === selection.slice(6))?.taxRates.reduce((sum, r) => sum + r.rate, 0) ?? 0;
+    return 0;
+  }
+  const supplyError = supplyClassTaxError(supplyClass, taxPercentOf(taxSelection));
 
   const incomeAccounts = accounts?.income ?? [];
   const expenseAccounts = accounts?.expense ?? [];
@@ -228,9 +267,71 @@ export function CatalogForm({
         </FormField>
       </div>
 
-      <FormField label="Default tax" helperText="Pre-fills a new quote/invoice line for this item; editable per line.">
+      {gst && (
+        <FormField
+          label="HSN/SAC code"
+          helperText="4, 6 or 8 digits. Copied to each line; change it there if needed."
+          errorText={hsnSac && !isValidHsnSac(hsnSac) ? HSN_SAC_MESSAGE : undefined}
+        >
+          {(field) => <Input {...field} inputMode="numeric" maxLength={8} value={hsnSac} onChange={(e) => setHsnSac(e.target.value.replace(/\D/g, ""))} />}
+        </FormField>
+      )}
+
+      {gst ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Intra-state tax" helperText="Same state as your business.">
+            {(field) => (
+              <Combobox
+                {...field}
+                options={taxOptions}
+                value={taxSelection}
+                onValueChange={(v) => {
+                  setTaxSelection(v);
+                  setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
+                }}
+                placeholder="No tax"
+              />
+            )}
+          </FormField>
+          <FormField label="Inter-state tax" helperText="Another state, export or SEZ.">
+            {(field) => <Combobox {...field} options={taxOptions} value={interSelection} onValueChange={setInterSelection} placeholder="No tax" />}
+          </FormField>
+        </div>
+      ) : (
+        <FormField label="Default tax" helperText="Pre-fills a new quote/invoice line for this item; editable per line.">
+          {(field) => (
+            <Combobox
+              {...field}
+              options={taxOptions}
+              value={taxSelection}
+              onValueChange={(v) => {
+                setTaxSelection(v);
+                setSupplyClass((current) => supplyClassForTax(current, taxPercentOf(v), null, v.startsWith("rate:") ? taxRates.find((r) => r.id === v.slice(5))?.supplyClass : null));
+              }}
+              placeholder="No tax"
+            />
+          )}
+        </FormField>
+      )}
+
+      <FormField
+        label="Supply type"
+        helperText="Zero-rated, exempt and non-taxable items have no tax and are reported separately."
+        errorText={supplyError ?? undefined}
+      >
         {(field) => (
-          <Combobox {...field} options={taxOptions} value={taxSelection} onValueChange={setTaxSelection} placeholder="No tax" />
+          <Select value={supplyClass} onValueChange={(v) => setSupplyClass(v as SupplyClass)}>
+            <SelectTrigger {...field}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SUPPLY_CLASSES.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {SUPPLY_CLASS_LABELS[c]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </FormField>
 

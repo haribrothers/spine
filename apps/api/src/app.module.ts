@@ -1,5 +1,7 @@
+import { ModuleGuard } from "./auth/module.guard";
 import { Module } from "@nestjs/common";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_FILTER, APP_GUARD } from "@nestjs/core";
+import { ZodExceptionFilter } from "./common/zod-exception.filter";
 import { ThrottlerModule } from "@nestjs/throttler";
 import { SessionThrottlerGuard } from "./common/session-throttler.guard";
 import { AuthModule } from "@thallesp/nestjs-better-auth";
@@ -31,11 +33,13 @@ import { FilesModule } from "./modules/files/files.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { DemoDataModule } from "./modules/demo-data/demo-data.module";
+import { SetupModule } from "./modules/setup/setup.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { DataExportModule } from "./modules/data-export/data-export.module";
 import { SearchModule } from "./modules/search/search.module";
 import { QueueModule } from "./modules/queue/queue.module";
 import { EmailModule } from "./modules/email/email.module";
+import { EmailTemplatesModule } from "./modules/email-templates/email-templates.module";
 import { PdfModule } from "./modules/pdf/pdf.module";
 
 @Module({
@@ -53,6 +57,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     DbModule,
     QueueModule,
     EmailModule,
+    EmailTemplatesModule,
     PdfModule,
     HealthModule,
     OrgModule,
@@ -79,6 +84,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     NotificationsModule,
     AuditModule,
     DemoDataModule,
+    SetupModule,
     DashboardModule,
     DataExportModule,
     SearchModule,
@@ -90,7 +96,11 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     // self-registers its own AuthGuard as a global APP_GUARD) so AuthGuard
     // runs first and populates request.session before this guard reads it
     // — see CapabilityGuard's own doc comment for the full reasoning.
+    // US-SET-24: a switched-off module's routes answer MODULE_OFF before any capability check.
+    { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
+    // A body that fails its schema is a 400 with a readable message, not a 500.
+    { provide: APP_FILTER, useClass: ZodExceptionFilter },
   ],
 })
 export class AppModule {}

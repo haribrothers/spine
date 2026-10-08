@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const quoteLineTypeSchema = z.enum(["item", "heading", "text"]);
 
@@ -34,6 +35,10 @@ export const quoteLineInputSchema = z.object({
   taxGroupId: uuidSchema.optional().nullable(),
   /** S-08.2 — whether this line's unitPriceAmount is entered tax-inclusive. Defaults to the org's own setting client-side; always explicit on the wire. */
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
+  /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
+  hsnSac: hsnSacSchema.optional().nullable(),
 });
 
 /**
@@ -46,12 +51,11 @@ export const quoteLineInputSchema = z.object({
  * schema's callers (create/update/send/revise/approve-discount) transition
  * through dedicated service methods, not raw fields a client can set.
  *
- * NOTE on the `.partial()` pitfall documented in catalog.ts's own schema
- * comment: this schema has no top-level `z.boolean().default(...)` field,
- * so `updateQuoteSchema = createQuoteSchema.partial()` below is safe as-is.
- * If one is ever added, do not rely on a shared `.default()` on a field
- * that also needs `.partial()` — handle its default explicitly at the call
- * site instead.
+ * NOTE on the `.partial()` pitfall: zod still applies a field's
+ * `.default()` after `.partial()`, so `lines: [...].default([])` would
+ * clear a draft's lines on any update that leaves them out.
+ * `updateQuoteSchema` below redeclares `lines` as optional for that reason
+ * (as invoices, credit notes, bills, vendor credits and expenses do).
  */
 export const createQuoteSchema = z.object({
   contactId: uuidSchema,
@@ -60,10 +64,13 @@ export const createQuoteSchema = z.object({
   notes: z.string().optional().nullable(),
   termsAndConditions: z.string().optional().nullable(),
   lines: z.array(quoteLineInputSchema).default([]),
+  /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
+  placeOfSupply: placeOfSupplySchema.optional().nullable(),
 });
 
 /** A draft-only update — see QuotesService.update's own guard against editing a sent quote. */
-export const updateQuoteSchema = createQuoteSchema.partial();
+// Without the create default: a partial update must not clear the lines.
+export const updateQuoteSchema = createQuoteSchema.partial().extend({ lines: z.array(quoteLineInputSchema).optional() });
 
 /**
  * Phase 5 (Mobile, S-11.7) — `POST /quotes/:id/accept-in-person`. The

@@ -1,3 +1,4 @@
+import type { SupplyClass } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/purchases.ts's `vendorBills`/`vendorBillLines` row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following invoices/types.ts's own precedent. Every bigint money field is serialized as a string over JSON; parse with `BigInt(...)`, format with `formatMoney` (lib/money.ts). */
 export type VendorBillStatus = "draft" | "recorded" | "void";
 export type VendorBillLineType = "item" | "heading" | "text";
@@ -18,6 +19,8 @@ export interface VendorBillLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -29,6 +32,9 @@ export interface VendorBill {
   attachmentCount?: number;
   orgId: string;
   contactId: string;
+  /** US-TAX-13 — GST place of supply and the supply type it gave. */
+  placeOfSupply: string | null;
+  supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   jobId: string | null;
   status: VendorBillStatus;
@@ -86,6 +92,11 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  /** US-TAX-13 — the inter-state counterpart of the default tax. */
+  interTaxRateId?: string | null;
+  interTaxGroupId?: string | null;
+  hsnSac?: string | null;
+  supplyClass: SupplyClass;
   expenseAccountId: string | null;
   archivedAt: string | null;
 }
@@ -96,6 +107,8 @@ export interface TaxRateOption {
   name: string;
   rate: number;
   isCompound: boolean;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: SupplyClass | null;
   archivedAt: string | null;
 }
 

@@ -56,7 +56,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    # The integration suite grows each phase (about 18 minutes on a slow runner by Phase 9).
+    timeout-minutes: 35
     # Scoped to this job: the E2E job must read its own values from .env.e2e,
     # and dotenv never overrides variables that are already set.
     env:

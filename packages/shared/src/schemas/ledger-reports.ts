@@ -50,6 +50,8 @@ export interface LedgerSource {
   /** "Invoice INV-0042", "Payment RCP-0012", "Journal JNL-0003"… */
   label: string;
   href: string | null;
+  /** The document's own number ("INV-0042"), when it has one (US-RPT-38). */
+  number?: string | null;
 }
 
 export interface GeneralLedgerRow extends LedgerSource {

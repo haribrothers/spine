@@ -1,5 +1,5 @@
 import { BadRequestException, Body, Controller, ForbiddenException, Get, Param, Put, UseInterceptors } from "@nestjs/common";
-import { brandingSchema, businessProfileSchema, invoiceRemindersSchema, taxProfileSchema } from "@spine/shared";
+import { brandingSchema, businessProfileSchema, documentLayoutSchema, emailTemplatesSchema, invoiceRemindersSchema, taxProfileSchema } from "@spine/shared";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { SettingsService } from "./settings.service";
@@ -59,6 +59,18 @@ export class SettingsController {
       // US-DASH-25: the return period the dashboard's tax card follows.
       const parsed = taxProfileSchema.safeParse(value);
       if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the tax settings and try again.");
+    }
+    if (key === "document_layout") {
+      // US-SET-17–US-SET-19 (D-152): only the known options, terms and notes under 2,000 characters.
+      const parsed = documentLayoutSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the document options and try again.");
+    }
+    if (key === "email_templates") {
+      // US-SET-21 (D-153): a subject and message per email, with only the placeholders it can fill.
+      const parsed = emailTemplatesSchema.safeParse(value);
+      if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the email text and try again.");
+      await this.settingsService.set(orgId, key, parsed.data);
+      return { key, value: parsed.data };
     }
     if (key === "branding") {
       // US-SET-09: only the listed theme presets.

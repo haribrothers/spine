@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const invoiceLineTypeSchema = z.enum(["item", "heading", "text"]);
 export const invoiceTypeSchema = z.enum(["standard", "advance", "progress", "retention_release"]);
@@ -19,6 +20,10 @@ export const invoiceLineInputSchema = z.object({
   taxRateId: uuidSchema.optional().nullable(),
   taxGroupId: uuidSchema.optional().nullable(),
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
+  /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
+  hsnSac: hsnSacSchema.optional().nullable(),
 });
 
 /**
@@ -37,10 +42,13 @@ export const createInvoiceSchema = z.object({
   notes: z.string().optional().nullable(),
   termsAndConditions: z.string().optional().nullable(),
   lines: z.array(invoiceLineInputSchema).default([]),
+  /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
+  placeOfSupply: placeOfSupplySchema.optional().nullable(),
 });
 
 /** A draft-only update — see InvoicesService.update's own guard against editing an issued invoice. */
-export const updateInvoiceSchema = createInvoiceSchema.partial();
+// Without the create defaults: a partial update must not reset the type or clear the lines.
+export const updateInvoiceSchema = createInvoiceSchema.partial().extend({ type: invoiceTypeSchema.optional(), lines: z.array(invoiceLineInputSchema).optional() });
 
 /** S-05.8 — void requires a reason, per the PRD's own wording ("void an invoice with a reason"). */
 export const voidInvoiceSchema = z.object({

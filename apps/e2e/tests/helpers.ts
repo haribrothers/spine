@@ -99,6 +99,8 @@ export async function sendQuoteAndGetPublicLink(
 
   await clearInbox();
   await page.getByRole("button", { name: "Send Quote" }).click();
+  // US-SET-21: the send dialog starts from the Quote email template.
+  await page.getByRole("dialog").getByRole("button", { name: "Send quote" }).click();
   await page.getByText(/^sent$/i).first().waitFor({ timeout: 10_000 });
 
   const email = await waitForEmail((e) => e.to.some((t) => t.address === contactEmail));

@@ -33,7 +33,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 | P4 | Payment received, allocated to invoices | `payment` | The chosen money account (amount; the organisation default when none is chosen, US-BANK-03) | 1100 AR (allocated) |
 | P5 | Payment received, part or all unallocated (deposit / overpayment) | `payment` | The chosen money account (amount) | 1100 AR (allocated part), 2200 Customer Advances (unallocated part) |
 | P5a | Payment allocated to an advance invoice (US-PAY-13, Phase 6, [D-075](12-decisions.md)) | `payment` | The chosen money account | 2200 Customer Advances (no AR line); the advance invoice's balance drops; tax is charged when the deposit is offset on the final invoice |
-| P6 | Sitting credit applied to an invoice — from a payment, or from a credit note's excess (US-PAY-16) | `payment_credit_applied` / `credit_note_credit_applied` | 2200 Customer Advances | 1100 AR (each line tagged with the invoice's job) |
+| P6 | Sitting credit applied to an invoice — from a payment, or from a credit note's excess (US-PAY-16), including as the invoice is issued ([D-187](12-decisions.md)) | `payment_credit_applied` / `credit_note_credit_applied` | 2200 Customer Advances | 1100 AR (each line tagged with the invoice's job) |
 | P7 | Unallocated payment deleted | `payment_delete` | Reverses P4/P5 | |
 | P8 | Credit note issued against an invoice | `credit_note` | Revenue (net), 2100 Output Tax | 1100 AR (up to the invoice's balance), 2200 Customer Advances (any excess, from Phase 8, [D-142](12-decisions.md)) — every line tagged with the invoice's `job_id` when it has one (US-JOB-27), so job revenue and billed to date drop by the credit |
 | P9 | Invoice voided (with reason) | `invoice_void` | Reverses P1/P2 exactly | |
@@ -65,6 +65,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 2. Each journal line is one-sided: exactly one of debit/credit is non-zero (`journal_lines_one_sided` check).
 3. The trial balance balances after every simulated workflow (`ledger-integrity` integration test).
 4. No posting is dated inside a closed fiscal period.
+8. An invoice (P1–P3) posts on its issue date, which defaults to the day it's issued; a backdated one lands in its own period, and one dated in a closed period is refused. Credit notes are dated, and post, on the day they're issued ([D-185](12-decisions.md)).
 5. An issued invoice's reversal (P9) mirrors its original lines exactly, including job and contact tags.
 6. Allocations never exceed the payment amount or the invoice balance (DB trigger), for customer and vendor payments alike.
 7. Reports (P&L, Balance Sheet, Trial Balance, Cash Flow, general ledger, day book, AR/AP aging, job profitability, sales and purchase analysis) read `journal_lines`, never documents. Tax Summary's per-rate breakdown, GSTR-1 and the Tally export read document lines for rate, HSN/SAC and place of supply ([D-031](12-decisions.md), [D-148](12-decisions.md), [D-149](12-decisions.md)); their totals must equal the ledger's tax accounts for the same period (tested).
@@ -72,6 +73,7 @@ The full default chart is in [14-glossary §Default chart of accounts](14-glossa
 9. Vendor credit allocations plus vendor refunds never exceed the credit; customer refunds never exceed the customer's credit (DB triggers, like invariant 6).
 10. A journal line matched in a finished reconciliation belongs to no other reconciliation, and its source document can't be voided or deleted until that reconciliation is undone ([D-158](12-decisions.md)). Enforced centrally in `LedgerService.reverseEntry` (every void and delete reverses through it): a line with `reconciliation_id` set → 400 "This entry is part of a finished reconciliation of <account> to <date>. Undo that reconciliation first."; a line matched only in a reconciliation still in progress is unmatched instead. `reconciliation_id` is the only journal-line column the immutability trigger lets change (US-BANK-10, tested).
 11. Cash-basis figures are computed at report time from the accrual ledger and payment allocations; nothing is posted twice ([D-138](12-decisions.md)).
+12. An entry posted for a demo document (or reversing one) carries `is_demo`. Only "Delete all demo data" removes entries, and only those; every other entry is immutable, in that transaction too ([D-191](12-decisions.md), US-ONB-17, tested).
 
 ## Open points
 

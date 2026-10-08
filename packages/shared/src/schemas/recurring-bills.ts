@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { SupplyClass } from "../tax/supply-class.ts";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
 import { vendorBillLineInputSchema } from "./purchases.ts";
 import { ENDS_BEFORE_START, RECURRING_NAME_REQUIRED, RECURRING_NEEDS_LINE, recurringFrequencySchema, type RecurringFrequency, type RecurringStatus } from "./recurring-invoices.ts";
@@ -71,6 +72,10 @@ export interface RecurringBillLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — null on heading and text lines. */
+  supplyClass: SupplyClass | null;
+  /** US-TAX-14 */
+  hsnSac: string | null;
 }
 
 export interface RecurringBill {

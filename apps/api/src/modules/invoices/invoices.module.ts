@@ -1,3 +1,6 @@
+import { PaymentsModule } from "../payments/payments.module";
+import { CreditNotesModule } from "../credit-notes/credit-notes.module";
+import { IssueCreditService } from "./issue-credit.service";
 import { Module } from "@nestjs/common";
 import { AuditModule } from "../audit/audit.module";
 import { NumberingModule } from "../numbering/numbering.module";
@@ -39,9 +42,9 @@ import { NotificationsModule } from "../notifications/notifications.module";
  * providers/imports independently).
  */
 @Module({
-  imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule, NotificationsModule],
+  imports: [AuditModule, NumberingModule, LedgerModule, PdfModule, EmailModule, FilesModule, OrgModule, TaxModule, NotificationsModule, PaymentsModule, CreditNotesModule],
   controllers: [InvoicesController, InvoiceRemindersController, RecurringInvoicesController],
-  providers: [InvoicesService, InvoiceBulkPdfService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker, RecurringInvoicesService, RecurringInvoiceRunService, RecurringInvoiceRunWorker],
+  providers: [InvoicesService, IssueCreditService, InvoiceBulkPdfService, InvoiceEmailWorker, InvoiceRemindersService, InvoiceReminderRunWorker, RecurringInvoicesService, RecurringInvoiceRunService, RecurringInvoiceRunWorker],
   exports: [InvoicesService],
 })
 export class InvoicesModule {}

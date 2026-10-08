@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 10 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 11 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 
@@ -394,32 +394,40 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 9 · Tax, documents and setup
 
-- [ ] US-ONB-14 · Start with the modules my industry needs
-- [ ] US-ONB-15 · Open a setup page that shows what's left
-- [ ] US-ONB-16 · Go from each setup card to its setting and its guide
-- [ ] US-INV-25 · Set my UPI ID for payments
-- [ ] US-INV-26 · Show a UPI QR code on invoices
-- [ ] US-TAX-09 · Start with my country's tax rates
-- [ ] US-TAX-10 · Give each rate a tax type
-- [ ] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
-- [ ] US-TAX-12 · Record my GSTIN and state, and each customer's
-- [ ] US-TAX-13 · Pick intra- or inter-state GST automatically
-- [ ] US-TAX-14 · Add HSN or SAC codes to items and lines
-- [ ] US-TAX-15 · Print GST details on invoices and credit notes
-- [ ] US-TAX-16 · Export GSTR-1 for the GST portal
-- [ ] US-TAX-17 · Check GSTR-1 figures before uploading
-- [ ] US-RPT-37 · See tax collected and paid by rate and tax type
-- [ ] US-RPT-38 · Export my books for Tally
-- [ ] US-RPT-39 · Map my accounts to Tally groups
-- [ ] US-SET-17 · Choose paper size and columns for each document
-- [ ] US-SET-18 · Set each document's title, terms and notes
-- [ ] US-SET-19 · Add a signature and the amount in words
-- [ ] US-SET-20 · Show every character on PDFs
-- [ ] US-SET-21 · Edit the text of each customer email
-- [ ] US-SET-22 · Preview an email and reset it to the default
-- [ ] US-SET-23 · Switch optional modules on or off
-- [ ] US-SET-24 · Hide everything a switched-off module owns
-- [ ] US-SET-25 · Switch a module back on with nothing lost
+- [x] US-ONB-14 · Start with the modules my industry needs
+- [x] US-ONB-15 · Open a setup page that shows what's left
+- [x] US-ONB-16 · Go from each setup card to its setting and its guide
+- [x] US-ONB-17 · Keep demo data out of my real numbers and books
+- [x] US-ONB-18 · Choose the country and industry of the demo business
+- [x] US-ONB-19 · Explore an Indian GST business
+- [x] US-ONB-20 · Start from a template for my industry
+- [x] US-ONB-21 · Explore a VAT or GST business in my country
+- [x] US-INV-25 · Set my UPI ID for payments
+- [x] US-INV-26 · Show a UPI QR code on invoices
+- [x] US-TAX-09 · Start with my country's tax rates
+- [x] US-TAX-10 · Give each rate a tax type
+- [x] US-TAX-11 · Mark supplies as zero-rated, exempt or outside tax
+- [x] US-TAX-12 · Record my GSTIN and state, and each customer's
+- [x] US-TAX-13 · Pick intra- or inter-state GST automatically
+- [x] US-TAX-14 · Add HSN or SAC codes to items and lines
+- [x] US-TAX-15 · Print GST details on invoices and credit notes
+- [x] US-TAX-16 · Export GSTR-1 for the GST portal
+- [x] US-TAX-17 · Check GSTR-1 figures before uploading
+- [x] US-RPT-37 · See tax collected and paid by rate and tax type
+- [x] US-RPT-38 · Export my books for Tally
+- [x] US-RPT-39 · Map my accounts to Tally groups
+- [x] US-SET-17 · Choose paper size and columns for each document
+- [x] US-SET-18 · Set each document's title, terms and notes
+- [x] US-SET-19 · Add a signature and the amount in words
+- [x] US-SET-20 · Show every character on PDFs
+- [x] US-SET-21 · Edit the text of each customer email
+- [x] US-SET-22 · Preview an email and reset it to the default
+- [x] US-SET-23 · Switch optional modules on or off (the "AI assistant" row lands with US-AI-01)
+- [x] US-SET-24 · Hide everything a switched-off module owns
+- [x] US-SET-25 · Switch a module back on with nothing lost
+
+## Phase 10 · AI assistant
+
 - [ ] US-AI-01 · Switch the AI assistant on or off
 - [ ] US-AI-02 · Connect a local or cloud AI provider
 - [ ] US-AI-03 · Choose which AI features are on
@@ -435,7 +443,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-AI-13 · Draft quote lines from an enquiry
 - [ ] US-AI-14 · Get AI suggestions while reconciling
 
-## Phase 10 · Packaging & 1.0
+## Phase 11 · Packaging & 1.0
 
 - [ ] US-ONB-09 · Load demo data to explore
 - [ ] US-SET-08 · Remove demo data and keep my real data

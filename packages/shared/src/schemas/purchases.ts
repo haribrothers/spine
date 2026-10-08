@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, placeOfSupplySchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 export const vendorBillLineTypeSchema = z.enum(["item", "heading", "text"]);
 
@@ -18,6 +19,10 @@ export const vendorBillLineInputSchema = z.object({
   taxRateId: uuidSchema.optional().nullable(),
   taxGroupId: uuidSchema.optional().nullable(),
   isTaxInclusive: z.boolean().default(false),
+  /** US-TAX-11 — why an untaxed line has no tax; a taxed line is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional().nullable(),
+  /** US-TAX-14 — the line's HSN/SAC code, copied from its item. */
+  hsnSac: hsnSacSchema.optional().nullable(),
 });
 
 /** PRD F7 (S-07.1) — a draft vendor bill. Every money total is absent — always server-computed, never trusted from the client, same as createInvoiceSchema/createQuoteSchema. */
@@ -30,10 +35,13 @@ export const createVendorBillSchema = z.object({
   currency: currencyCodeSchema,
   notes: z.string().optional().nullable(),
   lines: z.array(vendorBillLineInputSchema).default([]),
+  /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
+  placeOfSupply: placeOfSupplySchema.optional().nullable(),
 });
 
 /** A draft-only update — see VendorBillsService.update's own guard against editing a recorded bill. */
-export const updateVendorBillSchema = createVendorBillSchema.partial();
+// Without the create default: a partial update must not clear the lines.
+export const updateVendorBillSchema = createVendorBillSchema.partial().extend({ lines: z.array(vendorBillLineInputSchema).optional() });
 
 /** Void requires a reason, mirroring voidInvoiceSchema exactly. */
 export const voidVendorBillSchema = z.object({
@@ -92,7 +100,8 @@ export const createExpenseSchema = z.object({
 });
 
 /** A submitted-only update — see ExpensesService.update's own guard against editing a reviewed expense. */
-export const updateExpenseSchema = createExpenseSchema.partial();
+// Without the create defaults: a partial update must not reset tax, who paid or billable.
+export const updateExpenseSchema = createExpenseSchema.partial().extend({ taxAmount: z.coerce.bigint().optional(), paidBy: expensePaidBySchema.optional(), isBillable: z.boolean().optional() });
 
 /** S-07.4 — reject requires a comment; approve's comment is optional. */
 export const reviewExpenseSchema = z.object({
@@ -146,8 +155,10 @@ export const createVendorCreditSchema = z.object({
   currency: currencyCodeSchema,
   notes: z.string().optional().nullable(),
   lines: z.array(vendorBillLineInputSchema).default([]),
+  /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
+  placeOfSupply: placeOfSupplySchema.optional().nullable(),
 });
-export const updateVendorCreditSchema = createVendorCreditSchema.partial();
+export const updateVendorCreditSchema = createVendorCreditSchema.partial().extend({ lines: z.array(vendorBillLineInputSchema).optional() });
 
 export const voidVendorCreditSchema = z.object({
   reason: z.string().trim().min(1, "Give a reason for voiding this credit."),

@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { files } from "./files";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 
 /**
  * PRD F3 — quotes with multi-line pricing and versioning (S-03.1, S-03.8).
@@ -175,6 +175,9 @@ export const quotes = pgTable(
     emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
     /** Same demo-data marker as contacts.isDemo/catalogItems.isDemo — see contacts.ts's isDemo comment. */
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -243,6 +246,10 @@ export const quoteLines = pgTable(
      * explicitly) has this at 0.
      */
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     /** Provenance only, snapshot semantics — never re-read for totals. At most one of taxRateId/taxGroupId is set; enforced at the service layer. */
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),

@@ -40,6 +40,7 @@ const GUESS: Record<CatalogImportField, RegExp> = {
   unit: /^unit|uom/i,
   price: /price|rate|amount|cost/i,
   tax: /tax|gst|vat/i,
+  hsnSac: /hsn|sac/i,
   incomeAccount: /income|sales\s*acc|revenue/i,
   expenseAccount: /expense|purchase\s*acc|cogs/i,
 };

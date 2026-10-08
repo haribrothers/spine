@@ -1,3 +1,4 @@
+import type { SupplyClass } from "@spine/shared";
 /** Mirrors apps/api/src/db/schema/quotes.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape, following contacts/catalog's own precedent. */
 export type QuoteStatus = "draft" | "sent" | "accepted" | "rejected";
 export type QuoteLineType = "item" | "heading" | "text";
@@ -20,6 +21,8 @@ export interface QuoteLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: string;
   lineTaxAmount: string;
   lineTotalAmount: string;
@@ -29,6 +32,9 @@ export interface Quote {
   id: string;
   orgId: string;
   contactId: string;
+  /** US-TAX-13 — GST place of supply and the supply type it gave. */
+  placeOfSupply: string | null;
+  supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   number: string | null;
   status: QuoteStatus;
@@ -92,6 +98,11 @@ export interface CatalogItemOption {
   defaultTaxRatePercentage: number;
   defaultTaxRateId: string | null;
   defaultTaxGroupId: string | null;
+  /** US-TAX-13 — the inter-state counterpart of the default tax. */
+  interTaxRateId?: string | null;
+  interTaxGroupId?: string | null;
+  hsnSac?: string | null;
+  supplyClass: SupplyClass;
   archivedAt: string | null;
 }
 
@@ -101,6 +112,8 @@ export interface TaxRateOption {
   name: string;
   rate: number;
   isCompound: boolean;
+  /** D-182 — what a 0% rate means for its lines. */
+  supplyClass?: SupplyClass | null;
   archivedAt: string | null;
 }
 

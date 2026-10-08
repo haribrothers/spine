@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Alert, AlertDescription, Button, EmptyState, MultiSelect, StatCard, Switch } from "@spine/ui";
@@ -44,6 +45,7 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
   const canReject = useCapability("expenses.reject");
   const canCreate = useCapability("expenses.edit_own");
   const canManageCategories = useCanManageExpenseCategories();
+  const jobsOn = useModule("jobsField");
   const [expenses, setExpenses] = useState<Expense[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   // US-DASH-13: "Review" on the dashboard opens ?status=submitted.
@@ -158,7 +160,8 @@ export function ExpensesExplorer({ currentUserId }: { currentUserId: string | nu
             aria-label="Filter by status"
             className="w-40"
           />
-          <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />
+          {/* US-SET-24 */}
+          {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
           <label className="flex items-center gap-2 text-[13px] text-on-surface">
             <Switch checked={mineOnly} onCheckedChange={setMineOnly} />
             My expenses only

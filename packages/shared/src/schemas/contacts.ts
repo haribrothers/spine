@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { GST_TREATMENTS } from "../tax/gst.ts";
 import { currencyCodeSchema, uuidSchema } from "./common.ts";
 
 export const contactTypeSchema = z.enum(["customer", "vendor", "both"]);
@@ -24,6 +25,8 @@ export const addressInputSchema = z.object({
   state: z.string().optional().nullable(),
   postalCode: z.string().optional().nullable(),
   country: z.string().optional().nullable(),
+  /** US-TAX-12 — two-digit GST state code in India; a free region code elsewhere. */
+  stateCode: z.string().trim().max(10).optional().nullable(),
   isPrimary: z.boolean().optional(),
 });
 
@@ -45,6 +48,10 @@ export const createContactSchema = z.object({
   // Targeted field additions (task brief Phase 4) — a tax ID for invoicing
   // a business contact and a website, both optional free text.
   taxId: z.string().optional().nullable(),
+  /** US-TAX-12 — GST treatment in India; `taxId` then holds the GSTIN. */
+  gstTreatment: z.enum(GST_TREATMENTS).optional().nullable(),
+  /** US-TAX-12 (D-146) — the contact's GST state code; filled from a registered contact's GSTIN when blank. */
+  stateCode: z.string().trim().max(10).optional().nullable(),
   website: z.string().optional().nullable(),
   logoFileId: uuidSchema.optional().nullable(),
   contactPersons: z.array(contactPersonInputSchema).optional(),
@@ -71,6 +78,10 @@ export const updateContactSchema = z.object({
   phone: z.string().optional().nullable(),
   notes: z.string().optional().nullable(),
   taxId: z.string().optional().nullable(),
+  /** US-TAX-12 — GST treatment in India; `taxId` then holds the GSTIN. */
+  gstTreatment: z.enum(GST_TREATMENTS).optional().nullable(),
+  /** US-TAX-12 (D-146) — the contact's GST state code; filled from a registered contact's GSTIN when blank. */
+  stateCode: z.string().trim().max(10).optional().nullable(),
   website: z.string().optional().nullable(),
   logoFileId: uuidSchema.optional().nullable(),
   /** US-INV-19 — "Pause automatic reminders" for this contact's invoices. */

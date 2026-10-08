@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, AlertDescription, Button, Combobox, EmptyState, MultiSelect, StatCard } from "@spine/ui";
 import { ClipboardList } from "lucide-react";
@@ -34,6 +35,7 @@ const ALL_CONTACTS = "__all__";
 export function VendorBillsExplorer() {
   const canCreate = useCapability("vendor_bills.edit_own");
   const canManageRecurring = useCapability("vendor_bills.manage_recurring");
+  const jobsOn = useModule("jobsField");
   const [bills, setBills] = useState<VendorBill[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
@@ -141,7 +143,8 @@ export function VendorBillsExplorer() {
             placeholder="All vendors"
             className="w-48"
           />
-          <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />
+          {/* US-SET-24 */}
+          {jobsOn && <JobFilter value={job.jobId} options={job.options} onValueChange={job.setJobId} />}
         </div>
         <div className="flex items-center gap-2">
           {/* US-PUR-29 — hidden without vendor_bills.manage_recurring, which every /recurring-bills route also checks. */}

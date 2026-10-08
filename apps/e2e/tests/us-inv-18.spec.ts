@@ -29,7 +29,8 @@ test.describe("US-INV-18", () => {
 
     await pane.getByRole("button", { name: "Preview email" }).click();
     const preview = page.getByRole("dialog", { name: "Reminder email preview" });
-    await expect(preview.getByText(/Subject: Reminder: invoice INV-\d+ is \d+ days? overdue/)).toBeVisible();
+    // Demo invoices take their own series (US-ONB-17).
+    await expect(preview.getByText(/Subject: Reminder: invoice DEMO-INV-\d+ is \d+ days? overdue/)).toBeVisible();
     await expect(preview.locator("iframe")).toBeVisible();
   });
 });

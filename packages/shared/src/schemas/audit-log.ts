@@ -44,6 +44,9 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   bank_reconciliation: "Reconciliation",
   opening_balances: "Opening balances",
   manual_journal: "Journal",
+  gstr1_export: "GSTR-1 file",
+  tally_export: "Tally export",
+  modules: "Modules",
 };
 
 function sentenceCase(key: string): string {

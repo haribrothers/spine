@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, cn } from "@spine/ui";
+import { finishSettingUpLabel } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
 
 interface ChecklistStatus {
@@ -12,9 +13,11 @@ interface ChecklistStatus {
   hasItem: boolean;
   hasSentQuote: boolean;
   dismissed: boolean;
+  /** US-ONB-15 — setup cards still to do on Set up Spine. */
+  setupLeft?: number;
 }
 
-const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed" | "visible">; label: string; href: string }[] = [
+const CHECKLIST_ITEMS: { key: "hasCustomer" | "hasItem" | "hasSentQuote"; label: string; href: string }[] = [
   { key: "hasCustomer", label: "Add your first customer", href: "/contacts" },
   { key: "hasItem", label: "Create your first item", href: "/catalog" },
   { key: "hasSentQuote", label: "Send your first quote", href: "/quotes" },
@@ -35,9 +38,11 @@ const CHECKLIST_ITEMS: { key: keyof Omit<ChecklistStatus, "dismissed" | "visible
  * member sees and can dismiss this checklist (see
  * `DashboardService.dismissChecklist`'s comment).
  *
- * All three checked auto-dismisses (persisted, same as the manual Dismiss
- * action) rather than leaving a fully-ticked card sitting on the
- * dashboard forever. Guarded by `autoDismissSent` so a remount while the
+ * Once all three are checked, the card says "Finish setting up Spine —
+ * <n> left" and links to Set up Spine (US-ONB-15) until every setup card is
+ * done or marked not needed; then it auto-dismisses (persisted, same as the
+ * manual Dismiss action) rather than leaving a fully-ticked card sitting on
+ * the dashboard forever. Guarded by `autoDismissSent` so a remount while the
  * write is still in flight (or already succeeded but the fetched
  * `dismissed` hasn't caught up yet) doesn't fire a redundant PUT per visit.
  */
@@ -53,7 +58,7 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
       .then((res) => {
         if (cancelled) return;
         setStatus(res);
-        const allDone = res.hasCustomer && res.hasItem && res.hasSentQuote;
+        const allDone = res.hasCustomer && res.hasItem && res.hasSentQuote && (res.setupLeft ?? 0) === 0;
         if (allDone && !res.dismissed && !autoDismissSent.current) {
           autoDismissSent.current = true;
           apiClient.post("/dashboard/checklist/dismiss").catch((err) => {
@@ -86,6 +91,28 @@ export function SetupChecklist({ className, onVisibleChange }: { className?: str
 
   // Nothing until the status is known, so the dashboard doesn't shuffle cards.
   if (!shown || !status) return null;
+
+  const firstStepsDone = status.hasCustomer && status.hasItem && status.hasSentQuote;
+  if (firstStepsDone) {
+    const left = status.setupLeft ?? 0;
+    if (left === 0) return null;
+    return (
+      <Card className={cn("w-full", className)} data-testid="finish-setting-up">
+        <CardHeader>
+          <CardTitle>{finishSettingUpLabel(left)}</CardTitle>
+          <CardDescription>Your first quote is out. A few settings make the rest of Spine fit your business.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-wrap items-center gap-3">
+          <Button asChild size="sm">
+            <Link href="/setup">Set up Spine</Link>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleDismiss}>
+            Dismiss
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className={cn("w-full", className)}>

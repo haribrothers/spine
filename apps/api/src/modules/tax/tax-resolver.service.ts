@@ -1,5 +1,5 @@
 import { Inject, Injectable, BadRequestException } from "@nestjs/common";
-import type { TaxRate as ComputeTaxRate } from "@spine/shared";
+import type { SupplyClass, TaxRate as ComputeTaxRate } from "@spine/shared";
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
@@ -10,6 +10,8 @@ export interface ResolvedLineTax {
   rates: ComputeTaxRate[];
   /** Blended, snapshot-friendly percentage — sum of non-compound rates, for display/PDF/legacy `taxRatePercentage` columns. */
   blendedPercentage: number;
+  /** D-182 — the supply class a 0% rate (or a group of 0% rates sharing one) gives a line that doesn't name its own. */
+  supplyClass?: SupplyClass | null;
 }
 
 /**
@@ -40,6 +42,7 @@ export class TaxResolverService {
       return {
         rates: [{ id: rate.id, name: rate.name, percent: rate.rate, isCompound: rate.isCompound }],
         blendedPercentage: rate.rate,
+        supplyClass: rate.rate === 0 ? rate.supplyClass : null,
       };
     }
 
@@ -58,6 +61,7 @@ export class TaxResolverService {
       return {
         rates: rows.map((r) => ({ id: r.id, name: r.name, percent: r.rate, isCompound: r.isCompound })),
         blendedPercentage,
+        supplyClass: blendedPercentage === 0 && new Set(rows.map((r) => r.supplyClass)).size === 1 ? rows[0]!.supplyClass : null,
       };
     }
 

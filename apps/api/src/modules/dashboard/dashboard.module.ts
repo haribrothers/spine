@@ -1,5 +1,6 @@
 import { OrgModule } from "../org/org.module";
 import { ReportsModule } from "../reports/reports.module";
+import { SetupModule } from "../setup/setup.module";
 import { Module } from "@nestjs/common";
 import { DashboardController } from "./dashboard.controller";
 import { AttentionService } from "./attention.service";
@@ -26,7 +27,7 @@ import { EmailModule } from "../email/email.module";
  * than route-gating).
  */
 @Module({
-  imports: [ContactsModule, JobsModule, EmailModule, ReportsModule, OrgModule],
+  imports: [ContactsModule, JobsModule, EmailModule, ReportsModule, OrgModule, SetupModule],
   controllers: [DashboardController, ActivityFeedController],
   // US-NTF-13: the daily digest reuses the attention list and Today's sources.
   providers: [DashboardService, ActivityFeedService, AttentionService, KpiService, DigestService, DailyDigestWorker],

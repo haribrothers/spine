@@ -17,7 +17,6 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 | Accounting | Un-allocate a payment | Move a payment's allocation off an invoice without deleting the payment | Credit notes cover corrections in 1.0 | [D-074](12-decisions.md) |
 | Banking | OFX and QIF statement import | Statement formats beyond CSV | CSV covers Indian banks; OFX/QIF matter more abroad | [D-157](12-decisions.md) |
 | Banking | Bank rules | "When a statement line's description contains X, suggest category Y" while reconciling | Matching and create-from-line come first | Research (Zoho transaction rules) |
-| Tax, India | Exports under LUT | Zero-rated exports without IGST under a Letter of Undertaking, reported as `WOPAY` in GSTR-1 | 1.0 exports carry IGST (`WPAY`) | D-146, D-148 |
 | Tax, India | Reverse charge | Bills and expenses under reverse charge: self-assessed output tax with matching input credit; GSTR-1 flag | Needs posting rules and an accountant's review | Research |
 | Tax, India | Composition scheme | Bill of supply only, no tax collected, composition tax on turnover | Few target users are on it | Research |
 | Tax, India | TDS and TCS | Tax deducted at source on vendor payments and collected on receipts; certificates and reports | Separate law and returns | Research |
@@ -25,6 +24,10 @@ Small, accounting-first gaps that 1.0 users and their accountants will ask for f
 | Tax, India | Scheduled rate changes by HSN | Change the GST rate of every item with an HSN code from a date, previewing affected items and recurring documents | Rates change rarely; 1.0 edits rates by hand | Research (Zoho GST rate update) |
 | Tax, India | Cess on items | Compensation cess amounts on items that carry it | Rare for service businesses | US-TAX-10 (cess type exists) |
 | Tax, India | GSTR-3B worksheet | A summary laid out like GSTR-3B, from the Tax Summary | GSTR-1 first; 3B is mostly totals | Research |
+| Tax, India | Units of measure | A unit (GST UQC: NOS, KGS, MTR, SQM…) on catalogue items and document lines, printed on documents and used in GSTR-1's HSN summary instead of `OTH` | The portal accepts `OTH`; units touch every line editor | [D-184](12-decisions.md) |
+| Tax, India | Shipping bill details | Shipping bill number, date and port code on export invoices, written into GSTR-1's exports table | They can be added on the portal once customs issues them | [D-184](12-decisions.md) |
+| Tax, India | Advances in GSTR-1 | Tax on advances received and adjusted (Tables 11A and 11B), from deposits received before the invoice | Deposits carry no tax in 1.0 ([D-075](12-decisions.md)); needs an accountant's review | [D-184](12-decisions.md) |
+| Tax, India | GSTR-1 amendments | Amended tables (B2BA, CDNRA…) for changes to documents from earlier returns | Spine never edits issued documents; corrections go through credit notes, which 1.0 reports | [D-184](12-decisions.md) |
 | Exports | Tally JSON | TallyPrime 7.0's JSON data exchange as an alternative to Tally XML | XML works with every Tally version | [D-149](12-decisions.md) |
 | Documents | More Indian scripts on PDFs | Tamil, Telugu, Kannada, Malayalam, Bengali, Gujarati, Gurmukhi and Odia fonts | Devanagari and Latin ship in 1.0 | [D-151](12-decisions.md) |
 | Documents | Documents inbox | Upload or forward bills and receipts by email into an inbox, then turn one into a bill or expense | Attachments on records come first | Research (Zoho Documents) |
@@ -50,7 +53,7 @@ V1 ships the AI foundation and four form-filling features (D-162–D-173). These
 | Read the documents inbox | Read bills and receipts arriving in the documents inbox and prepare drafts | Needs the inbox (v1.1) and AI-created drafts | 16-roadmap (Documents inbox) |
 | Expense review help | Suggest category and flag unusual amounts when approving expenses | Approval flow first | US-PUR-08 |
 | Learned bank rules | Turn accepted AI bank suggestions into rules ("Bank rules" above) | Bank rules arrive in v1.1 | D-173 |
-| More languages | AI replies in Hindi and other languages, following the person's language | English only in 1.0 (D-168); i18n extraction in Phase 10 | D-168 |
+| More languages | AI replies in Hindi and other languages, following the person's language | English only in 1.0 (D-168); i18n extraction in Phase 11 | D-168 |
 | More email drafts | AI drafts for lead and activity follow-ups and meeting invitations | Customer document emails first | US-AI-11 |
 | Per-Team budgets and troubleshooting retention | Budgets per Team; an Owner option to keep AI request text for 30 days for troubleshooting | V1 keeps one organisation budget and stores no text (D-168, D-169) | D-168, D-169 |
 
@@ -78,7 +81,7 @@ Valuable, but bigger, or wanted by fewer of Spine's users.
 | Payments | Payment gateway links | Razorpay, Cashfree or Stripe payment links on invoices with automatic payment recording | Needs keys and an outside service; UPI QR covers India in 1.0 | [D-150](12-decisions.md) |
 | Purchases | Purchase orders | Orders to vendors that convert into bills | Construction firms use them; not core to the books | [00-overview](00-overview.md), research |
 | Tax | More country presets | US state sales tax, Canada GST/HST, Singapore GST, Malaysia SST, South Africa VAT, EU VAT | Six presets in 1.0; add on demand | [D-145](12-decisions.md) |
-| Platform | More languages | Translations beyond English, starting with Hindi | English only in 1.0; strings are extracted in Phase 10 | US-OPS-16 |
+| Platform | More languages | Translations beyond English, starting with Hindi | English only in 1.0; strings are extracted in Phase 11 | US-OPS-16 |
 | Platform | External calendar sync | Google and Outlook calendar sync for meetings | Needs OAuth and outside services | [D-028](12-decisions.md) |
 | Mobile | Native push notifications | Push to the field app | Email and next sync in 1.0 | [15-mobile-release](15-mobile-release.md) |
 | Mobile | Universal links and app links | Open links straight in the field app | Each install has its own domain | [15-mobile-release](15-mobile-release.md) |

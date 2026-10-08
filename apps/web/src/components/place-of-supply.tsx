@@ -1,0 +1,196 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Alert, FormField, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@spine/ui";
+import {
+  GST_STATES,
+  POS_OTHER_COUNTRIES,
+  placeOfSupplyFor,
+  placeOfSupplyLabel,
+  supplyTypeFor,
+  switchLineTaxes,
+  type GstTreatment,
+  type ItemTaxes,
+  type PlaceOfSupplySource,
+  type SupplyType,
+  type TaxChoice,
+  type TaxProfile,
+} from "@spine/shared";
+import { apiClient } from "../lib/api-client";
+
+interface ContactForPlaceOfSupply {
+  gstTreatment: GstTreatment | null;
+  stateCode: string | null;
+  addresses?: { type: string; stateCode: string | null; isPrimary: boolean }[];
+}
+
+type SwitchableLine = TaxChoice & { key: string; type: string; catalogItemId: string | null };
+
+const SOURCE_LABELS: Record<PlaceOfSupplySource, string> = {
+  site: "From the site address",
+  shipping: "From the shipping address",
+  billing: "From the billing address",
+  contact: "From the contact's state",
+  overseas: "The customer is overseas",
+};
+
+/**
+ * US-TAX-13 (D-146) — a draft's place of supply: it follows the contact
+ * (site or shipping address, else billing), can be changed, and moving it
+ * between intra- and inter-state switches item lines still on their item's
+ * tax. Lines changed by hand keep their tax and are flagged.
+ */
+export function usePlaceOfSupply<L extends SwitchableLine>({
+  contactId,
+  initial,
+  lines,
+  setLines,
+  direction = "sale",
+}: {
+  contactId: string;
+  /** The saved draft's place of supply; undefined for a new document. */
+  initial?: string | null;
+  lines: L[];
+  setLines: (lines: L[]) => void;
+  direction?: "sale" | "purchase";
+}) {
+  const [profile, setProfile] = useState<TaxProfile | null>(null);
+  const [contact, setContact] = useState<ContactForPlaceOfSupply | null>(null);
+  const [placeOfSupply, setPlaceOfSupply] = useState<string | null>(initial ?? null);
+  const [source, setSource] = useState<PlaceOfSupplySource | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [flagged, setFlagged] = useState<Set<string>>(new Set());
+  const [items, setItems] = useState<(ItemTaxes & { id: string })[]>([]);
+  const loadedContact = useRef<string | null>(initial !== undefined ? contactId : null);
+
+  useEffect(() => {
+    apiClient
+      .get<TaxProfile>("/org/tax/profile")
+      .then(setProfile)
+      .catch(() => setProfile({}));
+    apiClient
+      .get<(ItemTaxes & { id: string })[]>("/catalog-items")
+      .then(setItems)
+      .catch(() => {});
+  }, []);
+
+  const businessState = profile?.country === "IN" && typeof profile.stateCode === "string" ? profile.stateCode : null;
+  const active = businessState !== null;
+  const exportUnderLut = profile?.exportUnderLut === true;
+  const typeOf = useCallback(
+    (pos: string | null) => supplyTypeFor({ businessState, placeOfSupply: pos, treatment: contact?.gstTreatment, direction }),
+    [businessState, contact, direction],
+  );
+  const supplyType = typeOf(placeOfSupply);
+
+  const change = useCallback(
+    (next: string | null, nextSource: PlaceOfSupplySource | null, previousType: SupplyType | null, nextType: SupplyType | null) => {
+      setPlaceOfSupply(next);
+      setSource(nextSource);
+      const result = switchLineTaxes(lines, items, previousType, nextType, { exportUnderLut });
+      if (result.switched === 0 && result.flagged.length === 0) {
+        setNotice(null);
+        setFlagged(new Set());
+        return;
+      }
+      setLines(result.lines);
+      setFlagged(new Set(result.flagged));
+      const to = nextType === "intra" ? "CGST + SGST" : nextType === "export" && exportUnderLut ? "no tax (export under LUT)" : "IGST";
+      const parts = [
+        result.switched ? `${result.switched} ${result.switched === 1 ? "line" : "lines"} switched to ${to}` : null,
+        result.flagged.length ? `${result.flagged.length} ${result.flagged.length === 1 ? "line you changed by hand keeps its" : "lines you changed by hand keep their"} tax — check ${result.flagged.length === 1 ? "it" : "them"}` : null,
+      ].filter(Boolean);
+      setNotice(`The place of supply changed to ${placeOfSupplyLabel(next)}: ${parts.join("; ")}.`);
+    },
+    [items, lines, setLines, exportUnderLut],
+  );
+
+  // A new contact brings its own place of supply.
+  useEffect(() => {
+    if (!contactId || !active) return;
+    let cancelled = false;
+    apiClient
+      .get<ContactForPlaceOfSupply>(`/contacts/${contactId}`)
+      .then((c) => {
+        if (cancelled) return;
+        setContact(c);
+        if (loadedContact.current === contactId) return;
+        loadedContact.current = contactId;
+        const found = placeOfSupplyFor(c);
+        const nextType = supplyTypeFor({ businessState, placeOfSupply: found?.code ?? null, treatment: c.gstTreatment, direction });
+        change(found?.code ?? null, found?.source ?? null, typeOf(placeOfSupply), nextType);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+    // Only when the contact (or GST registration) changes, not on every line edit.
+  }, [contactId, active]);
+
+  return {
+    /** GST applies: an Indian business with a GST state. */
+    active,
+    placeOfSupply,
+    supplyType,
+    /** D-181 — exports are zero-rated with no IGST. */
+    exportUnderLut,
+    source,
+    notice,
+    flagged,
+    setPlaceOfSupply: (next: string) => change(next, null, supplyType, typeOf(next)),
+  };
+}
+
+/** "Place of supply" with where it came from and the tax it gives. */
+export function PlaceOfSupplyField({
+  value,
+  onChange,
+  source,
+  supplyType,
+  exportUnderLut = false,
+}: {
+  value: string | null;
+  onChange: (value: string) => void;
+  source: PlaceOfSupplySource | null;
+  supplyType: SupplyType | null;
+  exportUnderLut?: boolean;
+}) {
+  const kind = supplyType === "intra" ? "Intra-state, so items use their CGST + SGST rate." : supplyType === "export" ? (exportUnderLut ? "Export under LUT, so items have no IGST." : "Export, so items use their IGST rate.") : supplyType === "inter" ? "Inter-state, so items use their IGST rate." : undefined;
+  const helper = [source ? SOURCE_LABELS[source] : null, kind].filter(Boolean).join(" · ") || "The state the supply is made to.";
+  return (
+    <FormField label="Place of supply" required helperText={helper}>
+      {(field) => (
+        <Select value={value ?? ""} onValueChange={onChange}>
+          <SelectTrigger {...field}>
+            <SelectValue placeholder="Choose a state" />
+          </SelectTrigger>
+          <SelectContent>
+            {GST_STATES.map((s) => (
+              <SelectItem key={s.code} value={s.code}>
+                {s.name} ({s.code})
+              </SelectItem>
+            ))}
+            <SelectItem value={POS_OTHER_COUNTRIES}>{placeOfSupplyLabel(POS_OTHER_COUNTRIES)}</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+    </FormField>
+  );
+}
+
+/** The banner after the place of supply moves between intra- and inter-state. */
+export function PlaceOfSupplyNotice({ notice }: { notice: string | null }) {
+  if (!notice) return null;
+  return <Alert variant="warning">{notice}</Alert>;
+}
+
+/** On a line whose tax was changed by hand when the place of supply changed. */
+export function LineTaxWarning() {
+  return (
+    <p role="status" className="flex items-center gap-1.5 rounded-sm bg-due-soon-bg px-2 py-1 text-[12px] text-on-surface">
+      <AlertTriangle size={14} aria-hidden className="shrink-0" />
+      Check this line&apos;s tax — the place of supply changed.
+    </p>
+  );
+}

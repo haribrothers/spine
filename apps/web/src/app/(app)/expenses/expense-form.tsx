@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
@@ -77,6 +78,7 @@ export function ExpenseForm({
   /** Where focus goes when the form closes — for a form opened from a menu item, which is gone by then. */
   returnFocusTo?: React.RefObject<HTMLElement | null>;
 }) {
+  const jobsOn = useModule("jobsField");
   const [categoryId, setCategoryId] = useState("");
   const [jobId, setJobId] = useState(NO_JOB);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -289,9 +291,12 @@ export function ExpenseForm({
             >
               {() => <Combobox options={categoryOptions} value={categoryId} onValueChange={setCategoryId} placeholder="Select a category…" />}
             </FormField>
-            <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
-              {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
-            </FormField>
+            {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+            {jobsOn && (
+              <FormField label="Job" required={entryMode === "labour"} helperText={entryMode === "labour" ? "Labour is always for a job." : "Optional — flows into job costing once approved."}>
+                {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+              </FormField>
+            )}
             <FormField label="Date" required>
               {() => <DatePicker value={date} onChange={setDate} />}
             </FormField>

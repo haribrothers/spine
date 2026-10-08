@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterceptors } from "@nestjs/common";
+import { parseEmailOverride } from "../email/email-text";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
@@ -117,9 +118,10 @@ export class QuotesController {
   @Post(":id/send")
   @RequireCapability("quotes.send")
   @UseInterceptors(IdempotencyInterceptor)
-  async send(@Session() session: UserSession, @Param("id") id: string) {
+  async send(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
     const orgId = requireOrgId(session);
-    return this.quotesService.send(orgId, id, session.user.id);
+    // US-SET-21: the "Send" dialog may change this one email.
+    return this.quotesService.send(orgId, id, session.user.id, parseEmailOverride("quote", body));
   }
 
   /** US-QUO-24 — a new draft from this quote (anyone who can create quotes). */
@@ -135,9 +137,9 @@ export class QuotesController {
   @Post(":id/resend")
   @RequireCapability("quotes.send")
   @UseInterceptors(IdempotencyInterceptor)
-  async resend(@Session() session: UserSession, @Param("id") id: string) {
+  async resend(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
     const orgId = requireOrgId(session);
-    return this.quotesService.resend(orgId, id, session.user.id);
+    return this.quotesService.resend(orgId, id, session.user.id, parseEmailOverride("quote", body));
   }
 
   @Post(":id/revise")

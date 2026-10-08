@@ -59,6 +59,8 @@ describe("US-INV-15 · print payment instructions on invoices (requires local Po
     return textOf(InvoicePdfDocument({ invoice: invoice!, lines, contactName: "Alan Brooks", contactEmail: null, business }));
   }
 
+  const alanEmail = `alan-${randomUUID()}@example.com`;
+
   beforeAll(async () => {
     testApp = await createTestApp();
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
@@ -66,7 +68,7 @@ describe("US-INV-15 · print payment instructions on invoices (requires local Po
     orgId = (await db.select().from(member).where(eq(member.userId, userId)))[0]!.organizationId;
     const [contact] = await db
       .insert(contacts)
-      .values({ orgId, type: "customer", name: "Alan Brooks", email: `alan-${randomUUID()}@example.com`, createdByUserId: userId })
+      .values({ orgId, type: "customer", name: "Alan Brooks", email: alanEmail, createdByUserId: userId })
       .returning();
     contactId = contact!.id;
     invoicesService = testApp.app.get(InvoicesService);
@@ -116,7 +118,8 @@ describe("US-INV-15 · print payment instructions on invoices (requires local Po
     vi.spyOn(emailService, "isConfigured").mockReturnValue(true);
     const send = vi.spyOn(emailService, "send").mockResolvedValue();
     await testApp.app.get(InvoiceEmailWorker).process({ orgId, invoiceId: issued.id });
-    const sent = send.mock.calls[0]![0];
+    // This invoice's email: the queue is shared by every test file, so another file's leftover email can be sent too.
+    const sent = send.mock.calls.map(([mail]) => mail).find((mail) => mail.to === alanEmail)!;
     expect(sent.html).toContain("How to pay");
     expect(sent.html).toContain("Bank transfer to Riverstone Builders LLC<br>Account 0042 1188 0193");
     expect(sent.html!.indexOf("How to pay")).toBeLessThan(sent.html!.indexOf("The invoice is attached as a PDF."));

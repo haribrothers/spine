@@ -7,7 +7,7 @@ import { files } from "./files";
 import { quotes } from "./quotes";
 import { journalEntries } from "./ledger";
 import { jobs, milestones } from "./jobs";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 
 /**
  * PRD F5 — Invoicing (Phase 2 · Money In). Stage 1 scope: standard invoice
@@ -128,6 +128,13 @@ export const invoices = pgTable(
      * (they show the current setting) and when none was set.
      */
     paymentInstructions: text("payment_instructions"),
+    /**
+     * US-INV-26 (D-150) — the balance due at issue, which the issued PDF's
+     * UPI QR code asks for. Null when the PDF has no QR code (not INR, no
+     * UPI ID, the setting off, or nothing due). Reminders compare it with
+     * the current balance.
+     */
+    upiQrAmount: bigint("upi_qr_amount", { mode: "bigint" }),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     /** Set once, in the same transaction as the status flip to `issued` — never touched again (an issued invoice is immutable). */
     issuedAt: timestamp("issued_at", { withTimezone: true }),
@@ -161,6 +168,9 @@ export const invoices = pgTable(
      * gapless `number` is, D-007).
      */
     progressClaimNo: integer("progress_claim_no"),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -206,6 +216,10 @@ export const invoiceLines = pgTable(
     discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     /** Blended effective tax percentage — see quote_lines.taxRatePercentage's identical comment. */
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -307,6 +321,10 @@ export const recurringInvoiceLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

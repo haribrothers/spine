@@ -80,6 +80,439 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — D-195: the AI assistant becomes Phase 10 (planning)
+
+- **New phase:** the 14 AI stories (US-AI-01 to US-AI-14) move out of Phase 9 into **Phase 10 · AI assistant**, with its own goal, deliverables, "done when" and branch.
+- **Renumbering:** Packaging & 1.0 becomes **Phase 11**. Every reference that meant it now says Phase 11; past decisions and changelog entries are left as written.
+- **What stays:** AI still ships in 1.0 (D-162). Phase 9 (tax, documents and setup) is complete at 31 stories and merges on its own.
+
+### 2026-10-08 — US-ONB-15, US-ONB-16: Set up Spine (Phase 9)
+
+- **Set up Spine** (user menu, Owners only):
+  - One page with 14 cards — business details, tax, chart of accounts, opening balances, bank and cash accounts, payment instructions, documents and emails, numbering, payment reminders, modules, team, email sending, backups and field app.
+  - Each card says why it matters, and whether it's "Done" or "To do", worked out from your data (D-194).
+  - "Done <n> of <m>", "To do" and "Not needed" counts and a progress bar sit at the top.
+- **Each card goes where you set it up:**
+  - Settings opens over the page, and closing it re-reads the cards.
+  - Banking, Opening balances or Team › Users open as pages.
+  - Email sending and Backups are set by whoever runs the server, so they link to the self-hosting guide.
+- **Marking a card not needed** moves it to a "Not needed" list, where "Show again" brings it back.
+- **Backups** isn't counted until Phase 10 can check it.
+- **Field app** only shows while Jobs & field is on.
+- **With demo data loaded,** the page says so and counts the demo's settings as they stand.
+- **Dashboard:** once its three first steps are done, "Get started" becomes "Finish setting up Spine — <n> left" until every card is done or not needed.
+- **For developers:**
+  - `GET /org/setup-status`, `PUT /org/setup-status/:key/hidden`, and `setupLeft` on `GET /dashboard/checklist`.
+  - `SETUP_CARDS` in `@spine/shared`.
+  - `packages/shared/src/feature-flags.ts` (D-068) arrives with `bundledHelp` for the Phase 10 "How it works" links.
+
+### 2026-10-08 — US-ONB-18 fix: loading a demo works on a real install
+
+- **The bug:** "Load demo business" failed near the end with "You don't have permission to do that. If you need to, ask an owner.". A second try then said "Demo data is already loaded."
+- **Cause:** the demo Staff and Field logins were created through public sign-up, which is closed once a business has an owner (US-AUTH-08). Tests had sign-up forced open, so they never saw it.
+- **Logins:** the demo people are now written directly, with a password hashed the way sign-in checks it. Loading a demo no longer goes through sign-up.
+- **Failed loads:** a load that fails part-way now removes what it had added, so it can simply be tried again.
+- **Tests:** a new test loads a demo with sign-up closed and the demo people not yet created; it reproduces the 403 on the old code. Another checks that a failed load leaves nothing behind.
+
+### 2026-10-08 — `pnpm db:reset:dev` clears every table (dev tooling)
+
+- **What changed:** the reset now truncates every table in the `public` schema, read from the database each time it runs, instead of a hand-kept list.
+- **Why:** the list had fallen 22 tables behind. Those tables were still emptied through their foreign keys, but a future table without one would have survived a reset.
+- **What stays:** Drizzle's migration log (in its own `drizzle` schema), so no migrations replay.
+
+### 2026-10-08 — US-ONB-18, US-ONB-19, US-ONB-21: demo businesses by country and industry (Phase 9)
+
+- **Choose your demo:** "Just show me around" on the welcome screen, and "Load demo data" in Settings › Data, open "Explore a demo business":
+  - Seven countries: United States, India, United Kingdom, Australia, New Zealand, UAE and Saudi Arabia.
+  - Five industries: Construction, Interior design & fit-out, Trades, IT services & agency and Professional services.
+  - The country is guessed from the browser's time zone.
+- **Realistic history:** each demo has about six months ending today — paid, part-paid, overdue, voided and draft invoices; quotes; jobs with milestones (and retention, variation orders); bills; expenses; a credit note; leads and meetings. Numbers follow dates.
+- **Settings:**
+  - On a business with no records of its own, loading also sets the country, currency, tax, financial year and template.
+  - Once it has records, the country is fixed and nothing of yours changes.
+  - Settings › Data names the loaded demo; a second demo can't be loaded on top.
+- **India (US-ONB-19):** a Bengaluru business with a GSTIN, HSN/SAC codes, CGST + SGST, IGST, SEZ supplies, B2C large and small sales, exports under LUT, a credit note, and input GST from registered vendors. Its GSTR-1 for this month and last has every table, no problems, and totals equal to the Tax Summary.
+- **UK, Australia, New Zealand, UAE and Saudi Arabia (US-ONB-21):** local contacts and prices, each country's VAT or GST, untaxed export lines, and VAT on expenses. UK invoices are titled "VAT invoice". UK new-build works are zero-rated, and mobility aids are at 5%.
+- **Unchanged default:** `POST /demo-data/seed` with no body still loads Riverstone Builders, exactly as before.
+- **For developers:**
+  - `@spine/shared/demo` holds every demo as data (country packs × industry packs). `buildDemoPlan` turns a choice into a plan, and `DemoSeederService` runs it through the real services.
+  - `SEED_DEMO=IN:interior_design` is specified for US-OPS-02.
+  - Q-21 asks whether GSTR-1 should leave retention releases out; India's demos don't release retention until it's answered.
+
+### 2026-10-08 — US-ONB-20: industry templates for more kinds of business (Phase 9)
+
+- **Four new templates:** the Template step and Settings › Industry template now list Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency and Professional services, alongside Construction / Contracting, General Services and Generic. Each says what it sets up.
+- **Accounts and categories:** each new template adds its own cost accounts and six expense categories, once, as Construction does (D-193). For example:
+  - Trades adds 5700 Parts & Consumables, 5710 Tools & Equipment and 5720 Vehicle Running.
+  - Professional services adds 5900 Research & Subscriptions and 6450 Professional Indemnity Insurance.
+- **Existing setup wins:** an account code or category name already in use is kept, and the note on Expenses › Categories says so, naming the template.
+- **Modules:** Professional services starts with Jobs & field off, like Generic. The others start with everything on.
+- **For developers:** `INDUSTRY_TEMPLATES` in `@spine/shared` drives the step, the API seed (`IndustryTemplateService.seedTemplate`) and the note. `industry_template_seed` records which template ran.
+
+### 2026-10-08 — US-ONB-17: demo data stays out of my numbers and books (Phase 9)
+
+- **Own number series:** demo documents are numbered `DEMO-INV-0001`, `DEMO-QUO-0001`, `DEMO-JOB-001` and so on. Your own first invoice is still `INV-0001`, with or without demo data loaded.
+- **Demo spreads to new records:** anything saved for a demo contact (a quote, invoice, payment, credit note, bill, vendor payment or job), or an expense on a demo job, is demo too, and goes with the demo data.
+- **"Delete all demo data" leaves no trace.** It now also removes:
+  - The journal entries the demo posted, so every report, the Tax Summary, GSTR-1 and the Tally export are as if it never existed.
+  - The demo number series, so loading demo data again starts at 0001.
+  - Demo contacts and jobs. One that a record of your own uses (a refund or a vendor credit, say) is kept, and Settings › Data says "Kept 1 demo contact that your own records use.".
+- **Ledger rules unchanged for real entries.** Only demo entries can be deleted, and only by that one action. The database refuses every other delete or change, inside that action too (D-191 amends the immutability rule for demo rows only).
+- **For developers:**
+  - Migration `0108`: `number_sequences.is_demo`, `journal_entries.is_demo`, the demo-inheritance triggers and the narrowed immutability triggers. It also flags the entries of demo documents already loaded.
+  - `NumberingService.allocateNumber(…, { demo })`; `LedgerService.postEntry` reads the flag from the source document.
+  - Demo invoices in tests now match `DEMO-INV-…`.
+
+### 2026-10-07 — US-SET-23, US-SET-24, US-SET-25, US-ONB-14: optional modules (Phase 9)
+
+- **Settings › Modules** (Owner) lists "Leads & meetings", "Jobs & field", "Approvals" and "Recurring documents". Each has a switch, a description of what it includes, and the date it was switched off. A note says the core is always on.
+- Switching a module off asks first: what disappears, and "Nothing is deleted. Switch it back on any time and everything is where you left it."
+- "Jobs & field" can't go off while anyone uses the field app ("<n> people use the field app. Change their role or deactivate them first.").
+- Changes are audited.
+- **Approvals off:** a submitted expense is approved and posted at once, and quote discounts need no approval.
+- **A switched-off module leaves no trace.** It disappears from:
+  - The sidebar, dashboard widgets and attention rows.
+  - The Today card and the digest.
+  - Search's Jobs group, notifications and settings panes.
+  - Reports (Job profitability) and the Teams privilege matrix.
+  - Job pickers, "Convert to job" and a contact's Leads tab.
+- A direct link shows "<Module> is switched off. An owner can switch it on in Settings › Modules.". Its API answers 403 `{ error: "MODULE_OFF" }`, from the web and the mobile app alike.
+- **Recurring documents off:** no recurring invoices or bills are created.
+- **Switching back on:** records, Team grants and settings return as they were. Recurring schedules resume from their next future date, and missed dates are skipped ("Recurring documents were off from <date> to <date>; missed dates were skipped."). Expenses approved while Approvals was off stay approved.
+- **US-ONB-14:**
+  - Construction / Contracting and General Services start with every module on.
+  - Generic starts with Jobs & field off; the wizard says "Jobs are switched off — turn them on in Settings › Modules if you need them."
+  - Changing the template later leaves modules as they are; Settings says so.
+  - Businesses that existed before modules keep everything on (migration `0107`).
+- **For developers:**
+  - One map (`packages/shared/src/modules.ts`) drives the API's `ModuleGuard` and the web's `useModules`. D-190 records the details.
+  - The "AI assistant" row arrives with Settings › AI (US-AI-01).
+
+### 2026-10-07 — D-189: email messages are rich text (Phase 9)
+
+- The Message in Settings › Emails, the send dialogs and the statement dialog is now the rich text editor: paragraphs, bold, italics, bullet and numbered lists, and links. The Insert buttons put placeholders where the cursor is in the message, as they do in the subject.
+- Sending keeps the formatting with the email's own styles and makes it safe: only those tags survive, links only to web or mail addresses, and values like the customer's name go in escaped.
+- The plain-text version lists bullets and shows each link's address.
+- Messages saved as plain text still read as paragraphs. Spine's default emails look exactly as before.
+- `RichTextEditor` gains `onReady` (insert text at the cursor), `onFocus` and `aria-label` (named, it's a multi-line text box); its doc page, design-system page and a11y test are updated.
+
+### 2026-10-07 — US-SET-22: preview an email and reset it to the default (Phase 9)
+
+- Settings › Emails has three new buttons for the email you're editing (saved or not):
+  - **Preview** shows it in the branded layout, always light, made from the most recent document of that kind ("Made from INV-0042 · Lakeview Homes"). With no such document, or for statements, it uses sample details. Quotes show an example link.
+  - **Send me a test** emails it to you only, with "[Test]" before the subject.
+  - **Reset to default** asks first, then brings back Spine's subject and message and saves; your other emails keep their words.
+- API: `POST /org/settings/email_templates/:type/preview` and `/test` (Owner-only).
+
+### 2026-10-07 — US-SET-21: edit the text of each customer email (Phase 9)
+
+- Settings › Emails lists the six customer emails: Quote, Invoice, Payment reminder, Receipt, Credit note and Statement. Each shows its subject and the first line of its message.
+- Open one to edit "Subject" and "Message". An Insert menu adds placeholders at the cursor: `{customer_name}`, `{document_number}`, `{amount}`, `{balance_due}`, `{due_date}`, `{business_name}`, `{link}` (quotes) and `{due_status}` (reminders).
+- An unknown placeholder like `{invoice_no}` shows "{invoice_no} isn't a placeholder Spine knows. Use one from the list.", in the pane and from the API.
+- The next email of that kind uses your words inside the branded layout: the heading, details table, payment instructions, button and PDF stay. Emails already sent don't change. Web addresses in a message become links.
+- New send dialog (To, Subject, Message, attach the PDF), starting from the template with the document's details filled in. Changes apply to that one email.
+  - Used by Send quote, Email again, Email invoice, Send reminder and Email receipt.
+  - New: **Email credit note**, from the credit notes on an invoice.
+  - The statement dialog gains a Subject and starts from its template too.
+- Spine's default reminder now reads "invoice INV-0007 is 3 days overdue" (it said "was due on …"); the subject is unchanged. D-188 records the choices.
+- API:
+  - `PUT /org/settings/email_templates`.
+  - `GET /email-drafts/:type/:id` and `GET /contacts/:id/statement/draft`.
+  - Send routes take `{ to?, subject?, message?, attachPdf? }`.
+  - New: `POST /credit-notes/:id/send-email`.
+
+### 2026-10-07 — D-187: apply the customer's credit when issuing; known gaps tidied (Phase 9)
+
+- "Issue Invoice" now asks "Apply this customer's credit?" when the customer has credit (an unallocated payment such as a deposit, or a credit note's spare credit).
+  - "Apply credit and issue" applies it oldest first, up to the balance, before the PDF is drawn. The UPI QR code then asks for what's still owed, and there's no QR code when the credit covers it all.
+  - "Issue without credit" works as before.
+  - It needs "Apply credit" as well as "Issue". The API takes `applyCredit` on `POST /invoices/:id/issue`, and `GET /invoices/:id/available-credit` gives the amount.
+- QA script's known gaps:
+  - Removed six fixed entries: fine-grained permissions on screens, the variation order tax picker, Tax Summary export, the credit notes list, the mobile app, and job cost figures.
+  - Moved deliberate v1 choices under "By design in v1".
+  - Removed the UPI deposit gap (fixed above).
+- Roadmap:
+  - Added GSTR-1 units of measure, shipping bill details, advances (Tables 11A/11B) and amendments.
+  - Removed "Exports under LUT", which shipped in Phase 9 (D-181).
+
+### 2026-10-07 — US-RPT-38: export my books for Tally (Phase 9)
+
+- Reports › Export to Tally (Accountant group): choose From and To and press "Export". A ZIP downloads with `masters.xml`, `vouchers.xml` and `README.txt`.
+- The README says how to import (Gateway of Tally › Import › Masters, then Transactions; Tally.ERP 9's menus too) and lists the accounts still on their default group.
+- The page shows:
+  - Ledgers, vouchers, and the number of accounts on default groups (with "review the mapping").
+  - Each Spine document with its Tally voucher type and count.
+- Masters: every account used in the range is a ledger under its mapped group (US-RPT-39). Customers are under Sundry Debtors and vendors under Sundry Creditors, bill-wise, with address, state, GSTIN and GST registration type.
+- Vouchers come from the ledger (one per journal entry, always balanced):
+  - Invoices → Sales; bills → Purchase.
+  - Customer payments and money in → Receipt; vendor payments, refunds, expenses and money out → Payment.
+  - Transfers → Contra.
+  - Journals, opening balances and voids → Journal.
+  - Credit notes → Credit Note; vendor credits → Debit Note.
+- Bill-wise references name the invoice or bill (New Ref, Agst Ref, or On Account).
+- Downloads are audited. `GET /exports/tally` needs "View financial statements".
+- Sample files for an import check are in `docs/samples/tally/`; a test keeps them equal to what the export writes. D-186 and R-16 record the format choices.
+
+### 2026-10-07 — US-RPT-39: map my accounts to Tally groups (Phase 9)
+
+- Reports › Export to Tally › Account mapping lists every account with its code, its Spine type and a "Tally group" picker of Tally's predefined groups. You can filter by account type and search.
+- The first time, each account is pre-mapped:
+  - By money account: bank → Bank Accounts, cash → Cash-in-Hand, card → Bank OD A/c.
+  - By code: 1000 → Cash-in-Hand; 1200 and 2100 → Duties & Taxes; 1500s → Fixed Assets; 2500 → Loans (Liability); 3200 → Reserves & Surplus.
+  - By type: 4000–4799 → Sales Accounts; other income → Indirect Incomes; 5xxx → Direct Expenses; other expenses → Indirect Expenses; other equity → Capital Account; other assets and liabilities → Current Assets and Current Liabilities.
+- An Owner changes groups and presses "Save mapping"; later exports use them. Members with "View financial statements" can read the mapping but not change it.
+- `GET/PUT /exports/tally/mapping`; the saved groups are in `settings.tally_mapping`.
+
+### 2026-10-07 — D-185: invoices post on their issue date (Phase 9)
+
+- Issuing an invoice now dates its journal entry on the invoice's issue date (today when none was set), not on the day it's issued. A backdated invoice lands in its own month in the ledger, P&L, the Tax Summary and GSTR-1, so the GSTR-1 totals check agrees.
+- An issue date inside a closed fiscal period is refused with the closed-period message.
+- Voids still reverse on the day they're voided. Credit notes, which have no date of their own, post on the day they're issued.
+- This closes Q-20 (D-185). The posting rules gain invariant 8.
+
+### 2026-10-07 — US-TAX-17: check GSTR-1 figures before uploading (Phase 9)
+
+- The GSTR-1 page lists what to fix before uploading, under "Fix these before you upload". Each problem has a link to fix it:
+  - A registered customer with no GSTIN → "Open contact".
+  - Lines with no HSN/SAC → "Open invoice".
+  - Invoices with no place of supply → "Open invoice".
+  - Tax in the file that doesn't match the Tax Summary's tax collected → "Open Tax Summary".
+- A credit note's problems open its invoice, where credit notes are shown.
+- New cards:
+  - "Problems" shows the count.
+  - The "Tax" card says "equals the Tax Summary", or shows the Tax Summary's figure when the two differ.
+- "Download Excel" gives `GSTR1_<GSTIN>_<MMYYYY>.xlsx`:
+  - One sheet per GSTR-1 table (b2b, b2cl, b2cs, cdnr, cdnur, exp, exemp, hsn(b2b), hsn(b2c), docs), plus "Problems" with the footer.
+  - It's built from the JSON, so the figures are the same.
+- Excel downloads are audited, like JSON ones.
+- Q-20 is open: invoices post to the ledger on the day they're issued, so a backdated invoice makes the totals check differ.
+
+### 2026-10-07 — US-TAX-16: export GSTR-1 for the GST portal (Phase 9)
+
+- Reports › Tax › GSTR-1 appears for businesses with an Indian GST profile.
+- Choose Monthly or Quarterly and a period. The page shows:
+  - Documents issued, taxable value and tax.
+  - Counts and values for B2B, B2CL, B2CS, CDNR, CDNUR, Exports, Nil/exempt/non-GST, the HSN summary and Documents issued.
+- "Download JSON" gives `GSTR1_<GSTIN>_<MMYYYY>.json` in the GST portal's GSTR-1 upload format:
+  - It carries the GSTIN, the return period and the schema version (`GST3.2.4`).
+  - B2B, B2CL, B2CS, CDNR, CDNUR, EXP, NIL, HSN (split B2B/B2C) and Documents issued are all included.
+- Credit notes against invoices from earlier periods carry the original invoice's number and date.
+- Documents issued lists each invoice and credit-note series with totals and voided counts.
+- The footer reads "Spine prepares this file; it doesn't file your return. Check it, then upload it on the GST portal."
+- Every download is in the audit log.
+- `GET /exports/gstr1` needs "View financial statements" (Owners always; never Field).
+- The mapping lives in one module (`apps/api/src/modules/tax/gstr1/`) with fixture tests per table. D-184 records how documents map.
+
+### 2026-10-07 — US-RPT-37: see tax collected and paid by rate and tax type (Phase 9)
+
+- Reports › Tax Summary now shows both sides:
+  - A fourth card, "Paid to the tax authority", says what's still to pay.
+  - "By tax type": collected, paid and net. A GST business always sees CGST, SGST, IGST and cess (SGST reads "SGST/UTGST" when there's UTGST); elsewhere VAT, GST, sales tax or tax.
+  - "Paid by rate", beside "Collected by rate": bills, approved expenses and money out with tax, less vendor credits.
+  - "Supply class": zero-rated, exempt and non-taxable sales and purchases (D-147).
+- The totals equal the ledger: tax collected is 2100's credits and tax paid is 1200's debits for the range. Anything the documents don't explain (voids of earlier documents, removed documents) shows as an adjustment row.
+- "Paid to the tax authority" counts tax payments dated in the range or for a period that overlaps it, as the tax payments list does (US-TAX-08). Still to pay is net payable, less payments, plus refunds.
+- The CSV, Excel and PDF exports carry the new sections.
+- The Tax Summary and the GST invoice PDF now share one module that splits each line's tax by type (`RateBook`, `loadTaxBreakdown`). GSTR-1 will use it too.
+
+### 2026-10-07 — US-INV-26: show a UPI QR code on invoices (Phase 9)
+
+- When an INR invoice is issued with a UPI ID saved and "Show a UPI QR code on invoices" on, its PDF's "How to pay" box shows:
+  - A QR code.
+  - "Scan to pay ₹<balance due> with any UPI app · <UPI ID> · note <invoice number>".
+  - The payment instructions.
+- The code is a `upi://pay` link with the payee name (default: the business name), the amount and the invoice number as the note (D-150), rendered with `qrcode` (MIT).
+- The QR is part of the stored PDF (D-083): `invoices.upi_qr_amount` keeps the amount it asks for, and invoice responses carry `upiQrAmount`. There's no QR when nothing is due at issue, the setting is off, or the invoice isn't in rupees. Draft PDFs preview the QR they'd get.
+- Reminder emails state the current balance and, when it differs from the QR code's amount, add "The QR code on the attached invoice is for <original>; pay <balance> to clear it."
+- Nothing is recorded automatically when someone pays by scanning. Record the payment, or find it when you reconcile.
+- Migration `0106_upi_qr_amount`.
+
+### 2026-10-07 — US-INV-25: set my UPI ID for payments (Phase 9)
+
+- Settings › Payment instructions has a UPI section when the business's currency is INR. It holds:
+  - "UPI ID" (e.g. riverstone@okhdfc).
+  - "Payee name", which defaults to the business name.
+  - A "Show a UPI QR code on invoices" switch, on once a UPI ID is saved.
+- A UPI ID without an "@", or with spaces, is refused with "Enter a UPI ID like name@bank." in the pane and by the API (400).
+- Other currencies don't show the UPI fields.
+- `business_profile` gains `upiId`, `upiPayeeName` and `showUpiQr`. `upiPaymentUri` (`@spine/shared`) builds the `upi://pay` link that the QR code will encode (D-150, US-INV-26).
+
+### 2026-10-07 — US-TAX-15: print GST details on invoices and credit notes (Phase 9)
+
+- With GST on (the document has a supply type), the invoice PDF follows the GST rules:
+  - It's titled "TAX INVOICE", or "BILL OF SUPPLY" when every line is exempt or non-taxable.
+  - The header shows the business's address and GSTIN.
+  - "Billed to" adds the customer's address and their GSTIN when they're registered or an SEZ unit.
+  - A "Place of supply" block reads, for example, "Karnataka (29) · Intra-state supply" (or Inter-state supply, or Export).
+  - Each line shows its HSN/SAC, a "Taxable value", and its tax split into CGST and SGST (or UTGST, or IGST, plus any cess). Column headings carry the rate when every line has the same one, e.g. "CGST 9%".
+  - The totals list the taxable value and each tax instead of subtotal, discount and tax.
+- Exports say "Supply meant for export with payment of IGST", or "… under LUT without payment of IGST" (D-181), with the overseas address.
+- Credit notes show the same GST details, plus the original invoice's number and date.
+- With "Tax summary table" on (Settings › Documents), an HSN-wise summary follows the lines: taxable value, each tax and the total tax. Without GST, the summary is by rate.
+- Without a GST profile nothing changes: the PDF keeps its Subtotal/Discount/Tax totals and its title.
+- A line's tax is split in proportion to its rates and always adds back up to the line's tax (`splitLineTax` in `@spine/shared`).
+- The PDF test helper now reads each stream by its declared length, because compressed bytes can contain "endobj". This also steadies the US-SET-10 and US-RPT-33 checks.
+
+### 2026-10-07 — US-SET-19: add a signature and the amount in words (Phase 9)
+
+- **Signature:** Settings › Documents takes a PNG or JPEG signature ("Upload signature", "Replace signature", "Remove signature").
+  - Each document type can show it with "Signature". It prints above "Authorised signatory — <business name>" on quotes, invoices, credit notes, receipts and statements.
+  - Removing it leaves new PDFs without it; issued PDFs keep theirs.
+  - The image is served through its owning setting (D-117): Owner and Staff can open it, Field can't.
+  - The file-integrity list names it "Signature on documents".
+- **Amount in words:** prints the total in the organisation's currency on quotes, invoices (the amount due) and credit notes.
+  - Rupees use lakh and crore: "Rupees Two Lakh Forty-One Thousand Nine Hundred Only", "… and Fifty Paise Only".
+  - Other currencies: "Twelve thousand five hundred dollars and fifty cents".
+  - `amountInWords` is in `@spine/shared` and tested for both styles.
+- Settings › Documents also gains the "Tax summary table" option listed under US-SET-17. It prints from US-TAX-15.
+- Fixed: two changes in quick succession in the Documents pane (upload a signature, then tick it) could lose the first.
+
+### 2026-10-07 — US-SET-18: set each document's title, terms and notes (Phase 9)
+
+- Each Settings › Documents tab now has a "Title" (e.g. "Quotation", "Estimate"), "Default terms" and "Default notes".
+  - A blank title prints the default.
+  - Terms or notes over 2,000 characters show "Keep terms under 2,000 characters." and aren't saved.
+- New quotes and invoices start with the default terms and notes, which can be changed on each document. Drafts that already have text keep it.
+- Credit notes, receipts and statements have no notes of their own, so they print the default notes and terms under their content.
+- With GST on, an invoice is titled "Tax Invoice" and a credit note "Credit Note" whatever the setting says. Their Title field reads "Set by your GST settings" and can't be changed. US-TAX-15 adds "Bill of Supply".
+
+### 2026-10-07 — US-SET-17: choose paper size and columns for each document (Phase 9)
+
+- New Settings › Documents has a tab for each of Quotes, Invoices, Credit notes, Receipts and Statements. Each tab has its options beside a live preview: a sample PDF with the business's name, branding and currency, refreshed a moment after each change.
+- "Paper size" can be A4 or Letter for every document type.
+- Quotes, invoices and credit notes can show or hide these columns:
+  - "Quantity and unit" (the quantity and unit price columns).
+  - "Discount" (a new per-line column; credit notes have no discounts).
+  - "HSN/SAC" (only when GST is on).
+  - "Tax per line".
+- With Discount hidden, a discounted line prints its discounted unit price. "Hidden columns don't change any amounts."
+- Saved options apply to drafts and to documents issued from then on. Issued PDFs never change (D-083).
+- The setting is validated strictly (`documentLayoutSchema`): an unknown option is refused.
+- New `GET /org/settings/document_layout/preview` (Owner) renders the unsaved options.
+- Quote, invoice and credit-note PDFs share a new `DocumentLinesTable`. The invoice title from the tax preset (US-TAX-09) now comes from the same resolved layout.
+
+### 2026-10-07 — US-SET-20: show every character on PDFs (Phase 9)
+
+- Every PDF now prints in Noto Sans, falling back to Noto Sans Devanagari: quotes, invoices, credit notes, receipts, statements and report exports. Before, they used the built-in Helvetica.
+  - ₹ and every other currency symbol print, along with accented Latin, Greek, Cyrillic and Hindi (Devanagari) names.
+  - Money keeps its true minus sign, and INR shows "₹1,20,247.50" instead of "INR 1,20,247.50" (D-151 replaces D-123).
+- The fonts ship in `apps/api/assets/fonts` with their SIL Open Font Licence (`OFL.txt`). `pdf-fonts.ts` registers them once, with italics for rich-text notes, and turns off mid-word hyphenation.
+- Scripts the fonts don't cover yet (Tamil, Telugu, Kannada, Bengali, Chinese, Arabic) print as missing glyphs. The US-SET-20 test lists what is and isn't covered; more Indian scripts follow in v1.1.
+- Issued PDFs stored before this change keep their old look (D-083).
+- New test helper `src/test-utils/pdf-text.ts` reads drawn text back through each embedded font's ToUnicode map. The US-SET-10 and US-RPT-33 tests use it.
+
+### 2026-10-07 — Exports under LUT, rates that carry their supply type, and recurring and variation-order lines that follow the customer's state (D-181–D-183, Phase 9)
+
+The owner's answers to Q-18 and Q-19, plus closing the recurring and variation-order gap left by US-TAX-13.
+
+- **Exports under LUT (D-181):** Settings › GST › "We export under LUT".
+  - When it's on, an export's place-of-supply hint reads "Export under LUT, so items have no IGST.", and lines added from items have no tax and are zero-rated.
+  - Changing a draft's place of supply to or from an export switches those lines.
+  - When it's off, exports charge IGST as before.
+- **0% rates carry their supply type (D-182):** a 0% rate now says whether its lines are zero-rated, exempt or non-taxable ("Lines with this rate are" in the rate dialog).
+  - Rate rows read "0% · VAT · Exempt".
+  - Picking the rate on a line gives the line that type.
+  - The presets mark "Exempt" exempt and their other 0% rate zero-rated. Migration `0105` adds `tax_rates.supply_class` and backfills the preset rates.
+  - The API uses the rate's class when a line doesn't name one.
+- **Recurring schedules and variation orders (D-183):** their line editors work out intra- or inter-state from the contact's addresses, pick each item's matching tax, and switch lines when the contact changes, with the same banner as invoices.
+  - Recurring invoices and bills also show HSN/SAC.
+  - Variation orders copy the item's HSN/SAC code.
+  - Each invoice a schedule creates takes the contact's place of supply at that time.
+- Q-18 and Q-19 are closed.
+
+### 2026-10-07 — US-TAX-14: add HSN or SAC codes to items and lines (Phase 9)
+
+- In an Indian business, catalogue items have an "HSN/SAC code": 4, 6 or 8 digits, otherwise "Enter 4, 6 or 8 digits.".
+- Document lines on quotes, invoices, vendor bills and vendor credits show "HSN/SAC" next to Supply type when GST is on.
+  - The code is copied from the item and can be changed on the line.
+  - Lines snapshot it, so issued documents keep it.
+  - Recurring schedules, bundles and quote-to-invoice conversion carry it over.
+- Issuing an invoice to a registered business (or SEZ unit) with item lines that have no code asks first: "<n> lines have no HSN/SAC code. GSTR-1 needs them." The choices are "Go back" or "Issue anyway".
+- Catalogue import maps an "HSN/SAC" column. Spaces are dropped, and a bad code fails the row.
+- Migration `0104`: `hsn_sac` on catalogue items and every line table.
+- Any request body that fails its schema now answers 400 with a readable `message` (new global `ZodExceptionFilter`). Before, the 17 controllers that call `schema.parse(body)` answered 500.
+
+### 2026-10-07 — US-TAX-13: pick intra- or inter-state GST automatically (Phase 9)
+
+- In an Indian business with a GST state, quotes, invoices, vendor bills and vendor credits have a "Place of supply".
+  - It comes from the customer's site or shipping address, else billing, else the contact's state. An overseas customer gets "Other countries (96)".
+  - The hint says where it came from and which tax applies, for example "From the site address · Inter-state, so items use their IGST rate."
+  - It can be changed.
+  - Vendor bills and vendor credits use the vendor's state.
+  - A credit note takes its invoice's.
+- The supply type follows the place of supply:
+  - The business's own state is intra-state.
+  - Another state, or an SEZ unit, is inter-state.
+  - An overseas customer is an export, which charges IGST (Q-18 still asks whether LUT exports are needed).
+- Adding a catalogue item uses its intra-state tax in my state and its inter-state tax elsewhere.
+- Changing the place of supply on a draft between intra- and inter-state switches every line still on its item's tax.
+  - Lines changed by hand, and taxed one-off lines, keep their tax and show "Check this line's tax — the place of supply changed."
+  - A banner sums up what happened: "The place of supply changed to Karnataka (29): 1 line switched to CGST + SGST; 1 line you changed by hand keeps its tax — check it."
+- Catalogue items in India have "Intra-state tax" and "Inter-state tax".
+  - New items start from Settings › Tax › "Default tax preference".
+  - Choosing India sets that preference to GST 18% and IGST 18%.
+- The place of supply and supply type are saved on every draft and frozen when the quote is sent, the invoice or credit note issued, or the bill or vendor credit recorded. Detail pages show them.
+- Migration `0103`: `place_of_supply` and `supply_type` on quotes, invoices, credit notes, vendor bills and vendor credits, plus `inter_tax_rate_id` and `inter_tax_group_id` on catalogue items.
+- The rules (`supplyTypeFor`, `placeOfSupplyFor`, `itemTaxFor`, `switchLineTaxes`) are in `@spine/shared` with unit tests. The API uses them through `PlaceOfSupplyService`.
+- Fixed an older bug: updating a draft quote, invoice, credit note, vendor bill or vendor credit without sending its lines cleared them. A partial invoice update also reset its type to Standard, and a partial expense update reset its tax, who paid and billable. Update schemas no longer apply create-time defaults.
+
+### 2026-10-07 — US-TAX-12: record my GSTIN and state, and each customer's (Phase 9)
+
+- New Settings › GST pane, shown when the tax country is India. It asks for GSTIN, State, Legal name, Trade name, Registered on and Return period.
+  - The GSTIN is checked for format and check character: "This GSTIN isn't valid — check the 15 characters."
+  - Its first two digits must match the state: "This GSTIN belongs to <state>."
+  - Typing the GSTIN fills in the state.
+  - The pane notes that Spine never files returns or connects to the GST portal.
+- The setup wizard opens the same form as "GST details" right after India is chosen. "Not registered yet — skip this step" moves on.
+- A business in a union territory without a legislature gets its "GST n% (UT)" groups (CGST + UTGST) and their rates restored. The 12% and 28% groups stay archived.
+- Contacts in an Indian business have:
+  - "GST treatment": Registered business, Unregistered business, Consumer, Overseas or Special economic zone.
+  - GSTIN, required for registered and SEZ contacts.
+  - A State, which the GSTIN fills in when it's blank.
+  - The contact page header shows the treatment, state and GSTIN.
+- Each address has a State, as the place of supply comes from it.
+- Contact import maps GSTIN and State columns. A GSTIN marks the contact registered. A state can be its code or name. A bad GSTIN or an unknown state flags the row.
+- Migration `0102`: `contacts.gst_treatment`, `contacts.state_code` (D-146: contacts carry a state) and `addresses.state_code`. `PUT /org/tax/profile` now takes the GST fields.
+- Request bodies that fail validation (`ZodValidationPipe`) now answer with the first problem as `message`, plus the full list as `issues`. Before, `message` was the issue list, which the web showed as "[object Object]".
+- GSTIN and state-code helpers are in `@spine/shared` (`tax/gst.ts`).
+
+### 2026-10-07 — US-TAX-11: mark supplies as zero-rated, exempt or outside tax (Phase 9)
+
+- Catalogue items have a "Supply type": Taxable, Zero-rated, Exempt or "Non-taxable (outside GST/VAT)". An item with tax is always Taxable.
+- Every document line carries a supply type: quotes, invoices, credit notes, vendor bills, vendor credits, recurring schedules, bundles and variation orders.
+  - A line with no tax shows "Supply type". It comes from the item, else Zero-rated, and can be changed.
+  - A line that gains tax becomes Taxable.
+- An exempt or non-taxable line with a rate shows "An exempt line has no tax. Change the supply type to Taxable to add tax." The API refuses it with the same message.
+- Lines snapshot their supply type. Issued documents keep it, and their detail pages show it after the tax (for example "· Exempt").
+- Migration `0101` adds `supply_class` to `catalog_items` and every line table. Existing item lines with tax become taxable and the rest zero-rated. Heading and text lines have none.
+- New `SupplyTypeField` in `apps/web/src/components`, shared by the quote, invoice, vendor bill and variation-order line editors.
+- Open question Q-19: should a 0% rate such as the UK's "Exempt" imply its supply type?
+
+### 2026-10-07 — US-TAX-09: start with my country's tax rates (Phase 9)
+
+- The setup wizard's Tax step now asks "Where is your business registered for tax?". The choices are India (GST), United Kingdom (VAT), Australia (GST), New Zealand (GST), United Arab Emirates (VAT), Saudi Arabia (VAT) and "Another country — I'll add my own rates". The currency picked in the step before chooses the starting answer. "Another country" goes on to the single default-rate step, as before.
+- India creates GST at 0, 0.25, 3, 5, 12, 18, 28 and 40% (32 rates):
+  - Each slab gets CGST, SGST and UTGST halves, plus IGST at the full rate.
+  - The halves are grouped as "GST 18%" and so on (intra-state). The single IGST rate is the inter-state counterpart.
+  - The 12% and 28% slabs are created archived, since the 22 September 2025 rates no longer use them.
+  - The UTGST rates and their "GST n% (UT)" groups are created archived. A business in a union territory restores them.
+  - No cess rates are created; the Cess type is ready for when it's needed.
+- The UK gets "VAT 20%", "VAT 5%", "VAT 0%" and "Exempt", and invoices are titled "VAT invoice".
+- Australia (10%), New Zealand (15%), the UAE (5%) and Saudi Arabia (15%) each get their standard rate, a zero rate and "Exempt", and invoices are titled "Tax invoice".
+- Settings › Tax › Country changes the country later. The new preset's rates are added and existing rates are never changed or deleted. Spine then shows "Added <n> rates. Your existing rates are unchanged — archive the ones you no longer use."
+- Seeding twice adds nothing. A rate the owner already has with the same name and percentage is reused, not duplicated.
+- New `GET /org/tax/profile` and `PUT /org/tax/profile { country }` → `{ profile, added }`. The presets are data in `packages/shared/src/tax/presets`. The invoice PDF prints `document_layout.invoice.title`.
+
+### 2026-10-07 — US-TAX-10: give each rate a tax type (Phase 9)
+
+- Each tax rate now has a tax type. For India, "Add rate" and "Edit rate" offer CGST, SGST, UTGST, IGST and Cess. Elsewhere they offer VAT, GST, Sales tax or Other. Rate rows read "9% · CGST".
+- Rates from before the upgrade get the type Other and work as before (migration `0100`, `tax_rates.tax_type`).
+- Tax groups gain a scope: intra-state, inter-state or either (`tax_groups.scope`).
+  - For India, a group must be CGST with SGST or UTGST at the same rate, or a single IGST rate, either one with at most one cess rate. Any other mix is refused with "A GST group is CGST + SGST (or UTGST) at the same rate, optionally with cess." The mix sets the scope, and group rows read "CGST (9%) + SGST (9%) · Intra-state".
+  - Outside India, a group can mix any rates, as before.
+- The rate and group dialogs stay open when a save is refused, so the reason shows. Before, they closed and the error was never seen.
+- `/tax-rates` and `/tax-groups` answer 400 for a body that fails validation (was 500).
+
 ### 2026-10-07 — US-RPT-40: every report laid out the same way (Phase 8)
 
 - Every report — the statements, analysis, registers, General ledger, Day book, Job profitability, Tax Summary, Receivables and Payables — now follows one layout (D-180). The header names the range, plus any comparison or basis. Labelled filters sit on the left; Export, then any primary action, sits on the right. Then come one row of KPI cards, a chart where it helps, the table and a footnote.

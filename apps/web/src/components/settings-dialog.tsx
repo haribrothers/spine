@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlarmClock, BellRing, Building2, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
+import { AlarmClock, BellRing, Building2, FileText, Files, Calendar, CalendarClock, Coins, Columns3, Database, Download, Landmark, ListOrdered, Mail, ToggleRight, Palette, Percent, Scale, Search, ShieldAlert, Sparkles, Wallet } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle, Input, cn } from "@spine/ui";
 import { BusinessPane } from "../app/settings/panes/business-pane";
 import { BrandingPane } from "../app/settings/panes/branding-pane";
@@ -9,6 +9,14 @@ import { TemplatePane } from "../app/settings/panes/template-pane";
 import { CurrencyPane } from "../app/settings/panes/currency-pane";
 import { FiscalYearPane } from "../app/settings/panes/fiscal-year-pane";
 import { TaxPane } from "../app/settings/panes/tax-pane";
+import { GstPane } from "../app/settings/panes/gst-pane";
+import { DocumentsPane } from "../app/settings/panes/documents-pane";
+import { EmailsPane } from "../app/settings/panes/emails-pane";
+import { ModulesPane } from "../app/settings/panes/modules-pane";
+import { useModules } from "../lib/modules-context";
+import { ownedByOffModule } from "@spine/shared";
+import type { TaxProfile } from "@spine/shared";
+import { apiClient } from "../lib/api-client";
 import { NumberingPane } from "../app/settings/panes/numbering-pane";
 import { AccountsPane } from "../app/settings/panes/accounts-pane";
 import { OpeningBalancesPane } from "../app/settings/panes/opening-balances-pane";
@@ -27,6 +35,8 @@ interface SettingsSection {
   icon: React.ReactNode;
   /** `close` shuts the dialog, for a pane that links to a page of its own. */
   render: (close: () => void) => React.ReactNode;
+  /** Shown only for this tax country (US-TAX-12: GST is India's). */
+  country?: string;
 }
 
 const SECTIONS: SettingsSection[] = [
@@ -36,12 +46,20 @@ const SECTIONS: SettingsSection[] = [
   { key: "currency", label: "Currency & locale", icon: <Coins size={16} />, render: () => <CurrencyPane /> },
   { key: "fiscal-year", label: "Financial year", icon: <Calendar size={16} />, render: () => <FiscalYearPane /> },
   { key: "tax", label: "Tax", icon: <Percent size={16} />, render: () => <TaxPane /> },
+  // US-TAX-12
+  { key: "gst", label: "GST", icon: <FileText size={16} />, render: () => <GstPane />, country: "IN" },
   { key: "numbering", label: "Numbering", icon: <ListOrdered size={16} />, render: () => <NumberingPane /> },
   { key: "accounts", label: "Chart of accounts", icon: <Wallet size={16} />, render: () => <AccountsPane /> },
   // US-RPT-16
   { key: "opening-balances", label: "Opening balances", icon: <Scale size={16} />, render: (close) => <OpeningBalancesPane onOpen={close} /> },
   { key: "payment-instructions", label: "Payment instructions", icon: <Landmark size={16} />, render: () => <PaymentInstructionsPane /> },
+  // US-SET-17–US-SET-19
+  { key: "documents", label: "Documents", icon: <Files size={16} />, render: () => <DocumentsPane /> },
+  // US-SET-21
+  { key: "emails", label: "Emails", icon: <Mail size={16} />, render: () => <EmailsPane /> },
   { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
+  // US-SET-23
+  { key: "modules", label: "Modules", icon: <ToggleRight size={16} />, render: () => <ModulesPane /> },
   { key: "lead-stages", label: "Pipeline stages", icon: <Columns3 size={16} />, render: () => <LeadStagesPane /> },
   {
     key: "quote-conversion-guard",
@@ -103,6 +121,21 @@ export function SettingsDialog({
 }) {
   const [query, setQuery] = useState("");
   const [activeKey, setActiveKey] = useState("business");
+  // US-TAX-12 — re-read on each pane change, so choosing India under Tax shows GST.
+  const [country, setCountry] = useState<string | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    apiClient
+      .get<TaxProfile>("/org/tax/profile")
+      .then((p) => setCountry(p.country ?? null))
+      .catch(() => {});
+  }, [open, activeKey]);
+  // US-SET-24: a switched-off module's settings panes are gone.
+  const { modules } = useModules();
+  const sections = useMemo(
+    () => SECTIONS.filter((s) => (!s.country || s.country === country || s.key === activeKey) && !ownedByOffModule(modules, "settingsPanes", s.key)),
+    [country, activeKey, modules],
+  );
   useEffect(() => {
     if (open && initialKey && SECTIONS.some((s) => s.key === initialKey)) setActiveKey(initialKey);
   }, [open, initialKey]);
@@ -111,9 +144,9 @@ export function SettingsDialog({
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return SECTIONS;
-    return SECTIONS.filter((s) => s.label.toLowerCase().includes(q));
-  }, [query]);
+    if (!q) return sections;
+    return sections.filter((s) => s.label.toLowerCase().includes(q));
+  }, [query, sections]);
 
   const active = SECTIONS.find((s) => s.key === activeKey) ?? SECTIONS[0]!;
 

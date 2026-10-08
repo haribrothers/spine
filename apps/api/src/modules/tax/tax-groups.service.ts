@@ -1,11 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { createTaxGroupSchema, updateTaxGroupSchema } from "@spine/shared";
+import { GST_GROUP_MIX_MESSAGE, gstGroupScope, type TaxGroupScope, type createTaxGroupSchema, type updateTaxGroupSchema } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
 import { taxGroups, taxGroupRates, taxRates } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
+import { SettingsService } from "../org/settings.service";
 
 export type CreateTaxGroupInput = z.infer<typeof createTaxGroupSchema>;
 export type UpdateTaxGroupInput = z.infer<typeof updateTaxGroupSchema>;
@@ -23,6 +24,7 @@ export class TaxGroupsService {
   constructor(
     @Inject(DATABASE) private readonly db: Database,
     private readonly auditLog: AuditLogService,
+    private readonly settings: SettingsService,
   ) {}
 
   async list(orgId: string, options: { includeArchived?: boolean } = {}) {
@@ -55,7 +57,12 @@ export class TaxGroupsService {
     return { ...group, taxRates: rates };
   }
 
-  private async validateRateIds(orgId: string, taxRateIds: string[], tx: Transaction | Database = this.db) {
+  /**
+   * Checks the rates belong to the org and returns the group's scope. For
+   * India (US-TAX-10) the rates must be a GST mix, which sets the scope;
+   * elsewhere the scope is what was asked for.
+   */
+  private async validateRateIds(orgId: string, taxRateIds: string[], requested: TaxGroupScope, tx: Transaction | Database = this.db): Promise<TaxGroupScope> {
     if (taxRateIds.length === 0) {
       throw new BadRequestException("A tax group must include at least one tax rate");
     }
@@ -63,12 +70,17 @@ export class TaxGroupsService {
     if (rows.length !== new Set(taxRateIds).size) {
       throw new BadRequestException("One or more tax rates are invalid for this org");
     }
+    const country = (await this.settings.get<{ country?: string }>(orgId, "tax_profile"))?.country;
+    if (country !== "IN") return requested;
+    const scope = gstGroupScope(rows);
+    if (!scope) throw new BadRequestException(GST_GROUP_MIX_MESSAGE);
+    return scope;
   }
 
   async create(orgId: string, actorUserId: string, input: CreateTaxGroupInput) {
-    await this.validateRateIds(orgId, input.taxRateIds);
+    const scope = await this.validateRateIds(orgId, input.taxRateIds, input.scope ?? "any");
     const created = await this.db.transaction(async (tx) => {
-      const [group] = await tx.insert(taxGroups).values({ orgId, name: input.name }).returning();
+      const [group] = await tx.insert(taxGroups).values({ orgId, name: input.name, scope }).returning();
       if (!group) {
         throw new BadRequestException("Failed to create tax group");
       }
@@ -89,14 +101,12 @@ export class TaxGroupsService {
 
   async update(orgId: string, id: string, actorUserId: string, input: UpdateTaxGroupInput) {
     const existing = await this.getOne(orgId, id);
-    if (input.taxRateIds !== undefined) {
-      await this.validateRateIds(orgId, input.taxRateIds);
-    }
+    const scope = await this.validateRateIds(orgId, input.taxRateIds ?? existing.taxRates.map((r) => r.id), input.scope ?? existing.scope);
 
     const updated = await this.db.transaction(async (tx) => {
       const [group] = await tx
         .update(taxGroups)
-        .set({ ...(input.name !== undefined ? { name: input.name } : {}), updatedAt: new Date() })
+        .set({ ...(input.name !== undefined ? { name: input.name } : {}), scope, updatedAt: new Date() })
         .where(eq(taxGroups.id, id))
         .returning();
 

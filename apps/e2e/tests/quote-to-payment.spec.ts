@@ -49,6 +49,8 @@ test("quote → send → customer accepts → convert to invoice → issue → r
 
   await clearInbox();
   await page.getByRole("button", { name: "Send Quote" }).click();
+  // US-SET-21: the send dialog starts from the Quote email template.
+  await page.getByRole("dialog").getByRole("button", { name: "Send quote" }).click();
   await expect(page.getByText(/^sent$/i).first()).toBeVisible({ timeout: 10_000 });
 
   // --- Customer accepts via the real emailed public link ---

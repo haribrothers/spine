@@ -2,6 +2,8 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { createTaxRateSchema, updateTaxRateSchema } from "@spine/shared";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
+import type { z } from "zod";
+import { ZodValidationPipe } from "../../common/zod-validation.pipe";
 import { requireOrgId } from "../org/settings.controller";
 import { TaxRatesService } from "./tax-rates.service";
 
@@ -33,18 +35,16 @@ export class TaxRatesController {
   @Post()
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
-  async create(@Session() session: UserSession, @Body() body: unknown) {
+  async create(@Session() session: UserSession, @Body(new ZodValidationPipe(createTaxRateSchema)) input: z.infer<typeof createTaxRateSchema>) {
     const orgId = requireOrgId(session);
-    const input = createTaxRateSchema.parse(body);
     return this.taxRatesService.create(orgId, session.user.id, input);
   }
 
   @Put(":id")
   @OrgRoles(["owner"])
   @UseInterceptors(IdempotencyInterceptor)
-  async update(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+  async update(@Session() session: UserSession, @Param("id") id: string, @Body(new ZodValidationPipe(updateTaxRateSchema)) input: z.infer<typeof updateTaxRateSchema>) {
     const orgId = requireOrgId(session);
-    const input = updateTaxRateSchema.parse(body);
     return this.taxRatesService.update(orgId, id, session.user.id, input);
   }
 

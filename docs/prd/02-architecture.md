@@ -197,7 +197,7 @@ These were the original CLAUDE.md's architecture rules and design decisions (D-0
 These constraints protect financial correctness and should govern any implementation work in this repo:
 
 - **Ledger is derived, never authored.** Every business event (invoice issued, payment received, etc.) flows through a domain service → a posting rule → a balanced journal entry. Users never type a journal entry. Posting rules live in one module (see §7.2 for the full debit/credit table).
-- **Journal entries are immutable.** Corrections are reversing entries, never edits. A DB constraint enforces debits == credits per entry, in the same transaction as the business document it originates from.
+- **Journal entries are immutable.** Corrections are reversing entries, never edits. The one exception is demo data: "Delete all demo data" deletes the entries flagged `is_demo` with it ([D-191](12-decisions.md)). A DB constraint enforces debits == credits per entry, in the same transaction as the business document it originates from.
 - **Money is integer minor units (`bigint`) + currency code.** No floats. Rounding happens once, at line level, half-up. Tax is computed per line, not per document.
 - **Documents snapshot their data.** Catalogue price/tax changes must never alter existing quotes/invoices — issued documents store a snapshot at time of issue.
 - **Document numbers are gapless and permanent.** Allocated inside the issuing transaction via a row lock on a sequence table; drafts have no number; numbers never change once assigned.

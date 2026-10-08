@@ -22,6 +22,8 @@ export interface ReportEntry {
   access: "owner" | Capability[];
   /** Extra words the search matches. */
   keywords?: string;
+  /** Only for businesses taxed in this country (US-TAX-16: GSTR-1 is India's). */
+  country?: string;
 }
 
 export const REPORTS: ReportEntry[] = [
@@ -40,10 +42,12 @@ export const REPORTS: ReportEntry[] = [
   { slug: "vendor-credits-register", label: "Vendor credits", group: "Purchases", href: "/reports/vendor-credits", access: ["reports.view_payables"], keywords: "vendor credits refunds register suppliers" },
   { slug: "payables", label: "Payables", group: "Purchases", href: "/payables", access: ["reports.view_payables"], keywords: "aging owe vendors ap" },
   { slug: "tax-summary", label: "Tax Summary", group: "Tax", href: "/reports/tax-summary", access: ["reports.view_financial_statements"], keywords: "gst vat sales tax" },
+  { slug: "gstr-1", label: "GSTR-1", group: "Tax", href: "/reports/gstr-1", access: ["reports.view_financial_statements"], keywords: "gst return gstr1 portal json outward supplies", country: "IN" },
   { slug: "job-profitability", label: "Job profitability", group: "Jobs", href: "/reports/job-profitability", access: ["reports.view_job_profitability"], keywords: "jobs margin" },
   { slug: "general-ledger", label: "General ledger", group: "Accountant", href: "/reports/general-ledger", access: ["ledger.view"], keywords: "gl ledger accounts entries" },
   { slug: "day-book", label: "Day book", group: "Accountant", href: "/reports/day-book", access: ["ledger.view"], keywords: "daybook entries journal ledger" },
   { slug: "journals", label: "Journals", group: "Accountant", href: "/journals", access: ["ledger.view"], keywords: "manual journal adjustments ledger" },
+  { slug: "tally", label: "Export to Tally", group: "Accountant", href: "/reports/tally", access: ["reports.view_financial_statements"], keywords: "tally tallyprime erp xml import accountant mapping groups" },
 ];
 
 export const FINANCIAL_STATEMENTS_NO_ACCESS = "You don't have access to financial statements. Ask an owner.";

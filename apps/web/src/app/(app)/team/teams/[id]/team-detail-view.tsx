@@ -17,7 +17,8 @@ import {
   TabsTrigger,
 } from "@spine/ui";
 import { ArrowLeft, ChevronDown, ChevronRight, Trash2 } from "lucide-react";
-import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, withImpliedPrivileges, type Capability } from "@spine/shared";
+import { CAPABILITIES, CAPABILITY_LABELS, CAPABILITY_REQUIRES, capabilitiesOff, withImpliedPrivileges, type Capability } from "@spine/shared";
+import { useModules } from "../../../../../lib/modules-context";
 import { apiClient } from "../../../../../lib/api-client";
 import type { MemberRow } from "../../../../../lib/members";
 import type { TeamDetail } from "../../../../../lib/teams";
@@ -32,6 +33,7 @@ import type { TeamDetail } from "../../../../../lib/teams";
  */
 export function TeamDetailView({ teamId }: { teamId: string }) {
   const router = useRouter();
+  const { modules } = useModules();
   const [detail, setDetail] = useState<TeamDetail | null>(null);
   const [staffMembers, setStaffMembers] = useState<MemberRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -185,7 +187,10 @@ export function TeamDetailView({ teamId }: { teamId: string }) {
   // never drift from the single source of truth in @spine/shared.
   const privilegeRows: ({ kind: "single"; capability: Capability } | { kind: "group"; label: string; capabilities: Capability[] })[] = [];
   const groupIndexByLabel = new Map<string, number>();
+  // US-SET-24: a switched-off module's privileges aren't shown; their grants are kept.
+  const hidden = capabilitiesOff(modules);
   for (const capability of CAPABILITIES) {
+    if (hidden.has(capability)) continue;
     const group = CAPABILITY_LABELS[capability].group;
     if (!group) {
       privilegeRows.push({ kind: "single", capability });

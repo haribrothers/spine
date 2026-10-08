@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { uuidSchema } from "./common.ts";
+import type { SupplyClass } from "../tax/supply-class.ts";
 
 /** US-QUO-25 — the name a bundle needs, and how long it may be. */
 export const BUNDLE_NAME_REQUIRED = "Give the bundle a name.";
@@ -32,6 +33,10 @@ export interface CatalogBundleLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  /** US-TAX-11 — null on heading and text lines. */
+  supplyClass: SupplyClass | null;
+  /** US-TAX-14 */
+  hsnSac: string | null;
 }
 
 export interface CatalogBundle {

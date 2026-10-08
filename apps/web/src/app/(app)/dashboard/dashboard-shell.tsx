@@ -21,7 +21,10 @@ import {
   type Capability,
   type DashboardLayout,
   type DashboardWidgetKey,
+  type ModuleSettings,
+  ownedByOffModule,
 } from "@spine/shared";
+import { useModules } from "../../../lib/modules-context";
 import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { KpiRow } from "./kpi-row";
@@ -59,7 +62,13 @@ function localToday(): string {
 function visibleKeysForRole(
   role: string | null,
   can: (capability: Capability) => boolean,
+  modules: ModuleSettings | null = null,
 ): DashboardWidgetKey[] {
+  // US-SET-24: a switched-off module's widgets are gone.
+  return visibleForRole(role, can).filter((key) => !ownedByOffModule(modules, "dashboardWidgets", key));
+}
+
+function visibleForRole(role: string | null, can: (capability: Capability) => boolean): DashboardWidgetKey[] {
   // US-DASH-18: Field get their own cards; nobody else sees them.
   if (role === "field")
     return DASHBOARD_WIDGETS.filter((w) => w.fieldOnly).map((w) => w.key);
@@ -155,6 +164,8 @@ export function DashboardShell({
   // US-DASH-20: the Construction template shows retention and jobs in progress by default.
   const [template, setTemplate] = useState<string | null>(null);
   const { capabilities } = useCapabilities();
+  const { modules } = useModules();
+  const jobsOn = modules?.jobsField === true;
   const canSendReminder = useCapability("invoices.send_reminder");
   const [reminding, setReminding] = useState(false);
   const { show: showToast, toast } = useEntityToast();
@@ -220,12 +231,12 @@ export function DashboardShell({
   }, []);
 
   useEffect(() => {
-    if (role !== "field") return;
+    if (role !== "field" || !jobsOn) return;
     apiClient
       .get<unknown[]>("/jobs?assignedToMe=true&status=active")
       .then((rows) => setFieldJobs(rows.length))
       .catch(() => setFieldJobs(0));
-  }, [role]);
+  }, [role, jobsOn]);
 
   useEffect(() => {
     loadAttention();
@@ -247,6 +258,7 @@ export function DashboardShell({
   const visibleKeys = visibleKeysForRole(
     role,
     (c) => capabilities?.[c] ?? false,
+    modules,
   );
   const merged = mergeDashboardLayout(
     savedLayout ?? null,

@@ -11,6 +11,7 @@ import { SettingsService } from "../org/settings.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { renderEmail } from "../email/email-layout";
 import { invoiceEmail } from "../email/email-templates";
+import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 
 export const INVOICE_SEND_EMAIL_QUEUE = "invoice-send-email";
 
@@ -22,6 +23,8 @@ export interface InvoiceSendEmailJobData {
   isReminder?: boolean;
   /** US-INV-19 — days past the due date the reminder run worked out (negative = due in that many days). */
   daysOverdue?: number;
+  /** US-SET-21 — what the "Send" dialog changed for this one email. */
+  override?: EmailJobOverride;
 }
 
 /**
@@ -57,7 +60,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
   }
 
   async process(data: InvoiceSendEmailJobData): Promise<void> {
-    const { orgId, invoiceId, isReminder = false, daysOverdue } = data;
+    const { orgId, invoiceId, isReminder = false, daysOverdue, override } = data;
 
     const [row] = await this.db
       .select({ invoice: invoices, contactName: contacts.name, contactEmail: contacts.email })
@@ -70,7 +73,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     }
 
     try {
-      await this.attemptSend(orgId, invoiceId, row, isReminder, daysOverdue);
+      await this.attemptSend(orgId, invoiceId, row, isReminder, daysOverdue, override);
       await this.db
         .update(invoices)
         .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
@@ -88,12 +91,14 @@ export class InvoiceEmailWorker implements OnModuleInit {
     row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
     isReminder: boolean,
     scheduledDaysOverdue?: number,
+    override?: EmailJobOverride,
   ): Promise<void> {
     // US-INV-17: attach the PDF stored when the invoice was issued (stored now if it isn't yet).
     // US-RPT-17: an opening invoice has none, so its reminders go without one.
     const pdf = row.invoice.type === "opening" ? null : await this.issuedPdf.forEmail(orgId, "invoice", invoiceId);
 
-    if (!row.contactEmail) {
+    const to = override?.to ?? row.contactEmail;
+    if (!to) {
       throw new Error(`Invoice ${invoiceId}'s contact has no email address on file — cannot send`);
     }
     if (!this.email.isConfigured()) {
@@ -129,16 +134,19 @@ export class InvoiceEmailWorker implements OnModuleInit {
       reminder: isReminder ? { daysOverdue } : undefined,
       // US-INV-15: the instructions kept with the invoice when it was issued.
       paymentInstructions: invoice.paymentInstructions,
+      upiQrAmount: invoice.upiQrAmount,
+      // US-SET-21: the invoice's or the reminder's words, as saved or as edited in the "Send" dialog.
+      text: await loadEmailText(this.db, orgId, isReminder ? "reminder" : "invoice", override),
     });
     const email = renderEmail(brand, template.content);
 
     await this.email.send({
-      to: row.contactEmail,
+      to,
       fromName: brand.name,
       subject: template.subject,
       text: email.text,
       html: email.html,
-      attachments: [...(pdf ? [{ filename: pdf.filename, content: pdf.buffer, contentType: "application/pdf" }] : []), ...email.attachments],
+      attachments: [...(pdf && override?.attachPdf !== false ? [{ filename: pdf.filename, content: pdf.buffer, contentType: "application/pdf" }] : []), ...email.attachments],
     });
   }
 }

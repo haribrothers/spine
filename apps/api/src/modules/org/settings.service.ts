@@ -12,7 +12,7 @@ import { organization, settings } from "../../db/schema";
  * their shape since nothing else defines a schema for them:
  *
  * - `business_profile`   → { name: string; logoUrl?: string; address?: string; email?: string; phone?: string; industry?: string; paymentInstructions?: string }
- * - `industry_template`  → { template: "construction" | "general_services" | "generic" }
+ * - `industry_template`  → { template: one of `INDUSTRY_TEMPLATE_KEYS` (US-ONB-20) }
  * - `branding`           → { themePreset?: "spine-blue" | "harbour-teal" | "plum" | "graphite" } (US-SET-09; GET any member, PUT Owner)
  * - `currency`           → { code: string; locale: string }
  * - `financial_year_start` → { month: number (1-12); day: number (1-31) }

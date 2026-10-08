@@ -25,6 +25,7 @@ import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { FilesService } from "../files/files.service";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for `GET /invoices/:id/history`, `GET /payments/:id/
@@ -78,7 +79,7 @@ describe("Invoices/Payments/Credit Notes history (requires local Postgres)", () 
       new PaymentPdfService(db, settings, files),
     );
 
-    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
+    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
     paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf, new MoneyAccountsService(db, auditLog));
     creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger, queue);
 

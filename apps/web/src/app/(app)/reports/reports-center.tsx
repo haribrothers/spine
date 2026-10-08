@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Search, Star } from "lucide-react";
 import { Card, Input } from "@spine/ui";
-import { REPORTS, REPORT_GROUPS, canOpenReport, matchesReportSearch, type ReportEntry } from "@spine/shared";
+import { REPORTS, REPORT_GROUPS, canOpenReport, matchesReportSearch, ownedByOffModule, type ReportEntry } from "@spine/shared";
+import { useModules } from "../../../lib/modules-context";
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
 import { useMyRole } from "../../../lib/role-context";
+import { useTaxCountry } from "../contacts/contact-gst-fields";
 
 /** US-DASH-14's old `?tab=` links, now pages of their own. */
 const OLD_TABS: Record<string, string> = {
@@ -43,7 +45,14 @@ export function ReportsCenter() {
       .catch(() => {});
   }, []);
 
-  const visible = useMemo(() => REPORTS.filter((r) => canOpenReport(r, role, capabilities)), [role, capabilities]);
+  // US-TAX-16: a country's own reports (GSTR-1) show only to businesses taxed there.
+  const taxCountry = useTaxCountry();
+  // US-SET-24: a switched-off module's reports (Job profitability) are gone.
+  const { modules } = useModules();
+  const visible = useMemo(
+    () => REPORTS.filter((r) => canOpenReport(r, role, capabilities) && (!r.country || r.country === taxCountry) && !ownedByOffModule(modules, "reports", r.slug)),
+    [role, capabilities, taxCountry, modules],
+  );
   const shown = visible.filter((r) => matchesReportSearch(r, query));
   const favouriteReports = favourites.map((slug) => visible.find((r) => r.slug === slug)).filter((r): r is ReportEntry => Boolean(r) && matchesReportSearch(r!, query));
 

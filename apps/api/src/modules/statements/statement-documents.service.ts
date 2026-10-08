@@ -1,6 +1,9 @@
 import { BadRequestException, Inject, Injectable, Logger, ServiceUnavailableException } from "@nestjs/common";
+import type { EmailDraft } from "@spine/shared";
+import { draftOf } from "../email-templates/email-documents.service";
+import { loadEmailText } from "../email/email-text";
 import { renderToBuffer } from "@react-pdf/renderer";
-import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery } from "@spine/shared";
+import { NO_INVOICES_YET, resolveDocumentBranding, type SendStatementInput, type StatementQuery, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { activities } from "../../db/schema";
@@ -11,6 +14,7 @@ import { loadEmailBrand } from "../email/email-brand";
 import { emailMoney, renderEmail } from "../email/email-layout";
 import { statementEmail } from "../email/email-templates";
 import { FilesService } from "../files/files.service";
+import { loadSignatureDataUri } from "../pdf/signature";
 import { SettingsService } from "../org/settings.service";
 import { StatementPdfDocument, statementPeriodLabel, type StatementPdfBusiness } from "./statement-pdf.template";
 import { StatementsService } from "./statements.service";
@@ -37,7 +41,11 @@ export class StatementDocumentsService {
     const business = await this.settings.get<StatementPdfBusiness & { logoUrl?: string }>(orgId, "business_profile");
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.logo(orgId, business.logoUrl) : undefined;
-    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding }));
+    // US-SET-17–US-SET-19: Settings › Documents.
+    const savedLayout = await this.settings.get<DocumentLayout>(orgId, "document_layout");
+    const layout = resolveDocumentLayout(savedLayout, "statement");
+    const signatureDataUri = await loadSignatureDataUri(this.files, orgId, savedLayout, layout);
+    const buffer = await renderToBuffer(StatementPdfDocument({ statement, business, logoDataUri, locale: await orgLocale(this.db, orgId), branding, layout, signatureDataUri }));
     const slug = statement.contactName.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "customer";
     return {
       buffer,
@@ -47,6 +55,23 @@ export class StatementDocumentsService {
       contactName: statement.contactName,
       period: statementPeriodLabel(query.from, query.to),
     };
+  }
+
+  /** US-SET-21 — what the statement dialog starts from: the "Statement" template with this customer's period and balance. */
+  async draft(orgId: string, contactId: string, query: StatementQuery): Promise<EmailDraft> {
+    const statement = await this.statements.build(orgId, contactId, query);
+    const brand = await loadEmailBrand(this.db, orgId);
+    const text = await loadEmailText(this.db, orgId, "statement");
+    const template = statementEmail({
+      locale: brand.locale,
+      businessName: brand.name,
+      contactName: statement.contactName,
+      period: statementPeriodLabel(query.from, query.to),
+      balanceDue: BigInt(statement.balanceDue),
+      currency: statement.currency,
+      text,
+    });
+    return draftOf("statement", text, { template, to: statement.contactEmail ?? null, hasPdf: true });
   }
 
   async send(orgId: string, contactId: string, actorUserId: string, input: SendStatementInput): Promise<{ sentTo: string }> {
@@ -63,7 +88,8 @@ export class StatementDocumentsService {
       period: doc.period,
       balanceDue: doc.balanceDue,
       currency: doc.currency,
-      message: input.message,
+      // US-SET-21: the "Statement" template, with the dialog's subject and message when it changed them.
+      text: await loadEmailText(this.db, orgId, "statement", { subject: input.subject ?? undefined, message: input.message || undefined }),
     });
     const rendered = renderEmail(brand, template.content);
     await this.email.send({

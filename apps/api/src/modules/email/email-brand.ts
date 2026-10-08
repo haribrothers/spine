@@ -40,7 +40,8 @@ export async function loadEmailBrand(db: Database, orgId: string): Promise<Email
   const profile = (rows.find((r) => r.key === "business_profile")?.value ?? {}) as BusinessProfile;
   // US-SET-10: the same colour and footer as the PDFs (Spine Blue unless a readable colour is saved).
   const branding = resolveDocumentBranding(rows.find((r) => r.key === "branding")?.value);
-  const locale = (rows.find((r) => r.key === "currency")?.value as { locale?: string } | undefined)?.locale || "en-US";
+  const currencySetting = rows.find((r) => r.key === "currency")?.value as { locale?: string; code?: string } | undefined;
+  const locale = currencySetting?.locale || "en-US";
 
   let name = profile.name?.trim();
   if (!name) {
@@ -54,6 +55,7 @@ export async function loadEmailBrand(db: Database, orgId: string): Promise<Email
     color: branding.color,
     footer,
     locale,
+    currency: currencySetting?.code || "USD",
     logo: await loadLogo(orgId, profile.logoUrl),
   };
 }

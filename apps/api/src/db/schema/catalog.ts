@@ -2,7 +2,7 @@ import { pgTable, uuid, text, bigint, boolean, timestamp, index, numeric, intege
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { accounts } from "./ledger";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum } from "./tax";
 
 /**
  * PRD F2 — goods/services with a unit, default price and default tax rate,
@@ -74,6 +74,13 @@ export const catalogItems = pgTable(
     /** At most one of these two is set — enforced at the service layer, same convention as quote_lines/invoice_lines. */
     defaultTaxRateId: uuid("default_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     defaultTaxGroupId: uuid("default_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    /** US-TAX-13 — the inter-state counterpart of the default (intra-state) tax; at most one. */
+    interTaxRateId: uuid("inter_tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
+    interTaxGroupId: uuid("inter_tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
+    /** US-TAX-11 — copied to each line made from the item. */
+    supplyClass: supplyClassEnum("supply_class").notNull().default("taxable"),
+    /** US-TAX-14 — HSN (goods) or SAC (services) code, copied to each line. */
+    hsnSac: text("hsn_sac"),
     incomeAccountId: uuid("income_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     expenseAccountId: uuid("expense_account_id").references(() => accounts.id, { onDelete: "restrict" }),
     /** Same demo-data marker as contacts.isDemo — see that column's comment. */
@@ -145,6 +152,10 @@ export const catalogBundleLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     discountPercentage: numeric("discount_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

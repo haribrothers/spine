@@ -1,3 +1,4 @@
+import { GST_STATES, gstinError, normaliseGstin } from "@spine/shared";
 import type { Contact, ContactType } from "../types";
 import type { ColumnMapping, ImportRow } from "./types";
 
@@ -8,6 +9,12 @@ const TRUE_VALUES = new Set(["true", "yes", "y", "1"]);
 // the point is to catch what the server would reject BEFORE submit, not to
 // re-validate after.
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** US-TAX-12 — a GST state by its code ("29") or name ("Karnataka"). */
+function stateCodeOf(raw: string): string | null {
+  const value = raw.trim().toLowerCase();
+  return GST_STATES.find((s) => s.code === value.padStart(2, "0") || s.name.toLowerCase() === value)?.code ?? null;
+}
 
 function normalizeType(raw: string): ContactType | null {
   const value = raw.trim().toLowerCase();
@@ -51,6 +58,12 @@ export function buildImportRows(
     if (!typeRaw) errors.push("Missing type");
     else if (!type) errors.push(`Invalid type "${typeRaw}" — must be customer, vendor, or both`);
     if (email && !EMAIL_PATTERN.test(email)) errors.push(`Invalid email "${email}"`);
+    const gstin = normaliseGstin(get(raw, "gstin"));
+    const stateRaw = get(raw, "stateCode");
+    const stateCode = stateRaw ? stateCodeOf(stateRaw) : null;
+    if (stateRaw && !stateCode) errors.push(`Unknown state "${stateRaw}"`);
+    const gstinProblem = gstin ? gstinError(gstin, stateCode) : null;
+    if (gstinProblem) errors.push(`GSTIN ${gstin}: ${gstinProblem}`);
 
     const duplicateOf = existingContacts
       .filter(
@@ -69,7 +82,9 @@ export function buildImportRows(
       email,
       phone,
       notes: get(raw, "notes") || null,
-      taxId: get(raw, "taxId") || null,
+      taxId: gstin || get(raw, "taxId") || null,
+      gstTreatment: gstin ? "registered" : null,
+      stateCode,
       website: get(raw, "website") || null,
       errors,
       duplicateOf,

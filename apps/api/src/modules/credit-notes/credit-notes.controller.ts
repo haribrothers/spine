@@ -7,6 +7,8 @@ import { requireOrgId } from "../org/settings.controller";
 import type { Response } from "express";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { CreditNotesService } from "./credit-notes.service";
+import { CreditNoteEmailService } from "./credit-note-email.service";
+import { parseEmailOverride } from "../email/email-text";
 
 /**
  * PRD §2.1/§9 — Credit Notes use the own/others capability split, same
@@ -24,7 +26,16 @@ export class CreditNotesController {
   constructor(
     private readonly creditNotesService: CreditNotesService,
     private readonly issuedPdf: IssuedPdfService,
+    private readonly creditNoteEmail: CreditNoteEmailService,
   ) {}
+
+  /** US-SET-21 — emails an issued credit note with its PDF; sending documents to customers is `invoices.send`. */
+  @Post(":id/send-email")
+  @RequireCapability("invoices.send")
+  @UseInterceptors(IdempotencyInterceptor)
+  async sendEmail(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
+    return this.creditNoteEmail.send(requireOrgId(session), id, session.user.id, parseEmailOverride("credit_note", body));
+  }
 
   @Get()
   async list(@Session() session: UserSession, @Query("invoiceId") invoiceId?: string, @Query("contactId") contactId?: string) {

@@ -1,7 +1,10 @@
+import { resolveDocumentLayout, type ResolvedDocumentLayout } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { Statement } from "@spine/shared";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "../pdf/document-branding";
+import { PDF_FONT_FAMILY } from "../pdf/pdf-fonts";
+import { LayoutTextBlocks, SignatureBlock } from "../pdf/document-extras";
 
 export interface StatementPdfBusiness {
   name: string;
@@ -10,6 +13,10 @@ export interface StatementPdfBusiness {
 }
 
 export interface StatementPdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
+  /** US-SET-17 (D-152) — Settings › Documents: paper size, title… */
+  layout?: ResolvedDocumentLayout;
   statement: Statement;
   business: StatementPdfBusiness | null;
   logoDataUri?: string;
@@ -19,7 +26,7 @@ export interface StatementPdfData {
 
 // Same fonts and colours as the invoice PDF (PDFs are always light).
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", paddingBottom: 14, borderBottomWidth: 2, marginBottom: 18 },
   businessBlock: { flexDirection: "row", alignItems: "center" },
   logo: { width: 32, height: 32, objectFit: "contain", marginRight: 8 },
@@ -91,7 +98,8 @@ function initials(name: string): string {
  * payments and credits. Underneath, what's still owed by age (US-PAY-15)
  * and the "How to pay" block when payment instructions are set (US-INV-16).
  */
-export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding }: StatementPdfData) {
+export function StatementPdfDocument({ statement, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: StatementPdfData) {
+  const layout = givenLayout ?? resolveDocumentLayout(null, "statement");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const fmt = (amount: string) => formatMoneyForPdf(BigInt(amount), statement.currency, locale);
   const money = (amount: string) => (amount === "0" ? "" : fmt(amount));
@@ -99,7 +107,7 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
 
   return (
     <Document title={`Statement — ${statement.contactName}`} author={businessName}>
-      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+      <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
         <DocumentAccentBar color={brand.color} />
         <View style={[styles.header, { borderBottomColor: brand.color }]}>
           <View style={styles.businessBlock}>
@@ -110,7 +118,7 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
             </View>
           </View>
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>STATEMENT</Text>
+            <Text style={styles.title}>{layout.title.toUpperCase()}</Text>
             <Text style={styles.period}>{statementPeriodLabel(statement.from, statement.to)}</Text>
           </View>
         </View>
@@ -170,6 +178,10 @@ export function StatementPdfDocument({ statement, business, logoDataUri, locale,
             <Text style={styles.howToPayText}>{business.paymentInstructions.trim()}</Text>
           </View>
         )}
+
+        <LayoutTextBlocks notes={layout.notes} terms={layout.terms} />
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
       </Page>

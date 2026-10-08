@@ -22,6 +22,19 @@ export interface RichTextEditorProps {
   "aria-invalid"?: boolean;
   "aria-required"?: boolean;
   "aria-describedby"?: string;
+  /** The editable region's accessible name — a `<label>` can't name a contenteditable, so pass the field's label here. */
+  "aria-label"?: string;
+  /** Gives the parent a way to put text at the cursor, e.g. an email placeholder from an "Insert" menu (US-SET-21). */
+  onReady?: (handle: RichTextEditorHandle) => void;
+  /** Called when the editable region gets focus. */
+  onFocus?: () => void;
+}
+
+/** What `onReady` hands the parent. */
+export interface RichTextEditorHandle {
+  /** Inserts plain text at the cursor (or the end, if the editor never had focus) and focuses the editor. */
+  insertText: (text: string) => void;
+  focus: () => void;
 }
 
 /**
@@ -47,6 +60,9 @@ export function RichTextEditor({
   "aria-invalid": ariaInvalid,
   "aria-required": ariaRequired,
   "aria-describedby": ariaDescribedBy,
+  "aria-label": ariaLabel,
+  onReady,
+  onFocus,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -63,10 +79,13 @@ export function RichTextEditor({
         ...(ariaInvalid !== undefined ? { "aria-invalid": String(ariaInvalid) } : {}),
         ...(ariaRequired !== undefined ? { "aria-required": String(ariaRequired) } : {}),
         ...(ariaDescribedBy ? { "aria-describedby": ariaDescribedBy } : {}),
+        // Named, it's announced as a multi-line text box.
+        ...(ariaLabel ? { "aria-label": ariaLabel, role: "textbox", "aria-multiline": "true" } : {}),
         class: "min-h-24 px-2.5 py-2 text-[14px] text-on-surface focus:outline-none [&_p]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:text-primary [&_a]:underline",
       },
     },
     onUpdate: ({ editor: current }) => onValueChange(current.getHTML()),
+    onFocus: () => onFocus?.(),
     // Tiptap's SSR guard — this component is always "use client", but the
     // editor's own first render still happens before hydration settles;
     // immediatelyRender: false avoids a hydration mismatch warning that
@@ -92,6 +111,15 @@ export function RichTextEditor({
   useEffect(() => {
     editor?.setEditable(!disabled);
   }, [disabled, editor]);
+
+  useEffect(() => {
+    if (!editor || !onReady) return;
+    onReady({
+      // Inserted as a text node, so braces and angle brackets stay literal.
+      insertText: (text) => editor.chain().focus(undefined, { scrollIntoView: false }).insertContent({ type: "text", text }).run(),
+      focus: () => editor.commands.focus(undefined, { scrollIntoView: false }),
+    });
+  }, [editor, onReady]);
 
   return (
     <div

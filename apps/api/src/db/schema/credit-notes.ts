@@ -1,4 +1,5 @@
 import { files } from "./files";
+import { supplyClassEnum, supplyTypeEnum } from "./tax";
 import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric, check } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
@@ -74,6 +75,9 @@ export const creditNotes = pgTable(
     /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
     issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     isDemo: boolean("is_demo").notNull().default(false),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -143,6 +147,10 @@ export const creditNoteLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     unitPriceCurrency: text("unit_price_currency").notNull(),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     lineSubtotalAmount: bigint("line_subtotal_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTaxAmount: bigint("line_tax_amount", { mode: "bigint" }).notNull().default(sql`0`),
     lineTotalAmount: bigint("line_total_amount", { mode: "bigint" }).notNull().default(sql`0`),

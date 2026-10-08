@@ -1,7 +1,7 @@
 import { render, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
-import { RichTextContent, RichTextEditor } from "./rich-text-editor";
+import { RichTextContent, RichTextEditor, type RichTextEditorHandle } from "./rich-text-editor";
 
 describe("RichTextEditor a11y", () => {
   it("has no violations", async () => {
@@ -26,6 +26,19 @@ describe("RichTextEditor a11y", () => {
     await waitFor(() => {
       expect(container.querySelector(".ProseMirror")).toBeTruthy();
     });
+    await expectNoA11yViolations(container);
+  });
+});
+
+describe("RichTextEditor insertText (D-189)", () => {
+  it("puts text at the cursor and stays accessible", async () => {
+    let handle: RichTextEditorHandle | null = null;
+    let html = "<p>Hi</p>";
+    const { container } = render(<RichTextEditor value={html} onValueChange={(v) => (html = v)} onReady={(h) => (handle = h)} aria-label="Message" />);
+    await waitFor(() => expect(handle).not.toBeNull());
+    handle!.insertText(" {customer_name}");
+    await waitFor(() => expect(html).toContain("{customer_name}"));
+    expect(container.querySelector('[role="textbox"][aria-label="Message"][aria-multiline="true"]')).toBeTruthy();
     await expectNoA11yViolations(container);
   });
 });

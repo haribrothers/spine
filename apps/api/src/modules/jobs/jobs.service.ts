@@ -118,7 +118,8 @@ export class JobsService {
 
     const created = await this.db.transaction(async (tx) => {
       // US-JOB-22: the next Job number, under the sequence row lock.
-      const number = await this.numbering.allocateNumber(tx, orgId, "job");
+      // US-ONB-17: a job for a demo customer is demo too, in the demo series.
+      const number = await this.numbering.allocateNumber(tx, orgId, "job", { demo: isDemo || contact.isDemo });
       const [job] = await tx
         .insert(jobs)
         .values({

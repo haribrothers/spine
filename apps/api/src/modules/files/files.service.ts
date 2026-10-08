@@ -57,7 +57,7 @@ export type IntegrityProblem = "damaged" | "missing";
 
 /** A record a file belongs to (US-OPS-20). For `job_photo`, `id` is the job's id. */
 export type FileOwner =
-  | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo"; id: string }
+  | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo" | "document_signature"; id: string }
   | { type: "expense_receipt"; id: string; submittedBy: string | null }
   // US-OPS-34 (D-156): a file kept with a record follows that record's read rule; `id` is the record's.
   | { type: "attachment"; id: string; entityType: AttachmentEntityType };
@@ -313,7 +313,7 @@ export class FilesService {
       this.db.select({ jobId: jobPhotos.jobId }).from(jobPhotos).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
       this.db.select({ id: contacts.id }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
       this.db.select({ id: contactPersons.id }).from(contactPersons).innerJoin(contacts, eq(contactPersons.contactId, contacts.id)).where(and(eq(contacts.orgId, orgId), inArray(contactPersons.logoFileId, ids))),
-      this.db.select({ value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile"))),
+      this.db.select({ key: settings.key, value: settings.value }).from(settings).where(and(eq(settings.orgId, orgId), inArray(settings.key, ["business_profile", "document_layout"]))),
       this.db.select({ id: user.id }).from(user).innerJoin(member, eq(member.userId, user.id)).where(and(eq(member.organizationId, orgId), like(user.image, `%/files/${fileId}%`))),
       this.db
         .select({ entityType: attachments.entityType, entityId: attachments.entityId })
@@ -332,8 +332,11 @@ export class FilesService {
       ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
       ...attachmentRows.map((r) => ({ type: "attachment" as const, id: r.entityId, entityType: r.entityType })),
     ];
-    const logoUrl = (profile[0]?.value as { logoUrl?: string } | undefined)?.logoUrl;
+    const logoUrl = (profile.find((p) => p.key === "business_profile")?.value as { logoUrl?: string } | undefined)?.logoUrl;
     if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
+    // US-SET-19: the signature Settings › Documents prints (Owner and Staff read it; Field never prints documents).
+    const signatureFileId = (profile.find((p) => p.key === "document_layout")?.value as { signatureFileId?: string | null } | undefined)?.signatureFileId;
+    if (signatureFileId === fileId) owners.push({ type: "document_signature", id: orgId });
     return owners;
   }
 
@@ -513,6 +516,11 @@ export class FilesService {
       .where(and(eq(settings.orgId, orgId), eq(settings.key, "business_profile")));
     const logoId = (profile?.value as { logoUrl?: string } | undefined)?.logoUrl?.match(/\/files\/([0-9a-f-]{36})/i)?.[1];
     set(logoId ?? null, "Business logo");
+    const [layout] = await this.db
+      .select({ value: settings.value })
+      .from(settings)
+      .where(and(eq(settings.orgId, orgId), eq(settings.key, "document_layout")));
+    set((layout?.value as { signatureFileId?: string | null } | undefined)?.signatureFileId ?? null, "Signature on documents");
     return labels;
   }
 

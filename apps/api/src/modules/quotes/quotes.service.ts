@@ -1,6 +1,8 @@
+import { moduleOn } from "../../common/modules";
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import type { EmailJobOverride } from "../email/email-text";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
-import { computeDocumentLine } from "@spine/shared";
+import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
@@ -13,6 +15,7 @@ import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
 import { queueIssuedPdf } from "../pdf/issued-pdf.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
@@ -45,6 +48,8 @@ interface ComputedLine {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string | null;
   lineSubtotalAmount: bigint;
   lineTaxAmount: bigint;
   lineTotalAmount: bigint;
@@ -111,6 +116,8 @@ async function computeQuoteTotals(
           taxRateId: null,
           taxGroupId: null,
           isTaxInclusive: false,
+          supplyClass: null,
+          hsnSac: null,
           lineSubtotalAmount: 0n,
           lineTaxAmount: 0n,
           lineTotalAmount: 0n,
@@ -123,6 +130,10 @@ async function computeQuoteTotals(
             rates: line.taxRatePercentage > 0 ? [{ id: "line", name: "Tax", percent: line.taxRatePercentage, isCompound: false }] : [],
             blendedPercentage: line.taxRatePercentage,
           };
+
+      // US-TAX-11: an exempt or non-taxable line carries no tax.
+      const supplyError = supplyClassTaxError(line.supplyClass, resolved.blendedPercentage);
+      if (supplyError) throw new BadRequestException(supplyError);
 
       // US-TAX-07: exact decimal maths in @spine/shared, each figure rounded once.
       const computed = computeDocumentLine({
@@ -160,6 +171,8 @@ async function computeQuoteTotals(
         unitPriceCurrency: currency,
         discountPercentage: line.discountPercentage,
         taxRatePercentage: resolved.blendedPercentage,
+        supplyClass: lineSupplyClass(resolved.blendedPercentage, line.supplyClass ?? ("supplyClass" in resolved ? resolved.supplyClass : null)),
+        hsnSac: line.hsnSac ?? null,
         taxRateId: line.taxRateId ?? null,
         taxGroupId: line.taxGroupId ?? null,
         isTaxInclusive: line.isTaxInclusive,
@@ -195,6 +208,7 @@ export class QuotesService {
     private readonly queue: QueueService,
     private readonly publicTokens: QuotePublicTokenService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
     private readonly notifications: NotificationsService,
   ) {}
 
@@ -386,11 +400,19 @@ export class QuotesService {
     const currency = input.currency ?? existing.currency;
     const totals = input.lines !== undefined ? await computeQuoteTotals(orgId, currency, input.lines, this.taxResolver) : null;
     const threshold = await this.getThreshold(orgId);
+    // US-TAX-13: a new contact (or a draft saved before GST was set up) takes the contact's place of supply.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "sale",
+    );
 
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(quotes)
         .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
@@ -482,7 +504,7 @@ export class QuotesService {
    * needs to know how tokens are minted — it just builds a link with
    * whatever token this method handed it.
    */
-  async send(orgId: string, id: string, actorUserId: string) {
+  async send(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Quote not found");
@@ -506,11 +528,12 @@ export class QuotesService {
       if (existing.status !== "draft") {
         throw new BadRequestException("Only a draft quote can be sent");
       }
-      if (existing.discountRequiresApproval && !existing.approvedByUserId) {
+      // D-154: with Approvals switched off, discounts need no approval.
+      if (existing.discountRequiresApproval && !existing.approvedByUserId && (await moduleOn(tx, orgId, "approvals"))) {
         throw new BadRequestException("This quote's discount requires owner approval before it can be sent");
       }
 
-      const number = await this.numbering.allocateNumber(tx, orgId, "quote");
+      const number = await this.numbering.allocateNumber(tx, orgId, "quote", { demo: existing.isDemo });
       await tx
         .update(quotes)
         // emailStatus: "pending" here, not left null — the detail page
@@ -518,7 +541,15 @@ export class QuotesService {
         // for the window between this commit and the queue worker actually
         // picking the job up. The worker (quote-email.worker.ts) owns every
         // subsequent transition to "sent"/"failed".
-        .set({ status: "sent", number, sentAt: new Date(), emailStatus: "pending", updatedAt: new Date() })
+        .set({
+          status: "sent",
+          number,
+          sentAt: new Date(),
+          emailStatus: "pending",
+          updatedAt: new Date(),
+          // US-TAX-13: snapshotted when sent.
+          ...(await this.placeOfSupply.resolve(orgId, existing.contactId, existing.placeOfSupply ?? undefined, "sale", tx)),
+        })
         .where(eq(quotes.id, id));
 
       await this.auditLog.record(tx, {
@@ -536,7 +567,7 @@ export class QuotesService {
     });
 
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
     } catch (err) {
       // Never let a queue-enqueue failure fail an already-committed send —
       // see this method's own doc comment above.
@@ -610,6 +641,8 @@ export class QuotesService {
           notes: existing.notes,
           termsAndConditions: existing.termsAndConditions,
           createdByUserId: actorUserId,
+          placeOfSupply: existing.placeOfSupply,
+          supplyType: existing.supplyType,
           // A revision of a demo quote must itself be demo data — otherwise
           // it would survive DemoDataService.deleteAll's isDemo-scoped
           // cleanup as an orphaned real-looking row.
@@ -634,6 +667,8 @@ export class QuotesService {
             taxRateId: line.taxRateId,
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
+            supplyClass: line.supplyClass,
+            hsnSac: line.hsnSac,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -703,6 +738,8 @@ export class QuotesService {
           termsAndConditions: source.termsAndConditions,
           createdByUserId: actorUserId,
           isDemo: source.isDemo,
+          placeOfSupply: source.placeOfSupply,
+          supplyType: source.supplyType,
         })
         .returning();
       if (sourceLines.length) {
@@ -722,6 +759,8 @@ export class QuotesService {
             taxRateId: line.taxRateId,
             taxGroupId: line.taxGroupId,
             isTaxInclusive: line.isTaxInclusive,
+            supplyClass: line.supplyClass,
+            hsnSac: line.hsnSac,
             lineSubtotalAmount: line.lineSubtotalAmount,
             lineTaxAmount: line.lineTaxAmount,
             lineTotalAmount: line.lineTotalAmount,
@@ -747,7 +786,7 @@ export class QuotesService {
    * with a fresh public link. Earlier links keep working (US-QUO-22); the
    * PDF is the one stored when it was sent (US-INV-17).
    */
-  async resend(orgId: string, id: string, actorUserId: string) {
+  async resend(orgId: string, id: string, actorUserId: string, override?: EmailJobOverride) {
     const { token } = await this.db.transaction(async (tx) => {
       const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
       if (!existing) throw new NotFoundException("Quote not found");
@@ -765,7 +804,7 @@ export class QuotesService {
       return this.publicTokens.issue(tx, orgId, id);
     });
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token });
+      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
     } catch (err) {
       this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
     }
@@ -976,6 +1015,8 @@ export class QuotesService {
 
     const totals = await computeQuoteTotals(orgId, input.currency, input.lines, this.taxResolver);
     const threshold = await this.getThreshold(orgId);
+    // US-TAX-13: the place of supply given, else the contact's.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
 
     const created = await this.db.transaction(async (tx) => {
       const [quote] = await tx
@@ -997,6 +1038,7 @@ export class QuotesService {
           termsAndConditions: input.termsAndConditions ?? null,
           createdByUserId: actorUserId,
           isDemo,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
         })
         .returning();
 
@@ -1037,6 +1079,8 @@ async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac,
       lineSubtotalAmount: line.lineSubtotalAmount,
       lineTaxAmount: line.lineTaxAmount,
       lineTotalAmount: line.lineTotalAmount,

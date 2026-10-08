@@ -13,7 +13,8 @@ export class ZodValidationPipe<T> implements PipeTransform {
   transform(value: unknown): T {
     const result = this.schema.safeParse(value);
     if (!result.success) {
-      throw new BadRequestException(result.error.issues);
+      // `message` is the first problem, for showing to people; `issues` lists them all.
+      throw new BadRequestException({ statusCode: 400, error: "Bad Request", message: result.error.issues[0]?.message ?? "Check the details and try again.", issues: result.error.issues });
     }
     return result.data;
   }

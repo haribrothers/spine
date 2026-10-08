@@ -81,7 +81,9 @@ async function request<T>(
     } catch {
       // response wasn't JSON — keep the generic message
     }
-    if (res.status === 403) {
+    // US-SET-24: a switched-off module isn't a permission problem — its own message says what to do.
+    const moduleOff = res.status === 403 && (data as { error?: string } | undefined)?.error === "MODULE_OFF";
+    if (res.status === 403 && !moduleOff) {
       // US-OPS-12: a refusal is explained, never shown as a raw error.
       message = FORBIDDEN_MESSAGE;
       if (method !== "GET" && typeof window !== "undefined") window.dispatchEvent(new Event(FORBIDDEN_EVENT));

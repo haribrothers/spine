@@ -10,6 +10,7 @@ import { SettingsService } from "../org/settings.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { appUrl, renderEmail } from "../email/email-layout";
 import { quoteEmail } from "../email/email-templates";
+import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
@@ -27,6 +28,8 @@ export interface QuoteSendEmailJobData {
    * in-flight deploy) — a normal `send()` call always supplies it now.
    */
   publicToken?: string;
+  /** US-SET-21 — what the "Send" dialog changed for this one email. */
+  override?: EmailJobOverride;
 }
 
 /**
@@ -85,7 +88,7 @@ export class QuoteEmailWorker implements OnModuleInit {
   }
 
   async process(data: QuoteSendEmailJobData): Promise<void> {
-    const { orgId, quoteId, publicToken } = data;
+    const { orgId, quoteId, publicToken, override } = data;
 
     const [row] = await this.db
       .select({ quote: quotes, contactName: contacts.name, contactEmail: contacts.email })
@@ -98,7 +101,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     }
 
     try {
-      await this.attemptSend(orgId, quoteId, row, publicToken);
+      await this.attemptSend(orgId, quoteId, row, publicToken, override);
       await this.db
         .update(quotes)
         .set({ emailStatus: "sent", emailError: null, emailSentAt: new Date() })
@@ -125,11 +128,13 @@ export class QuoteEmailWorker implements OnModuleInit {
     quoteId: string,
     row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
     publicToken: string | undefined,
+    override?: EmailJobOverride,
   ): Promise<void> {
     // US-INV-17: attach the PDF stored when the quote was sent (stored now if it isn't yet).
     const { buffer, filename } = await this.issuedPdf.forEmail(orgId, "quote", quoteId);
+    const to = override?.to ?? row.contactEmail;
 
-    if (!row.contactEmail) {
+    if (!to) {
       throw new Error(`Quote ${quoteId}'s contact has no email address on file — cannot send`);
     }
     if (!this.email.isConfigured()) {
@@ -154,16 +159,17 @@ export class QuoteEmailWorker implements OnModuleInit {
       currency: row.quote.currency,
       validUntil: row.quote.validUntil,
       link: quoteLink,
+      text: await loadEmailText(this.db, orgId, "quote", override),
     });
     const email = renderEmail(brand, template.content);
 
     await this.email.send({
-      to: row.contactEmail,
+      to,
       fromName: brand.name,
       subject: template.subject,
       text: email.text,
       html: email.html,
-      attachments: [{ filename, content: buffer, contentType: "application/pdf" }, ...email.attachments],
+      attachments: [...(override?.attachPdf === false ? [] : [{ filename, content: buffer, contentType: "application/pdf" }]), ...email.attachments],
     });
   }
 }

@@ -7,6 +7,9 @@ export interface VendorCredit {
   number: string | null;
   vendorReference: string | null;
   contactId: string;
+  /** US-TAX-13 — GST place of supply and the supply type it gave. */
+  placeOfSupply: string | null;
+  supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   billId: string | null;
   billNumber?: string | null;

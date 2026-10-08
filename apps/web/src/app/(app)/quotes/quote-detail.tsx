@@ -1,5 +1,6 @@
 "use client";
 
+import { SUPPLY_CLASS_LABELS, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type EmailOverride } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -27,6 +28,8 @@ import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
+import { SendEmailDialog } from "../../../components/send-email-dialog";
+import { useModule, useModules } from "../../../lib/modules-context";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { SaveBundleDialog } from "./save-bundle-dialog";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
@@ -149,12 +152,18 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       .catch(() => {});
   }, [currentUserId]);
 
-  async function handleMarkAsSent() {
+  // US-SET-21: "Send Quote" and "Email again" open the send dialog, which starts from the Quote email template.
+  const [sendDialog, setSendDialog] = useState<"send" | "resend" | null>(null);
+  // US-SET-24: no jobs while Jobs & field is switched off.
+  const jobsOn = useModule("jobsField");
+  const approvalsOn = useModules().modules?.approvals !== false;
+
+  async function handleMarkAsSent(email: EmailOverride) {
     if (!quote) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Quote>(`/quotes/${quote.id}/send`);
+      const updated = await apiClient.post<Quote>(`/quotes/${quote.id}/send`, email);
       setQuote(updated);
       // The email itself is sent out-of-band via a queued job (pg-boss),
       // never awaited by this request — see quotes.service.ts's `send()`
@@ -169,6 +178,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark this quote as sent.");
+      throw err;
     } finally {
       setBusy(false);
     }
@@ -188,14 +198,15 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   }
 
   /** US-QUO-24 — "Email again" re-sends the quote email; the page polls while it's pending. */
-  async function handleEmailAgain() {
+  async function handleEmailAgain(email: EmailOverride) {
     if (!quote) return;
     setBusy(true);
     try {
-      setQuote(await apiClient.post<Quote>(`/quotes/${quote.id}/resend`));
+      setQuote(await apiClient.post<Quote>(`/quotes/${quote.id}/resend`, email));
       showToast("Email queued", `Quote ${quote.number ?? ""} is being emailed to ${quote.contactName ?? "the contact"} again.`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not email this quote again.");
+      throw err;
     } finally {
       setBusy(false);
     }
@@ -328,7 +339,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   // exclusive: a quote can become a job, an invoice, or both.
   const canConvertToInvoice = quote.status === "accepted";
   const canConvertToJob = quote.status === "accepted" && hasCreateJobCapability;
-  const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId;
+  // D-154: with Approvals switched off, discounts need no approval.
+  const needsApproval = quote.discountRequiresApproval && !quote.approvedByUserId && approvalsOn;
 
   return (
     <div className="flex flex-col gap-6">
@@ -363,6 +375,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {quote.contactName ?? "Unknown contact"} · Version {quote.version}
               {quote.validUntil && <> · Valid until {new Date(quote.validUntil).toLocaleDateString()}</>}
+              {/* US-TAX-13: the place of supply snapshotted on the document. */}
+              {quote.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(quote.placeOfSupply)}{quote.supplyType ? ` (${SUPPLY_TYPE_LABELS[quote.supplyType].toLowerCase()})` : ""}</>}
             </p>
           </div>
 
@@ -388,7 +402,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
               </Button>
             )}
             {canSendQuote && !needsApproval && (
-              <Button onClick={handleMarkAsSent} disabled={busy}>
+              <Button onClick={() => setSendDialog("send")} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Send Quote"}
               </Button>
             )}
@@ -402,7 +416,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {busy ? <Spinner size="sm" /> : "Convert to invoice"}
               </Button>
             )}
-            {canConvertToJob && (
+            {canConvertToJob && jobsOn && (
               <Button variant="secondary" onClick={() => handleConvertToJob()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Convert to job"}
               </Button>
@@ -423,7 +437,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                 {canSaveBundle && (quote.lines ?? []).some((l) => l.type === "item") && (
                   <DropdownMenuItem onSelect={() => setBundleOpen(true)}>Save lines as a bundle…</DropdownMenuItem>
                 )}
-                {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={handleEmailAgain}>Email again</DropdownMenuItem>}
+                {quote.status === "sent" && hasSendCapability && <DropdownMenuItem onSelect={() => setSendDialog("resend")}>Email again</DropdownMenuItem>}
                 <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -500,6 +514,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
                     {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), quote.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                    {/* US-TAX-11: the supply type snapshotted on the line. */}
+                    {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
                   </p>
                 )}
               </div>
@@ -599,6 +615,18 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
         </AlertDialogContent>
       </AlertDialog>
 
+      {sendDialog && (
+        <SendEmailDialog
+          open
+          onOpenChange={(open) => !open && setSendDialog(null)}
+          title={sendDialog === "send" ? "Send quote" : `Email quote ${quote.number ?? ""} again`.trim()}
+          description={quote.contactName ?? undefined}
+          draftPath={`/email-drafts/quote/${quote.id}`}
+          sendLabel={sendDialog === "send" ? "Send quote" : "Send email"}
+          pdfLabel="Attach the quote PDF"
+          onSend={(email) => (sendDialog === "send" ? handleMarkAsSent(email) : handleEmailAgain(email))}
+        />
+      )}
       {toast}
     </div>
   );

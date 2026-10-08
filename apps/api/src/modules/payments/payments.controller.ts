@@ -1,4 +1,5 @@
 import { Body, Controller, Delete, Get, Param, Post, Query, Res, UseInterceptors } from "@nestjs/common";
+import { parseEmailOverride } from "../email/email-text";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
 import { applyPaymentCreditSchema, createPaymentSchema } from "@spine/shared";
 import type { Response } from "express";
@@ -75,9 +76,10 @@ export class PaymentsController {
   @Post(":id/send-receipt")
   @RequireCapability("payments.send_receipt")
   @UseInterceptors(IdempotencyInterceptor)
-  async sendReceipt(@Session() session: UserSession, @Param("id") id: string) {
+  async sendReceipt(@Session() session: UserSession, @Param("id") id: string, @Body() body?: unknown) {
     const orgId = requireOrgId(session);
-    return this.paymentsService.sendReceiptEmail(orgId, id);
+    // US-SET-21: the "Send" dialog may change this one email.
+    return this.paymentsService.sendReceiptEmail(orgId, id, parseEmailOverride("receipt", body));
   }
 
   /** S-06.1/S-06.2/S-06.4/S-06.5 — records a payment, optionally allocating it across invoices in the same call. `moneyAccountId` (US-BANK-03) picks the account the money went into; omitted means the organisation's default. */

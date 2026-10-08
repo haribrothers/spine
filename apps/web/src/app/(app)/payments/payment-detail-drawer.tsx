@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { EmailOverride } from "@spine/shared";
+import { SendEmailDialog } from "../../../components/send-email-dialog";
 import {
   Alert,
   AlertDescription,
@@ -118,15 +120,16 @@ export function PaymentDetailDrawer({
     }
   }
 
-  async function handleSendReceipt() {
+  // US-SET-21: "Email receipt" opens the send dialog, starting from the Receipt email template.
+  const [receiptDialog, setReceiptDialog] = useState(false);
+
+  async function handleSendReceipt(email: EmailOverride) {
     if (!payment) return;
     setBusy(true);
     setError(null);
     try {
-      await apiClient.post(`/payments/${payment.id}/send-receipt`);
-      showToast("Receipt sent", `The receipt for ${payment.number ?? "this payment"} has been emailed to ${payment.contactName ?? "the contact"}.`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not email this receipt.");
+      await apiClient.post(`/payments/${payment.id}/send-receipt`, email);
+      showToast("Receipt sent", `The receipt for ${payment.number ?? "this payment"} has been emailed to ${email.to ?? payment.contactName ?? "the contact"}.`);
     } finally {
       setBusy(false);
     }
@@ -246,7 +249,7 @@ export function PaymentDetailDrawer({
               </Button>
             )}
             {payment && main === "receipt" && (
-              <Button variant="secondary" onClick={handleSendReceipt} disabled={busy}>
+              <Button variant="secondary" onClick={() => setReceiptDialog(true)} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email receipt"}
               </Button>
             )}
@@ -264,7 +267,7 @@ export function PaymentDetailDrawer({
                       Download PDF
                     </a>
                   </DropdownMenuItem>
-                  {hasSendReceiptCapability && main !== "receipt" && <DropdownMenuItem onSelect={handleSendReceipt}>Email receipt</DropdownMenuItem>}
+                  {hasSendReceiptCapability && main !== "receipt" && <DropdownMenuItem onSelect={() => setReceiptDialog(true)}>Email receipt</DropdownMenuItem>}
                   {canRefund && <DropdownMenuItem onSelect={() => setRefundOpen(true)}>Refund</DropdownMenuItem>}
                   {canDelete && (
                     <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
@@ -308,6 +311,18 @@ export function PaymentDetailDrawer({
           showToast("Credit applied", `Credit from ${payment?.number ?? "this payment"} has been applied to the selected invoice(s).`);
         }}
       />
+      {receiptDialog && payment && (
+        <SendEmailDialog
+          open
+          onOpenChange={setReceiptDialog}
+          title={`Email receipt ${payment.number ?? ""}`.trim()}
+          description={payment.contactName ?? undefined}
+          draftPath={`/email-drafts/receipt/${payment.id}`}
+          sendLabel="Send receipt"
+          pdfLabel="Attach the receipt PDF"
+          onSend={handleSendReceipt}
+        />
+      )}
       {toast}
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

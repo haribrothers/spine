@@ -40,6 +40,7 @@ import {
   type RecurringFrequency,
 } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
+import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
 import { formatMoney } from "../../../../lib/money";
 import { ContactPicker } from "../contact-picker";
 import { blankLine, computeLinePreview, VendorBillLineEditor, type EditableVendorBillLine } from "../vendor-bill-line-editor";
@@ -69,6 +70,8 @@ function toEditableLines(lines: RecurringBill["lines"]): EditableVendorBillLine[
     taxRateId: line.taxRateId,
     taxGroupId: line.taxGroupId,
     isTaxInclusive: line.isTaxInclusive,
+    supplyClass: line.supplyClass,
+    hsnSac: line.hsnSac ?? "",
   }));
 }
 
@@ -125,6 +128,8 @@ export function RecurringBillDialog({
   const [moneyAccountId, setMoneyAccountId] = useState("none");
   const [moneyAccounts, setMoneyAccounts] = useState<{ id: string; name: string }[]>([]);
   const [lines, setLines] = useState<EditableVendorBillLine[]>([blankLine()]);
+  // D-183 — no place-of-supply field: the contact's address picks intra- or inter-state tax; each run takes the contact's place of supply then.
+  const pos = usePlaceOfSupply({ contactId, lines, setLines, direction: "purchase" });
   const [editingLines, setEditingLines] = useState(false);
   const [problems, setProblems] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -235,6 +240,8 @@ export function RecurringBillDialog({
           taxRateId: l.taxRateId,
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
+          supplyClass: l.supplyClass,
+          hsnSac: l.hsnSac || null,
         })),
     };
     setSaving(true);
@@ -396,7 +403,8 @@ export function RecurringBillDialog({
                   </Button>
                 )}
               </div>
-              <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} />
+              <PlaceOfSupplyNotice notice={pos.notice} />
+              <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
               {problems.lines && <p className="text-[13px] text-overdue">{problems.lines}</p>}
             </div>
           ) : (

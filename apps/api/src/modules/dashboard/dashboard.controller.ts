@@ -1,4 +1,5 @@
 import { BadRequestException, Controller, Get, Inject, Post, Query, UseInterceptors } from "@nestjs/common";
+import { SetupService } from "../setup/setup.service";
 import { periodLabel, sharePercent, TOP_EXPENSE_PERIODS, type ReturnPeriod, type TaxPeriod, type TopExpensePeriod, type TopExpenses } from "@spine/shared";
 import { orgClock } from "../../common/org-clock";
 import { AnalysisReportsService } from "../reports/analysis-reports.service";
@@ -33,6 +34,7 @@ export class DashboardController {
     private readonly analysis: AnalysisReportsService,
     private readonly settings: SettingsService,
     private readonly reports: ReportsService,
+    private readonly setup: SetupService,
     @Inject(DATABASE) private readonly db: Database,
   ) {}
 
@@ -119,7 +121,8 @@ export class DashboardController {
   async getChecklist(@Session() session: UserSession) {
     const orgId = requireOrgId(session);
     if ((await getMemberRole(this.db, orgId, session.user.id)) !== "owner") return { visible: false };
-    return { visible: true, ...(await this.dashboardService.getSetupChecklist(orgId)) };
+    // US-ONB-15: once its three steps are done, the card points to what's left on Set up Spine.
+    return { visible: true, ...(await this.dashboardService.getSetupChecklist(orgId)), setupLeft: await this.setup.left(orgId) };
   }
 
   /**

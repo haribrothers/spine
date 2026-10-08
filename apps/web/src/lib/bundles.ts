@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { CatalogBundle } from "@spine/shared";
+import type { CatalogBundle, SupplyClass } from "@spine/shared";
 import type { PickerBundle } from "../components/line-item-picker";
 import { apiClient } from "./api-client";
 
@@ -18,6 +18,8 @@ export interface BundleLineFields {
   taxRateId: string | null;
   taxGroupId: string | null;
   isTaxInclusive: boolean;
+  supplyClass: SupplyClass | null;
+  hsnSac: string;
 }
 
 /** US-QUO-26 — active bundles in the document's currency, for the line picker. */
@@ -58,5 +60,7 @@ export function bundleLines(bundle: CatalogBundle, activeItemIds: Set<string>): 
     taxRateId: l.taxRateId,
     taxGroupId: l.taxGroupId,
     isTaxInclusive: l.isTaxInclusive,
+    supplyClass: l.supplyClass,
+    hsnSac: l.hsnSac ?? "",
   }));
 }

@@ -1,10 +1,19 @@
 "use client";
 
+import { SUPPLY_CLASS_LABELS, gstinRequired, missingHsnSacMessage, placeOfSupplyLabel, SUPPLY_TYPE_LABELS, type GstTreatment, type EmailOverride } from "@spine/shared";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Alert,
   AlertDescription,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   Card,
@@ -26,6 +35,7 @@ import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { ApplyCustomerCreditDialog } from "./apply-customer-credit-dialog";
+import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { loadCustomerCredit } from "../../../lib/customer-credit";
 import { CreateCreditNoteDialog } from "./create-credit-note-dialog";
 import { CreditNotesSection } from "./credit-notes-section";
@@ -116,14 +126,57 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     return () => clearInterval(interval);
   }, [invoice?.emailStatus, load]);
 
-  async function handleIssue() {
+  // US-TAX-14 — lines without an HSN/SAC code on an invoice to a registered business.
+  const [missingHsn, setMissingHsn] = useState(0);
+
+  async function requestIssue() {
     if (!invoice) return;
+    const missing = (invoice.lines ?? []).filter((l) => l.type === "item" && !l.hsnSac).length;
+    if (missing > 0) {
+      const contact = await apiClient.get<{ gstTreatment: GstTreatment | null }>(`/contacts/${invoice.contactId}`).catch(() => null);
+      if (gstinRequired(contact?.gstTreatment)) {
+        setMissingHsn(missing);
+        return;
+      }
+    }
+    await offerCreditOrIssue();
+  }
+
+  // D-187 — the customer's credit (a deposit, a credit note), offered before issuing so the PDF's UPI QR asks for what's left.
+  const [creditOffer, setCreditOffer] = useState<bigint>(0n);
+
+  async function offerCreditOrIssue() {
+    if (!invoice) return;
+    setMissingHsn(0);
+    if (hasApplyCreditCapability && invoice.type !== "advance") {
+      const credit = await apiClient.get<{ amount: string }>(`/invoices/${invoice.id}/available-credit`).catch(() => ({ amount: "0" }));
+      if (BigInt(credit.amount) > 0n) {
+        setCreditOffer(BigInt(credit.amount));
+        return;
+      }
+    }
+    await handleIssue(false);
+  }
+
+  const issueWithCredit = () => handleIssue(true);
+
+  async function handleIssue(applyCredit: boolean) {
+    if (!invoice) return;
+    setMissingHsn(0);
+    setCreditOffer(0n);
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/issue`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/issue`, applyCredit ? { applyCredit: true } : undefined);
       setInvoice(updated);
-      showToast("Invoice issued", `${updated.number} has been issued and posted to the ledger.`);
+      const applied = BigInt(updated.amountPaid ?? "0") + BigInt(updated.creditedAmount ?? "0");
+      if (applied > 0n) setPaymentsRefreshKey((key) => key + 1);
+      showToast(
+        "Invoice issued",
+        applied > 0n
+          ? `${updated.number} has been issued and posted to the ledger. ${formatMoney(applied, updated.currency)} of credit was applied.`
+          : `${updated.number} has been issued and posted to the ledger.`,
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not issue this invoice.");
     } finally {
@@ -131,12 +184,15 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
     }
   }
 
-  async function handleSendEmail() {
+  // US-SET-21: "Email invoice" and "Send reminder" open the send dialog, starting from their templates.
+  const [sendDialog, setSendDialog] = useState<"invoice" | "reminder" | null>(null);
+
+  async function handleSendEmail(email: EmailOverride) {
     if (!invoice) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-email`, email);
       setInvoice(updated);
       showToast(
         "Emailing invoice",
@@ -146,17 +202,18 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not email this invoice.");
+      throw err;
     } finally {
       setBusy(false);
     }
   }
 
-  async function handleSendReminder() {
+  async function handleSendReminder(email: EmailOverride) {
     if (!invoice) return;
     setBusy(true);
     setError(null);
     try {
-      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`);
+      const updated = await apiClient.post<Invoice>(`/invoices/${invoice.id}/send-reminder`, email);
       setInvoice(updated);
       showToast(
         "Reminder sent",
@@ -164,6 +221,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not send this reminder.");
+      throw err;
     } finally {
       setBusy(false);
     }
@@ -273,6 +331,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
             <p className="mt-1 text-[13px] text-on-surface-muted">
               {invoice.contactName ?? "Unknown contact"}
               {invoice.dueDate && <> · Due {new Date(invoice.dueDate).toLocaleDateString()}</>}
+              {/* US-TAX-13: the place of supply snapshotted on the document. */}
+              {invoice.placeOfSupply && <> · Place of supply {placeOfSupplyLabel(invoice.placeOfSupply)}{invoice.supplyType ? ` (${SUPPLY_TYPE_LABELS[invoice.supplyType].toLowerCase()})` : ""}</>}
             </p>
           </div>
 
@@ -292,7 +352,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               </Button>
             )}
             {canIssue && (
-              <Button onClick={handleIssue} disabled={busy}>
+              <Button onClick={() => void requestIssue()} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Issue Invoice"}
               </Button>
             )}
@@ -312,12 +372,12 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
               </Button>
             )}
             {canSendEmail && invoice.type !== "opening" && (
-              <Button variant="secondary" onClick={handleSendEmail} disabled={busy}>
+              <Button variant="secondary" onClick={() => setSendDialog("invoice")} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Email invoice"}
               </Button>
             )}
             {canSendReminder && (
-              <Button variant="secondary" onClick={handleSendReminder} disabled={busy}>
+              <Button variant="secondary" onClick={() => setSendDialog("reminder")} disabled={busy}>
                 {busy ? <Spinner size="sm" /> : "Send reminder"}
               </Button>
             )}
@@ -416,6 +476,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
                     {line.quantity} × {formatMoney(BigInt(line.unitPriceAmount), invoice.currency)}
                     {line.discountPercentage > 0 && <> · {line.discountPercentage}% off</>}
                     {line.taxRatePercentage > 0 && <> · {line.taxRatePercentage}% tax</>}
+                    {/* US-TAX-11: the supply type snapshotted on the line. */}
+                    {line.supplyClass && line.supplyClass !== "taxable" && <> · {SUPPLY_CLASS_LABELS[line.supplyClass]}</>}
                   </p>
                 )}
               </div>
@@ -430,7 +492,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
       </Card>
 
       <PaymentsSection invoiceId={invoice.id} refreshKey={paymentsRefreshKey} />
-      <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} />
+      <CreditNotesSection invoiceId={invoice.id} refreshKey={creditNotesRefreshKey} canEmail={hasSendCapability} />
       <AttachmentsSection entityType="invoice" entityId={invoice.id} />
 
       <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
@@ -532,6 +594,37 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         </DialogContent>
       </Dialog>
 
+
+      <AlertDialog open={missingHsn > 0} onOpenChange={(open) => !open && setMissingHsn(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Issue without HSN/SAC codes?</AlertDialogTitle>
+            <AlertDialogDescription>{missingHsnSacMessage(missingHsn)} Add them on the invoice, or issue it as it is.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <AlertDialogAction onClick={offerCreditOrIssue}>Issue anyway</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* D-187 — apply the customer's credit as the invoice is issued. */}
+      <AlertDialog open={creditOffer > 0n} onOpenChange={(open) => !open && setCreditOffer(0n)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Apply this customer&apos;s credit?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {invoice.contactName ?? "This customer"} has {formatMoney(creditOffer, invoice.currency)} of credit from payments and credit notes. Apply it as the invoice is issued, so the invoice — and its UPI QR code, if it has one — asks only for what&apos;s still owed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Go back</AlertDialogCancel>
+            <Button variant="secondary" onClick={() => void handleIssue(false)}>
+              Issue without credit
+            </Button>
+            <AlertDialogAction onClick={issueWithCredit}>Apply credit and issue</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <RecordPaymentDialog
         open={paymentOpen}
         onOpenChange={setPaymentOpen}
@@ -577,6 +670,18 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
         }}
       />
 
+      {sendDialog && (
+        <SendEmailDialog
+          open
+          onOpenChange={(open) => !open && setSendDialog(null)}
+          title={sendDialog === "invoice" ? `Email invoice ${invoice.number ?? ""}`.trim() : `Send payment reminder — ${invoice.number ?? ""}`}
+          description={`${invoice.contactName ?? "Customer"} · ${formatMoney(balanceDue, invoice.currency)} due`}
+          draftPath={`/email-drafts/${sendDialog}/${invoice.id}`}
+          sendLabel={sendDialog === "invoice" ? "Send invoice" : "Send reminder"}
+          pdfLabel="Attach the invoice PDF"
+          onSend={(email) => (sendDialog === "invoice" ? handleSendEmail(email) : handleSendReminder(email))}
+        />
+      )}
       {toast}
     </div>
   );

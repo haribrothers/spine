@@ -36,6 +36,8 @@ function toBundle(row: BundleRow, lines: BundleLineRow[]): CatalogBundle {
         taxRateId: l.taxRateId,
         taxGroupId: l.taxGroupId,
         isTaxInclusive: l.isTaxInclusive,
+        supplyClass: l.supplyClass,
+        hsnSac: l.hsnSac,
       })),
   };
 }
@@ -111,6 +113,8 @@ export class CatalogBundlesService {
           taxRateId: l.taxRateId,
           taxGroupId: l.taxGroupId,
           isTaxInclusive: l.isTaxInclusive,
+          supplyClass: l.supplyClass,
+          hsnSac: l.hsnSac,
         })),
       );
       await this.auditLog.record(tx, {

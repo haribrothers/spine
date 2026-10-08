@@ -9,26 +9,9 @@ export interface WelcomeStepProps {
 }
 
 /**
- * Wizard-entry screen, before step 1 — offers demo data as an alternative
- * to manual setup (S-12.8/PRD F12 "MUST offer to load demo/sample data").
- *
- * "Load demo data" seeds a fictional business profile/industry template/
- * currency (only if the org doesn't already have one set — see
- * DemoDataService.seedSettingIfUnset), ~12-15 sample contacts, catalogue
- * items, 5 sample quotes (spanning draft/sent/an S-03.8 revision, one
- * deliberately left unapproved above the discount-approval threshold), 5
- * sample invoices (draft/issued/void/partially-paid/paid-in-full, with
- * real §7.2 ledger postings and payment allocations), and 3 sample jobs at
- * different stages of S-04.1→S-04.7's lifecycle (one just started, one
- * with progress invoices issued and retention accumulating, one fully
- * complete with retention released) via `POST /demo-data/seed`
- * (apps/api/src/modules/demo-data). The row-based data is tagged
- * `isDemo: true` so Settings can remove it later without touching real
- * records (the settings themselves aren't removable the same way — see
- * DemoDataService.deleteAll's own doc comment on why). Skips the manual
- * wizard steps the same way "Skip to dashboard" does. Vendor bills/
- * expenses aren't seeded yet — that module doesn't exist until Phase 4
- * (see CHANGELOG); this is the natural place to extend once it does.
+ * Wizard-entry screen, before step 1: set up the business, explore a demo
+ * business ("Just show me around" opens the country and industry picker,
+ * US-ONB-18) or go straight to the dashboard.
  */
 export function WelcomeStep({ onStartManual, onUseDemoDefaults, onSkip }: WelcomeStepProps) {
   return (

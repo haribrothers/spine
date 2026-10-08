@@ -1,3 +1,4 @@
+import { loadModules } from "../../common/modules";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import {
   DIGEST_LABELS,
@@ -134,8 +135,10 @@ export class DigestService {
   /** Meetings later today and milestones due within 7 days, as on the dashboard's Today card (US-DASH-16). */
   private async todayFor(orgId: string, who: DigestRecipient, now: Date): Promise<TodayEntry[]> {
     const tomorrow = localDay(now, 1);
-    const meetings = (await this.meetings.upcomingForDashboard(orgId, who.userId, { withinDays: 1, from: now })).filter((m) => m.startAt < tomorrow);
-    const milestones = await this.milestones.dueAcrossJobs(orgId, { withinDays: 7, assignedToUserId: who.role === "field" ? who.userId : undefined });
+    // US-SET-24: no meetings or milestones from a switched-off module.
+    const modules = await loadModules(this.db, orgId);
+    const meetings = modules.leadsMeetings ? (await this.meetings.upcomingForDashboard(orgId, who.userId, { withinDays: 1, from: now })).filter((m) => m.startAt < tomorrow) : [];
+    const milestones = modules.jobsField ? await this.milestones.dueAcrossJobs(orgId, { withinDays: 7, assignedToUserId: who.role === "field" ? who.userId : undefined }) : [];
     return buildToday({
       now,
       meetings: meetings.map((m) => ({ id: m.id, title: m.title, startAt: m.startAt.toISOString(), allDay: m.allDay, location: m.location })),

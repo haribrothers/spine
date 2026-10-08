@@ -1,3 +1,4 @@
+import { moduleOn } from "../../common/modules";
 import { Inject, Injectable } from "@nestjs/common";
 import {
   SEARCH_GROUP_LABELS,
@@ -61,7 +62,8 @@ export class SearchService {
     const results: Record<SearchGroupType, (SearchResult & { exact: boolean })[]> = {
       contacts: field ? [] : await this.contacts(ctx),
       quotes: field ? [] : await this.quotes(ctx),
-      jobs: await this.jobs(ctx, field),
+      // US-SET-24: no Jobs group while Jobs & field is switched off.
+      jobs: (await moduleOn(this.db, orgId, "jobsField")) ? await this.jobs(ctx, field) : [],
       invoices: field ? [] : await this.invoices(ctx),
       vendor_bills: field ? [] : await this.vendorBills(ctx),
       expenses: await this.expenses(ctx, field),

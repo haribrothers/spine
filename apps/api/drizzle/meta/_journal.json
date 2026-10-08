@@ -701,6 +701,69 @@
       "when": 1791310843189,
       "tag": "0099_recurring_bills",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1791346547819,
+      "tag": "0100_tax_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1791347587677,
+      "tag": "0101_supply_class",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1791348477127,
+      "tag": "0102_gst_registration",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1791349299228,
+      "tag": "0103_place_of_supply",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1791350331612,
+      "tag": "0104_hsn_sac",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1791353590673,
+      "tag": "0105_rate_supply_class",
+      "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1791363932747,
+      "tag": "0106_upi_qr_amount",
+      "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1791388915673,
+      "tag": "0107_modules_for_existing_installs",
+      "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1791399108981,
+      "tag": "0108_demo_isolation",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { contactIsDemo } from "../../common/demo";
 import type { createVendorPaymentSchema } from "@spine/shared";
 import { and, asc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
@@ -153,7 +154,9 @@ export class VendorPaymentsService {
 
     const created = await this.db.transaction(async (tx) => {
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, input.moneyAccountId);
-      const number = await this.numbering.allocateNumber(tx, orgId, "vendor_payment");
+      // US-ONB-17: a payment to a demo vendor is demo too, in the demo series.
+      const demo = isDemo || (await contactIsDemo(tx, input.contactId));
+      const number = await this.numbering.allocateNumber(tx, orgId, "vendor_payment", { demo });
 
       const [payment] = await tx
         .insert(vendorPayments)

@@ -1,9 +1,11 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, Input, Spinner, Textarea } from "@spine/ui";
 import { apiClient } from "../../../lib/api-client";
+import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { formatMoney } from "../../../lib/money";
 import { AttachmentsSection, attachPending, type PendingAttachment } from "../../../components/attachments-section";
 import { ContactPicker } from "../vendor-bills/contact-picker";
@@ -15,7 +17,7 @@ const COMMON_CURRENCIES = ["USD", "EUR", "GBP", "AUD", "CAD", "INR", "AED", "SGD
 const NO_JOB = "__none__";
 const NO_BILL = "__none__";
 
-function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive">[]): EditableVendorBillLine[] {
+function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "catalogItemId" | "name" | "description" | "quantity" | "unitPriceAmount" | "accountId" | "taxRatePercentage" | "taxRateId" | "taxGroupId" | "isTaxInclusive" | "supplyClass" | "hsnSac">[]): EditableVendorBillLine[] {
   return lines
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -32,6 +34,8 @@ function toEditable(lines: Pick<VendorBillLine, "id" | "sortOrder" | "type" | "c
       taxRateId: line.taxRateId,
       taxGroupId: line.taxGroupId,
       isTaxInclusive: line.isTaxInclusive,
+      supplyClass: line.supplyClass,
+      hsnSac: line.hsnSac ?? "",
     }));
 }
 
@@ -44,6 +48,7 @@ const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart
  */
 export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
   const router = useRouter();
+  const jobsOn = useModule("jobsField");
   const [contactId, setContactId] = useState(credit?.contactId ?? "");
   const [vendorReference, setVendorReference] = useState(credit?.vendorReference ?? "");
   const [billId, setBillId] = useState(credit?.billId ?? NO_BILL);
@@ -52,6 +57,8 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
   const [date, setDate] = useState<Date | undefined>(credit?.date ? new Date(`${credit.date.slice(0, 10)}T00:00:00`) : new Date());
   const [notes, setNotes] = useState(credit?.notes ?? "");
   const [lines, setLines] = useState<EditableVendorBillLine[]>(credit?.lines?.length ? toEditable(credit.lines) : [blankLine()]);
+  // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
+  const pos = usePlaceOfSupply({ contactId, initial: credit ? credit.placeOfSupply : undefined, lines, setLines, direction: "purchase" });
   const [bills, setBills] = useState<VendorBill[]>([]);
   const [jobs, setJobs] = useState<JobOption[]>([]);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
@@ -124,6 +131,7 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
     try {
       const payload = {
         contactId,
+        placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
         vendorReference: vendorReference.trim(),
         billId: billId === NO_BILL ? null : billId,
         jobId: jobId === NO_JOB ? null : jobId,
@@ -143,6 +151,8 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           taxRateId: line.taxRateId,
           taxGroupId: line.taxGroupId,
           isTaxInclusive: line.isTaxInclusive,
+          supplyClass: line.supplyClass,
+          hsnSac: line.hsnSac || null,
           sortOrder: index,
         })),
       };
@@ -179,15 +189,21 @@ export function VendorCreditBuilder({ credit }: { credit?: VendorCredit }) {
           <FormField label="Date" required>
             {() => <DatePicker value={date} onChange={setDate} />}
           </FormField>
-          <FormField label="Job" helperText="Lowers this job's cost once recorded.">
-            {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
-          </FormField>
+          {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+          {jobsOn && (
+            <FormField label="Job" helperText="Lowers this job's cost once recorded.">
+              {() => <Combobox options={jobOptions} value={jobId} onValueChange={setJobId} />}
+            </FormField>
+          )}
+          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
       </Card>
 
+      <PlaceOfSupplyNotice notice={pos.notice} />
+
       <Card className="flex flex-col gap-4">
         <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} />
+        <VendorBillLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
       <Card className="flex flex-col gap-4">

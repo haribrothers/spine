@@ -4,7 +4,7 @@ import { organization, user } from "./auth";
 import { contacts } from "./contacts";
 import { catalogItems } from "./catalog";
 import { jobs } from "./jobs";
-import { taxRates, taxGroups } from "./tax";
+import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
 import { accounts, journalEntries } from "./ledger";
 import { files } from "./files";
 import { moneyAccounts } from "./banking";
@@ -69,6 +69,9 @@ export const vendorBills = pgTable(
     /** US-PUR-30 (D-159) — the recurring bill and run date that created this bill; unique together, so a date is created once. */
     recurringBillId: uuid("recurring_bill_id").references((): AnyPgColumn => recurringBills.id, { onDelete: "set null" }),
     recurringRunOn: date("recurring_run_on", { mode: "string" }),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -111,6 +114,10 @@ export const vendorBillLines = pgTable(
     /** The Expense/COGS account this line's pre-tax amount debits at record() time — resolved from the catalog item's own expenseAccountId at add-time, then snapshotted; nullable only for heading/text lines. */
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -185,6 +192,10 @@ export const recurringBillLines = pgTable(
     unitPriceAmount: bigint("unit_price_amount", { mode: "bigint" }).notNull().default(sql`0`),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),
@@ -456,6 +467,9 @@ export const vendorCredits = pgTable(
     entryId: uuid("entry_id").references(() => journalEntries.id),
     voidEntryId: uuid("void_entry_id").references(() => journalEntries.id),
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
+    placeOfSupply: text("place_of_supply"),
+    supplyType: supplyTypeEnum("supply_type"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -484,6 +498,10 @@ export const vendorCreditLines = pgTable(
     unitPriceCurrency: text("unit_price_currency").notNull(),
     accountId: uuid("account_id").references(() => accounts.id, { onDelete: "restrict" }),
     taxRatePercentage: numeric("tax_rate_percentage", { precision: 18, scale: 4, mode: "number" }).notNull().default(0),
+    /** US-TAX-11 — snapshot of why the line has (no) tax; null on heading and text lines. */
+    supplyClass: supplyClassEnum("supply_class"),
+    /** US-TAX-14 — HSN/SAC code, a snapshot from the item; null on heading and text lines. */
+    hsnSac: text("hsn_sac"),
     taxRateId: uuid("tax_rate_id").references(() => taxRates.id, { onDelete: "set null" }),
     taxGroupId: uuid("tax_group_id").references(() => taxGroups.id, { onDelete: "set null" }),
     isTaxInclusive: boolean("is_tax_inclusive").notNull().default(false),

@@ -2,28 +2,12 @@
 
 import { useState } from "react";
 import { Button, RadioGroup, RadioGroupItem, Spinner, cn } from "@spine/ui";
-import { CONSTRUCTION_TEMPLATE_NOTE } from "@spine/shared";
+import { GENERIC_JOBS_OFF_NOTE, INDUSTRY_TEMPLATE_KEYS, INDUSTRY_TEMPLATES, TEMPLATE_KEEPS_MODULES_NOTE, TEMPLATES_WITHOUT_JOBS, type IndustryTemplateValue } from "@spine/shared";
 
-export type IndustryTemplate = "construction" | "general_services" | "generic";
+export type IndustryTemplate = IndustryTemplateValue;
 
-const TEMPLATES: { value: IndustryTemplate; title: string; description: string }[] = [
-  {
-    value: "construction",
-    title: "Construction / Contracting",
-    // US-ONB-13: choosing it also seeds the site cost accounts and categories.
-    description: `Pre-enables milestones and retention on jobs, and job-costing defaults suited to site work. ${CONSTRUCTION_TEMPLATE_NOTE}`,
-  },
-  {
-    value: "general_services",
-    title: "General Services",
-    description: "Sensible defaults for service-based work — no milestones/retention shown by default.",
-  },
-  {
-    value: "generic",
-    title: "Generic",
-    description: "A neutral starting point with nothing industry-specific pre-enabled.",
-  },
-];
+// US-ONB-13, US-ONB-20: each line says what the template sets up.
+const TEMPLATES = INDUSTRY_TEMPLATE_KEYS.map((value) => ({ value, title: INDUSTRY_TEMPLATES[value].label, description: INDUSTRY_TEMPLATES[value].description }));
 
 export interface IndustryTemplateStepProps {
   initialValue: IndustryTemplate;
@@ -31,6 +15,8 @@ export interface IndustryTemplateStepProps {
   onSkip?: () => void;
   /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
   saveLabel?: string;
+  /** US-ONB-14 — the wizard says Generic starts without jobs; Settings says modules aren't changed. */
+  modulesNote?: "onboarding" | "settings";
 }
 
 /**
@@ -40,7 +26,7 @@ export interface IndustryTemplateStepProps {
  * a setting. The downstream effect (Construction surfacing
  * milestones/retention) is explicitly Phase 3 territory and not built here.
  */
-export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: IndustryTemplateStepProps) {
+export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel = "Continue", modulesNote }: IndustryTemplateStepProps) {
   const [value, setValue] = useState<IndustryTemplate>(initialValue);
   const [saving, setSaving] = useState(false);
 
@@ -73,6 +59,17 @@ export function IndustryTemplateStep({ initialValue, onSave, onSkip, saveLabel =
           </label>
         ))}
       </RadioGroup>
+
+      {modulesNote === "onboarding" && TEMPLATES_WITHOUT_JOBS.includes(value) && (
+        <p className="text-[13px] text-on-surface-muted" data-testid="template-modules-note">
+          {GENERIC_JOBS_OFF_NOTE}
+        </p>
+      )}
+      {modulesNote === "settings" && (
+        <p className="text-[13px] text-on-surface-muted" data-testid="template-modules-note">
+          {TEMPLATE_KEEPS_MODULES_NOTE}
+        </p>
+      )}
 
       <div className="mt-2 flex items-center justify-between gap-2">
         {onSkip && (

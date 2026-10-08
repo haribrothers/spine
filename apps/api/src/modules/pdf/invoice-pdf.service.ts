@@ -6,7 +6,10 @@ import type { Database } from "../../db/client";
 import { invoices, invoiceLines, contacts, jobs } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { FilesService } from "../files/files.service";
-import { progressClaimLabel, resolveDocumentBranding } from "@spine/shared";
+import { loadSignatureDataUri } from "./signature";
+import { loadGstContext } from "./gst-document";
+import { loadUpiQr } from "./upi-qr";
+import { progressClaimLabel, resolveDocumentBranding, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
 import { orgLocale } from "../../common/money-format";
 import { InvoicePdfDocument, type InvoicePdfBusinessProfile } from "./invoice-pdf.template";
 
@@ -50,8 +53,13 @@ export class InvoicePdfService {
     const branding = resolveDocumentBranding(await this.settings.get(orgId, "branding"));
     const logoDataUri = business?.logoUrl ? await this.tryFetchLogoAsDataUri(orgId, business.logoUrl) : undefined;
 
+    // US-SET-17–US-SET-19: Settings › Documents.
+    const savedLayout = await this.settings.get<DocumentLayout>(orgId, "document_layout");
+    const layout = resolveDocumentLayout(savedLayout, "invoice");
     const buffer = await renderToBuffer(
       InvoicePdfDocument({
+        layout,
+        signatureDataUri: await loadSignatureDataUri(this.files, orgId, savedLayout, layout),
         invoice: row.invoice,
         lines,
         contactName: row.contactName,
@@ -61,6 +69,13 @@ export class InvoicePdfService {
         locale: await orgLocale(this.db, orgId),
         branding,
         claimLabel: await this.claimLabel(row.invoice),
+        // US-TAX-15: GSTINs, place of supply and the tax split for a GST invoice.
+        gst: await loadGstContext(this.db, orgId, row.invoice, lines),
+        // US-INV-26: the UPI QR code beside the payment instructions.
+        upiQr: await loadUpiQr(
+          { ...row.invoice, balanceDue: row.invoice.totalAmount - row.invoice.retentionAmount - row.invoice.amountPaid - row.invoice.creditedAmount },
+          business,
+        ),
       }),
     );
 

@@ -12,6 +12,7 @@ import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for `GET /catalog-items/:id/history` and
@@ -54,7 +55,7 @@ describe("Catalogue/Quotes history (requires local Postgres)", () => {
     const notifications = new NotificationsService(db, fakeQueue as never, fakePush as never);
 
     catalogService = new CatalogService(db, auditLog, taxResolver);
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver, notifications);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver, new PlaceOfSupplyService(db), notifications);
 
     const ownerEmail = `catquote-history-owner-${randomUUID()}@example.com`;
     createdEmails.push(ownerEmail);

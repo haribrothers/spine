@@ -12,7 +12,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-01 | Wizard shell: welcome, stepper, skip, revisit in Settings | P1 | 0 | `OnbWelcome`, `OnbBusinessProfile`, `OnbChartOfAccounts` |
 | F-ONB-02 | Setup steps: business, currency and year, tax and numbering, accounts, team | P1 | 0 | `OnbBusinessProfile`, `OnbCurrencyLocale`, `OnbFinancialYear`, `OnbTaxRate`, `OnbNumbering`, `OnbChartOfAccounts`, `OnbInviteTeam`, `OnbInviteTeamSent` |
 | F-ONB-03 | Industry template | P1 | 3 | `OnbIndustryTemplate`, `ExpenseCategoriesConstruction` |
-| F-ONB-04 | Load demo data | P1 | 10 | `OnbWelcome` |
+| F-ONB-04 | Load demo data, by country and industry | P1 | 11 (9 for US-ONB-17–US-ONB-19, US-ONB-21) | `OnbWelcome`, `SettingsDemoData` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 
@@ -36,7 +36,7 @@ Legacy: S-12.1
 - Data: `settings` keys written by each step (see 04-data-model conventions).
 - UI: `apps/web/src/app/onboarding/page.tsx`, `Stepper`, `Card`, `Button` from `@spine/ui`.
 - Edge: refreshing mid-wizard resumes at the first unsaved step.
-- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 10; the button itself is built.
+- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 11; the button itself is built.
 
 ### US-ONB-02 · Skip setup at any step
 **Feature:** F-ONB-01 · **Priority:** P1 · **Phase:** 0 · **Screens:** `OnbWelcome`, `OnbBusinessProfile`
@@ -166,13 +166,13 @@ Legacy: S-12.7
 - Edge: Owner is never offered as a role at invite time (D-020).
 
 ### US-ONB-09 · Load demo data to explore
-**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 10 · **Screens:** `OnbWelcome`
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 11 · **Screens:** `OnbWelcome`
 **As** an evaluator, **I want** to load a realistic sample business with one click, **so that** I can see every screen working before I commit real data.
 
 Legacy: S-12.8
 
 **Acceptance criteria**
-- **Given** I am on the welcome screen, **when** I press "Just show me around (use defaults)", **then** a sample contracting business (Riverstone Builders) is created with contacts, catalogue items, leads, quotes in several states, three jobs, invoices with payments and retention, vendor bills, expenses, meetings and a staff and field user.
+- **Given** I am on the welcome screen, **when** I press "Just show me around (use defaults)" and load the default choice (United States, Construction / Contracting — US-ONB-18), **then** a sample contracting business (Riverstone Builders) is created with contacts, catalogue items, leads, quotes in several states, three jobs, invoices with payments and retention, vendor bills, expenses, meetings and a staff and field user.
 - **Given** demo data loaded, **when** I open every report, **then** each renders non-empty figures and the trial balance balances.
 - **Given** demo data is loaded, **when** I open Settings › Demo data and confirm "Delete all demo data", **then** only rows marked as demo are removed and my own records remain.
 - **Given** the demo data includes a recurring meeting, **when** I edit it, **then** the "This event" / "All events" choice appears (finding C5).
@@ -278,17 +278,20 @@ Decision: D-154
 **Feature:** F-ONB-06 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SetupSpine`
 **As** a new owner, **I want** one page showing every setup step and whether it's done, **so that** I finish setting up without guessing.
 
-Decision: D-155
+Decisions: D-155, D-194
 
 **Acceptance criteria**
 - **Given** the user menu › "Set up Spine" (Owners only), **when** it opens, **then** cards show "Business details and logo", "Tax", "Chart of accounts", "Opening balances", "Bank and cash accounts", "Payment instructions", "Documents and emails", "Numbering", "Payment reminders", "Modules", "Invite your team", "Email sending", "Backups" and "Field app", each "Done" or "To do" with one line on why it matters.
-- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done".
-- **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick; "Mark as not needed" hides a card for this organisation.
+- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done". Backups isn't counted until Spine can check it (Phase 11); its card says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.". Field app only shows while Jobs & field is on.
+- **Given** demo data is loaded, **when** the page opens, **then** it says "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own." and the cards count the demo's settings as they stand.
+- **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick (D-194 lists what each card checks); "Mark as not needed" moves a card to "Not needed" for this organisation, where "Show again" brings it back.
 - **Given** the dashboard's setup checklist, **when** its three steps are done, **then** it shows "Finish setting up Spine — <n> left" linking here until every card is done or hidden.
 - **Given** a Staff or Field user, **when** they open the page, **then** they see the no-access page.
 
 **Implementation notes**
-- API: `GET /org/setup-status` (roles: owner) → `[{ key, done, hidden }]`; `PUT /org/setup-status/:key/hidden`.
+- API: `GET /org/setup-status` (roles: owner) → `{ cards: [{ key, done: boolean | null, hidden }], demoLoaded }`; `PUT /org/setup-status/:key/hidden { hidden }` (the same shape back); `GET /dashboard/checklist` gains `setupLeft`.
+- Shared: `SETUP_CARDS` (title, line, target, guide) and `setupProgress` in `schemas/setup.ts`.
+- UI: `/setup` (`SetupView`); the user menu's "Set up Spine"; the checklist's "Finish setting up Spine — <n> left".
 
 ### US-ONB-16 · Go from each setup card to its setting and its guide
 **Feature:** F-ONB-06 · **Priority:** P2 · **Phase:** 9 · **Screens:** `SetupSpine`
@@ -296,8 +299,100 @@ Decision: D-155
 
 **Acceptance criteria**
 - **Given** a card, **when** I press "Set up" (or "Review" when done), **then** the matching Settings pane, Banking page or Opening balances opens, and closing it returns me to the setup page.
-- **Given** "How it works" on a card, **when** I press it, **then** the user-guide page for that topic opens (bundled help, US-SITE-11; hidden until Phase 10 ships).
+- **Given** "How it works" on a card, **when** I press it, **then** the user-guide page for that topic opens (bundled help, US-SITE-11; hidden until Phase 11 ships).
 - **Given** "Email sending" or "Backups", **when** they're not configured, **then** the card explains it's set by whoever runs the server and links to the self-hosting guide.
 
 **Implementation notes**
-- Card targets are routes in the web app; guide links come from the help map (US-SITE-11), behind a feature flag until Phase 10.
+- Card targets are in `SETUP_CARDS`: a Settings pane opens over the page (closing it re-reads the cards), or Banking, Opening balances or Team › Users opens. Email sending and Backups link to the README's self-hosting section until the docs site ships (Q-15).
+- "How it works" links to each card's bundled guide page, behind `FEATURE_FLAGS.bundledHelp` (`packages/shared/src/feature-flags.ts`) until Phase 11.
+
+### US-ONB-17 · Keep demo data out of my real numbers and books
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbWelcome`, `SettingsDemoData`
+**As** an owner who explored with demo data, **I want** deleting it to leave no trace, **so that** my own invoice numbers start at 0001 and my books hold only my own business.
+
+Decision: D-191
+
+**Acceptance criteria**
+- **Given** demo data is loaded, **when** I open its documents, **then** they're numbered from their own series: `DEMO-QUO-0001`, `DEMO-INV-0001`, `DEMO-CRN-0001`, `DEMO-RCP-0001`, `DEMO-VPY-0001`, `DEMO-EXP-0001`, `DEMO-JOB-001`.
+- **Given** demo data is loaded, **when** I issue my first invoice to my own customer, **then** it's `INV-0001` (the real series hasn't moved).
+- **Given** demo data is loaded, **when** I create a quote, invoice or payment for a demo customer, a bill or vendor payment for a demo vendor, or an expense on a demo job, **then** it's demo too: it takes a `DEMO-` number and goes when the demo data is deleted.
+- **Given** demo data was deleted, **when** I open the Trial Balance, Profit and Loss, General ledger, Day book, Tax Summary, GSTR-1, Receivables, the dashboard or the Tally export, **then** nothing from the demo appears, and every demo contact and job is gone.
+- **Given** demo data was deleted and is loaded again, **when** I look at its invoices, **then** they start at `DEMO-INV-0001` again.
+- **Given** I recorded something of my own against demo data that isn't demo (a refund, vendor credit or bank entry for a demo contact), **when** I delete the demo data, **then** that record and its contact stay, and the confirmation says "Kept 1 demo contact that your own records use.".
+- **Given** any journal entry, **when** anything other than "Delete all demo data" tries to change or delete it — or that deletion meets an entry that isn't demo — **then** the database refuses.
+
+**Implementation notes**
+- Data: `number_sequences.is_demo` (unique per organisation, document type and `is_demo`); `journal_entries.is_demo`, written by `LedgerService.postEntry` from the source document; a `BEFORE INSERT` trigger on quotes, invoices, payments, credit notes, vendor bills, vendor payments and jobs sets `is_demo` from the contact, and on expenses from the job. The immutability triggers allow a delete only for `is_demo` entries while `spine.deleting_demo` is on.
+- API: `NumberingService.allocateNumber(tx, orgId, type, { demo })`; `DELETE /demo-data` returns `kept: { contacts }` as well as the counts.
+- Edge: deletion order is payments and vendor payments, credit notes, invoices, bills, expenses, quotes, demo journal entries, then jobs and contacts that nothing else uses.
+
+### US-ONB-18 · Choose the country and industry of the demo business
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbWelcome`, `SettingsDemoData`
+**As** an evaluator, **I want** a demo business like mine, **so that** what I explore has my tax, my currency and my kind of work.
+
+Decision: D-192
+
+**Acceptance criteria**
+- **Given** the welcome screen, **when** I press "Just show me around (use defaults)", **then** a dialog "Explore a demo business" asks for Country and Industry and has "Load demo business" and "Cancel".
+- **Given** no tax country is set, **when** the dialog opens, **then** Country is guessed from my time zone (Asia/Kolkata → India (GST), Europe/London → United Kingdom (VAT), anything not listed → United States (sales tax)), and Industry is Construction / Contracting.
+- **Given** Country lists United States (sales tax), India (GST), United Kingdom (VAT), Australia (GST), New Zealand (GST), United Arab Emirates (VAT) and Saudi Arabia (VAT), and Industry lists Construction / Contracting, Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency and Professional services, **when** I pick India and Interior design and load, **then** the dashboard shows an Indian interior design business in rupees, and its tax country, currency, financial year and industry template are India's and Interior design's.
+- **Given** any country and industry except the default (Riverstone Builders keeps its data, US-ONB-09), **when** it's loaded, **then** there's about six months of history ending today: invoices issued across those months in date order, payments after their invoices, at least one overdue invoice, bills, approved and waiting expenses, quotes in several states, leads and meetings; every report renders figures and the Trial Balance balances.
+- **Given** my business has records of its own, **when** I open Settings › Data › "Load demo data", **then** Country is my tax country and can't be changed ("Demo data uses your business's country: India (GST)."), only Industry can be picked, and loading changes none of my settings.
+- **Given** demo data is loaded, **when** I open Settings › Data, **then** it says which ("Tarang Interiors · India (GST) · Interior design & fit-out") and offers only "Delete all demo data".
+- **Given** the API, **when** demo data is loaded for another country while the business has records of its own, **then** it answers 409 `DEMO_COUNTRY_LOCKED`; when demo data is already loaded, 409 `DEMO_DATA_LOADED` ("Demo data is already loaded. Delete it first to load another demo business.").
+- **Given** `POST /demo-data/seed` without a body, **when** it runs, **then** it loads US construction (Riverstone Builders) as before.
+
+**Implementation notes**
+- API: `POST /demo-data/seed` body `{ country?, industry? }`; `GET /demo-data/status` → `{ hasDemoData, loaded: { country, industry, businessName } | null, country: DemoCountry | null, countryLocked }`. Owner-only, as before (US-OPS-20).
+- Shared: `packages/shared/src/demo/` — `DEMO_COUNTRIES`, `DEMO_INDUSTRIES`, the country packs (`countries.ts`), the industry packs (`industries/`) on a shared six-month timeline (`scenario.ts`), Riverstone (`riverstone.ts`), `guessDemoCountry(timeZone)` and `buildDemoPlan(country, industry)`, whose days are relative to today. The API's `DemoSeederService` runs a plan through the real services, every dated step in date order.
+- UI: `DemoBusinessDialog`, used by `WelcomeStep` and `SettingsDemoData`.
+- Edge: the business profile, logo and GST registration are only set when empty; demo users are the same two people for every demo.
+
+### US-ONB-19 · Explore an Indian GST business
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbWelcome`
+**As** an evaluator in India, **I want** the demo to show real GST work, **so that** I can judge invoices, GSTR-1 and the Tax Summary before entering my own.
+
+Decision: D-192
+
+**Acceptance criteria**
+- **Given** India with any industry, **when** it's loaded, **then** the business is in Bengaluru, Karnataka (29), with a valid GSTIN, legal and trade name, monthly returns, "We export under LUT" on, INR in `en-IN` (₹1,00,000.00), a financial year from April and a UPI ID that pays no one.
+- **Given** its contacts, **then** they include registered businesses in Karnataka and in another state, consumers, an SEZ unit, an overseas client where the industry exports, registered vendors and one unregistered vendor, each with GST treatment, GSTIN where registered, and a billing address with its state.
+- **Given** its catalogue, **then** every item has an HSN or SAC code and its intra-state GST group and inter-state IGST rate at the current slabs.
+- **Given** its invoices, **then** each has the place of supply and tax the app itself would choose: CGST + SGST within Karnataka, IGST to other states and SEZ units with payment of tax, and zero-rated exports and SEZ supplies under LUT.
+- **Given** GSTR-1 for the current month and the one before, **when** I review it, **then** B2B (with an SEZ invoice), B2CS, CDNR and the HSN summary have rows in at least one month, B2CL has an invoice above ₹1,00,000, EXP has an export where the industry exports, US-TAX-17 lists no problems, and the totals equal the Tax Summary.
+- **Given** its bills, **then** input GST from registered Karnataka and out-of-state vendors shows on the Tax Summary's paid side, and the unregistered vendor's bill has none.
+
+**Implementation notes**
+- Content: India's prices (in rupees), HSN/SAC codes and GST slabs are written by hand on every item and typed line of each industry pack (`in: { price, hsnSac, slab }`), checked against the slabs from 22 September 2025; its contacts, GST treatments and PANs are in `countries.ts`. The second SEZ invoice is zero-rated by hand (under LUT); the voided invoice is raised and voided the same day, so this month's GSTR-1 and Tax Summary agree.
+- Edge: India's demos don't release retention until [Q-21](../prd/13-risks-open-questions.md) is answered.
+- Edge: the business isn't in a union territory, so UTGST isn't shown.
+
+### US-ONB-20 · Start from a template for my industry
+**Feature:** F-ONB-03 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbIndustryTemplate`, `ExpenseCategoriesConstruction`, `SettingsModules`
+**As** the owner of an interior design firm, a trade business, an IT agency or a professional practice, **I want** a template for my kind of work, **so that** my cost categories and modules fit from day one.
+
+Decision: D-193
+
+**Acceptance criteria**
+- **Given** the Template step or Settings › Industry template, **when** I view it, **then** it lists Construction / Contracting, Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency, Professional services, General Services and Generic, each with a line saying what it sets up.
+- **Given** I choose Interior design & fit-out, Trades, IT services & agency or Professional services, **when** it saves, **then** its accounts and expense categories exist (D-193), and Expenses › Categories says "Set up by the <template> template: …".
+- **Given** an account code or category name that already exists, **when** the template is applied, **then** it's kept and listed as kept, and applying the template twice creates nothing the second time.
+- **Given** Professional services on a business that has never saved its modules, **when** I continue, **then** Jobs & field is off and the step says "Jobs are switched off — turn them on in Settings › Modules if you need them."; the other new templates start with every module on.
+
+**Implementation notes**
+- Shared: `INDUSTRY_TEMPLATES` (label, description, accounts, categories) in `schemas/industry-template.ts`; `templateModules` turns jobs off for Generic and Professional services.
+- API: `IndustryTemplateService.seedTemplate(tx, orgId, template)` replaces `seedConstruction` for every template that has accounts or categories; `PUT /org/settings/industry_template` returns `seeded` for each of them.
+
+### US-ONB-21 · Explore a VAT or GST business in my country
+**Feature:** F-ONB-04 · **Priority:** P2 · **Phase:** 9 · **Screens:** `OnbWelcome`
+**As** an evaluator in the UK, Australia, New Zealand, the UAE or Saudi Arabia, **I want** a demo in my currency and tax, **so that** what I see matches how I'd use Spine.
+
+Decision: D-192
+
+**Acceptance criteria**
+- **Given** the United Kingdom, Australia, New Zealand, the UAE or Saudi Arabia with any industry, **when** it's loaded, **then** the business, contacts and addresses are local, amounts are in GBP, AUD, NZD, AED or SAR at local price levels, and the country's preset rates are set up.
+- **Given** its invoices and bills, **then** lines carry the standard rate, plus a zero-rated or exempt line wherever the industry has one, and the Tax Summary shows them by rate and class.
+- **Given** the United Kingdom, **when** I open an invoice PDF, **then** it's titled "VAT invoice".
+
+**Implementation notes**
+- Content: each industry pack localised by the country pack (names, addresses, phone formats, price scale rounded to whole local units, tax roles mapped to preset rates).

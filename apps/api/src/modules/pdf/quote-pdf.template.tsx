@@ -1,8 +1,12 @@
+import { resolveDocumentLayout, type ResolvedDocumentLayout, amountInWords } from "@spine/shared";
 import { Document, Page, Text, View, Image, StyleSheet } from "@react-pdf/renderer";
 import type { quotes, quoteLines } from "../../db/schema";
 import { formatMoneyForPdf } from "../../common/money-format";
 import { renderRichTextForPdf } from "./rich-text-to-pdf";
 import { DEFAULT_DOCUMENT_BRANDING, DocumentAccentBar, DocumentFooterLine, pagePaddingFor, type DocumentBranding } from "./document-branding";
+import { PDF_FONT_FAMILY } from "./pdf-fonts";
+import { DocumentLinesTable } from "./document-lines";
+import { AmountInWordsLine, SignatureBlock } from "./document-extras";
 
 export interface QuotePdfBusinessProfile {
   name: string;
@@ -12,6 +16,10 @@ export interface QuotePdfBusinessProfile {
 }
 
 export interface QuotePdfData {
+  /** US-SET-19 — the signature image, when this document type shows it. */
+  signatureDataUri?: string;
+  /** US-SET-17 (D-152) — Settings › Documents: paper size, columns, title… */
+  layout?: ResolvedDocumentLayout;
   /** US-SET-10 — document colour and footer from Settings › Branding. */
   branding?: DocumentBranding;
   /** US-OPS-24 — the organisation's locale for money (Settings › Currency & locale). */
@@ -26,7 +34,7 @@ export interface QuotePdfData {
 }
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#1a1a1a" },
+  page: { padding: 40, fontSize: 10, fontFamily: PDF_FONT_FAMILY, color: "#1a1a1a" },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 24 },
   businessBlock: { flexDirection: "row", alignItems: "center", gap: 10 },
   logo: { width: 48, height: 48, objectFit: "contain", marginRight: 10 },
@@ -40,25 +48,7 @@ const styles = StyleSheet.create({
   contactName: { fontSize: 11, fontWeight: 700 },
   metaRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
   metaCol: {},
-  table: { marginTop: 8 },
-  tableHeaderRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "#333333",
-    paddingBottom: 4,
-    marginBottom: 4,
-  },
-  tableRow: { flexDirection: "row", paddingVertical: 4, borderBottomWidth: 0.5, borderBottomColor: "#e0e0e0" },
-  headingRow: { paddingTop: 10, paddingBottom: 2 },
-  colName: { flex: 4 },
-  colQty: { flex: 1, textAlign: "right" },
-  colPrice: { flex: 1.4, textAlign: "right" },
-  colTax: { flex: 1, textAlign: "right" },
-  colTotal: { flex: 1.4, textAlign: "right" },
-  thText: { fontSize: 8, color: "#888888", textTransform: "uppercase", letterSpacing: 0.5 },
   lineName: { fontSize: 10 },
-  lineNameHeading: { fontSize: 10, fontWeight: 700 },
-  lineDescription: { fontSize: 8.5, color: "#666666", marginTop: 1 },
   totalsBlock: { marginTop: 16, alignSelf: "flex-end", width: 220 },
   totalsRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 2 },
   totalsLabel: { color: "#555555" },
@@ -102,14 +92,15 @@ function formatDate(value: Date | string | null): string {
  * app uses the same formatter), never a hand-rolled division, so this template can never
  * silently misplace a decimal point.
  */
-export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding }: QuotePdfData) {
+export function QuotePdfDocument({ quote, lines, contactName, contactEmail, business, logoDataUri, locale, branding, signatureDataUri, layout: givenLayout }: QuotePdfData) {
+  const layout = givenLayout ?? resolveDocumentLayout(null, "quote");
   const brand = branding ?? DEFAULT_DOCUMENT_BRANDING;
   const currency = quote.currency;
   const fmt = (amount: bigint | string) => formatMoneyForPdf(amount, currency, locale);
 
   return (
     <Document title={quote.number ?? "Quote"} author={business?.name ?? "Spine"}>
-      <Page size="A4" style={[styles.page, pagePaddingFor(brand)]}>
+      <Page size={layout.paperSize} style={[styles.page, pagePaddingFor(brand)]}>
         <DocumentAccentBar color={brand.color} />
         <View style={styles.header}>
           <View style={styles.businessBlock}>
@@ -120,7 +111,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
             </View>
           </View>
           <View style={styles.docTitleBlock}>
-            <Text style={[styles.docTitle, { color: brand.color }]}>QUOTE</Text>
+            <Text style={[styles.docTitle, { color: brand.color }]}>{layout.title.toUpperCase()}</Text>
             <Text style={styles.docNumber}>{quote.number ?? "DRAFT"}</Text>
           </View>
         </View>
@@ -143,38 +134,7 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
         </View>
 
-        <View style={styles.table}>
-          <View style={styles.tableHeaderRow}>
-            <Text style={[styles.colName, styles.thText]}>Description</Text>
-            <Text style={[styles.colQty, styles.thText]}>Qty</Text>
-            <Text style={[styles.colPrice, styles.thText]}>Unit price</Text>
-            <Text style={[styles.colTax, styles.thText]}>Tax</Text>
-            <Text style={[styles.colTotal, styles.thText]}>Total</Text>
-          </View>
-
-          {lines.map((line) => {
-            if (line.type !== "item") {
-              return (
-                <View key={line.id} style={styles.headingRow}>
-                  <Text style={styles.lineNameHeading}>{line.name}</Text>
-                  {line.description && <Text style={styles.lineDescription}>{line.description}</Text>}
-                </View>
-              );
-            }
-            return (
-              <View key={line.id} style={styles.tableRow}>
-                <View style={styles.colName}>
-                  <Text style={styles.lineName}>{line.name}</Text>
-                  {line.description && <Text style={styles.lineDescription}>{line.description}</Text>}
-                </View>
-                <Text style={styles.colQty}>{line.quantity}</Text>
-                <Text style={styles.colPrice}>{fmt(line.unitPriceAmount)}</Text>
-                <Text style={styles.colTax}>{line.taxRatePercentage > 0 ? `${line.taxRatePercentage}%` : "—"}</Text>
-                <Text style={styles.colTotal}>{fmt(line.lineTotalAmount)}</Text>
-              </View>
-            );
-          })}
-        </View>
+        <DocumentLinesTable lines={lines} columns={layout.columns} fmt={fmt} showHsn={quote.supplyType !== null} showDiscount={true} />
 
         <View style={styles.totalsBlock}>
           <View style={styles.totalsRow}>
@@ -197,6 +157,8 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
           </View>
         </View>
 
+        {layout.amountInWords && <AmountInWordsLine words={amountInWords(quote.totalAmount, quote.currency)} />}
+
         {/* notes/termsAndConditions are HTML now (RichTextEditor) — React-PDF's
             <Text> only accepts plain strings/nested <Text>, so this walks the
             editor's own small tag set into Text/View/Link rather than
@@ -214,6 +176,8 @@ export function QuotePdfDocument({ quote, lines, contactName, contactEmail, busi
             {renderRichTextForPdf(quote.termsAndConditions, { paragraph: styles.footerParagraph, text: styles.footerText })}
           </View>
         )}
+
+        {signatureDataUri && <SignatureBlock src={signatureDataUri} businessName={business?.name ?? "Your business"} />}
 
         <DocumentFooterLine footer={brand.footer} />
         <Text

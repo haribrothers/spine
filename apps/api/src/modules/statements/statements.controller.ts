@@ -33,6 +33,12 @@ export class StatementsController {
     return this.statements.build(requireOrgId(session), id, parse(statementQuerySchema, query));
   }
 
+  /** US-SET-21 — the email the statement dialog starts from. */
+  @Get("statement/draft")
+  async draft(@Session() session: UserSession, @Param("id") id: string, @Query() query: unknown) {
+    return this.documents.draft(requireOrgId(session), id, parse(statementQuerySchema, query));
+  }
+
   @Get("statement.pdf")
   async pdf(@Session() session: UserSession, @Param("id") id: string, @Query() query: unknown, @Res() res: Response) {
     const { buffer, filename } = await this.documents.pdf(requireOrgId(session), id, parse(statementQuerySchema, query));

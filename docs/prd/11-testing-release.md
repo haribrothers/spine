@@ -20,8 +20,8 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 |---|---|---|---|
 | `test` ("Unit and integration") | PR into `main`, manual | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · install (frozen lockfile) → lint → typecheck → unit → migrate → integration (files run one at a time: they share one database) | Yes |
 | `e2e` ("E2E") | after `test` passes; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
-| `a11y-routes` | PR (Phase 10) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
-| `restore-verify` | nightly and on `v*` tags (Phase 10) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
+| `a11y-routes` | PR (Phase 11) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
+| `restore-verify` | nightly and on `v*` tags (Phase 11) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
 | `site` (publish) | push to `main` touching `apps/site/**` or `apps/api/openapi.json` | build (link-checked) → deploy to GitHub Pages | — (main is already merged) |
 | `release` | tag `v*` | build images → push to registry → attach `install.sh` + checksums → mobile EAS build | — |
@@ -44,10 +44,10 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 | `concurrency` with `cancel-in-progress` | Superseded runs |
 | E2E waits for `test` (`needs`) | E2E minutes when unit tests already fail |
 | pnpm store, Turbo and Playwright browser caches | Install and rebuild time on re-runs |
-| One production build (in E2E), timeouts of 25 and 30 minutes | Duplicate builds, runaway jobs |
+| One production build (in E2E), timeouts of 35 minutes (unit and integration, raised from 25 in Phase 9 as the suite grew) and 30 (E2E) | Duplicate builds, runaway jobs |
 | Failure-only Playwright report, kept 3 days | Artifact storage |
 
-Phase 10 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
+Phase 11 adds the nightly `restore-verify` job; keep it to one run a day, and consider moving it to weekly if the minutes budget is tight.
 
 ## Release artifacts
 
@@ -72,7 +72,7 @@ Phase 10 adds the nightly `restore-verify` job; keep it to one run a day, and co
 3. Any contract change is reflected in [04](04-data-model.md) / [05](05-api.md) in the same change.
 4. New capabilities are enforced in the service layer and reflected in the web UI ([07](07-security.md)).
 5. New or changed UI uses design-system components and tokens, works in light and dark mode, and component changes ship with their doc page and a11y test (both themes).
-6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 10, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
+6. `docs/qa-script.md` and `CHANGELOG.md` are updated; from Phase 11, the story's user-guide page in `apps/site` is added or updated ([D-113](12-decisions.md)); the story is ticked in [progress.md](../progress.md).
 
 ## Appendix — testing expectations moved verbatim from CLAUDE.md
 
@@ -81,5 +81,5 @@ Phase 10 adds the nightly `restore-verify` job; keep it to one run a day, and co
 - Unit tests are mandatory for money, tax, and posting-rule modules — this is where silent financial bugs hide.
 - Integration tests per document lifecycle (quote, invoice, payment, etc.).
 - A ledger-integrity test asserting the trial balance stays balanced after every simulated workflow.
-- E2E smoke test covering quote → invoice → payment — **built**, see `apps/e2e/` (Playwright, driving real `apps/api`+`apps/web` instances, no mocks). Now also covers Dashboard v2, Reports, the public quote page, and a broad route-smoke pass across every other page (29 tests total across 5 spec files) — see CHANGELOG's 2026-08-29 entries for the full breakdown. Run locally via `pnpm test:e2e` (or `pnpm test:e2e:ui` for Playwright's UI mode) from the repo root — needs `docker-compose.dev.yml`'s `db`/`maildev` services running, plus a one-time `createdb spine_e2e` (see `.env.e2e`'s own comment); runs automatically in CI as its own job. Extend `apps/e2e/tests/` for future coverage rather than starting a second E2E setup. Use `fixtures.ts`'s worker-scoped `seededOrg` fixture (one `POST /demo-data/seed` per spec file) for any new test needing non-empty data — a per-test-scoped seed was tried first and caused a real, confirmed-live pg-boss queue backlog that intermittently broke unrelated tests; don't reintroduce that pattern.
+- E2E smoke test covering quote → invoice → payment — **built**, see `apps/e2e/` (Playwright, driving real `apps/api`+`apps/web` instances, no mocks). Now also covers Dashboard v2, Reports, the public quote page, and a broad route-smoke pass across every other page (29 tests total across 5 spec files) — see CHANGELOG's 2026-08-29 entries for the full breakdown. Run locally via `pnpm test:e2e` (or `pnpm test:e2e:ui` for Playwright's UI mode) from the repo root — needs `docker-compose.dev.yml`'s `db`/`maildev` services running, plus a one-time `createdb spine_e2e` (see `.env.e2e`'s own comment); runs automatically in CI as its own job. Extend `apps/e2e/tests/` for future coverage rather than starting a second E2E setup. Use `fixtures.ts`'s worker-scoped `seededOrg` fixture (one `POST /demo-data/seed` per spec file) for any new test needing non-empty data — a per-test-scoped seed was tried first and caused a real, confirmed-live pg-boss queue backlog that intermittently broke unrelated tests; don't reintroduce that pattern. A spec that loads or deletes demo data of its own (US-ONB-17, US-ONB-18) goes in the `demo-data` Playwright project, which runs after the rest: the demo Staff and Field logins follow the latest demo, and every other spec expects them in `seededOrg` (run one such spec alone with `--no-deps`).
 - `docs/qa-script.md` is the human-run counterpart to the above — update it alongside a feature's automated tests, not instead of them. See the pointer near the top of this file.

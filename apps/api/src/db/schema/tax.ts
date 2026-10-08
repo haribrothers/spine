@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, timestamp, index, unique, numeric } from "drizzle-orm/pg-core";
+import { pgEnum, pgTable, uuid, text, boolean, timestamp, index, unique, numeric } from "drizzle-orm/pg-core";
 import { organization } from "./auth";
 
 /**
@@ -18,6 +18,18 @@ import { organization } from "./auth";
  * snapshot their data" rule — editing or archiving a rate here must never
  * alter an existing quote/invoice line.
  */
+/** US-TAX-10 — what kind of tax a rate is; rates from before Phase 9 are `other`. */
+export const taxTypeEnum = pgEnum("tax_type", ["cgst", "sgst", "utgst", "igst", "cess", "vat", "gst", "sales_tax", "other"]);
+
+/** US-TAX-10 — whether a group applies within the business's state, across states, or either. */
+export const taxGroupScopeEnum = pgEnum("tax_group_scope", ["intra", "inter", "any"]);
+
+/** US-TAX-11 (D-147) — why a line has no tax: zero-rated, exempt or outside GST/VAT. */
+export const supplyClassEnum = pgEnum("supply_class", ["taxable", "zero_rated", "exempt", "non_taxable"]);
+
+/** US-TAX-13 (D-146) — intra-state (CGST + SGST), inter-state (IGST) or export; null without GST. */
+export const supplyTypeEnum = pgEnum("supply_type", ["intra", "inter", "export"]);
+
 export const taxRates = pgTable(
   "tax_rates",
   {
@@ -29,6 +41,9 @@ export const taxRates = pgTable(
     /** e.g. 15 for 15%. */
     rate: numeric("rate", { precision: 18, scale: 4, mode: "number" }).notNull(),
     isCompound: boolean("is_compound").notNull().default(false),
+    taxType: taxTypeEnum("tax_type").notNull().default("other"),
+    /** D-182 — the supply class a 0% rate gives its lines; null for a rate above 0% (and a 0% rate means zero-rated). */
+    supplyClass: supplyClassEnum("supply_class"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -54,6 +69,7 @@ export const taxGroups = pgTable(
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    scope: taxGroupScopeEnum("scope").notNull().default("any"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

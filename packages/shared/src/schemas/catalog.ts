@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { currencyCodeSchema, uuidSchema } from "./common.ts";
+import { currencyCodeSchema, hsnSacSchema, uuidSchema } from "./common.ts";
+import { SUPPLY_CLASSES } from "../tax/supply-class.ts";
 
 /**
  * PRD F2 / S-02.1-S-02.4 — goods and services with a unit, default price and
@@ -37,6 +38,13 @@ export const createCatalogItemSchema = z.object({
   defaultTaxGroupId: uuidSchema.optional().nullable(),
   incomeAccountId: uuidSchema.optional().nullable(),
   expenseAccountId: uuidSchema.optional().nullable(),
+  /** US-TAX-13 — the item's inter-state tax (e.g. IGST 18%); the default tax above is its intra-state tax. At most one. */
+  interTaxRateId: uuidSchema.optional().nullable(),
+  interTaxGroupId: uuidSchema.optional().nullable(),
+  /** US-TAX-14 — HSN (goods) or SAC (services) code, copied to each line. */
+  hsnSac: hsnSacSchema.optional().nullable(),
+  /** US-TAX-11 — copied to each line; an item with tax is always taxable. */
+  supplyClass: z.enum(SUPPLY_CLASSES).optional(),
 });
 
 export const updateCatalogItemSchema = createCatalogItemSchema.partial();

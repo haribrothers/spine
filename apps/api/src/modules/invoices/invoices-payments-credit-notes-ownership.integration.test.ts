@@ -26,6 +26,7 @@ import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { FilesService } from "../files/files.service";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
  * Regression coverage for the own/others capability split extended to
@@ -95,7 +96,7 @@ describe("Invoices/Payments/Credit Notes ownership split (requires local Postgre
       new PaymentPdfService(db, settings, files),
     );
 
-    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver);
+    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
     paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf, new MoneyAccountsService(db, auditLog));
     creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger, queue);
 

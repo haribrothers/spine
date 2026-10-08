@@ -7,7 +7,7 @@ import { z } from "zod";
  */
 export const MAX_CATALOG_IMPORT_ROWS = 2000;
 
-export const CATALOG_IMPORT_FIELDS = ["name", "description", "unit", "price", "tax", "incomeAccount", "expenseAccount"] as const;
+export const CATALOG_IMPORT_FIELDS = ["name", "description", "unit", "price", "tax", "hsnSac", "incomeAccount", "expenseAccount"] as const;
 export type CatalogImportField = (typeof CATALOG_IMPORT_FIELDS)[number];
 export const CATALOG_IMPORT_FIELD_LABELS: Record<CatalogImportField, string> = {
   name: "Name",
@@ -15,6 +15,8 @@ export const CATALOG_IMPORT_FIELD_LABELS: Record<CatalogImportField, string> = {
   unit: "Unit",
   price: "Price",
   tax: "Tax",
+  // US-TAX-14
+  hsnSac: "HSN/SAC code",
   incomeAccount: "Income account",
   expenseAccount: "Expense account",
 };
@@ -29,6 +31,7 @@ export const catalogImportRowSchema = z.object({
   unit: cell,
   price: cell,
   tax: cell,
+  hsnSac: cell,
   incomeAccount: cell,
   expenseAccount: cell,
 });
@@ -40,6 +43,8 @@ export const importCatalogItemsSchema = z.object({
 });
 
 export const UNKNOWN_TAX = (name: string) => `Unknown tax ${name}`;
+/** US-TAX-14 — a code that isn't 4, 6 or 8 digits. */
+export const BAD_HSN_SAC = (code: string) => `HSN/SAC ${code}: enter 4, 6 or 8 digits.`;
 export const UNKNOWN_ACCOUNT = (code: string) => `Unknown account ${code}`;
 export const CATALOG_IMPORT_SUMMARY = (imported: number, duplicates: number, failed: number) =>
   `Imported ${imported} ${imported === 1 ? "item" : "items"} · skipped ${duplicates} ${duplicates === 1 ? "duplicate" : "duplicates"} · ${failed} ${failed === 1 ? "row" : "rows"} failed`;

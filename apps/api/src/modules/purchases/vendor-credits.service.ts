@@ -14,6 +14,7 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { LedgerService } from "../ledger/ledger.service";
 import { NumberingService } from "../numbering/numbering.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
+import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { computeBillTotals, type ComputedLine } from "./vendor-bills.service";
 
 export type CreateVendorCreditInput = z.infer<typeof createVendorCreditSchema>;
@@ -38,6 +39,7 @@ export class VendorCreditsService {
     private readonly ledger: LedgerService,
     private readonly numbering: NumberingService,
     private readonly taxResolver: TaxResolverService,
+    private readonly placeOfSupply: PlaceOfSupplyService,
     private readonly moneyAccounts: MoneyAccountsService,
   ) {}
 
@@ -89,6 +91,8 @@ export class VendorCreditsService {
   async create(orgId: string, actorUserId: string, input: CreateVendorCreditInput) {
     await this.requireVendorAndBill(orgId, input.contactId, input.billId ?? null);
     const totals = await computeBillTotals(orgId, input.currency, input.lines, this.taxResolver);
+    // US-TAX-13: the vendor's state, unless one is given.
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "purchase");
     const created = await this.db.transaction(async (tx) => {
       const [credit] = await tx
         .insert(vendorCredits)
@@ -106,6 +110,7 @@ export class VendorCreditsService {
           balanceAmount: totals.totalAmount,
           notes: input.notes ?? null,
           createdByUserId: actorUserId,
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
         })
         .returning();
       await insertLines(tx, credit!.id, totals.lines);
@@ -122,10 +127,18 @@ export class VendorCreditsService {
     await this.requireVendorAndBill(orgId, input.contactId ?? existing.contactId, input.billId !== undefined ? input.billId : existing.billId);
     const currency = input.currency ?? existing.currency;
     const totals = input.lines !== undefined ? await computeBillTotals(orgId, currency, input.lines, this.taxResolver) : null;
+    // US-TAX-13: the vendor's state decides intra- or inter-state; a new vendor (or a draft from before GST) takes the vendor's.
+    const supply = await this.placeOfSupply.resolve(
+      orgId,
+      input.contactId ?? existing.contactId,
+      input.placeOfSupply !== undefined ? input.placeOfSupply : (input.contactId !== undefined && input.contactId !== existing.contactId) || existing.placeOfSupply === null ? undefined : existing.placeOfSupply,
+      "purchase",
+    );
     await this.db.transaction(async (tx) => {
       await tx
         .update(vendorCredits)
         .set({
+          placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.vendorReference !== undefined ? { vendorReference: input.vendorReference } : {}),
           ...(input.billId !== undefined ? { billId: input.billId } : {}),
@@ -196,7 +209,9 @@ export class VendorCreditsService {
         lines: postingLines,
       });
       const recordedAt = new Date();
-      await tx.update(vendorCredits).set({ status: "open", number, entryId, recordedAt, balanceAmount: credit.totalAmount, updatedAt: recordedAt }).where(eq(vendorCredits.id, id));
+      // US-TAX-13: the place of supply is snapshotted when recorded.
+      const supply = await this.placeOfSupply.resolve(orgId, credit.contactId, credit.placeOfSupply ?? undefined, "purchase", tx);
+      await tx.update(vendorCredits).set({ status: "open", number, entryId, recordedAt, balanceAmount: credit.totalAmount, updatedAt: recordedAt, ...supply }).where(eq(vendorCredits.id, id));
       await this.auditLog.record(tx, { orgId, actorUserId, action: "recorded", entityType: "vendor_credit", entityId: id, contactId: credit.contactId, changes: [{ field: "status", from: "draft", to: "open" }] });
     });
     return this.getOne(orgId, id);

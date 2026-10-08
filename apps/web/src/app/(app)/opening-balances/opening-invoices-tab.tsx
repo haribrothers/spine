@@ -1,5 +1,6 @@
 "use client";
 
+import { useModule } from "../../../lib/modules-context";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import {
@@ -201,6 +202,7 @@ function OpeningInvoiceDialog({
   onSaved: () => void;
 }) {
   const existing = value && value !== "new" ? value : null;
+  const jobsOn = useModule("jobsField");
   const [contactId, setContactId] = useState("");
   const [number, setNumber] = useState("");
   const [invoiceDate, setInvoiceDate] = useState<Date | undefined>();
@@ -287,24 +289,27 @@ function OpeningInvoiceDialog({
             <FormField label="Retention held" helperText="Optional — held back on a job until the job is done.">
               {(field) => <MoneyInput id={field.id} aria-describedby={field["aria-describedby"]} value={retention} onValueChange={setRetention} currency={currency} />}
             </FormField>
-            <FormField label="Job" helperText={retention > 0n ? "Needed for retention." : "Optional."}>
-              {(field) => (
-                <Select value={jobId} onValueChange={setJobId}>
-                  <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={NONE}>No job</SelectItem>
-                    {jobs.map((j) => (
-                      <SelectItem key={j.id} value={j.id}>
-                        {j.number ? `${j.number} · ` : ""}
-                        {j.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </FormField>
+            {/* US-SET-24: no jobs while Jobs & field is switched off. */}
+            {jobsOn && (
+              <FormField label="Job" helperText={retention > 0n ? "Needed for retention." : "Optional."}>
+                {(field) => (
+                  <Select value={jobId} onValueChange={setJobId}>
+                    <SelectTrigger id={field.id} aria-describedby={field["aria-describedby"]}>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={NONE}>No job</SelectItem>
+                      {jobs.map((j) => (
+                        <SelectItem key={j.id} value={j.id}>
+                          {j.number ? `${j.number} · ` : ""}
+                          {j.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </FormField>
+            )}
           </div>
         </DialogBody>
         <DialogFooter>

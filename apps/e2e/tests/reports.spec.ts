@@ -30,7 +30,8 @@ test.describe("Reports", () => {
 
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    await expect(dialog.getByText(/Invoice INV-\d+ issued/).first()).toBeVisible();
+    // Demo invoices take their own series (US-ONB-17).
+    await expect(dialog.getByText(/Invoice DEMO-INV-\d+ issued/).first()).toBeVisible();
   });
 
   test("Balance Sheet tab renders real seeded assets/liabilities/equity that balance", async ({ page, seededOrg }) => {

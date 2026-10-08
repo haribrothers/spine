@@ -1,3 +1,4 @@
+import { moduleOn } from "../../common/modules";
 import { getMemberRole } from "../../auth/capability.util";
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
 import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
@@ -203,6 +204,9 @@ export class ExpensesService {
       return expense;
     });
 
+    // D-154: with Approvals switched off, a submitted expense is approved and posted at once by its submitter's save.
+    if (!(await moduleOn(this.db, orgId, "approvals"))) await this.approve(orgId, created!.id, actorUserId, null, undefined, { approvalsOff: true });
+
     return this.getOne(orgId, created!.id);
   }
 
@@ -318,12 +322,13 @@ export class ExpensesService {
     throw new ForbiddenException(SELF_REVIEW_MESSAGE);
   }
 
-  async approve(orgId: string, id: string, actorUserId: string, comment: string | null, moneyAccountId?: string | null) {
+  async approve(orgId: string, id: string, actorUserId: string, comment: string | null, moneyAccountId?: string | null, options: { approvalsOff?: boolean } = {}) {
     const [preCheck] = await this.db.select().from(expenses).where(and(eq(expenses.orgId, orgId), eq(expenses.id, id)));
     if (!preCheck) {
       throw new NotFoundException("Expense not found");
     }
-    await this.refuseSelfReview(orgId, actorUserId, preCheck.submittedByUserId);
+    // With Approvals off there's no review: the submitter's own save approves it (D-154).
+    if (!options.approvalsOff) await this.refuseSelfReview(orgId, actorUserId, preCheck.submittedByUserId);
 
     const [category] = await this.db.select().from(expenseCategories).where(eq(expenseCategories.id, preCheck.categoryId));
     const resolvedExpenseAccountId = category?.accountId ?? (await this.resolveDefaultExpenseAccount(orgId));
@@ -344,7 +349,7 @@ export class ExpensesService {
       // P15 credits the account the approver chose, else the one the expense carries, else the default (US-BANK-03).
       const moneyAccount = await this.moneyAccounts.resolveForPosting(tx, orgId, moneyAccountId ?? existing.moneyAccountId);
       if (moneyAccountId) await this.moneyAccounts.rememberLastUsed(tx, actorUserId, "expense", moneyAccount.id);
-      const number = await this.numbering.allocateNumber(tx, orgId, "expense");
+      const number = await this.numbering.allocateNumber(tx, orgId, "expense", { demo: existing.isDemo });
       const approvedAt = new Date();
       const dateStr = new Date(existing.date).toISOString().slice(0, 10);
 

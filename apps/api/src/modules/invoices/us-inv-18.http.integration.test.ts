@@ -69,7 +69,8 @@ describe("US-INV-18 · turn on automatic payment reminders (requires local Postg
   it("previews the reminder for the most overdue invoice", async () => {
     const body = (await (await preview(cookie)).json()) as { subject: string; html: string; sample: boolean };
     expect(body.sample).toBe(false);
-    expect(body.subject).toMatch(/^Reminder: invoice INV-\d+ is \d+ days? overdue$/);
+    // Demo invoices take their own series (US-ONB-17).
+    expect(body.subject).toMatch(/^Reminder: invoice DEMO-INV-\d+ is \d+ days? overdue$/);
     expect(body.html).toContain("already paid, thank you");
   });
 
