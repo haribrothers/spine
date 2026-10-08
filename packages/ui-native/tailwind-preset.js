@@ -75,6 +75,11 @@ function toTailwindClassNames(colors) {
     surfaceSunken: "surface-sunken",
     onSurface: "on-surface",
     onSurfaceMuted: "on-surface-muted",
+    // US-OPS-25 (D-099) — text on filled primary / danger controls; without these,
+    // `text-on-primary` matched nothing and fell back to black (the avatar's initials).
+    onPrimary: "on-primary",
+    onDanger: "on-danger",
+    overlaySubtle: "overlay-subtle",
     border: "border",
     borderStrong: "border-strong",
     paid: "paid",

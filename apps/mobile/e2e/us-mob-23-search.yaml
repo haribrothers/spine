@@ -1,0 +1,45 @@
+# US-MOB-23 — Search finds a job the demo Field user is on, opens it in the
+# Jobs tab and remembers the search. On iOS Search is the tab bar's search
+# button; on Android the fourth tab. Run like us-mob-01-sign-in.yaml.
+appId: com.spine.app
+---
+- runFlow: _sign-in.yaml
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Search"
+      - tapOn:
+          id: "search-input"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Search"
+      # The field in the tab bar (the empty state above repeats its placeholder).
+      - tapOn:
+          text: "Search jobs and expenses"
+          index: 1
+- inputText: "warehouse"
+- extendedWaitUntil:
+    visible: "(JOBS|Jobs) · 1"
+    timeout: 10000
+- tapOn: "Warehouse extension.*"
+- extendedWaitUntil:
+    visible: "(MILESTONES|Milestones)"
+    timeout: 15000
+# Back on Search (Android: after clearing the field), the search is under Recent searches.
+- tapOn: "Search"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn: "Clear search"
+- runFlow:
+    when:
+      platform: iOS
+      visible: "Clear text"
+    commands:
+      - tapOn: "Clear text"
+- assertVisible: "Recent searches"
+- assertVisible: "Search for warehouse|warehouse"

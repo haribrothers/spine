@@ -1,8 +1,10 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { render, screen } from "@testing-library/react-native";
+import { screen } from "@testing-library/react-native";
 import TabsLayout from "../../app/(tabs)/_layout";
 import { useTabHeaderOptions } from "../components/header-items";
+import { renderWithSession } from "../test-utils/session";
+import { darkColors } from "@spine/ui-native/tokens";
 
 jest.mock("expo-router/unstable-native-tabs", () => {
   const { Text: MockText, View: MockView } = jest.requireActual("react-native");
@@ -40,7 +42,7 @@ const allSources = [...sourceFiles(join(appRoot, "app")), ...sourceFiles(join(ap
 
 describe("US-MOB-19 · run the field app on native tabs", () => {
   it("has native tabs Today, Jobs and Expenses, plus Search as the iOS search tab", () => {
-    render(<TabsLayout />);
+    renderWithSession(<TabsLayout />);
     for (const [name, label] of [["(today)", "Today"], ["jobs", "Jobs"], ["expenses", "Expenses"]] as const) {
       expect(screen.getByTestId(`tab-${name}`)).toBeTruthy();
       expect(screen.getByText(label)).toBeTruthy();
@@ -62,11 +64,13 @@ describe("US-MOB-19 · run the field app on native tabs", () => {
     expect(allSources.filter((file) => readFileSync(file, "utf8").includes("FloatingTabBar"))).toEqual([]);
   });
 
-  it("lets large titles collapse: every header-backed ScrollView adjusts its insets automatically", () => {
+  it("lets large titles collapse: every header-backed scroll view or list adjusts its insets automatically", () => {
     const offenders = allSources.filter((file) => {
       const src = readFileSync(file, "utf8");
-      if (!src.includes("<ScrollView") || src.includes("SafeAreaView")) return false;
-      return (src.match(/<ScrollView\b/g) ?? []).length > (src.match(/contentInsetAdjustmentBehavior="automatic"/g) ?? []).length;
+      if (src.includes("SafeAreaView")) return false;
+      // Vertical scrollers only: a horizontal carousel inside a screen isn't under the header.
+      const vertical = (src.match(/<(?:ScrollView|FlatList|SectionList)\b(?![^>]*\bhorizontal\b)/g) ?? []).length;
+      return vertical > (src.match(/contentInsetAdjustmentBehavior="automatic"/g) ?? []).length;
     });
     expect(offenders).toEqual([]);
   });
@@ -75,11 +79,21 @@ describe("US-MOB-19 · run the field app on native tabs", () => {
     const THEMED = /^(?:bg|text|border)-(?:background|surface|surface-sunken|on-surface|on-surface-muted|on-primary|primary|overdue|overdue-bg|due-soon|due-soon-bg|paid|paid-bg|draft|draft-bg|info|info-bg|border|border-strong)$/;
     const missing: string[] = [];
     for (const file of allSources) {
-      for (const match of readFileSync(file, "utf8").matchAll(/className="([^"]+)"/g)) {
-        const classes = match[1]!.split(/\s+/);
+      // Every string or template literal: class lists are also built in ternaries and template strings.
+      for (const match of readFileSync(file, "utf8").matchAll(/"([^"\n]*)"|`([^`]*)`/g)) {
+        const classes = (match[1] ?? match[2] ?? "").split(/\s+/).map((cls) => cls.replace(/^[`"'{(]+|[`"'})]+$/g, ""));
         for (const cls of classes) if (THEMED.test(cls) && !classes.includes(`dark:${cls}-dark`)) missing.push(`${file.replace(appRoot, "")}: ${cls}`);
       }
     }
     expect(missing).toEqual([]);
+  });
+
+  it("draws Today and a job in iOS dark mode from the MobHomeDark / MobJobDetailDark roles", () => {
+    expect({ background: darkColors.background, surface: darkColors.surface, primary: darkColors.primary, onPrimary: darkColors.onPrimary }).toEqual({ background: "#121110", surface: "#191815", primary: "#6B8AFF", onPrimary: "#121110" });
+    const today = readFileSync(join(appRoot, "src/features/today/today-screen.tsx"), "utf8");
+    const job = readFileSync(join(appRoot, "src/features/jobs/job-detail-screen.tsx"), "utf8");
+    for (const src of [today, job]) expect(src).toContain("bg-background dark:bg-background-dark");
+    expect(job).toContain("bg-surface dark:border-border-dark dark:bg-surface-dark");
+    expect(job).toContain("text-on-primary dark:text-on-primary-dark");
   });
 });

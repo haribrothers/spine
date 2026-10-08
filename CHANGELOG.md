@@ -80,6 +80,58 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — Phase 5 Group 2: Today, Jobs, a job, Search and Notifications (US-JOB-16, US-MOB-03, US-MOB-04, US-MOB-05, US-MOB-06, US-MOB-19, US-MOB-22, US-MOB-23)
+
+- **Today (US-MOB-03):** built like the showcase-native home and `MobHome`/`MobHomeJobs`.
+  - Welcome card with the milestones gauge ("<n> of <n> done").
+  - "This week" / "This month" / "This year" switch, and KPI cards: due, overdue, photos, my expenses.
+  - Quick actions Add photo, Log expense, Scan receipt and Directions.
+  - "YOUR JOBS TODAY": Active jobs with a milestone overdue or due within 7 days, with the due chip, "Call <contact>" (full name on iOS, first name on Android) and Directions.
+  - The next meeting I organise or am invited to.
+  - The header has the sync pill, the bell with the unread count, and the avatar.
+  - The story's tiles and periods now match the drawn Today: four tiles, three periods.
+- **Jobs (US-MOB-04, US-JOB-16):**
+  - "ASSIGNED TO YOU · <n>" with customer, town and a milestone chip, pull to refresh, and the empty state with "Check again".
+  - A job someone is taken off disappears on refresh, and its cached copy goes with it.
+- **A job (US-MOB-05):**
+  - Status, name, "<number> · <customer>", the site with Directions, the contact with a call button, MILESTONES ("Due …" with Mark complete, or "Completed"), PHOTOS with "See all", and QUOTES TO PRESENT with "Present".
+  - "Add photos" is in the toolbar on iOS and a floating button on Android.
+  - "Photos · <n>" groups photos by day, newest first.
+  - Mark complete, Present and the photo and expense tiles say they arrive in the next update until US-MOB-11 to US-MOB-17 land.
+- **Search (US-MOB-23):**
+  - Searches the phone's cache by job name, customer, number or address, and my expenses by category, description or job, ignoring case and accents.
+  - Groups "JOBS · <n>" and "YOUR EXPENSES · <n>", with the match highlighted.
+  - Up to 10 recent searches on the phone (Edit on iOS, Clear on Android), and a no-results message.
+- **Notifications (US-MOB-22):**
+  - "NEW" and "EARLIER", with an icon, message, detail and time; a dot on iOS, a tinted row on Android.
+  - Tapping one marks it read and opens its job, expense or meeting (small read-only screens for an expense and a meeting). "Read all" marks every one read.
+  - Refreshes when the app returns to the front (no push, D-200).
+- **No money but my own (US-MOB-06):** the app has no invoice, payment or report screens and calls none of those endpoints (tested by scanning the source). A Field phone session gets 403 from each.
+- **Read cache:** every read goes through a SQLite cache (`expo-sqlite`, 02-architecture §Offline). It shows what was last fetched first and is cleared on sign-out. Group 3 adds the outbox on top.
+- **API (05-api, 04-data-model, 07-security):**
+  - New `GET /mobile/today?period=`.
+  - `GET /jobs` gains `include=site_contact,milestone_counts`; `GET /jobs/:id` gains `siteContact`.
+  - `GET /jobs/:id/quotes` is built.
+  - `GET /meetings/upcoming?attending=true`.
+  - `GET /org/members/me` adds the business `currency` and `locale`.
+  - Notifications gain a `detail` column (migration 0109).
+  - New types `expense_rejected`, `crew_assigned` and `crew_removed`. `expense_approved` now reaches the submitter ("<name> approved your expense"), and the office's copy no longer goes to them.
+  - `NotificationsService.notify` takes `excludeUserIds`.
+- **Demo data:**
+  - The demo Field user is put on every demo job's crew (`crewAssignmentsCreated`).
+  - The first demo job's first milestone is due in 4 days instead of 10, so Today shows a job.
+- **Fixes found on the devices:**
+  - `formatMoney` crashed on the phone: Hermes has no `Intl.NumberFormat.formatToParts`. It now falls back to `format` with the true minus sign (shared test).
+  - `@spine/ui-native`'s Tailwind preset never mapped `onPrimary`/`onDanger`, so `text-on-primary` was black (avatar initials, filled buttons). Now mapped, and tested for every token.
+  - `KpiCard` text uses the on-fill role, so dark mode's lighter cards have dark text as `MobHomeDark` draws them.
+  - Pushed screens' headers were white in dark mode. The app now gives navigation a theme from its own tokens.
+  - On iOS, Search's empty state is a scroll view at the screen's root, so it sits under the large title.
+- **Tests:**
+  - Phone Jest tests (91), named per story: us-mob-03, 04, 05, 06, 22, 23 and us-job-16; us-mob-19 and 20 extended.
+  - API integration tests us-mob-03, 04, 05, 06, 22 and us-job-16.
+  - Maestro flows `us-mob-03-today`, `us-mob-04-jobs` and `us-mob-23-search` pass on the iPhone 17 simulator and the Pixel 9 emulator. Dark mode was checked on both.
+- **Still open:** US-MOB-20 ("every `Mob…Android` artboard matches") stays open until the photo, expense, quote and sync screens exist (Groups 3–5). Today, a job, Jobs, Search and Notifications match theirs.
+
 ### 2026-10-08 — Phase 5 Group 1: the new field app, sign in, Profile and errors (US-MOB-01, US-MOB-02, US-MOB-10, US-MOB-21)
 
 - **New app (D-196):** the old React Navigation `apps/mobile` is gone. A new expo-router app was generated with `scripts/create-native-app.mjs`, built the way `apps/showcase-native` is:

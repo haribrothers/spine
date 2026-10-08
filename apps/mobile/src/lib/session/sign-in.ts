@@ -37,6 +37,9 @@ export interface Member {
   email: string;
   role: "owner" | "staff" | "field" | string;
   organizationName: string;
+  /** The business currency and locale, for money and dates (US-MOB-03); older servers leave them out. */
+  currency?: string;
+  locale?: string;
 }
 
 const HEALTH_TIMEOUT_MS = 8_000;

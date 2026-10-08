@@ -152,7 +152,7 @@ Optional and off by default ([D-162](12-decisions.md)). `AiService` in the API c
 | `notify-email` | Any notification with an email channel | Email to the targeted users |
 | `meeting-starting-soon-poll` | Every few minutes | Sends `meeting_starting_soon` to each attendee once per occurrence |
 | `recurring-bill-run` | Every 15 minutes, from 6:00 AM organisation time (Phase 8) | Creates due recurring bills, recorded or as drafts ([D-159](12-decisions.md)) |
-| Notification types | `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon` | In-app notification row + optional email + optional browser push |
+| Notification types | `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `expense_rejected`, `crew_assigned`, `crew_removed`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon` | In-app notification row + optional email + optional browser push |
 
 ## Offline sync (mobile)
 

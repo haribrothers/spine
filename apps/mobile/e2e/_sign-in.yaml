@@ -1,0 +1,32 @@
+# Shared: a clean install, signed in as the demo Field user, on Today.
+# SERVER/EMAIL/PASSWORD as in us-mob-01-sign-in.yaml.
+appId: com.spine.app
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- runFlow: _open-app.yaml
+- extendedWaitUntil:
+    visible: "Sign in to Spine"
+    timeout: 60000
+- tapOn:
+    id: "sign-in-server"
+- eraseText: 60
+- inputText: ${SERVER || "http://localhost:4000"}
+- tapOn:
+    id: "sign-in-email"
+- eraseText: 60
+- inputText: ${EMAIL || "marcus.webb.demo@example.com"}
+- tapOn:
+    id: "sign-in-password"
+- inputText: ${PASSWORD || "DemoPassword123!"}
+- tapOn: "Sign in"
+- runFlow:
+    when:
+      visible: "Save Password?"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "today-welcome"
+    timeout: 20000

@@ -40,6 +40,8 @@ export const notifications = pgTable(
     /** e.g. "quote_viewed", "quote_accepted" — a short machine-readable tag, not currently used for anything beyond display/future filtering. */
     type: text("type").notNull(),
     message: text("message").notNull(),
+    /** US-MOB-22 — the line under the message (e.g. "Fuel & Vehicle · $38.50 · <reason>"); null on older types. */
+    detail: text("detail"),
     /** Nullable — a relative in-app path (e.g. "/quotes/:id") the notification's row links to when clicked. Not every notification needs one. */
     link: text("link"),
     readAt: timestamp("read_at", { withTimezone: true }),

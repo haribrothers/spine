@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Inject, Injectable } from "@nestjs/common";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLine, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, leads, leadStages, meetings as meetingsTable, member, quotes, teamMemberships, user, account } from "../../db/schema";
+import { activities, addresses, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, jobAssignments, leads, leadStages, meetings as meetingsTable, member, quotes, teamMemberships, user, account } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
@@ -522,6 +522,16 @@ export class DemoSeederService {
 
     // 10. The demo Staff and Field people.
     count("usersCreated", await this.seedDemoUsers(orgId));
+
+    // 11. US-MOB-04 — the demo Field person is on every demo job's crew, so
+    // the field app has jobs to show. Written directly: nobody needs telling.
+    const fieldUsers = await this.db
+      .select({ id: user.id })
+      .from(user)
+      .where(inArray(user.email, DEMO_USERS.filter((u) => u.role === "field").map((u) => u.email)));
+    const crew = [...jobRows.values()].flatMap((job) => fieldUsers.map((u) => ({ jobId: job.id, userId: u.id, orgId })));
+    if (crew.length) await this.db.insert(jobAssignments).values(crew);
+    count("crewAssignmentsCreated", crew.length);
 
     return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, counts };
   }

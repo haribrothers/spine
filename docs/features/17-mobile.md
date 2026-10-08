@@ -65,9 +65,9 @@ Legacy: S-11.2
 
 **Acceptance criteria**
 - **Given** Today, **when** it opens, **then** a welcome card shows "Good morning, <first name>", the business and date, and a gauge of the milestones completed this month on my jobs ("3 of 5 done"), as in the showcase-native home.
-- **Given** the "This week" / "This month" switch, **when** I change it, **then** the KPI cards and the gauge follow it. The swipeable KPI cards are milestones due, milestones overdue, photos taken (with how many are waiting) and my own expenses (total, and how many wait for approval); there are no other money figures (D-048).
+- **Given** the "This week" / "This month" / "This year" switch, **when** I change it, **then** the KPI cards and the gauge follow it. The swipeable KPI cards are milestones due, milestones overdue, photos taken (with how many are waiting) and my own expenses (total, and how many wait for approval); there are no other money figures (D-048).
 - **Given** Today's header, **when** it renders, **then** it shows the sync pill, the bell with the unread count, and my avatar.
-- **Given** Today, **when** it opens, **then** "Add photos" and "Log expense" sit under the KPI cards as two action tiles on both platforms, above the next meeting and the jobs ([D-197](../prd/12-decisions.md)).
+- **Given** Today, **when** it opens, **then** "Add photo" and "Log expense" sit under the KPI cards as action tiles on both platforms, with "Scan receipt" and "Directions" (to the first of today's sites) beside them as drawn, above the jobs and the next meeting ([D-197](../prd/12-decisions.md)).
 - **Given** an assigned job, **when** Today decides what to show, **then** it lists the job only if its status is "Active" and it has a pending milestone that is overdue or due within the next 7 days; other assigned jobs are only on the Jobs tab.
 - **Given** I'm on two such jobs, **when** Today opens, **then** I see the date, "Today", my next meeting, "YOUR JOBS TODAY · 2" and a card per job with name, customer, site address and its next milestone with a due chip ("Due Sat", or "<n> days late" in the overdue colour). "NEXT MEETING" is my next meeting in the next 7 days, and is hidden when there is none or Leads & meetings is off.
 - **Given** a job card, **when** I tap "Call <contact name>" inside the card (iOS: full name, "Call Alan Reyes"; Android: first name, "Call Alan"), **then** the phone dialler opens with the job contact's number.
@@ -75,8 +75,9 @@ Legacy: S-11.2
 - **Given** the header, **when** everything has synced, **then** a pill reads "All synced".
 
 **Implementation notes**
-- API: `GET /jobs?assignedToMe=true`, `GET /jobs/milestones/due`, `GET /meetings/upcoming`.
-- UI: expo-router native tabs Today · Jobs · Expenses, Profile from the avatar ([D-197](../prd/12-decisions.md)); `ActionTile`, `Card`, `StatusChip` from `@spine/ui-native`.
+- API: `GET /mobile/today?period=` (gauge and KPI figures, built), `GET /jobs?assignedToMe=true&include=next_milestone,site_contact,milestone_counts` (job cards; who to call is `siteContact`), `GET /meetings/upcoming?attending=true&withinDays=7`, `GET /org/modules`, `GET /notifications/unread-count`; `GET /org/members/me` gives the business currency and locale.
+- UI: expo-router native tabs Today · Jobs · Expenses, Profile from the avatar ([D-197](../prd/12-decisions.md)); `GaugeIndicator`, `SegmentedControl`, `KpiCard`, `ActionTile`, `StatusChip` from `@spine/ui-native`. Every read is cached on the phone (SQLite) and shown first.
+- The Add photo, Log expense and Scan receipt tiles open their flows once US-MOB-11 and US-MOB-13 land; until then they say the feature arrives in the next update.
 
 ### US-MOB-04 · Browse my assigned jobs
 **Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`
@@ -89,8 +90,8 @@ Legacy: S-11.2
 - **Given** I'm on no jobs, **when** I open the tab, **then** I see "No jobs assigned to you yet", "When your office adds you to a job's crew, it shows up here with its address and contact." and "Check again".
 
 **Implementation notes**
-- API: `GET /jobs?assignedToMe=true`.
-- Demo data: the demo Field user (Marcus Webb) is put on the crew of the demo's jobs, so the app has something to show after loading a demo business (the seeder adds `job_assignments`).
+- API: `GET /jobs?assignedToMe=true&include=next_milestone,site_contact,milestone_counts` ("All milestones complete" from `milestoneCounts`; the town is read from the site address).
+- Demo data: the demo Field user (Marcus Webb) is put on the crew of the demo's jobs, so the app has something to show after loading a demo business (the seeder adds `job_assignments`); the first demo job's first milestone is due within the week, so Today has a job.
 
 ### US-MOB-05 · Open a job's details on site
 **Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobDetail`, `MobJobDetailAndroid`, `MobJobPhotos`, `MobJobPhotosAndroid`
@@ -104,7 +105,8 @@ Legacy: S-11.2
 - **Given** "PHOTOS · <n>", **when** I tap "See all", **then** "Photos · <n>" opens with the job name and number, photos grouped by day newest first, a "Waiting" badge on photos not yet sent, and "Add photos".
 
 **Implementation notes**
-- API: `GET /jobs/:id`, `GET /jobs/:id/milestones`, `GET /jobs/:id/photos`, `GET /jobs/:id/quotes` (contract addition, [D-073](../prd/12-decisions.md)). Field gets assigned jobs only, without money fields (US-JOB-19).
+- API: `GET /jobs/:id` (with `siteContact`), `GET /jobs/:id/milestones`, `GET /jobs/:id/photos`, `GET /jobs/:id/quotes` (built, [D-073](../prd/12-decisions.md)); photos load from `GET /files/:id` with the bearer token. Field gets assigned jobs only, without money fields (US-JOB-19).
+- "Mark complete" (US-MOB-15), "Add photos" (US-MOB-11) and "Present" (US-MOB-16) are drawn now and open their flows when those stories land.
 - The subtitle shows the job number next to the customer ("JOB-007 · Alan Brooks", US-JOB-22).
 
 ### US-MOB-06 · Keep financial reports off phones
@@ -360,7 +362,8 @@ Finding: C24 · Decision: D-034
 - **Given** a module is switched off, **when** something in it happens, **then** no notification is sent (US-SET-24).
 
 **Implementation notes**
-- API: the web bell's notification routes, read with the bearer session. New in-app types: `expense_rejected`, `crew_assigned`, `crew_removed`.
+- API: the web bell's notification routes, read with the bearer session; rows carry `detail` (the second line). New in-app types: `expense_rejected`, `crew_assigned`, `crew_removed`; `expense_approved` now also goes to the submitter ("Sarah Mendes approved your expense").
+- A notification opens its job (`/jobs/<id>`), expense (`/expenses/<id>`, read-only) or meeting (`/meetings?id=<id>` → the meeting, read-only); other links just mark it read.
 - No push to the lock screen in 1.0 ([D-200](../prd/12-decisions.md)): the list refreshes when the app opens or comes back to the foreground, and on pull to refresh.
 
 ### US-MOB-23 · Search my jobs and my expenses
@@ -380,5 +383,5 @@ Decision: [D-197](../prd/12-decisions.md)
 - **Given** Jobs & field is off, **when** I search, **then** only my expenses are searched and the jobs group is hidden (D-198).
 
 **Implementation notes**
-- Searches the local SQLite cache (jobs and expenses already synced plus the outbox) — no new API; matching is case- and accent-insensitive and runs as you type with a short debounce.
+- Searches the local SQLite cache (jobs and expenses already synced plus the outbox) — no new API; matching is case- and accent-insensitive and runs as you type with a short debounce. Opening Search refreshes the cached jobs and expenses when there's a connection.
 - Recent searches live in the same per-device storage as the appearance setting, never on the server.

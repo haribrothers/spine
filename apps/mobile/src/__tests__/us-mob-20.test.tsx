@@ -34,4 +34,13 @@ describe("US-MOB-20 · give Android users a designed Material 3 app", () => {
     expect(buttons[2]!.style).toBe("destructive");
     alert.mockRestore();
   });
+
+  it("draws Android's screens as Material: title-case primary section titles, outlined Directions, floating Add photos", () => {
+    const read = (path: string) => readFileSync(join(__dirname, "..", path), "utf8");
+    expect(read("components/section-header.tsx")).toContain('"text-[15px] font-medium text-primary dark:text-primary-dark"');
+    expect(read("features/today/job-card.tsx")).toContain('outlined={Platform.OS === "android"}');
+    for (const file of ["features/jobs/job-detail-screen.tsx", "features/jobs/job-photos-screen.tsx"]) {
+      expect(read(file)).toMatch(/absolute bottom-6 right-4 h-14 flex-row items-center gap-3 rounded-2xl/);
+    }
+  });
 });

@@ -1,86 +1,288 @@
-import { useCallback, useEffect, useState } from "react";
-import { RefreshControl, ScrollView, Text, View } from "react-native";
+import { useCallback, useMemo, useState } from "react";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
+import { useRouter } from "expo-router";
+import CalendarClock from "lucide-react-native/icons/calendar-clock";
+import Camera from "lucide-react-native/icons/camera";
 import CloudOff from "lucide-react-native/icons/cloud-off";
-import { Skeleton, useNativeColors } from "@spine/ui-native";
-import { useSession, useSignedInSession } from "../../lib/session/session-provider";
-import { OfflineError, ServerUnreachableError } from "../../lib/api/errors";
-import type { Member } from "../../lib/session/sign-in";
+import Flag from "lucide-react-native/icons/flag";
+import Images from "lucide-react-native/icons/images";
+import Navigation from "lucide-react-native/icons/navigation";
+import ReceiptText from "lucide-react-native/icons/receipt-text";
+import ScanLine from "lucide-react-native/icons/scan-line";
+import TriangleAlert from "lucide-react-native/icons/triangle-alert";
+import Wallet from "lucide-react-native/icons/wallet";
+import { ActionTile, GaugeIndicator, KpiCard, ScrollEdgeMask, SegmentedControl, Skeleton, useNativeColors } from "@spine/ui-native";
+import type { GradientTone } from "@spine/ui-native/tokens";
+import { useSignedInSession } from "../../lib/session/session-provider";
+import { useCachedQuery } from "../../lib/data/use-cached-query";
+import { useModules } from "../../lib/data/modules";
+import { useBusinessFormat } from "../../lib/data/business";
+import { todaysJobs, useAssignedJobs } from "../../lib/data/jobs";
+import { NEXT_MEETINGS_KEY, NEXT_MEETINGS_PATH, nextMeeting, type Meeting } from "../../lib/data/meetings";
+import { PERIODS, todayKey, todayPath, type TodayPeriod, type TodaySummary } from "../../lib/data/today";
+import { usePendingSummary } from "../../lib/outbox/pending";
 import { greeting } from "../../lib/member-display";
+import { calendarDay, longDate, money, shortWhen, weekdayDayMonth, type BusinessFormat } from "../../lib/format";
+import { openDirections } from "../../lib/linking";
+import { arrivesLater } from "../../lib/later";
+import { SectionHeader } from "../../components/section-header";
 import { ServerErrorState } from "../errors/server-error-state";
+import { TodayJobCard } from "./job-card";
 
-type LoadState = { kind: "loading" } | { kind: "ready" } | { kind: "offline" } | { kind: "unreachable" };
+const KPI_CARD_WIDTH = 168;
+const KPI_CARD_GAP = 12;
+const PERIOD_WORD: Record<TodayPeriod, string> = { week: "week", month: "month", year: "year" };
+
+const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
+interface Kpi {
+  key: string;
+  label: string;
+  value: string;
+  trend: string;
+  icon: React.ComponentType<{ size?: number; color?: string; opacity?: number }>;
+  tone: GradientTone;
+}
+
+/** US-MOB-03 — the swipeable cards: milestones due and overdue, photos, my expenses. No other money (D-048). */
+export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: BusinessFormat, now: Date = new Date()): Kpi[] {
+  const word = PERIOD_WORD[summary.period];
+  const cards: Kpi[] = [];
+  const m = summary.milestones;
+  if (m) {
+    cards.push({
+      key: "due",
+      label: `Due this ${word}`,
+      value: String(m.due),
+      trend: `${plural(m.due, "milestone", "milestones")}${m.nextDueDate ? ` · next ${shortWhen(m.nextDueDate, format.locale, now)}` : ""}`,
+      icon: Flag,
+      tone: "dueSoon",
+    });
+    const late = m.oldestOverdueDate ? Math.max(1, -Math.round((calendarDay(m.oldestOverdueDate).getTime() - new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()) / 86_400_000)) : 0;
+    cards.push({
+      key: "overdue",
+      label: "Overdue",
+      value: String(m.overdue),
+      trend: m.overdue ? `${plural(m.overdue, "milestone", "milestones")} · ${late} ${plural(late, "day", "days")} late` : "Nothing late",
+      icon: TriangleAlert,
+      tone: "overdue",
+    });
+  }
+  if (summary.photos) {
+    cards.push({
+      key: "photos",
+      label: "Photos",
+      value: String(summary.photos.taken + waitingPhotos),
+      trend: waitingPhotos ? `taken · ${waitingPhotos} waiting` : `taken this ${word}`,
+      icon: Images,
+      tone: "primary",
+    });
+  }
+  const e = summary.expenses;
+  cards.push({
+    key: "expenses",
+    label: "My expenses",
+    value: money(e.total, { currency: e.currency, locale: format.locale }),
+    trend: e.awaitingApproval ? `${e.awaitingApproval} waiting for approval` : `${e.count} this ${word}`,
+    icon: Wallet,
+    tone: "paid",
+  });
+  return cards;
+}
+
+function WelcomeCard({ summary, period }: { summary: TodaySummary | null; period: TodayPeriod }) {
+  const colors = useNativeColors();
+  const { member } = useSignedInSession();
+  const format = useBusinessFormat();
+  const m = summary?.milestones;
+  return (
+    <View testID="today-welcome" className="items-center gap-2 rounded-[20px] bg-surface-sunken p-5 dark:bg-surface-sunken-dark">
+      <View className="w-full">
+        <Text className="text-[26px] font-semibold text-on-surface dark:text-on-surface-dark">{greeting(member)}</Text>
+        <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
+          {member.organizationName} · {longDate(new Date(), format.locale)}
+        </Text>
+      </View>
+      {summary === null ? (
+        <Skeleton className="mt-2 h-32 w-full rounded-lg" />
+      ) : m ? (
+        <>
+          <GaugeIndicator progress={m.total ? m.done / m.total : 0} trackColor={colors.overlaySubtle} fillGradient={colors.gradients.primary} textColorClass="text-on-surface dark:text-on-surface-dark" />
+          <View className="items-center gap-0.5" testID="today-gauge" accessible accessibilityLabel={`Milestones this ${PERIOD_WORD[period]}: ${m.done} of ${m.total} done`}>
+            <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">Milestones this {PERIOD_WORD[period]}</Text>
+            <Text className="text-[15px] font-medium text-on-surface dark:text-on-surface-dark">{m.total ? `${m.done} of ${m.total} done` : "None due"}</Text>
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function NextMeetingCard({ meeting, locale, onOpen }: { meeting: Meeting; locale: string; onOpen: () => void }) {
+  const colors = useNativeColors();
+  const start = new Date(meeting.startAt);
+  const when = meeting.allDay ? weekdayDayMonth(start, locale) : `${weekdayDayMonth(start, locale)}, ${start.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}`;
+  return (
+    <Pressable
+      testID="today-next-meeting"
+      onPress={onOpen}
+      accessibilityRole="button"
+      className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface p-4 active:opacity-80 dark:border-border-dark dark:bg-surface-dark"
+    >
+      <View className="h-11 w-11 items-center justify-center rounded-xl bg-info-bg dark:bg-info-bg-dark">
+        <CalendarClock size={22} color={colors.primary} />
+      </View>
+      <View className="flex-1 gap-0.5">
+        <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">{meeting.title}</Text>
+        <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{[when, meeting.location].filter(Boolean).join(" · ")}</Text>
+      </View>
+    </Pressable>
+  );
+}
 
 /**
- * Today — Group 1 builds the frame: the large title with the avatar, the
- * welcome card and the load states. "Couldn't load your jobs" (US-MOB-10)
- * shows when the phone is online but the server doesn't answer; the saved
- * jobs link appears once there's a cache (US-MOB-07). The gauge, KPI cards,
- * quick actions and jobs arrive with US-MOB-03 (Group 2).
+ * US-MOB-03 · `MobHome`, `MobHomeJobs` (and Android) — Today, following the
+ * showcase-native home: the welcome card with the milestones gauge, the
+ * period switch, the KPI cards, quick actions, "YOUR JOBS TODAY" and the
+ * next meeting. The header has the sync pill, the bell and the avatar
+ * (set in `(today)/_layout.tsx`). Jobs & field off hides every job part
+ * (D-198); Leads & meetings off hides the meeting.
  */
 export function TodayScreen() {
+  const router = useRouter();
   const colors = useNativeColors();
-  const { request } = useSession();
-  const { member } = useSignedInSession();
-  const [load, setLoad] = useState<LoadState>({ kind: "loading" });
-  const [refreshing, setRefreshing] = useState(false);
+  const format = useBusinessFormat();
+  const modules = useModules();
+  const pending = usePendingSummary();
+  const [period, setPeriod] = useState<TodayPeriod>("month");
 
-  const fetchToday = useCallback(async () => {
-    try {
-      await request<Member>("GET", "/org/members/me");
-      setLoad({ kind: "ready" });
-    } catch (error) {
-      if (error instanceof OfflineError) setLoad({ kind: "offline" });
-      else if (error instanceof ServerUnreachableError) setLoad({ kind: "unreachable" });
-      else setLoad({ kind: "ready" });
-    }
-  }, [request]);
+  const summary = useCachedQuery<TodaySummary>(todayKey(period), todayPath(period), { refreshOnForeground: true });
+  const jobs = useAssignedJobs(modules.jobsField);
+  const meetings = useCachedQuery<Meeting[]>(NEXT_MEETINGS_KEY, NEXT_MEETINGS_PATH, { enabled: modules.leadsMeetings });
 
-  useEffect(() => {
-    void fetchToday();
-  }, [fetchToday]);
+  const now = new Date();
+  const forToday = useMemo(() => (modules.jobsField ? todaysJobs(jobs.data ?? []) : []), [jobs.data, modules.jobsField]);
+  const meeting = modules.leadsMeetings ? nextMeeting(meetings.data ?? []) : null;
+  const kpis = summary.data ? todayKpis(summary.data, pending.photos, format, now) : [];
 
+  const refreshing = summary.refreshing || jobs.refreshing || meetings.refreshing;
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await fetchToday();
-    setRefreshing(false);
-  }, [fetchToday]);
+    await Promise.all([summary.refresh(), jobs.refresh(), meetings.refresh()]);
+  }, [summary, jobs, meetings]);
 
-  const today = new Date().toLocaleDateString(undefined, { weekday: "long", day: "numeric", month: "long" });
+  const offline = [summary.status, jobs.status].includes("offline");
+  const unreachable = summary.status === "unreachable" && !summary.data;
+
+  const firstSite = forToday.find((job) => job.siteAddress)?.siteAddress ?? null;
+  const actions = [
+    ...(modules.jobsField ? [{ label: "Add photo", icon: Camera, onPress: () => arrivesLater("Add photo") }] : []),
+    { label: "Log expense", icon: ReceiptText, onPress: () => arrivesLater("Log expense") },
+    { label: "Scan receipt", icon: ScanLine, onPress: () => arrivesLater("Scan receipt") },
+    ...(modules.jobsField ? [{ label: "Directions", icon: Navigation, disabled: !firstSite, onPress: () => firstSite && void openDirections(firstSite) }] : []),
+  ];
+
+  const content = unreachable ? (
+    <ServerErrorState
+      onRetry={() => void onRefresh()}
+      savedAt={jobs.fetchedAt ? new Date(jobs.fetchedAt).toLocaleTimeString(format.locale, { hour: "numeric", minute: "2-digit" }) : null}
+      onShowSaved={() => router.navigate("/jobs")}
+    />
+  ) : (
+    <>
+      {offline ? (
+        <View accessibilityRole="alert" className="flex-row items-start gap-3 rounded-lg bg-draft-bg px-4 py-3.5 dark:bg-draft-bg-dark">
+          <CloudOff size={20} color={colors.onSurfaceMuted} />
+          <View className="flex-1 gap-1">
+            <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{"You're offline"}</Text>
+            <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{"Connect to Wi-Fi or mobile data to load today's jobs."}</Text>
+          </View>
+        </View>
+      ) : null}
+
+      <WelcomeCard summary={summary.data} period={period} />
+
+      <SegmentedControl
+        testID="today-period"
+        values={PERIODS.map((p) => p.label)}
+        value={PERIODS.find((p) => p.value === period)!.label}
+        onValueChange={(label) => setPeriod(PERIODS.find((p) => p.label === label)?.value ?? "month")}
+        style={{ height: 36 }}
+      />
+
+      {kpis.length ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          snapToInterval={KPI_CARD_WIDTH + KPI_CARD_GAP}
+          decelerationRate="fast"
+          contentContainerStyle={{ gap: KPI_CARD_GAP, paddingRight: 32 }}
+          className="-mx-4"
+          contentContainerClassName="px-4"
+        >
+          {kpis.map((kpi) => (
+            <View key={kpi.key} testID={`today-kpi-${kpi.key}`} accessible accessibilityLabel={`${kpi.label}: ${kpi.value}, ${kpi.trend}`}>
+              <KpiCard label={kpi.label} value={kpi.value} trend={kpi.trend} icon={kpi.icon} gradient={colors.gradients[kpi.tone]} gradientId={kpi.key} width={KPI_CARD_WIDTH} />
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
+
+      <View className="gap-3">
+        <SectionHeader title="Quick actions" />
+        <View className="flex-row flex-wrap gap-3">
+          {actions.map(({ label, icon, onPress, ...rest }) => (
+            <ActionTile key={label} testID={`today-action-${label.toLowerCase().replace(/\s+/g, "-")}`} label={label} icon={icon} iconColor={colors.primary} onPress={onPress} disabled={"disabled" in rest ? rest.disabled : false} />
+          ))}
+        </View>
+      </View>
+
+      {modules.jobsField ? (
+        <View className="gap-3" testID="today-jobs">
+          <SectionHeader title="Your jobs today" count={forToday.length} action={{ label: "All jobs", arrow: true, onPress: () => router.navigate("/jobs") }} />
+          {forToday.map((job) => (
+            <TodayJobCard key={job.id} job={job} locale={format.locale} now={now} onOpen={() => router.push(`/jobs/${job.id}`)} />
+          ))}
+          {jobs.data && forToday.length === 0 ? (
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing due on your jobs in the next 7 days.</Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {meeting ? (
+        <View className="gap-3">
+          <SectionHeader title="Next meeting" />
+          <NextMeetingCard meeting={meeting} locale={format.locale} onOpen={() => router.push(`/meetings/${meeting.id}`)} />
+        </View>
+      ) : null}
+    </>
+  );
+
+  if (Platform.OS === "android") {
+    return (
+      <View className="flex-1 bg-background dark:bg-background-dark">
+        <ScrollView
+          testID="today-scroll"
+          contentInsetAdjustmentBehavior="automatic"
+          contentContainerClassName="gap-6 p-4"
+          contentContainerStyle={{ paddingBottom: 48 }}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.onSurfaceMuted} />}
+        >
+          {content}
+        </ScrollView>
+        <ScrollEdgeMask edge="bottom" />
+      </View>
+    );
+  }
 
   return (
     <ScrollView
+      testID="today-scroll"
       contentInsetAdjustmentBehavior="automatic"
       className="flex-1 bg-background dark:bg-background-dark"
-      contentContainerClassName="gap-5 px-4 pb-32 pt-3"
+      contentContainerClassName="gap-6 px-4 pb-32 pt-3"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.onSurfaceMuted} />}
     >
-      {load.kind === "unreachable" ? (
-        <ServerErrorState
-          onRetry={() => {
-            setLoad({ kind: "loading" });
-            void fetchToday();
-          }}
-        />
-      ) : (
-        <>
-          {load.kind === "offline" ? (
-            <View accessibilityRole="alert" className="flex-row items-start gap-3 rounded-lg bg-draft-bg px-4 py-3.5 dark:bg-draft-bg-dark">
-              <CloudOff size={20} color={colors.onSurfaceMuted} />
-              <View className="flex-1 gap-1">
-                <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{"You're offline"}</Text>
-                <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{"Connect to Wi-Fi or mobile data to load today's jobs."}</Text>
-              </View>
-            </View>
-          ) : null}
-          <View testID="today-welcome" className="gap-1 rounded-[20px] bg-surface-sunken p-5 dark:bg-surface-sunken-dark">
-            <Text className="text-[26px] font-semibold text-on-surface dark:text-on-surface-dark">{greeting(member)}</Text>
-            <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
-              {member.organizationName} · {today}
-            </Text>
-            {load.kind === "loading" ? <Skeleton className="mt-4 h-24 w-full rounded-lg" /> : null}
-          </View>
-        </>
-      )}
+      {content}
     </ScrollView>
   );
 }

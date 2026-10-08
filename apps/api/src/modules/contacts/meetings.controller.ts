@@ -47,10 +47,11 @@ export class MeetingsController {
    * segment must come first or it's swallowed by `:id` (id="upcoming").
    */
   @Get("upcoming")
-  async upcoming(@Session() session: UserSession, @Query("withinDays") withinDays?: string) {
+  async upcoming(@Session() session: UserSession, @Query("withinDays") withinDays?: string, @Query("attending") attending?: string) {
     const orgId = requireOrgId(session);
     return this.meetingsService.upcomingForDashboard(orgId, session.user.id, {
       withinDays: withinDays ? Number(withinDays) : undefined,
+      attending: attending === "true",
     });
   }
 

@@ -140,9 +140,13 @@ export const EXPENSE_TIMELINE = [
 ] as const satisfies readonly { key: string; date: number; outcome: "approved" | "submitted" | "rejected"; job?: "a" }[];
 export type ExpenseKey = (typeof EXPENSE_TIMELINE)[number]["key"];
 
-/** Job A has just started; B is half invoiced; C is finished. Milestone invoices are paid after the days given. */
+/**
+ * Job A has just started, its first milestone due this week (so the field
+ * app's Today has a job, US-MOB-03); B is half invoiced; C is finished.
+ * Milestone invoices are paid after the days given.
+ */
 const JOB_TIMELINE = {
-  a: { start: -10, due: [10, 35, 60], invoice: [undefined, undefined, undefined], paidAfter: [undefined, undefined, undefined] },
+  a: { start: -10, due: [4, 35, 60], invoice: [undefined, undefined, undefined], paidAfter: [undefined, undefined, undefined] },
   b: { start: -80, due: [-64, -20, 20], invoice: [-64, -20, undefined], paidAfter: [20, undefined, undefined] },
   c: { start: -170, due: [-160, -130, -100], invoice: [-160, -130, -100], paidAfter: [15, 20, 25] },
 } as const;

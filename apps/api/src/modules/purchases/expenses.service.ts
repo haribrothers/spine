@@ -7,7 +7,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { expenses, expenseCategories, expenseLabourLines, accounts, invoiceLines, jobs, jobAssignments } from "../../db/schema";
+import { expenses, expenseCategories, expenseLabourLines, accounts, invoiceLines, jobs, jobAssignments, user } from "../../db/schema";
 import type { Transaction } from "../../db/client";
 import { AuditLogService } from "../audit/audit-log.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
@@ -400,16 +400,20 @@ export class ExpensesService {
     });
 
     const amountText = formatMoney(result!.amount, result!.currency, await orgLocale(this.db, orgId));
+    // The submitter gets their own "approved your expense" below, not the office's copy.
+    const submitter = result!.submittedByUserId && result!.submittedByUserId !== actorUserId ? result!.submittedByUserId : null;
     void this.notifications.notify(orgId, {
       subject: `Expense approved — ${category?.name ?? "Uncategorized"}`,
       text: `Expense ${result!.number} (${category?.name ?? "Uncategorized"}, ${amountText}) was approved.`,
       recipientRoles: ["owner", "staff"],
+      excludeUserIds: submitter ? [submitter] : undefined,
       inApp: {
         type: "expense_approved",
         message: `Expense approved — ${category?.name ?? "Uncategorized"}, ${amountText}`,
         link: `/expenses/${result!.id}`,
       },
     });
+    if (submitter) await this.notifySubmitter(orgId, actorUserId, submitter, { id: result!.id, category: category?.name ?? "Uncategorized", amountText }, null);
 
     return this.getOne(orgId, result!.id);
   }
@@ -477,7 +481,33 @@ export class ExpensesService {
       return row;
     });
 
+    if (existing.submittedByUserId && existing.submittedByUserId !== actorUserId) {
+      const [category] = await this.db.select({ name: expenseCategories.name }).from(expenseCategories).where(eq(expenseCategories.id, existing.categoryId));
+      const amountText = formatMoney(existing.amount, existing.currency, await orgLocale(this.db, orgId));
+      await this.notifySubmitter(orgId, actorUserId, existing.submittedByUserId, { id, category: category?.name ?? "Uncategorized", amountText }, comment);
+    }
+
     return this.getOne(orgId, updated!.id);
+  }
+
+  /**
+   * US-MOB-22 — tells the person who submitted an expense that it was
+   * approved (`expense_approved`) or rejected with the reason
+   * (`expense_rejected`): "Sarah Mendes rejected your expense", detail
+   * "Fuel & Vehicle · $38.50 · “No receipt attached”".
+   */
+  private async notifySubmitter(orgId: string, actorUserId: string, submitterUserId: string, expense: { id: string; category: string; amountText: string }, rejectReason: string | null) {
+    const [actor] = await this.db.select({ name: user.name }).from(user).where(eq(user.id, actorUserId));
+    const who = actor?.name || "Your office";
+    const rejected = rejectReason !== null;
+    const verb = rejected ? "rejected" : "approved";
+    const detail = [expense.category, expense.amountText, ...(rejected && rejectReason.trim() ? [`“${rejectReason.trim()}”`] : [])].join(" · ");
+    await this.notifications.notify(orgId, {
+      subject: `${who} ${verb} your expense`,
+      text: `${who} ${verb} your expense (${detail}).`,
+      recipientUserIds: [submitterUserId],
+      inApp: { type: rejected ? "expense_rejected" : "expense_approved", message: `${who} ${verb} your expense`, detail, link: `/expenses/${expense.id}` },
+    });
   }
 
   /**

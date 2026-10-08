@@ -240,7 +240,7 @@ A generic, org-scoped uploaded-file record — the storage key (inside the drive
 
 PRD S-10.11 (added 2026-08-08 at the user's explicit request — see CHANGELOG for the scope discussion) — the persisted, in-app-visible half of a notification. `NotificationsService.notify()` (built in Quotes Stage 3, S-03.7) already queues an email per recipient; this table is the second, additive delivery channel for…
 
-`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `recipient_user_id` text (not null, → user (cascade)) · `type` text (not null) · `message` text (not null) · `link` text · `read_at` timestamp · `created_at` timestamp (not null, default now)
+`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `recipient_user_id` text (not null, → user (cascade)) · `type` text (not null) · `message` text (not null) · `detail` text (US-MOB-22, migration 0109: the line under the message, e.g. "Fuel & Vehicle · $38.50 · “No receipt attached”"; null on older types) · `link` text · `read_at` timestamp · `created_at` timestamp (not null, default now)
 
 ### CRM
 

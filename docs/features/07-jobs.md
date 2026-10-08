@@ -254,7 +254,7 @@ Legacy: S-04.8
 - **Given** an Owner or Staff user who is on no crew, **when** their app requests the mobile job feed, **then** it returns an empty list and the app shows "No jobs assigned to you yet".
 
 **Implementation notes**
-- API: `GET /jobs?assignedToMe=true` (built). The app screens aren't built yet; the server-forced Field filter is US-JOB-19.
+- API: `GET /jobs?assignedToMe=true` (built); the server-forced Field filter is US-JOB-19. The field app's Jobs tab and Today read it; on each refresh the phone drops the cached copy (detail, milestones, photos, quotes) of any job that left the list.
 
 ### US-JOB-17 · Let a Team edit only its own jobs
 **Feature:** F-JOB-08 · **Priority:** P1 · **Phase:** 4 · **Screens:** `JobEditDialog`, `JobMilestones`

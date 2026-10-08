@@ -3,6 +3,7 @@ import { apiRequest, type Method, type RequestOptions } from "../api/request";
 import { AccessRemovedError, SessionExpiredError, UpdateRequiredError } from "../api/errors";
 import { discoverServer, fetchMember, passwordSignIn, revokeSession, SignInError, SIGN_IN_FAILED_MESSAGE, type SignInField } from "./sign-in";
 import { clearSession, loadLastSignIn, loadSession, saveSession, type StoredSession } from "./storage";
+import { cache } from "../cache/cache-store";
 
 export type SessionState =
   | { status: "loading" }
@@ -55,6 +56,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const session = sessionRef.current;
     sessionRef.current = null;
     await clearSession();
+    // The cached jobs, expenses and notifications are this person's: gone with the session.
+    await cache.clear();
     const last = await loadLastSignIn();
     setState({ status: "signedOut", notice, lastServer: last?.server ?? session?.server, lastEmail: last?.email ?? session?.member.email });
   }, []);

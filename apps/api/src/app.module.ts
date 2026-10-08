@@ -38,6 +38,7 @@ import { DemoDataModule } from "./modules/demo-data/demo-data.module";
 import { SetupModule } from "./modules/setup/setup.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { DataExportModule } from "./modules/data-export/data-export.module";
+import { MobileModule } from "./modules/mobile/mobile.module";
 import { SearchModule } from "./modules/search/search.module";
 import { QueueModule } from "./modules/queue/queue.module";
 import { EmailModule } from "./modules/email/email.module";
@@ -89,6 +90,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     SetupModule,
     DashboardModule,
     DataExportModule,
+    MobileModule,
     SearchModule,
   ],
   providers: [

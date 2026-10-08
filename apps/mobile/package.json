@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:e2e": "maestro test e2e/us-mob-01-sign-in.yaml"
+    "test:e2e": "maestro test e2e/us-mob-01-sign-in.yaml e2e/us-mob-03-today.yaml e2e/us-mob-04-jobs.yaml e2e/us-mob-23-search.yaml"
   },
   "dependencies": {
     "@expo/ui": "57.0.16",
@@ -22,6 +22,7 @@
     "expo-network": "~57.0.2",
     "expo-router": "57.0.19",
     "expo-secure-store": "~57.0.2",
+    "expo-sqlite": "~57.0.4",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.4",
     "expo-web-browser": "^57.0.2",

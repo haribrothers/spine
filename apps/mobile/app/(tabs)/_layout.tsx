@@ -1,6 +1,7 @@
 import { Platform } from "react-native";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { useNativeColors } from "@spine/ui-native";
+import { useModules } from "../../src/lib/data/modules";
 
 /**
  * US-MOB-19 / D-197 — native tabs: Today, Jobs and Expenses, plus Search.
@@ -9,10 +10,11 @@ import { useNativeColors } from "@spine/ui-native";
  * navigation bar where Search is an ordinary fourth tab. Icons are SF
  * Symbols / Material Symbols — the one place Lucide isn't used (see
  * apps/showcase-native's tab layout). Groups need `name="(group)"`
- * (docs/design/native-notes.md).
+ * (docs/design/native-notes.md). Jobs & field off hides the Jobs tab (D-198).
  */
 export default function TabsLayout() {
   const colors = useNativeColors();
+  const modules = useModules();
 
   return (
     <NativeTabs
@@ -25,7 +27,7 @@ export default function TabsLayout() {
         <NativeTabs.Trigger.Icon sf={{ default: "house", selected: "house.fill" }} md="today" />
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="jobs">
+      <NativeTabs.Trigger name="jobs" hidden={!modules.jobsField}>
         <NativeTabs.Trigger.Icon sf={{ default: "briefcase", selected: "briefcase.fill" }} md="work" />
         <NativeTabs.Trigger.Label>Jobs</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

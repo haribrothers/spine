@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
 import type { Database } from "../../db/client";
-import { member, organization } from "../../db/schema";
+import { contacts, jobs, member, organization } from "../../db/schema";
 import { signUp } from "../../test-utils/test-app";
 
 /** An owner's organisation plus a Field member in it — the field app's usual caller. */
@@ -30,4 +30,23 @@ export async function bearerSignIn(baseUrl: string, email: string, password: str
     body: JSON.stringify({ email, password }),
   });
   return { res, token: res.headers.get("set-auth-token") };
+}
+
+/** A customer and a job in `orgId`, written directly (US-MOB-03 to US-MOB-05 fixtures). */
+export async function customerWithJob(
+  db: Database,
+  orgId: string,
+  options: { customer?: Partial<typeof contacts.$inferInsert>; job?: Partial<typeof jobs.$inferInsert> } = {},
+) {
+  const [contact] = await db.insert(contacts).values({ orgId, type: "customer", name: "Harborview Construction Co.", ...options.customer }).returning();
+  const [job] = await db
+    .insert(jobs)
+    .values({ orgId, contactId: contact!.id, name: `Marina office fit-out ${randomUUID().slice(0, 4)}`, siteAddress: "48 Harbor Way, Portland, ME 04101", currency: "USD", contractValueAmount: 4_800_000n, ...options.job })
+    .returning();
+  return { contactId: contact!.id, jobId: job!.id };
+}
+
+/** `Authorization: Bearer` headers the way the phone sends them. */
+export function bearer(token: string, extra: Record<string, string> = {}) {
+  return { Authorization: `Bearer ${token}`, ...extra };
 }

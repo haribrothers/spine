@@ -1,3 +1,4 @@
+import { orgMoneySettings } from "../../common/money-format";
 import { BadRequestException, ForbiddenException, Inject, Injectable } from "@nestjs/common";
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
@@ -66,8 +67,9 @@ export class MembersService {
    * link is not access control, but it's still useful UI signal, and every
    * `team/*` page independently re-checks this server-side too.
    */
-  async getMe(orgId: string, userId: string): Promise<MemberRow & { organizationName: string }> {
+  async getMe(orgId: string, userId: string): Promise<MemberRow & { organizationName: string; currency: string; locale: string }> {
     // `organizationName` — US-MOB-02: the field app's Profile shows "Field · <Business>".
+    // `currency`/`locale` — US-MOB-03: the phone formats money and dates the business's way.
     const [row] = await this.db
       .select({ ...this.memberRowSelection, organizationName: organization.name })
       .from(member)
@@ -77,7 +79,7 @@ export class MembersService {
     if (!row) {
       throw new BadRequestException("Not a member of this organisation");
     }
-    return row;
+    return { ...row, ...(await orgMoneySettings(this.db, orgId)) };
   }
 
   private async getRow(memberId: string): Promise<MemberRow> {
