@@ -76,6 +76,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
       { slug: "native-text-field", name: "Native Text Field (iOS)", description: "Real SwiftUI TextField, colored with this design system's own tokens — iOS only." },
       { slug: "select", name: "Select", description: "Single-choice picker using the OS's native picker chrome." },
+      { slug: "outlined-text-field", name: "Outlined Text Field", description: "Material 3 outlined field with a notched label — Android forms in the field app." },
       { slug: "select-field", name: "Select Field", description: "TextField-styled select opening a native menu — matches surrounding form fields." },
       { slug: "date-time-picker", name: "Date & Time Picker", description: "TextField-styled trigger with a calendar/clock icon, opening a native date/time popup." },
       { slug: "card", name: "Card", description: "Card, Header, Title, Description, Content, and Footer composition." },

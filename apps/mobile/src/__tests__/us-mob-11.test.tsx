@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { mockTakePicture } from "../test-utils/camera-mock";
 import { mockRouter } from "../test-utils/router-mock";
 import { renderWithSession } from "../test-utils/session";
@@ -27,7 +27,10 @@ describe("US-MOB-11 · take site photos tagged to a job, even offline", () => {
     await cache.write(JOBS_KEY, [MARINA, TOWNHOMES]);
     await cache.write(milestonesKey(MARINA.id), MILESTONES);
   });
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    jest.restoreAllMocks();
+    Platform.OS = "ios";
+  });
 
   it("opens the camera with the job at the top (changeable), flash, shutter and Done", async () => {
     renderWithSession(<CameraScreen mode="photos" jobId={MARINA.id} />, { request: offline });
@@ -69,6 +72,24 @@ describe("US-MOB-11 · take site photos tagged to a job, even offline", () => {
     expect(item).toMatchObject({ kind: "photos", status: "waiting", payload: { jobId: MARINA.id, jobName: MARINA.name, milestoneId: "m-1" } });
     expect(item!.kind === "photos" && item!.payload.photos.map((p) => p.caption)).toEqual(["Site cabin in place", "Fencing"]);
     expect(mockRouter.back).toHaveBeenCalled();
+  });
+
+  it("uses Material outlined fields on Android: Caption with its hint, Job and Milestone dropdowns, and Save in the top bar", async () => {
+    Platform.OS = "android";
+    renderWithSession(<CameraScreen mode="photos" jobId={MARINA.id} />, { request: offline });
+    await screen.findByText("Marina office fit-out");
+    await shoot(1);
+    fireEvent.press(screen.getByTestId("camera-done"));
+    expect(await screen.findByText("1 photo")).toBeTruthy();
+    expect(screen.getByTestId("review-caption").props.placeholder).toBe("What does this photo show?");
+    expect(screen.UNSAFE_getByProps({ testID: "review-job" }).props.variant).toBe("outlined");
+    expect(screen.UNSAFE_getByProps({ testID: "review-milestone" }).props.variant).toBe("outlined");
+    expect(screen.getByRole("button", { name: "Job: Marina office fit-out" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Milestone (optional): No milestone" })).toBeTruthy();
+    fireEvent.changeText(screen.getByTestId("review-caption"), "Cabinets in");
+    await act(async () => fireEvent.press(screen.getByTestId("review-save")));
+    const [item] = outbox.snapshot();
+    expect(item!.kind === "photos" && item!.payload.photos.map((p) => p.caption)).toEqual(["Cabinets in"]);
   });
 
   it("asks before discarding photos taken but not saved", async () => {

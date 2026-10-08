@@ -3,6 +3,7 @@ import { TextFieldScreen } from "../../app/components/text-field";
 import { NativeTextFieldScreen } from "../../app/components/native-text-field";
 import { SelectScreen } from "../../app/components/select";
 import { SelectFieldScreen } from "../../app/components/select-field";
+import { OutlinedTextFieldScreen } from "../../app/components/outlined-text-field";
 import { DateTimePickerScreen } from "../../app/components/date-time-picker";
 import { CardScreen } from "../../app/components/card";
 import { AvatarScreen } from "../../app/components/avatar";
@@ -54,6 +55,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "native-text-field": NativeTextFieldScreen,
     select: SelectScreen,
     "select-field": SelectFieldScreen,
+    "outlined-text-field": OutlinedTextFieldScreen,
     "date-time-picker": DateTimePickerScreen,
     card: CardScreen,
     avatar: AvatarScreen,

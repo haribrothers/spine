@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Platform } from "react-native";
 import { mockRouter, mockScreen } from "../test-utils/router-mock";
 import { renderWithSession, MARCUS } from "../test-utils/session";
 import { MARINA, routeRequests, TOWNHOMES } from "../test-utils/fixtures";
@@ -34,6 +35,9 @@ describe("US-MOB-13 · submit an expense with a receipt photo", () => {
     mockRouter.back.mockClear();
     await cache.write(JOBS_KEY, [MARINA, TOWNHOMES]);
   });
+  afterEach(() => {
+    Platform.OS = "ios";
+  });
 
   it("asks for the amount in the business currency, category, job, date, paid by, description and a receipt, with the note", async () => {
     renderForm();
@@ -57,6 +61,21 @@ describe("US-MOB-13 · submit an expense with a receipt photo", () => {
     expect(screen.getByText(CHOOSE_CATEGORY)).toBeTruthy();
     expect(screen.getByText(AMOUNT_ABOVE_ZERO)).toBeTruthy();
     expect(outbox.snapshot()).toHaveLength(0);
+  });
+
+  it("uses Material outlined fields on Android, with each error under its outline", async () => {
+    Platform.OS = "android";
+    renderForm();
+    await screen.findByText("Amount (USD)");
+    expect(screen.getByText("$")).toBeTruthy();
+    for (const id of ["expense-category", "expense-job", "expense-date"]) expect(screen.UNSAFE_getByProps({ testID: id }).props.variant).toBe("outlined");
+    expect(screen.getByRole("button", { name: /^Date: / })).toBeTruthy();
+    const submit = (mockScreen.options.headerRight as () => React.ReactElement<{ onPress: () => void }>)();
+    await act(async () => submit.props.onPress());
+    expect(screen.getByText(CHOOSE_CATEGORY)).toBeTruthy();
+    expect(screen.getByText(AMOUNT_ABOVE_ZERO)).toBeTruthy();
+    expect(screen.getByTestId("expense-amount").props.accessibilityHint).toBe(AMOUNT_ABOVE_ZERO);
+    expect(screen.getByRole("button", { name: "Category: Choose a category" }).props.accessibilityHint).toBe(CHOOSE_CATEGORY);
   });
 
   it("puts a valid expense with its receipt in the outbox, to show under WAITING TO SYNC", async () => {

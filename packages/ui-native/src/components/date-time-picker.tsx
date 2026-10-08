@@ -6,6 +6,7 @@ import ExpoDateTimePicker, { type DateTimePickerProps as ExpoDateTimePickerProps
 import { DatePicker, Host } from "@expo/ui/swift-ui";
 import { disabled as disabledMod } from "@expo/ui/swift-ui/modifiers";
 import { useNativeColors } from "../theme/use-native-colors";
+import { OutlinedFrame } from "./outlined-text-field";
 
 /**
  * `@expo/ui`'s community `DateTimePicker` — `@react-native-community/
@@ -162,6 +163,13 @@ export interface DateTimePickerProps {
   maximumDate?: Date;
   disabled?: boolean;
   testID?: string;
+  /**
+   * Android only: `outlined` is Material 3's outlined field (`OutlinedFrame`)
+   * with `label` on its outline and the calendar/clock icon at the end — for
+   * forms built from outlined fields. iOS always shows SwiftUI's compact pill.
+   */
+  variant?: "pill" | "outlined";
+  label?: string;
 }
 
 function formatValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
@@ -199,7 +207,7 @@ function mergeDateAndTime(date: Date, time: Date): Date {
   return merged;
 }
 
-export function DateTimePicker({ value, onChange, mode = "date", minimumDate, maximumDate, disabled = false, testID }: DateTimePickerProps) {
+export function DateTimePicker({ value, onChange, mode = "date", minimumDate, maximumDate, disabled = false, testID, variant = "pill", label }: DateTimePickerProps) {
   const colors = useNativeColors();
 
   if (Platform.OS === "android") {
@@ -213,6 +221,7 @@ export function DateTimePicker({ value, onChange, mode = "date", minimumDate, ma
           maximumDate={maximumDate}
           disabled={disabled}
           testID={testID}
+          outlinedLabel={variant === "outlined" ? (label ?? "") : undefined}
           accentColor={colors.primary}
           iconColor={colors.onSurfaceMuted}
         />
@@ -247,10 +256,11 @@ function AndroidDateTimePickerField({
   maximumDate,
   disabled,
   testID,
+  outlinedLabel,
   accentColor,
   iconColor,
 }: Required<Pick<DateTimePickerProps, "value" | "onChange" | "mode" | "disabled">> &
-  Pick<DateTimePickerProps, "minimumDate" | "maximumDate" | "testID"> & { accentColor: string; iconColor: string }) {
+  Pick<DateTimePickerProps, "minimumDate" | "maximumDate" | "testID"> & { outlinedLabel?: string; accentColor: string; iconColor: string }) {
   // `false` = closed. For `date`/`time` mode, `"date"`/`"time"` is the one
   // dialog step. For `datetime` mode (no native combined dialog on Android
   // — see this file's own doc comment), this is a real two-step state
@@ -282,8 +292,20 @@ function AndroidDateTimePickerField({
     setStep(false);
   }
 
+  const outlined = outlinedLabel !== undefined;
+  const Icon = mode === "time" ? ClockIcon : CalendarIcon;
   return (
     <>
+      {outlined ? (
+        <Pressable disabled={disabled} onPress={handlePress} accessibilityRole="button" accessibilityLabel={`${outlinedLabel}: ${formatValue(value, mode)}`} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
+          <OutlinedFrame label={outlinedLabel}>
+            <View className="flex-row items-center justify-between gap-2">
+              <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">{formatValue(value, mode)}</Text>
+              <Icon size={20} color={iconColor} />
+            </View>
+          </OutlinedFrame>
+        </Pressable>
+      ) : (
       <Pressable
         disabled={disabled}
         onPress={handlePress}
@@ -298,8 +320,9 @@ function AndroidDateTimePickerField({
         ].join(" ")}
       >
         <Text className="text-[14px] text-on-surface dark:text-on-surface-dark">{formatValue(value, mode)}</Text>
-        {mode === "time" ? <ClockIcon size={16} color={iconColor} /> : <CalendarIcon size={16} color={iconColor} />}
+        <Icon size={16} color={iconColor} />
       </Pressable>
+      )}
       {step === "date" ? (
         <ExpoDateTimePicker
           value={value}

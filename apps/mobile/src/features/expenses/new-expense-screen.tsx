@@ -6,7 +6,7 @@ import ImagePlus from "lucide-react-native/icons/image-plus";
 import Plus from "lucide-react-native/icons/plus";
 import X from "lucide-react-native/icons/x";
 import { toDecimalString } from "@spine/shared/money";
-import { DateTimePicker, FloatingLabelField, FORM_ROW_HEIGHT, FormRow, FormSection, SegmentedControl, SelectListField, useNativeColors } from "@spine/ui-native";
+import { DateTimePicker, FloatingLabelField, FORM_ROW_HEIGHT, FormRow, FormSection, OutlinedTextField, SegmentedControl, SelectListField, useNativeColors } from "@spine/ui-native";
 import { outbox } from "../../lib/outbox/outbox";
 import { syncEngine } from "../../lib/outbox/sync-engine";
 import { pickPhoto } from "../../lib/outbox/pick-photo";
@@ -182,6 +182,26 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
 
   const total = tradesTotal(draft.trades, currency);
   const labour = draft.mode === "labour";
+  const categoryField = {
+    floatingLabel: "Category",
+    placeholder: "Choose a category",
+    sheetTitle: "Category",
+    value: draft.categoryId,
+    error: Boolean(shown.category),
+    options: categories.map((c) => ({ label: c.name, value: c.id })),
+    onValueChange: (categoryId: string) => update({ categoryId }),
+  };
+  const jobField = modules.jobsField
+    ? {
+        floatingLabel: "Job",
+        placeholder: labour ? "Choose a job" : "No job",
+        sheetTitle: "Job",
+        value: draft.jobId ?? (labour ? null : NO_JOB),
+        error: Boolean(shown.job),
+        options: [...(labour ? [] : [{ label: "No job", value: NO_JOB }]), ...jobs.map((j) => ({ label: j.name, value: j.id }))],
+        onValueChange: (id: string) => update({ jobId: id === NO_JOB ? null : id }),
+      }
+    : null;
 
   return (
     <ScrollView testID="new-expense" keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" className="flex-1 bg-background dark:bg-background-dark" contentContainerClassName="gap-5 px-4 pb-16 pt-4">
@@ -214,9 +234,16 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
       {labour ? null : (
         <View className={android ? "" : "items-center gap-1"}>
           {android ? (
-            <FormRow error={shown.amount}>
-              <FloatingLabelField testID="expense-amount" label={`Amount (${currency})`} value={draft.amount} onChangeText={(amount) => update({ amount })} keyboardType="decimal" error={Boolean(shown.amount)} />
-            </FormRow>
+            <OutlinedTextField
+              testID="expense-amount"
+              label={`Amount (${currency})`}
+              prefix={currencySymbol(currency, format.locale)}
+              value={draft.amount}
+              onChangeText={(amount) => update({ amount })}
+              keyboardType="decimal-pad"
+              error={Boolean(shown.amount)}
+              helperText={shown.amount ?? undefined}
+            />
           ) : (
             <>
               <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">Amount ({currency})</Text>
@@ -239,39 +266,28 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
         </View>
       )}
 
-      <FormSection>
-        <FormRow error={shown.category}>
-          <SelectListField
-            testID="expense-category"
-            variant={android ? "bordered" : "row"}
-            floatingLabel="Category"
-            placeholder="Choose a category"
-            sheetTitle="Category"
-            value={draft.categoryId}
-            error={Boolean(shown.category)}
-            options={categories.map((c) => ({ label: c.name, value: c.id }))}
-            onValueChange={(categoryId) => update({ categoryId })}
-          />
-        </FormRow>
-        {modules.jobsField ? (
-          <FormRow error={shown.job}>
-            <SelectListField
-              testID="expense-job"
-              variant={android ? "bordered" : "row"}
-              floatingLabel="Job"
-              placeholder={labour ? "Choose a job" : "No job"}
-              sheetTitle="Job"
-              value={draft.jobId ?? (labour ? null : NO_JOB)}
-              error={Boolean(shown.job)}
-              options={[...(labour ? [] : [{ label: "No job", value: NO_JOB }]), ...jobs.map((j) => ({ label: j.name, value: j.id }))]}
-              onValueChange={(id) => update({ jobId: id === NO_JOB ? null : id })}
-            />
+      {android ? (
+        // `MobExpenseNewAndroid`: Material outlined fields, no grouped card.
+        <View className="gap-4">
+          <SelectListField testID="expense-category" variant="outlined" {...categoryField} helperText={shown.category ?? undefined} />
+          {jobField ? <SelectListField testID="expense-job" variant="outlined" {...jobField} helperText={shown.job ?? undefined} /> : null}
+          <DateTimePicker testID="expense-date" variant="outlined" label="Date" mode="date" value={draft.date} maximumDate={new Date()} onChange={(date) => update({ date })} />
+        </View>
+      ) : (
+        <FormSection>
+          <FormRow error={shown.category}>
+            <SelectListField testID="expense-category" variant="row" {...categoryField} />
           </FormRow>
-        ) : null}
-        <FormRow label="Date" last>
-          <DateTimePicker testID="expense-date" mode="date" value={draft.date} maximumDate={new Date()} onChange={(date) => update({ date })} />
-        </FormRow>
-      </FormSection>
+          {jobField ? (
+            <FormRow error={shown.job}>
+              <SelectListField testID="expense-job" variant="row" {...jobField} />
+            </FormRow>
+          ) : null}
+          <FormRow label="Date" last>
+            <DateTimePicker testID="expense-date" mode="date" value={draft.date} maximumDate={new Date()} onChange={(date) => update({ date })} />
+          </FormRow>
+        </FormSection>
+      )}
 
       {labour ? (
         <View className="gap-2">
@@ -307,11 +323,15 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
             <SectionHeader title="Paid by" />
             <SegmentedControl testID="expense-paid-by" values={PAID_BY.map((p) => p.label)} value={PAID_BY.find((p) => p.value === draft.paidBy)!.label} onValueChange={(label) => update({ paidBy: PAID_BY.find((p) => p.label === label)!.value })} />
           </View>
-          <FormSection>
-            <FormRow last>
-              <FloatingLabelField testID="expense-description" label="Description" value={draft.description} onChangeText={(description) => update({ description })} />
-            </FormRow>
-          </FormSection>
+          {android ? (
+            <OutlinedTextField testID="expense-description" label="Description" value={draft.description} onChangeText={(description) => update({ description })} />
+          ) : (
+            <FormSection>
+              <FormRow last>
+                <FloatingLabelField testID="expense-description" label="Description" value={draft.description} onChangeText={(description) => update({ description })} />
+              </FormRow>
+            </FormSection>
+          )}
         </>
       )}
 

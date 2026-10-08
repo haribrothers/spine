@@ -125,3 +125,18 @@ describe("SelectListField a11y", () => {
     expect(findList(root).props.initialScrollIndex).toBeUndefined();
   });
 });
+
+describe("SelectListField outlined a11y", () => {
+  it("is a button named by its label and value, with the label on the outline", () => {
+    render(<SelectListField variant="outlined" floatingLabel="Job" options={OPTIONS} value="bright" onValueChange={() => {}} testID="job" />);
+    const trigger = screen.getByRole("button");
+    expect(trigger.props.accessibilityLabel).toBe("Job: Bright Homes");
+    expect(screen.getByText("Job")).toBeTruthy();
+  });
+
+  it("opens the sheet on press", () => {
+    const root = render(<SelectListField variant="outlined" floatingLabel="Job" options={OPTIONS} value={null} placeholder="Choose a job" onValueChange={() => {}} testID="job" />);
+    fireEvent.press(screen.getByTestId("job"));
+    expect(root.UNSAFE_root.findByType(FlatList)).toBeTruthy();
+  });
+});

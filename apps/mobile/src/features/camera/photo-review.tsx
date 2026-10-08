@@ -3,7 +3,7 @@ import { Image, Platform, Pressable, ScrollView, Text, View } from "react-native
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Plus from "lucide-react-native/icons/plus";
 import X from "lucide-react-native/icons/x";
-import { FloatingLabelField, FormRow, FormSection, FullWidthButton, SelectListField, useNativeColors } from "@spine/ui-native";
+import { FloatingLabelField, FormRow, FormSection, FullWidthButton, OutlinedTextField, SelectListField, useNativeColors } from "@spine/ui-native";
 import { outbox } from "../../lib/outbox/outbox";
 import type { LocalPhoto } from "../../lib/outbox/types";
 import { milestonesKey, useAssignedJobs, type FieldMilestone } from "../../lib/data/jobs";
@@ -66,6 +66,25 @@ export function PhotoReview({
     onSaved();
   };
 
+  const jobField = {
+    floatingLabel: "Job",
+    placeholder: "Choose a job",
+    sheetTitle: "Job",
+    value: jobId,
+    options: jobs.map((j) => ({ label: j.name, value: j.id })),
+    onValueChange: (id: string) => {
+      onJobChange(id);
+      setMilestoneId(NO_MILESTONE);
+    },
+  };
+  const milestoneField = {
+    floatingLabel: "Milestone (optional)",
+    sheetTitle: "Milestone",
+    value: milestoneId,
+    options: [{ label: "No milestone", value: NO_MILESTONE }, ...pending.map((m) => ({ label: m.name, value: m.id }))],
+    onValueChange: setMilestoneId,
+  };
+
   const title = `${photos.length} ${photos.length === 1 ? "photo" : "photos"}`;
   return (
     <View testID="photo-review" className="flex-1 bg-background dark:bg-background-dark" style={{ paddingTop: insets.top }}>
@@ -110,37 +129,26 @@ export function PhotoReview({
             <Plus size={22} color={colors.primary} />
           </Pressable>
         </View>
-        <FormSection>
-          <FormRow>
-            <FloatingLabelField testID="review-caption" label="Caption" value={current?.caption ?? ""} onChangeText={setCaption} />
-          </FormRow>
-          <FormRow>
-            <SelectListField
-              testID="review-job"
-              variant={android ? "bordered" : "row"}
-              floatingLabel="Job"
-              placeholder="Choose a job"
-              sheetTitle="Job"
-              value={jobId}
-              options={jobs.map((j) => ({ label: j.name, value: j.id }))}
-              onValueChange={(id) => {
-                onJobChange(id);
-                setMilestoneId(NO_MILESTONE);
-              }}
-            />
-          </FormRow>
-          <FormRow last>
-            <SelectListField
-              testID="review-milestone"
-              variant={android ? "bordered" : "row"}
-              floatingLabel="Milestone (optional)"
-              sheetTitle="Milestone"
-              value={milestoneId}
-              options={[{ label: "No milestone", value: NO_MILESTONE }, ...pending.map((m) => ({ label: m.name, value: m.id }))]}
-              onValueChange={setMilestoneId}
-            />
-          </FormRow>
-        </FormSection>
+        {android ? (
+          // `MobPhotoReviewAndroid`: Material outlined fields, no grouped card.
+          <View className="gap-4">
+            <OutlinedTextField testID="review-caption" label="Caption" placeholder="What does this photo show?" value={current?.caption ?? ""} onChangeText={setCaption} />
+            <SelectListField testID="review-job" variant="outlined" {...jobField} />
+            <SelectListField testID="review-milestone" variant="outlined" {...milestoneField} />
+          </View>
+        ) : (
+          <FormSection>
+            <FormRow>
+              <FloatingLabelField testID="review-caption" label="Caption" value={current?.caption ?? ""} onChangeText={setCaption} />
+            </FormRow>
+            <FormRow>
+              <SelectListField testID="review-job" variant="row" {...jobField} />
+            </FormRow>
+            <FormRow last>
+              <SelectListField testID="review-milestone" variant="row" {...milestoneField} />
+            </FormRow>
+          </FormSection>
+        )}
         <Text className="px-1 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{REVIEW_NOTE}</Text>
       </ScrollView>
       {android ? null : (

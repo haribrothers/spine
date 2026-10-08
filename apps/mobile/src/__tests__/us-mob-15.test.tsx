@@ -33,6 +33,16 @@ describe("US-MOB-15 · mark a milestone complete from the phone", () => {
     expect(screen.getByText("Mark complete")).toBeTruthy();
   });
 
+  it("shows the note as a Material outlined field on Android", async () => {
+    Platform.OS = "android";
+    renderWithSession(<MilestoneCompleteScreen jobId={MARINA.id} milestoneId="m-1" />);
+    expect(await screen.findByText("Note for the office (optional)")).toBeTruthy();
+    const note = screen.getByTestId("milestone-note");
+    expect(note.props.accessibilityLabel).toBe("Note for the office (optional)");
+    expect(note.props.multiline).toBe(true);
+    expect(screen.queryByText("NOTE FOR THE OFFICE (OPTIONAL)")).toBeNull();
+  });
+
   it("adds photos from the camera and puts the completion, note and photos in the outbox", async () => {
     renderWithSession(<MilestoneCompleteScreen jobId={MARINA.id} milestoneId="m-1" />);
     await screen.findByText("Mobilisation & site setup");

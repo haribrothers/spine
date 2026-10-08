@@ -2,8 +2,10 @@ import { useMemo, useRef, useState, type Context } from "react";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import CheckIcon from "lucide-react-native/icons/check";
+import Triangle from "lucide-react-native/icons/triangle";
 import { useNativeColors } from "../theme/use-native-colors";
 import { BottomSheet } from "./bottom-sheet";
+import { OutlinedFrame } from "./outlined-text-field";
 import { cn } from "../lib/cn";
 
 /**
@@ -71,7 +73,15 @@ export interface SelectListFieldProps<T extends string> {
   searchPlaceholder?: string;
   disabled?: boolean;
   error?: boolean;
-  variant?: "bordered" | "row";
+  /**
+   * `outlined` — Material 3's exposed dropdown (Android forms): the label in
+   * a notch on the outline and a ▾, via `OutlinedFrame`.
+   */
+  variant?: "bordered" | "row" | "outlined";
+  /** `outlined` only: what's behind the field, for the label's notch. */
+  labelBackgroundClassName?: string;
+  /** `outlined` only: text under the outline — the error message or a hint. */
+  helperText?: string;
   /**
    * A floating-style label — see `SelectField`'s own `floatingLabel` doc
    * comment for the full behavior (empty: centered placeholder text; has a
@@ -120,6 +130,8 @@ export function SelectListField<T extends string>({
   required = false,
   sheetTitle,
   testID,
+  labelBackgroundClassName,
+  helperText,
 }: SelectListFieldProps<T>) {
   const colors = useNativeColors();
   const { height: windowHeight } = useWindowDimensions();
@@ -179,9 +191,26 @@ export function SelectListField<T extends string>({
     setIsOpen(false);
   }
 
+  const trigger =
+    variant === "outlined" ? (
+      <Pressable onPress={handleOpen} disabled={disabled} accessibilityRole="button" accessibilityLabel={`${labelText ?? placeholder}: ${selected?.label ?? placeholder}`} accessibilityHint={error && helperText ? helperText : undefined} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
+        <OutlinedFrame label={labelText ?? placeholder} error={error} helperText={helperText} labelBackgroundClassName={labelBackgroundClassName}>
+          <View className="flex-row items-center justify-between gap-2">
+            <Text numberOfLines={1} className={cn("flex-1 text-[16px]", selected ? "text-on-surface dark:text-on-surface-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark")}>
+              {selected?.label ?? placeholder}
+            </Text>
+            {/* Material's arrow_drop_down. Rotated on a wrapper: react-native-svg reads a transform on the Svg as an SVG one (about 0,0). */}
+            <View style={{ transform: [{ rotate: "180deg" }] }}>
+              <Triangle size={10} color={colors.onSurfaceMuted} fill={colors.onSurfaceMuted} />
+            </View>
+          </View>
+        </OutlinedFrame>
+      </Pressable>
+    ) : null;
+
   return (
     <>
-      <Pressable
+      {trigger ?? <Pressable
         onPress={handleOpen}
         disabled={disabled}
         accessibilityRole="button"
@@ -228,7 +257,7 @@ export function SelectListField<T extends string>({
           </Text>
         )}
         <ChevronRight size={16} color={colors.onSurfaceMuted} />
-      </Pressable>
+      </Pressable>}
 
       <BottomSheet isPresented={isOpen} onDismiss={() => setIsOpen(false)} snapPoints={[{ fraction: SHEET_HEIGHT_FRACTION }]}>
         <View className="gap-3 px-4 pb-4 pt-2">

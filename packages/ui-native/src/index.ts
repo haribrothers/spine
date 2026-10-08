@@ -3,6 +3,7 @@ export { FullWidthButton, type FullWidthButtonProps } from "./components/full-wi
 export { TextField, type TextFieldProps } from "./components/text-field";
 export { NativeTextField, type NativeTextFieldProps } from "./components/native-text-field";
 export { FloatingLabelField, type FloatingLabelFieldProps } from "./components/floating-label-field";
+export { OutlinedFrame, OutlinedTextField, type OutlinedFrameProps, type OutlinedTextFieldProps } from "./components/outlined-text-field";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/card";
 export { Badge } from "./components/badge";
 export { StatusChip, statusChipVariants, type StatusChipProps } from "./components/status-chip";

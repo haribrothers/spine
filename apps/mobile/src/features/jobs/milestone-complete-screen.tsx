@@ -4,7 +4,7 @@ import { Stack, useRouter } from "expo-router";
 import Camera from "lucide-react-native/icons/camera";
 import Check from "lucide-react-native/icons/check";
 import X from "lucide-react-native/icons/x";
-import { useNativeColors } from "@spine/ui-native";
+import { OutlinedTextField, useNativeColors } from "@spine/ui-native";
 import { outbox } from "../../lib/outbox/outbox";
 import type { LocalPhoto } from "../../lib/outbox/types";
 import { newIdempotencyKey } from "../../lib/api/idempotency";
@@ -100,20 +100,33 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
         </View>
       </View>
 
-      <View className="gap-2">
-        <SectionHeader title="Note for the office (optional)" />
-        <TextInput
+      {android ? (
+        // `MobMilestoneCompleteAndroid`: a Material outlined note on the sheet's surface.
+        <OutlinedTextField
           testID="milestone-note"
+          label="Note for the office (optional)"
+          placeholder="What's done, anything they should know"
           value={note}
           onChangeText={setNote}
           multiline
-          accessibilityLabel="Note for the office (optional)"
-          placeholder="What's done, anything they should know"
-          placeholderTextColor={colors.onSurfaceMuted}
-          className="min-h-[88px] rounded-xl border border-border-strong bg-background px-4 py-3 text-[16px] text-on-surface dark:border-border-strong-dark dark:bg-background-dark dark:text-on-surface-dark"
-          style={{ textAlignVertical: "top" }}
+          labelBackgroundClassName="bg-surface dark:bg-surface-dark"
         />
-      </View>
+      ) : (
+        <View className="gap-2">
+          <SectionHeader title="Note for the office (optional)" />
+          <TextInput
+            testID="milestone-note"
+            value={note}
+            onChangeText={setNote}
+            multiline
+            accessibilityLabel="Note for the office (optional)"
+            placeholder="What's done, anything they should know"
+            placeholderTextColor={colors.onSurfaceMuted}
+            className="min-h-[88px] rounded-xl border border-border-strong bg-background px-4 py-3 text-[16px] text-on-surface dark:border-border-strong-dark dark:bg-background-dark dark:text-on-surface-dark"
+            style={{ textAlignVertical: "top" }}
+          />
+        </View>
+      )}
 
       <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{COMPLETE_NOTE}</Text>
       <View className={`pt-2 ${android ? "flex-row items-center justify-end gap-6" : ""}`}>

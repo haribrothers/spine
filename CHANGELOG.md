@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Field app: Material outlined fields on Android forms (US-MOB-11, US-MOB-13, US-MOB-15)
+
+- **Android forms now match their designs** (`MobPhotoReviewAndroid`, `MobExpenseNewAndroid`, `MobMilestoneCompleteAndroid`): Material 3 outlined fields with the label in a notch on the outline, no grouped white card. iOS keeps `FormSection`/`FormRow`.
+  - Photo review: "Caption" (hint "What does this photo show?"), "Job" ▾ and "Milestone (optional)" ▾.
+  - New expense: "Amount (<currency>)" with the currency symbol, "Category" ▾, "Job" ▾, "Date" with a calendar icon and "Description". Errors turn the outline red and show the message under it (also read as the field's hint).
+  - Mark complete: "Note for the office (optional)", multi-line, on the sheet's surface.
+- **`@spine/ui-native`:**
+  - New `OutlinedTextField` and `OutlinedFrame`, with an a11y test and a design-system-native page ("Outlined Text Field").
+  - `SelectListField` `variant="outlined"`, Material's exposed dropdown: label on the outline, ▾ and `helperText`.
+  - `DateTimePicker` `variant="outlined"` + `label` (Android).
+  - The outline thickens to 2 px when focused or in error without moving its content.
+
 ### 2026-10-09 — Phase 5 Group 4: photos, expenses and Mark complete (US-MOB-11 to US-MOB-15)
 
 - **Camera explainer (US-MOB-14):**
