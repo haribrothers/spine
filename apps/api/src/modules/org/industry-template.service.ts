@@ -41,11 +41,6 @@ export class IndustryTemplateService {
     });
   }
 
-  /** US-ONB-13 — kept for callers that only ever meant Construction. */
-  async seedConstruction(tx: Database | Transaction, orgId: string, actorUserId: string | null): Promise<TemplateSeedResult> {
-    return this.seedTemplate(tx, orgId, actorUserId, "construction");
-  }
-
   async seedTemplate(tx: Database | Transaction, orgId: string, actorUserId: string | null, template: IndustryTemplateValue): Promise<TemplateSeedResult> {
     const { accounts: templateAccounts, categories: templateCategories } = INDUSTRY_TEMPLATES[template];
     const [previous] = await tx.select().from(settings).where(and(eq(settings.orgId, orgId), eq(settings.key, TEMPLATE_SEED_KEY)));

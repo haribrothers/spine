@@ -7,11 +7,13 @@ The design canvas with every drawn screen: [Spine — New screens](https://claud
 ## Onboarding & first run
 
 ### OnbWelcome — Welcome / load demo data or set up
-**Priority:** P1 · **Phase:** 0 · **Stories:** US-ONB-01, US-ONB-02, US-ONB-09 · **Source:** Captured
+**Priority:** P1 · **Phase:** 0 · **Stories:** US-ONB-01, US-ONB-02, US-ONB-09, US-ONB-18 · **Source:** Captured
 
 ![OnbWelcome](screens/OnbWelcome.webp)
 
-Links to: `OnbBusinessProfile`
+Links to: `OnbBusinessProfile`, `DemoBusinessDialog`
+
+Since US-ONB-18, "Just show me around (use defaults)" opens `DemoBusinessDialog` instead of loading the demo straight away.
 
 Shows: "Welcome to Spine" · "Let's set a few things up - or jump straight in and configure them later from" · "Settings." · "Set up my business" · "Just show me around (use defaults)" · "skip to dashboard"
 
@@ -2394,11 +2396,20 @@ Links to: —
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Q Search settings" · "Document numbering" · "Prefix and starting number for each document type." · "ORGANISATION" · "dEb" · "Business profile" · "Document" · "Prefix" · "Padding" · "Starting number" · "* Industry template" · "Quote" · "QUO" · "® Currency & locale" · "• Financial year" · "Invoice" · "INV" · "11" · "% Tax" · "Credit Note" · "IE Numbering" · "CRN" · "evenue this month" · "• Chart of accounts" · "Receipt" · "RCP" · "15265.00 USD" · "?. Purchases" · "• Repeat quote conversion" · "Expense" · "EXP" · "/ Edit layout" · "to Upcoming meetings" · "Q Meeting reminders" · "Job" · "JOB" · "A Browser notifications" · "View board" · "Vendor Payment" · "VPY" · "• Demo data" · "Save" · …
 
 ### SettingsDemoData — Settings — demo data
-**Priority:** P2 · **Phase:** 8 · **Stories:** US-SET-08 · **Source:** Captured
+**Priority:** P2 · **Phase:** 8 · **Stories:** US-SET-08, US-ONB-17, US-ONB-18 · **Source:** Captured
 
 ![SettingsDemoData](screens/SettingsDemoData.webp)
 
-Links to: `DeleteDemoDataConfirm`
+Links to: `DeleteDemoDataConfirm`, `DemoBusinessDialog`
+
+Since US-ONB-18: with no demo loaded, the pane has "Load demo data" (opens `DemoBusinessDialog`); with one loaded, it names it ("Tarang Interiors · India (GST) · Interior design & fit-out"). After a deletion that kept a contact, it says "Kept 1 demo contact that your own records use." (US-ONB-17).
+
+### DemoBusinessDialog — Explore a demo business
+**Priority:** P1 · **Phase:** 9 · **Stories:** US-ONB-18 · **Source:** Built (not captured yet)
+
+Links to: `OnbWelcome`, `SettingsDemoData`
+
+Shows: "Explore a demo business" · "A sample business with six months of quotes, invoices, payments, bills and expenses. Delete it any time in Settings › Data — your own records stay." · Country (seven, e.g. "India (GST)"; fixed with "Demo data uses your business's country: …" once the business has records of its own, otherwise "Your tax country, currency and industry template change to the demo's. You can change them back in Settings.") · Industry (five) with "You'll see <business name>." · "Cancel" · "Load demo business"
 
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Get started" · "Q Search settings" · "Demo data" · "Sample contacts, catalogue items, quotes, invoices, and payments loaded from onboarding," · "ORGANISATION" · "for evaluating Spine before entering real data." · "‹E Business profile" · "Demo data is loaded" · "* Industry template" · "Removing it only deletes demo records — your real data is" · "Delete all demo data" · "° Currency & locale" · "never touched." · "• Financial year" · "% Tax" · "evenue this month" · "lE Numbering" · "15265.00 USD" · "Chart of accounts" · "?. Purchases" · "0 Edit layout" · "• Repeat quote conversion" · "to Upcoming meetings" · "View board" · "@ Meeting reminders" · "A Browser notifications" · "• Demo data" · "Won 422.00 USD • 4" · "Lost 155.00 USD • 1" · "Dec" · "Feb" · "Apr" · "Jun" · "Aug" · "Oct" · "Receivables aging" · "View all" · "Job profitability"
 

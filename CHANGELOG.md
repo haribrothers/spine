@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-ONB-18, US-ONB-19, US-ONB-21: demo businesses by country and industry (Phase 9)
+
+- **Choose your demo:** "Just show me around" on the welcome screen, and "Load demo data" in Settings › Data, open "Explore a demo business":
+  - Seven countries: United States, India, United Kingdom, Australia, New Zealand, UAE and Saudi Arabia.
+  - Five industries: Construction, Interior design & fit-out, Trades, IT services & agency and Professional services.
+  - The country is guessed from the browser's time zone.
+- **Realistic history:** each demo has about six months ending today — paid, part-paid, overdue, voided and draft invoices; quotes; jobs with milestones (and retention, variation orders); bills; expenses; a credit note; leads and meetings. Numbers follow dates.
+- **Settings:**
+  - On a business with no records of its own, loading also sets the country, currency, tax, financial year and template.
+  - Once it has records, the country is fixed and nothing of yours changes.
+  - Settings › Data names the loaded demo; a second demo can't be loaded on top.
+- **India (US-ONB-19):** a Bengaluru business with a GSTIN, HSN/SAC codes, CGST + SGST, IGST, SEZ supplies, B2C large and small sales, exports under LUT, a credit note, and input GST from registered vendors. Its GSTR-1 for this month and last has every table, no problems, and totals equal to the Tax Summary.
+- **UK, Australia, New Zealand, UAE and Saudi Arabia (US-ONB-21):** local contacts and prices, each country's VAT or GST, untaxed export lines, and VAT on expenses. UK invoices are titled "VAT invoice". UK new-build works are zero-rated, and mobility aids are at 5%.
+- **Unchanged default:** `POST /demo-data/seed` with no body still loads Riverstone Builders, exactly as before.
+- **For developers:**
+  - `@spine/shared/demo` holds every demo as data (country packs × industry packs). `buildDemoPlan` turns a choice into a plan, and `DemoSeederService` runs it through the real services.
+  - `SEED_DEMO=IN:interior_design` is specified for US-OPS-02.
+  - Q-21 asks whether GSTR-1 should leave retention releases out; India's demos don't release retention until it's answered.
+
 ### 2026-10-08 — US-ONB-20: industry templates for more kinds of business (Phase 9)
 
 - **Four new templates:** the Template step and Settings › Industry template now list Interior design & fit-out, Trades (electrical, plumbing, HVAC), IT services & agency and Professional services, alongside Construction / Contracting, General Services and Generic. Each says what it sets up.

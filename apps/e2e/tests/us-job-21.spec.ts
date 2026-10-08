@@ -12,8 +12,8 @@ test.describe("US-JOB-21", () => {
     const jobCard = page.getByTestId("invoice-job-card");
     await expect(jobCard).toContainText("Job");
     await expect(jobCard).toContainText("Milestone");
-    // US-JOB-22: the job is named with its number.
-    await expect(jobCard.getByRole("link").first()).toHaveText(/^JOB-\d{3} · /);
+    // US-JOB-22: the job is named with its number (a demo job's, US-ONB-17).
+    await expect(jobCard.getByRole("link").first()).toHaveText(/^DEMO-JOB-\d{3} · /);
     await expect(jobCard.getByRole("link").first()).toHaveAttribute("href", /\/jobs\//);
 
     await expect(page.getByText(/^Retention held \(\d+(\.\d+)?%\)$/)).toBeVisible();

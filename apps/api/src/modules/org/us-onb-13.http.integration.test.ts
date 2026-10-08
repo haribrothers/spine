@@ -56,6 +56,7 @@ describe("US-ONB-13 · start a construction business with site cost categories (
     const { status, body } = await choose(o.cookie, "construction");
     expect(status).toBeLessThan(300);
     expect(body.seeded).toEqual({
+      template: "construction",
       accounts: ["5300 · Plant & Equipment Hire", "5400 · Fuel & Freight", "5500 · Site Overheads & Permits"],
       categories: ["Materials", "Subcontractors", "Site labour", "Plant & equipment hire", "Fuel & freight", "Site overheads & permits"],
       kept: [],
@@ -98,7 +99,7 @@ describe("US-ONB-13 · start a construction business with site cost categories (
     const o = await owner();
     await choose(o.cookie, "construction");
     const again = await choose(o.cookie, "construction");
-    expect(again.body.seeded).toEqual({ accounts: [], categories: [], kept: [] });
+    expect(again.body.seeded).toEqual({ template: "construction", accounts: [], categories: [], kept: [] });
     expect(await categoriesOf(o.orgId)).toHaveLength(6);
 
     expect((await choose(o.cookie, "generic")).body.seeded).toBeUndefined();

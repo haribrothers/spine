@@ -340,7 +340,7 @@ Decision: D-192
 
 **Implementation notes**
 - API: `POST /demo-data/seed` body `{ country?, industry? }`; `GET /demo-data/status` → `{ hasDemoData, loaded: { country, industry, businessName } | null, country: DemoCountry | null, countryLocked }`. Owner-only, as before (US-OPS-20).
-- Shared: `packages/shared/src/demo/` — `DEMO_COUNTRIES`, `DEMO_INDUSTRIES`, the country and industry packs, `guessDemoCountry(timeZone)` and `buildDemoPlan(country, industry, today)`.
+- Shared: `packages/shared/src/demo/` — `DEMO_COUNTRIES`, `DEMO_INDUSTRIES`, the country packs (`countries.ts`), the industry packs (`industries/`) on a shared six-month timeline (`scenario.ts`), Riverstone (`riverstone.ts`), `guessDemoCountry(timeZone)` and `buildDemoPlan(country, industry)`, whose days are relative to today. The API's `DemoSeederService` runs a plan through the real services, every dated step in date order.
 - UI: `DemoBusinessDialog`, used by `WelcomeStep` and `SettingsDemoData`.
 - Edge: the business profile, logo and GST registration are only set when empty; demo users are the same two people for every demo.
 
@@ -359,7 +359,8 @@ Decision: D-192
 - **Given** its bills, **then** input GST from registered Karnataka and out-of-state vendors shows on the Tax Summary's paid side, and the unregistered vendor's bill has none.
 
 **Implementation notes**
-- Content: hand-written per industry in `packages/shared/src/demo/countries/in/`, amounts in paise, with HSN/SAC codes and rates checked against the slabs from 22 September 2025.
+- Content: India's prices (in rupees), HSN/SAC codes and GST slabs are written by hand on every item and typed line of each industry pack (`in: { price, hsnSac, slab }`), checked against the slabs from 22 September 2025; its contacts, GST treatments and PANs are in `countries.ts`. The second SEZ invoice is zero-rated by hand (under LUT); the voided invoice is raised and voided the same day, so this month's GSTR-1 and Tax Summary agree.
+- Edge: India's demos don't release retention until [Q-21](../prd/13-risks-open-questions.md) is answered.
 - Edge: the business isn't in a union territory, so UTGST isn't shown.
 
 ### US-ONB-20 · Start from a template for my industry

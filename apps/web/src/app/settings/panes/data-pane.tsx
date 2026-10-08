@@ -13,18 +13,22 @@ import {
   Button,
   Spinner,
 } from "@spine/ui";
+import { DEMO_COUNTRY_LABELS, INDUSTRY_TEMPLATES, type DemoDataStatus } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import { DemoBusinessDialog } from "../../../components/demo-business-dialog";
 import { SavedToast } from "../saved-toast";
 
 /**
- * Owner-only Settings › Data. "Delete all demo data" removes every row
- * tagged `isDemo`, the journal entries they posted and the demo number
- * series (US-ONB-17, D-191); the API picks the rows, never the client. A
- * demo contact that one of the person's own records uses is kept, and the
- * pane says so.
+ * Owner-only Settings › Data. "Load demo data" opens the country and
+ * industry picker (US-ONB-18); once loaded, the pane names the demo.
+ * "Delete all demo data" removes every row tagged `isDemo`, the journal
+ * entries they posted and the demo number series (US-ONB-17, D-191); the
+ * API picks the rows, never the client. A demo contact that one of the
+ * person's own records uses is kept, and the pane says so.
  */
 export function DataPane() {
-  const [status, setStatus] = useState<{ hasDemoData: boolean } | null>(null);
+  const [status, setStatus] = useState<DemoDataStatus | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [done, setDone] = useState(false);
@@ -32,7 +36,7 @@ export function DataPane() {
 
   useEffect(() => {
     let cancelled = false;
-    apiClient.get<{ hasDemoData: boolean }>("/demo-data/status").then((res) => {
+    apiClient.get<DemoDataStatus>("/demo-data/status").then((res) => {
       if (!cancelled) setStatus(res);
     });
     return () => {
@@ -40,12 +44,17 @@ export function DataPane() {
     };
   }, []);
 
+  async function handleLoaded() {
+    setKeptContacts(0);
+    setStatus(await apiClient.get<DemoDataStatus>("/demo-data/status"));
+  }
+
   async function handleDelete() {
     setDeleting(true);
     try {
       const result = await apiClient.delete<{ kept?: { contacts: number } }>("/demo-data");
       setKeptContacts(result?.kept?.contacts ?? 0);
-      setStatus({ hasDemoData: false });
+      setStatus(await apiClient.get<DemoDataStatus>("/demo-data/status"));
       setDone(true);
     } finally {
       setDeleting(false);
@@ -75,6 +84,11 @@ export function DataPane() {
         <div className="flex items-center justify-between rounded-md border border-border bg-surface p-4">
           <div className="flex flex-col gap-0.5">
             <span className="text-[13px] font-medium text-on-surface">Demo data is loaded</span>
+            {status.loaded && (
+              <span className="text-[13px] text-on-surface" data-testid="demo-loaded">
+                {`${status.loaded.businessName} · ${DEMO_COUNTRY_LABELS[status.loaded.country]} · ${INDUSTRY_TEMPLATES[status.loaded.industry].label}`}
+              </span>
+            )}
             <span className="text-[13px] text-on-surface-muted">Removing it only deletes demo records — your real data is never touched.</span>
           </div>
           <Button variant="danger" onClick={() => setConfirmOpen(true)}>
@@ -82,13 +96,18 @@ export function DataPane() {
           </Button>
         </div>
       ) : (
-        <div className="flex flex-col gap-1 rounded-md border border-border bg-surface p-4">
-          <span className="text-[13px] text-on-surface-muted">No demo data is currently loaded.</span>
-          {keptContacts > 0 && (
-            <span role="status" className="text-[13px] text-on-surface-muted">
-              {keptContactsMessage(keptContacts)}
-            </span>
-          )}
+        <div className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface p-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-[13px] text-on-surface-muted">No demo data is currently loaded.</span>
+            {keptContacts > 0 && (
+              <span role="status" className="text-[13px] text-on-surface-muted">
+                {keptContactsMessage(keptContacts)}
+              </span>
+            )}
+          </div>
+          <Button variant="secondary" onClick={() => setPickerOpen(true)}>
+            Load demo data
+          </Button>
         </div>
       )}
 
@@ -110,6 +129,7 @@ export function DataPane() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <DemoBusinessDialog open={pickerOpen} onOpenChange={setPickerOpen} onLoaded={handleLoaded} />
       <SavedToast open={done} onOpenChange={setDone} />
     </div>
   );

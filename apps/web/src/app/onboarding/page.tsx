@@ -7,6 +7,7 @@ import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spin
 import type { TaxCountry, TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { ThemeToggle } from "../../components/theme-toggle";
+import { DemoBusinessDialog } from "../../components/demo-business-dialog";
 import { BusinessProfileStep, type BusinessProfileValue } from "./steps/business-profile-step";
 import { WelcomeStep } from "./steps/welcome-step";
 import { IndustryTemplateStep, type IndustryTemplate } from "./steps/industry-template-step";
@@ -48,6 +49,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const [step, setStep] = useState<Step>("welcome");
   const [loading, setLoading] = useState(false);
+  const [demoOpen, setDemoOpen] = useState(false);
 
   async function markOnboardingStatus(status: { completedSteps?: string[]; skipped?: boolean; completedAt?: string }) {
     await apiClient.put("/org/settings/onboarding_status", { value: status });
@@ -66,10 +68,9 @@ export default function OnboardingPage() {
     }
   }
 
-  async function handleUseDemoDefaults() {
-    setLoading(true);
+  // US-ONB-18: the demo business is chosen in a dialog; once it's loaded, onboarding is skipped.
+  async function handleDemoLoaded() {
     try {
-      await apiClient.post("/demo-data/seed");
       await markOnboardingStatus({ skipped: true });
     } finally {
       goToDashboard();
@@ -117,10 +118,11 @@ export default function OnboardingPage() {
       {step === "welcome" && (
         <WelcomeStep
           onStartManual={() => setStep("profile")}
-          onUseDemoDefaults={handleUseDemoDefaults}
+          onUseDemoDefaults={() => setDemoOpen(true)}
           onSkip={handleSkip}
         />
       )}
+      <DemoBusinessDialog open={demoOpen} onOpenChange={setDemoOpen} onLoaded={handleDemoLoaded} />
 
       {step === "profile" && (
         <StepCard title="Tell us about your business" description="Name, logo and address — shown on quotes and invoices.">

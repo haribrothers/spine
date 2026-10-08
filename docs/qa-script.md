@@ -4180,8 +4180,74 @@ Use the GST business from section 175.
 5. Rename account 5600 to "Showroom Stock" before choosing Interior design & fit-out. The note keeps it: "Kept your existing account 5600 · Showroom Stock".
 6. Regression: Construction still sets up 5300–5500 and its six categories (section 1 of US-ONB-13); Generic still starts without Jobs (section 184 step 9).
 
+## 187. Choose the country and industry of the demo business (US-ONB-18, Phase 9)
+
+1. Set your computer's time zone to India (or open the browser with `Asia/Kolkata`).
+2. Sign up and press "Just show me around (use defaults)". "Explore a demo business" opens:
+   - Country shows India (GST), with "Your tax country, currency and industry template change to the demo's. …".
+   - Industry shows Construction / Contracting, with "You'll see Shilpa Buildcon.".
+   - Both lists hold seven countries and five industries.
+   - Pick Interior design & fit-out: the line becomes "You'll see Tarang Interiors.".
+3. "Load demo business" (a few seconds). The dashboard opens with rupee amounts. Then check:
+   - Settings: currency INR, tax country India, financial year from April, template Interior design & fit-out.
+   - Settings › Data: "Tarang Interiors · India (GST) · Interior design & fit-out".
+4. Look around, and check:
+   - Invoices: about six months of `DEMO-INV-…` numbers in date order, some paid, one part-paid and overdue, one voided today, and one draft.
+   - Payments come after their invoices.
+   - Quotes: draft, sent and revised.
+   - Jobs: three — one just started with a variation order, one half invoiced, one finished.
+   - Bills: paid, overdue, voided and draft. Expenses: approved, waiting and rejected.
+   - Every report has figures, and the Trial Balance balances.
+5. Repeat on fresh businesses for, say, United Kingdom × Trades and United States × IT services & agency. Each has local names, addresses and money.
+6. Professional services starts with Jobs switched off and has no jobs.
+7. On a business with an invoice of its own, Settings › Data › "Load demo data":
+   - Country is fixed to your tax country, with "Demo data uses your business's country: …".
+   - Loading changes none of your settings (currency, template, business name).
+8. With demo data loaded, Settings › Data offers only "Delete all demo data". Through the API, a second load answers 409 "Demo data is already loaded. Delete it first to load another demo business.".
+9. Regression:
+   - `POST /demo-data/seed` with no body still loads Riverstone Builders (section 1 step 7), which e2e relies on.
+   - Section 185 (delete leaves no trace) holds for every country and industry.
+
+## 188. An Indian GST demo business (US-ONB-19, Phase 9)
+
+1. Load India × any industry. Settings › GST shows:
+   - A Karnataka (29) GSTIN, legal and trade name, monthly returns and "We export under LUT" on.
+   - Settings › Business has the UPI ID `demo.business@example`, which pays no one.
+2. Contacts include:
+   - Registered businesses in Karnataka and Maharashtra.
+   - Consumers in Bengaluru and Hosur (Tamil Nadu).
+   - An SEZ unit and, for interior design, IT and professional services, a client in Dubai.
+   - Registered vendors in Karnataka and Tamil Nadu, and one unregistered vendor.
+3. Catalogue items have HSN/SAC codes and the GST 18% group with IGST 18% for other states.
+4. Invoices:
+   - Within Karnataka: CGST + SGST. To Pune: IGST, place of supply 27.
+   - To the SEZ unit: one with IGST, the recent one zero-rated under LUT.
+   - To Dubai: an export, zero-rated (place of supply 96).
+   - The PDFs show GST details and a UPI QR.
+5. GSTR-1 for this month and last month:
+   - B2B (with the SEZ invoice as SEWOP), B2C large (the Hosur invoice above ₹1,00,000), B2C small, CDNR (today's credit note), HSN summary and, where the industry exports, EXP all have rows.
+   - The checks list no problems, and the totals equal the Tax Summary.
+6. The Tax Summary shows CGST, SGST and IGST collected and paid, zero-rated sales, and the unregistered vendor's bill as non-taxable purchases.
+7. Regression: the Tally export of the period has the demo's vouchers, and after deleting the demo it has none.
+
+## 189. A VAT or GST demo business in my country (US-ONB-21, Phase 9)
+
+1. Load the United Kingdom, Australia, New Zealand, the UAE and Saudi Arabia × IT services & agency, each on a fresh business. Each has:
+   - Local contacts, addresses and phone numbers.
+   - Amounts in GBP, AUD, NZD, AED or SAR at local price levels.
+   - The country's preset rates.
+2. Each Tax Summary has:
+   - The standard rate (VAT 20%, GST 10%, GST 15%, VAT 5%, VAT 15%).
+   - Untaxed sales for the client abroad (zero-rated, or outside the scope in the UK).
+   - Tax paid on bills and expenses.
+3. United Kingdom × Construction:
+   - Invoice PDFs are titled "VAT invoice".
+   - The new-build stage payment is zero-rated.
+4. United Kingdom × Trades: mobility aids are at VAT 5%.
+
 ## Known gaps — don't file these as bugs
 
+- India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 
 - The Tally export hasn't yet been imported into a real TallyPrime or Tally.ERP 9 here. Section 179 step 8 is the check (R-16). Customer advances (2200) and retention (1150) stay as their own ledgers rather than on the party ledger.

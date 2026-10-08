@@ -6,7 +6,8 @@ test.describe("US-BANK-01", () => {
   test("an Owner sees the starting accounts, adds a bank account and a card, and moves the default", async ({ page }) => {
     await signUpNewOrg(page, { name: "Banking Owner", email: `e2e-bank-01-${randomUUID()}@example.com`, password: "e2e-test-password-1" });
 
-    await page.getByRole("link", { name: "Banking" }).click();
+    // The sidebar link: the dashboard's accounts card links to Banking too.
+    await page.locator('a[aria-label="Banking"]').click();
     await page.waitForURL("**/banking");
     const table = page.getByTestId("money-accounts-table");
     await expect(table.getByRole("row", { name: /Bank Account/ })).toContainText("Default");
