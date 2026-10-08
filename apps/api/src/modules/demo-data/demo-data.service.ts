@@ -107,7 +107,14 @@ export class DemoDataService {
     const industry: DemoIndustry = choice.industry ?? DEMO_DEFAULT.industry;
 
     const plan = buildDemoPlan(country, industry);
-    const result = await this.seeder.run(orgId, actorUserId, plan, { locked: status.countryLocked });
+    let result: Awaited<ReturnType<DemoSeederService["run"]>>;
+    try {
+      result = await this.seeder.run(orgId, actorUserId, plan, { locked: status.countryLocked });
+    } catch (error) {
+      // Nothing half-loaded is left behind: every demo row so far is this attempt's, so remove them and say what failed.
+      await this.deleteAll(orgId, actorUserId).catch(() => undefined);
+      throw error;
+    }
     const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds };
     await this.settingsService.set(orgId, DEMO_DATA_KEY, loaded);
     return { country, industry, businessName: plan.business.name, ...result.counts };

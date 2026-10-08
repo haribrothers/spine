@@ -4206,6 +4206,8 @@ Use the GST business from section 175.
 8. With demo data loaded, Settings › Data offers only "Delete all demo data". Through the API, a second load answers 409 "Demo data is already loaded. Delete it first to load another demo business.".
 9. Regression:
    - `POST /demo-data/seed` with no body still loads Riverstone Builders (section 1 step 7), which e2e relies on.
+   - On an install where sign-up is closed (any install after its first owner), loading a demo succeeds and Sarah Mendes and Marcus Webb can sign in with `DemoPassword123!`.
+   - If loading fails part-way (stop the database mid-load), nothing demo is left and "Load demo data" works again.
    - Section 185 (delete leaves no trace) holds for every country and industry.
 
 ## 188. An Indian GST demo business (US-ONB-19, Phase 9)

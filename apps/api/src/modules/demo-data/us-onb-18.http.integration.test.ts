@@ -1,14 +1,15 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, eq, isNotNull } from "drizzle-orm";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { and, asc, eq, inArray, isNotNull } from "drizzle-orm";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { buildDemoPlan, DEMO_COUNTRIES, DEMO_INDUSTRIES, type DemoDataStatus } from "@spine/shared";
 import { createDb, type Database } from "../../db/client";
-import { invoices, journalEntries, member, settings } from "../../db/schema";
+import { contacts, invoices, journalEntries, member, settings, user } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 import { ContactsService } from "../contacts/contacts.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { ReportsService } from "../reports/reports.service";
+import { DemoSeederService } from "./demo-seeder.service";
 
 /**
  * US-ONB-18 (D-192) — a demo business for every country and industry:
@@ -110,6 +111,42 @@ describe("US-ONB-18 · choose the country and industry of the demo business (req
     expect(await setting(orgId, "industry_template")).toEqual({ template: "generic" });
     expect((await setting(orgId, "business_profile"))?.name).not.toBe("Bluegum Labs");
     expect((await setting(orgId, "industry_template_seed"))?.template).toBe("it_services");
+  }, 120_000);
+
+  it("creates the demo Staff and Field people when sign-up is closed, as it is on any real install (US-AUTH-08)", async () => {
+    const { cookie, orgId } = await owner();
+    // From scratch: the demo people don't exist yet, as on a new install.
+    await db.delete(user).where(inArray(user.email, ["sarah.mendes.demo@example.com", "marcus.webb.demo@example.com"]));
+    const before = process.env.SPINE_ALLOW_OPEN_SIGNUP;
+    process.env.SPINE_ALLOW_OPEN_SIGNUP = "false";
+    try {
+      expect((await seed(cookie, { country: "IN", industry: "construction" })).status).toBe(201);
+    } finally {
+      process.env.SPINE_ALLOW_OPEN_SIGNUP = before;
+    }
+    const people = await db.select({ role: member.role, email: user.email }).from(member).innerJoin(user, eq(user.id, member.userId)).where(and(eq(member.organizationId, orgId), eq(member.isDemo, true)));
+    expect(people.map((p) => `${p.role}:${p.email}`).sort()).toEqual(["field:marcus.webb.demo@example.com", "staff:sarah.mendes.demo@example.com"]);
+    const signIn = await fetch(`${testApp.baseUrl}/api/auth/sign-in/email`, { method: "POST", headers: { "Content-Type": "application/json", Origin: process.env.APP_URL ?? "http://localhost:3000" }, body: JSON.stringify({ email: "sarah.mendes.demo@example.com", password: "DemoPassword123!" }) });
+    expect(signIn.status).toBe(200);
+  }, 120_000);
+
+  it("leaves nothing behind when loading fails part-way, so it can be tried again", async () => {
+    const { cookie, orgId } = await owner();
+    const seeder = testApp.app.get(DemoSeederService);
+    const run = seeder.run.bind(seeder);
+    const spy = vi.spyOn(seeder, "run").mockImplementationOnce(async (...args) => {
+      await run(...args);
+      throw new Error("Storage went away");
+    });
+    try {
+      expect((await seed(cookie, { country: "GB", industry: "trades" })).status).toBe(500);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(await db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.isDemo, true)))).toHaveLength(0);
+    expect(await db.select().from(journalEntries).where(eq(journalEntries.orgId, orgId))).toHaveLength(0);
+    expect((await status(cookie)).hasDemoData).toBe(false);
+    expect((await seed(cookie, { country: "GB", industry: "trades" })).status).toBe(201);
   }, 120_000);
 
   it("loads US construction (Riverstone Builders) without a choice, and rejects an unknown country", async () => {

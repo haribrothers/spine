@@ -4,8 +4,8 @@ import { asc, eq } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLine, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, leads, leadStages, meetings as meetingsTable, member, organization, quotes, teamMemberships, user } from "../../db/schema";
-import { auth } from "../../auth/auth";
+import { activities, addresses, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, leads, leadStages, meetings as meetingsTable, member, quotes, teamMemberships, user, account } from "../../db/schema";
+import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
 import { LeadStagesService } from "../contacts/lead-stages.service";
@@ -36,6 +36,7 @@ import { TeamsService } from "../teams/teams.service";
 const PLACEHOLDER_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 /** The two demo people every demo shares (real logins; their memberships are demo rows). */
+const DEMO_USER_PASSWORD = "DemoPassword123!";
 const DEMO_USERS: { email: string; name: string; role: "staff" | "field"; joinDefaultTeam: boolean }[] = [
   { email: "sarah.mendes.demo@example.com", name: "Sarah Mendes", role: "staff", joinDefaultTeam: true },
   { email: "marcus.webb.demo@example.com", name: "Marcus Webb", role: "field", joinDefaultTeam: false },
@@ -588,39 +589,34 @@ export class DemoSeederService {
   }
 
   /**
-   * One real Staff and one real Field login, made with Better Auth's own
-   * sign-up (the only way to get a correctly hashed password). Sign-up
-   * always creates the person's own organisation; their membership moves
-   * here first, then that empty organisation is deleted. Seeding again
-   * reuses the people. Their membership is demo data; their logins aren't.
+   * One real Staff and one real Field login. They're written directly — a
+   * user row and a password login, hashed the way sign-in checks it —
+   * because sign-up is closed once the business has an owner (US-AUTH-08)
+   * and every sign-up starts an organisation of its own. Loading a demo
+   * again reuses the people and moves their membership here (a person
+   * whose last demo was deleted gets a new one). Their membership is demo
+   * data; their logins aren't.
    */
   private async seedDemoUsers(orgId: string): Promise<number> {
     let usersCreated = 0;
     const defaultTeam = (await this.teamsService.list(orgId)).find((t) => t.isDefault);
     for (const seed of DEMO_USERS) {
       const [existingUser] = await this.db.select().from(user).where(eq(user.email, seed.email));
-      let userId: string;
-      let autoOrgId: string | undefined;
-      if (existingUser) {
-        userId = existingUser.id;
-      } else {
-        const signUp = await auth.api.signUpEmail({ body: { email: seed.email, password: "DemoPassword123!", name: seed.name } });
-        if (!signUp?.user?.id) continue;
-        userId = signUp.user.id;
-        const [autoMembership] = await this.db.select().from(member).where(eq(member.userId, userId));
-        autoOrgId = autoMembership?.organizationId;
+      let userId = existingUser?.id;
+      if (!userId) {
+        userId = randomUUID();
+        const now = new Date();
+        await this.db.insert(user).values({ id: userId, name: seed.name, email: seed.email, emailVerified: true, createdAt: now, updatedAt: now });
+        await this.db.insert(account).values({ id: randomUUID(), accountId: userId, providerId: "credential", userId, password: await hashPassword(DEMO_USER_PASSWORD), createdAt: now, updatedAt: now });
       }
-      // Move the membership before deleting the throwaway organisation, which would cascade onto it.
-      // A person whose last demo was deleted has no membership left to move: they get a new one.
       let [moved] = await this.db.update(member).set({ organizationId: orgId, role: seed.role, isDemo: true, isPrimaryOwner: false }).where(eq(member.userId, userId)).returning();
       if (!moved) [moved] = await this.db.insert(member).values({ id: randomUUID(), organizationId: orgId, userId, role: seed.role, createdAt: new Date(), isDemo: true, isPrimaryOwner: false }).returning();
       usersCreated++;
-      // No Team grants follow it from wherever it was.
-      if (moved) await this.db.delete(teamMemberships).where(eq(teamMemberships.memberId, moved.id));
-      if (autoOrgId && autoOrgId !== orgId) await this.db.delete(organization).where(eq(organization.id, autoOrgId));
-      if (seed.joinDefaultTeam && defaultTeam && moved) {
+      // No Team grants follow the membership from wherever it was.
+      await this.db.delete(teamMemberships).where(eq(teamMemberships.memberId, moved!.id));
+      if (seed.joinDefaultTeam && defaultTeam) {
         const existing = await this.db.select({ id: teamMemberships.memberId }).from(teamMemberships).where(eq(teamMemberships.teamId, defaultTeam.id));
-        await this.teamsService.setMembers(orgId, defaultTeam.id, [...existing.map((m) => m.id), moved.id]);
+        await this.teamsService.setMembers(orgId, defaultTeam.id, [...existing.map((m) => m.id), moved!.id]);
       }
     }
     return usersCreated;

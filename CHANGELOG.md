@@ -80,6 +80,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-ONB-18 fix: loading a demo works on a real install
+
+- **The bug:** "Load demo business" failed near the end with "You don't have permission to do that. If you need to, ask an owner.". A second try then said "Demo data is already loaded."
+- **Cause:** the demo Staff and Field logins were created through public sign-up, which is closed once a business has an owner (US-AUTH-08). Tests had sign-up forced open, so they never saw it.
+- **Logins:** the demo people are now written directly, with a password hashed the way sign-in checks it. Loading a demo no longer goes through sign-up.
+- **Failed loads:** a load that fails part-way now removes what it had added, so it can simply be tried again.
+- **Tests:** a new test loads a demo with sign-up closed and the demo people not yet created; it reproduces the 403 on the old code. Another checks that a failed load leaves nothing behind.
+
 ### 2026-10-08 — `pnpm db:reset:dev` clears every table (dev tooling)
 
 - **What changed:** the reset now truncates every table in the `public` schema, read from the database each time it runs, instead of a hand-kept list.
