@@ -4,6 +4,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import type { BulkResult, createExpenseSchema, updateExpenseSchema } from "@spine/shared";
 import { LABOUR_NEEDS_JOB, LABOUR_ROW_INCOMPLETE, labourLineAmount, labourTotal, toDecimalString, type LabourLineInput } from "@spine/shared";
 import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -65,15 +66,18 @@ export class ExpensesService {
     if (options.jobId) conditions.push(eq(expenses.jobId, options.jobId));
     if (options.submittedByUserId) conditions.push(eq(expenses.submittedByUserId, options.submittedByUserId));
 
+    const reviewer = alias(user, "reviewer");
     const rows = await this.db
-      .select({ expense: expenses, categoryName: expenseCategories.name })
+      .select({ expense: expenses, categoryName: expenseCategories.name, reviewerName: reviewer.name })
       .from(expenses)
       .leftJoin(expenseCategories, eq(expenses.categoryId, expenseCategories.id))
+      // US-MOB-12: who approved or rejected it ("— Sarah Mendes" under a rejection).
+      .leftJoin(reviewer, eq(reviewer.id, sql`coalesce(${expenses.rejectedByUserId}, ${expenses.approvedByUserId})`))
       .where(and(...conditions))
       .orderBy(desc(expenses.createdAt));
     // US-OPS-33: the paperclip on the list.
     const counts = await attachmentCounts(this.db, orgId, "expense", rows.map((r) => r.expense.id));
-    return rows.map((r) => ({ ...r.expense, categoryName: r.categoryName, attachmentCount: counts.get(r.expense.id) ?? 0 }));
+    return rows.map((r) => ({ ...r.expense, categoryName: r.categoryName, reviewerName: r.reviewerName ?? null, attachmentCount: counts.get(r.expense.id) ?? 0 }));
   }
 
   /**
@@ -133,12 +137,18 @@ export class ExpensesService {
   }
 
   /** US-PUR-23 — trades used before, with the last day rate for each, for the labour form's suggestions. */
-  async labourTrades(orgId: string, query?: string): Promise<{ trade: string; lastDayRateAmount: string }[]> {
+  /**
+   * `onlySubmittedBy` (from `readScope`): Field get only the trades and day
+   * rates from their own expenses (US-MOB-13 "a trade I've used before";
+   * 07-security: never other people's money).
+   */
+  async labourTrades(orgId: string, query?: string, onlySubmittedBy?: string): Promise<{ trade: string; lastDayRateAmount: string }[]> {
     const q = query?.trim().toLowerCase();
     const rows = await this.db.execute<{ trade: string; day_rate_amount: string }>(sql`
       select distinct on (lower(${expenseLabourLines.trade})) ${expenseLabourLines.trade} as trade, ${expenseLabourLines.dayRateAmount}::text as day_rate_amount
       from ${expenseLabourLines}
       where ${expenseLabourLines.orgId} = ${orgId} ${q ? sql`and lower(${expenseLabourLines.trade}) like ${`%${q}%`}` : sql``}
+      ${onlySubmittedBy ? sql`and ${expenseLabourLines.expenseId} in (select ${expenses.id} from ${expenses} where ${expenses.submittedByUserId} = ${onlySubmittedBy})` : sql``}
       order by lower(${expenseLabourLines.trade}), ${expenseLabourLines.createdAt} desc
       limit 20`);
     return (rows as unknown as { trade: string; day_rate_amount: string }[]).map((r) => ({ trade: r.trade, lastDayRateAmount: r.day_rate_amount }));

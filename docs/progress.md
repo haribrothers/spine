@@ -221,11 +221,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MOB-08 · See what's waiting to sync
 - [x] US-MOB-09 · Send each item exactly once and fix failures
 - [x] US-MOB-10 · Show a clear error when the server can't be reached
-- [ ] US-MOB-11 · Take site photos tagged to a job, even offline
-- [ ] US-MOB-12 · See my expenses and their status
-- [ ] US-MOB-13 · Submit an expense with a receipt photo
-- [ ] US-MOB-14 · Ask for camera access with a reason
-- [ ] US-MOB-15 · Mark a milestone complete from the phone
+- [x] US-MOB-11 · Take site photos tagged to a job, even offline
+- [x] US-MOB-12 · See my expenses and their status
+- [x] US-MOB-13 · Submit an expense with a receipt photo
+- [x] US-MOB-14 · Ask for camera access with a reason
+- [x] US-MOB-15 · Mark a milestone complete from the phone
 - [ ] US-MOB-16 · Present a quote to the customer on my phone
 - [ ] US-MOB-17 · Capture the customer's acceptance and signature
 - [ ] US-MOB-18 · Require a connection to accept a quote

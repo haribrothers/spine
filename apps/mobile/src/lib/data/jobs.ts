@@ -67,7 +67,8 @@ export async function pruneJobCaches(jobs: FieldJob[]): Promise<void> {
 
 /** My assigned jobs (`GET /jobs?assignedToMe=true`), cached; pruned as above. */
 export function useAssignedJobs(enabled = true) {
-  return useCachedQuery<FieldJob[]>(JOBS_KEY, JOBS_PATH, { onFresh: pruneJobCaches, enabled });
+  // A completion moves a job's next milestone on.
+  return useCachedQuery<FieldJob[]>(JOBS_KEY, JOBS_PATH, { onFresh: pruneJobCaches, enabled, refreshOnSent: (item) => item.kind === "completion" });
 }
 
 /**

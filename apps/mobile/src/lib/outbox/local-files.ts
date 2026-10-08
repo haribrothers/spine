@@ -16,6 +16,13 @@ export interface LocalFiles {
   discard(photo: Pick<LocalPhoto, "uri">): void;
   /** False when the phone no longer has the file (cleared storage). */
   exists(photo: Pick<LocalPhoto, "uri">): boolean;
+  /**
+   * The photo as a multipart `file` field for `POST /files`. Expo's fetch
+   * takes a real Blob — expo-file-system's `File` is one — and refuses
+   * React Native's `{ uri, name, type }` parts ("Unsupported FormDataPart
+   * implementation").
+   */
+  formData(photo: LocalPhoto): FormData;
 }
 
 function outboxFolder(): Directory {
@@ -33,6 +40,11 @@ export const deviceFiles: LocalFiles = {
     const target = new File(outboxFolder(), `${Date.now()}-${Math.round(Math.random() * 1e6)}-${base}.jpg`);
     await new File(compressed.uri).copy(target);
     return { uri: target.uri, name: `${base}.jpg`, mimeType: "image/jpeg", size: target.info().size ?? 0 };
+  },
+  formData(photo) {
+    const form = new FormData();
+    form.append("file", new File(photo.uri) as unknown as Blob, photo.name);
+    return form;
   },
   exists(photo) {
     try {

@@ -1,9 +1,9 @@
 import { Alert } from "react-native";
 
 /**
- * Field work that lands later in Phase 5 (photos, expenses, milestone
- * completion, presenting quotes — US-MOB-11 to US-MOB-17). Its buttons are
- * drawn now so the screens match the designs; until then they say so.
+ * Presenting a quote on site lands with Phase 5's last group (US-MOB-16,
+ * US-MOB-17). Its button is drawn now so the job matches the design; until
+ * then it says so.
  */
 export const LATER_MESSAGE = "This arrives in the next update of Spine on your phone. Use Spine on a computer for now.";
 

@@ -85,10 +85,3 @@ export async function apiRequest<T>(
   if (res.status === 502 || res.status === 503 || res.status === 504) throw new ServerUnreachableError();
   throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status, body?.error, body);
 }
-
-/** A photo or receipt on the phone as a multipart `file` field (React Native's `{ uri, name, type }`). */
-export function fileFormData(file: { uri: string; name: string; mimeType: string }): FormData {
-  const form = new FormData();
-  form.append("file", { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
-  return form;
-}

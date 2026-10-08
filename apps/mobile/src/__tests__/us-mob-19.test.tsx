@@ -70,7 +70,8 @@ describe("US-MOB-19 · run the field app on native tabs", () => {
       if (src.includes("SafeAreaView")) return false;
       // Vertical scrollers only: a horizontal carousel inside a screen isn't under the header.
       const vertical = (src.match(/<(?:ScrollView|FlatList|SectionList)\b(?![^>]*\bhorizontal\b)/g) ?? []).length;
-      return vertical > (src.match(/contentInsetAdjustmentBehavior="automatic"/g) ?? []).length;
+      // "automatic" under a header; "never" only where the screen pads for the safe area itself (a headerless full-screen modal).
+      return vertical > (src.match(/contentInsetAdjustmentBehavior="(?:automatic|never)"/g) ?? []).length;
     });
     expect(offenders).toEqual([]);
   });

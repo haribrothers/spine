@@ -28,6 +28,8 @@ describe("US-MOB-06 · keep financial reports off phones", () => {
     const formatsMoney = sources.filter((file) => /\bmoney\(/.test(readFileSync(file, "utf8")) && !file.endsWith("lib/format.ts")).map(relative).sort();
     expect(formatsMoney).toEqual([
       "src/features/expenses/expense-screen.tsx",
+      "src/features/expenses/expenses-screen.tsx",
+      "src/features/expenses/new-expense-screen.tsx",
       "src/features/search/search-screen.tsx",
       "src/features/sync/fix-screen.tsx",
       "src/features/today/today-screen.tsx",

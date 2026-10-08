@@ -1,13 +1,12 @@
 import { useMemo } from "react";
 import { Platform, Pressable, SectionList, Text, View, useWindowDimensions } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useRouter } from "expo-router";
 import Camera from "lucide-react-native/icons/camera";
 import { EmptyState, useNativeColors } from "@spine/ui-native";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { jobKey, photosKey, useAssignedJobs, type FieldJob, type JobPhoto } from "../../lib/data/jobs";
 import { useBusinessFormat } from "../../lib/data/business";
 import { daysUntil, weekdayDayMonth } from "../../lib/format";
-import { arrivesLater } from "../../lib/later";
 import { SectionHeader } from "../../components/section-header";
 import { PhotoTile, tileKey, type TilePhoto } from "./job-detail-screen";
 import { useOutboxItems } from "../../lib/outbox/pending";
@@ -42,12 +41,13 @@ export function photosByDay(photos: (JobPhoto | TilePhoto)[], locale: string, no
  * camera on iOS and a floating button on Android.
  */
 export function JobPhotosScreen({ id }: { id: string }) {
+  const router = useRouter();
   const colors = useNativeColors();
   const { locale } = useBusinessFormat();
   const { width } = useWindowDimensions();
   const listed = useAssignedJobs(false).data?.find((job) => job.id === id) ?? null;
   const detail = useCachedQuery<FieldJob>(jobKey(id), `/jobs/${id}`);
-  const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`);
+  const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`, { refreshOnSent: (item) => item.kind !== "expense" && item.payload.jobId === id });
   const job = detail.data ?? listed;
   const queued = useOutboxItems();
   const list = useMemo<TilePhoto[]>(
@@ -61,7 +61,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
   const tile = Math.floor((width - 32 - GAP * (COLUMNS - 1)) / COLUMNS);
   const android = Platform.OS === "android";
   const subtitle = [job?.name, job?.number].filter(Boolean).join(" · ");
-  const addPhotos = () => arrivesLater("Add photos");
+  const addPhotos = () => router.push(`/camera?mode=photos&jobId=${id}`);
 
   return (
     <View className="flex-1 bg-background dark:bg-background-dark">

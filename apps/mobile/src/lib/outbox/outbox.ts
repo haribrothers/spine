@@ -152,6 +152,16 @@ export class Outbox {
     return this.files.keepPhoto(uri, options);
   }
 
+  /** Deletes a photo kept for something never queued (closing the camera, removing a receipt). */
+  discardPhoto(photo: LocalPhoto) {
+    this.files.discard(photo);
+  }
+
+  /** A photo as the multipart body `POST /files` takes. */
+  formData(photo: LocalPhoto): FormData {
+    return this.files.formData(photo);
+  }
+
   /** Whether a photo's copy is still on the phone. */
   hasFile(photo: LocalPhoto): boolean {
     return this.files.exists(photo);

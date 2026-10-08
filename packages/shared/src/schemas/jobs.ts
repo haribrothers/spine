@@ -75,6 +75,8 @@ export const addJobNoteSchema = z.object({
 export const addJobPhotoSchema = z.object({
   fileId: uuidSchema,
   caption: z.string().optional().nullable(),
+  /** US-MOB-11 — the milestone the photo shows (optional; must be one of the job's). */
+  milestoneId: uuidSchema.optional().nullable(),
 });
 
 /** Phase 5 (Mobile) — assigns one field/staff/owner user to a job's crew. See jobs.ts's `jobAssignments` schema comment for why this is a join table, not a single column. */

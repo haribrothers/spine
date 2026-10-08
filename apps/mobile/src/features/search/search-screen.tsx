@@ -90,7 +90,7 @@ export function SearchScreen() {
   const format = useBusinessFormat();
   const modules = useModules();
   const jobs = useAssignedJobs(modules.jobsField);
-  const expenses = useCachedQuery<MyExpense[]>(MY_EXPENSES_KEY, MY_EXPENSES_PATH);
+  const expenses = useCachedQuery<MyExpense[]>(MY_EXPENSES_KEY, MY_EXPENSES_PATH, { refreshOnSent: (item) => item.kind === "expense" });
   const queued = useOutboxItems();
   const [typed, setTyped] = useState("");
   const [query, setQuery] = useState("");

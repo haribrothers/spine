@@ -4,6 +4,8 @@ import { cache } from "../cache/cache-store";
 import { OfflineError, ServerUnreachableError } from "../api/errors";
 import { useSession } from "../session/session-provider";
 import { connectivity } from "../connectivity";
+import { syncEngine } from "../outbox/sync-engine";
+import type { OutboxItem } from "../outbox/types";
 
 /**
  * `loading` until the first answer; `ready` with fresh data; `offline` or
@@ -30,6 +32,8 @@ export interface CachedQueryOptions<T> {
   refreshOnForeground?: boolean;
   /** Skip the request (e.g. a module is off). The cache is still read. */
   enabled?: boolean;
+  /** Fetch again when the outbox sends something this data shows (a sent expense joins "Submitted by you"). */
+  refreshOnSent?: (item: OutboxItem) => boolean;
 }
 
 interface Snapshot<T> {
@@ -54,6 +58,8 @@ export function useCachedQuery<T>(key: string, path: string, options: CachedQuer
   keyRef.current = key;
   const onFreshRef = useRef(options.onFresh);
   onFreshRef.current = options.onFresh;
+  const sentRef = useRef(options.refreshOnSent);
+  sentRef.current = options.refreshOnSent;
   const enabled = options.enabled !== false;
 
   /** Updates the snapshot only while `forKey` is still the current key. */
@@ -103,6 +109,13 @@ export function useCachedQuery<T>(key: string, path: string, options: CachedQuer
     });
     return () => subscription.remove();
   }, [options.refreshOnForeground, enabled, fetchFresh]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    return syncEngine.onSent((item) => {
+      if (sentRef.current?.(item)) void fetchFresh();
+    });
+  }, [enabled, fetchFresh]);
 
   // US-MOB-07: back online, every screen showing saved data fetches it again.
   useEffect(() => {

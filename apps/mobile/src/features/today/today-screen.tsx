@@ -26,7 +26,6 @@ import { useOnline } from "../../lib/connectivity";
 import { greeting } from "../../lib/member-display";
 import { calendarDay, longDate, money, shortWhen, weekdayDayMonth, type BusinessFormat } from "../../lib/format";
 import { openDirections } from "../../lib/linking";
-import { arrivesLater } from "../../lib/later";
 import { SectionHeader } from "../../components/section-header";
 import { GaugeSkeleton, JobCardsSkeleton, KpiCardsSkeleton, MeetingCardSkeleton } from "../../components/skeletons";
 import { ServerErrorState } from "../errors/server-error-state";
@@ -167,7 +166,7 @@ export function TodayScreen() {
   const online = useOnline();
   const [period, setPeriod] = useState<TodayPeriod>("month");
 
-  const summary = useCachedQuery<TodaySummary>(todayKey(period), todayPath(period), { refreshOnForeground: true });
+  const summary = useCachedQuery<TodaySummary>(todayKey(period), todayPath(period), { refreshOnForeground: true, refreshOnSent: () => true });
   const jobs = useAssignedJobs(modules.jobsField);
   const meetings = useCachedQuery<Meeting[]>(NEXT_MEETINGS_KEY, NEXT_MEETINGS_PATH, { enabled: modules.leadsMeetings });
 
@@ -188,9 +187,11 @@ export function TodayScreen() {
 
   const firstSite = forToday.find((job) => job.siteAddress)?.siteAddress ?? null;
   const actions = [
-    ...(modules.jobsField ? [{ label: "Add photo", icon: Camera, onPress: () => arrivesLater("Add photo") }] : []),
-    { label: "Log expense", icon: ReceiptText, onPress: () => arrivesLater("Log expense") },
-    { label: "Scan receipt", icon: ScanLine, onPress: () => arrivesLater("Scan receipt") },
+    ...(modules.jobsField
+      ? [{ label: "Add photo", icon: Camera, onPress: () => router.push(`/camera?mode=photos${(forToday[0] ?? jobs.data?.[0]) ? `&jobId=${(forToday[0] ?? jobs.data![0])!.id}` : ""}`) }]
+      : []),
+    { label: "Log expense", icon: ReceiptText, onPress: () => router.push("/expense-new") },
+    { label: "Scan receipt", icon: ScanLine, onPress: () => router.push("/expense-new?scan=1") },
     ...(modules.jobsField ? [{ label: "Directions", icon: Navigation, disabled: !firstSite, onPress: () => firstSite && void openDirections(firstSite) }] : []),
   ];
 

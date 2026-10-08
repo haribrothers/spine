@@ -80,6 +80,48 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Phase 5 Group 4: photos, expenses and Mark complete (US-MOB-11 to US-MOB-15)
+
+- **Camera explainer (US-MOB-14):**
+  - Before the system asks: "Allow camera access", why, three reasons, "Continue", "Not now", and where to turn it on.
+  - Once refused for good, "Continue" opens Settings.
+  - Purpose strings come from the `expo-camera` and `expo-image-picker` plugins, with no microphone.
+- **Site photos (US-MOB-11):**
+  - An in-app camera (`expo-camera`) with the job at the top (changeable), flash, shutter, "<n> taken · saved on this phone" and the latest thumbnail with its count.
+  - Then a review: a caption per photo, the job, an optional milestone, and "Save <n> photos" into the outbox.
+  - Opened from "Add photos" on a job and its Photos, and from Today's "Add photo".
+- **Expenses tab (US-MOB-12):**
+  - "WAITING TO SYNC" (from the outbox; a refused one opens Fix) and "SUBMITTED BY YOU", with category icon, date, job, amount and Submitted/Approved/Rejected.
+  - A rejection shows the reason and the reviewer.
+  - "+" beside the avatar (iOS) or a floating "Log expense" (Android).
+- **New expense (US-MOB-13):**
+  - Amount in the business currency, or "Headcount × day rate" (D-199): trades with totals, Direct Labour preselected, a job required, past trades suggested with their day rate.
+  - Category, job, date, paid by, description, and a receipt from the receipt camera (frame and gallery) or the library.
+  - Errors appear under each field; a receipt over 10 MB is refused before it's queued.
+  - "Scan receipt" on Today opens it with the camera up.
+  - Fix's "Edit expense" opens a refused expense in this form and sends it again.
+- **Mark complete (US-MOB-15):** a sheet with the milestone and job, photos of the finished work (camera), a note for the office and the offline note. It queues the completion, so the job shows "Completion waiting" until sent.
+- **The placeholders are gone:** Add photo, Log expense, Scan receipt, Mark complete and Add photos now do what they say. Only "Present" (US-MOB-16) still says it arrives in the next update.
+- **API (05-api, 07-security):**
+  - `POST /jobs/:id/photos` takes `milestoneId`.
+  - `GET /expenses` rows carry `reviewerName`.
+  - **Security fix:** `GET /expenses/labour-trades` gives Field only their own trades and day rates. It used to return everyone's in the organisation.
+- **Components:**
+  - `@spine/ui-native` gains the `scrim` colour token from tokens.json (light/dark) for controls over the camera.
+  - `FormSection`'s title is optional (a11y test and showcase demo added).
+- **Fixes found on the devices:**
+  - Uploads failed with "Unsupported FormDataPart implementation": Expo's fetch needs an `expo-file-system` `File` (a Blob), not React Native's `{ uri, name, type }`. This was hidden in Group 3 because Jest never builds a real upload.
+  - The trade fields grew without limit, because the floating-label field fills a fixed-height parent.
+  - The Mark complete button sat below the sheet.
+  - iOS "Submit" was system blue; it's now the token primary.
+  - The camera explainer sat under Android's status bar.
+- **Also:** screens refetch when the outbox sends something they show, so a sent expense moves to "Submitted by you" and a completion moves the job on.
+- **Test fix:** US-QUO-24 picked "any sent demo quote" with no order and failed in full runs whenever that quote had no catalogue line. It now picks a sent quote that has one. The full API suite passed apart from it (984 tests).
+- **Tests:**
+  - Phone: us-mob-11 to us-mob-15 (151 Jest tests); `expo-camera` mocked in `src/test-utils/camera-mock.ts`.
+  - API: `us-mob-group4.http.integration.test.ts` (a photo with a milestone and one from another job, the reviewer's name, labour trades scoped to Field, a completion with its note and photos telling the office once).
+  - Maestro: `us-mob-13-expense.yaml` passes on iOS and Android; `us-mob-11-photos.yaml` on Android (the iOS Simulator has no camera) uploads with the caption and reaches "All synced". Expenses, New expense (both modes) and Mark complete checked on iOS against the designs, and the camera, explainer and review on Android.
+
 ### 2026-10-09 — Phase 5 Group 3: offline, the outbox, Sync and Fix (US-MOB-07, US-MOB-08, US-MOB-09)
 
 - **The outbox:** photos, expenses and milestone completions made on the phone wait in a SQLite outbox, with compressed copies of their photos (long edge 2048 px, JPEG 70%, D-053) in the app's documents folder, until the server has them.

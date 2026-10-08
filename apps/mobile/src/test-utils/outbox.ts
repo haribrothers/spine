@@ -8,6 +8,11 @@ export const testFiles: LocalFiles = {
   keepPhoto: async (uri, options = {}) => ({ uri, name: options.name ?? "photo.jpg", mimeType: "image/jpeg", size: 1_200_000 }),
   discard: (photo) => void discardedFiles.push(photo.uri),
   exists: (photo) => !missingFiles.has(photo.uri),
+  formData: (photo) => {
+    const form = new FormData();
+    form.append("file", photo.uri);
+    return form;
+  },
 };
 
 /** URIs the fake phone has lost. */

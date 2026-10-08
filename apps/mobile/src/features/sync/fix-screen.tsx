@@ -168,6 +168,7 @@ export function FixScreen({ id }: { id: string }) {
         </View>
       )}
 
+      {item.kind === "expense" ? <ActionButton testID="fix-edit" label="Edit expense" tone={android ? "outline" : "soft"} onPress={() => router.push(`/expense-new?edit=${item.id}`)} /> : null}
       <ActionButton testID="fix-send-again" label="Send again" tone="primary" onPress={() => void sendAgain()} />
       {android ? (
         <Text className="px-1 text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{`“${DELETE_LABEL[item.kind]}” is the bin icon at the top. It removes it from this phone.`}</Text>

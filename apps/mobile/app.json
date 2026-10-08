@@ -33,6 +33,14 @@
           "photosPermission": "Spine opens your photos when you choose a receipt or site photo you've already taken. Only the photo you pick is used.",
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Spine uses the camera for site photos and receipts. They're saved to your jobs and expenses, and nowhere else.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
       ]
     ],
     "extra": {

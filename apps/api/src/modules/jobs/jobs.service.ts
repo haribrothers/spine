@@ -367,6 +367,10 @@ export class JobsService {
    */
   async addPhoto(orgId: string, jobId: string, actorUserId: string, input: AddJobPhotoInput) {
     const job = await this.getOne(orgId, jobId);
+    if (input.milestoneId) {
+      const [milestone] = await this.db.select({ id: milestones.id }).from(milestones).where(and(eq(milestones.id, input.milestoneId), eq(milestones.jobId, jobId)));
+      if (!milestone) throw new BadRequestException("Choose one of this job's milestones.");
+    }
 
     const row = await this.db.transaction(async (tx) => {
       const [photo] = await tx
@@ -374,7 +378,7 @@ export class JobsService {
         .values({
           jobId,
           orgId,
-          milestoneId: null,
+          milestoneId: input.milestoneId ?? null,
           fileId: input.fileId,
           caption: input.caption ?? null,
           uploadedByUserId: actorUserId,

@@ -10,13 +10,15 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "test:e2e": "maestro test e2e/us-mob-01-sign-in.yaml e2e/us-mob-03-today.yaml e2e/us-mob-04-jobs.yaml e2e/us-mob-23-search.yaml"
+    "test:e2e": "maestro test e2e/us-mob-01-sign-in.yaml e2e/us-mob-03-today.yaml e2e/us-mob-04-jobs.yaml e2e/us-mob-13-expense.yaml e2e/us-mob-23-search.yaml",
+    "test:e2e:android": "maestro test e2e/us-mob-07-offline.yaml e2e/us-mob-11-photos.yaml"
   },
   "dependencies": {
     "@expo/ui": "57.0.16",
     "@spine/shared": "workspace:*",
     "@spine/ui-native": "workspace:*",
     "expo": "~57.0.18",
+    "expo-camera": "~57.0.6",
     "expo-constants": "^57.0.17",
     "expo-file-system": "~57.0.7",
     "expo-image-manipulator": "~57.0.21",

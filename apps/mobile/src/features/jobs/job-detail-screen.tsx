@@ -22,6 +22,7 @@ import { JobStatusChip } from "./job-status";
 import { useOutboxItems } from "../../lib/outbox/pending";
 import { jobWaiting } from "../../lib/outbox/job-waiting";
 import { WaitingChip } from "../../components/waiting-chip";
+import type { OutboxItem } from "../../lib/outbox/types";
 import { CardRowsSkeleton, HeadingSkeleton, ListRowsSkeleton, PhotoGridSkeleton } from "../../components/skeletons";
 
 const PREVIEW_PHOTOS = 4;
@@ -30,7 +31,7 @@ export function jobSubtitle(job: Pick<FieldJob, "number" | "contactName">): stri
   return [job.number, job.contactName].filter(Boolean).join(" · ");
 }
 
-function MilestoneRow({ milestone, primary, first, locale, waiting }: { milestone: FieldMilestone; primary: boolean; first: boolean; locale: string; waiting: boolean }) {
+function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }: { milestone: FieldMilestone; primary: boolean; first: boolean; locale: string; waiting: boolean; onComplete: () => void }) {
   const colors = useNativeColors();
   const done = milestone.status !== "pending";
   const due = milestone.dueDate ? calendarDay(milestone.dueDate) : null;
@@ -59,7 +60,7 @@ function MilestoneRow({ milestone, primary, first, locale, waiting }: { mileston
       ) : (
         <Pressable
           testID={`milestone-complete-${milestone.id}`}
-          onPress={() => arrivesLater("Mark complete")}
+          onPress={onComplete}
           accessibilityRole="button"
           accessibilityLabel={`Mark ${milestone.name} complete`}
           className={`min-h-[44px] items-center justify-center rounded-full px-4 active:opacity-70 ${primary ? "bg-primary dark:bg-primary-dark" : "bg-info-bg dark:bg-info-bg-dark"}`}
@@ -145,8 +146,9 @@ export function JobDetailScreen({ id }: { id: string }) {
   const { locale } = useBusinessFormat();
   const listed = useAssignedJobs(false).data?.find((job) => job.id === id) ?? null;
   const detail = useCachedQuery<FieldJob>(jobKey(id), `/jobs/${id}`);
-  const milestones = useCachedQuery<FieldMilestone[]>(milestonesKey(id), `/jobs/${id}/milestones`);
-  const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`);
+  const forThisJob = (item: OutboxItem) => item.kind !== "expense" && item.payload.jobId === id;
+  const milestones = useCachedQuery<FieldMilestone[]>(milestonesKey(id), `/jobs/${id}/milestones`, { refreshOnSent: (item) => forThisJob(item) && item.kind === "completion" });
+  const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`, { refreshOnSent: forThisJob });
   const quotes = useCachedQuery<QuoteToPresent[]>(quotesKey(id), `/jobs/${id}/quotes`);
   const job = detail.data ?? listed;
   const waiting = jobWaiting(useOutboxItems(), id);
@@ -156,7 +158,7 @@ export function JobDetailScreen({ id }: { id: string }) {
   const onRefresh = useCallback(async () => {
     await Promise.all([detail.refresh(), milestones.refresh(), photos.refresh(), quotes.refresh()]);
   }, [detail, milestones, photos, quotes]);
-  const addPhotos = () => arrivesLater("Add photos");
+  const addPhotos = () => router.push(`/camera?mode=photos&jobId=${id}`);
 
   const header = (
     <Stack.Screen
@@ -269,6 +271,7 @@ export function JobDetailScreen({ id }: { id: string }) {
                   primary={milestone.id === pending.find((m) => !waiting.completionMilestoneIds.includes(m.id))?.id}
                   locale={locale}
                   waiting={milestone.status === "pending" && waiting.completionMilestoneIds.includes(milestone.id)}
+                  onComplete={() => router.push(`/milestone-complete?jobId=${id}&milestoneId=${milestone.id}`)}
                 />
               ))}
             </Group>

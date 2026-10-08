@@ -90,7 +90,7 @@ describe("US-MOB-05 · open a job's details on site", () => {
     Platform.OS = "android";
     renderWithSession(<JobDetailScreen id={id} />, { request: asRequest(detailRoutes()) });
     fireEvent.press(await screen.findByTestId("job-add-photos"));
-    expect(arrivesLater).toHaveBeenCalledWith("Add photos");
+    expect(mockRouter.push).toHaveBeenCalledWith(`/camera?mode=photos&jobId=${id}`);
   });
 
   it("opens Photos · <n> with the job name and number, grouped by day newest first", async () => {

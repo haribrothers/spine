@@ -69,6 +69,8 @@ export const lightColors = {
 
   /** A subtle translucent scrim over `surface` — e.g. a gauge/progress track. */
   overlaySubtle: "rgba(33,31,26,0.12)",
+  /** tokens.json `scrim` — dims what's behind a control laid over a photo or the camera. */
+  scrim: "rgba(18,17,16,0.32)",
 } as const;
 
 export const darkColors = {
@@ -117,6 +119,7 @@ export const darkColors = {
   },
 
   overlaySubtle: "rgba(243,242,238,0.16)",
+  scrim: "rgba(0,0,0,0.62)",
 } as const;
 
 /** Flat colour tokens only — `gradients` is a nested object, not a colour string (see `GradientTone`). */

@@ -1,5 +1,5 @@
 import { AccessRemovedError, ApiError, OfflineError, ServerUnreachableError, SessionExpiredError, UpdateRequiredError } from "../api/errors";
-import { fileFormData, type RequestOptions, type Method } from "../api/request";
+import type { RequestOptions, Method } from "../api/request";
 import { MAX_UPLOAD_BYTES, type LocalPhoto, type OutboxItem } from "./types";
 import { outbox } from "./outbox";
 
@@ -46,7 +46,7 @@ async function upload(transport: Transport, item: OutboxItem, photo: LocalPhoto,
   if (photo.size > MAX_UPLOAD_BYTES) throw new RejectedError(rejectionMessage(item, new ApiError("too large", 413)));
   // A copy the phone lost would otherwise look like a network error and retry for ever.
   if (!outbox.hasFile(photo)) throw new RejectedError(`Didn't send: ${item.kind === "expense" ? "the receipt photo" : "a photo"} is no longer on this phone. Take it again or remove it.`);
-  const file = await transport<{ id: string }>("POST", "/files", { formData: fileFormData(photo), idempotencyKey: key, timeoutMs: UPLOAD_TIMEOUT_MS });
+  const file = await transport<{ id: string }>("POST", "/files", { formData: outbox.formData(photo), idempotencyKey: key, timeoutMs: UPLOAD_TIMEOUT_MS });
   return file.id;
 }
 

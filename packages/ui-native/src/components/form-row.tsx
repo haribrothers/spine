@@ -130,15 +130,20 @@ export function FormRow({
  * background is visibly distinct from `surface` in both modes before
  * assuming this component provides contrast on its own.
  */
-export function FormSection({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+/** `title` is optional: a section straight under a heading (the field app's forms) has none. */
+export function FormSection({ title, description, children }: { title?: string; description?: string; children: React.ReactNode }) {
   return (
     <View className="gap-2">
-      <View className="gap-0.5 px-1">
-        <Text className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
-          {title}
-        </Text>
-        {description ? <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{description}</Text> : null}
-      </View>
+      {title || description ? (
+        <View className="gap-0.5 px-1">
+          {title ? (
+            <Text accessibilityRole="header" className="text-[13px] font-semibold uppercase tracking-wide text-on-surface-muted dark:text-on-surface-muted-dark">
+              {title}
+            </Text>
+          ) : null}
+          {description ? <Text className="text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">{description}</Text> : null}
+        </View>
+      ) : null}
       <View className="rounded-lg bg-surface dark:bg-surface-dark">{children}</View>
     </View>
   );

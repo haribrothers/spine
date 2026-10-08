@@ -27,6 +27,7 @@ export class SyncEngine {
   private transport: Transport | null = null;
   private state: SyncState = { sending: false, problem: null };
   private listeners = new Set<() => void>();
+  private sentListeners = new Set<(item: OutboxItem) => void>();
   private timer: ReturnType<typeof setTimeout> | null = null;
   private running: Promise<void> | null = null;
   private again = false;
@@ -42,6 +43,14 @@ export class SyncEngine {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   };
+
+  /** Called after an item reaches the server, so screens showing its data fetch it again. */
+  onSent(listener: (item: OutboxItem) => void): () => void {
+    this.sentListeners.add(listener);
+    return () => {
+      this.sentListeners.delete(listener);
+    };
+  }
 
   /** The signed-in session's request, or null when signed out. */
   setTransport(transport: Transport | null) {
@@ -96,7 +105,10 @@ export class SyncEngine {
         const sent = await sendItem(item, transport, async (progress) => void (await this.queue.update(item.id, { payload: progress.payload } as Partial<OutboxItem>)));
         await this.queue.update(item.id, { ...sent, status: "sent", sentAt: this.now(), error: null, nextAttemptAt: null } as Partial<OutboxItem>);
         const done = this.queue.get(item.id);
-        if (done) this.queue.discardFiles(done);
+        if (done) {
+          this.queue.discardFiles(done);
+          this.sentListeners.forEach((listener) => listener(done));
+        }
         if (this.state.problem !== "offline") this.setState({ problem: null });
       } catch (error) {
         const kind = classify(error);

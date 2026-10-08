@@ -202,7 +202,9 @@ Legacy: S-11.3, S-04.10 (mobile)
 - **Given** I saved them offline, **when** I'm back online, **then** they upload and appear on the job's Photos tab on the web.
 
 **Implementation notes**
-- API: `POST /files` then `POST /jobs/:id/photos` (outbox).
+- API: `POST /files` then `POST /jobs/:id/photos` (outbox), with the photo's caption and optional `milestoneId`.
+- The in-app camera is `expo-camera` behind the camera explainer (US-MOB-14); photos are compressed (D-053) and kept in the app's own folder until sent. Closing with photos taken asks "Discard <n> photos?". iOS's "Retake" drops the photo shown and goes back to the camera; "+" takes more.
+- Opened from "Add photos" on a job and its Photos, and from Today's "Add photo" (today's first job, changeable).
 
 ### US-MOB-12 · See my expenses and their status
 **Feature:** F-MOB-05 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobExpensesList`, `MobExpensesListAndroid`
@@ -216,7 +218,7 @@ Legacy: S-11.3, S-04.10 (mobile)
 - **Given** another person's expenses, **when** I look, **then** they're never listed.
 
 **Implementation notes**
-- API: `GET /expenses?mine=true`.
+- API: `GET /expenses?mine=true` (rows carry `reviewerName` for "— Sarah Mendes"); waiting rows come from the outbox, and a refused one opens Fix.
 
 ### US-MOB-13 · Submit an expense with a receipt photo
 **Feature:** F-MOB-05 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobExpenseNew`, `MobExpenseNewAndroid`, `MobReceiptCapture`, `MobReceiptCaptureAndroid`, `MobExpenseLabour`, `MobExpenseLabourAndroid`
@@ -234,7 +236,9 @@ Legacy: S-11.5, S-07.2 (mobile), S-07.3
 - **Given** the note "Your office approves it before it's paid back. No signal? It's saved and sent later.", **when** I read it, **then** it's shown on every new expense.
 
 **Implementation notes**
-- API: `POST /files`, `POST /expenses` (outbox); Field always passes own-expense capabilities.
+- API: `POST /files`, `POST /expenses` (outbox); Field always passes own-expense capabilities. `GET /expense-categories` (Direct Labour preselected by `accountCode` 5200), `GET /expenses/labour-trades` (Field: their own trades only).
+- The receipt camera is the same in-app camera with the frame; "Scan receipt" on Today opens New expense straight into it. A receipt photo is "Take a photo" or "Choose a photo" (expo-image-picker).
+- Fix's "Edit expense" opens this form on the refused item; "Send" saves the change and sends it again (US-MOB-09).
 
 ### US-MOB-14 · Ask for camera access with a reason
 **Feature:** F-MOB-04 · **Priority:** P2 · **Phase:** 5 · **Screens:** `MobCameraPermission`, `MobCameraPermissionAndroid`
@@ -247,7 +251,8 @@ Legacy: S-11.5, S-07.2 (mobile), S-07.3
 - **Given** I denied before, **when** the explainer shows, **then** it tells me where to turn it on (iOS "Settings › Spine › Camera"; Android "Settings › Apps › Spine › Permissions").
 
 **Implementation notes**
-- Purpose strings in app config ([15-mobile-release](../prd/15-mobile-release.md)).
+- Purpose strings in app config ([15-mobile-release](../prd/15-mobile-release.md)): `expo-camera` and `expo-image-picker` plugins in `apps/mobile/app.json`, no microphone.
+- Where to turn it on is shown under the buttons, as drawn; once refused for good, "Continue" reads "Open Settings" and opens them.
 
 ### US-MOB-15 · Mark a milestone complete from the phone
 **Feature:** F-MOB-04 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobMilestoneComplete`, `MobMilestoneCompleteAndroid`
@@ -262,7 +267,8 @@ Legacy: S-11.6, S-04.4 (mobile)
 - **Given** two people complete the same milestone offline, **when** both sync, **then** it's completed once; the later request gets a success response marked "already completed", its outbox item shows as sent with "Already completed by <name>", and the attempt is recorded in history only.
 
 **Implementation notes**
-- API: `POST /jobs/:id/milestones/:milestoneId/complete` (outbox). Completing an already-completed milestone returns 200 with `alreadyCompleted: true` and changes nothing (first completion wins; 02 "Conflicts").
+- API: `POST /jobs/:id/milestones/:milestoneId/complete` (outbox). Completing an already-completed milestone returns 201 with `alreadyCompleted: true` and `completedBy`, and changes nothing (first completion wins; 02 "Conflicts"; built with the outbox in Group 3).
+- A sheet on both platforms; "Add" opens the in-app camera, which hands the photos back.
 
 ### US-MOB-16 · Present a quote to the customer on my phone
 **Feature:** F-MOB-06 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobQuotePresent`, `MobQuotePresentAndroid`, `MobQuoteDecline`, `MobQuoteDeclineAndroid`
