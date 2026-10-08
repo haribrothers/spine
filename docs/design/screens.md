@@ -2544,7 +2544,7 @@ Shows: "Sign in to Spine" · "Use the email your office invited you with." · "s
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "Due this week" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "14" · "this week · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "Add photos" · "Log expense" · "NEXT MEETING" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "Jobs" · "Expenses"
 
 ### MobHomeAndroid — Today — Spine Android
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19, US-MOB-20 · **Source:** Claude Design
@@ -2553,7 +2553,7 @@ Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone B
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "check This week" · "This month" · "Due this week" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "14" · "this week · all sent" · "Add photos" · "Log expense" · "Next meeting" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses" · "Search"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "check This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobHomeOffline — Today, offline
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Claude Design
@@ -2562,7 +2562,7 @@ Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone B
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "Today" · "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "YOUR JOBS TODAY · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Completion waiting" · "Foundation walls poured" · "Jobs" · "Expenses"
+Shows: "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Completion waiting" · "Call Sarah Kim" · "Today" · "Jobs" · "Expenses"
 
 ### MobHomeOfflineAndroid — Today, offline — Spine Android
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Claude Design
@@ -2571,7 +2571,7 @@ Shows: "Today" · "3 waiting to sync" · "You're offline" · "Photos, expenses a
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Today" · "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "Your jobs today · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Completion waiting" · "Foundation walls poured" · "Jobs" · "Expenses" · "Search"
+Shows: "Today" · "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Completion waiting" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobJobsListAndroid — Jobs — Spine Android
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
@@ -2958,7 +2958,7 @@ Shows: "Fix expense" · "Didn't send: the receipt photo is over 10 MB." · "Cate
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "Due this week" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "14" · "this week · all sent" · "Add photos" · "Log expense" · "NEXT MEETING" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "Jobs" · "Expenses"
 
 ### MobJobDetailDark — Job detail (iOS), dark mode
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-19 · **Source:** Claude Design
@@ -2976,7 +2976,7 @@ Shows: "Active" · "Marina office fit-out" · "JOB-001 · Harborview Constructio
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "check This week" · "This month" · "Due this week" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "14" · "this week · all sent" · "Add photos" · "Log expense" · "Next meeting" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses" · "Search"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "check This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobJobDetailAndroidDark — Job detail (Android), dark mode
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-20 · **Source:** Claude Design
@@ -2994,7 +2994,7 @@ Shows: "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "A
 
 Links to: `MobJobDetail`, `MobNotifications`, `MobSyncQueue`, `MobProfile`, `MobSearch`
 
-Shows: "Today" · "All synced" · "2" · "YOUR JOBS TODAY · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "Jobs" · "Expenses"
+Shows: "All synced" · "Today" · "2" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "NEXT MEETING" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses"
 
 ### MobHomeJobsAndroid — Today, scrolled to the jobs — Spine Android
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03 · **Source:** Claude Design
@@ -3003,7 +3003,7 @@ Shows: "Today" · "All synced" · "2" · "YOUR JOBS TODAY · 2" · "Marina offic
 
 Links to: `MobJobDetailAndroid`, `MobNotificationsAndroid`, `MobSyncQueueAndroid`, `MobProfileAndroid`, `MobSearchAndroid`
 
-Shows: "Today" · "All synced" · "2" · "Your jobs today · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
+Shows: "Today" · "All synced" · "2" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Next meeting" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses" · "Search"
 
 ### MobExpenseLabour — New expense, headcount × day rate
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13, US-PUR-23 · **Source:** Claude Design
@@ -3024,7 +3024,7 @@ Links to: `MobExpensesListAndroid`
 Shows: "New expense" · "Submit" · "Amount" · "check Headcount × day rate" · "Phase 2 townhomes — foundations" · "Job" · "Trades" · "Mason" · "Trade" · "4" · "Workers" · "220.00" · "Day rate" · "$" · "4 × $220.00" · "$880.00" · "Steel fixer" · "2 × $260.00" · "$520.00" · "Add trade" · "Total for the day" · "$1,400.00"
 
 ### MobSearch — Search
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
 
 ![MobSearch](screens/MobSearch.webp)
 
@@ -3033,7 +3033,7 @@ Links to: `MobSearchResults`
 Shows: "Search" · "Recent searches" · "Edit" · "ridge rd" · "Find a job by name, customer or address, or one of your expenses by category or description." · "Search jobs and expenses"
 
 ### MobSearchResults — Search results
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
 
 ![MobSearchResults](screens/MobSearchResults.webp)
 
@@ -3042,7 +3042,7 @@ Links to: `MobJobDetail`, `MobExpensesList`
 Shows: "Search" · "JOBS · 1" · "office fit-out" · "Marina" · "Harborview Construction Co. · 48 Harbor Way, Portland" · "YOUR EXPENSES · 2" · "Fuel & Vehicle" · "Today · office fit-out" · "$64.20" · "Waiting" · "Site Meals" · "Sun 27 Sep · office fit-out" · "$42.00" · "Approved"
 
 ### MobSearchAndroid — Search — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
 
 ![MobSearchAndroid](screens/MobSearchAndroid.webp)
 
@@ -3051,13 +3051,31 @@ Links to: `MobSearchResultsAndroid`
 Shows: "Search jobs and expenses" · "Recent searches" · "Clear" · "ridge rd" · "Find a job by name, customer or address, or one of your expenses by category or description." · "Today" · "Jobs" · "Expenses" · "Search"
 
 ### MobSearchResultsAndroid — Search results — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
 
 ![MobSearchResultsAndroid](screens/MobSearchResultsAndroid.webp)
 
 Links to: `MobJobDetailAndroid`, `MobExpensesListAndroid`
 
 Shows: "Jobs · 1" · "office fit-out" · "Marina" · "Harborview Construction Co. · 48 Harbor Way, Portland" · "Your expenses · 2" · "Fuel & Vehicle" · "Today · waiting to sync" · "$64.20" · "Site Meals" · "Sun 27 Sep ·" · "Approved" · "$42.00"
+
+### MobSearchEmpty — Search, no results
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchEmpty](screens/MobSearchEmpty.webp)
+
+Links to: `MobSearch`
+
+Shows: "Search" · "No results for “quarry”" · "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
+
+### MobSearchEmptyAndroid — Search, no results — Spine Android
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchEmptyAndroid](screens/MobSearchEmptyAndroid.webp)
+
+Links to: `MobSearchAndroid`
+
+Shows: "No results for “quarry”" · "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
 
 ### MobNotifications — Notifications
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-22 · **Source:** Claude Design

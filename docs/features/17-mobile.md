@@ -4,7 +4,7 @@ A native iOS and Android app for field crew: sign in once, see today's assigned 
 
 **Throughout the app:** money is shown in the business currency and formatted for the business locale ("$64.20", "₹1,250.00"), never with a trailing currency code. Native tabs Today, Jobs and Expenses plus Search (iOS `role="search"`, a fourth tab on Android); the person's avatar at the top right of every tab opens Profile, and the bell on Today opens Notifications ([D-197](../prd/12-decisions.md)). When the **Jobs & field** module is off, the Jobs tab, job pickers, job cards and job KPIs are hidden and the app is for expenses ([D-198](../prd/12-decisions.md)); when **Leads & meetings** is off, the next meeting is hidden.
 
-**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1), `MobHomeJobs` (P1), `MobHomeJobsAndroid` (P1), `MobSearch` (P1), `MobSearchAndroid` (P1), `MobSearchResults` (P1), `MobSearchResultsAndroid` (P1), `MobExpenseLabour` (P1), `MobExpenseLabourAndroid` (P1), `MobNotifications` (P1), `MobNotificationsAndroid` (P1), `MobNotificationsEmpty` (P2), `MobNotificationsEmptyAndroid` (P2)
+**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1), `MobHomeJobs` (P1), `MobHomeJobsAndroid` (P1), `MobSearch` (P1), `MobSearchAndroid` (P1), `MobSearchResults` (P1), `MobSearchResultsAndroid` (P1), `MobExpenseLabour` (P1), `MobExpenseLabourAndroid` (P1), `MobNotifications` (P1), `MobNotificationsAndroid` (P1), `MobNotificationsEmpty` (P2), `MobNotificationsEmptyAndroid` (P2), `MobSearchEmpty` (P2), `MobSearchEmptyAndroid` (P2)
 **Depends on:** 02 Sign-in (accounts), 07 Jobs (crew, milestones, photos), 10 Purchases (expenses), 06 Quotes (in-person acceptance), `packages/ui-native`, [15-mobile-release](../prd/15-mobile-release.md).
 
 ## Features
@@ -18,6 +18,7 @@ A native iOS and Android app for field crew: sign in once, see today's assigned 
 | F-MOB-05 | Expenses with receipts | P1 | 5 | `MobExpensesList`, `MobExpensesListAndroid`, `MobExpenseNew`, `MobExpenseNewAndroid`, `MobReceiptCapture`, `MobReceiptCaptureAndroid` |
 | F-MOB-06 | On-site quote acceptance | P1 | 5 | `MobQuotePresent`, `MobQuotePresentAndroid`, `MobQuoteAccept`, `MobQuoteAcceptAndroid`, `MobQuoteAccepted`, `MobQuoteAcceptedAndroid`, `MobQuoteNeedsConnection`, `MobQuoteNeedsConnectionAndroid` |
 | F-MOB-07 | Native app foundation | P1 | 5 | `MobHome`, `MobHomeAndroid` |
+| F-MOB-09 | Search | P1 | 5 | `MobSearch`, `MobSearchAndroid`, `MobSearchResults`, `MobSearchResultsAndroid`, `MobSearchEmpty`, `MobSearchEmptyAndroid` |
 | F-MOB-08 | Notifications on the phone | P1 | 5 | `MobNotifications`, `MobNotificationsAndroid`, `MobNotificationsEmpty`, `MobNotificationsEmptyAndroid` |
 
 ## User stories
@@ -78,13 +79,12 @@ Legacy: S-11.2
 - UI: expo-router native tabs Today · Jobs · Expenses, Profile from the avatar ([D-197](../prd/12-decisions.md)); `ActionTile`, `Card`, `StatusChip` from `@spine/ui-native`.
 
 ### US-MOB-04 · Browse my assigned jobs
-**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`, `MobSearch`, `MobSearchAndroid`, `MobSearchResults`, `MobSearchResultsAndroid`
+**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`
 **As** a field user, **I want** a list of every job I'm on, **so that** I can find one that isn't today's.
 
 **Acceptance criteria**
 - **Given** the Jobs tab, **when** it opens, **then** I see "ASSIGNED TO YOU · <n>" with each job's name, customer, town and milestone status.
-- **Given** the Search tab, **when** it opens, **then** I see "Search jobs and expenses" and my recent searches (kept on this phone), with "Edit" on iOS or "Clear" on Android.
-- **Given** I type in search, **when** I pause, **then** results are grouped into "JOBS · <n>" (job name, customer or site address) and "YOUR EXPENSES · <n>" (category, description or job) with the match highlighted. Only my assigned jobs and my own expenses are searched, and it works offline against the cache.
+- **Given** I want a job that isn't on the list's first screen, **when** I look for it, **then** I use the Search tab (US-MOB-23); the Jobs list has no search field of its own.
 - **Given** I pull down, **when** I release, **then** the list refreshes.
 - **Given** I'm on no jobs, **when** I open the tab, **then** I see "No jobs assigned to you yet", "When your office adds you to a job's crew, it shows up here with its address and contact." and "Check again".
 
@@ -362,3 +362,23 @@ Finding: C24 · Decision: D-034
 **Implementation notes**
 - API: the web bell's notification routes, read with the bearer session. New in-app types: `expense_rejected`, `crew_assigned`, `crew_removed`.
 - No push to the lock screen in 1.0 ([D-200](../prd/12-decisions.md)): the list refreshes when the app opens or comes back to the foreground, and on pull to refresh.
+
+### US-MOB-23 · Search my jobs and my expenses
+**Feature:** F-MOB-09 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSearch`, `MobSearchAndroid`, `MobSearchResults`, `MobSearchResultsAndroid`, `MobSearchEmpty`, `MobSearchEmptyAndroid`
+**As** a field user, **I want** one place to find a job or an expense by typing, **so that** I don't scroll through lists on site.
+
+Decision: [D-197](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** the app, **when** it renders the tabs, **then** Search sits beside Today, Jobs and Expenses: on iOS as the tab bar's search button (`role="search"`), on Android as a fourth tab labelled "Search".
+- **Given** the Search tab, **when** it opens with nothing typed, **then** I see "Search jobs and expenses", my recent searches (up to 10, newest first, kept only on this phone) and "Find a job by name, customer or address, or one of your expenses by category or description."; iOS offers "Edit" and Android "Clear" to remove them.
+- **Given** I type, **when** I pause, **then** results appear grouped as "JOBS · <n>" (my assigned jobs matching name, customer, job number or site address) and "YOUR EXPENSES · <n>" (my own expenses matching category, description or job), with the matching text highlighted; a group with no matches is left out.
+- **Given** a result, **when** I tap it, **then** the job opens in the Jobs tab or the expense opens in the Expenses tab, and the search is added to my recent searches.
+- **Given** nothing matches, **when** the results would be empty, **then** I see "No results for “<query>”" and "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
+- **Given** I'm offline, **when** I search, **then** it searches the phone's cache, including expenses still waiting to sync (shown with "Waiting").
+- **Given** a Field user, **when** they search, **then** other people's expenses, unassigned jobs, invoices and money figures other than their own expenses never appear (D-048).
+- **Given** Jobs & field is off, **when** I search, **then** only my expenses are searched and the jobs group is hidden (D-198).
+
+**Implementation notes**
+- Searches the local SQLite cache (jobs and expenses already synced plus the outbox) — no new API; matching is case- and accent-insensitive and runs as you type with a short debounce.
+- Recent searches live in the same per-device storage as the appearance setting, never on the server.

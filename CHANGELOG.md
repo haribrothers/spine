@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-MOB-23 and Today redrawn like the showcase-native home (planning)
+
+- **Today:** follows `apps/showcase-native`'s home:
+  - Large title, with the sync pill on the left and the bell and a filled avatar on the right.
+  - A welcome card with the GaugeIndicator-style gauge (rounded arc, ticks and end dot) showing milestones done this month.
+  - A This week / This month / This year switch and KPI cards.
+  - "QUICK ACTIONS" with four tiles (Add photo, Log expense, Scan receipt, Directions).
+  - "YOUR JOBS TODAY" in bordered cards with "All jobs ↗".
+- **Search:** new story **US-MOB-23** (search my jobs and my expenses). It covers the tab on both platforms, recent searches, grouped and highlighted results, offline search of the cache, and nothing outside the person's own records. New `MobSearchEmpty` artboards. The search criteria moved out of US-MOB-04. Phase 5 now has 27 stories.
+
 ### 2026-10-08 — D-196 to D-200: Phase 5 redesigned and its stories refreshed (planning)
 
 - **Rebuild from scratch (D-196):** the old `apps/mobile` (React Navigation, five screens) will be replaced by a new expo-router app on `@spine/ui-native` and `@expo/ui`, built the way `apps/showcase-native` is.
