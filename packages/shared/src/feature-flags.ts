@@ -3,7 +3,7 @@
  * behind a flag here until that phase turns it on.
  */
 export const FEATURE_FLAGS = {
-  /** US-SITE-11, US-SITE-12 (Phase 10): "How it works" links to the guide bundled with the server. */
+  /** US-SITE-11, US-SITE-12 (Phase 11): "How it works" links to the guide bundled with the server. */
   bundledHelp: false,
 } as const;
 

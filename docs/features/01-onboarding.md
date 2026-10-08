@@ -12,7 +12,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-01 | Wizard shell: welcome, stepper, skip, revisit in Settings | P1 | 0 | `OnbWelcome`, `OnbBusinessProfile`, `OnbChartOfAccounts` |
 | F-ONB-02 | Setup steps: business, currency and year, tax and numbering, accounts, team | P1 | 0 | `OnbBusinessProfile`, `OnbCurrencyLocale`, `OnbFinancialYear`, `OnbTaxRate`, `OnbNumbering`, `OnbChartOfAccounts`, `OnbInviteTeam`, `OnbInviteTeamSent` |
 | F-ONB-03 | Industry template | P1 | 3 | `OnbIndustryTemplate`, `ExpenseCategoriesConstruction` |
-| F-ONB-04 | Load demo data, by country and industry | P1 | 10 (9 for US-ONB-17–US-ONB-19, US-ONB-21) | `OnbWelcome`, `SettingsDemoData` |
+| F-ONB-04 | Load demo data, by country and industry | P1 | 11 (9 for US-ONB-17–US-ONB-19, US-ONB-21) | `OnbWelcome`, `SettingsDemoData` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 
@@ -36,7 +36,7 @@ Legacy: S-12.1
 - Data: `settings` keys written by each step (see 04-data-model conventions).
 - UI: `apps/web/src/app/onboarding/page.tsx`, `Stepper`, `Card`, `Button` from `@spine/ui`.
 - Edge: refreshing mid-wizard resumes at the first unsaved step.
-- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 10; the button itself is built.
+- Phases: the Template step's effect on jobs ships with Phase 3 (US-ONB-04); until then the choice is saved but changes nothing. The demo-data fixes in US-ONB-09 ship in Phase 11; the button itself is built.
 
 ### US-ONB-02 · Skip setup at any step
 **Feature:** F-ONB-01 · **Priority:** P1 · **Phase:** 0 · **Screens:** `OnbWelcome`, `OnbBusinessProfile`
@@ -166,7 +166,7 @@ Legacy: S-12.7
 - Edge: Owner is never offered as a role at invite time (D-020).
 
 ### US-ONB-09 · Load demo data to explore
-**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 10 · **Screens:** `OnbWelcome`
+**Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 11 · **Screens:** `OnbWelcome`
 **As** an evaluator, **I want** to load a realistic sample business with one click, **so that** I can see every screen working before I commit real data.
 
 Legacy: S-12.8
@@ -282,7 +282,7 @@ Decisions: D-155, D-194
 
 **Acceptance criteria**
 - **Given** the user menu › "Set up Spine" (Owners only), **when** it opens, **then** cards show "Business details and logo", "Tax", "Chart of accounts", "Opening balances", "Bank and cash accounts", "Payment instructions", "Documents and emails", "Numbering", "Payment reminders", "Modules", "Invite your team", "Email sending", "Backups" and "Field app", each "Done" or "To do" with one line on why it matters.
-- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done". Backups isn't counted until Spine can check it (Phase 10); its card says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.". Field app only shows while Jobs & field is on.
+- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done". Backups isn't counted until Spine can check it (Phase 11); its card says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.". Field app only shows while Jobs & field is on.
 - **Given** demo data is loaded, **when** the page opens, **then** it says "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own." and the cards count the demo's settings as they stand.
 - **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick (D-194 lists what each card checks); "Mark as not needed" moves a card to "Not needed" for this organisation, where "Show again" brings it back.
 - **Given** the dashboard's setup checklist, **when** its three steps are done, **then** it shows "Finish setting up Spine — <n> left" linking here until every card is done or hidden.
@@ -299,12 +299,12 @@ Decisions: D-155, D-194
 
 **Acceptance criteria**
 - **Given** a card, **when** I press "Set up" (or "Review" when done), **then** the matching Settings pane, Banking page or Opening balances opens, and closing it returns me to the setup page.
-- **Given** "How it works" on a card, **when** I press it, **then** the user-guide page for that topic opens (bundled help, US-SITE-11; hidden until Phase 10 ships).
+- **Given** "How it works" on a card, **when** I press it, **then** the user-guide page for that topic opens (bundled help, US-SITE-11; hidden until Phase 11 ships).
 - **Given** "Email sending" or "Backups", **when** they're not configured, **then** the card explains it's set by whoever runs the server and links to the self-hosting guide.
 
 **Implementation notes**
 - Card targets are in `SETUP_CARDS`: a Settings pane opens over the page (closing it re-reads the cards), or Banking, Opening balances or Team › Users opens. Email sending and Backups link to the README's self-hosting section until the docs site ships (Q-15).
-- "How it works" links to each card's bundled guide page, behind `FEATURE_FLAGS.bundledHelp` (`packages/shared/src/feature-flags.ts`) until Phase 10.
+- "How it works" links to each card's bundled guide page, behind `FEATURE_FLAGS.bundledHelp` (`packages/shared/src/feature-flags.ts`) until Phase 11.
 
 ### US-ONB-17 · Keep demo data out of my real numbers and books
 **Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbWelcome`, `SettingsDemoData`

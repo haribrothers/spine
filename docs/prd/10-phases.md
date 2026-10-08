@@ -1,6 +1,6 @@
 # 10 · Phases
 
-Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–10 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
+Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
 
 | Phase | Name | Stories | Milestone |
 |---|---|---|---|
@@ -13,10 +13,11 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–10 follow (
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
-| 9 | Tax, documents and setup | 40 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; an owner can switch on an AI assistant that fills in forms |
-| 10 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
+| 9 | Tax, documents and setup | 31 | An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails, modules and a setup page that fit it |
+| 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
+| 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 422 stories.
+Total: 427 stories.
 
 ## Phase 0 · Foundation
 
@@ -692,7 +693,7 @@ Total: 422 stories.
 
 **Goal:** An Indian business issues GST invoices, uploads GSTR-1 and hands its books to a Tally accountant; every business gets documents, emails and modules that fit it.
 
-**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); demo businesses by country and industry that leave no trace when deleted, and four more industry templates (D-191–D-193); and the optional AI assistant — Settings › AI with a local or cloud provider, per-feature switches, a monthly budget, `ai.use`, AI audit — with four features: reading bills and receipts, drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173).
+**Deliverables:** Country tax presets (India, UK, Australia, New Zealand, UAE, Saudi Arabia); tax types and supply classes; for India, GST registration, contact GST details, automatic place of supply, HSN/SAC codes, GST invoice and credit note PDFs, the GSTR-1 JSON and review workbook; the Tax Summary by rate, type and class on both sides; the Tally XML export and account mapping; UPI QR codes on invoices; document layout options, a signature and the amount in words; Unicode PDF fonts; editable customer emails; optional modules; the Set up Spine page (D-145–D-155); demo businesses by country and industry that leave no trace when deleted, and four more industry templates (D-191–D-194). The AI assistant moved to Phase 10 ([D-195](12-decisions.md)).
 
 **Done when:**
 - An India-preset organisation issues intra-state, inter-state, export and bill-of-supply invoices whose PDFs pass a GST checklist review, and the GSTR-1 JSON for the month validates in the GST offline tool with totals equal to the Tax Summary.
@@ -700,7 +701,6 @@ Total: 422 stories.
 - A UPI app scanning a test invoice's QR code opens with the right payee, amount and note.
 - With each module switched off, its pages, widgets, search results, notifications and API routes are gone (403 `MODULE_OFF`), and switching it back on restores everything (tested per module).
 - A new owner completes every card on the Set up Spine page using only the page and its links.
-- With AI off, a network test sees no AI request and no AI control renders on any screen; with AI on against a local model and a cloud model, a sample bill fills the bill form with totals matching Spine's computation, and nothing is saved until a person saves.
 
 **Stories:**
 
@@ -750,6 +750,19 @@ Total: 422 stories.
 - US-SET-24 · Hide everything a switched-off module owns (P1)
 - US-SET-25 · Switch a module back on with nothing lost (P1)
 
+## Phase 10 · AI assistant
+
+**Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.
+
+**Deliverables:** The optional AI assistant module ([D-162](12-decisions.md)): Settings › AI with a local or cloud provider (`AiDriver`: none, OpenAI-compatible, Anthropic), an encrypted key, per-feature switches, a monthly budget and usage, the `ai.use` Team right, every request in the audit log, and graceful behaviour when the provider is unavailable; four features — reading bills and receipts (web and phone), drafting customer emails, drafting quote lines and suggesting bank matches (D-162–D-173). A phase of its own since [D-195](12-decisions.md): it is the only feature that sends data off the server, and it reaches bills, expenses, emails, quotes, reconciliation and the phone app.
+
+**Done when:**
+- With AI off, a network test sees no AI request and no AI control renders on any screen; with AI on against a local model and a cloud model, a sample bill fills the bill form with totals matching Spine's computation, and nothing is saved until a person saves.
+- With a provider outside the local network, nothing leaves the server until an Owner acknowledges what's sent, and the redaction tests show no bank, card, tax or UPI identifiers in any request (D-164, D-165).
+- Every AI request is in the audit log, and a monthly budget pauses AI at 100% (D-168, D-169).
+
+**Stories:**
+
 *AI assistant*
 
 - US-AI-01 · Switch the AI assistant on or off (P1)
@@ -767,7 +780,7 @@ Total: 422 stories.
 - US-AI-13 · Draft quote lines from an enquiry (P1)
 - US-AI-14 · Get AI suggestions while reconciling (P1)
 
-## Phase 10 · Packaging & 1.0
+## Phase 11 · Packaging & 1.0
 
 **Goal:** A stranger installs from the README and issues their first invoice.
 

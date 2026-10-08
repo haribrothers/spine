@@ -115,7 +115,7 @@ Owners have every capability. Staff have what their Teams grant; the seeded **Ge
 ## Supply chain
 
 - Lockfile committed; `pnpm install --frozen-lockfile` in CI.
-- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 10 (NFR-SEC-04).
+- Dependency audit in CI (`pnpm audit --prod`, fails on high/critical) — added in Phase 11 (NFR-SEC-04).
 - Docker images pinned to major versions (`postgres:16-alpine`, `caddy:2-alpine`); base images rebuilt per release.
 - OWASP Top 10 review documented before 1.0 (NFR-SEC-05).
 

@@ -40,7 +40,7 @@ describe("US-ONB-15", () => {
     expect(finishSettingUpLabel(3)).toBe("Finish setting up Spine — 3 left");
   });
 
-  it("keeps the bundled guide links off until Phase 10 (US-SITE-11)", () => {
+  it("keeps the bundled guide links off until Phase 11 (US-SITE-11)", () => {
     expect(FEATURE_FLAGS.bundledHelp).toBe(false);
   });
 });

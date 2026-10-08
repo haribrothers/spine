@@ -4253,7 +4253,7 @@ Use the GST business from section 175.
    - "Done 0 of 13" (1 of 13 if the server has SMTP set up), "To do" and "Not needed 0", and a progress bar.
    - 14 cards in order, from "Business details and logo" to "Field app", each with its line.
    - Backups has no chip, and says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.".
-   - No "How it works" links (they come with the bundled guide in Phase 10).
+   - No "How it works" links (they come with the bundled guide in Phase 11).
 2. Business details and logo → "Set up":
    - Settings opens on Business profile, over the page.
    - Enter a name and address, save and close. You're back on Set up Spine, the card says "Done" and its button reads "Review".
@@ -4287,7 +4287,7 @@ Use the GST business from section 175.
 
 ## Known gaps — don't file these as bugs
 
-- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 10 (D-194).
+- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 

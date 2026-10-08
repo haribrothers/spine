@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | R-01 | Accounting correctness bugs found after real use | Severe: destroys trust | Medium | Ledger-integrity test after every workflow (NFR-REL-02); daily integrity check (US-RPT-12); accountant review of [06](06-ledger-posting-rules.md) before 1.0 (Q-02) |
 | R-02 | Scope creep toward a general ERP | Never ships | Medium | Non-goals in [00-overview](00-overview.md) are binding; new ideas go to a v2 backlog |
-| R-03 | Self-hosting is too hard for the target user | Nobody adopts it | Medium | Phase 10 install script, 5-minute target (NFR-MNT-01), install test on a clean machine with a non-technical person watching |
+| R-03 | Self-hosting is too hard for the target user | Nobody adopts it | Medium | Phase 11 install script, 5-minute target (NFR-MNT-01), install test on a clean machine with a non-technical person watching |
 | R-04 | Offline sync duplicates or loses data | Field users stop trusting the app | Medium | Idempotency keys on every mutation, append-only offline operations, no offline financial documents ([D-050](12-decisions.md)), NFR-REL-06 test |
 | R-05 | Solo maintainer burnout | Abandonment | Medium | Boring architecture, public early releases, contributor docs (US-OPS-19) |
 | R-06 | Tax model too generic for any one country's filing | Users still need an accountant to file | Medium | V1 produces the numbers and upload files, not the filing: country tax presets for six countries (D-145), India GST with place of supply and HSN/SAC (D-146) and a GSTR-1 export (D-148). Other countries' presets are on the [roadmap](16-roadmap.md) |
@@ -33,8 +33,8 @@
 
 | ID | Question | Options | Needed before | Owner |
 |---|---|---|---|---|
-| Q-01 | Licence | AGPL-3.0 · MIT | Phase 10 (US-OPS-19) | Product owner |
-| Q-02 | Is a practising accountant available to review the chart of accounts and posting rules? | Yes, name · No, accept risk R-01 | Before the Phase 8 PR merges (P17–P27 are built first, decided 2026-10-06), and again before the Phase 10 release | Product owner |
+| Q-01 | Licence | AGPL-3.0 · MIT | Phase 11 (US-OPS-19) | Product owner |
+| Q-02 | Is a practising accountant available to review the chart of accounts and posting rules? | Yes, name · No, accept risk R-01 | Before the Phase 8 PR merges (P17–P27 are built first, decided 2026-10-06), and again before the Phase 11 release | Product owner |
 | Q-03 | ~~Does the reference business migrate historical data or start clean from a cutover date?~~ — closed by [D-137](12-decisions.md): opening balances at a cutover date plus open invoices, bills, retention and credits | — | — | — |
 | Q-04 | ~~Is accrual-only accounting acceptable for v1, or is a cash-basis report needed?~~ — closed by [D-138](12-decisions.md): a cash-basis P&L and dashboard profit, derived at report time | — | — | — |
 | Q-05 | Should expenses paid personally by an employee credit an "Employee reimbursements payable" account instead of Bank? | Keep Bank · Add the account and a reimburse action | v1.1 ([16-roadmap](16-roadmap.md)) | Accountant |
@@ -47,7 +47,7 @@
 | Q-12 | ~~May a member with `expenses.approve` approve their own expense?~~ — closed by [D-085](12-decisions.md): no self-approval for Staff; Owners may | — | — | — |
 | Q-13 | ~~With `SEED_DEMO=true`, how does someone sign in to the demo organisation?~~ — closed by [D-086](12-decisions.md): the first sign-up adopts the demo organisation | — | — | — |
 | Q-14 | ~~Which S3-compatible store replaces `minio/minio` as the self-hosted default in `docker-compose.yml` and `docker-compose.dev.yml`?~~ — closed by [D-102](12-decisions.md) and [D-103](12-decisions.md): local disk by default, optional pinned RustFS | — | — | — |
-| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 10 (US-SITE-14) | Product owner |
+| Q-15 | What domain will the website and docs use (`[DOMAIN]`, `docs.[DOMAIN]`)? | Buy a domain · Use `haribrothers.github.io/spine` at launch | Phase 11 (US-SITE-14) | Product owner |
 | Q-16 | When a customer certifies less than a progress claim, should Spine record the claimed and certified amounts on the invoice? Today the office issues a credit note for the difference after issue, or edits the draft before issuing | Keep credit notes · Record a certified amount on the draft before issue (claimed amount kept for reference) · Add a certification step after issue that raises the credit note automatically | Before the next construction round | Product owner + accountant |
 | Q-17 | Should statement import ship ready-made column mappings for common Indian banks (HDFC, ICICI, SBI, Axis, Kotak)? | No, map by hand · Ship presets for the five banks | Phase 8 (US-BANK-07) | Product owner |
 | Q-18 | ~~For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1?~~ — closed by [D-181](12-decisions.md): a per-business "We export under LUT" setting | — | — | — |

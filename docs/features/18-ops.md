@@ -1,6 +1,6 @@
 # 18 · Self-hosting & system states
 
-What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 10 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
+What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 11 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
 **Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
@@ -23,7 +23,7 @@ What it takes for a stranger to run Spine for years: one-command install, backup
 ## User stories
 
 ### US-OPS-01 · Install Spine with one command
-**Feature:** F-OPS-01 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-01 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster, **I want** a single command that installs and starts Spine, **so that** I don't need help.
 
 Legacy: S-10.7
@@ -39,7 +39,7 @@ Legacy: S-10.7
 - New `scripts/install.sh` (POSIX shell, shellcheck-clean); Compose profiles `minimal` / `full`; storage defaults to the local disk driver with no extra container (US-OPS-27). The README warns that `docker compose down -v` deletes the files and database volumes, and recommends full-disk encryption on the host (D-106).
 
 ### US-OPS-02 · Start with demo data from an environment flag
-**Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-01 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
 **As** an evaluator, **I want** `SEED_DEMO=true` to load the demo business on first start, **so that** I see Spine working without clicking through setup.
 
 Legacy: S-10.10
@@ -55,7 +55,7 @@ Legacy: S-10.10
 - Today `SEED_DEMO` is in `.env.example` but not read by any code.
 
 ### US-OPS-03 · Back up everything into one file
-**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster, **I want** one command that produces a single restorable archive, **so that** my data is safe.
 
 Legacy: S-10.8
@@ -72,7 +72,7 @@ Legacy: S-10.8
 - New `scripts/backup.sh`; uploads via the S3 API (no extra tool); last-success time written to `settings.last_backup_at` (04 "Columns added").
 
 ### US-OPS-04 · Restore a backup into a clean install
-**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-02 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster, **I want** to restore a backup onto a fresh machine, **so that** I can recover from a dead server.
 
 **Acceptance criteria**
@@ -84,7 +84,7 @@ Legacy: S-10.8
 - New `scripts/restore.sh`; CI job "restore-verify".
 
 ### US-OPS-05 · Report health and readiness
-**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster, **I want** health and readiness endpoints, **so that** Docker and monitors know when Spine is really up.
 
 **Acceptance criteria**
@@ -96,7 +96,7 @@ Legacy: S-10.8
 - API: `GET /health/ready` (contract addition).
 
 ### US-OPS-06 · Tell owners a new version is available
-**Feature:** F-OPS-03 · **Priority:** P3 · **Phase:** 10 · **Screens:** `UpgradeNotice`
+**Feature:** F-OPS-03 · **Priority:** P3 · **Phase:** 11 · **Screens:** `UpgradeNotice`
 **As** an owner, **I want** to know when an update exists, **so that** I stay current.
 
 Legacy: PRD F10 · Decision: D-055
@@ -112,7 +112,7 @@ Legacy: PRD F10 · Decision: D-055
 - API: `GET /org/update-status` (contract addition); `settings.update_check`.
 
 ### US-OPS-07 · Log every request with an id
-**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-03 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster, **I want** structured logs with a request id, **so that** I can trace an error a user reports.
 
 **Acceptance criteria**
@@ -140,7 +140,7 @@ Finding: C26 · Decision: D-009
 - Data: `idempotency_keys` gains `user_id`; keys are unique per org + user + endpoint + key (04 invariant I12), so two devices can't collide.
 
 ### US-OPS-09 · Respect reduced-motion settings everywhere
-**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
 **As** a member sensitive to motion, **I want** Spine to stop animating when I ask my device for less motion, **so that** it's comfortable to use.
 
 Finding: C25
@@ -169,7 +169,7 @@ Findings: C4, C15 · Decision: D-058
 - `@spine/ui` `AlertDialog` default variant; audit every `AlertDialogAction`.
 
 ### US-OPS-11 · Show a helpful page for a missing page
-**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 10 · **Screens:** `NotFound`
+**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 11 · **Screens:** `NotFound`
 **As** a member, **I want** a clear page when a link is wrong, **so that** I can get back to work.
 
 Finding: G8
@@ -198,7 +198,7 @@ Finding: G8
 - Shared `NoAccess` component used by route guards and `apiClient`.
 
 ### US-OPS-13 · Recover from an unexpected error
-**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 10 · **Screens:** `ServerError`
+**Feature:** F-OPS-05 · **Priority:** P2 · **Phase:** 11 · **Screens:** `ServerError`
 **As** a member, **I want** a calm error page with a reference, **so that** I know my saved work is safe and how to report it.
 
 Finding: G8
@@ -212,7 +212,7 @@ Finding: G8
 - Next.js `error.tsx`; request id from US-OPS-07.
 
 ### US-OPS-14 · Use the web app on a phone
-**Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 10 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`
+**Feature:** F-OPS-06 · **Priority:** P1 · **Phase:** 11 · **Screens:** `AppShellPhone`, `AppShellPhoneNav`
 **As** an owner checking something between jobs, **I want** the web app to work on my phone's browser, **so that** I can see if an invoice got paid.
 
 Finding: C19 · Decision: D-066
@@ -227,7 +227,7 @@ Finding: C19 · Decision: D-066
 - `@spine/ui` `AppShell` responsive mode.
 
 ### US-OPS-15 · Keep wide tables usable on small screens
-**Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 10 · **Screens:** `AppShellPhone`
+**Feature:** F-OPS-06 · **Priority:** P2 · **Phase:** 11 · **Screens:** `AppShellPhone`
 **As** a member on a phone or small tablet, **I want** tables to scroll inside their own box, **so that** the page doesn't break.
 
 **Acceptance criteria**
@@ -239,7 +239,7 @@ Finding: C19 · Decision: D-066
 - Playwright checks at 390×844 for every route (NFR-COMP-02).
 
 ### US-OPS-16 · Move every user-facing string into translation files
-**Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P2 · **Phase:** 11 · **Screens:** —
 **As** a self-hoster in another country, **I want** strings externalised, **so that** a translation can be added without changing code.
 
 PRD §10.8 · Decision: D-069
@@ -253,7 +253,7 @@ PRD §10.8 · Decision: D-069
 - English only ships in v1.
 
 ### US-OPS-17 · Pass an accessibility audit of every screen
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** a member who uses a keyboard or screen reader, **I want** every screen to meet WCAG 2.1 AA, **so that** I can use Spine fully.
 
 PRD §10.8
@@ -267,7 +267,7 @@ PRD §10.8
 - Extends `apps/e2e`; results recorded in `docs/qa-script.md`.
 
 ### US-OPS-18 · Complete a security review before 1.0
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** an owner trusting Spine with my books, **I want** a documented security review, **so that** obvious holes are closed before release.
 
 PRD §10.3
@@ -281,7 +281,7 @@ PRD §10.3
 - NFR-SEC-04, NFR-SEC-05.
 
 ### US-OPS-19 · Ship the README, licence and contributor guide
-**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 10 · **Screens:** —
+**Feature:** F-OPS-07 · **Priority:** P1 · **Phase:** 11 · **Screens:** —
 **As** a stranger finding the repository, **I want** a README with screenshots, a licence and contribution rules, **so that** I can decide to use or help with Spine.
 
 PRD §10.9
@@ -289,7 +289,7 @@ PRD §10.9
 **Acceptance criteria**
 - **Given** the repository root, **when** I open it, **then** I find `README.md` (what it is, screenshots, install in 5 minutes, backup, upgrade), `LICENSE` (as decided in Q-01), `CONTRIBUTING.md`, a code of conduct and issue templates.
 - **Given** the release process, **when** I read `docs/release.md`, **then** it lists versioning, changelog and image publishing steps.
-- **Given** a new user follows only the README on a clean machine, **when** they finish, **then** they issue their first invoice (Phase 10 exit criterion).
+- **Given** a new user follows only the README on a clean machine, **when** they finish, **then** they issue their first invoice (Phase 11 exit criterion).
 
 **Implementation notes**
 - Licence is blocked on Q-01.

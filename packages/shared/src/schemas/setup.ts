@@ -60,7 +60,7 @@ export const SETUP_CARDS: Record<SetupCardKey, SetupCardDefinition> = {
  */
 export const SELF_HOSTING_GUIDE_URL = "https://github.com/haribrothers/spine#production--self-hosting";
 
-/** Said on the Backups card until Phase 10 can tell whether a backup ran (D-194). */
+/** Said on the Backups card until Phase 11 can tell whether a backup ran (D-194). */
 export const BACKUPS_NOT_TRACKED_NOTE = "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.";
 
 export const SETUP_DEMO_NOTE = "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own.";

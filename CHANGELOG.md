@@ -80,6 +80,12 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — D-195: the AI assistant becomes Phase 10 (planning)
+
+- **New phase:** the 14 AI stories (US-AI-01 to US-AI-14) move out of Phase 9 into **Phase 10 · AI assistant**, with its own goal, deliverables, "done when" and branch.
+- **Renumbering:** Packaging & 1.0 becomes **Phase 11**. Every reference that meant it now says Phase 11; past decisions and changelog entries are left as written.
+- **What stays:** AI still ships in 1.0 (D-162). Phase 9 (tax, documents and setup) is complete at 31 stories and merges on its own.
+
 ### 2026-10-08 — US-ONB-15, US-ONB-16: Set up Spine (Phase 9)
 
 - **Set up Spine** (user menu, Owners only):

@@ -141,7 +141,7 @@ Shows: "Setup — tax country — Spine" · "Business" · "Template" · "Currenc
 
 Links to: the Settings panes, `Banking`, `OpeningBalances`, `TeamUsers`
 
-As built (D-194): Backups shows no Done/To do chip and "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.", so the drawn "8 of 14" reads "8 of 13"; hidden cards move to a "Not needed" list with "Show again"; "How it works" is hidden until Phase 10; a loaded demo adds the note "Demo data is loaded — …" above the counts.
+As built (D-194): Backups shows no Done/To do chip and "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.", so the drawn "8 of 14" reads "8 of 13"; hidden cards move to a "Not needed" list with "Show again"; "How it works" is hidden until Phase 11; a loaded demo adds the note "Demo data is loaded — …" above the counts.
 
 Shows: "Set up Spine — Spine" · "Set up Spine" · "Everything a new business sets up, in one place. Owners only." · "Done" · "8 of 14" · "To do" · "6" · "Not needed" · "0" · "Business details and logo" · "Shown on every quote, invoice and email." · "Review" · "How it works" · "Mark as not needed" · "Tax" · "Your country's rates, and GST details in India." · "Chart of accounts" · "Add the income and expense accounts you report on." · "Opening balances" · "What you had on the day you started — so the Balance Sheet is right." · "Set up" · "Bank and cash accounts" · "Record money where it really is, then reconcile." · "Payment instructions" · "How customers pay you — bank details and UPI ID." · "Documents and emails" · "Paper size, terms, signature and the words in your emails." · "Numbering" · "Continue your existing invoice numbers." · "Payment reminders" · "Chase overdue invoices automatically." · "Modules" · "Switch off what you don't use." · "Invite your team" · "Office staff and field crew sign in with their own accounts." · "Email sending" · "Set by whoever runs the server — see the self-hosting guide." · "Read the guide" · "Backups" · "Off-site backups protect your books if the server dies." · "Field app" · "Crews see their jobs and send photos and expenses."
 
@@ -3267,7 +3267,7 @@ Shows: "Reconciliations — Spine" · "Money" · "Banking" · "First Coastal —
 Optional AI help, off by default (D-162–D-173, [features/21-ai.md](../features/21-ai.md)). AI only fills in forms: every suggested value carries a "Suggested by AI" marker until someone edits or accepts it, and nothing is saved, sent or posted until a person presses the usual button. With AI off, none of these controls appear.
 
 ### SettingsAi — Settings › AI assistant — switch, provider, features, budget
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-01, US-AI-02, US-AI-03, US-AI-04 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-01, US-AI-02, US-AI-03, US-AI-04 · **Source:** Drawn
 
 ![SettingsAi](screens/SettingsAi.webp)
 
@@ -3276,7 +3276,7 @@ Links to: `SettingsModules`, `TeamPrivilegesBooks`
 Shows: "Settings — AI assistant — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Cash position" · "Profit this month" · "Receivables" · "Overdue" · "Search settings" · "ORGANISATION" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "AI assistant" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Off until you switch it on. Your own model, on your network or in the cloud, with your own key." · "AI helps fill in forms — reading bills and receipts, drafting emails and quote lines, suggesting bank matches. It never saves, sends or posts anything by itself." · "Provider" · "Local or OpenAI-compatible" · "Model" · "llama3.2-vision" · "Server address" · "http://192.168.1.20:11434/v1" · "API key" · "Optional for local servers" · "Test connection" · "Connected · llama3.2-vision · reads images: yes" · "Features" · "Read bills and receipts" · "Fill in bills and expenses from the vendor's PDF or a receipt photo." · "What's sent" · "The document you ask it to read. Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." · "Draft customer emails" · "Write the message when sending quotes, invoices, reminders and statements." · "The email template, the document's number, amounts and dates, and the customer's name. Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." · "Draft quote lines" · "Turn an enquiry into draft quote lines from your catalogue." · "The enquiry text and the names of up to 50 matching catalogue items. Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." · "Suggest bank matches" · "Rank matches and suggest categories while reconciling." · "Each statement line's date, amount and description, and recent categories on that account. Never sent: bank account numbers, tax IDs and GSTINs, UPI IDs, passwords or keys." · "Monthly budget" · "Token budget" · "2,000,000" · "Owners are told at 80%; AI pauses at 100% until next month." · "This month:" · "1,240,000" · "of" · "tokens · 412 requests" · "See usage" · "Save"
 
 ### VendorBillBuilderAi — Vendor bill filled in by AI from the vendor's PDF
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-07, US-AI-08 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-07, US-AI-08 · **Source:** Drawn
 
 ![VendorBillBuilderAi](screens/VendorBillBuilderAi.webp)
 
@@ -3285,7 +3285,7 @@ Links to: —
 Shows: "New vendor bill — Spine" · "Purchases" · "Vendor Bills" · "New" · "New vendor bill" · "Record what you owe a vendor. It saves as a draft until you record it." · "PDF" · "coastal-timber-88213.pdf" · "Attached to this bill · read by AI in 4 seconds" · "Read again" · "Remove" · "Filled in from coastal-timber-88213.pdf. Check every field marked “Suggested by AI” before saving — nothing is saved yet." · "The document says $2,180.00; the lines add up to $2,160.08. Check the lines before saving." · "Vendor" · "*" · "Suggested by AI" · "Coastal Timber Supply" · "Bill number" · "88213" · "The vendor's own number." · "Job" · "J-0012 · Harbour Lofts fit-out" · "Optional — flows into job costing once recorded." · "Currency" · "USD" · "Date" · "Sep 28, 2026" · "Due date" · "Oct 28, 2026" · "Lines" · "Suggested by AI — check before saving" · "Treated pine 90×45 — 4.8 m" · "Prefill from catalogue…" · "120 lengths, delivered to site" · "Qty" · "120" · "Unit price" · "15.20" · "Discount %" · "0" · "Line total" · "1,824.00" · "Expense/COGS account" · "5000 · Cost of Materials" · "Tax" · "Sales Tax 8.875%" · "Price includes tax" · "Delivery — Harbour Lofts" · "Site delivery, crane truck" · "1" · "160.00" · "Add line" · "Subtotal" · "$1,984.00" · "$176.08" · "Total" · "$2,160.08" · "Cancel" · "Save as draft"
 
 ### ExpenseDialogAi — Expense filled in by AI from a receipt
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-09 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-09 · **Source:** Drawn
 
 ![ExpenseDialogAi](screens/ExpenseDialogAi.webp)
 
@@ -3294,7 +3294,7 @@ Links to: —
 Shows: "Submit expense — Spine" · "Purchases" · "Expenses" · "Submit an expense for approval. Categories are managed from Expenses › Categories." · "Submitted" · "3" · "Approved this month" · "$1,912.40" · "Rejected" · "1" · "Billable not billed" · "$612.40" · "Status" · "All jobs" · "Submit expense" · "Search expenses" · "Columns" · "Number" · "Date" · "Category" · "Amount" · "Submitted by" · "Actions" · "EXP-0034" · "Oct 4, 2026" · "Fuel" · "$58.20" · "Marcus Webb" · "EXP-0033" · "Oct 2, 2026" · "Materials" · "$212.40" · "Approved" · "Sarah Chen" · "Submit an expense" · "A submitted expense doesn't post to the ledger until an owner or staff member approves it." · "[RECEIPT]" · "receipt-shell-0410.jpg" · "Read by AI · check the fields below" · "Read receipt" · "*" · "Suggested by AI" · "From this merchant's past expenses." · "Job" · "J-0012 · Harbour Lofts fit-out" · "Optional — flows into job costing once approved." · "Currency" · "USD" · "58.20" · "Tax rate" · "Sales Tax 8.875%" · "Tax amount" · "4.75" · "Worked out by Spine from the amount and rate." · "Paid by" · "Company" · "Description" · "Shell Portland — diesel 31.4 L" · "Cancel" · "Save expense"
 
 ### EmailDraftAi — Customer email drafted by AI in the send dialog (reminder with tone)
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-11, US-AI-12 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-11, US-AI-12 · **Source:** Drawn
 
 ![EmailDraftAi](screens/EmailDraftAi.webp)
 
@@ -3303,7 +3303,7 @@ Links to: —
 Shows: "Send reminder — Spine" · "Billing" · "Invoices" · "Detail" · "Invoice" · "Back to invoices" · "INV-0002" · "Overdue" · "Harborview Construction Co. · Due Oct 24, 2026" · "Record payment" · "Issue credit note" · "Email invoice" · "Void" · "Lines" · "Kitchen and bathroom fit-out — stage 2" · "1 × $4,175.00 · Sales Tax 8.875%" · "$4,542.50" · "Payments" · "No payments recorded against this invoice yet." · "Subtotal" · "$4,175.00" · "Tax" · "$367.50" · "Total" · "Balance due" · "Send payment reminder — INV-0002" · "Harborview Construction Co. · $4,542.50 overdue by 8 days" · "To" · "*" · "accounts@harborviewco.example" · "Tone" · "Friendly" · "Formal" · "Firm" · "Draft with AI" · "Try again" · "Undo" · "Drafted by AI — check it before sending. Amounts and dates are filled in by Spine." · "Subject" · "Suggested by AI" · "Reminder: invoice INV-0002 is now overdue" · "Message" · "Dear Accounts team, Our records show that invoice INV-0002 for $4,542.50, due on September 28, 2026, remains unpaid. We'd be grateful if you could arrange payment or let us know if there's anything holding it up. The invoice is attached, with our bank details. Kind regards, Riverstone Builders" · "Attach the invoice PDF" · "Cancel" · "Send reminder"
 
 ### QuoteBuilderAi — Quote builder: draft lines with AI from an enquiry
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-13 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-13 · **Source:** Drawn
 
 ![QuoteBuilderAi](screens/QuoteBuilderAi.webp)
 
@@ -3312,7 +3312,7 @@ Links to: —
 Shows: "New quote — Spine" · "Sales" · "Quotes" · "New" · "New quote" · "Build a multi-line quote. It saves as a draft until you send it." · "Contact" · "*" · "Bluewater Hospitality Group" · "Currency" · "USD" · "Valid until" · "Nov 5, 2026" · "Quote shows as expired after this date." · "Draft lines with AI" · "Close" · "Enquiry or description" · "Hi — we need the lobby washrooms refreshed before Christmas: replace 6 basins and taps, retile two walls (about 24 m²), new LED mirror lights, and make good afterwards. Can you quote?" · "Draft lines" · "Sends the text above and the names of matching catalogue items. Prices always come from your catalogue." · "Proposed lines" · "· 4 · Suggested by AI" · "Basin and tap replacement" · "Catalogue: Basin + mixer tap — supply and fit" · "6" · "$420.00" · "Wall tiling" · "Catalogue: Wall tiling — per m²" · "24" · "$68.00" · "LED mirror lights" · "Catalogue: LED mirror light — supply and fit" · "$185.00" · "Make good after works" · "No catalogue match" · "1" · "Add a price" · "Discard" · "Add 4 lines to quote" · "Lines" · "No lines yet — add the proposed lines above, or add them yourself." · "Add item" · "Add heading" · "Add text line" · "Subtotal" · "$0.00" · "Tax" · "Total" · "Cancel" · "Save as draft"
 
 ### ReconcileAiSuggestions — Reconcile with AI-ranked matches and suggestions for unmatched lines
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-14 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-14 · **Source:** Drawn
 
 ![ReconcileAiSuggestions](screens/ReconcileAiSuggestions.webp)
 
@@ -3321,7 +3321,7 @@ Links to: —
 Shows: "Reconcile — Spine" · "Money" · "Banking" · "First Coastal — Operating" · "Reconcile" · "Reconcile First Coastal — Operating" · "Match each statement line to an entry in Spine until the difference is zero." · "Statement closing balance" · "$50,566.42" · "Oct 4, 2026" · "Cleared in Spine" · "$46,075.90" · "opening $45,829.90 + 1 matched" · "Difference" · "$4,490.52" · "match or create entries until it's zero" · "AI ranked the entries for 1 line and has suggestions for 2 unmatched lines. Nothing is matched or created until you press Match or save." · "Statement lines" · "From statement-oct-2026.csv · 4 lines to Oct 4" · "Oct 1" · "NEFT-MAPLE RIDGE DEV · FT26100248" · "AI suggests a match" · "Same amount as RCT-0018 (Oct 2); description mentions Maple Ridge" · "+4,542.50" · "Match" · "Not this one" · "CHQ 000214 COASTAL TIMBER" · "Matched" · "−2,160.00" · "Oct 3" · "INTEREST CREDIT" · "Unmatched" · "+6.12" · "Create" · "Oct 4" · "POS 4410 SHELL PORTLAND" · "−58.20" · "Unreconciled in Spine" · "Ranked for the selected line · Oct 1 NEFT-MAPLE RIDGE DEV" · "Oct 2" · "Payment RCT-0018 · Maple Ridge Developments" · "Best match" · "Sep 30" · "Payment RCT-0017 · Maple Ridge Developments" · "2nd" · "Expense EXP-0034 · Marcus Webb · Fuel" · "AI suggestions for unmatched lines" · "Other money in · 4800 Interest Received · First Coastal Bank — same as the last 3 months" · "Create from suggestion" · "Expense · Fuel · Shell Portland — 6 earlier fuel expenses from this card"
 
 ### MobExpenseNewAi — Phone: expense filled in by AI from a receipt (iOS)
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-10 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** Drawn
 
 ![MobExpenseNewAi](screens/MobExpenseNewAi.webp)
 
@@ -3330,7 +3330,7 @@ Links to: —
 Shows: "New expense, read by AI — Spine mobile" · "Cancel" · "New expense" · "Submit" · "Amount (USD)" · "Suggested by AI" · "Category" · "Fuel & Vehicle ›" · "Job" · "Marina office fit-out ›" · "Date" · "4 Oct 2026" · "Paid by" · "Me — pay me back" · "Company" · "Description" · "Filled in from your receipt. Check the amount, date and category before you submit." · "RECEIPT" · "[RECEIPT]" · "Retake receipt" · "Read receipt again" · "Reading a receipt needs a connection. Your office approves it before it's paid back."
 
 ### MobExpenseNewAiAndroid — Phone: expense filled in by AI from a receipt (Android)
-**Priority:** P1 · **Phase:** 9 · **Stories:** US-AI-10 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 10 · **Stories:** US-AI-10 · **Source:** Drawn
 
 ![MobExpenseNewAiAndroid](screens/MobExpenseNewAiAndroid.webp)
 

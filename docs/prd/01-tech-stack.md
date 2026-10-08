@@ -45,7 +45,7 @@ Settled choices, recorded with rationale so they are not relitigated. Versions a
 | Command palette | cmdk | |
 | Docs | `apps/design-system` (Next.js docs app) | Living spec for `@spine/ui` |
 
-## `apps/site` — website, user guide and developer docs (Phase 10)
+## `apps/site` — website, user guide and developer docs (Phase 11)
 
 | Concern | Choice | Why |
 |---|---|---|

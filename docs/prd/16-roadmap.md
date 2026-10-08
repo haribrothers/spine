@@ -53,7 +53,7 @@ V1 ships the AI foundation and four form-filling features (D-162–D-173). These
 | Read the documents inbox | Read bills and receipts arriving in the documents inbox and prepare drafts | Needs the inbox (v1.1) and AI-created drafts | 16-roadmap (Documents inbox) |
 | Expense review help | Suggest category and flag unusual amounts when approving expenses | Approval flow first | US-PUR-08 |
 | Learned bank rules | Turn accepted AI bank suggestions into rules ("Bank rules" above) | Bank rules arrive in v1.1 | D-173 |
-| More languages | AI replies in Hindi and other languages, following the person's language | English only in 1.0 (D-168); i18n extraction in Phase 10 | D-168 |
+| More languages | AI replies in Hindi and other languages, following the person's language | English only in 1.0 (D-168); i18n extraction in Phase 11 | D-168 |
 | More email drafts | AI drafts for lead and activity follow-ups and meeting invitations | Customer document emails first | US-AI-11 |
 | Per-Team budgets and troubleshooting retention | Budgets per Team; an Owner option to keep AI request text for 30 days for troubleshooting | V1 keeps one organisation budget and stores no text (D-168, D-169) | D-168, D-169 |
 
@@ -81,7 +81,7 @@ Valuable, but bigger, or wanted by fewer of Spine's users.
 | Payments | Payment gateway links | Razorpay, Cashfree or Stripe payment links on invoices with automatic payment recording | Needs keys and an outside service; UPI QR covers India in 1.0 | [D-150](12-decisions.md) |
 | Purchases | Purchase orders | Orders to vendors that convert into bills | Construction firms use them; not core to the books | [00-overview](00-overview.md), research |
 | Tax | More country presets | US state sales tax, Canada GST/HST, Singapore GST, Malaysia SST, South Africa VAT, EU VAT | Six presets in 1.0; add on demand | [D-145](12-decisions.md) |
-| Platform | More languages | Translations beyond English, starting with Hindi | English only in 1.0; strings are extracted in Phase 10 | US-OPS-16 |
+| Platform | More languages | Translations beyond English, starting with Hindi | English only in 1.0; strings are extracted in Phase 11 | US-OPS-16 |
 | Platform | External calendar sync | Google and Outlook calendar sync for meetings | Needs OAuth and outside services | [D-028](12-decisions.md) |
 | Mobile | Native push notifications | Push to the field app | Email and next sync in 1.0 | [15-mobile-release](15-mobile-release.md) |
 | Mobile | Universal links and app links | Open links straight in the field app | Each install has its own domain | [15-mobile-release](15-mobile-release.md) |

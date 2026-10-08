@@ -48,7 +48,7 @@ Out of scope for 1.0. Work planned after 1.0 is listed, with reasons, in [16-roa
 
 ## Licence and repository
 
-Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 10). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
+Licence is undecided between AGPL-3.0 and MIT ([Q-01](13-risks-open-questions.md), needed before Phase 11). The repository is a pnpm/Turborepo monorepo ([03-monorepo](03-monorepo.md)).
 
 ## Personas
 

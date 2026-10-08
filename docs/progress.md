@@ -1,6 +1,6 @@
 # Progress
 
-Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 10 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
+Tick a story only when its acceptance criteria pass with tests named after the story id (definition of done in [11-testing-release](prd/11-testing-release.md)). Ticks below were verified against the code on 2026-10-04: Phases 0–4 are built; in Phase 5 only crew assignment (US-JOB-15) is built. Stories built before story-id-named tests existed keep their tick while their criteria pass (D-076). Phases 8 (Books completeness) and 9 (Tax, documents and setup) were added on 2026-10-06 and Packaging & 1.0 became Phase 11 ([D-133](prd/12-decisions.md)); later work is in [16-roadmap](prd/16-roadmap.md).
 
 ## Phase 0 · Foundation
 
@@ -425,6 +425,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-23 · Switch optional modules on or off (the "AI assistant" row lands with US-AI-01)
 - [x] US-SET-24 · Hide everything a switched-off module owns
 - [x] US-SET-25 · Switch a module back on with nothing lost
+
+## Phase 10 · AI assistant
+
 - [ ] US-AI-01 · Switch the AI assistant on or off
 - [ ] US-AI-02 · Connect a local or cloud AI provider
 - [ ] US-AI-03 · Choose which AI features are on
@@ -440,7 +443,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-AI-13 · Draft quote lines from an enquiry
 - [ ] US-AI-14 · Get AI suggestions while reconciling
 
-## Phase 10 · Packaging & 1.0
+## Phase 11 · Packaging & 1.0
 
 - [ ] US-ONB-09 · Load demo data to explore
 - [ ] US-SET-08 · Remove demo data and keep my real data
