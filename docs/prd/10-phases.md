@@ -9,7 +9,7 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow (
 | 2 | Money in | 22 | Quote → invoice → partial payment with a balanced trial balance |
 | 3 | Jobs & construction billing | 15 | A full contract lifecycle reconciles |
 | 4 | Money out & books | 62 | A simulated quarter produces accountant-acceptable reports |
-| 5 | Mobile field companion | 25 | The app works end-to-end in airplane mode and syncs without duplicates |
+| 5 | Mobile field companion | 26 | The app works end-to-end in airplane mode and syncs without duplicates |
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
@@ -393,6 +393,7 @@ Total: 427 stories.
 - US-MOB-19 · Run the field app on native tabs (P1)
 - US-MOB-20 · Give Android users a designed Material 3 app (P1)
 - US-MOB-21 · Document every native component in a showcase app (P2)
+- US-MOB-22 · See my notifications on the phone (P1)
 
 ## Phase 6 · Fix and harden
 

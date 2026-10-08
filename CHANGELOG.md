@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — D-196 to D-200: Phase 5 redesigned and its stories refreshed (planning)
+
+- **Rebuild from scratch (D-196):** the old `apps/mobile` (React Navigation, five screens) will be replaced by a new expo-router app on `@spine/ui-native` and `@expo/ui`, built the way `apps/showcase-native` is.
+- **Designs:** every Phase 5 screen was redrawn in Claude Design ("Spine Field — mobile app (Phase 5)", nine canvases) for iOS 26 and Material 3, light and dark. There are 66 artboards in `docs/design/screens/Mob*.webp`, and `screens.md` is updated, including 12 new screens.
+- **Navigation (D-197):** native tabs Today, Jobs and Expenses plus Search. Profile opens from the avatar and Notifications from the bell on Today. Today follows the showcase-native home: a welcome card with a milestone gauge, a This week / This month switch, KPI cards, and the quick actions as tiles.
+- **Stories:**
+  - The refresh reflects today's API: business currency and locale, module rules, the default money account, tax lines as on the PDF, "Forgot password?" now shown, the demo Field user on the demo crews, and labour entry on the phone (D-199).
+  - Jobs & field off hides the jobs (D-198).
+  - New **US-MOB-22** for notifications on the phone, with no push in 1.0 (D-200).
+- **Testing:** `11-testing-release.md` describes how the field app is tested. The outbox is covered by Jest, replay by integration tests, offline flows by Maestro (Android airplane mode, and an E2E-build network override on iOS), and a real-phone check is in the QA script.
+
 ### 2026-10-08 — D-195: the AI assistant becomes Phase 10 (planning)
 
 - **New phase:** the 14 AI stories (US-AI-01 to US-AI-14) move out of Phase 9 into **Phase 10 · AI assistant**, with its own goal, deliverables, "done when" and branch.

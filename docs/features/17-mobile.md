@@ -1,8 +1,10 @@
 # 17 · Mobile field companion
 
-A native iOS and Android app for field crew: sign in once, see today's assigned jobs with addresses and tap-to-call, capture site photos and receipts with no signal, complete milestones, present a quote and take the customer's signature on site, and see what's still waiting to sync. It never shows invoices, payments or reports. Designed native-first (expo-router native tabs, `@expo/ui` SwiftUI and Jetpack Compose controls) for both platforms.
+A native iOS and Android app for field crew: sign in once, see today's assigned jobs with addresses and tap-to-call, capture site photos and receipts with no signal, complete milestones, present a quote and take the customer's signature on site, and see what's still waiting to sync. It never shows invoices, payments or reports. Designed native-first (expo-router native tabs, `@expo/ui` SwiftUI and Jetpack Compose controls) for both platforms, and built from scratch on that stack ([D-196](../prd/12-decisions.md)). The designs are in the Claude Design project "Spine Field — mobile app (Phase 5)"; the exported artboards are in `docs/design/screens/Mob*.webp`.
 
-**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1)
+**Throughout the app:** money is shown in the business currency and formatted for the business locale ("$64.20", "₹1,250.00"), never with a trailing currency code. Native tabs Today, Jobs and Expenses plus Search (iOS `role="search"`, a fourth tab on Android); the person's avatar at the top right of every tab opens Profile, and the bell on Today opens Notifications ([D-197](../prd/12-decisions.md)). When the **Jobs & field** module is off, the Jobs tab, job pickers, job cards and job KPIs are hidden and the app is for expenses ([D-198](../prd/12-decisions.md)); when **Leads & meetings** is off, the next meeting is hidden.
+
+**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1), `MobHomeJobs` (P1), `MobHomeJobsAndroid` (P1), `MobSearch` (P1), `MobSearchAndroid` (P1), `MobSearchResults` (P1), `MobSearchResultsAndroid` (P1), `MobExpenseLabour` (P1), `MobExpenseLabourAndroid` (P1), `MobNotifications` (P1), `MobNotificationsAndroid` (P1), `MobNotificationsEmpty` (P2), `MobNotificationsEmptyAndroid` (P2)
 **Depends on:** 02 Sign-in (accounts), 07 Jobs (crew, milestones, photos), 10 Purchases (expenses), 06 Quotes (in-person acceptance), `packages/ui-native`, [15-mobile-release](../prd/15-mobile-release.md).
 
 ## Features
@@ -16,6 +18,7 @@ A native iOS and Android app for field crew: sign in once, see today's assigned 
 | F-MOB-05 | Expenses with receipts | P1 | 5 | `MobExpensesList`, `MobExpensesListAndroid`, `MobExpenseNew`, `MobExpenseNewAndroid`, `MobReceiptCapture`, `MobReceiptCaptureAndroid` |
 | F-MOB-06 | On-site quote acceptance | P1 | 5 | `MobQuotePresent`, `MobQuotePresentAndroid`, `MobQuoteAccept`, `MobQuoteAcceptAndroid`, `MobQuoteAccepted`, `MobQuoteAcceptedAndroid`, `MobQuoteNeedsConnection`, `MobQuoteNeedsConnectionAndroid` |
 | F-MOB-07 | Native app foundation | P1 | 5 | `MobHome`, `MobHomeAndroid` |
+| F-MOB-08 | Notifications on the phone | P1 | 5 | `MobNotifications`, `MobNotificationsAndroid`, `MobNotificationsEmpty`, `MobNotificationsEmptyAndroid` |
 
 ## User stories
 
@@ -29,7 +32,8 @@ Legacy: S-11.1 · Decision: D-049
 - **Given** the app's first launch, **when** it opens, **then** I see "Sign in to Spine", "Use the email your office invited you with.", "Server", "Email", "Password" and "Sign in".
 - **Given** a server address that isn't a Spine server or is unreachable, **when** I sign in, **then** I see "Can't reach that server. Check the address — it's the link you open Spine with on a computer.".
 - **Given** wrong credentials, **when** I sign in, **then** I see "Invalid email or password.".
-- **Given** I tap "Forgot password?", **when** it opens, **then** the server's reset page opens in the phone's browser (D-052). The link is hidden until the reset page ships in Phase 6 (US-AUTH-09).
+- **Given** I tap "Forgot password?", **when** it opens, **then** the server's reset page (US-AUTH-09) opens in the phone's browser (D-052).
+- **Given** an error, **when** it shows, **then** it sits under the field it's about (the server error under "Server").
 - **Given** valid details, **when** I sign in, **then** I land on Today.
 
 **Implementation notes**
@@ -44,7 +48,7 @@ Legacy: S-11.1
 
 **Acceptance criteria**
 - **Given** I signed in, **when** I reopen the app days later within the session lifetime, **then** I'm on Today without signing in again.
-- **Given** Profile, **when** it opens, **then** it shows my name, "Field · <Business>", email, server, appearance, sync status, "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." and "Sign out".
+- **Given** I tap my avatar at the top right of any tab, **when** Profile opens (a sheet on iOS, a page on Android), **then** it shows my name, "Field · <Business>", email, server, appearance, sync status, "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." and "Sign out".
 - **Given** items are waiting to sync, **when** I tap "Sign out", **then** I'm warned "<N> items haven't reached your office yet. Sign out anyway?" before anything is discarded.
 - **Given** my membership is deactivated, **when** the app next calls the server, **then** I'm signed out with "Your access to <Business> was removed.".
 - **Given** the sign-out warning, **when** it shows, **then** it explains "<n> site photos and <n> expense are still waiting to sync. Signing out deletes them from this phone." and offers "Send them first" (opens Sync), "Sign out anyway" (destructive) and "Cancel"; Android shows a Material dialog with "Cancel", "Send first" and "Sign out".
@@ -53,43 +57,48 @@ Legacy: S-11.1
 - API: Better Auth sign-out (revokes the session).
 
 ### US-MOB-03 · See today's jobs with addresses and tap-to-call
-**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobHome`, `MobHomeAndroid`
+**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobHome`, `MobHomeAndroid`, `MobHomeJobs`, `MobHomeJobsAndroid`
 **As** a field user, **I want** today's assigned jobs on the home screen with directions and a call button, **so that** I can just go.
 
 Legacy: S-11.2
 
 **Acceptance criteria**
+- **Given** Today, **when** it opens, **then** a welcome card shows "Good morning, <first name>", the business and date, and a gauge of the milestones completed this month on my jobs ("3 of 5 done"), as in the showcase-native home.
+- **Given** the "This week" / "This month" switch, **when** I change it, **then** the KPI cards and the gauge follow it. The swipeable KPI cards are milestones due, milestones overdue, photos taken (with how many are waiting) and my own expenses (total, and how many wait for approval); there are no other money figures (D-048).
+- **Given** Today's header, **when** it renders, **then** it shows the sync pill, the bell with the unread count, and my avatar.
+- **Given** Today, **when** it opens, **then** "Add photos" and "Log expense" sit under the KPI cards as two action tiles on both platforms, above the next meeting and the jobs ([D-197](../prd/12-decisions.md)).
 - **Given** an assigned job, **when** Today decides what to show, **then** it lists the job only if its status is "Active" and it has a pending milestone that is overdue or due within the next 7 days; other assigned jobs are only on the Jobs tab.
-- **Given** I'm on two such jobs, **when** Today opens, **then** I see the date, "Today", my next meeting, "YOUR JOBS TODAY · 2" and a card per job with name, customer, site address and its next milestone with a due chip.
-- **Given** a job card, **when** I tap "Call <contact name>" (iOS: full name, "Call Alan Reyes"; Android: first name, "Call Alan"), **then** the phone dialler opens with the job contact's number.
+- **Given** I'm on two such jobs, **when** Today opens, **then** I see the date, "Today", my next meeting, "YOUR JOBS TODAY · 2" and a card per job with name, customer, site address and its next milestone with a due chip ("Due Sat", or "<n> days late" in the overdue colour). "NEXT MEETING" is my next meeting in the next 7 days, and is hidden when there is none or Leads & meetings is off.
+- **Given** a job card, **when** I tap "Call <contact name>" inside the card (iOS: full name, "Call Alan Reyes"; Android: first name, "Call Alan"), **then** the phone dialler opens with the job contact's number.
 - **Given** a job card, **when** I tap "Directions", **then** the maps app opens at the site address.
-- **Given** iOS, **when** Today renders, **then** "Add photos" and "Log expense" buttons sit under the jobs; on Android a floating "Add photos" button is shown instead (D-051).
 - **Given** the header, **when** everything has synced, **then** a pill reads "All synced".
 
 **Implementation notes**
 - API: `GET /jobs?assignedToMe=true`, `GET /jobs/milestones/due`, `GET /meetings/upcoming`.
-- UI: expo-router native tabs Today · Jobs · Expenses · Profile (D-047).
+- UI: expo-router native tabs Today · Jobs · Expenses, Profile from the avatar ([D-197](../prd/12-decisions.md)); `ActionTile`, `Card`, `StatusChip` from `@spine/ui-native`.
 
 ### US-MOB-04 · Browse my assigned jobs
-**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`
+**Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`, `MobSearch`, `MobSearchAndroid`, `MobSearchResults`, `MobSearchResultsAndroid`
 **As** a field user, **I want** a list of every job I'm on, **so that** I can find one that isn't today's.
 
 **Acceptance criteria**
-- **Given** the Jobs tab, **when** it opens, **then** I see a search field ("Search jobs") and "ASSIGNED TO YOU · <n>" with each job's name, customer, town and milestone status.
-- **Given** I type in search, **when** I pause, **then** the list filters by job or customer name.
+- **Given** the Jobs tab, **when** it opens, **then** I see "ASSIGNED TO YOU · <n>" with each job's name, customer, town and milestone status.
+- **Given** the Search tab, **when** it opens, **then** I see "Search jobs and expenses" and my recent searches (kept on this phone), with "Edit" on iOS or "Clear" on Android.
+- **Given** I type in search, **when** I pause, **then** results are grouped into "JOBS · <n>" (job name, customer or site address) and "YOUR EXPENSES · <n>" (category, description or job) with the match highlighted. Only my assigned jobs and my own expenses are searched, and it works offline against the cache.
 - **Given** I pull down, **when** I release, **then** the list refreshes.
 - **Given** I'm on no jobs, **when** I open the tab, **then** I see "No jobs assigned to you yet", "When your office adds you to a job's crew, it shows up here with its address and contact." and "Check again".
 
 **Implementation notes**
 - API: `GET /jobs?assignedToMe=true`.
+- Demo data: the demo Field user (Marcus Webb) is put on the crew of the demo's jobs, so the app has something to show after loading a demo business (the seeder adds `job_assignments`).
 
 ### US-MOB-05 · Open a job's details on site
 **Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobJobDetail`, `MobJobDetailAndroid`, `MobJobPhotos`, `MobJobPhotosAndroid`
 **As** a field user, **I want** a job's address, contact, milestones, photos and quotes to present, **so that** I have what I need on site.
 
 **Acceptance criteria**
-- **Given** I open a job, **when** it loads, **then** I see its name, customer, status, the site address with "Directions", the contact with a call button, "MILESTONES", "PHOTOS · <n>" with "See all" and "QUOTES TO PRESENT".
-- **Given** a pending milestone, **when** I view it, **then** it shows its due date and "Mark complete".
+- **Given** I open a job, **when** it loads, **then** I see its name, "<job number> · <customer>", status, the site address with "Directions", the contact with a call button, "MILESTONES", "PHOTOS · <n>" with "See all" and "QUOTES TO PRESENT". "Add photos" is the camera button in the toolbar on iOS and a floating button on Android.
+- **Given** a pending milestone, **when** I view it, **then** it shows its due date and "Mark complete"; a completed one shows "Completed" and a queued completion "Completion waiting".
 - **Given** a quote waiting for the customer, **when** I view it, **then** it shows "Present".
 - **Given** the job's contract value, milestone amounts or invoices, **when** I look anywhere on the screen, **then** none are shown (D-048).
 - **Given** "PHOTOS · <n>", **when** I tap "See all", **then** "Photos · <n>" opens with the job name and number, photos grouped by day newest first, a "Waiting" badge on photos not yet sent, and "Add photos".
@@ -107,7 +116,7 @@ Legacy: S-11.8 · Decision: D-048
 **Acceptance criteria**
 - **Given** any user signs in on mobile (Owner, Staff or Field), **when** they use the app, **then** there are no screens for invoices, payments, receivables, payables or reports.
 - **Given** the app's API calls, **when** inspected, **then** it never requests report or invoice endpoints.
-- **Given** money shown on mobile, **when** it appears, **then** it's only the user's own expenses or the quote being presented.
+- **Given** money shown on mobile, **when** it appears, **then** it's only the user's own expenses or the quote being presented, in the business currency and locale.
 
 **Implementation notes**
 - Enforced by app scope plus server-side Field restrictions (07-security).
@@ -135,7 +144,7 @@ Legacy: S-11.4
 
 **Acceptance criteria**
 - **Given** waiting items, **when** I look at the header, **then** the pill reads "<n> waiting to sync" in the due-soon colour.
-- **Given** I tap the pill, **when** Sync opens, **then** I see "<n> items waiting" with the reason (e.g. "You're offline · sends automatically when you reconnect"), a "WAITING" list (what, which job, when), and "SENT TODAY".
+- **Given** I tap the pill on Today (or the sync row in Profile), **when** Sync opens, **then** I see "<n> items waiting" with the reason (e.g. "You're offline · sends automatically when you reconnect"), "NEEDS FIXING · <n>" when something was rejected, a "WAITING" list (what, which job, when), and "SENT TODAY".
 - **Given** I tap "Try sending now", **when** I'm online, **then** waiting items send immediately.
 - **Given** everything sent, **when** I view the pill, **then** it reads "All synced".
 
@@ -195,23 +204,26 @@ Legacy: S-11.3, S-04.10 (mobile)
 **Acceptance criteria**
 - **Given** the Expenses tab, **when** it opens, **then** I see "WAITING TO SYNC" (if any) and "SUBMITTED BY YOU" with category, date, job, amount and status ("Submitted", "Approved", "Rejected").
 - **Given** a rejected expense, **when** it's listed, **then** the reviewer's reason shows in red under it.
-- **Given** the add button, **when** I tap it, **then** "New expense" opens.
+- **Given** the add button ("+" in the toolbar on iOS, a floating "Log expense" button on Android), **when** I tap it, **then** "New expense" opens.
+- **Given** the Approvals module is off, **when** an expense reaches the server, **then** it's listed as "Approved" straight away.
 - **Given** another person's expenses, **when** I look, **then** they're never listed.
 
 **Implementation notes**
 - API: `GET /expenses?mine=true`.
 
 ### US-MOB-13 · Submit an expense with a receipt photo
-**Feature:** F-MOB-05 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobExpenseNew`, `MobExpenseNewAndroid`, `MobReceiptCapture`, `MobReceiptCaptureAndroid`
+**Feature:** F-MOB-05 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobExpenseNew`, `MobExpenseNewAndroid`, `MobReceiptCapture`, `MobReceiptCaptureAndroid`, `MobExpenseLabour`, `MobExpenseLabourAndroid`
 **As** a field user, **I want** to photograph a receipt and submit the expense on the spot, **so that** it isn't lost and I'm reimbursed.
 
 Legacy: S-11.5, S-07.2 (mobile), S-07.3
 
 **Acceptance criteria**
-- **Given** "New expense", **when** it opens, **then** I see "Amount (USD)", "Category", "Job", "Date", "Paid by" ("Me — pay me back" / "Company"), "Description" and "RECEIPT".
+- **Given** "New expense", **when** it opens, **then** I see "Amount (<business currency code>)", "Category", "Job" (hidden when Jobs & field is off), "Date", "Paid by" ("Me — pay me back" / "Company"), "Description" and "RECEIPT". It doesn't ask which account paid: that's the organisation's default, and the approver can change it (US-BANK-03).
 - **Given** I tap the receipt camera, **when** it opens, **then** a frame guides "Fit the whole receipt inside the frame" with a gallery option.
 - **Given** I tap "Submit", **when** it saves, **then** it appears under "WAITING TO SYNC" if offline or "Submitted" once sent.
-- **Given** no category or a zero amount, **when** I tap "Submit", **then** the field shows an error.
+- **Given** no category or a zero amount, **when** I tap "Submit", **then** the field shows "Choose a category." or "Enter an amount above zero." under it.
+- **Given** a receipt photo over 10 MB after compression, **when** I attach it, **then** the phone says so before it's queued.
+- **Given** the "Amount" / "Headcount × day rate" switch ([D-199](../prd/12-decisions.md), US-PUR-23), **when** I choose "Headcount × day rate", **then** the amount is replaced by "TRADES" rows of trade, workers and day rate with each row's total, "Add trade" and "Total for the day"; "Job" becomes required ("Labour is always for a job — choose one."); the category posting to 5200 Direct Labour is preselected; a trade I've used before is suggested with its last day rate; and a row with no trade, workers or day rate shows "Every row needs a trade, at least one worker and a day rate.". It never asks for names, attendance or hours, and it queues offline like any expense (`entryMode: "labour"`, `labourLines`).
 - **Given** the note "Your office approves it before it's paid back. No signal? It's saved and sent later.", **when** I read it, **then** it's shown on every new expense.
 
 **Implementation notes**
@@ -252,7 +264,7 @@ Legacy: S-11.6, S-04.4 (mobile)
 Legacy: S-11.7, S-03.12
 
 **Acceptance criteria**
-- **Given** a job's quote to present, **when** I tap "Present", **then** the quote opens full-screen with "Hand the phone to your customer", the business, "QUOTE <number>", "Prepared for <customer>", valid-until date, lines, Subtotal, Tax, Total and notes.
+- **Given** a job's quote to present, **when** I tap "Present", **then** the quote opens full-screen with "Hand the phone to your customer", the business, "QUOTE <number>", "Prepared for <customer>", valid-until date, lines, Subtotal, each tax line as on the PDF (e.g. "Sales Tax (15%)", or CGST and SGST in India), Total and notes.
 - **Given** the bottom bar, **when** it renders, **then** it offers "Decline" and "Accept quote".
 - **Given** the customer taps "Decline", **when** I'm online, **then** the quote is recorded as declined with an optional comment and the office is notified.
 - **Given** I tap "Done", **when** it closes, **then** I'm back on the job.
@@ -297,14 +309,14 @@ Decision: D-050
 Decision: D-022
 
 **Acceptance criteria**
-- **Given** the app, **when** it launches, **then** navigation uses the platform's native tab bar (iOS floating tab bar with SF Symbols; Android Material navigation bar with Material Symbols) for Today, Jobs, Expenses and Profile.
+- **Given** the app, **when** it launches, **then** navigation uses the platform's native tab bar (iOS Liquid Glass tab bar with SF Symbols; Android Material navigation bar with Material Symbols) for Today, Jobs and Expenses plus Search (the iOS search role, an ordinary fourth tab on Android), and Profile opens from the avatar in each tab's header ([D-197](../prd/12-decisions.md)).
 - **Given** a top-level screen on iOS, **when** I scroll, **then** the large title collapses and the system blur appears under the bar.
-- **Given** `apps/mobile`, **when** this story is done, **then** it uses expo-router, and `FloatingTabBar` and React Navigation are no longer used by it.
+- **Given** `apps/mobile`, **when** this story is done, **then** it is a new expo-router app built on `@spine/ui-native` the way `apps/showcase-native` is, and the old React Navigation app is gone ([D-196](../prd/12-decisions.md)).
 - **Given** dark mode on the phone, **when** the app opens, **then** every screen, including native chrome, follows it.
 - **Given** dark mode on iOS, **when** Today and a job open, **then** they match `MobHomeDark` and `MobJobDetailDark`: grouped background `#121110`, cards `#191815`, primary `#6B8AFF` with dark text on filled buttons ([D-099](../prd/12-decisions.md)).
 
 **Implementation notes**
-- Migrate `apps/mobile` to expo-router `unstable-native-tabs` (see [native notes](../design/native-notes.md) for the large-title `contentInsetAdjustmentBehavior` rule and the Trigger `name="(group)"` rule).
+- Rebuild `apps/mobile` from scratch with `node scripts/create-native-app.mjs mobile --router=expo-router` on expo-router `unstable-native-tabs` (see [native notes](../design/native-notes.md) for the large-title `contentInsetAdjustmentBehavior` rule and the Trigger `name="(group)"` rule).
 
 ### US-MOB-20 · Give Android users a designed Material 3 app
 **Feature:** F-MOB-07 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobHomeAndroid`, `MobHomeAndroidDark`, `MobJobDetailAndroidDark`
@@ -313,7 +325,7 @@ Decision: D-022
 Decision: D-051
 
 **Acceptance criteria**
-- **Given** every `Mob…Android` artboard, **when** the Android build runs, **then** each screen matches it: top app bar with back arrow, outlined text fields, pill buttons, floating action buttons, bottom sheets and alert dialogs as drawn.
+- **Given** every `Mob…Android` artboard, **when** the Android build runs, **then** each screen matches it: top app bar with back arrow, outlined text fields, pill buttons, floating action buttons ("Add photos" on a job and its photos, "Log expense" on Expenses), bottom sheets and alert dialogs as drawn.
 - **Given** Android back gestures, **when** used on any screen, **then** they behave like the drawn back arrow.
 - **Given** dark mode on Android, **when** Today and a job open, **then** they use the Material 3 dark roles (`android-dark` in tokens.json) as drawn in `MobHomeAndroidDark` and `MobJobDetailAndroidDark`.
 - **Given** a reviewer, **when** they open the app with TalkBack, **then** every control has a spoken label.
@@ -334,3 +346,19 @@ Finding: C24 · Decision: D-034
 
 **Implementation notes**
 - Add a coverage check like `check-a11y-coverage.mjs` that fails when a component has no doc screen.
+
+### US-MOB-22 · See my notifications on the phone
+**Feature:** F-MOB-08 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobNotifications`, `MobNotificationsAndroid`, `MobNotificationsEmpty`, `MobNotificationsEmptyAndroid`
+**As** a field user, **I want** a list of what happened to my expenses, crews and meetings, **so that** I don't miss a rejection or a new job.
+
+**Acceptance criteria**
+- **Given** unread notifications, **when** Today renders, **then** the bell in the header shows the unread count ("9+" above nine).
+- **Given** I tap the bell, **when** Notifications opens, **then** I see "NEW" and "EARLIER", each item with an icon, a message, a detail line and a time; unread items carry a dot (iOS) or a tinted row (Android).
+- **Given** a Field user, **when** notifications are created, **then** they get their expense approved ("Sarah Mendes approved your expense") or rejected (with the reason), being added to or removed from a job's crew, and meeting invitations, changes and starting-soon reminders — never anything about money they can't see.
+- **Given** I tap a notification, **when** it opens, **then** I land on the expense, job or meeting and it's marked read; "Read all" marks every one read.
+- **Given** no notifications, **when** I open the list, **then** I see "You're all caught up" and "Expense decisions, crew changes and meeting invitations show up here."
+- **Given** a module is switched off, **when** something in it happens, **then** no notification is sent (US-SET-24).
+
+**Implementation notes**
+- API: the web bell's notification routes, read with the bearer session. New in-app types: `expense_rejected`, `crew_assigned`, `crew_removed`.
+- No push to the lock screen in 1.0 ([D-200](../prd/12-decisions.md)): the list refreshes when the app opens or comes back to the foreground, and on pull to refresh.

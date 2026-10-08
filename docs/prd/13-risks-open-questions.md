@@ -53,6 +53,9 @@
 | Q-18 | ~~For export invoices in 1.0, is IGST-paid (`WPAY`) enough, or must exports under LUT (zero-rated, no IGST) be supported before v1.1?~~ — closed by [D-181](12-decisions.md): a per-business "We export under LUT" setting | — | — | — |
 | Q-19 | ~~Should a 0% rate carry the supply class it implies?~~ — closed by [D-182](12-decisions.md): yes, `tax_rates.supply_class` | — | — | — |
 | Q-21 | GSTR-1 counts a retention-release invoice (US-JOB-21) as a supply of its own, with an untaxed line and no HSN/SAC, although the retention was taxed on the progress invoices that held it back. Should GSTR-1 leave retention releases out, like deposit requests and opening invoices? (Until then, India's demo businesses don't release retention, D-192.) | Leave them in · Leave them out of GSTR-1 (and the Tax Summary's untaxed sales) | Phase 9 | Owner |
+| Q-22 | ~~What does the field app show an Owner or Staff user when Jobs & field is off?~~ — closed by [D-198](12-decisions.md): jobs are hidden and expenses keep working | — | — | — |
+| Q-23 | ~~Should "New expense" on the phone offer the labour entry mode from US-PUR-23?~~ — closed by [D-199](12-decisions.md): yes | — | — | — |
+| Q-24 | ~~Should the field app get push notifications on the lock screen?~~ — closed by [D-200](12-decisions.md): no push in 1.0; the in-app list only | — | — | — |
 | Q-20 | ~~An invoice posts to the ledger on the day it's issued, not on its issue date, so a backdated invoice lands in a different period in the Tax Summary (ledger) than in GSTR-1 (issue date), and US-TAX-17 flags the totals. Should invoices (and credit notes) post on their document date instead?~~ — closed by [D-185](12-decisions.md): invoices post on their issue date | Owner | Closed |
 
 ## Design follow-ups

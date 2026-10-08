@@ -232,6 +232,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-MOB-19 · Run the field app on native tabs
 - [ ] US-MOB-20 · Give Android users a designed Material 3 app
 - [ ] US-MOB-21 · Document every native component in a showcase app
+- [ ] US-MOB-22 · See my notifications on the phone
 
 ## Phase 6 · Fix and harden
 

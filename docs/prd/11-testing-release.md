@@ -14,6 +14,19 @@
 
 Story tests are named after the story id: `describe('US-INV-04', …)` or `us-inv-04.spec.ts`. This applies to new work; stories built before the rule keep their tick while their criteria pass ([D-076](12-decisions.md)).
 
+### Testing the field app (Phase 5)
+
+Phase 5 is done when the app works end to end in airplane mode and syncs with no duplicates. That is tested in four layers, most of it automated:
+
+| Layer | Tool | What it proves |
+|---|---|---|
+| Outbox and cache | Jest (jest-expo) in `apps/mobile`, with a fake transport and an in-memory SQLite | Each outbox item keeps one `Idempotency-Key` across retries. A network error stays `waiting` and backs off. A lost response is retried and treated as sent. A 4xx goes to `failed` with the server's reason. A 426 stops sending and keeps the queue. Items send in order. The cache serves jobs and milestones when offline |
+| Server replay | Vitest integration (`apps/api`) | Replaying the same key for a photo, expense or milestone completion returns the first result and creates nothing. A second completion returns `alreadyCompleted: true`. `reject-in-person` and `accept-in-person` need a live call. `X-Spine-Client-Version` under `MOBILE_MIN_VERSION` returns 426 |
+| Flows on a simulator | Maestro (`apps/mobile/e2e/*.yaml`), iOS Simulator and Android emulator, against the local API with the seeded e2e org | Sign in, Today, a job, expense with a receipt, photos, mark complete, present and accept a quote. Offline replay: go offline, add 2 photos, an expense and a completion, check the waiting count, come back online, then check through the API (`runScript` with `http`) that each exists exactly once |
+| Real phone | `docs/qa-script.md` | One iPhone and one Android phone in real airplane mode, plus a flaky-signal walk, before the Phase 5 PR |
+
+Going offline on a simulator: on Android, Maestro toggles airplane mode on the emulator. The iOS Simulator can't, so the E2E build (`EXPO_PUBLIC_E2E=1`, never in a store build) has a hidden network override. It makes the transport fail the way no network does and makes NetInfo report offline. Maestro flows run locally (`pnpm --filter @spine/mobile test:e2e`) before the Phase 5 PR. CI runs the Jest and integration layers, since macOS runners for simulators aren't part of CI.
+
 ## CI
 
 | Job | Trigger | Steps | Blocks merge |
