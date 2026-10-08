@@ -49,6 +49,10 @@ describe("US-PAY-17 · refund a customer (requires local Postgres)", () => {
     return rows.map((r) => [r.code, r.debit, r.credit]).sort();
   }
 
+  const contactEmail = `ap-${randomUUID()}@example.com`;
+  /** This customer's email: the queue is shared by every test file, so another file's leftover email can be sent while the spy is on. */
+  const sentTo = (send: { mock: { calls: [{ to: string; subject: string; text?: string }][] } }, to: string) => send.mock.calls.map(([mail]) => mail).find((mail) => mail.to === to)!;
+
   async function newUser(name: string): Promise<Who> {
     const email = `us-pay-17-${name}-${randomUUID()}@example.com`;
     emails.push(email);
@@ -74,7 +78,7 @@ describe("US-PAY-17 · refund a customer (requires local Postgres)", () => {
     Object.assign(plain, await newUser("plain"));
     await join(plain, ["payments.edit_own"]);
 
-    const [c] = await db.insert(contacts).values({ orgId, type: "customer", name: "Maple Ridge Developments", email: `ap-${randomUUID()}@example.com`, createdByUserId: owner.userId }).returning();
+    const [c] = await db.insert(contacts).values({ orgId, type: "customer", name: "Maple Ridge Developments", email: contactEmail, createdByUserId: owner.userId }).returning();
     contactId = c!.id;
     cash = (await json<MoneyAccount[]>(await call(owner, "GET", "/money-accounts"))).find((a) => a.code === "1000")!;
     // An overpayment: 500.00 held as credit.
@@ -102,8 +106,9 @@ describe("US-PAY-17 · refund a customer (requires local Postgres)", () => {
       ].sort(),
     );
     expect(await unallocated()).toBe("30000");
-    expect(send.mock.calls[0]![0].subject).toContain("refunded $200.00");
-    expect(send.mock.calls[0]![0].text).toContain("We've refunded $200.00");
+    const mail = sentTo(send as never, contactEmail);
+    expect(mail.subject).toContain("refunded $200.00");
+    expect(mail.text).toContain("We've refunded $200.00");
   });
 
   it("refuses more than the credit left, and credit already refunded can't be applied", async () => {

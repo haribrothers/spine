@@ -58,13 +58,15 @@ describe("US-TEAM-15 · use the business name everywhere the organisation is nam
     await saveProfile({ name: "Riverstone Builders" });
     vi.spyOn(EmailService.prototype, "isConfigured").mockReturnValue(true);
     const send = vi.spyOn(EmailService.prototype, "send").mockResolvedValue();
+    const invitee = `invitee-${randomUUID()}@example.com`;
     const res = await fetch(`${testApp.baseUrl}/org/invitations`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Idempotency-Key": randomUUID(), cookie: owner.cookie },
-      body: JSON.stringify({ email: `invitee-${randomUUID()}@example.com`, role: "staff" }),
+      body: JSON.stringify({ email: invitee, role: "staff" }),
     });
     expect(res.status).toBeLessThan(300);
-    const sent = send.mock.calls[0]![0];
+    // The invitee's email: the queue is shared by every test file, so another file's leftover email can be sent too.
+    const sent = send.mock.calls.map(([mail]) => mail).find((mail) => mail.to === invitee)!;
     expect(sent.subject).toBe("Alex Morgan invited you to join Riverstone Builders on Spine");
     expect(sent.text).toContain("Alex Morgan invited you to join Riverstone Builders as staff.");
   });
