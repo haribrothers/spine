@@ -20,7 +20,9 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { todaysJobs, useAssignedJobs } from "../../lib/data/jobs";
 import { NEXT_MEETINGS_KEY, NEXT_MEETINGS_PATH, nextMeeting, type Meeting } from "../../lib/data/meetings";
 import { PERIODS, todayKey, todayPath, type TodayPeriod, type TodaySummary } from "../../lib/data/today";
-import { usePendingSummary } from "../../lib/outbox/pending";
+import { usePendingSummary, useOutboxItems } from "../../lib/outbox/pending";
+import { jobWaiting, waitingChips } from "../../lib/outbox/job-waiting";
+import { useOnline } from "../../lib/connectivity";
 import { greeting } from "../../lib/member-display";
 import { calendarDay, longDate, money, shortWhen, weekdayDayMonth, type BusinessFormat } from "../../lib/format";
 import { openDirections } from "../../lib/linking";
@@ -35,6 +37,12 @@ const KPI_CARD_GAP = 12;
 const PERIOD_WORD: Record<TodayPeriod, string> = { week: "week", month: "month", year: "year" };
 
 const plural = (n: number, one: string, many: string) => (n === 1 ? one : many);
+
+/** US-MOB-07 — what still works offline, and how fresh the saved jobs are. */
+export function offlineMessage(savedAt: number | null, locale: string): string {
+  const base = "Photos, expenses and milestone updates are saved on this phone and sync when you're back online.";
+  return savedAt ? `${base} Showing jobs as of ${new Date(savedAt).toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" })}.` : base;
+}
 
 interface Kpi {
   key: string;
@@ -155,6 +163,8 @@ export function TodayScreen() {
   const format = useBusinessFormat();
   const modules = useModules();
   const pending = usePendingSummary();
+  const queued = useOutboxItems();
+  const online = useOnline();
   const [period, setPeriod] = useState<TodayPeriod>("month");
 
   const summary = useCachedQuery<TodaySummary>(todayKey(period), todayPath(period), { refreshOnForeground: true });
@@ -171,7 +181,9 @@ export function TodayScreen() {
     await Promise.all([summary.refresh(), jobs.refresh(), meetings.refresh()]);
   }, [summary, jobs, meetings]);
 
-  const offline = [summary.status, jobs.status].includes("offline");
+  // US-MOB-07: the phone's own connection decides the banner, not a failed request.
+  const offline = !online || [summary.status, jobs.status].includes("offline");
+  const savedAt = jobs.fetchedAt ?? summary.fetchedAt;
   const unreachable = summary.status === "unreachable" && !summary.data;
 
   const firstSite = forToday.find((job) => job.siteAddress)?.siteAddress ?? null;
@@ -191,11 +203,13 @@ export function TodayScreen() {
   ) : (
     <>
       {offline ? (
-        <View accessibilityRole="alert" className="flex-row items-start gap-3 rounded-lg bg-draft-bg px-4 py-3.5 dark:bg-draft-bg-dark">
+        <View testID="offline-banner" accessibilityRole="alert" className="flex-row items-start gap-3 rounded-lg bg-draft-bg px-4 py-3.5 dark:bg-draft-bg-dark">
           <CloudOff size={20} color={colors.onSurfaceMuted} />
           <View className="flex-1 gap-1">
             <Text className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">{"You're offline"}</Text>
-            <Text className="text-[13px] text-on-surface dark:text-on-surface-dark">{"Connect to Wi-Fi or mobile data to load today's jobs."}</Text>
+            <Text testID="offline-banner-text" className="text-[13px] text-on-surface dark:text-on-surface-dark">
+              {offlineMessage(savedAt, format.locale)}
+            </Text>
           </View>
         </View>
       ) : null}
@@ -244,7 +258,7 @@ export function TodayScreen() {
           <SectionHeader title="Your jobs today" count={jobs.loading ? undefined : forToday.length} action={{ label: "All jobs", arrow: true, onPress: () => router.navigate("/jobs") }} />
           {jobs.loading ? <JobCardsSkeleton /> : null}
           {forToday.map((job) => (
-            <TodayJobCard key={job.id} job={job} locale={format.locale} now={now} onOpen={() => router.push(`/jobs/${job.id}`)} />
+            <TodayJobCard key={job.id} job={job} locale={format.locale} now={now} waiting={waitingChips(jobWaiting(queued, job.id))} onOpen={() => router.push(`/jobs/${job.id}`)} />
           ))}
           {jobs.data && forToday.length === 0 ? (
             <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing due on your jobs in the next 7 days.</Text>

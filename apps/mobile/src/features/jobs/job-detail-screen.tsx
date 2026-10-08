@@ -19,6 +19,9 @@ import { arrivesLater } from "../../lib/later";
 import { PillButton } from "../../components/pill-button";
 import { SectionHeader } from "../../components/section-header";
 import { JobStatusChip } from "./job-status";
+import { useOutboxItems } from "../../lib/outbox/pending";
+import { jobWaiting } from "../../lib/outbox/job-waiting";
+import { WaitingChip } from "../../components/waiting-chip";
 import { CardRowsSkeleton, HeadingSkeleton, ListRowsSkeleton, PhotoGridSkeleton } from "../../components/skeletons";
 
 const PREVIEW_PHOTOS = 4;
@@ -27,7 +30,7 @@ export function jobSubtitle(job: Pick<FieldJob, "number" | "contactName">): stri
   return [job.number, job.contactName].filter(Boolean).join(" · ");
 }
 
-function MilestoneRow({ milestone, primary, first, locale }: { milestone: FieldMilestone; primary: boolean; first: boolean; locale: string }) {
+function MilestoneRow({ milestone, primary, first, locale, waiting }: { milestone: FieldMilestone; primary: boolean; first: boolean; locale: string; waiting: boolean }) {
   const colors = useNativeColors();
   const done = milestone.status !== "pending";
   const due = milestone.dueDate ? calendarDay(milestone.dueDate) : null;
@@ -50,6 +53,9 @@ function MilestoneRow({ milestone, primary, first, locale }: { milestone: FieldM
           <CircleCheck size={20} color={colors.paid} />
           <Text className="text-[15px] font-medium text-paid dark:text-paid-dark">Completed</Text>
         </View>
+      ) : waiting ? (
+        // US-MOB-07: completed on this phone, not yet at the office.
+        <WaitingChip label="Completion waiting" testID={`milestone-waiting-${milestone.id}`} />
       ) : (
         <Pressable
           testID={`milestone-complete-${milestone.id}`}
@@ -65,11 +71,24 @@ function MilestoneRow({ milestone, primary, first, locale }: { milestone: FieldM
   );
 }
 
-export function PhotoTile({ photo, overlay, size, waiting = false }: { photo: JobPhoto; overlay?: string; size?: number; waiting?: boolean }) {
+/** A photo the server has, or one still on the phone (`localUri`, shown with "Waiting"). */
+export type TilePhoto = { kind: "sent"; photo: JobPhoto } | { kind: "waiting"; key: string; localUri: string; createdAt: string };
+
+export function tileKey(tile: TilePhoto): string {
+  return tile.kind === "sent" ? tile.photo.id : tile.key;
+}
+
+export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: string; size?: number }) {
   const source = useFileSource();
+  const waiting = tile.kind === "waiting";
   return (
-    <View className="overflow-hidden rounded-md bg-surface-sunken dark:bg-surface-sunken-dark" style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}>
-      <Image source={source(photo.fileId)} accessibilityLabel={photo.caption ?? "Site photo"} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+    <View testID={waiting ? "photo-waiting" : undefined} className="overflow-hidden rounded-md bg-surface-sunken dark:bg-surface-sunken-dark" style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}>
+      <Image
+        source={tile.kind === "sent" ? source(tile.photo.fileId) : { uri: tile.localUri }}
+        accessibilityLabel={tile.kind === "sent" ? (tile.photo.caption ?? "Site photo") : "Site photo, waiting to sync"}
+        style={{ width: "100%", height: "100%" }}
+        resizeMode="cover"
+      />
       {overlay ? (
         <View className="absolute inset-0 items-center justify-center bg-on-surface/60 dark:bg-on-surface-dark/60">
           <Text className="text-[17px] font-semibold text-surface dark:text-surface-dark">{overlay}</Text>
@@ -130,6 +149,7 @@ export function JobDetailScreen({ id }: { id: string }) {
   const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`);
   const quotes = useCachedQuery<QuoteToPresent[]>(quotesKey(id), `/jobs/${id}/quotes`);
   const job = detail.data ?? listed;
+  const waiting = jobWaiting(useOutboxItems(), id);
   const android = Platform.OS === "android";
 
   const refreshing = detail.refreshing || milestones.refreshing || photos.refreshing || quotes.refreshing;
@@ -171,7 +191,10 @@ export function JobDetailScreen({ id }: { id: string }) {
 
   const pending = (milestones.data ?? []).filter((m) => m.status === "pending");
   const ordered = [...(milestones.data ?? [])].sort((a, b) => a.sequence - b.sequence);
-  const photoList = photos.data ?? [];
+  const photoList: TilePhoto[] = [
+    ...waiting.photos.map(({ photo, queuedAt }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString() })).reverse(),
+    ...(photos.data ?? []).map((photo) => ({ kind: "sent" as const, photo })),
+  ];
   const contact = job.siteContact;
 
   return (
@@ -239,7 +262,14 @@ export function JobDetailScreen({ id }: { id: string }) {
           {ordered.length ? (
             <Group testID="job-milestones">
               {ordered.map((milestone, index) => (
-                <MilestoneRow key={milestone.id} milestone={milestone} first={index === 0} primary={milestone.id === pending[0]?.id} locale={locale} />
+                <MilestoneRow
+                  key={milestone.id}
+                  milestone={milestone}
+                  first={index === 0}
+                  primary={milestone.id === pending.find((m) => !waiting.completionMilestoneIds.includes(m.id))?.id}
+                  locale={locale}
+                  waiting={milestone.status === "pending" && waiting.completionMilestoneIds.includes(milestone.id)}
+                />
               ))}
             </Group>
           ) : milestones.loading ? (
@@ -252,14 +282,14 @@ export function JobDetailScreen({ id }: { id: string }) {
         <View className="gap-2">
           <SectionHeader
             title="Photos"
-            count={photos.loading ? undefined : photoList.length}
+            count={photos.loading && !waiting.photos.length ? undefined : photoList.length}
             testID="job-photos-header"
             action={photoList.length ? { label: "See all", onPress: () => router.push(`/jobs/${id}/photos`) } : undefined}
           />
           {photoList.length ? (
             <View className="flex-row gap-1">
-              {photoList.slice(0, PREVIEW_PHOTOS).map((photo, index) => (
-                <PhotoTile key={photo.id} photo={photo} overlay={index === PREVIEW_PHOTOS - 1 && photoList.length > PREVIEW_PHOTOS ? `+${photoList.length - PREVIEW_PHOTOS + 1}` : undefined} />
+              {photoList.slice(0, PREVIEW_PHOTOS).map((tile, index) => (
+                <PhotoTile key={tileKey(tile)} tile={tile} overlay={index === PREVIEW_PHOTOS - 1 && photoList.length > PREVIEW_PHOTOS ? `+${photoList.length - PREVIEW_PHOTOS + 1}` : undefined} />
               ))}
               {Array.from({ length: Math.max(0, PREVIEW_PHOTOS - photoList.length) }).map((_, index) => (
                 <View key={`empty-${index}`} style={{ flex: 1, aspectRatio: 1 }} />

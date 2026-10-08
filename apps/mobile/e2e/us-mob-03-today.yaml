@@ -9,7 +9,7 @@ appId: com.spine.app
 - assertVisible: "Milestones this month: .*"
 - assertVisible:
     id: "today-kpi-due"
-- assertVisible: "All synced"
+- assertVisible: "All synced.*"
 - tapOn: "This week"
 - assertVisible: "Milestones this week: .*"
 - tapOn: "This month"

@@ -4,6 +4,7 @@ import { AccessRemovedError, SessionExpiredError, UpdateRequiredError } from "..
 import { discoverServer, fetchMember, passwordSignIn, revokeSession, SignInError, SIGN_IN_FAILED_MESSAGE, type SignInField } from "./sign-in";
 import { clearSession, loadLastSignIn, loadSession, saveSession, type StoredSession } from "./storage";
 import { cache } from "../cache/cache-store";
+import { outbox } from "../outbox/outbox";
 
 export type SessionState =
   | { status: "loading" }
@@ -52,19 +53,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [lastSession, setLastSession] = useState<StoredSession | null>(null);
   const sessionRef = useRef<StoredSession | null>(null);
 
-  const endSession = useCallback(async (notice?: string) => {
+  /**
+   * `discardOutbox`: signing out or losing access deletes what's waiting
+   * (the warning said so, US-MOB-02); an expired session keeps it, to send
+   * once the same person signs in again.
+   */
+  const endSession = useCallback(async (notice?: string, options: { discardOutbox?: boolean } = {}) => {
     const session = sessionRef.current;
     sessionRef.current = null;
     await clearSession();
     // The cached jobs, expenses and notifications are this person's: gone with the session.
     await cache.clear();
+    if (options.discardOutbox) await outbox.clear();
     const last = await loadLastSignIn();
     setState({ status: "signedOut", notice, lastServer: last?.server ?? session?.server, lastEmail: last?.email ?? session?.member.email });
   }, []);
 
   const handleError = useCallback(
     (error: unknown) => {
-      if (error instanceof AccessRemovedError) void endSession(error.message);
+      if (error instanceof AccessRemovedError) void endSession(error.message, { discardOutbox: true });
       else if (error instanceof SessionExpiredError) void endSession(error.message);
       else if (error instanceof UpdateRequiredError) setUpdateRequired(true);
     },
@@ -143,7 +150,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     async (notice?: string) => {
       const session = sessionRef.current;
       if (session) await revokeSession(session.apiBase, session.token);
-      await endSession(notice);
+      await endSession(notice, { discardOutbox: true });
     },
     [endSession],
   );

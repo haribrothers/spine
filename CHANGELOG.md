@@ -80,6 +80,37 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Phase 5 Group 3: offline, the outbox, Sync and Fix (US-MOB-07, US-MOB-08, US-MOB-09)
+
+- **The outbox:** photos, expenses and milestone completions made on the phone wait in a SQLite outbox, with compressed copies of their photos (long edge 2048 px, JPEG 70%, D-053) in the app's documents folder, until the server has them.
+  - Each item's id is its `Idempotency-Key`, and each step uses a key derived from it. Progress is saved after every step, so a retry resumes and never duplicates.
+  - It sends oldest first: when something is queued, when the phone reconnects or returns to the foreground, and on "Try sending now".
+  - Network errors, 5xx, 408, 409 and 429 retry with back-off (5 s doubling to 5 min) and stay "Waiting". Other refusals become "Didn't send: <reason>" with Fix. A 426 or an ended session pauses sending and keeps everything. Photos over 10 MB, or no longer on the phone, need fixing before anything is sent.
+  - The outbox belongs to one person on one server. Signing out or losing access deletes it; an expired session keeps it; someone else signing in never sends it.
+  - Group 4's screens add items with `outbox.addPhotos/addExpense/addCompletion`.
+- **Offline (US-MOB-07):**
+  - Today says "You're offline" and what still works, with "Showing jobs as of <time>", following the phone's own connection (expo-network).
+  - Jobs seen before open from the phone.
+  - Job cards show "2 photos waiting" / "Completion waiting"; a job shows "Completion waiting" on the milestone and "Waiting" on its photos; Search lists waiting expenses.
+  - Back online, the banner goes, every screen refetches and the outbox sends.
+- **Sync (US-MOB-08):**
+  - The pill reads "<n> waiting to sync" in amber and opens Sync (also from Profile's Sync row and the sign-out warning's "Send them first").
+  - Sync shows "<n> items waiting" and why, "Try sending now", NEEDS FIXING, WAITING and SENT TODAY ("Already completed by <name>").
+  - A page sheet on iOS, a page on Android.
+- **Fix (US-MOB-09):**
+  - The reason in red and the item's details.
+  - For an expense: the receipt with its size ("14.2 MB · over the 10 MB limit"), "Retake photo", "Choose a different photo" (expo-image-picker, offering Settings if access is refused), "Remove photo", "Send again" and "Delete this expense" (the bin in the top bar on Android).
+  - Photos and milestone updates can lose a photo, be sent again or be deleted.
+- **API — completing a milestone that's already completed** (first write wins, 02-architecture; built for US-MOB-15):
+  - Answers 201 with `alreadyCompleted` and `completedBy`, and changes nothing about the milestone (previously 400).
+  - The photos sent with it are still attached.
+  - History records `milestone_completion_ignored`.
+- **Tests:**
+  - Phone: us-mob-07, 08 and 09 (124 Jest tests in total).
+  - API: us-mob-09 (each step replayed with the same key creates nothing twice; the late completion; the 10 MB limit).
+  - Maestro: `e2e/us-mob-07-offline.yaml` (airplane mode on Android) and the earlier flows pass on both phones. Sync and Fix checked on both against `MobSyncQueue` and `MobSyncFix`.
+- **Docs:** 02-architecture §Offline (keys, retries, ownership), 05-api, 07-security, the story notes, native notes, and QA section 193.
+
 ### 2026-10-08 — Field app loading states: skeletons per section (D-201)
 
 - **Skeletons while data loads:** a section with nothing saved on the phone and its first request still out shows blocks in its own shape. Headings and quick actions don't wait. This covers:

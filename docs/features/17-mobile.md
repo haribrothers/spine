@@ -136,7 +136,9 @@ Legacy: S-07.3, §6.6
 - **Given** I come back online, **when** the app notices, **then** the banner disappears and waiting items start sending automatically.
 
 **Implementation notes**
-- SQLite cache + outbox (02-architecture §Offline sync); airplane-mode end-to-end test.
+- SQLite cache + outbox (02-architecture §Offline sync); airplane-mode end-to-end test (`e2e/us-mob-07-offline.yaml`, Android).
+- The banner follows the phone's own connection (expo-network); back online, every screen showing saved data fetches again and the outbox sends.
+- Photos, expenses and completions go in through `outbox.addPhotos`, `addExpense` and `addCompletion` (`apps/mobile/src/lib/outbox`); the screens that call them are US-MOB-11, US-MOB-13 and US-MOB-15.
 
 ### US-MOB-08 · See what's waiting to sync
 **Feature:** F-MOB-03 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSyncQueue`, `MobSyncQueueAndroid`
@@ -151,7 +153,8 @@ Legacy: S-11.4
 - **Given** everything sent, **when** I view the pill, **then** it reads "All synced".
 
 **Implementation notes**
-- Outbox status per item: `waiting`, `sending`, `sent`, `failed`.
+- Outbox status per item: `waiting`, `sending`, `sent`, `failed`. The pill counts items not yet sent (a batch of photos is one item), including those needing fixing; "SENT TODAY" keeps today's sent items and drops older ones.
+- Sync is a page sheet on iOS (Close) and a page on Android, opened from the pill, Profile's Sync row and the sign-out warning's "Send them first".
 
 ### US-MOB-09 · Send each item exactly once and fix failures
 **Feature:** F-MOB-03 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSyncQueue`, `MobSyncQueueAndroid`, `MobSyncFix`, `MobSyncFixAndroid`
@@ -167,7 +170,9 @@ Decisions: D-009, D-053
 - **Given** the "Fix" screen for a rejected expense, **when** it opens, **then** it shows the reason in red ("Didn't send: the receipt photo is over 10 MB."), the expense details, the photo with its size, "Retake photo", "Choose a different photo", "Remove photo", "Send again" and "Delete this expense".
 
 **Implementation notes**
-- Each outbox item's id is its `Idempotency-Key`; photos compressed before queueing.
+- Each outbox item's id is its `Idempotency-Key`; each step uses a key derived from it, and progress is saved after every step. Photos are compressed before queueing (long edge at most 2048 px, JPEG 70%, D-053) and checked against 10 MB on the phone before upload.
+- A milestone someone else completed first is "sent" and reads "Already completed by <name>" (first write wins, 02-architecture).
+- Fix uses the camera or photo library (`expo-image-picker`); without permission it offers Settings. US-MOB-14 adds the explanation before the first request.
 
 ### US-MOB-10 · Show a clear error when the server can't be reached
 **Feature:** F-MOB-03 · **Priority:** P2 · **Phase:** 5 · **Screens:** `MobError`, `MobErrorAndroid`, `MobUpdateRequired`, `MobUpdateRequiredAndroid`

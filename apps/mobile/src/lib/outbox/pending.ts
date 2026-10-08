@@ -1,10 +1,11 @@
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
+import { outbox } from "./outbox";
+import type { OutboxItem } from "./types";
 
 /**
- * What hasn't reached the office yet. The outbox itself arrives with
- * offline sync (US-MOB-07 to US-MOB-09); until then nothing is ever queued,
- * so the summary is always empty and signing out never warns. Sign out
- * (US-MOB-02) already reads it through this one store.
+ * What hasn't reached the office yet, from the outbox: every item not yet
+ * sent, whether it's waiting, sending or needs fixing. Sign out (US-MOB-02),
+ * the sync pill and Profile read it.
  */
 export interface PendingSummary {
   photos: number;
@@ -12,24 +13,28 @@ export interface PendingSummary {
   completions: number;
 }
 
-const EMPTY: PendingSummary = { photos: 0, expenses: 0, completions: 0 };
-let current: PendingSummary = EMPTY;
-const listeners = new Set<() => void>();
+export function summarize(items: readonly OutboxItem[]): PendingSummary {
+  const open = items.filter((item) => item.status !== "sent");
+  return {
+    photos: open.filter((item) => item.kind === "photos").reduce((sum, item) => sum + (item.kind === "photos" ? item.payload.photos.length : 0), 0),
+    expenses: open.filter((item) => item.kind === "expense").length,
+    completions: open.filter((item) => item.kind === "completion").length,
+  };
+}
 
-export const pendingStore = {
-  get: () => current,
-  set(next: PendingSummary) {
-    current = next;
-    listeners.forEach((listener) => listener());
-  },
-  subscribe(listener: () => void) {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-};
+/** The outbox's items, live. */
+export function useOutboxItems(): readonly OutboxItem[] {
+  return useSyncExternalStore(outbox.subscribe, outbox.snapshot, outbox.snapshot);
+}
 
 export function usePendingSummary(): PendingSummary {
-  return useSyncExternalStore(pendingStore.subscribe, pendingStore.get, pendingStore.get);
+  const items = useOutboxItems();
+  return useMemo(() => summarize(items), [items]);
+}
+
+/** Items not yet sent — photos counted per batch, as the Sync screen lists them. */
+export function pendingItems(items: readonly OutboxItem[]): number {
+  return items.filter((item) => item.status !== "sent").length;
 }
 
 export function pendingTotal(summary: PendingSummary): number {

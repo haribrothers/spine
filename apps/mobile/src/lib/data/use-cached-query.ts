@@ -3,6 +3,7 @@ import { AppState } from "react-native";
 import { cache } from "../cache/cache-store";
 import { OfflineError, ServerUnreachableError } from "../api/errors";
 import { useSession } from "../session/session-provider";
+import { connectivity } from "../connectivity";
 
 /**
  * `loading` until the first answer; `ready` with fresh data; `offline` or
@@ -102,6 +103,17 @@ export function useCachedQuery<T>(key: string, path: string, options: CachedQuer
     });
     return () => subscription.remove();
   }, [options.refreshOnForeground, enabled, fetchFresh]);
+
+  // US-MOB-07: back online, every screen showing saved data fetches it again.
+  useEffect(() => {
+    if (!enabled) return;
+    let wasOnline = connectivity.get();
+    return connectivity.subscribe(() => {
+      const online = connectivity.get();
+      if (online && !wasOnline) void fetchFresh();
+      wasOnline = online;
+    });
+  }, [enabled, fetchFresh]);
 
   const refresh = useCallback(async () => {
     if (!enabled) return;

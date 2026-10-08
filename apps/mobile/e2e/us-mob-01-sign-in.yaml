@@ -67,6 +67,6 @@ appId: com.spine.app
 # Profile (whatever demo business is loaded), then sign out.
 - tapOn: "Profile, Marcus Webb"
 - assertVisible: "Field · .*"
-- assertVisible: "All synced"
+- assertVisible: "All synced.*"
 - tapOn: "Sign out"
 - assertVisible: "Sign in to Spine"

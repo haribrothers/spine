@@ -1,10 +1,11 @@
-import { Platform, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import CircleCheck from "lucide-react-native/icons/circle-check";
+import ChevronRight from "lucide-react-native/icons/chevron-right";
 import CloudUpload from "lucide-react-native/icons/cloud-upload";
 import { Avatar, FormRow, FormSection, FullWidthButton, SegmentedControl, useNativeColors, useTheme, type ThemePreference } from "@spine/ui-native";
 import { useSession, useSignedInSession } from "../../lib/session/session-provider";
-import { pendingTotal, usePendingSummary } from "../../lib/outbox/pending";
+import { pendingItems, useOutboxItems, usePendingSummary } from "../../lib/outbox/pending";
 import { initials, roleLine } from "../../lib/member-display";
 import { APP_BUILD, APP_VERSION } from "../../lib/app-version";
 import { confirmSignOut } from "./sign-out";
@@ -63,7 +64,7 @@ export function ProfileScreen() {
   const { preference, setPreference } = useTheme();
   const { member } = session;
 
-  const waiting = pendingTotal(pending);
+  const waiting = pendingItems(useOutboxItems());
   const selected = APPEARANCE.find((option) => option.value === preference)?.label ?? "System";
 
   return (
@@ -100,10 +101,17 @@ export function ProfileScreen() {
 
       <FormSection title="Sync">
         <FormRow last>
-          <View className="flex-row items-center gap-3" testID="profile-sync">
+          <Pressable
+            testID="profile-sync"
+            onPress={() => router.push("/sync")}
+            accessibilityRole="button"
+            accessibilityLabel={`${waiting === 0 ? "All synced" : `${waiting} waiting to sync`}. Open Sync`}
+            className="min-h-[44px] flex-1 flex-row items-center gap-3"
+          >
             {waiting === 0 ? <CircleCheck size={20} color={colors.paid} /> : <CloudUpload size={20} color={colors.dueSoon} />}
-            <Text className="text-[15px] text-on-surface dark:text-on-surface-dark">{waiting === 0 ? "All synced" : `${waiting} waiting to sync`}</Text>
-          </View>
+            <Text className="flex-1 text-[15px] text-on-surface dark:text-on-surface-dark">{waiting === 0 ? "All synced" : `${waiting} waiting to sync`}</Text>
+            <ChevronRight size={18} color={colors.onSurfaceMuted} />
+          </Pressable>
         </FormRow>
       </FormSection>
 
@@ -116,8 +124,8 @@ export function ProfileScreen() {
         onPress={() =>
           confirmSignOut(pending, {
             signOut: () => void signOut(),
-            // Sync arrives with offline sync (US-MOB-08); until then nothing is ever waiting.
-            sendFirst: () => router.back(),
+            // US-MOB-02/08: "Send them first" opens Sync.
+            sendFirst: () => router.push("/sync"),
           })
         }
       />

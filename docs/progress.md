@@ -217,9 +217,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MOB-04 · Browse my assigned jobs
 - [x] US-MOB-05 · Open a job's details on site
 - [x] US-MOB-06 · Keep financial reports off phones
-- [ ] US-MOB-07 · Keep working when there's no signal
-- [ ] US-MOB-08 · See what's waiting to sync
-- [ ] US-MOB-09 · Send each item exactly once and fix failures
+- [x] US-MOB-07 · Keep working when there's no signal
+- [x] US-MOB-08 · See what's waiting to sync
+- [x] US-MOB-09 · Send each item exactly once and fix failures
 - [x] US-MOB-10 · Show a clear error when the server can't be reached
 - [ ] US-MOB-11 · Take site photos tagged to a job, even offline
 - [ ] US-MOB-12 · See my expenses and their status

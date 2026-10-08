@@ -4,7 +4,7 @@ import { apiRequest } from "../lib/api/request";
 import { AccessRemovedError, ApiError, OfflineError, ServerUnreachableError, SessionExpiredError, UpdateRequiredError } from "../lib/api/errors";
 import { SERVER_ERROR_MESSAGE, SERVER_ERROR_TITLE, ServerErrorState } from "../features/errors/server-error-state";
 import { UpdateRequiredScreen } from "../features/errors/update-required-screen";
-import { pendingStore } from "../lib/outbox/pending";
+import { queueExpense, queuePhotos } from "../test-utils/outbox";
 import { jsonResponse, renderWithSession } from "../test-utils/session";
 
 const fetchMock = jest.fn();
@@ -60,13 +60,13 @@ describe("US-MOB-10 · show a clear error when the server can't be reached", () 
     expect(screen.getByTestId("server-error-saved")).toBeTruthy();
   });
 
-  it("shows Update Spine to keep going, and the waiting items it keeps", () => {
-    pendingStore.set({ photos: 2, expenses: 1, completions: 0 });
+  it("shows Update Spine to keep going, and the waiting items it keeps", async () => {
+    await queuePhotos();
+    await queueExpense();
     renderWithSession(<UpdateRequiredScreen />);
     expect(screen.getByText("Update Spine to keep going")).toBeTruthy();
     expect(screen.getByText("Your company's Spine server needs a newer version of this app. It only takes a minute.")).toBeTruthy();
     expect(screen.getByText(/3 items waiting to send are kept on this phone and sent after you update\./)).toBeTruthy();
     expect(screen.getByTestId("update-open-store")).toBeTruthy();
-    pendingStore.set({ photos: 0, expenses: 0, completions: 0 });
   });
 });

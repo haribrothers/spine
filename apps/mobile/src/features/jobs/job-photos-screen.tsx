@@ -9,17 +9,22 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { daysUntil, weekdayDayMonth } from "../../lib/format";
 import { arrivesLater } from "../../lib/later";
 import { SectionHeader } from "../../components/section-header";
-import { PhotoTile } from "./job-detail-screen";
+import { PhotoTile, tileKey, type TilePhoto } from "./job-detail-screen";
+import { useOutboxItems } from "../../lib/outbox/pending";
+import { jobWaiting } from "../../lib/outbox/job-waiting";
 import { PhotoGridSkeleton } from "../../components/skeletons";
 
 const COLUMNS = 3;
 const GAP = 2;
 
-/** Photos grouped by the day they were taken, newest first: "Today", "Mon 5 Oct", … */
-export function photosByDay(photos: JobPhoto[], locale: string, now: Date = new Date()): { title: string; data: JobPhoto[][] }[] {
-  const groups = new Map<string, JobPhoto[]>();
-  for (const photo of [...photos].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))) {
-    const at = new Date(photo.createdAt);
+const takenAt = (tile: TilePhoto) => (tile.kind === "sent" ? tile.photo.createdAt : tile.createdAt);
+
+/** Photos grouped by the day they were taken, newest first: "Today", "Mon 5 Oct", … Waiting photos are today's. */
+export function photosByDay(photos: (JobPhoto | TilePhoto)[], locale: string, now: Date = new Date()): { title: string; data: TilePhoto[][] }[] {
+  const tiles: TilePhoto[] = photos.map((p) => ("kind" in p ? p : { kind: "sent" as const, photo: p }));
+  const groups = new Map<string, TilePhoto[]>();
+  for (const photo of [...tiles].sort((a, b) => Date.parse(takenAt(b)) - Date.parse(takenAt(a)))) {
+    const at = new Date(takenAt(photo));
     const days = daysUntil(at, now);
     const title = days === 0 ? "Today" : days === -1 ? "Yesterday" : weekdayDayMonth(at, locale);
     groups.set(title, [...(groups.get(title) ?? []), photo]);
@@ -44,7 +49,14 @@ export function JobPhotosScreen({ id }: { id: string }) {
   const detail = useCachedQuery<FieldJob>(jobKey(id), `/jobs/${id}`);
   const photos = useCachedQuery<JobPhoto[]>(photosKey(id), `/jobs/${id}/photos`);
   const job = detail.data ?? listed;
-  const list = useMemo(() => photos.data ?? [], [photos.data]);
+  const queued = useOutboxItems();
+  const list = useMemo<TilePhoto[]>(
+    () => [
+      ...jobWaiting(queued, id).photos.map(({ photo, queuedAt }) => ({ kind: "waiting" as const, key: photo.uri, localUri: photo.uri, createdAt: new Date(queuedAt).toISOString() })),
+      ...(photos.data ?? []).map((photo) => ({ kind: "sent" as const, photo })),
+    ],
+    [queued, id, photos.data],
+  );
   const sections = useMemo(() => photosByDay(list, locale), [list, locale]);
   const tile = Math.floor((width - 32 - GAP * (COLUMNS - 1)) / COLUMNS);
   const android = Platform.OS === "android";
@@ -75,7 +87,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
         contentInsetAdjustmentBehavior="automatic"
         contentContainerClassName="px-4 pb-32"
         sections={sections}
-        keyExtractor={(row) => row.map((p) => p.id).join(",")}
+        keyExtractor={(row) => row.map(tileKey).join(",")}
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={android ? null : <Text className="pb-1 pt-2 text-center text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{subtitle}</Text>}
         renderSectionHeader={({ section }) => (
@@ -86,7 +98,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
         renderItem={({ item: row }) => (
           <View className="flex-row" style={{ gap: GAP, marginBottom: GAP }}>
             {row.map((photo) => (
-              <PhotoTile key={photo.id} photo={photo} size={tile} />
+              <PhotoTile key={tileKey(photo)} tile={photo} size={tile} />
             ))}
           </View>
         )}

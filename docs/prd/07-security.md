@@ -149,6 +149,7 @@ Historical text, kept word for word. Where it disagrees with the matrix above, t
 - `siteContact` on `GET /jobs` and `GET /jobs/:id` is a customer's contact person's name, title and phone. Field already reads contacts (Roles table above), so it adds nothing they couldn't see.
 - `GET /meetings/upcoming?attending=true` keeps the meeting visibility rules: it narrows to meetings the caller organises or is invited to, never widens.
 - Notifications about a person (`expense_approved`/`expense_rejected` to the submitter, `crew_assigned`/`crew_removed` to the crew member) go only to that person, and never to someone who did it to themselves. `crew_removed` has no link: the job isn't theirs to open any more.
+- The phone's outbox (US-MOB-07 to US-MOB-09) holds what the signed-in person made, with photos kept in the app's own documents folder. It's tied to that person and server: signing out (after the warning) or a removed membership deletes it, and a different person signing in on the phone discards it rather than sending it as themselves. Every item goes through the same authorised routes as the web, with the person's own bearer session.
 - The phone's read cache (SQLite) holds only what the signed-in person was sent, and is wiped when they sign out or their access is removed. A job they're taken off loses its cached copy on the next refresh (US-JOB-16). Photos are fetched from `GET /files/:id` with the bearer token, so the owning record is checked every time (US-OPS-20).
 
 ## Added with the Phase 7 feature round (D-087–D-097)

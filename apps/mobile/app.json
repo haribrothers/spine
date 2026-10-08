@@ -25,7 +25,15 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Spine uses the camera for site photos and receipts. They're saved to your jobs and expenses, and nowhere else.",
+          "photosPermission": "Spine opens your photos when you choose a receipt or site photo you've already taken. Only the photo you pick is used.",
+          "microphonePermission": false
+        }
+      ]
     ],
     "extra": {
       "storeLinks": {

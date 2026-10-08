@@ -5,7 +5,7 @@ import { and, eq, inArray, lte } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { jobAssignments, jobPhotos, jobs, milestones } from "../../db/schema";
+import { jobAssignments, jobPhotos, jobs, milestones, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { InvoicesService } from "../invoices/invoices.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -238,10 +238,7 @@ export class MilestonesService {
     const job = await this.requireJob(orgId, jobId);
     const milestone = await this.getOne(orgId, jobId, milestoneId);
 
-    if (milestone.status !== "pending") {
-      throw new BadRequestException("Only a pending milestone can be marked complete");
-    }
-
+    // Ownership before status (07-security).
     await requireOwnershipCapability(
       this.db,
       { orgId, userId: actorUserId },
@@ -250,12 +247,23 @@ export class MilestonesService {
       "always",
     );
 
-    await this.db.transaction(async (tx) => {
+    /**
+     * US-MOB-15 (02-architecture §Offline: first write wins) — a completion
+     * of a milestone someone already completed (a phone's queued completion
+     * arriving late) changes nothing about the milestone and answers
+     * with `alreadyCompleted` and who completed it (201, like any completion). Its photos are still
+     * attached — appends never conflict — and the attempt is in history.
+     */
+    const outcome = await this.db.transaction(async (tx) => {
+      const [current] = await tx.select().from(milestones).where(eq(milestones.id, milestoneId)).for("update");
+      const already = current!.status !== "pending";
       const completedAt = new Date();
-      await tx
-        .update(milestones)
-        .set({ status: "completed", completedByUserId: actorUserId, completedAt, completionNotes: input.completionNotes ?? null, updatedAt: completedAt })
-        .where(eq(milestones.id, milestoneId));
+      if (!already) {
+        await tx
+          .update(milestones)
+          .set({ status: "completed", completedByUserId: actorUserId, completedAt, completionNotes: input.completionNotes ?? null, updatedAt: completedAt })
+          .where(eq(milestones.id, milestoneId));
+      }
 
       if (input.photoFileIds.length) {
         await tx.insert(jobPhotos).values(
@@ -273,13 +281,19 @@ export class MilestonesService {
       await this.auditLog.record(tx, {
         orgId,
         actorUserId,
-        action: "milestone_completed",
+        action: already ? "milestone_completion_ignored" : "milestone_completed",
         entityType: "milestone",
         entityId: milestoneId,
         contactId: job.contactId,
-        changes: [{ field: "status", from: "pending", to: "completed" }],
+        changes: already ? [] : [{ field: "status", from: "pending", to: "completed" }],
       });
+      return { already, completedByUserId: current!.completedByUserId };
     });
+
+    if (outcome.already) {
+      const [by] = outcome.completedByUserId ? await this.db.select({ name: user.name }).from(user).where(eq(user.id, outcome.completedByUserId)) : [];
+      return { ...(await this.getOne(orgId, jobId, milestoneId)), alreadyCompleted: true as const, completedBy: by ? { name: by.name } : null };
+    }
 
     void this.notifications.notify(orgId, {
       subject: `Milestone completed — ${milestone.name}`,

@@ -19,6 +19,31 @@ import { calendarDay, daysUntil, dayMonth, weekday, money, oneLine } from "../..
 import { highlightParts, searchCache, type ExpenseHit } from "../../lib/search/search";
 import { addRecentSearch, clearRecentSearches, getRecentSearches, removeRecentSearch } from "../../lib/search/recent-searches";
 import { ListRowsSkeleton } from "../../components/skeletons";
+import { useOutboxItems } from "../../lib/outbox/pending";
+import type { OutboxItem } from "../../lib/outbox/types";
+
+/** Expenses still on the phone, as search rows (US-MOB-23: "Waiting"). */
+export function waitingExpenses(items: readonly OutboxItem[]): MyExpense[] {
+  return items.flatMap((item) =>
+    item.kind === "expense" && item.status !== "sent"
+      ? [
+          {
+            id: item.id,
+            number: null,
+            categoryName: item.payload.categoryName,
+            jobId: item.payload.jobId,
+            date: item.payload.date,
+            amount: item.payload.amount,
+            currency: item.payload.currency,
+            description: item.payload.description,
+            status: "submitted" as const,
+            reviewComment: null,
+            createdAt: new Date(item.createdAt).toISOString(),
+          },
+        ]
+      : [],
+  );
+}
 
 export const SEARCH_PLACEHOLDER = "Search jobs and expenses";
 export const SEARCH_HINT = "Find a job by name, customer or address, or one of your expenses by category or description.";
@@ -66,6 +91,7 @@ export function SearchScreen() {
   const modules = useModules();
   const jobs = useAssignedJobs(modules.jobsField);
   const expenses = useCachedQuery<MyExpense[]>(MY_EXPENSES_KEY, MY_EXPENSES_PATH);
+  const queued = useOutboxItems();
   const [typed, setTyped] = useState("");
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
@@ -84,8 +110,8 @@ export function SearchScreen() {
   );
 
   const results = useMemo(
-    () => searchCache({ query, jobs: jobs.data ?? [], expenses: expenses.data ?? [], jobsOn: modules.jobsField }),
-    [query, jobs.data, expenses.data, modules.jobsField],
+    () => searchCache({ query, jobs: jobs.data ?? [], expenses: expenses.data ?? [], waitingExpenses: waitingExpenses(queued), jobsOn: modules.jobsField }),
+    [query, jobs.data, expenses.data, modules.jobsField, queued],
   );
   const searching = query.trim().length > 0;
   const sections = [
@@ -96,7 +122,8 @@ export function SearchScreen() {
   const remember = useCallback(async () => setRecent(await addRecentSearch(query)), [query]);
   const open = (row: Row) => {
     void remember();
-    router.push(row.kind === "job" ? `/jobs/${row.job.id}` : `/expenses/${row.hit.expense.id}`);
+    // An expense still on the phone has nothing on the server to open yet: Sync shows it.
+    router.push(row.kind === "job" ? `/jobs/${row.job.id}` : row.hit.waiting ? "/sync" : `/expenses/${row.hit.expense.id}`);
   };
   const searchFor = (value: string) => {
     setTyped(value);
@@ -205,7 +232,7 @@ export function SearchScreen() {
         }
         const { expense, jobName, waiting } = row.hit;
         const status = waiting ? { label: "Waiting", status: "draft" as const } : EXPENSE_STATUS[expense.status];
-        const line = [waiting ? "Today" : expenseDay(expense.date, format.locale), jobName ?? expense.description].filter(Boolean).join(" · ");
+        const line = [expenseDay(expense.date, format.locale), jobName ?? expense.description].filter(Boolean).join(" · ");
         return (
           <Pressable testID={`search-expense-${expense.id}`} onPress={() => open(row)} accessibilityRole="button" accessibilityLabel={`${expense.categoryName ?? "Expense"}, ${money(expense.amount, { currency: expense.currency, locale: format.locale })}, ${status.label}`} className={`flex-row items-center gap-3 px-3 py-3 ${shape}`}>
             <View className="h-11 w-11 items-center justify-center rounded-xl bg-draft-bg dark:bg-draft-bg-dark">

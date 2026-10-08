@@ -4,6 +4,7 @@ import { Stack, ThemeProvider, useRouter } from "expo-router";
 import { SpineUIProvider, useNativeColors } from "@spine/ui-native";
 import { persistentThemeStorage } from "../src/lib/theme-storage";
 import { SessionProvider, useSession } from "../src/lib/session/session-provider";
+import { SyncProvider } from "../src/lib/outbox/sync-provider";
 import { profileScreenOptions } from "../src/features/profile/profile-screen";
 import { useNavigationTheme } from "../src/lib/navigation-theme";
 
@@ -31,6 +32,7 @@ function RootStack() {
         <Stack.Protected guard={!updateRequired && signedIn}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="profile" options={profileScreenOptions(Platform.OS, colors, () => router.back())} />
+        <Stack.Screen name="sync" options={{ presentation: Platform.OS === "ios" ? "modal" : "card", headerShown: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!updateRequired && !signedIn}>
           <Stack.Screen name="sign-in" />
@@ -44,7 +46,9 @@ export default function RootLayout() {
   return (
     <SpineUIProvider storage={persistentThemeStorage}>
       <SessionProvider>
-        <RootStack />
+        <SyncProvider>
+          <RootStack />
+        </SyncProvider>
       </SessionProvider>
     </SpineUIProvider>
   );

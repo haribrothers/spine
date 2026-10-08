@@ -7,6 +7,8 @@ export type Method = "GET" | "POST" | "PUT" | "DELETE";
 
 export interface RequestOptions {
   body?: unknown;
+  /** A multipart body (`POST /files`); sent as is, with fetch setting the boundary. */
+  formData?: FormData;
   /** Required by the API on every mutating route; the outbox reuses one key per item (Group 3). */
   idempotencyKey?: string;
   token?: string | null;
@@ -43,7 +45,7 @@ export async function apiRequest<T>(
   online: OnlineCheck = isOnline,
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: "application/json", [CLIENT_VERSION_HEADER]: APP_VERSION, ...options.headers };
-  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  if (options.body !== undefined && !options.formData) headers["Content-Type"] = "application/json";
   if (options.token) headers.Authorization = `Bearer ${options.token}`;
   if (method !== "GET" && options.idempotencyKey) headers["Idempotency-Key"] = options.idempotencyKey;
 
@@ -54,7 +56,7 @@ export async function apiRequest<T>(
     res = await fetch(`${apiBase}${path}`, {
       method,
       headers,
-      body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+      body: options.formData ?? (options.body !== undefined ? JSON.stringify(options.body) : undefined),
       // Bearer only (D-016): no cookies, see sign-in.ts.
       credentials: "omit",
       signal: controller.signal,
@@ -82,4 +84,11 @@ export async function apiRequest<T>(
   if (res.status === 401) throw new SessionExpiredError();
   if (res.status === 502 || res.status === 503 || res.status === 504) throw new ServerUnreachableError();
   throw new ApiError(body?.message ?? `Request failed (${res.status})`, res.status, body?.error, body);
+}
+
+/** A photo or receipt on the phone as a multipart `file` field (React Native's `{ uri, name, type }`). */
+export function fileFormData(file: { uri: string; name: string; mimeType: string }): FormData {
+  const form = new FormData();
+  form.append("file", { uri: file.uri, name: file.name, type: file.mimeType } as unknown as Blob);
+  return form;
 }

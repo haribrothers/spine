@@ -1,0 +1,40 @@
+# US-MOB-07 / US-MOB-08 — airplane mode: Today says "You're offline", a job
+# seen before opens from the phone, and the banner goes when the phone is
+# back online. Android only: Maestro can switch airplane mode there.
+#   maestro --device emulator-5554 test -e SERVER=http://10.0.2.2:4000 \
+#     -e DEV_CLIENT_URL='spine://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8081' \
+#     apps/mobile/e2e/us-mob-07-offline.yaml
+appId: com.spine.app
+---
+- runFlow: _sign-in.yaml
+# Sync starts empty.
+- tapOn:
+    id: "sync-pill"
+- assertVisible: "All synced"
+- assertVisible: "Everything has reached your office."
+- back
+# See a job once, so it's saved on the phone.
+- tapOn: "Jobs"
+- tapOn: "Office block — structural works.*"
+- extendedWaitUntil:
+    visible: "(MILESTONES|Milestones)"
+    timeout: 15000
+- back
+- setAirplaneMode: enabled
+- tapOn: "Today"
+- extendedWaitUntil:
+    visible: "You're offline"
+    timeout: 15000
+- assertVisible: "Photos, expenses and milestone updates are saved on this phone.*"
+- tapOn: "Jobs"
+- tapOn: "Office block — structural works.*"
+- extendedWaitUntil:
+    visible: "(MILESTONES|Milestones)"
+    timeout: 15000
+- assertVisible: "Mark .* complete"
+- back
+- setAirplaneMode: disabled
+- tapOn: "Today"
+- extendedWaitUntil:
+    notVisible: "You're offline"
+    timeout: 30000
