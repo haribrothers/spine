@@ -3,13 +3,14 @@ import { useRouter } from "expo-router";
 import Briefcase from "lucide-react-native/icons/briefcase";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import RefreshCw from "lucide-react-native/icons/refresh-cw";
-import { EmptyState, StatusChip, useNativeColors } from "@spine/ui-native";
+import { EmptyState, Skeleton, StatusChip, useNativeColors } from "@spine/ui-native";
 import { useAssignedJobs, type FieldJob } from "../../lib/data/jobs";
 import { useBusinessFormat } from "../../lib/data/business";
 import { townFrom } from "../../lib/format";
 import { PillButton } from "../../components/pill-button";
 import { SectionHeader } from "../../components/section-header";
 import { ServerErrorState } from "../errors/server-error-state";
+import { ListRowsSkeleton } from "../../components/skeletons";
 import { jobMilestoneChip } from "./milestone-chip";
 
 export const JOBS_EMPTY_TITLE = "No jobs assigned to you yet";
@@ -89,7 +90,14 @@ export function JobsListScreen() {
         </View>
       )}
       ListEmptyComponent={
-        jobs.data ? (
+        jobs.loading ? (
+          <View className="gap-2 px-4">
+            <Skeleton className="h-4 w-36 rounded-md" />
+            <View className={android ? "-mx-4" : ""}>
+              <ListRowsSkeleton label="Loading your jobs" testID="skeleton-jobs" rows={4} leading={android} />
+            </View>
+          </View>
+        ) : jobs.data ? (
           <EmptyState
             testID="jobs-empty"
             icon={

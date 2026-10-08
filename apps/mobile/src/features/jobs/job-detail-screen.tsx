@@ -7,7 +7,7 @@ import FileText from "lucide-react-native/icons/file-text";
 import MapPin from "lucide-react-native/icons/map-pin";
 import Navigation from "lucide-react-native/icons/navigation";
 import Phone from "lucide-react-native/icons/phone";
-import { Avatar, EmptyState, Skeleton, useNativeColors } from "@spine/ui-native";
+import { Avatar, EmptyState, useNativeColors } from "@spine/ui-native";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { jobKey, milestonesKey, photosKey, quotesKey, useAssignedJobs, type FieldJob, type FieldMilestone, type JobPhoto, type QuoteToPresent } from "../../lib/data/jobs";
 import { useBusinessFormat } from "../../lib/data/business";
@@ -19,6 +19,7 @@ import { arrivesLater } from "../../lib/later";
 import { PillButton } from "../../components/pill-button";
 import { SectionHeader } from "../../components/section-header";
 import { JobStatusChip } from "./job-status";
+import { CardRowsSkeleton, HeadingSkeleton, ListRowsSkeleton, PhotoGridSkeleton } from "../../components/skeletons";
 
 const PREVIEW_PHOTOS = 4;
 
@@ -158,9 +159,10 @@ export function JobDetailScreen({ id }: { id: string }) {
         {gone ? (
           <EmptyState title="This job isn't on your list" description="Your office may have taken you off its crew. Pull down on Jobs to refresh." />
         ) : (
-          <View className="gap-3 pt-24">
-            <Skeleton className="h-8 w-2/3 rounded-md" />
-            <Skeleton className="h-24 w-full rounded-2xl" />
+          <View className="gap-5 pt-24">
+            <HeadingSkeleton label="Loading the job" />
+            <CardRowsSkeleton rows={2} label="Loading the site and contact" />
+            <ListRowsSkeleton label="Loading milestones" rows={3} trailing="pill" grouped />
           </View>
         )}
       </View>
@@ -240,17 +242,17 @@ export function JobDetailScreen({ id }: { id: string }) {
                 <MilestoneRow key={milestone.id} milestone={milestone} first={index === 0} primary={milestone.id === pending[0]?.id} locale={locale} />
               ))}
             </Group>
-          ) : milestones.data ? (
-            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No milestones on this job yet.</Text>
+          ) : milestones.loading ? (
+            <ListRowsSkeleton label="Loading milestones" testID="skeleton-milestones" rows={3} trailing="pill" grouped />
           ) : (
-            <Skeleton className="h-24 w-full rounded-2xl" />
+            <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No milestones on this job yet.</Text>
           )}
         </View>
 
         <View className="gap-2">
           <SectionHeader
             title="Photos"
-            count={photoList.length}
+            count={photos.loading ? undefined : photoList.length}
             testID="job-photos-header"
             action={photoList.length ? { label: "See all", onPress: () => router.push(`/jobs/${id}/photos`) } : undefined}
           />
@@ -263,6 +265,8 @@ export function JobDetailScreen({ id }: { id: string }) {
                 <View key={`empty-${index}`} style={{ flex: 1, aspectRatio: 1 }} />
               ))}
             </View>
+          ) : photos.loading ? (
+            <PhotoGridSkeleton />
           ) : (
             <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">No photos yet.</Text>
           )}
@@ -276,6 +280,8 @@ export function JobDetailScreen({ id }: { id: string }) {
                 <QuoteRow key={quote.id} quote={quote} first={index === 0} locale={locale} />
               ))}
             </Group>
+          ) : quotes.loading ? (
+            <ListRowsSkeleton label="Loading quotes to present" testID="skeleton-quotes" rows={1} leading trailing="pill" grouped />
           ) : (
             <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing waiting for the customer.</Text>
           )}

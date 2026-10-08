@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react-nativ
 import { Linking, Platform } from "react-native";
 import { mockRouter } from "../test-utils/router-mock";
 import { renderWithSession, MARCUS } from "../test-utils/session";
-import { freezeClock, HOTEL, LATER_JOB, MARINA, MEETING, ON_HOLD, routeRequests, SUMMARY, THURSDAY, TOWNHOMES } from "../test-utils/fixtures";
+import { deferred, freezeClock, HOTEL, PENDING, LATER_JOB, MARINA, MEETING, ON_HOLD, routeRequests, SUMMARY, THURSDAY, TOWNHOMES } from "../test-utils/fixtures";
 import { TodayScreen, todayKpis } from "../features/today/today-screen";
 import { callLabel } from "../features/today/job-card";
 import { SyncPill } from "../components/sync-pill";
@@ -151,5 +151,42 @@ describe("US-MOB-03 · see today's jobs with addresses and tap-to-call", () => {
     expect(screen.queryByTestId("today-action-add-photo")).toBeNull();
     expect(screen.queryByTestId("today-action-directions")).toBeNull();
     expect(screen.getByTestId("today-action-log-expense")).toBeTruthy();
+  });
+
+  it("shows skeletons for the gauge, cards, jobs and meeting while Today's first data loads (D-201)", async () => {
+    renderToday(routes({ "/mobile/today?period=month": PENDING, [JOBS_PATH]: PENDING, [NEXT_MEETINGS_PATH]: PENDING }));
+    expect(await screen.findByTestId("skeleton-gauge")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-kpis")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-job-cards").props.accessibilityLabel).toBe("Loading jobs");
+    expect(screen.getByTestId("skeleton-meeting")).toBeTruthy();
+    expect(screen.getByText("YOUR JOBS TODAY")).toBeTruthy();
+    // The quick actions don't wait for anything.
+    expect(screen.getByTestId("today-action-log-expense")).toBeTruthy();
+  });
+
+  it("swaps the gauge and cards for skeletons while another period loads — never the old period's numbers", async () => {
+    const week = deferred<typeof WEEK>();
+    renderToday(routes({ "/mobile/today?period=week": week.promise }));
+    await screen.findByText("3 of 5 done");
+    fireEvent(screen.getByTestId("today-period"), "onValueChange", "This week");
+    expect(await screen.findByTestId("skeleton-gauge")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-kpis")).toBeTruthy();
+    expect(screen.queryByText("3 of 5 done")).toBeNull();
+    expect(screen.queryByTestId("today-kpi-due")).toBeNull();
+    // The jobs don't depend on the period: they stay.
+    expect(screen.getByTestId(`today-job-${MARINA.id}`)).toBeTruthy();
+    week.resolve(WEEK);
+    expect(await screen.findByText("0 of 2 done")).toBeTruthy();
+    expect(screen.queryByTestId("skeleton-kpis")).toBeNull();
+  });
+
+  it("shows a period it has seen before at once, from the phone, with no skeleton", async () => {
+    renderToday();
+    await screen.findByText("3 of 5 done");
+    fireEvent(screen.getByTestId("today-period"), "onValueChange", "This week");
+    await screen.findByText("0 of 2 done");
+    fireEvent(screen.getByTestId("today-period"), "onValueChange", "This month");
+    expect(await screen.findByText("3 of 5 done")).toBeTruthy();
+    expect(screen.queryByTestId("skeleton-gauge")).toBeNull();
   });
 });

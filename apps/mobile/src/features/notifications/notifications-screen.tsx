@@ -17,6 +17,7 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { NOTIFICATIONS_KEY, NOTIFICATIONS_PATH, routeForLink, splitByRead, UNREAD_KEY, type AppNotification } from "../../lib/data/notifications";
 import { newIdempotencyKey } from "../../lib/api/idempotency";
 import { relativeTime } from "../../lib/format";
+import { ListRowsSkeleton } from "../../components/skeletons";
 
 export const NOTIFICATIONS_EMPTY_TITLE = "You're all caught up";
 export const NOTIFICATIONS_EMPTY_MESSAGE = "Expense decisions, crew changes and meeting invitations show up here.";
@@ -177,7 +178,11 @@ export function NotificationsScreen() {
           );
         }}
         ListEmptyComponent={
-          list.data ? (
+          list.loading ? (
+            <View className={android ? "" : "pt-4"}>
+              <ListRowsSkeleton label="Loading notifications" testID="skeleton-notifications" rows={5} leading />
+            </View>
+          ) : list.data ? (
             <EmptyState
               testID="notifications-empty"
               icon={

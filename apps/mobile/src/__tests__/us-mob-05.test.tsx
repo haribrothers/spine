@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from "@testing-library/react-native";
 import { Linking, Platform } from "react-native";
 import { mockRouter, mockScreen } from "../test-utils/router-mock";
 import { renderWithSession } from "../test-utils/session";
-import { freezeClock, MARINA, MILESTONES, photos, QUOTES, routeRequests, THURSDAY } from "../test-utils/fixtures";
+import { freezeClock, MARINA, MILESTONES, PENDING, photos, QUOTES, routeRequests, THURSDAY } from "../test-utils/fixtures";
 import { JobDetailScreen } from "../features/jobs/job-detail-screen";
 import { JobPhotosScreen, photosByDay } from "../features/jobs/job-photos-screen";
 import type { SessionContextValue } from "../lib/session/session-provider";
@@ -100,5 +100,26 @@ describe("US-MOB-05 · open a job's details on site", () => {
     const sections = photosByDay(photos(12), "en-US", THURSDAY).map((s) => s.title);
     expect(sections).toEqual(["Today", "Mon, Oct 5", "Thu, Oct 1"]);
     expect(screen.getByText("TODAY")).toBeTruthy();
+  });
+
+  it("shows the job's shape while it loads, then each section's own skeleton until it arrives (D-201)", async () => {
+    const pending = { "/jobs?assignedToMe=true&include=next_milestone,site_contact,milestone_counts": [], [`/jobs/${id}`]: PENDING, [`/jobs/${id}/milestones`]: PENDING, [`/jobs/${id}/photos`]: PENDING, [`/jobs/${id}/quotes`]: PENDING };
+    renderWithSession(<JobDetailScreen id={id} />, { request: asRequest(routeRequests(pending)) });
+    expect((await screen.findByTestId("skeleton-heading")).props.accessibilityLabel).toBe("Loading the job");
+    screen.unmount();
+
+    renderWithSession(<JobDetailScreen id={id} />, { request: asRequest(routeRequests({ ...pending, [`/jobs/${id}`]: MARINA })) });
+    expect(await screen.findByText("Marina office fit-out")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-milestones")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-photos")).toBeTruthy();
+    expect(screen.getByTestId("skeleton-quotes")).toBeTruthy();
+    expect(screen.getByText("PHOTOS")).toBeTruthy();
+    expect(screen.queryByText("No milestones on this job yet.")).toBeNull();
+  });
+
+  it("shows a photo grid skeleton on Photos while it loads", async () => {
+    renderWithSession(<JobPhotosScreen id={id} />, { request: asRequest(detailRoutes({ [`/jobs/${id}/photos`]: PENDING })) });
+    expect(await screen.findByTestId("skeleton-photos")).toBeTruthy();
+    expect(mockScreen.options.title).toBe("Photos");
   });
 });

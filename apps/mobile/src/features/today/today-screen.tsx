@@ -11,7 +11,7 @@ import ReceiptText from "lucide-react-native/icons/receipt-text";
 import ScanLine from "lucide-react-native/icons/scan-line";
 import TriangleAlert from "lucide-react-native/icons/triangle-alert";
 import Wallet from "lucide-react-native/icons/wallet";
-import { ActionTile, GaugeIndicator, KpiCard, ScrollEdgeMask, SegmentedControl, Skeleton, useNativeColors } from "@spine/ui-native";
+import { ActionTile, GaugeIndicator, KpiCard, ScrollEdgeMask, SegmentedControl, useNativeColors } from "@spine/ui-native";
 import type { GradientTone } from "@spine/ui-native/tokens";
 import { useSignedInSession } from "../../lib/session/session-provider";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
@@ -26,6 +26,7 @@ import { calendarDay, longDate, money, shortWhen, weekdayDayMonth, type Business
 import { openDirections } from "../../lib/linking";
 import { arrivesLater } from "../../lib/later";
 import { SectionHeader } from "../../components/section-header";
+import { GaugeSkeleton, JobCardsSkeleton, KpiCardsSkeleton, MeetingCardSkeleton } from "../../components/skeletons";
 import { ServerErrorState } from "../errors/server-error-state";
 import { TodayJobCard } from "./job-card";
 
@@ -90,7 +91,7 @@ export function todayKpis(summary: TodaySummary, waitingPhotos: number, format: 
   return cards;
 }
 
-function WelcomeCard({ summary, period }: { summary: TodaySummary | null; period: TodayPeriod }) {
+function WelcomeCard({ summary, loading, period }: { summary: TodaySummary | null; loading: boolean; period: TodayPeriod }) {
   const colors = useNativeColors();
   const { member } = useSignedInSession();
   const format = useBusinessFormat();
@@ -103,8 +104,8 @@ function WelcomeCard({ summary, period }: { summary: TodaySummary | null; period
           {member.organizationName} · {longDate(new Date(), format.locale)}
         </Text>
       </View>
-      {summary === null ? (
-        <Skeleton className="mt-2 h-32 w-full rounded-lg" />
+      {loading ? (
+        <GaugeSkeleton />
       ) : m ? (
         <>
           <GaugeIndicator progress={m.total ? m.done / m.total : 0} trackColor={colors.overlaySubtle} fillGradient={colors.gradients.primary} textColorClass="text-on-surface dark:text-on-surface-dark" />
@@ -199,7 +200,7 @@ export function TodayScreen() {
         </View>
       ) : null}
 
-      <WelcomeCard summary={summary.data} period={period} />
+      <WelcomeCard summary={summary.data} loading={summary.loading} period={period} />
 
       <SegmentedControl
         testID="today-period"
@@ -209,7 +210,9 @@ export function TodayScreen() {
         style={{ height: 36 }}
       />
 
-      {kpis.length ? (
+      {summary.loading ? (
+        <KpiCardsSkeleton width={KPI_CARD_WIDTH} gap={KPI_CARD_GAP} />
+      ) : kpis.length ? (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -238,13 +241,21 @@ export function TodayScreen() {
 
       {modules.jobsField ? (
         <View className="gap-3" testID="today-jobs">
-          <SectionHeader title="Your jobs today" count={forToday.length} action={{ label: "All jobs", arrow: true, onPress: () => router.navigate("/jobs") }} />
+          <SectionHeader title="Your jobs today" count={jobs.loading ? undefined : forToday.length} action={{ label: "All jobs", arrow: true, onPress: () => router.navigate("/jobs") }} />
+          {jobs.loading ? <JobCardsSkeleton /> : null}
           {forToday.map((job) => (
             <TodayJobCard key={job.id} job={job} locale={format.locale} now={now} onOpen={() => router.push(`/jobs/${job.id}`)} />
           ))}
           {jobs.data && forToday.length === 0 ? (
             <Text className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">Nothing due on your jobs in the next 7 days.</Text>
           ) : null}
+        </View>
+      ) : null}
+
+      {modules.leadsMeetings && meetings.loading ? (
+        <View className="gap-3">
+          <SectionHeader title="Next meeting" />
+          <MeetingCardSkeleton />
         </View>
       ) : null}
 

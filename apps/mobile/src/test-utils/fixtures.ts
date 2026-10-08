@@ -113,3 +113,13 @@ export function routeRequests(routes: Record<string, unknown>) {
     return value;
   });
 }
+
+/** A promise you resolve later: a request that is still out (skeleton tests, D-201). */
+export function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((r) => (resolve = r));
+  return { promise, resolve };
+}
+
+/** A request that never answers. */
+export const PENDING = new Promise<never>(() => {});

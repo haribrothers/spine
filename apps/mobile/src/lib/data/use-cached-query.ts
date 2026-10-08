@@ -16,6 +16,8 @@ export interface CachedQuery<T> {
   /** When `data` was fetched (ms), for "saved at <time>". */
   fetchedAt: number | null;
   status: QueryStatus;
+  /** Nothing to show yet: no cached copy and the first request is still out. Screens show a skeleton (D-201). */
+  loading: boolean;
   refreshing: boolean;
   refresh: () => Promise<void>;
 }
@@ -29,57 +31,66 @@ export interface CachedQueryOptions<T> {
   enabled?: boolean;
 }
 
+interface Snapshot<T> {
+  key: string;
+  data: T | null;
+  fetchedAt: number | null;
+  status: QueryStatus;
+}
+
 /**
  * Cache first, then the network: shows what the phone last fetched for
  * `key` at once, asks the API for `path`, and writes the answer back. A
- * failed refresh keeps the cached data and says why.
+ * failed refresh keeps the cached data and says why. State belongs to one
+ * key: when the key changes (Today's period), the previous key's data is
+ * never shown for the new one, and a late answer for an old key is ignored.
  */
 export function useCachedQuery<T>(key: string, path: string, options: CachedQueryOptions<T> = {}): CachedQuery<T> {
   const { request } = useSession();
-  const [data, setData] = useState<T | null>(null);
-  const [fetchedAt, setFetchedAt] = useState<number | null>(null);
-  const [status, setStatus] = useState<QueryStatus>("loading");
+  const [snapshot, setSnapshot] = useState<Snapshot<T>>({ key, data: null, fetchedAt: null, status: "loading" });
   const [refreshing, setRefreshing] = useState(false);
-  const optionsRef = useRef(options);
-  optionsRef.current = options;
+  const keyRef = useRef(key);
+  keyRef.current = key;
+  const onFreshRef = useRef(options.onFresh);
+  onFreshRef.current = options.onFresh;
   const enabled = options.enabled !== false;
+
+  /** Updates the snapshot only while `forKey` is still the current key. */
+  const update = useCallback((forKey: string, patch: Partial<Snapshot<T>>) => {
+    if (keyRef.current !== forKey) return;
+    setSnapshot((prev) => (prev.key === forKey ? { ...prev, ...patch } : { key: forKey, data: null, fetchedAt: null, status: "loading", ...patch }));
+  }, []);
 
   const readCache = useCallback(async () => {
     const entry = await cache.read<T>(key);
-    if (entry) {
-      setData(entry.value);
-      setFetchedAt(entry.fetchedAt);
-    } else {
-      setData(null);
-      setFetchedAt(null);
-    }
+    update(key, { data: entry?.value ?? null, fetchedAt: entry?.fetchedAt ?? null });
     return entry;
-  }, [key]);
+  }, [key, update]);
 
   const fetchFresh = useCallback(async () => {
     try {
       const value = await request<T>("GET", path);
-      await optionsRef.current.onFresh?.(value);
+      await onFreshRef.current?.(value);
       await cache.write(key, value);
-      setStatus("ready");
+      update(key, { status: "ready" });
     } catch (error) {
-      setStatus(error instanceof OfflineError ? "offline" : error instanceof ServerUnreachableError ? "unreachable" : "error");
+      update(key, { status: error instanceof OfflineError ? "offline" : error instanceof ServerUnreachableError ? "unreachable" : "error" });
     }
-  }, [key, path, request]);
+  }, [key, path, request, update]);
 
   useEffect(() => {
     let cancelled = false;
-    setStatus("loading");
+    setSnapshot({ key, data: null, fetchedAt: null, status: "loading" });
     void (async () => {
       const entry = await readCache();
       if (cancelled) return;
       if (enabled) await fetchFresh();
-      else setStatus(entry ? "ready" : "error");
+      else update(key, { status: entry ? "ready" : "error" });
     })();
     return () => {
       cancelled = true;
     };
-  }, [readCache, fetchFresh, enabled]);
+  }, [key, readCache, fetchFresh, enabled, update]);
 
   // Another screen (or this one) wrote the key: show it.
   useEffect(() => cache.subscribe(key, () => void readCache()), [key, readCache]);
@@ -99,5 +110,7 @@ export function useCachedQuery<T>(key: string, path: string, options: CachedQuer
     setRefreshing(false);
   }, [enabled, fetchFresh]);
 
-  return { data, fetchedAt, status, refreshing, refresh };
+  // Until the effect above resets it, a snapshot from the previous key must not leak through.
+  const current = snapshot.key === key ? snapshot : { key, data: null, fetchedAt: null, status: "loading" as const };
+  return { data: current.data, fetchedAt: current.fetchedAt, status: current.status, loading: current.status === "loading" && current.data === null, refreshing, refresh };
 }

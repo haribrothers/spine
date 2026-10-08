@@ -92,9 +92,10 @@ export function relativeTime(iso: string, locale: string, now: Date = new Date()
 }
 
 /**
- * The town in a site address, for "Customer · Portland": the last part,
- * without its postcode — or the part before it when that's only a state
- * code ("Portland, ME 04101" → "Portland"; "Pune 411045" → "Pune").
+ * The town in a site address, for "Customer · Portland": the part before
+ * "<state> <postcode>" ("…, Portland, ME 04101" → "Portland"; "…, Bengaluru,
+ * Karnataka 560037" → "Bengaluru"), else the last part without its postcode
+ * ("Baner Road, Pune 411045" → "Pune").
  */
 export function townFrom(address: string | null | undefined): string | null {
   if (!address) return null;
@@ -104,8 +105,12 @@ export function townFrom(address: string | null | undefined): string | null {
     .filter(Boolean);
   if (parts.length < 2) return null;
   const strip = (part: string) => part.replace(/\b[A-Z]?\d[\dA-Z -]*$/, "").trim();
-  const last = strip(parts[parts.length - 1]!);
-  if (last && !/^[A-Z]{2,3}$/.test(last) && !/\d/.test(last)) return last;
+  const lastPart = parts[parts.length - 1]!;
+  const last = strip(lastPart);
+  // "…, Bengaluru, Karnataka 560037" and "…, Portland, ME 04101": the last part is the
+  // state or region with the postcode, so the town is the part before it.
+  const regionAndPostcode = /\d/.test(lastPart) && parts.length >= 3;
+  if (last && !regionAndPostcode && !/^[A-Z]{2,3}$/.test(last) && !/\d/.test(last)) return last;
   return strip(parts[parts.length - 2]!) || null;
 }
 

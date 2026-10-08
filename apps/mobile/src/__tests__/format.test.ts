@@ -16,7 +16,9 @@ describe("field app formatting", () => {
   it("finds the town in a site address", () => {
     expect(townFrom("48 Harbor Way, Portland, ME 04101")).toBe("Portland");
     expect(townFrom("220 Ridge Rd, Burlington, VT 05401")).toBe("Burlington");
-    expect(townFrom("Plot 12, Baner Road, Pune 411045")).toBe("Pune");
+    expect(townFrom("Baner Road, Pune 411045")).toBe("Pune");
+    expect(townFrom("Outer Ring Road, Marathahalli, Bengaluru, Karnataka 560037")).toBe("Bengaluru");
+    expect(townFrom("Baner Road, Pune, Maharashtra 411045")).toBe("Pune");
     expect(townFrom("12 High Street\nOxford\nOX1 4AA")).toBe("Oxford");
     expect(townFrom("Just a street")).toBeNull();
     expect(townFrom(null)).toBeNull();

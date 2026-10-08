@@ -2,9 +2,11 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
 import { Platform } from "react-native";
 import { mockRouter, mockScreen } from "../test-utils/router-mock";
 import { renderWithSession } from "../test-utils/session";
-import { freezeClock, NOTIFICATIONS, routeRequests } from "../test-utils/fixtures";
+import { freezeClock, NOTIFICATIONS, PENDING, routeRequests } from "../test-utils/fixtures";
 import { NotificationsScreen, NOTIFICATIONS_EMPTY_MESSAGE, NOTIFICATIONS_EMPTY_TITLE } from "../features/notifications/notifications-screen";
 import { BellButton } from "../components/bell-button";
+import { ExpenseScreen } from "../features/expenses/expense-screen";
+import { MeetingScreen } from "../features/meetings/meeting-screen";
 import { badgeText, NOTIFICATIONS_PATH, routeForLink, UNREAD_PATH } from "../lib/data/notifications";
 import type { SessionContextValue } from "../lib/session/session-provider";
 
@@ -79,5 +81,19 @@ describe("US-MOB-22 · see my notifications on the phone", () => {
     expect(NOTIFICATIONS_EMPTY_TITLE).toBe("You're all caught up");
     expect(screen.getByText(NOTIFICATIONS_EMPTY_MESSAGE)).toBeTruthy();
     expect(NOTIFICATIONS_EMPTY_MESSAGE).toBe("Expense decisions, crew changes and meeting invitations show up here.");
+  });
+
+  it("shows skeleton rows, not \"You're all caught up\", while the list first loads (D-201)", async () => {
+    renderWithSession(<NotificationsScreen />, { request: asRequest(routeRequests({ [NOTIFICATIONS_PATH]: PENDING })) });
+    expect((await screen.findByTestId("skeleton-notifications")).props.accessibilityLabel).toBe("Loading notifications");
+    expect(screen.queryByText(NOTIFICATIONS_EMPTY_TITLE)).toBeNull();
+  });
+
+  it("shows the expense's and the meeting's shape while they load", async () => {
+    renderWithSession(<ExpenseScreen id="e-3" />, { request: asRequest(routeRequests({ "/expenses/e-3": PENDING })) });
+    expect((await screen.findByTestId("skeleton-expense")).props.accessibilityLabel).toBe("Loading the expense");
+    screen.unmount();
+    renderWithSession(<MeetingScreen id="meet-1" />, { request: asRequest(routeRequests({ "/meetings/meet-1": PENDING })) });
+    expect(await screen.findByTestId("skeleton-meeting-detail")).toBeTruthy();
   });
 });

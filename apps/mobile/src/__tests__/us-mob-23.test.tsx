@@ -3,7 +3,7 @@ import { Platform } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { mockRouter } from "../test-utils/router-mock";
 import { renderWithSession } from "../test-utils/session";
-import { EXPENSES, freezeClock, HOTEL, MARINA, routeRequests, TOWNHOMES } from "../test-utils/fixtures";
+import { EXPENSES, freezeClock, HOTEL, MARINA, PENDING, routeRequests, TOWNHOMES } from "../test-utils/fixtures";
 import { NO_RESULTS_HINT, SEARCH_HINT, SearchScreen } from "../features/search/search-screen";
 import { highlightParts, searchCache } from "../lib/search/search";
 import { addRecentSearch, getRecentSearches } from "../lib/search/recent-searches";
@@ -138,5 +138,13 @@ describe("US-MOB-23 · search my jobs and my expenses", () => {
     fireEvent.changeText(screen.getByTestId("search-input"), "marina");
     await waitFor(() => expect(screen.getByText("No results for “marina”")).toBeTruthy());
     expect(screen.queryByText(/Jobs ·/)).toBeNull();
+  });
+
+  it("shows skeleton rows, not \"No results\", while nothing is saved on the phone yet (D-201)", async () => {
+    Platform.OS = "android";
+    renderWithSession(<SearchScreen />, { request: asRequest(routeRequests({ ...ROUTES, [JOBS_PATH]: PENDING, [MY_EXPENSES_PATH]: PENDING })) });
+    fireEvent.changeText(screen.getByTestId("search-input"), "marina");
+    expect(await screen.findByTestId("skeleton-search")).toBeTruthy();
+    expect(screen.queryByText(/No results/)).toBeNull();
   });
 });

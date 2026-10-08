@@ -18,6 +18,7 @@ import { useBusinessFormat } from "../../lib/data/business";
 import { calendarDay, daysUntil, dayMonth, weekday, money, oneLine } from "../../lib/format";
 import { highlightParts, searchCache, type ExpenseHit } from "../../lib/search/search";
 import { addRecentSearch, clearRecentSearches, getRecentSearches, removeRecentSearch } from "../../lib/search/recent-searches";
+import { ListRowsSkeleton } from "../../components/skeletons";
 
 export const SEARCH_PLACEHOLDER = "Search jobs and expenses";
 export const SEARCH_HINT = "Find a job by name, customer or address, or one of your expenses by category or description.";
@@ -222,6 +223,12 @@ export function SearchScreen() {
         );
       }}
       ListEmptyComponent={
+        // Nothing saved on the phone yet and the first fetch is out: rows, not "No results".
+        (modules.jobsField && jobs.loading) || expenses.loading ? (
+          <View className="pt-4">
+            <ListRowsSkeleton label="Loading your jobs and expenses" testID="skeleton-search" rows={3} leading trailing="amount" />
+          </View>
+        ) : (
         <EmptyState
           testID="search-empty"
           className="pt-12"
@@ -229,6 +236,7 @@ export function SearchScreen() {
           title={`No results for “${query.trim()}”`}
           description={NO_RESULTS_HINT}
         />
+        )
       }
     />
   );

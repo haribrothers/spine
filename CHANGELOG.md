@@ -80,6 +80,20 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — Field app loading states: skeletons per section (D-201)
+
+- **Skeletons while data loads:** a section with nothing saved on the phone and its first request still out shows blocks in its own shape. Headings and quick actions don't wait. This covers:
+  - Today: the gauge (an arc), the KPI cards, the job cards and the next meeting.
+  - The Jobs list.
+  - A job: the heading, milestones, photos and quotes.
+  - Photos, Notifications, Search, an expense and a meeting.
+  - An empty state ("No jobs…", "You're all caught up", "No results") never shows while loading.
+- **Today's period switch:** switching shows skeletons for the gauge and KPI cards only; the jobs and meeting stay. A period already fetched shows at once from the phone. `useCachedQuery` now keeps its state per key, so the previous period's numbers are never shown for the new one, and a late answer for an old key is ignored. It also returns `loading`.
+- **No page loader** (D-201): the read cache makes most screens instant, a full-page spinner would hide saved data during a slow refresh, and pull to refresh already has the system spinner.
+- **`@spine/ui-native` Skeleton:** holds still with Reduce Motion on, and is hidden from VoiceOver and TalkBack. Each loading region is announced once instead ("Loading jobs", busy). Updated a11y test and doc page.
+- **Fix:** the Jobs list showed the state as the town for addresses ending in "<state> <postcode>" ("Karnataka" instead of "Bengaluru").
+- **Tests:** skeleton cases added to us-mob-03, 04, 05, 22 and 23 (100 phone tests). Checked on the iPhone simulator with requests slowed down for the check.
+
 ### 2026-10-08 — Phase 5 Group 2: Today, Jobs, a job, Search and Notifications (US-JOB-16, US-MOB-03, US-MOB-04, US-MOB-05, US-MOB-06, US-MOB-19, US-MOB-22, US-MOB-23)
 
 - **Today (US-MOB-03):** built like the showcase-native home and `MobHome`/`MobHomeJobs`.

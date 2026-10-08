@@ -1,6 +1,7 @@
 import { ScrollView, Text, View } from "react-native";
 import { Stack } from "expo-router";
 import { EmptyState, Skeleton, StatusChip } from "@spine/ui-native";
+import { CardRowsSkeleton, LoadingRegion } from "../../components/skeletons";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { useBusinessFormat } from "../../lib/data/business";
 import { useAssignedJobs } from "../../lib/data/jobs";
@@ -50,8 +51,14 @@ export function ExpenseScreen({ id }: { id: string }) {
             {e.number ? <Row label="Number" value={e.number} /> : null}
           </View>
         </>
-      ) : expense.status === "loading" ? (
-        <Skeleton className="h-40 w-full rounded-2xl" />
+      ) : expense.loading ? (
+        <>
+          <LoadingRegion label="Loading the expense" testID="skeleton-expense" className="items-center gap-3 py-4">
+            <Skeleton className="h-10 w-40 rounded-md" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </LoadingRegion>
+          <CardRowsSkeleton rows={3} label="Loading the expense details" />
+        </>
       ) : (
         <EmptyState title="This expense isn't available" description="Only your own expenses show on your phone." />
       )}

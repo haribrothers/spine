@@ -10,6 +10,7 @@ import { daysUntil, weekdayDayMonth } from "../../lib/format";
 import { arrivesLater } from "../../lib/later";
 import { SectionHeader } from "../../components/section-header";
 import { PhotoTile } from "./job-detail-screen";
+import { PhotoGridSkeleton } from "../../components/skeletons";
 
 const COLUMNS = 3;
 const GAP = 2;
@@ -58,13 +59,13 @@ export function JobPhotosScreen({ id }: { id: string }) {
             ? {
                 headerTitle: () => (
                   <View>
-                    <Text className="text-[22px] text-on-surface dark:text-on-surface-dark">Photos · {list.length}</Text>
+                    <Text className="text-[22px] text-on-surface dark:text-on-surface-dark">{photos.loading ? "Photos" : `Photos · ${list.length}`}</Text>
                     <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">{subtitle}</Text>
                   </View>
                 ),
               }
             : {
-                title: `Photos · ${list.length}`,
+                title: photos.loading ? "Photos" : `Photos · ${list.length}`,
                 unstable_headerRightItems: () => [{ type: "button" as const, label: "Add photos", icon: { type: "sfSymbol" as const, name: "camera" as const }, accessibilityLabel: "Add photos", onPress: addPhotos }],
               }
         }
@@ -89,7 +90,15 @@ export function JobPhotosScreen({ id }: { id: string }) {
             ))}
           </View>
         )}
-        ListEmptyComponent={photos.data ? <EmptyState title="No photos yet" description="Photos your crew takes on this job show up here, newest first." /> : null}
+        ListEmptyComponent={
+          photos.loading ? (
+            <View className="pt-5">
+              <PhotoGridSkeleton rows={4} columns={COLUMNS} size={tile} gap={GAP} />
+            </View>
+          ) : photos.data ? (
+            <EmptyState title="No photos yet" description="Photos your crew takes on this job show up here, newest first." />
+          ) : null
+        }
       />
       {android ? (
         <Pressable

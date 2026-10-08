@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react-nativ
 import { TextInput } from "react-native";
 import { mockRouter } from "../test-utils/router-mock";
 import { renderWithSession } from "../test-utils/session";
-import { freezeClock, HOTEL, MARINA, routeRequests, THURSDAY, TOWNHOMES } from "../test-utils/fixtures";
+import { freezeClock, HOTEL, MARINA, PENDING, routeRequests, THURSDAY, TOWNHOMES } from "../test-utils/fixtures";
 import { JobsListScreen, JOBS_EMPTY_MESSAGE, JOBS_EMPTY_TITLE, JOBS_FOOTNOTE } from "../features/jobs/jobs-list-screen";
 import { jobMilestoneChip } from "../features/jobs/milestone-chip";
 import { JOBS_PATH } from "../lib/data/jobs";
@@ -58,5 +58,11 @@ describe("US-MOB-04 · browse my assigned jobs", () => {
 
   it("shows no chip for a job without milestones yet", () => {
     expect(jobMilestoneChip({ ...HOTEL, milestoneCounts: { total: 0, completed: 0 } }, "en-US", THURSDAY)).toBeNull();
+  });
+
+  it("shows skeleton rows, not the empty state, while the list first loads (D-201)", async () => {
+    renderWithSession(<JobsListScreen />, { request: asRequest(routeRequests({ [JOBS_PATH]: PENDING })) });
+    expect((await screen.findByTestId("skeleton-jobs")).props.accessibilityLabel).toBe("Loading your jobs");
+    expect(screen.queryByText(JOBS_EMPTY_TITLE)).toBeNull();
   });
 });

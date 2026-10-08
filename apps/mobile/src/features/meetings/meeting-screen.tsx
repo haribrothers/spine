@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import CalendarClock from "lucide-react-native/icons/calendar-clock";
 import MapPin from "lucide-react-native/icons/map-pin";
 import { EmptyState, Skeleton, useNativeColors } from "@spine/ui-native";
+import { LoadingRegion } from "../../components/skeletons";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { useBusinessFormat } from "../../lib/data/business";
 import type { Meeting } from "../../lib/data/meetings";
@@ -40,8 +41,12 @@ export function MeetingScreen({ id }: { id: string }) {
           ) : null}
           {m.description ? <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">{m.description}</Text> : null}
         </View>
-      ) : meeting.status === "loading" ? (
-        <Skeleton className="h-32 w-full rounded-2xl" />
+      ) : meeting.loading ? (
+        <LoadingRegion label="Loading the meeting" testID="skeleton-meeting-detail" className="gap-4 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
+          <Skeleton className="h-7 w-3/4 rounded-md" />
+          <Skeleton className="h-4 w-2/3 rounded-md" />
+          <Skeleton className="h-4 w-1/2 rounded-md" />
+        </LoadingRegion>
       ) : (
         <EmptyState title="This meeting isn't available" description="It may have been cancelled, or you're no longer invited." />
       )}
