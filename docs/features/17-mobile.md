@@ -38,8 +38,8 @@ Legacy: S-11.1 · Decision: D-049
 - **Given** valid details, **when** I sign in, **then** I land on Today.
 
 **Implementation notes**
-- API: Better Auth sign-in; session token stored with expo-secure-store; sent as Bearer (D-016).
-- UI: `@expo/ui` text fields; Android uses outlined Material fields.
+- API: Better Auth sign-in (`POST <api>/api/auth/sign-in/email`), keeping the bearer token from `set-auth-token`; stored with expo-secure-store; sent as Bearer (D-016). The typed address is checked with `GET /health` at `<address>/api`, then at `<address>` (`service: "spine"`); "Forgot password?" opens `<appUrl>/forgot-password`.
+- UI: `FloatingLabelField` rows in a `FormSection`; the password uses its `secureTextEntry` (always the RN text field — `@expo/ui`'s field has no secure mode).
 
 ### US-MOB-02 · Stay signed in and sign out safely
 **Feature:** F-MOB-01 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobProfile`, `MobProfileAndroid`, `MobSignOutConfirm`, `MobSignOutConfirmAndroid`
@@ -55,7 +55,7 @@ Legacy: S-11.1
 - **Given** the sign-out warning, **when** it shows, **then** it explains "<n> site photos and <n> expense are still waiting to sync. Signing out deletes them from this phone." and offers "Send them first" (opens Sync), "Sign out anyway" (destructive) and "Cancel"; Android shows a Material dialog with "Cancel", "Send first" and "Sign out".
 
 **Implementation notes**
-- API: Better Auth sign-out (revokes the session).
+- API: Better Auth sign-out (revokes the session). A deactivated member's requests answer 403 `ACCESS_REMOVED` everywhere (`ActiveMemberGuard`), and the app signs out with that message. `GET /org/members/me` gives `organizationName` for "Field · <Business>".
 
 ### US-MOB-03 · See today's jobs with addresses and tap-to-call
 **Feature:** F-MOB-02 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobHome`, `MobHomeAndroid`, `MobHomeJobs`, `MobHomeJobsAndroid`

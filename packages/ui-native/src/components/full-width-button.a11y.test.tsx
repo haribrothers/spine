@@ -158,4 +158,18 @@ describe("FullWidthButton a11y — on Android (unchanged: real @expo/ui/jetpack-
     const pill = render(<FullWidthButton label="Save" onPress={() => {}} />);
     expect(findNativeButtonNode(pill).props.shape).toBeUndefined();
   });
+
+  it("fills with the exact Spine colours, not a Material-derived tone (US-MOB-20)", () => {
+    const primary = render(<FullWidthButton label="Sign in" onPress={() => {}} />);
+    expect(findNativeButtonNode(primary).props.colors).toEqual({ containerColor: "#2954E5", contentColor: "#FFFFFF" });
+    primary.unmount();
+    const danger = render(<FullWidthButton label="Sign out" onPress={() => {}} variant="danger" />);
+    expect(findNativeButtonNode(danger).props.colors).toEqual({ containerColor: "#B3261E", contentColor: "#FFFFFF" });
+  });
+
+  it("passes testID through as a Compose test tag so UI tests can find it", () => {
+    const root = render(<FullWidthButton label="Sign in" onPress={() => {}} testID="sign-in-submit" />);
+    const modifiers = findNativeButtonNode(root).props.modifiers as Array<Record<string, unknown>>;
+    expect(modifiers.some((m) => m.$type === "testID")).toBe(true);
+  });
 });

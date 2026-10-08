@@ -2,7 +2,7 @@
   "expo": {
     "name": "Spine",
     "slug": "spine-mobile",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -19,11 +19,18 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": true
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "plugins": ["expo-secure-store"]
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "extra": {
+      "storeLinks": {
+        "ios": "https://apps.apple.com/app/spine",
+        "android": "https://play.google.com/store/apps/details?id=com.spine.app"
+      }
+    }
   }
 }

@@ -1,6 +1,10 @@
+import { Platform } from "react-native";
 import { SegmentedControl as ExpoSegmentedControl } from "@expo/ui/community/segmented-control";
+import { Host } from "@expo/ui";
+import { SegmentedButton, SingleChoiceSegmentedButtonRow, Text as ComposeText } from "@expo/ui/jetpack-compose";
+import { testID as testIDModifier } from "@expo/ui/jetpack-compose/modifiers";
 import type { StyleProp, ViewStyle } from "react-native";
-import { useNativeColors } from "../theme/use-native-colors";
+import { useNativeColors, useNativeHostTheme } from "../theme/use-native-colors";
 
 /**
  * `@expo/ui/community/segmented-control`'s real, genuinely native component
@@ -40,7 +44,37 @@ export interface SegmentedControlProps {
 
 export function SegmentedControl({ values, value, onValueChange, disabled = false, style, testID }: SegmentedControlProps) {
   const colors = useNativeColors();
+  const hostTheme = useNativeHostTheme();
   const selectedIndex = values.indexOf(value);
+
+  // Android: the community control only sets the selected container colour,
+  // leaving Material's default ink on it — the selected label read at about
+  // 2:1 on a real device (Phase 5, US-MOB-20). Spine's tonal pair instead:
+  // info-bg behind primary text (4.5:1+ in both modes), the Material 3
+  // "secondary container" look the Android designs use.
+  if (Platform.OS === "android") {
+    const segmentColors = {
+      activeContainerColor: colors.infoBg,
+      activeContentColor: colors.primary,
+      activeBorderColor: colors.borderStrong,
+      inactiveContainerColor: colors.surface,
+      inactiveContentColor: colors.onSurface,
+      inactiveBorderColor: colors.borderStrong,
+    };
+    return (
+      <Host matchContents={{ vertical: true }} style={style} colorScheme={hostTheme.colorScheme}>
+        <SingleChoiceSegmentedButtonRow modifiers={testID ? [testIDModifier(testID)] : undefined}>
+          {values.map((label, index) => (
+            <SegmentedButton key={label} selected={index === selectedIndex} onClick={() => onValueChange(label)} enabled={!disabled} colors={segmentColors}>
+              <SegmentedButton.Label>
+                <ComposeText>{label}</ComposeText>
+              </SegmentedButton.Label>
+            </SegmentedButton>
+          ))}
+        </SingleChoiceSegmentedButtonRow>
+      </Host>
+    );
+  }
 
   return (
     <ExpoSegmentedControl

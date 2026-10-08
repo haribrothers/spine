@@ -4285,8 +4285,33 @@ Use the GST business from section 175.
     - `GET /org/setup-status` answers 403.
 11. Regression: Settings still opens from the user menu and from `?settings=<pane>` links.
 
+## 191. The field app: sign in, Profile, errors (US-MOB-01, US-MOB-02, US-MOB-10, US-MOB-19, US-MOB-20, US-MOB-21, Phase 5)
+
+Run the app on an iPhone simulator and an Android emulator (`pnpm --filter @spine/mobile ios` / `android`, a dev build because of `@expo/ui`). Use the API's own address in development (`http://localhost:4000` on the iOS simulator, `http://10.0.2.2:4000` on the Android emulator). Load the demo business and sign in as Marcus Webb (Field).
+
+1. First launch shows "Sign in to Spine", "Use the email your office invited you with.", Server, Email, Password, "The server address is the link you open Spine with on a computer.", "Sign in", "Forgot password?" and "You stay signed in on this phone until you sign out."
+2. Errors sit under their field:
+   - A server that isn't Spine (e.g. `example.com`): "Can't reach that server. Check the address — it's the link you open Spine with on a computer." under Server.
+   - A wrong password: "Invalid email or password." under Password.
+   - An empty field: a line under that field; nothing is sent.
+3. "Forgot password?" opens the web app's reset page in the phone's browser. With no server typed it asks for the server first.
+4. Sign in. You land on Today: a large title "Today" (iOS) or "Today" headline (Android), "Good morning, Marcus" and "Riverstone Builders · <date>". Tabs: Today, Jobs, Expenses and Search — on iOS Search is the separate round button beside the glass tab bar; on Android it's a fourth tab with labels on every tab. Jobs, Expenses and Search say what they'll hold.
+5. Scroll Today on iOS: the large title collapses into the bar.
+6. Tap the avatar: Profile opens as a sheet (iOS) or a page (Android) with "Marcus Webb", "Field · Riverstone Builders", email, server, Appearance (System, Light, Dark), Sync "All synced", the Field note and "Sign out". Switch Appearance to Dark and back: every screen, the tab bar and the sheet follow it.
+7. Kill the app and reopen it: you're on Today without signing in. Turn the phone's dark mode on: the app follows it (Appearance on System).
+8. Sign out: you're back on Sign in with the server and email filled in; the session no longer works on the server.
+9. As the Owner on the web, deactivate Marcus. In the app, pull Today down to refresh: you're signed out to Sign in with "Your access to Riverstone Builders was removed." Reactivate him and sign in again.
+10. Stop the API with the app open and pull Today down: "Couldn't load your jobs", "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." and "Try again" — no saved-jobs link yet. Start the API and tap "Try again".
+11. Turn on airplane mode and pull Today down: "You're offline" — not "Couldn't load".
+12. Restart the API with `MOBILE_MIN_VERSION=99.0.0` and pull Today down: "Update Spine to keep going", "Your company's Spine server needs a newer version of this app. It only takes a minute." and "Open App Store" / "Open Google Play". Restart without it; reopen the app.
+13. Android: the system back gesture closes Profile like the back arrow; TalkBack reads "Profile, Marcus Webb" on the avatar and a label on every control.
+14. Regression (API, US-TEAM-04): a deactivated member's existing session — web cookie or phone token — gets 403 "Your access to <Business> was removed." from every API route. Other members are unaffected, and reactivating restores access.
+15. Android colours (US-MOB-20): Sign in is Spine blue and Sign out Spine red (not a muted purple or brown); the selected Appearance segment reads clearly in light and dark.
+16. Regression (component docs, US-MOB-21): `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks; the showcase app's Components list has Scroll Edge Mask, and Floating Label Field shows the sign-in (email and password) example.
+
 ## Known gaps — don't file these as bugs
 
+- The field app (Phase 5, D-196) is being rebuilt group by group: Jobs, Expenses and Search say what they'll hold until their stories land, Today has only its welcome card until US-MOB-03, and "Send them first" on the sign-out warning opens Sync once offline sync exists (US-MOB-08). The App Store link is a placeholder until the listing exists.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).

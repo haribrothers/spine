@@ -7,6 +7,8 @@ export function FloatingLabelFieldDemo() {
   const [title, setTitle] = useState("Kitchen extension");
   const [empty, setEmpty] = useState("");
   const [notes, setNotes] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   return (
     <>
@@ -33,6 +35,14 @@ export function FloatingLabelFieldDemo() {
         <DemoPreview>
           <View className="w-full">
             <FloatingLabelField label="Title" required value="" onChangeText={() => {}} error />
+          </View>
+        </DemoPreview>
+      </DemoSection>
+      <DemoSection title="Sign-in fields (email and password)">
+        <DemoPreview>
+          <View className="w-full gap-2">
+            <FloatingLabelField label="Email" value={email} onChangeText={setEmail} keyboardType="email" forceTextField autoCapitalize="none" autoComplete="email" returnKeyType="next" />
+            <FloatingLabelField label="Password" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" returnKeyType="go" />
           </View>
         </DemoPreview>
       </DemoSection>

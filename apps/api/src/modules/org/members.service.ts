@@ -2,7 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable } from "@ne
 import { and, eq, inArray } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { member, user } from "../../db/schema";
+import { member, organization, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 
 export interface MemberRow {
@@ -66,11 +66,13 @@ export class MembersService {
    * link is not access control, but it's still useful UI signal, and every
    * `team/*` page independently re-checks this server-side too.
    */
-  async getMe(orgId: string, userId: string): Promise<MemberRow> {
+  async getMe(orgId: string, userId: string): Promise<MemberRow & { organizationName: string }> {
+    // `organizationName` — US-MOB-02: the field app's Profile shows "Field · <Business>".
     const [row] = await this.db
-      .select(this.memberRowSelection)
+      .select({ ...this.memberRowSelection, organizationName: organization.name })
       .from(member)
       .innerJoin(user, eq(member.userId, user.id))
+      .innerJoin(organization, eq(organization.id, member.organizationId))
       .where(and(eq(member.organizationId, orgId), eq(member.userId, userId)));
     if (!row) {
       throw new BadRequestException("Not a member of this organisation");

@@ -21,6 +21,8 @@
 | Password reset | Email link, single-use, expires in 1 hour; resend after 60 s; responses never reveal whether an account exists; a reset signs out every session, web and phone (US-AUTH-09, US-AUTH-10, [D-056](12-decisions.md)). Requests are limited to 10 per IP per 15 minutes (429) and 3 emails per address per hour (silently; the answer is the same) ([D-119](12-decisions.md)). The token is never logged |
 | Sessions (web) | HTTP-only session cookie (Better Auth); `Secure` when served over HTTPS; lifetime pinned explicitly in `auth.ts` |
 | Sessions (mobile) | Session token in the OS secure store (Keychain / Keystore), sent as Bearer; signing out deletes it and revokes the session |
+| Deactivated members | A deactivated member's sessions stop working for that organisation at once: every signed-in request whose active organisation has them deactivated is 403 `ACCESS_REMOVED`, "Your access to <Business> was removed." (`ActiveMemberGuard`, a global guard ahead of the module and capability guards; US-TEAM-04, US-MOB-02). The field app signs out on it and shows that message. Reactivating restores access |
+| Outdated field apps | The field app sends `X-Spine-Client-Version`; below `MOBILE_MIN_VERSION` every request is 426 `CLIENT_TOO_OLD` (`ClientVersionGuard`, D-071, US-MOB-10). Requests without the header (the web app, scripts) are never affected |
 | Customer | Public quote token: random, unguessable, one quote, 30-day lifetime, rate-limited 20/min/IP ([D-032](12-decisions.md)) |
 | 2FA | Not in 1.0; planned for v1.1 ([Q-08](13-risks-open-questions.md), [16-roadmap](16-roadmap.md)) |
 

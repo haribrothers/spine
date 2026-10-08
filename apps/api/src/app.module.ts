@@ -1,4 +1,6 @@
 import { ModuleGuard } from "./auth/module.guard";
+import { ActiveMemberGuard } from "./auth/active-member.guard";
+import { ClientVersionGuard } from "./common/client-version.guard";
 import { Module } from "@nestjs/common";
 import { APP_FILTER, APP_GUARD } from "@nestjs/core";
 import { ZodExceptionFilter } from "./common/zod-exception.filter";
@@ -97,6 +99,10 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     // runs first and populates request.session before this guard reads it
     // — see CapabilityGuard's own doc comment for the full reasoning.
     // US-SET-24: a switched-off module's routes answer MODULE_OFF before any capability check.
+    // D-071 / US-MOB-10: an outdated field app gets 426 before anything else runs.
+    { provide: APP_GUARD, useClass: ClientVersionGuard },
+    // US-TEAM-04 / US-MOB-02: a deactivated member's session answers ACCESS_REMOVED.
+    { provide: APP_GUARD, useClass: ActiveMemberGuard },
     { provide: APP_GUARD, useClass: ModuleGuard },
     { provide: APP_GUARD, useClass: CapabilityGuard },
     // A body that fails its schema is a 400 with a readable message, not a 500.

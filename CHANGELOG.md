@@ -80,6 +80,47 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — Phase 5 Group 1: the new field app, sign in, Profile and errors (US-MOB-01, US-MOB-02, US-MOB-10, US-MOB-21)
+
+- **New app (D-196):** the old React Navigation `apps/mobile` is gone. A new expo-router app was generated with `scripts/create-native-app.mjs`, built the way `apps/showcase-native` is:
+  - Native tabs Today, Jobs and Expenses, plus Search (the iOS search tab, a fourth tab on Android).
+  - A large title on each tab, with the avatar opening Profile (a form sheet on iOS, a page on Android).
+  - `Stack.Protected` routing between Sign in, the app and "Update Spine to keep going".
+  - Jobs, Expenses and Search say what they'll hold until their groups land.
+- **Sign in (US-MOB-01):**
+  - Server, email and password in `FloatingLabelField` rows. Errors sit under their field ("Can't reach that server…", "Invalid email or password.").
+  - The typed address is checked with `GET /health` at `<address>/api`, then at `<address>`.
+  - "Forgot password?" opens the web reset page.
+  - The bearer token from `set-auth-token` is kept in the secure store.
+- **Profile and sign out (US-MOB-02):**
+  - Profile shows the name, "Field · <Business>", email, server, Appearance, Sync, the Field note and Sign out.
+  - Sign out revokes the session. With items waiting, it warns first: an iOS confirmation dialog, or an Android alert with Cancel, Send first and Sign out.
+  - Reopening the app lands on Today without signing in.
+- **Deactivated members (security fix):** a deactivated member's sessions kept working on every route, despite US-TEAM-04. A new global `ActiveMemberGuard` now answers 403 `ACCESS_REMOVED`, "Your access to <Business> was removed.", and the app signs out with that message.
+- **Errors (US-MOB-10):**
+  - The app sends `X-Spine-Client-Version`. A new `ClientVersionGuard` answers 426 `CLIENT_TOO_OLD` below `MOBILE_MIN_VERSION` (new in `.env.example`), and the app shows "Update Spine to keep going" with the store button.
+  - Requests tell offline, "server didn't answer" (`MobError`, "Couldn't load your jobs"), expired and removed apart.
+- **API additions:**
+  - `GET /health` adds `service: "spine"` and `appUrl`.
+  - `GET /org/members/me` adds `organizationName`.
+  - `@spine/shared/mobile` holds the shared header, error codes and version comparison.
+- **Components (US-MOB-21):**
+  - `FloatingLabelField` gains `secureTextEntry`, `autoCapitalize`, `autoComplete`, `returnKeyType` and `onSubmitEditing`, with its a11y test and showcase example.
+  - New Scroll Edge Mask demo.
+  - New `check-doc-coverage.mjs` (run by `@spine/ui-native`'s tests) fails when a component has no doc screen. 29/29 are documented.
+- **Tests:**
+  - Story Jest tests in `apps/mobile/src/__tests__` (36).
+  - API integration tests `us-mob-01`, `us-mob-02` and `us-mob-10` (real HTTP with bearer sign-in).
+  - Shared tests `us-mob-02` and `us-mob-10`.
+- **Run on devices:** built for the iPhone 17 simulator and the Pixel 9 emulator. `apps/mobile/e2e/us-mob-01-sign-in.yaml` passes on both: wrong password, sign in, reopen still signed in, Profile, sign out. "Couldn't load your jobs" was checked by stopping the API. Fixes found on the devices:
+  - Requests now omit cookies; a stored session cookie broke the second sign-in.
+  - Profile's iOS sheet uses the stack's own header, with the scroll view as its root.
+  - A rate-limited sign-in says "Too many sign-in attempts. Wait a minute, then try again."
+  - `@spine/ui-native` on Android: `Button`, `FullWidthButton` and `SegmentedControl` now use exact Spine colours instead of a Material-derived tone, and pass `testID` as a Compose test tag (with a11y tests).
+  - `expo-system-ui` added so Android follows dark mode.
+  - In development, `EXPO_PUBLIC_DEFAULT_SERVER` pre-fills the Server field.
+- **Still open:** US-MOB-19 and US-MOB-20 stay open until Today and job detail are built (Group 2), since their dark-mode and Android criteria are about those screens.
+
 ### 2026-10-08 — US-MOB-23 and Today redrawn like the showcase-native home (planning)
 
 - **Today:** follows `apps/showcase-native`'s home:

@@ -1,5 +1,7 @@
 import { Platform } from "react-native";
 import { Button as ExpoButton, Host } from "@expo/ui";
+import { Button as ComposeButton, OutlinedButton, TextButton, Text as ComposeText } from "@expo/ui/jetpack-compose";
+import { testID as testIDModifier } from "@expo/ui/jetpack-compose/modifiers";
 import { buttonBorderShape, controlSize as iosControlSize } from "@expo/ui/swift-ui/modifiers";
 import { useNativeHostTheme, useNativeColors } from "../theme/use-native-colors";
 
@@ -108,6 +110,30 @@ export function Button({ variant = "primary", disabled = false, onPress, childre
   // content, not a plain string — jest-expo's mock render never caught
   // this, since it doesn't perform real native-view reconciliation.
   const isPlainString = typeof children === "string";
+
+  // Android: Compose's own buttons with exact Spine colours (D-099). The
+  // universal Button has no colour props on Android, and a Host seed colour
+  // alone lets Material derive a muted tonal palette instead of primary /
+  // overdue (seen on a real device, Phase 5, US-MOB-20).
+  if (Platform.OS === "android") {
+    const expoUiVariant = VARIANT_TO_EXPO_UI_VARIANT[variant];
+    const fill = seedColor ?? colors.primary;
+    const AndroidButton = expoUiVariant === "filled" ? ComposeButton : expoUiVariant === "outlined" ? OutlinedButton : TextButton;
+    const androidColors =
+      expoUiVariant === "filled" ? { containerColor: fill, contentColor: variant === "danger" ? colors.onDanger : colors.onPrimary } : { contentColor: fill };
+    return (
+      <Host matchContents colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
+        <AndroidButton
+          onClick={disabled ? undefined : onPress}
+          enabled={!disabled}
+          colors={androidColors}
+          modifiers={testID ? [testIDModifier(testID)] : undefined}
+        >
+          {isPlainString || children === undefined ? <ComposeText>{isPlainString ? (children as string) : (label ?? "")}</ComposeText> : children}
+        </AndroidButton>
+      </Host>
+    );
+  }
 
   const iosModifiers =
     Platform.OS === "ios"

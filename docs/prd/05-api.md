@@ -38,11 +38,11 @@ NestJS REST API in `apps/api`. OpenAPI document at `/api/docs` (Swagger UI) — 
 |---|---|---|
 | 400 | Validation failed; business rule broken (e.g. "This quote's discount requires owner approval before it can be sent", "falls within a closed fiscal period", percentages ≠ 100) | `{ statusCode, message, error }` or Zod `issues` |
 | 401 | No or expired session | `{ statusCode: 401 }` |
-| 403 | Role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) or an AI feature is off (`AI_FEATURE_OFF`, US-AI-03) | `{ statusCode: 403, message, error? }` |
+| 403 | The caller's membership was deactivated (`error: "ACCESS_REMOVED"`, message "Your access to <Business> was removed.", on every route; US-TEAM-04, US-MOB-02); role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) or an AI feature is off (`AI_FEATURE_OFF`, US-AI-03) | `{ statusCode: 403, message, error? }` |
 | 404 | Record not in this organisation | `{ statusCode: 404 }` |
 | 409 | Idempotency key in flight; repeat quote conversion in `warn` mode (body lists existing jobs/invoices; retry with `confirm: true`); unique conflict | `{ statusCode: 409, message, existing? }` |
 | 413 | Upload over 10 MB | |
-| 426 | Mobile client older than the server's minimum (`X-Spine-Client-Version` header below `MOBILE_MIN_VERSION`); Phase 5 ([D-071](12-decisions.md)) | `{ statusCode: 426, error: "CLIENT_TOO_OLD" }` |
+| 426 | Mobile client older than the server's minimum (`X-Spine-Client-Version` header below `MOBILE_MIN_VERSION`); Phase 5 ([D-071](12-decisions.md), US-MOB-10) | `{ statusCode: 426, error: "CLIENT_TOO_OLD", message: "Update Spine to keep going", minimumVersion }` |
 | 429 | Rate limit on public routes | |
 | 500 | Unexpected; logged with a request id | `{ statusCode: 500, requestId }` |
 
@@ -164,7 +164,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/health` | Public | — |
+| GET | `/health` → `{ status: "ok", service: "spine", appUrl }` — the field app checks a typed address is a Spine server and opens "Forgot password?" at `appUrl` (US-MOB-01) | Public | — |
 
 ### Invoices — `/invoices`
 
@@ -273,7 +273,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | PUT | `/org/members/:id/promote` | roles: owner | Yes |
 | PUT | `/org/members/:id/reactivate` | roles: owner | Yes |
 | GET | `/org/members/:id/teams` | roles: owner | — |
-| GET | `/org/members/me` | Any member | — |
+| GET | `/org/members/me` → the caller's member row plus `organizationName` (the field app's Profile, US-MOB-02) | Any member | — |
 | GET | `/org/members/me/capabilities` | Any member | — |
 | POST | `/org/members/transfer-primary-owner` | roles: owner | Yes |
 | GET | `/org/numbering` | Any member | — |

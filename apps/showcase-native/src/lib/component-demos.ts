@@ -7,6 +7,7 @@ import { CardDemo } from "../components/demos/card-demo";
 import { ContextMenuDemo } from "../components/demos/context-menu-demo";
 import { DateTimePickerDemo } from "../components/demos/date-time-picker-demo";
 import { DividerDemo } from "../components/demos/divider-demo";
+import { ScrollEdgeMaskDemo } from "../components/demos/scroll-edge-mask-demo";
 import { EmptyStateDemo } from "../components/demos/empty-state-demo";
 import { FloatingLabelFieldDemo } from "../components/demos/floating-label-field-demo";
 import { FormRowDemo } from "../components/demos/form-row-demo";
@@ -45,6 +46,7 @@ export const COMPONENT_DEMOS: Record<string, React.ComponentType> = {
   "floating-label-field": FloatingLabelFieldDemo,
   "form-row": FormRowDemo,
   divider: DividerDemo,
+  "scroll-edge-mask": ScrollEdgeMaskDemo,
   stepper: StepperDemo,
   card: CardDemo,
   badge: BadgeDemo,

@@ -211,8 +211,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-QUO-20 · Show how a quote was accepted
 - [x] US-JOB-15 · Assign crew to a job
 - [ ] US-JOB-16 · Show field crew only their assigned jobs
-- [ ] US-MOB-01 · Sign in to my company's Spine on my phone
-- [ ] US-MOB-02 · Stay signed in and sign out safely
+- [x] US-MOB-01 · Sign in to my company's Spine on my phone
+- [x] US-MOB-02 · Stay signed in and sign out safely
 - [ ] US-MOB-03 · See today's jobs with addresses and tap-to-call
 - [ ] US-MOB-04 · Browse my assigned jobs
 - [ ] US-MOB-05 · Open a job's details on site
@@ -220,7 +220,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-MOB-07 · Keep working when there's no signal
 - [ ] US-MOB-08 · See what's waiting to sync
 - [ ] US-MOB-09 · Send each item exactly once and fix failures
-- [ ] US-MOB-10 · Show a clear error when the server can't be reached
+- [x] US-MOB-10 · Show a clear error when the server can't be reached
 - [ ] US-MOB-11 · Take site photos tagged to a job, even offline
 - [ ] US-MOB-12 · See my expenses and their status
 - [ ] US-MOB-13 · Submit an expense with a receipt photo
@@ -231,7 +231,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [ ] US-MOB-18 · Require a connection to accept a quote
 - [ ] US-MOB-19 · Run the field app on native tabs
 - [ ] US-MOB-20 · Give Android users a designed Material 3 app
-- [ ] US-MOB-21 · Document every native component in a showcase app
+- [x] US-MOB-21 · Document every native component in a showcase app
 - [ ] US-MOB-22 · See my notifications on the phone
 - [ ] US-MOB-23 · Search my jobs and my expenses
 

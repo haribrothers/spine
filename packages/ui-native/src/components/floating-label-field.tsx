@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Animated, Platform, View, type TextInput } from "react-native";
+import { Animated, Platform, View, type TextInput, type TextInputProps } from "react-native";
 import { TextField } from "./text-field";
 import { NativeTextField, type NativeTextFieldProps } from "./native-text-field";
 import { useNativeColors } from "../theme/use-native-colors";
@@ -29,6 +29,20 @@ export interface FloatingLabelFieldProps {
   onFocus?: () => void;
   onBlur?: () => void;
   testID?: string;
+  /**
+   * US-MOB-01 — hides what's typed (a password). `@expo/ui`'s native text
+   * field has no secure mode, so a secure field always takes the RN
+   * `TextField` branch, on iOS too.
+   */
+  secureTextEntry?: boolean;
+  /** Passed to the RN `TextField` branch (Android, `forceTextField`, `secureTextEntry`): e.g. `"none"` for an email or a server address. */
+  autoCapitalize?: TextInputProps["autoCapitalize"];
+  /** Passed to the RN `TextField` branch so the OS can offer saved credentials (`"email"`, `"current-password"`, `"url"`). */
+  autoComplete?: TextInputProps["autoComplete"];
+  /** Passed to the RN `TextField` branch: the keyboard's return key (`"next"`, `"go"`, `"done"`). */
+  returnKeyType?: TextInputProps["returnKeyType"];
+  /** Passed to the RN `TextField` branch: fires when the return key is pressed. */
+  onSubmitEditing?: () => void;
 }
 
 const RESTING_TOP = 18;
@@ -130,6 +144,11 @@ export function FloatingLabelField({
   onFocus,
   onBlur,
   testID,
+  secureTextEntry = false,
+  autoCapitalize,
+  autoComplete,
+  returnKeyType,
+  onSubmitEditing,
 }: FloatingLabelFieldProps) {
   const colors = useNativeColors();
   const [isFocused, setIsFocused] = useState(false);
@@ -155,7 +174,7 @@ export function FloatingLabelField({
     ],
   };
 
-  const useNativeField = Platform.OS === "ios" && !forceTextField;
+  const useNativeField = Platform.OS === "ios" && !forceTextField && !secureTextEntry;
 
   return (
     <View className={multiline ? "w-full" : "h-full w-full justify-center"}>
@@ -239,6 +258,12 @@ export function FloatingLabelField({
           }
           variant="row"
           accessibilityLabel={label}
+          secureTextEntry={secureTextEntry}
+          autoCapitalize={autoCapitalize}
+          autoCorrect={autoCapitalize === "none" ? false : undefined}
+          autoComplete={autoComplete}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
           testID={testID}
           textAlignVertical="top"
           className={multiline ? "h-24 pt-7 pb-2" : "h-14 pt-7 pb-1"}

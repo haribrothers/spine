@@ -14,7 +14,7 @@
   "scripts": {
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "jest && node scripts/check-a11y-coverage.mjs"
+    "test": "jest && node scripts/check-a11y-coverage.mjs && node scripts/check-doc-coverage.mjs"
   },
   "dependencies": {
     "@expo/ui": "57.0.16",
