@@ -33,6 +33,7 @@ import { FilesModule } from "./modules/files/files.module";
 import { NotificationsModule } from "./modules/notifications/notifications.module";
 import { AuditModule } from "./modules/audit/audit.module";
 import { DemoDataModule } from "./modules/demo-data/demo-data.module";
+import { SetupModule } from "./modules/setup/setup.module";
 import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { DataExportModule } from "./modules/data-export/data-export.module";
 import { SearchModule } from "./modules/search/search.module";
@@ -83,6 +84,7 @@ import { PdfModule } from "./modules/pdf/pdf.module";
     NotificationsModule,
     AuditModule,
     DemoDataModule,
+    SetupModule,
     DashboardModule,
     DataExportModule,
     SearchModule,

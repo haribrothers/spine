@@ -395,8 +395,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 ## Phase 9 · Tax, documents and setup
 
 - [x] US-ONB-14 · Start with the modules my industry needs
-- [ ] US-ONB-15 · Open a setup page that shows what's left
-- [ ] US-ONB-16 · Go from each setup card to its setting and its guide
+- [x] US-ONB-15 · Open a setup page that shows what's left
+- [x] US-ONB-16 · Go from each setup card to its setting and its guide
 - [x] US-ONB-17 · Keep demo data out of my real numbers and books
 - [x] US-ONB-18 · Choose the country and industry of the demo business
 - [x] US-ONB-19 · Explore an Indian GST business

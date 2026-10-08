@@ -278,17 +278,20 @@ Decision: D-154
 **Feature:** F-ONB-06 · **Priority:** P1 · **Phase:** 9 · **Screens:** `SetupSpine`
 **As** a new owner, **I want** one page showing every setup step and whether it's done, **so that** I finish setting up without guessing.
 
-Decision: D-155
+Decisions: D-155, D-194
 
 **Acceptance criteria**
 - **Given** the user menu › "Set up Spine" (Owners only), **when** it opens, **then** cards show "Business details and logo", "Tax", "Chart of accounts", "Opening balances", "Bank and cash accounts", "Payment instructions", "Documents and emails", "Numbering", "Payment reminders", "Modules", "Invite your team", "Email sending", "Backups" and "Field app", each "Done" or "To do" with one line on why it matters.
-- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done".
-- **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick; "Mark as not needed" hides a card for this organisation.
+- **Given** the cards, **when** progress shows, **then** the header reads "<n> of <m> done". Backups isn't counted until Spine can check it (Phase 10); its card says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.". Field app only shows while Jobs & field is on.
+- **Given** demo data is loaded, **when** the page opens, **then** it says "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own." and the cards count the demo's settings as they stand.
+- **Given** a card's state, **when** the data changes (e.g. opening balances locked), **then** it shows "Done" without a manual tick (D-194 lists what each card checks); "Mark as not needed" moves a card to "Not needed" for this organisation, where "Show again" brings it back.
 - **Given** the dashboard's setup checklist, **when** its three steps are done, **then** it shows "Finish setting up Spine — <n> left" linking here until every card is done or hidden.
 - **Given** a Staff or Field user, **when** they open the page, **then** they see the no-access page.
 
 **Implementation notes**
-- API: `GET /org/setup-status` (roles: owner) → `[{ key, done, hidden }]`; `PUT /org/setup-status/:key/hidden`.
+- API: `GET /org/setup-status` (roles: owner) → `{ cards: [{ key, done: boolean | null, hidden }], demoLoaded }`; `PUT /org/setup-status/:key/hidden { hidden }` (the same shape back); `GET /dashboard/checklist` gains `setupLeft`.
+- Shared: `SETUP_CARDS` (title, line, target, guide) and `setupProgress` in `schemas/setup.ts`.
+- UI: `/setup` (`SetupView`); the user menu's "Set up Spine"; the checklist's "Finish setting up Spine — <n> left".
 
 ### US-ONB-16 · Go from each setup card to its setting and its guide
 **Feature:** F-ONB-06 · **Priority:** P2 · **Phase:** 9 · **Screens:** `SetupSpine`
@@ -300,7 +303,8 @@ Decision: D-155
 - **Given** "Email sending" or "Backups", **when** they're not configured, **then** the card explains it's set by whoever runs the server and links to the self-hosting guide.
 
 **Implementation notes**
-- Card targets are routes in the web app; guide links come from the help map (US-SITE-11), behind a feature flag until Phase 10.
+- Card targets are in `SETUP_CARDS`: a Settings pane opens over the page (closing it re-reads the cards), or Banking, Opening balances or Team › Users opens. Email sending and Backups link to the README's self-hosting section until the docs site ships (Q-15).
+- "How it works" links to each card's bundled guide page, behind `FEATURE_FLAGS.bundledHelp` (`packages/shared/src/feature-flags.ts`) until Phase 10.
 
 ### US-ONB-17 · Keep demo data out of my real numbers and books
 **Feature:** F-ONB-04 · **Priority:** P1 · **Phase:** 9 · **Screens:** `OnbWelcome`, `SettingsDemoData`

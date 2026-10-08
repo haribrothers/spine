@@ -14,7 +14,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@spine/ui";
-import { ChevronDown, Laptop, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
+import { ChevronDown, Laptop, ListChecks, LogOut, Moon, Settings, Sun, UserCircle } from "lucide-react";
 import { useTheme } from "next-themes";
 import { authClient } from "../lib/auth-client";
 import { SettingsDialog } from "./settings-dialog";
@@ -135,6 +135,13 @@ export function AppUserMenu({
             <DropdownMenuItem onSelect={() => setSettingsOpen(true)}>
               <Settings size={14} className="mr-2" />
               Settings
+            </DropdownMenuItem>
+          )}
+          {/* US-ONB-15 — Owners only, like Settings. */}
+          {isOwner && (
+            <DropdownMenuItem onSelect={() => router.push("/setup")}>
+              <ListChecks size={14} className="mr-2" />
+              Set up Spine
             </DropdownMenuItem>
           )}
           <div className="px-2 py-1.5">

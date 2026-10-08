@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-08 — US-ONB-15, US-ONB-16: Set up Spine (Phase 9)
+
+- **Set up Spine** (user menu, Owners only):
+  - One page with 14 cards — business details, tax, chart of accounts, opening balances, bank and cash accounts, payment instructions, documents and emails, numbering, payment reminders, modules, team, email sending, backups and field app.
+  - Each card says why it matters, and whether it's "Done" or "To do", worked out from your data (D-194).
+  - "Done <n> of <m>", "To do" and "Not needed" counts and a progress bar sit at the top.
+- **Each card goes where you set it up:**
+  - Settings opens over the page, and closing it re-reads the cards.
+  - Banking, Opening balances or Team › Users open as pages.
+  - Email sending and Backups are set by whoever runs the server, so they link to the self-hosting guide.
+- **Marking a card not needed** moves it to a "Not needed" list, where "Show again" brings it back.
+- **Backups** isn't counted until Phase 10 can check it.
+- **Field app** only shows while Jobs & field is on.
+- **With demo data loaded,** the page says so and counts the demo's settings as they stand.
+- **Dashboard:** once its three first steps are done, "Get started" becomes "Finish setting up Spine — <n> left" until every card is done or not needed.
+- **For developers:**
+  - `GET /org/setup-status`, `PUT /org/setup-status/:key/hidden`, and `setupLeft` on `GET /dashboard/checklist`.
+  - `SETUP_CARDS` in `@spine/shared`.
+  - `packages/shared/src/feature-flags.ts` (D-068) arrives with `bundledHelp` for the Phase 10 "How it works" links.
+
 ### 2026-10-08 — US-ONB-18 fix: loading a demo works on a real install
 
 - **The bug:** "Load demo business" failed near the end with "You don't have permission to do that. If you need to, ask an owner.". A second try then said "Demo data is already loaded."

@@ -4247,8 +4247,47 @@ Use the GST business from section 175.
    - The new-build stage payment is zero-rated.
 4. United Kingdom × Trades: mobility aids are at VAT 5%.
 
+## 190. Set up Spine (US-ONB-15, US-ONB-16, Phase 9)
+
+1. As a new Owner, open the user menu and choose "Set up Spine". The page shows:
+   - "Done 0 of 13" (1 of 13 if the server has SMTP set up), "To do" and "Not needed 0", and a progress bar.
+   - 14 cards in order, from "Business details and logo" to "Field app", each with its line.
+   - Backups has no chip, and says "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.".
+   - No "How it works" links (they come with the bundled guide in Phase 10).
+2. Business details and logo → "Set up":
+   - Settings opens on Business profile, over the page.
+   - Enter a name and address, save and close. You're back on Set up Spine, the card says "Done" and its button reads "Review".
+3. Check the other cards turn Done from real data:
+   - Tax: choose a country (India also needs a GSTIN and state).
+   - Chart of accounts: add an account or rename one.
+   - Opening balances: lock them.
+   - Bank and cash accounts: add an account, or rename the bank account.
+   - Payment instructions: add bank details or a UPI ID.
+   - Documents and emails: save any document or email setting.
+   - Numbering: set a starting number.
+   - Payment reminders: switch them on.
+   - Modules: save Settings › Modules.
+   - Invite your team: invite someone.
+   - Field app: add a Field user.
+4. Bank and cash accounts → "Set up" opens Banking. Opening balances opens Opening balances. Invite your team opens Team › Users.
+5. Email sending and Backups → "Read the guide" opens the README's self-hosting section in a new tab.
+6. Field app disappears when Jobs & field is switched off.
+7. "Mark as not needed" on Payment reminders:
+   - The card moves to "Not needed" and the counts change ("of 12").
+   - "Show again" brings it back.
+8. Load demo data on a fresh business. The page says "Demo data is loaded — these reflect the demo business. Delete it in Settings › Data to set up your own.", and Business, Tax and Modules show Done.
+9. Dashboard:
+   - With a customer, an item and a sent quote of your own, "Get started" becomes "Finish setting up Spine — <n> left" with "Set up Spine".
+   - When every card is done or not needed, the card goes away.
+10. As Staff or Field:
+    - There's no "Set up Spine" in the user menu.
+    - `/setup` shows "Set up Spine is only available to owners."
+    - `GET /org/setup-status` answers 403.
+11. Regression: Settings still opens from the user menu and from `?settings=<pane>` links.
+
 ## Known gaps — don't file these as bugs
 
+- Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 10 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).
 

@@ -139,7 +139,9 @@ Shows: "Setup — tax country — Spine" · "Business" · "Template" · "Currenc
 
 ![SetupSpine](screens/SetupSpine.webp)
 
-Links to: —
+Links to: the Settings panes, `Banking`, `OpeningBalances`, `TeamUsers`
+
+As built (D-194): Backups shows no Done/To do chip and "Spine can't check backups yet — whoever runs the server sets them up. Not counted below.", so the drawn "8 of 14" reads "8 of 13"; hidden cards move to a "Not needed" list with "Show again"; "How it works" is hidden until Phase 10; a loaded demo adds the note "Demo data is loaded — …" above the counts.
 
 Shows: "Set up Spine — Spine" · "Set up Spine" · "Everything a new business sets up, in one place. Owners only." · "Done" · "8 of 14" · "To do" · "6" · "Not needed" · "0" · "Business details and logo" · "Shown on every quote, invoice and email." · "Review" · "How it works" · "Mark as not needed" · "Tax" · "Your country's rates, and GST details in India." · "Chart of accounts" · "Add the income and expense accounts you report on." · "Opening balances" · "What you had on the day you started — so the Balance Sheet is right." · "Set up" · "Bank and cash accounts" · "Record money where it really is, then reconcile." · "Payment instructions" · "How customers pay you — bank details and UPI ID." · "Documents and emails" · "Paper size, terms, signature and the words in your emails." · "Numbering" · "Continue your existing invoice numbers." · "Payment reminders" · "Chase overdue invoices automatically." · "Modules" · "Switch off what you don't use." · "Invite your team" · "Office staff and field crew sign in with their own accounts." · "Email sending" · "Set by whoever runs the server — see the self-hosting guide." · "Read the guide" · "Backups" · "Off-site backups protect your books if the server dies." · "Field app" · "Crews see their jobs and send photos and expenses."
 
