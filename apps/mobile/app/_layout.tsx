@@ -38,6 +38,7 @@ function RootStack() {
           name="milestone-complete"
           options={{ presentation: "formSheet", sheetAllowedDetents: [0.92], sheetGrabberVisible: true, headerShown: Platform.OS === "ios", headerStyle: { backgroundColor: colors.surface } }}
         />
+        <Stack.Screen name="quote" options={{ presentation: "fullScreenModal", headerShown: false }} />
         <Stack.Screen name="expense-new" options={{ presentation: Platform.OS === "ios" ? "modal" : "card", headerShown: true, headerStyle: { backgroundColor: colors.background } }} />
         </Stack.Protected>
         <Stack.Protected guard={!updateRequired && !signedIn}>

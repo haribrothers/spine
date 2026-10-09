@@ -11,8 +11,6 @@ import { NEXT_MEETINGS_PATH } from "../lib/data/meetings";
 import { useTabHeaderOptions } from "../components/header-items";
 import type { SessionContextValue } from "../lib/session/session-provider";
 
-jest.mock("../lib/later", () => ({ arrivesLater: jest.fn() }));
-
 const WEEK = { ...SUMMARY, period: "week" as const, from: "2026-10-05", to: "2026-10-11", milestones: { done: 0, total: 2, due: 1, nextDueDate: "2026-10-10", overdue: 1, oldestOverdueDate: "2026-10-06" }, photos: { taken: 4 }, expenses: { total: "6420", count: 1, awaitingApproval: 1, currency: "USD" } };
 
 function routes(overrides: Record<string, unknown> = {}) {

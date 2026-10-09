@@ -155,6 +155,9 @@ export const quotes = pgTable(
     /** Phase 5 (Mobile, S-11.7) — see quoteAcceptanceMethodEnum's own doc comment above. Both null unless/until this quote is accepted via POST /quotes/:id/accept-in-person specifically (never set by the public-link accept path). */
     acceptanceMethod: quoteAcceptanceMethodEnum("acceptance_method"),
     acceptedByUserId: text("accepted_by_user_id").references(() => user.id, { onDelete: "set null" }),
+    /** US-QUO-19 (D-054) — what an on-site acceptance captured: the customer's signature (a PNG via `POST /files`) and the name they typed. Null for any other acceptance. */
+    signatureFileId: uuid("signature_file_id").references(() => files.id, { onDelete: "set null" }),
+    acceptedSignerName: text("accepted_signer_name"),
     /** US-INV-17 (D-083) — the PDF rendered and stored once, at send/issue; every later download serves these exact bytes. Null on drafts and until the store-issued-pdf job (or the first download) stores it. */
     issuedPdfFileId: uuid("issued_pdf_file_id").references(() => files.id, { onDelete: "set null" }),
     /**

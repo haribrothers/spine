@@ -80,6 +80,34 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Phase 5 Group 5: present a quote on site, accept with a signature or decline (US-QUO-19, US-QUO-20, US-MOB-16, US-MOB-17, US-MOB-18)
+
+- **Present (US-MOB-16):**
+  - "Present" on a job's quote opens it full-screen, read live from the server. It shows "Hand the phone to your customer", the business and address, "QUOTE <number>", "Prepared for", "Valid until", the lines with quantity × price, Subtotal, each tax by name ("Sales Tax (15%)", or CGST and SGST in India), Total and Notes.
+  - At the bottom are "Decline" and "Accept quote".
+  - Decline is a sheet: "<customer> is declining <number> for <total>. <Business>'s office is told straight away.", "Reason (optional)" and a red "Decline quote". Offline it says "Needs a connection — declining can't be saved offline." and the button stays off.
+  - New `POST /quotes/:id/reject-in-person`, which notifies "Quote <number> was declined in person."
+- **Accept (US-MOB-17):**
+  - The customer types their name and signs in the box. The statement names the total, the customer, the business and the staff member present.
+  - "Accept and sign" stays off with a hint ("Type the customer's name to continue." / "Sign in the box to continue.") until both are there.
+  - "Quote accepted" then shows who signed and when, that the office was told and the quote is locked, the witness, and "In person, on this phone".
+  - The quote leaves the job's "Quotes to present" straight away.
+  - The signature is drawn and encoded as a PNG on the phone, with no new native module (D-202). The accept screen turns off the swipe-back gesture so a signature isn't taken as "back".
+- **Needs a connection (US-MOB-18):** offline, "Present" shows "Quotes need a connection" with why, "Photos, expenses and milestone updates still work offline.", "Try again" and "Back to job". On Android this is an alert over the job.
+- **Signature stored (US-QUO-19):**
+  - `quotes.signature_file_id` and `accepted_signer_name` (migration `0110`).
+  - `signerName` is required.
+  - The signature must be an image the caller uploaded in the organisation.
+  - The signature file is read by Owners and Staff with the quote, never by Field.
+  - Accepting in person now also sends the variation-order "apply it to the job" nudge, as the link does.
+- **Field reaches only quotes to present:** `GET /quotes/:id`, accept and decline in person, for Field, only reach a sent variation order or source quote on a job they're on (404 otherwise, before the status check). Before, Field could accept any sent quote in the organisation by id.
+- **`GET /quotes/:id`** also returns `business`, `taxLines` (tax by named rate, summing to the tax) and `acceptedByName`.
+- **How it was accepted (US-QUO-20):**
+  - The quote page shows "Accepted on site — Signed by <name> on <date> at <time>, witnessed by <name>" with the signature and "View signature full size", or "Accepted online by the customer on <date>".
+  - Declines show the same way, with the reason.
+  - History reads "The customer accepted this quote online" / "<person> recorded the customer's acceptance of this quote on site, signed by <name>".
+- The temporary "arrives in the next update" message for "Present" is gone.
+
 ### 2026-10-09 — Field app: Material outlined fields on Android forms (US-MOB-11, US-MOB-13, US-MOB-15)
 
 - **Android forms now match their designs** (`MobPhotoReviewAndroid`, `MobExpenseNewAndroid`, `MobMilestoneCompleteAndroid`): Material 3 outlined fields with the label in a notch on the outline, no grouped white card. iOS keeps `FormSection`/`FormRow`.

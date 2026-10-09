@@ -15,8 +15,6 @@ import { NEXT_MEETINGS_PATH } from "../lib/data/meetings";
 import type { SessionContextValue } from "../lib/session/session-provider";
 import type { Transport } from "../lib/outbox/send";
 
-jest.mock("../lib/later", () => ({ arrivesLater: jest.fn() }));
-
 const offline = jest.fn(async () => {
   throw new OfflineError();
 }) as unknown as SessionContextValue["request"];

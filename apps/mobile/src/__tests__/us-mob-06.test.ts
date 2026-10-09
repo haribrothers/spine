@@ -24,12 +24,16 @@ describe("US-MOB-06 · keep financial reports off phones", () => {
     expect(sources.filter((file) => FORBIDDEN.test(readFileSync(file, "utf8"))).map(relative)).toEqual([]);
   });
 
-  it("shows money only for my own expenses (Today's card, Search, an expense, my queued expenses on Sync and Fix) — the quote being presented comes with US-MOB-16", () => {
+  it("shows money only for my own expenses (Today's card, Search, an expense, my queued expenses on Sync and Fix) and the quote being presented to the customer (US-MOB-16, US-MOB-17)", () => {
     const formatsMoney = sources.filter((file) => /\bmoney\(/.test(readFileSync(file, "utf8")) && !file.endsWith("lib/format.ts")).map(relative).sort();
     expect(formatsMoney).toEqual([
       "src/features/expenses/expense-screen.tsx",
       "src/features/expenses/expenses-screen.tsx",
       "src/features/expenses/new-expense-screen.tsx",
+      "src/features/quotes/accept-screen.tsx",
+      "src/features/quotes/accepted-screen.tsx",
+      "src/features/quotes/decline-sheet.tsx",
+      "src/features/quotes/present-screen.tsx",
       "src/features/search/search-screen.tsx",
       "src/features/sync/fix-screen.tsx",
       "src/features/today/today-screen.tsx",

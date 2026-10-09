@@ -207,8 +207,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Phase 5 · Mobile field companion
 
-- [ ] US-QUO-19 · Store the signature from an on-site acceptance
-- [ ] US-QUO-20 · Show how a quote was accepted
+- [x] US-QUO-19 · Store the signature from an on-site acceptance
+- [x] US-QUO-20 · Show how a quote was accepted
 - [x] US-JOB-15 · Assign crew to a job
 - [x] US-JOB-16 · Show field crew only their assigned jobs
 - [x] US-MOB-01 · Sign in to my company's Spine on my phone
@@ -226,9 +226,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MOB-13 · Submit an expense with a receipt photo
 - [x] US-MOB-14 · Ask for camera access with a reason
 - [x] US-MOB-15 · Mark a milestone complete from the phone
-- [ ] US-MOB-16 · Present a quote to the customer on my phone
-- [ ] US-MOB-17 · Capture the customer's acceptance and signature
-- [ ] US-MOB-18 · Require a connection to accept a quote
+- [x] US-MOB-16 · Present a quote to the customer on my phone
+- [x] US-MOB-17 · Capture the customer's acceptance and signature
+- [x] US-MOB-18 · Require a connection to accept a quote
 - [x] US-MOB-19 · Run the field app on native tabs
 - [ ] US-MOB-20 · Give Android users a designed Material 3 app
 - [x] US-MOB-21 · Document every native component in a showcase app

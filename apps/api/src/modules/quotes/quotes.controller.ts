@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query, Res, UseInterce
 import { parseEmailOverride } from "../email/email-text";
 import { ApiBody } from "@nestjs/swagger";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
 import type { Response } from "express";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
@@ -11,7 +11,7 @@ import { QuotesService } from "./quotes.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QueueService } from "../queue/queue.service";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
-import { AcceptQuoteInPersonDto } from "./quotes.dto";
+import { AcceptQuoteInPersonDto, RejectQuoteInPersonDto } from "./quotes.dto";
 
 /**
  * Per §2.1's permission table, quotes are NOT "Manage contacts & catalogue"
@@ -62,10 +62,12 @@ export class QuotesController {
     return this.quotesService.enrichEmailQueueJobs(orgId, jobs);
   }
 
+  /** Field reads a quote to present on an assigned job (US-MOB-16), checked in the service. */
   @Get(":id")
+  @OrgRoles(["owner", "staff", "field"])
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
-    return this.quotesService.getOne(orgId, id);
+    return this.quotesService.getDetail(orgId, session.user.id, id);
   }
 
   /** `GET /quotes/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "quote"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
@@ -168,6 +170,18 @@ export class QuotesController {
     const orgId = requireOrgId(session);
     const input = acceptQuoteInPersonSchema.parse(body);
     return this.quotesService.acceptInPerson(orgId, id, session.user.id, input);
+  }
+
+  /** US-MOB-16 — the customer declines on site. Same reach as accept-in-person. */
+  @Post(":id/reject-in-person")
+  @OrgRoles(["owner", "staff", "field"])
+  @RequireCapability("quotes.accept_in_person")
+  @UseInterceptors(IdempotencyInterceptor)
+  @ApiBody({ type: RejectQuoteInPersonDto })
+  async rejectInPerson(@Session() session: UserSession, @Param("id") id: string, @Body() body: unknown) {
+    const orgId = requireOrgId(session);
+    const input = rejectQuoteInPersonSchema.parse(body);
+    return this.quotesService.rejectInPerson(orgId, id, session.user.id, input);
   }
 
   /**

@@ -7,9 +7,6 @@ import { JobDetailScreen } from "../features/jobs/job-detail-screen";
 import { JobPhotosScreen, photosByDay } from "../features/jobs/job-photos-screen";
 import type { SessionContextValue } from "../lib/session/session-provider";
 
-jest.mock("../lib/later", () => ({ arrivesLater: jest.fn() }));
-const { arrivesLater } = jest.requireMock("../lib/later") as { arrivesLater: jest.Mock };
-
 const asRequest = (fn: jest.Mock) => fn as unknown as SessionContextValue["request"];
 const id = MARINA.id;
 const detailRoutes = (overrides: Record<string, unknown> = {}) =>
@@ -27,7 +24,6 @@ describe("US-MOB-05 · open a job's details on site", () => {
     freezeClock();
     jest.spyOn(Linking, "openURL").mockResolvedValue(true);
     mockRouter.push.mockClear();
-    arrivesLater.mockClear();
   });
   afterEach(() => {
     jest.useRealTimers();
@@ -60,7 +56,7 @@ describe("US-MOB-05 · open a job's details on site", () => {
     expect(screen.getByText("QUO-0004 · Additional electrical outlets")).toBeTruthy();
     expect(screen.getByText("Sent Oct 6 · waiting for the customer")).toBeTruthy();
     fireEvent.press(screen.getByTestId("quote-present-q-4"));
-    expect(arrivesLater).toHaveBeenCalledWith("Present");
+    expect(mockRouter.push).toHaveBeenCalledWith({ pathname: "/quote/[id]", params: { id: "q-4", jobId: id } });
   });
 
   it("shows a pending milestone's due date with Mark complete, and a completed one as Completed", async () => {

@@ -15,7 +15,8 @@ import { useFileSource } from "../../lib/data/files";
 import { calendarDay, dayMonth, daysUntil, oneLine, weekdayDayMonth } from "../../lib/format";
 import { initials } from "../../lib/member-display";
 import { callNumber, openDirections } from "../../lib/linking";
-import { arrivesLater } from "../../lib/later";
+import { connectivity } from "../../lib/connectivity";
+import { alertNeedsConnection } from "../quotes/needs-connection";
 import { PillButton } from "../../components/pill-button";
 import { SectionHeader } from "../../components/section-header";
 import { JobStatusChip } from "./job-status";
@@ -104,7 +105,7 @@ export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: 
   );
 }
 
-function QuoteRow({ quote, first, locale }: { quote: QuoteToPresent; first: boolean; locale: string }) {
+function QuoteRow({ quote, first, locale, onPresent }: { quote: QuoteToPresent; first: boolean; locale: string; onPresent: () => void }) {
   const colors = useNativeColors();
   const title = [quote.number, quote.title].filter(Boolean).join(" · ");
   return (
@@ -118,7 +119,7 @@ function QuoteRow({ quote, first, locale }: { quote: QuoteToPresent; first: bool
           {quote.sentAt ? `Sent ${dayMonth(new Date(quote.sentAt), locale)} · ` : ""}waiting for the customer
         </Text>
       </View>
-      <PillButton testID={`quote-present-${quote.id}`} label="Present" accessibilityLabel={`Present ${quote.number ?? "quote"}`} onPress={() => arrivesLater("Present")} />
+      <PillButton testID={`quote-present-${quote.id}`} label="Present" accessibilityLabel={`Present ${quote.number ?? "quote"}`} onPress={onPresent} />
     </View>
   );
 }
@@ -142,6 +143,14 @@ function Group({ children, testID }: { children: React.ReactNode; testID?: strin
  */
 export function JobDetailScreen({ id }: { id: string }) {
   const router = useRouter();
+  // US-MOB-16/18: Present opens the quote live; offline, Android says so over the job (iOS shows it full screen).
+  const present = (quoteId: string) => {
+    if (Platform.OS === "android" && !connectivity.get()) {
+      alertNeedsConnection(() => present(quoteId));
+      return;
+    }
+    router.push({ pathname: "/quote/[id]", params: { id: quoteId, jobId: id } });
+  };
   const colors = useNativeColors();
   const { locale } = useBusinessFormat();
   const listed = useAssignedJobs(false).data?.find((job) => job.id === id) ?? null;
@@ -310,7 +319,7 @@ export function JobDetailScreen({ id }: { id: string }) {
           {(quotes.data ?? []).length ? (
             <Group testID="job-quotes">
               {quotes.data!.map((quote, index) => (
-                <QuoteRow key={quote.id} quote={quote} first={index === 0} locale={locale} />
+                <QuoteRow key={quote.id} quote={quote} first={index === 0} locale={locale} onPresent={() => present(quote.id)} />
               ))}
             </Group>
           ) : quotes.loading ? (

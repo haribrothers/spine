@@ -7,7 +7,19 @@ import { connectivity } from "../lib/connectivity";
 import { discardedFiles, missingFiles, testFiles } from "./outbox";
 
 // Native modules the outbox's file helpers load; tests use `testFiles` instead.
-jest.mock("expo-file-system", () => ({ File: class {}, Directory: class {}, Paths: {} }));
+// Files on the phone: no-ops (tests spy on `File.prototype.write` to see what was written). Like the real one, a File is a Blob, so it goes into FormData.
+jest.mock("expo-file-system", () => ({
+  File: class extends Blob {
+    constructor() {
+      super([]);
+    }
+    create() {}
+    write() {}
+    delete() {}
+  },
+  Directory: class {},
+  Paths: { cache: "cache", document: "document" },
+}));
 jest.mock("expo-image-manipulator", () => ({ manipulateAsync: jest.fn(), SaveFormat: { JPEG: "jpeg" } }));
 
 // `pnpm test` runs every package at once; the default 1 s for findBy/waitFor flakes under that load.

@@ -57,7 +57,7 @@ export type IntegrityProblem = "damaged" | "missing";
 
 /** A record a file belongs to (US-OPS-20). For `job_photo`, `id` is the job's id. */
 export type FileOwner =
-  | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo" | "document_signature"; id: string }
+  | { type: "invoice_pdf" | "credit_note_pdf" | "receipt_pdf" | "quote_pdf" | "job_photo" | "contact_logo" | "contact_person_photo" | "user_avatar" | "business_logo" | "document_signature" | "quote_signature"; id: string }
   | { type: "expense_receipt"; id: string; submittedBy: string | null }
   // US-OPS-34 (D-156): a file kept with a record follows that record's read rule; `id` is the record's.
   | { type: "attachment"; id: string; entityType: AttachmentEntityType };
@@ -304,7 +304,7 @@ export class FilesService {
   /** Every record that points at this file. */
   async owningRecords(orgId: string, fileId: string): Promise<FileOwner[]> {
     const ids = [fileId];
-    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows, attachmentRows] = await Promise.all([
+    const [invoiceRows, creditNoteRows, paymentRows, quoteRows, expenseRows, photoRows, contactRows, personRows, profile, avatarRows, attachmentRows, signedQuoteRows] = await Promise.all([
       this.db.select({ id: invoices.id }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
       this.db.select({ id: creditNotes.id }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
       this.db.select({ id: payments.id }).from(payments).where(and(eq(payments.orgId, orgId), inArray(payments.issuedPdfFileId, ids))),
@@ -319,6 +319,7 @@ export class FilesService {
         .select({ entityType: attachments.entityType, entityId: attachments.entityId })
         .from(attachments)
         .where(and(eq(attachments.orgId, orgId), inArray(attachments.fileId, ids), isNull(attachments.removedAt))),
+      this.db.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.signatureFileId, ids))),
     ]);
     const owners: FileOwner[] = [
       ...invoiceRows.map((r) => ({ type: "invoice_pdf" as const, id: r.id })),
@@ -331,6 +332,8 @@ export class FilesService {
       ...personRows.map((r) => ({ type: "contact_person_photo" as const, id: r.id })),
       ...avatarRows.map((r) => ({ type: "user_avatar" as const, id: r.id })),
       ...attachmentRows.map((r) => ({ type: "attachment" as const, id: r.entityId, entityType: r.entityType })),
+      // US-QUO-19: the customer's on-site signature — Owners and Staff read it with the quote; Field doesn't (the default below).
+      ...signedQuoteRows.map((r) => ({ type: "quote_signature" as const, id: r.id })),
     ];
     const logoUrl = (profile.find((p) => p.key === "business_profile")?.value as { logoUrl?: string } | undefined)?.logoUrl;
     if (logoUrl?.includes(`/files/${fileId}`)) owners.push({ type: "business_logo", id: orgId });
@@ -487,7 +490,7 @@ export class FilesService {
     const set = (id: string | null, label: string) => {
       if (id && labels.has(id)) labels.set(id, label);
     };
-    const [invoiceRows, quoteRows, creditNoteRows, paymentRows, expenseRows, photoRows, contactRows, personRows] = await Promise.all([
+    const [invoiceRows, quoteRows, creditNoteRows, paymentRows, expenseRows, photoRows, contactRows, personRows, signedQuoteRows] = await Promise.all([
       this.db.select({ id: invoices.issuedPdfFileId, number: invoices.number }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.issuedPdfFileId, ids))),
       this.db.select({ id: quotes.issuedPdfFileId, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.issuedPdfFileId, ids))),
       this.db.select({ id: creditNotes.issuedPdfFileId, number: creditNotes.number }).from(creditNotes).where(and(eq(creditNotes.orgId, orgId), inArray(creditNotes.issuedPdfFileId, ids))),
@@ -496,7 +499,9 @@ export class FilesService {
       this.db.select({ id: jobPhotos.fileId, name: jobs.name }).from(jobPhotos).innerJoin(jobs, eq(jobPhotos.jobId, jobs.id)).where(and(eq(jobPhotos.orgId, orgId), inArray(jobPhotos.fileId, ids))),
       this.db.select({ id: contacts.logoFileId, name: contacts.name }).from(contacts).where(and(eq(contacts.orgId, orgId), inArray(contacts.logoFileId, ids))),
       this.db.select({ id: contactPersons.logoFileId, name: contactPersons.name }).from(contactPersons).where(inArray(contactPersons.logoFileId, ids)),
+      this.db.select({ id: quotes.signatureFileId, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.signatureFileId, ids))),
     ]);
+    for (const r of signedQuoteRows) set(r.id, `Customer's signature on quote ${r.number ?? ""}`.trim());
     for (const r of invoiceRows) set(r.id, `PDF of invoice ${r.number ?? "(draft)"}`);
     for (const r of quoteRows) set(r.id, `PDF of quote ${r.number ?? "(draft)"}`);
     for (const r of creditNoteRows) set(r.id, `PDF of credit note ${r.number ?? "(draft)"}`);

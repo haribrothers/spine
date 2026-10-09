@@ -4373,9 +4373,39 @@ Same setup as section 191. Use a real phone or the Android emulator for the came
 14. Two phones complete the same milestone offline, then both reconnect: it's completed once (the first); the other's Sync shows "Milestone completed · Already completed by <name>".
 15. Regression (web, US-PUR-23): an Owner's labour expense still suggests every trade used in the business; a Field user's phone suggests only their own.
 
+## 195. The field app: present a quote, accept with a signature or decline (US-QUO-19, US-QUO-20, US-MOB-16 to US-MOB-18, Phase 5)
+
+Same setup as section 191. You need a sent quote that is a variation order on (or the source quote of) a job the phone's user is on. As an Owner, send a quote for the job's customer and add it as a variation order on the job.
+
+1. On the job, "QUOTES TO PRESENT" lists it with "Present". Tap it (US-MOB-16):
+   - The quote opens full-screen with "Hand the phone to your customer" (iOS beside "Done"; Android under the ✕ and the number).
+   - It shows the business and address, "QUOTE <number>" (iOS), "Prepared for <customer>", "Valid until <date>", each line with "<qty> × <price>" and its amount, Subtotal, each tax by name, Total and NOTES.
+   - In India the taxes are "CGST (9%)" and "SGST (9%)". Elsewhere they're the rates' names, e.g. "Sales Tax (15%)". The figures match the quote's PDF.
+   - "Decline" and "Accept quote" are at the bottom.
+2. "Decline": a sheet titled "Decline quote" says "<customer> is declining <number> for <total>. <Business>'s office is told straight away.", with "Reason (optional)" ("For example, the price or the timing"), a red "Decline quote" and "Cancel". Android uses an outlined reason field, with Cancel beside the button. "Cancel" goes back to the quote.
+3. "Accept quote" (US-MOB-17):
+   - The screen shows "Accept <number>", the customer and total, "Your name", "Sign below" with "Clear", and "By signing, I accept this quote for <total> on behalf of <customer>. Spine records your signature, the time and the <Business> staff member present (<your name>)."
+   - "Accept and sign" is off: "Type the customer's name to continue.", then "Sign in the box to continue." once a name is typed.
+   - Sign with a finger from left to right: the stroke draws and the screen doesn't go back. "Clear" empties the box.
+4. Type a name, sign, "Accept and sign":
+   - The phone shows "Quote accepted", "<number> · <total>", "Signed by <name> at <time>. <Business>'s office has been told and the quote is now locked." and Customer, "Witnessed by <you>", "Method: In person, on this phone".
+   - "Back to job" (or Android's back) returns to the job, and the quote is no longer under QUOTES TO PRESENT.
+   - On the web, Owners and Staff got "Quote <number> was accepted in person." A variation order also says to apply it to the job.
+5. On the web, open that quote (US-QUO-20):
+   - It shows "Accepted on site", "Signed by <name> on <date> at <time>, witnessed by <name>", the signature, and "View signature full size", which opens the image.
+   - "More" › "View history" reads "<you> recorded the customer's acceptance of this quote on site, signed by <name>".
+   - A quote accepted through the emailed link instead says "Accepted online by the customer on <date>", and its history reads "The customer accepted this quote online".
+6. Present another quote, "Decline", give a reason, "Decline quote": you're back on the job without it. The web quote shows "Declined on site", who recorded it and the reason, and the office got "Quote <number> was declined in person."
+7. Offline (US-MOB-18), with airplane mode on:
+   - iOS: "Present" shows "Quotes need a connection", "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again.", "Photos, expenses and milestone updates still work offline.", "Try again" and "Back to job". Turn the connection back on and "Try again" opens the quote.
+   - Android: the same words in an alert over the job, with "Back to job" and "Try again".
+   - With the quote already open, going offline makes the decline sheet say "Needs a connection — declining can't be saved offline." and its button stays off.
+8. Security: a Field user can't open, accept or decline a quote on a job they aren't on (404), and can't open the signature file (404). Staff and Owners can.
+9. Regression: Mark complete, Add photos and the job's photos still work from the same job screen (section 194). The web quote page for a draft or sent quote shows no acceptance panel.
+
 ## Known gaps — don't file these as bugs
 
-- The field app (Phase 5, D-196) is being rebuilt group by group: "Present" on a quote says it arrives in the next update until US-MOB-16 and US-MOB-17 land. The App Store link is a placeholder until the listing exists.
+- The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).

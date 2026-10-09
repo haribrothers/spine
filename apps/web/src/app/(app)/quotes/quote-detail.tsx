@@ -32,6 +32,7 @@ import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { useModule, useModules } from "../../../lib/modules-context";
 import { EmailQueueDialog } from "./email-queue-dialog";
 import { SaveBundleDialog } from "./save-bundle-dialog";
+import { AcceptancePanel } from "./acceptance-panel";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
 import { formatMoney } from "../../../lib/money";
@@ -500,6 +501,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           </Alert>
         )}
       </Card>
+
+      <AcceptancePanel quote={quote} />
 
       <Card className="flex flex-col gap-3">
         <h3 className="text-[14px] font-semibold text-on-surface">Lines</h3>
