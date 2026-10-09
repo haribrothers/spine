@@ -39,7 +39,7 @@ test.describe("US-SET-24", () => {
     // Accepted in person, so its convert actions show.
     const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
     const signature = await (await page.request.post(`${API_URL}/files`, { headers: { "Idempotency-Key": randomUUID() }, multipart: { file: { name: "signature.png", mimeType: "image/png", buffer: png } } })).json();
-    expect((await page.request.post(`${API_URL}/quotes/${quote.id}/accept-in-person`, { headers: { "Idempotency-Key": randomUUID() }, data: { signatureFileId: signature.id } })).ok()).toBe(true);
+    expect((await page.request.post(`${API_URL}/quotes/${quote.id}/accept-in-person`, { headers: { "Idempotency-Key": randomUUID() }, data: { signatureFileId: signature.id, signerName: "Alan Reyes" } })).ok()).toBe(true);
     await page.goto(`/quotes/${quote.id}`);
     await expect(page.getByRole("button", { name: "Convert to invoice" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Convert to job" })).toHaveCount(0);
