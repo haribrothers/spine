@@ -12,7 +12,7 @@
 
 | Topic | Rule |
 |---|---|
-| Method | Email + password (Better Auth). Passwords hashed with Argon2id (`apps/api/src/auth/password.ts`, `@node-rs/argon2`); minimum 8 characters |
+| Method | Email + password (Better Auth). Passwords hashed with Argon2id (`apps/api/src/auth/password.ts`, `@node-rs/argon2`); minimum 8 characters, and a password on Spine's common-passwords list is refused at sign-up, reset and change (400 `PASSWORD_TOO_COMMON`; US-AUTH-15, [D-207](12-decisions.md)) |
 | Sign-up | Open only while the instance has no users; the first user becomes Owner and Primary Owner. After that `/signup` shows "This Spine is invite-only" and the API rejects sign-up without a valid pending invitation for that email (Better Auth `user.create.before` hook, US-AUTH-08). `SPINE_ALLOW_OPEN_SIGNUP` opens it for automated tests and is ignored in production |
 | Invitations | Created by an Owner (Staff or Field only — never Owner, [D-020](12-decisions.md)); emailed link; accepting requires being signed in with the invited email; expired, cancelled or used invitations show "This invitation can't be used" |
 | Signed out mid-task | A request with no valid session is always 401 (never 403), on every route including capability-gated ones. The web app keeps the page and asks to log in again in a dialog; it never retries the change itself (US-AUTH-12). `/login?next=` follows only same-site paths |

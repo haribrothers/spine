@@ -435,6 +435,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 ## Refinements before Phase 10
 
 - [x] US-SET-26 · See the Spine logo across the web app
+- [ ] US-AUTH-13 · See a welcome page on a new install
+- [ ] US-AUTH-14 · Log in on a page that feels like Spine
+- [ ] US-AUTH-15 · Choose a strong password I can see
 
 ## Phase 10 · AI assistant
 

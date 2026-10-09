@@ -2,7 +2,7 @@
 
 How people get into Spine and look after their own account: the single-use first sign-up that creates the Primary Owner, sign-in and sign-out, joining by invitation, password reset, and the personal Profile & Preferences page every role has.
 
-**Screens:** `SignUp` (P1), `SignIn` (P1), `AcceptInvite` (P1), `EmailInvite` (P2), `ProfilePreferences` (P1), `UserMenu` (P1), `SignUpClosed` (P2), `ForgotPassword` (P2), `ForgotPasswordSent` (P2), `ResetPassword` (P2), `InviteInvalid` (P2), `SessionExpired` (P2)
+**Screens:** `SignUp` (P1), `SignIn` (P1), `AcceptInvite` (P1), `EmailInvite` (P2), `ProfilePreferences` (P1), `UserMenu` (P1), `SignUpClosed` (P2), `ForgotPassword` (P2), `ForgotPasswordSent` (P2), `ResetPassword` (P2), `InviteInvalid` (P2), `SessionExpired` (P2), `AuthWelcome` (P2), `AuthWelcomeDark` (P2), `AuthLogin` (P2), `AuthLoginDark` (P2), `AuthLoginError` (P2), `AuthSignUp` (P2), `AuthSignUpStrength` (P2), `AuthNarrow` (P2)
 **Depends on:** 15 Team (invitations are created there), 14 Notifications (email delivery), 18 Self-hosting (SMTP).
 
 ## Features
@@ -13,6 +13,7 @@ How people get into Spine and look after their own account: the single-use first
 | F-AUTH-02 | Join by invitation | P1 | 0 | `AcceptInvite`, `EmailInvite`, `SignUp` |
 | F-AUTH-03 | Profile & Preferences | P1 | 0 | `ProfilePreferences`, `UserMenu` |
 | F-AUTH-04 | Account recovery and access states | P2 | 6 | `SignUpClosed`, `ForgotPassword`, `ForgotPasswordSent`, `ResetPassword`, `InviteInvalid`, `SessionExpired` |
+| F-AUTH-05 | Welcome, login and passwords that feel like Spine | P2 | Refinements | `AuthWelcome`, `AuthWelcomeDark`, `AuthLogin`, `AuthLoginDark`, `AuthLoginError`, `AuthSignUp`, `AuthSignUpStrength`, `AuthNarrow` |
 
 ## User stories
 
@@ -23,7 +24,7 @@ How people get into Spine and look after their own account: the single-use first
 Legacy: S-10.16 (Primary Owner)
 
 **Acceptance criteria**
-- **Given** the instance has no users, **when** I open `/signup`, **then** I see "Create your account" with "Sets up a new organisation with you as the owner." and the fields "Name", "Email" and "Password", all required.
+- **Given** the instance has no users, **when** I open `/signup`, **then** I see "Create your account" with "Sets up a new organisation with you as the owner." and the fields "Name", "Email", "Password" and "Confirm password", all required (US-AUTH-15).
 - **Given** I submit valid details, **when** the account is created, **then** an organisation is created, I become its Owner with the Primary Owner flag, and I land on `/onboarding`.
 - **Given** the password is shorter than 8 characters, **when** I submit, **then** the form shows an error and no account is created.
 - **Given** account creation fails part-way, **when** the error returns, **then** I see "Could not create your account. Please try again." and no half-created user or organisation is left behind.
@@ -42,7 +43,7 @@ Legacy: S-10.16 (Primary Owner)
 **Acceptance criteria**
 - **Given** I'm signed out, **when** I open `/login`, **then** I see "Log in", "Welcome back to Spine.", "Email" and "Password".
 - **Given** correct credentials, **when** I submit, **then** I land on `/dashboard` (or the `next` page I was sent from).
-- **Given** a wrong email or password, **when** I submit, **then** I see "Invalid email or password." and the message doesn't say which one was wrong.
+- **Given** a wrong email or password, **when** I submit, **then** I see "That email and password don't match. Check both, or reset your password." (US-AUTH-14) and the message doesn't say which one was wrong.
 - **Given** my membership was deactivated, **when** I log in, **then** every organisation page shows the no-access page and every organisation API call returns 403.
 - **Given** I'm signed out and open a deep link, **when** I log in, **then** I'm returned to that link.
 
@@ -221,3 +222,82 @@ Finding: C3
 **Implementation notes**
 - UI: a shared API-client interceptor; draft kept in component state/sessionStorage.
 - Edge: never retries the mutation automatically after re-login; the user presses save again.
+
+### US-AUTH-13 · See a welcome page on a new install
+**Feature:** F-AUTH-05 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `AuthWelcome`, `AuthWelcomeDark`, `AuthNarrow`
+**As** the person who just installed Spine, **I want** a welcome page that tells me what Spine is and how to start, **so that** I don't land on a login form for an account that doesn't exist yet.
+
+Decision: [D-207](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** a new install with no accounts, **when** anyone opens `/` or `/login`, **then** they land on `/welcome`.
+- **Given** `/welcome`, **when** it opens, **then** one side shows:
+  - the Spine logo;
+  - "Run your business on Spine";
+  - "Quotes, jobs, invoices and your books in one place — on your own server.";
+  - three next steps: "Create your account", "Set up your business in a few minutes", "Invite your team";
+  - **Create your account** (to `/signup`).
+
+  The other side shows an animated illustration.
+- **Given** the illustration, **when** it plays, **then** a sample quote is sent and accepted, becomes a job, then an invoice, and is paid. Its cards are drawn from Spine's own components with made-up names, and it settles within about 2 seconds, then drifts gently.
+- **Given** Reduce Motion, **when** the page opens, **then** the illustration shows its final frame and nothing moves.
+- **Given** a screen reader, **when** it reads the page, **then** it skips the illustration.
+- **Given** an install that already has an owner, **when** someone opens `/welcome`, **then** they go to `/login`.
+- **Given** a window narrower than 1024 px, **when** the page opens, **then** the illustration is left out and the content is centred.
+- **Given** the page, **when** it loads, **then** it asks the server only whether sign-up is open, and shows nothing else about the install ([D-084](../prd/12-decisions.md)).
+
+**Implementation notes**
+- UI: new route `/welcome`. `AuthFrame` (`apps/web/src/components/auth-frame.tsx`) is the split frame every signed-out page uses: the form side and the illustration side, side by side from `lg`. The middleware sends `/` and `/login` to `/welcome` while `GET /public/signup-status` says `open` because no account exists.
+- Motion: CSS keyframes with the motion tokens, under `prefers-reduced-motion: no-preference` only.
+
+### US-AUTH-14 · Log in on a page that feels like Spine
+**Feature:** F-AUTH-05 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `AuthLogin`, `AuthLoginDark`, `AuthLoginError`, `AuthNarrow`
+**As** a member, **I want** a clear, branded login page, **so that** signing in is quick and I know I'm in the right place.
+
+Decision: [D-207](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** `/login`, **when** it opens, **then** the form side shows:
+  - "Log in" and "Welcome back to Spine.";
+  - "Email", focused;
+  - "Password" with a show/hide eye;
+  - "Forgot password?" and **Log in**.
+
+  The illustration side shows a calmer scene: today's jobs, a quote accepted, an invoice paid. It uses made-up names, never the install's data.
+- **Given** Caps Lock is on, **when** I type in Password, **then** "Caps Lock is on." shows under the field.
+- **Given** a wrong email or password, **when** I log in, **then** I see "That email and password don't match. Check both, or reset your password.". It doesn't say which one was wrong, and what I typed stays.
+- **Given** too many attempts, **when** the server refuses, **then** I see "Too many sign-in attempts. Wait a minute, then try again.".
+- **Given** I press **Log in**, **when** it's working, **then** the button reads "Logging in…" and is disabled.
+- **Given** forgot password, reset password, invite-only, an invitation and the invitation sign-up, **when** they open, **then** they use the same frame: their own form, with the illustration side and the logo.
+- **Given** a window narrower than 1024 px, **when** the page opens, **then** only the form shows, with the logo above it.
+- **Given** dark mode or Reduce Motion, **when** the page opens, **then** it follows them, as on `/welcome`.
+
+**Implementation notes**
+- UI: `apps/web/src/app/login/page.tsx` on `AuthFrame`; the password field is US-AUTH-15's `PasswordInput` without the meter. The wrong-password wording is the same as the phone's (US-MOB-01). Better Auth's 429 maps to the attempts message.
+
+### US-AUTH-15 · Choose a strong password I can see
+**Feature:** F-AUTH-05 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `AuthSignUp`, `AuthSignUpStrength`
+**As** someone setting a password, **I want** to see what I typed, confirm it and know how strong it is, **so that** I pick one I can remember and others can't guess.
+
+Decision: [D-207](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** sign-up (the first account or an invitation), **when** it opens, **then** it asks for "Name", "Email", "Password" and "Confirm password", with a show/hide eye on both password fields (labelled "Show password" / "Hide password").
+- **Given** I type a password, **when** it changes, **then** a four-part meter shows "Too short", "Weak", "Fair", "Good" or "Strong". Beneath it a checklist ticks off each item:
+  - "At least 8 characters" (required);
+  - "12 or more characters";
+  - "Letters, numbers and symbols";
+  - "Not a common password";
+  - "No repeats or sequences like aaaa or 1234".
+- **Given** a screen reader, **when** the strength changes, **then** it announces "Password strength: <level>" (polite).
+- **Given** fewer than 8 characters, **when** I submit, **then** Password shows "Use at least 8 characters." and nothing is sent.
+- **Given** a password on Spine's common-passwords list, **when** I submit, **then** Password shows "That password is too common. Choose another one.". The server refuses it too, for sign-up, reset and change password.
+- **Given** the two passwords differ, **when** I leave Confirm password or submit, **then** it shows "The passwords don't match.".
+- **Given** reset password (US-AUTH-10) and Profile › Password (US-AUTH-06), **when** I choose a new password, **then** they use the same fields, meter and rules. Profile also asks to confirm the new password.
+- **Given** a password manager, **when** it offers a password, **then** it fills both fields (`autocomplete="new-password"`), and pasting works.
+- **Given** I press **Create account**, **when** it's working, **then** the button reads "Creating your account…", and a failure keeps what I typed.
+
+**Implementation notes**
+- `packages/shared/src/password.ts`: `passwordStrength(password)` gives the level, the checklist and the common-password check (a short built-in list, no dependency). It's used by the web and by the API's Better Auth `before` hook on `/sign-up/email`, `/reset-password` and `/change-password`, which answers 400 `PASSWORD_TOO_COMMON`.
+- `PasswordInput` and `PasswordStrengthMeter` in `@spine/ui`, with doc pages and accessibility tests. The existing `PasswordToggleField` is the base for the eye.
+
