@@ -5,7 +5,7 @@ Spine is a self-hosted business management app for small service and project bus
 ## Before you start any task
 1. Read `docs/README.md` once per session, then only the docs the task needs. Check `CHANGELOG.md` for what landed recently.
 2. For a story: read the story in `docs/features/<module>.md`, its screens in `docs/design/screens.md` (look at the images in `docs/design/screens/`), and the contracts it names in `docs/prd/04-data-model.md` and `docs/prd/05-api.md` (including "Contract additions from the feature files").
-3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–4 are built; check `docs/progress.md` for what's open.
+3. For a phase: read `docs/prd/10-phases.md` for that phase and work through its stories in order. Phases 0–9 are built; check `docs/progress.md` for what's open.
 4. Check `docs/prd/12-decisions.md` before choosing a library, a pattern or behaviour that isn't spelled out.
 5. Touching auth, roles or any endpoint's authorization: read `docs/prd/07-security.md` first, including its appendix. Touching `packages/ui-native` or a native app: read `docs/design/native-notes.md` first.
 

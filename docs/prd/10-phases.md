@@ -1,6 +1,6 @@
 # 10 · Phases
 
-Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
+Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split the original Phase 6 into fix, upgrades and 1.0; [D-133](12-decisions.md) added Books completeness and Tax, documents and setup before 1.0; [D-195](12-decisions.md) gave the AI assistant a phase of its own). Work planned after 1.0 is in [16-roadmap](16-roadmap.md). Progress per story is in [progress.md](../progress.md). Every story appears exactly once, under the phase it ships in. A story that depends on a later phase says "hidden until phase N ships".
 
 | Phase | Name | Stories | Milestone |
 |---|---|---|---|
@@ -9,7 +9,7 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow (
 | 2 | Money in | 22 | Quote → invoice → partial payment with a balanced trial balance |
 | 3 | Jobs & construction billing | 15 | A full contract lifecycle reconciles |
 | 4 | Money out & books | 62 | A simulated quarter produces accountant-acceptable reports |
-| 5 | Mobile field companion | 27 | The app works end-to-end in airplane mode and syncs without duplicates |
+| 5 | Mobile field companion | 31 | The app works end-to-end in airplane mode and syncs without duplicates |
 | 6 | Fix and harden | 47 | Everything already built is correct, secure and consistent |
 | 7 | Product upgrades | 35 | An owner runs the business from the dashboard and gets paid without chasing |
 | 8 | Books completeness | 55 | An accountant migrates a business in, reconciles the bank and closes a year in Spine |
@@ -17,7 +17,7 @@ Phases 0–4 and 6–7 are built; Phase 5 is in progress; Phases 8–11 follow (
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 427 stories.
+Total: 431 stories.
 
 ## Phase 0 · Foundation
 
