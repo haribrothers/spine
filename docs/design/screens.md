@@ -2564,6 +2564,91 @@ Links to: `PublicQuote`
 
 Shows: The 20 px mark before "Sent with Spine", light and dark
 
+## Welcome, login and sign-up
+
+Drawn in Claude Design for US-AUTH-13 to US-AUTH-15 (D-207): project "Spine web — refinements before Phase 10", canvas "02 Welcome, login and sign-up". Every signed-out page uses the same frame (`AuthFrame`): the form on one side, an illustration of made-up work on the other (left out below 1024 px). The built illustration leaves out the drawn dashed connector between the cards, which couldn't line up at every width. `SignIn`, `SignUp` and `SignUpClosed` above show the old card layout; these replace them.
+
+### AuthWelcome — Welcome on a new install
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
+
+![AuthWelcome](screens/AuthWelcome.webp)
+
+Links to: `AuthSignUp`
+
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place."
+
+### AuthWelcomeDark — Welcome on a new install, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
+
+![AuthWelcomeDark](screens/AuthWelcomeDark.webp)
+
+Links to: `AuthSignUp`
+
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place."
+
+### AuthLogin — Log in
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLogin](screens/AuthLogin.webp)
+
+Links to: `DashboardOwnerRedesign`, `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back."
+
+### AuthLoginDark — Log in, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLoginDark](screens/AuthLoginDark.webp)
+
+Links to: `DashboardOwnerRedesignDark`, `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back."
+
+### AuthLoginError — Log in, wrong password and Caps Lock
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthLoginError](screens/AuthLoginError.webp)
+
+Links to: `ForgotPassword`
+
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · "That email and password don't match. Check both, or reset your password." · "Caps Lock is on."
+
+### AuthSignUp — Create your account, password shown, Fair
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-15 · **Source:** Claude Design
+
+![AuthSignUp](screens/AuthSignUp.webp)
+
+Links to: `OnbWelcome`
+
+Shows: "Create your account" · "Sets up a new organisation with you as the owner." · "Name" · "Email" · "Password" · "Password strength: Fair" · "At least 8 characters" · "12 or more characters" · "Letters, numbers and symbols" · "Not a common password" · "No repeats or sequences like aaaa or 1234" · "Confirm password" · "Create account" · "Already have an account? Log in"
+
+### AuthSignUpStrength — Create your account, Strong, passwords don't match
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-15 · **Source:** Claude Design
+
+![AuthSignUpStrength](screens/AuthSignUpStrength.webp)
+
+Links to: `OnbWelcome`
+
+Shows: "Password strength: Strong" · "The passwords don't match."
+
+### AuthInvite — Join a business from an invitation
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14, US-AUTH-15 · **Source:** Claude Design
+
+![AuthInvite](screens/AuthInvite.webp)
+
+Links to: `AcceptInvite`
+
+Shows: "Join Riverstone Builders on Spine" · the invited email, locked · "Password strength: Good" · "Create account and join" · "Already have an account? Log in to accept"
+
+### AuthNarrow — Log in in a narrow window
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
+
+![AuthNarrow](screens/AuthNarrow.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: The logo above "Log in" and the form; no illustration
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

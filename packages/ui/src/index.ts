@@ -42,6 +42,8 @@ export * from "./components/kanban";
 export * from "./components/reorderable-list";
 export * from "./components/kbd";
 export * from "./components/spine-logo";
+export * from "./components/password-input";
+export * from "./components/password-strength-meter";
 export * from "./components/label";
 export * from "./components/layout";
 export * from "./components/menubar";

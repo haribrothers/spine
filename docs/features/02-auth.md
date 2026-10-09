@@ -2,7 +2,7 @@
 
 How people get into Spine and look after their own account: the single-use first sign-up that creates the Primary Owner, sign-in and sign-out, joining by invitation, password reset, and the personal Profile & Preferences page every role has.
 
-**Screens:** `SignUp` (P1), `SignIn` (P1), `AcceptInvite` (P1), `EmailInvite` (P2), `ProfilePreferences` (P1), `UserMenu` (P1), `SignUpClosed` (P2), `ForgotPassword` (P2), `ForgotPasswordSent` (P2), `ResetPassword` (P2), `InviteInvalid` (P2), `SessionExpired` (P2), `AuthWelcome` (P2), `AuthWelcomeDark` (P2), `AuthLogin` (P2), `AuthLoginDark` (P2), `AuthLoginError` (P2), `AuthSignUp` (P2), `AuthSignUpStrength` (P2), `AuthNarrow` (P2)
+**Screens:** `SignUp` (P1), `SignIn` (P1), `AcceptInvite` (P1), `EmailInvite` (P2), `ProfilePreferences` (P1), `UserMenu` (P1), `SignUpClosed` (P2), `ForgotPassword` (P2), `ForgotPasswordSent` (P2), `ResetPassword` (P2), `InviteInvalid` (P2), `SessionExpired` (P2), `AuthWelcome` (P2), `AuthWelcomeDark` (P2), `AuthLogin` (P2), `AuthLoginDark` (P2), `AuthLoginError` (P2), `AuthSignUp` (P2), `AuthSignUpStrength` (P2), `AuthInvite` (P2), `AuthNarrow` (P2)
 **Depends on:** 15 Team (invitations are created there), 14 Notifications (email delivery), 18 Self-hosting (SMTP).
 
 ## Features

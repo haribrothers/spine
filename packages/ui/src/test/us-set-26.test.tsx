@@ -82,8 +82,11 @@ describe("US-SET-26 · see the Spine logo across the web app", () => {
     expect(layout).toContain('<SpineLogo variant="mark" size={28} />');
     expect(layout).toContain('<SpineLogo variant="horizontal" size={96} />');
     expect(layout).not.toMatch(/>S<\/span>/);
-    for (const page of ["apps/web/src/app/login/page.tsx", "apps/web/src/app/signup/page.tsx", "apps/web/src/app/onboarding/page.tsx", "apps/web/src/app/accept-invite/[id]/accept-invite-view.tsx", "apps/web/src/components/auth-page-shell.tsx"]) {
-      expect(read(page)).toContain('<SpineLogo variant="horizontal" size={140} />');
+    expect(read("apps/web/src/app/onboarding/page.tsx")).toContain('<SpineLogo variant="horizontal" size={140} />');
+    // US-AUTH-13, US-AUTH-14 (D-207): every signed-out page now sits in AuthFrame, which carries the logo.
+    expect(read("apps/web/src/components/auth-frame.tsx")).toContain('<SpineLogo variant="horizontal" size={96} />');
+    for (const page of ["apps/web/src/app/login/page.tsx", "apps/web/src/app/signup/page.tsx", "apps/web/src/app/accept-invite/[id]/accept-invite-view.tsx"]) {
+      expect(read(page)).toContain("<AuthFrame");
     }
     expect(read("apps/web/src/app/quote/[token]/public-quote-view.tsx")).toMatch(/<SpineLogo decorative size=\{20\} \/>\s*Sent with Spine/);
   });

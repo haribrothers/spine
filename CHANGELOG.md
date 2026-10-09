@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — Welcome, login and passwords (US-AUTH-13 to US-AUTH-15, D-207)
+
+- **One frame for every signed-out page (`AuthFrame`):** the logo and theme toggle on top, the form centred, and beside it, from 1024 px up, an illustration of made-up work drawn with Spine's own card styles around the Spine mark. It's still under Reduce Motion and skipped by screen readers. It's used by welcome, login, sign-up, invite-only, forgot password, "Check your email", reset password and invitations; the old card shell is gone.
+- **Welcome on a new install (US-AUTH-13):**
+  - `/` and `/login` open `/welcome` while the install has no account, using `newInstall`, a new field on `GET /public/signup-status`; tests' forced open sign-up never sets it.
+  - The page has "Run your business on Spine", the three next steps and **Create your account**, with the quote → job → invoice → paid story.
+- **Login (US-AUTH-14):**
+  - Email is focused, with show/hide on the password and a Caps Lock warning.
+  - A wrong password reads "That email and password don't match. Check both, or reset your password." (the same as the phone), and too many tries says to wait a minute. While it works, the button reads "Logging in…".
+  - The invitation sign-up says "Join <Business> on Spine" and the role.
+- **Passwords (US-AUTH-15):**
+  - `passwordStrength` in `@spine/shared` (a built-in checker, no new dependency) drives the new `PasswordInput` and `PasswordStrengthMeter` in `@spine/ui`, which have doc pages and accessibility tests.
+  - Sign-up gains Confirm password; reset password and Profile › Password use the same fields and rules, and Profile now asks to confirm the new password.
+  - The API refuses common passwords at sign-up, reset and change (400 `PASSWORD_TOO_COMMON`); the 8-character minimum is unchanged.
+- **Tests:**
+  - `apps/web` gains Vitest, with `us-auth-13` covering the middleware routing and the page.
+  - New: `us-auth-15` (shared and API integration) and `us-auth-14` / `us-auth-15` E2E.
+  - E2E password fields are now found with anchored labels (`/^Password/`), since "Show password" and "Confirm password" also match.
+  - QA script section 199.
+
 ### 2026-10-09 — The Spine logo across the web app (US-SET-26, D-206, closes Q-25)
 
 - **`SpineLogo` in `@spine/ui`:**

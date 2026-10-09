@@ -6,7 +6,8 @@ async function reachTaxStep(page: Page, name: string) {
   await page.goto("/signup");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(`e2e-tax-09-${randomUUID()}@example.com`);
-  await page.getByLabel("Password").fill("e2e-test-password-1");
+  await page.getByLabel(/^Password/).fill("e2e-test-password-1");
+  await page.getByLabel(/^Confirm password/).fill("e2e-test-password-1");
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL("**/onboarding");
   await page.getByRole("button", { name: "Set up my business" }).click();

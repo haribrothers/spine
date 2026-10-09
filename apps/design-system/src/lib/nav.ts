@@ -97,6 +97,8 @@ export const nav: TopLevelSection[] = [
           { title: "MoneyInput", href: "/components/money-input" },
           { title: "OTPField", href: "/components/otp-field" },
           { title: "PasswordToggleField", href: "/components/password-toggle-field" },
+          { title: "PasswordInput", href: "/components/password-input" },
+          { title: "PasswordStrengthMeter", href: "/components/password-strength-meter" },
           { title: "Popover", href: "/components/popover" },
           { title: "Tooltip", href: "/components/tooltip" },
           { title: "HoverCard", href: "/components/hover-card" },

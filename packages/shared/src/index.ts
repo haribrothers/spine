@@ -7,3 +7,4 @@ export * from "./modules.ts";
 export * from "./demo/index.ts";
 export * from "./feature-flags.ts";
 export * from "./mobile.ts";
+export * from "./password.ts";

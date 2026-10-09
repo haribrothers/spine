@@ -28,7 +28,7 @@ test.describe("US-AUTH-12", () => {
     );
     await dialog.getByRole("button", { name: "Log in again" }).click();
     await expect(dialog).toContainText(`Log in as ${email}.`);
-    await dialog.getByLabel("Password").fill(PASSWORD);
+    await dialog.getByLabel(/^Password/).fill(PASSWORD);
     await dialog.getByRole("button", { name: "Log in" }).click();
     await expect(dialog).toHaveCount(0);
 
@@ -60,7 +60,7 @@ test.describe("US-AUTH-12", () => {
 
     await page.goto("/login?next=%2F%2Fevil.example%2Fphish");
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel(/^Password/).fill(PASSWORD);
     await page.getByRole("button", { name: "Log in" }).click();
     await page.waitForURL("**/dashboard");
 
@@ -68,7 +68,7 @@ test.describe("US-AUTH-12", () => {
     await page.context().clearCookies();
     await page.goto("/login?next=%2Fcontacts");
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByLabel(/^Password/).fill(PASSWORD);
     await page.getByRole("button", { name: "Log in" }).click();
     await page.waitForURL("**/contacts");
   });

@@ -1,0 +1,140 @@
+/* US-AUTH-13, US-AUTH-14 (D-207) — the signed-out pages' illustration: Spine's own cards on a soft
+   brand panel. Colours come from tokens (brand colours for the panel only); motion runs only when
+   the person hasn't asked for less. */
+.panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  background: linear-gradient(
+    160deg,
+    color-mix(in srgb, var(--color-brand-teal) 9%, var(--color-background)) 0%,
+    color-mix(in srgb, var(--color-brand-sky) 11%, var(--color-background)) 58%,
+    var(--color-surface-sunken) 100%
+  );
+}
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in srgb, var(--color-brand-deep) 11%, transparent) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+.glow {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 520px;
+  height: 520px;
+  margin: -260px 0 0 -260px;
+  border-radius: 50%;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--color-brand-teal) 20%, transparent),
+    color-mix(in srgb, var(--color-brand-sky) 14%, transparent) 55%,
+    transparent
+  );
+}
+.orbit {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 560px;
+  height: 300px;
+  margin: -150px 0 0 -280px;
+  overflow: visible;
+}
+.orbit ellipse {
+  fill: none;
+  stroke: var(--color-border-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 7;
+  stroke-linecap: round;
+}
+.mark {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  margin: -38px 0 0 -38px;
+  z-index: 3;
+}
+.card {
+  position: absolute;
+  z-index: 2;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-overlay);
+  padding: 12px 14px;
+}
+:global([data-theme="dark"]) .card {
+  border: 1px solid var(--color-border);
+}
+.swap {
+  display: inline-grid;
+  margin-left: auto;
+}
+.swap > * {
+  grid-area: 1 / 1;
+}
+.caption {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 28px;
+  z-index: 4;
+}
+
+/* The first status shows until the story reaches it; with less motion, only the final one shows. */
+.swap > :first-child {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .orbit ellipse {
+    animation: flow 16s linear infinite;
+  }
+  .orbit ellipse:nth-child(2) {
+    animation-direction: reverse;
+    animation-duration: 12s;
+  }
+  .card {
+    animation:
+      enter 0.6s var(--d, 0s) cubic-bezier(0.2, 0.9, 0.25, 1.12) both,
+      float 7s var(--fd, 2s) ease-in-out infinite;
+  }
+  .swap > :first-child {
+    opacity: 1;
+    animation: out 0.3s var(--sd) ease-out forwards;
+  }
+  .swap > :last-child {
+    opacity: 0;
+    animation: fade 0.3s var(--sd) ease-out forwards;
+  }
+}
+
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.94);
+  }
+}
+@keyframes float {
+  50% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -180;
+  }
+}
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes out {
+  to {
+    opacity: 0;
+  }
+}

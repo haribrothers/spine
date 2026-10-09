@@ -43,10 +43,10 @@ test.describe("US-AUTH-10", () => {
 
     // The old password no longer works; the new one does.
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(oldPassword);
+    await page.getByLabel(/^Password/).fill(oldPassword);
     await page.getByRole("button", { name: "Log in" }).click();
     await expect(page.getByRole("alert")).toBeVisible();
-    await page.getByLabel("Password").fill(newPassword);
+    await page.getByLabel(/^Password/).fill(newPassword);
     await page.getByRole("button", { name: "Log in" }).click();
     await page.waitForURL("**/dashboard");
 

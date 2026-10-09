@@ -4486,6 +4486,44 @@ Run the web app (`pnpm dev`) in Chrome and Safari, light and dark (the theme tog
 9. **Design system:** `pnpm --filter @spine/design-system dev` has a SpineLogo page (horizontal, vertical, mark, minimum sizes), Brand swatches on Color, and the Sidebar, AppShell and Templates demos use the new logo.
 10. Regression: section 191 (field app sign-in) still shows the phone's own logo; Settings › Branding's theme swatches still change only the accent colour (US-SET-09).
 
+## 199. Welcome, login and passwords (US-AUTH-13 to US-AUTH-15, refinements before Phase 10)
+
+Use a 1280 px-wide window in Chrome and Safari, light and dark. Compare against the canvas "02 Welcome, login and sign-up" and the `Auth*` artboards.
+
+1. **Welcome (US-AUTH-13),** on a brand-new install with an empty database (`pnpm db:reset:dev`, no seed):
+   - `/` and `/login` open `/welcome`.
+   - It shows the logo, "Run your business on Spine", the three next steps and **Create your account**, which goes to `/signup`.
+   - The illustration plays: the quote turns Accepted, the job and invoice appear, the invoice turns Paid, then "Payment received". After about 2 seconds it settles and drifts gently.
+   - With Reduce Motion on, everything shows already settled and nothing moves.
+   - A screen reader reads the heading, steps and button and skips the illustration.
+2. Welcome, continued:
+   - Create the first account. `/welcome` now goes to `/login` when signed out, and to the dashboard when signed in.
+   - Below 1024 px wide the illustration disappears and the content is centred.
+3. **Login (US-AUTH-14):**
+   - The illustration shows today's jobs, "Bluewater accepted QUO-0006" and a paid invoice, with made-up names.
+   - Email is focused. The eye shows and hides the password, and its label says "Show password" / "Hide password".
+   - With Caps Lock on, typing in Password shows "Caps Lock is on.".
+   - A wrong password: "That email and password don't match. Check both, or reset your password.", and Email keeps what you typed.
+   - Many wrong tries: "Too many sign-in attempts. Wait a minute, then try again.".
+   - While logging in the button reads "Logging in…".
+4. **The same frame everywhere:** forgot password, "Check your email", reset password (including an expired link), invite-only (`/signup` on an install with an owner), an invitation link (`/accept-invite/<id>`, signed out and signed in) and "This invitation can't be used". All look like login: logo, form, illustration.
+5. **Sign-up passwords (US-AUTH-15):**
+   - The fields are Name, Email, Password and Confirm password, with an eye on both password fields.
+   - Typing `riverstone8` shows Fair, with "At least 8 characters", "Not a common password" and "No repeats or sequences" ticked. `Deck&Pergola-2026` shows Strong with all five ticked.
+   - A screen reader hears "Password strength: …".
+6. Sign-up refusals:
+   - `short`: "Use at least 8 characters.", and nothing is sent.
+   - `Password123`: "That password is too common. Choose another one.".
+   - Confirm password different: "The passwords don't match." when you leave the field.
+   - A valid account goes to onboarding. While it works, the button reads "Creating your account…".
+7. **Invitation sign-up:** from an invitation link, "Create account". The heading reads "Join <Business> on Spine" and "You've been invited as <Role>.", and the email is locked.
+8. **Reset and Profile:** reset password and Profile › Password show the same meter and checklist. `qwerty123` is refused with "That password is too common. Choose another one." (the server refuses it too). Profile now asks to confirm the new password.
+9. Regression:
+   - Forgot-password emails, the 60-second resend wait and single-use reset links still work (sections on US-AUTH-09 and US-AUTH-10).
+   - Invitations still accept and decline.
+   - Session-expired login from the dialog still returns you to your page (US-AUTH-12).
+   - The field app's sign-in is unchanged.
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

@@ -149,7 +149,7 @@ test.describe("US-OPS-26", () => {
     // The logo's wordmark is light text in dark mode (US-SET-26: SpineLogo, --color-brand-wordmark).
     const logo = page.getByRole("complementary").getByRole("img", { name: "Spine" }).first();
     await expect(logo).toBeVisible();
-    expect(await logo.locator("path[style]").first().evaluate((el) => getComputedStyle(el).fill)).toBe("rgb(243, 242, 238)");
+    expect(await logo.locator("path[style]").first().evaluate((el) => (globalThis as unknown as { getComputedStyle(e: unknown): { fill: string } }).getComputedStyle(el).fill)).toBe("rgb(243, 242, 238)");
 
     await page.keyboard.press("ControlOrMeta+k");
     const palette = page.getByRole("dialog", { name: "Search" });

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Logger } from "@nestjs/common";
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware, getIp } from "better-auth/api";
+import { isCommonPassword, PASSWORD_TOO_COMMON_MESSAGE } from "@spine/shared";
 import { assertSignupAllowed } from "./signup-policy";
 import { RESET_TOKEN_TTL_SECONDS, RESET_TOO_MANY_MESSAGE, resetIpLimiter, sendResetPasswordEmail } from "./password-reset";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -82,6 +83,11 @@ export const auth = betterAuth({
      * sign-in); the per-email limit lives in `sendResetPasswordEmail`.
      */
     before: createAuthMiddleware(async (ctx) => {
+      // US-AUTH-15 (D-207): the most common passwords are refused wherever one is chosen.
+      const chosen = ctx.path === "/sign-up/email" ? ctx.body?.password : ctx.path === "/reset-password" || ctx.path === "/change-password" ? ctx.body?.newPassword : undefined;
+      if (typeof chosen === "string" && isCommonPassword(chosen)) {
+        throw new APIError("BAD_REQUEST", { message: PASSWORD_TOO_COMMON_MESSAGE, code: "PASSWORD_TOO_COMMON" });
+      }
       if (ctx.path !== "/request-password-reset") return;
       const ip = (ctx.request && getIp(ctx.request, ctx.context.options)) || "unknown";
       if (!resetIpLimiter.hit(ip)) throw new APIError("TOO_MANY_REQUESTS", { message: RESET_TOO_MANY_MESSAGE });

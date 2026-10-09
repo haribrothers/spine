@@ -1,11 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Input, SpineLogo, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Button, FormField, Input, PasswordInput, PasswordStrengthMeter, Spinner } from "@spine/ui";
+import { PASSWORDS_DONT_MATCH_MESSAGE, PASSWORD_TOO_COMMON_MESSAGE, passwordProblem } from "@spine/shared";
 import { authClient } from "../../lib/auth-client";
-import { ThemeToggle } from "../../components/theme-toggle";
+import { apiClient } from "../../lib/api-client";
+import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { useSignupStatus } from "../../lib/signup-status";
 
 export default function SignupPage() {
@@ -18,6 +20,11 @@ export default function SignupPage() {
   );
 }
 
+const ROLE_LABELS: Record<string, string> = { owner: "Owner", staff: "Staff", field: "Field" };
+
+/** `GET /public/invitations/:id` while the invitation can still be used (US-AUTH-11). */
+type InvitationPreview = { status: "pending"; email: string; role: string; organizationName: string } | { status: string };
+
 function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -29,27 +36,48 @@ function SignupForm() {
   const invitedEmail = searchParams.get("email");
 
   const signupStatus = useSignupStatus();
+  const [invitation, setInvitation] = useState<{ organizationName: string; role: string } | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState(invitedEmail ?? "");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [passwordError, setPasswordError] = useState<string | undefined>();
+  const [confirmError, setConfirmError] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // US-AUTH-14: an invitation says whose Spine it is and the role it gives.
+  useEffect(() => {
+    if (!inviteId) return;
+    apiClient
+      .get<InvitationPreview>(`/public/invitations/${inviteId}`)
+      .then((data) => {
+        if ("organizationName" in data) setInvitation({ organizationName: data.organizationName, role: data.role });
+      })
+      .catch(() => {});
+  }, [inviteId]);
+
+  function checkConfirm(value = confirm) {
+    setConfirmError(value && value !== password ? PASSWORDS_DONT_MATCH_MESSAGE : undefined);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // US-AUTH-15: refused here exactly as the server would refuse it; weaker passwords are only a warning.
+    const problem = passwordProblem(password);
+    const mismatch = password !== confirm;
+    setPasswordError(problem ?? undefined);
+    setConfirmError(mismatch ? PASSWORDS_DONT_MATCH_MESSAGE : undefined);
+    if (problem || mismatch) return;
+
     setLoading(true);
-
-    const { error: signUpError } = await authClient.signUp.email({
-      name,
-      email,
-      password,
-    });
-
+    const { error: signUpError } = await authClient.signUp.email({ name, email, password });
     setLoading(false);
 
     if (signUpError) {
-      setError(signUpError.message ?? "Could not create your account. Please try again.");
+      if (signUpError.code === "PASSWORD_TOO_COMMON") setPasswordError(PASSWORD_TOO_COMMON_MESSAGE);
+      else setError(signUpError.message ?? "Could not create your account. Please try again.");
       return;
     }
 
@@ -65,102 +93,106 @@ function SignupForm() {
     router.push("/onboarding");
   }
 
-  return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <div className="flex w-full max-w-sm items-center justify-center">
-        <SpineLogo variant="horizontal" size={140} />
-      </div>
-      <ThemeToggle />
-      {/* US-AUTH-08: an existing install takes new people by invitation only. */}
-      {!inviteId && signupStatus === null ? (
+  // US-AUTH-08: an existing install takes new people by invitation only.
+  if (!inviteId && signupStatus === null) {
+    return (
+      <AuthFrame scene="welcome">
         <Spinner />
-      ) : !inviteId && !signupStatus?.open ? (
-        <Card className="w-full max-w-sm" data-testid="signup-closed">
-          <CardHeader>
-            <CardTitle>This Spine is invite-only</CardTitle>
-            <CardDescription>
-              {signupStatus?.businessName ?? "This business"} already has an owner, so new accounts are created by invitation. Ask an owner
-              to invite you — you&apos;ll get an email with a link to join.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <Button asChild>
-              <Link href="/login">Log in</Link>
-            </Button>
-            <p className="text-center text-[13px] text-on-surface-muted">Already have an invite? Open the link in your email.</p>
-          </CardContent>
-        </Card>
+      </AuthFrame>
+    );
+  }
+  if (!inviteId && !signupStatus?.open) {
+    return (
+      <AuthFrame scene="login">
+        <div data-testid="signup-closed" className="flex flex-col gap-6">
+          <AuthHeading title="This Spine is invite-only">
+            {signupStatus?.businessName ?? "This business"} already has an owner, so new accounts are created by invitation. Ask an owner to
+            invite you — you&apos;ll get an email with a link to join.
+          </AuthHeading>
+          <Button asChild size="touch">
+            <Link href="/login">Log in</Link>
+          </Button>
+          <p className="text-center text-[13px] text-on-surface-muted">Already have an invite? Open the link in your email.</p>
+        </div>
+      </AuthFrame>
+    );
+  }
+
+  return (
+    <AuthFrame scene={inviteId ? "login" : "welcome"}>
+      {inviteId ? (
+        <AuthHeading title={invitation ? `Join ${invitation.organizationName} on Spine` : "Create your account"}>
+          {invitation
+            ? `You've been invited as ${ROLE_LABELS[invitation.role] ?? invitation.role}. Create your account to accept.`
+            : "Finish creating your account to accept the invitation."}
+        </AuthHeading>
       ) : (
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Create your account</CardTitle>
-          <CardDescription>
-            {inviteId ? "Finish creating your account to accept the invitation." : "Sets up a new organisation with you as the owner."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            {error && (
-              <Alert variant="critical">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            <FormField label="Name" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="text"
-                  autoComplete="name"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required
-                />
-              )}
-            </FormField>
-
-            <FormField label="Email" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={Boolean(invitedEmail)}
-                  required
-                />
-              )}
-            </FormField>
-
-            <FormField label="Password" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="password"
-                  autoComplete="new-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  minLength={8}
-                />
-              )}
-            </FormField>
-
-            <Button type="submit" disabled={loading} className="mt-1">
-              {loading ? <Spinner size="sm" /> : "Create account"}
-            </Button>
-          </form>
-
-          <p className="mt-4 text-center text-[13px] text-on-surface-muted">
-            Already have an account?{" "}
-            <Link href={inviteId ? `/login?next=/accept-invite/${inviteId}` : "/login"} className="text-primary hover:underline">
-              Log in
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+        <AuthHeading title="Create your account">Sets up a new organisation with you as the owner.</AuthHeading>
       )}
-    </main>
+
+      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        {error && (
+          <Alert variant="critical">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <FormField label="Name" required>
+          {(field) => <Input {...field} type="text" autoComplete="name" autoFocus value={name} onChange={(e) => setName(e.target.value)} required />}
+        </FormField>
+
+        <FormField label="Email" required>
+          {(field) => (
+            <Input {...field} type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={Boolean(invitedEmail)} required />
+          )}
+        </FormField>
+
+        <FormField label="Password" errorText={passwordError} required>
+          {(field) => (
+            <div className="flex flex-col gap-2">
+              <PasswordInput
+                {...field}
+                aria-describedby={[field["aria-describedby"], "signup-password-strength"].filter(Boolean).join(" ")}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setPasswordError(undefined);
+                }}
+                required
+              />
+              <PasswordStrengthMeter id="signup-password-strength" password={password} />
+            </div>
+          )}
+        </FormField>
+
+        <FormField label="Confirm password" errorText={confirmError} required>
+          {(field) => (
+            <PasswordInput
+              {...field}
+              autoComplete="new-password"
+              value={confirm}
+              onChange={(e) => {
+                setConfirm(e.target.value);
+                if (confirmError) checkConfirm(e.target.value);
+              }}
+              onBlur={() => checkConfirm()}
+              required
+            />
+          )}
+        </FormField>
+
+        <Button type="submit" size="touch" disabled={loading} className="mt-1">
+          {loading ? "Creating your account…" : "Create account"}
+        </Button>
+      </form>
+
+      <p className="mt-5 text-center text-[13px] text-on-surface-muted">
+        Already have an account?{" "}
+        <Link href={inviteId ? `/login?next=/accept-invite/${inviteId}` : "/login"} className="text-primary hover:underline">
+          Log in
+        </Link>
+      </p>
+    </AuthFrame>
   );
 }

@@ -14,7 +14,7 @@ test.describe("US-AUTH-08", () => {
     await expect(closed).toContainText(
       "Riverstone Builders already has an owner, so new accounts are created by invitation. Ask an owner to invite you — you'll get an email with a link to join.",
     );
-    await expect(page.getByLabel("Password")).toHaveCount(0);
+    await expect(page.getByLabel(/^Password/)).toHaveCount(0);
     await closed.getByRole("link", { name: "Log in" }).click();
     await page.waitForURL("**/login");
   });

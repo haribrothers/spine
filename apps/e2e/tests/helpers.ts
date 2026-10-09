@@ -59,7 +59,8 @@ export async function signUpNewOrg(page: Page, { name, email, password }: { name
   await page.goto("/signup");
   await page.getByLabel("Name").fill(name);
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Password").fill(password);
+  await page.getByLabel(/^Password/).fill(password);
+  await page.getByLabel(/^Confirm password/).fill(password);
   await page.getByRole("button", { name: "Create account" }).click();
   await page.waitForURL("**/onboarding");
   await page.getByRole("button", { name: "Skip to dashboard" }).click();

@@ -7,7 +7,8 @@ base.describe("US-OPS-21 · onboarding", () => {
     await page.goto("/signup");
     await page.getByLabel("Name").fill("Owner");
     await page.getByLabel("Email").fill(`us-ops-21-${randomUUID()}@example.com`);
-    await page.getByLabel("Password").fill("TestPassword123!");
+    await page.getByLabel(/^Password/).fill("TestPassword123!");
+    await page.getByLabel(/^Confirm password/).fill("TestPassword123!");
     await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForURL("**/onboarding");
 

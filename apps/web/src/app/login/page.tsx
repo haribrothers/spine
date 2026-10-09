@@ -3,11 +3,12 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Input, SpineLogo, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Button, FormField, Input, PasswordInput } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
-import { ThemeToggle } from "../../components/theme-toggle";
+import { AuthFrame, AuthHeading } from "../../components/auth-frame";
 import { useSignupStatus } from "../../lib/signup-status";
 import { safeNextPath } from "../../lib/safe-next";
+import { TOO_MANY_ATTEMPTS_MESSAGE, WRONG_CREDENTIALS_MESSAGE } from "../../lib/auth-messages";
 
 export default function LoginPage() {
   return (
@@ -48,7 +49,7 @@ function LoginForm() {
     setLoading(false);
 
     if (signInError) {
-      setError(signInError.message ?? "Invalid email or password.");
+      setError(signInError.status === 429 ? TOO_MANY_ATTEMPTS_MESSAGE : signInError.status === 401 || signInError.status === 400 ? WRONG_CREDENTIALS_MESSAGE : (signInError.message ?? WRONG_CREDENTIALS_MESSAGE));
       return;
     }
 
@@ -56,71 +57,42 @@ function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
-      <div className="flex w-full max-w-sm items-center justify-center">
-        <SpineLogo variant="horizontal" size={140} />
-      </div>
-      <ThemeToggle />
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle>Log in</CardTitle>
-          <CardDescription>Welcome back to Spine.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
-            {error && (
-              <Alert variant="critical">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
+    <AuthFrame scene="login">
+      <AuthHeading title="Log in">Welcome back to Spine.</AuthHeading>
+      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
+        {error && (
+          <Alert variant="critical">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-            <FormField label="Email" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              )}
-            </FormField>
+        <FormField label="Email" required>
+          {(field) => <Input {...field} type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required />}
+        </FormField>
 
-            <FormField label="Password" required>
-              {(field) => (
-                <Input
-                  {...field}
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              )}
-            </FormField>
+        <FormField label="Password" required>
+          {(field) => <PasswordInput {...field} autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} required />}
+        </FormField>
 
-            {/* US-AUTH-09 */}
-            <Link href="/forgot-password" className="-mt-2 self-end text-[13px] text-primary hover:underline">
-              Forgot password?
-            </Link>
+        {/* US-AUTH-09 */}
+        <Link href="/forgot-password" className="-mt-2 self-end text-[13px] text-primary hover:underline">
+          Forgot password?
+        </Link>
 
-            <Button type="submit" disabled={loading} className="mt-1">
-              {loading ? <Spinner size="sm" /> : "Log in"}
-            </Button>
-          </form>
+        <Button type="submit" size="touch" disabled={loading} className="mt-1">
+          {loading ? "Logging in…" : "Log in"}
+        </Button>
+      </form>
 
-          {/* US-AUTH-08: only while the instance has no accounts yet. */}
-          {signupStatus?.open && (
-            <p className="mt-4 text-center text-[13px] text-on-surface-muted">
-              Don&apos;t have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline">
-                Sign up
-              </Link>
-            </p>
-          )}
-        </CardContent>
-      </Card>
-    </main>
+      {/* US-AUTH-08: only while the instance still takes a first account. */}
+      {signupStatus?.open && (
+        <p className="mt-5 text-center text-[13px] text-on-surface-muted">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up
+          </Link>
+        </p>
+      )}
+    </AuthFrame>
   );
 }

@@ -18,9 +18,12 @@ import {
   TabsTrigger,
   ToggleGroup,
   ToggleGroupItem,
+  PasswordInput,
+  PasswordStrengthMeter,
 } from "@spine/ui";
 import { useSearchParams } from "next/navigation";
 import type { DigestDays } from "@spine/shared";
+import { PASSWORDS_DONT_MATCH_MESSAGE, passwordProblem } from "@spine/shared";
 import { AlarmClock, Camera, Laptop, Moon, Sun } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { BrowserNotificationsSection } from "../../../components/browser-notifications-section";
@@ -81,6 +84,9 @@ export function ProfileView() {
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [newPasswordError, setNewPasswordError] = useState<string | undefined>();
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | undefined>();
   const [savingPassword, setSavingPassword] = useState(false);
 
   const inputRef = useRef<HTMLInputElement>(null);
@@ -132,11 +138,18 @@ export function ProfileView() {
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // US-AUTH-15: the same rules as sign-up, reset and the server.
+    const problem = passwordProblem(newPassword);
+    const mismatch = newPassword !== confirmPassword;
+    setNewPasswordError(problem ?? undefined);
+    setConfirmPasswordError(mismatch ? PASSWORDS_DONT_MATCH_MESSAGE : undefined);
+    if (problem || mismatch) return;
     setSavingPassword(true);
     try {
       await apiClient.put("/users/me/password", { currentPassword, newPassword });
       setCurrentPassword("");
       setNewPassword("");
+      setConfirmPassword("");
       flash("Password changed.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not change password.");
@@ -277,13 +290,31 @@ export function ProfileView() {
         <form onSubmit={handleChangePassword} className="flex flex-col gap-4">
           <h2 className="text-[15px] font-semibold text-on-surface">Change password</h2>
           <FormField label="Current password">
-            {(field) => <Input {...field} type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />}
+            {(field) => <PasswordInput {...field} autoComplete="current-password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} required />}
           </FormField>
-          <FormField label="New password">
-            {(field) => <Input {...field} type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} minLength={8} required />}
+          <FormField label="New password" errorText={newPasswordError}>
+            {(field) => (
+              <div className="flex flex-col gap-2">
+                <PasswordInput
+                  {...field}
+                  aria-describedby={[field["aria-describedby"], "profile-password-strength"].filter(Boolean).join(" ")}
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setNewPasswordError(undefined);
+                  }}
+                  required
+                />
+                <PasswordStrengthMeter id="profile-password-strength" password={newPassword} />
+              </div>
+            )}
+          </FormField>
+          <FormField label="Confirm new password" errorText={confirmPasswordError}>
+            {(field) => <PasswordInput {...field} autoComplete="new-password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />}
           </FormField>
           <div>
-            <Button type="submit" disabled={savingPassword || !currentPassword || newPassword.length < 8}>
+            <Button type="submit" disabled={savingPassword || !currentPassword || !newPassword || !confirmPassword}>
               {savingPassword ? <Spinner size="sm" /> : "Change password"}
             </Button>
           </div>

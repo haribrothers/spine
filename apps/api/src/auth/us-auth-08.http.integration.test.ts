@@ -53,7 +53,7 @@ describe("US-AUTH-08 · sign-up is invite-only (requires local Postgres)", () =>
       .onConflictDoUpdate({ target: [settings.orgId, settings.key], set: { value: { name } } });
 
     const status = await (await fetch(`${testApp.baseUrl}/public/signup-status`)).json();
-    expect(status).toEqual({ open: false, businessName: name });
+    expect(status).toEqual({ open: false, businessName: name, newInstall: false });
   });
 
   it("refuses a direct sign-up without an invitation", async () => {
