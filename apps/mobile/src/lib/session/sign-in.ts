@@ -5,7 +5,7 @@ import { CLIENT_VERSION_HEADER } from "@spine/shared/mobile";
 
 export const SERVER_UNREACHABLE_MESSAGE = "Can't reach that server. Check the address — it's the link you open Spine with on a computer.";
 export const SERVER_OFFLINE_MESSAGE = "You're offline. Connect to Wi-Fi or mobile data to sign in.";
-export const INVALID_CREDENTIALS_MESSAGE = "Invalid email or password.";
+export const INVALID_CREDENTIALS_MESSAGE = "That email and password don't match. Check both, or reset your password.";
 export const SIGN_IN_FAILED_MESSAGE = "Couldn't sign in. Try again in a minute.";
 export const TOO_MANY_ATTEMPTS_MESSAGE = "Too many sign-in attempts. Wait a minute, then try again.";
 export const SERVER_REQUIRED_MESSAGE = "Enter your server address first — it's the link you open Spine with on a computer.";

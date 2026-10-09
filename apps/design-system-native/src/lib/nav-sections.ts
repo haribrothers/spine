@@ -91,6 +91,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "floating-tab-bar", name: "Floating Tab Bar", description: "Fully custom floating pill tab bar with an active-tab highlight capsule." },
       { slug: "native-tab-view", name: "Native Tab View (iOS)", description: "@expo/ui's real SwiftUI TabView with liquid glass — iOS only, embedded in-screen, not a router replacement." },
       { slug: "native-header", name: "Native Header", description: "React Navigation native-stack's real native header — iOS blur/large-title, Android Material — with themed controls." },
+      { slug: "spine-logo", name: "Spine logo", description: "The layered mark and SPiNE wordmark — mark, horizontal and vertical lockups." },
     ],
   },
   {

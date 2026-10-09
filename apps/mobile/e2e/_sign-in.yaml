@@ -6,9 +6,14 @@ appId: com.spine.app
     clearState: true
     clearKeychain: true
 - runFlow: _open-app.yaml
+# A clean install opens on Welcome (US-MOB-26).
 - extendedWaitUntil:
-    visible: "Sign in to Spine"
+    visible: "Get started"
     timeout: 60000
+- tapOn: "Get started"
+- extendedWaitUntil:
+    visible: "Use the email your office invited you with."
+    timeout: 10000
 - tapOn:
     id: "sign-in-server"
 - eraseText: 60
@@ -20,7 +25,11 @@ appId: com.spine.app
 - tapOn:
     id: "sign-in-password"
 - inputText: ${PASSWORD || "DemoPassword123!"}
-- tapOn: "Sign in"
+# The title also says "Sign in"; the button is the one below the password.
+- tapOn:
+    text: "Sign in"
+    below:
+      id: "sign-in-password"
 - runFlow:
     when:
       visible: "Save Password?"

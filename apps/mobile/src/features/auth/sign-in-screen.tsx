@@ -5,12 +5,15 @@ import * as WebBrowser from "expo-web-browser";
 import { Button, FloatingLabelField, FormRow, FormSection, FullWidthButton, OutlinedTextField, Spinner } from "@spine/ui-native";
 import { useSession } from "../../lib/session/session-provider";
 import { discoverServer, SignInError, type SignInField } from "../../lib/session/sign-in";
+import { SignInCompactLogo, SignInHero, useKeyboardOpen } from "./sign-in-hero";
 
 type Errors = Partial<Record<SignInField, string>>;
 
 /**
- * US-MOB-01 · `MobSignIn` / `MobSignInAndroid` — server, email and password.
- * Errors sit under the field they're about; "Forgot password?" opens the
+ * US-MOB-01 · `MobSignIn` / `MobSignInAndroid` — the Spine logo on its
+ * illustration, then server, email and password. While the keyboard is up
+ * the illustration folds to the horizontal logo (`MobSignInKeyboard`) so the
+ * fields and "Sign in" stay in view. Errors sit under the field they're about; "Forgot password?" opens the
  * server's reset page in the phone's browser (D-052, US-AUTH-09). A removed
  * membership comes back here with its notice (US-MOB-02).
  */
@@ -26,6 +29,7 @@ export function SignInScreen() {
   const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
   const passwordRef = useRef(null);
+  const keyboardOpen = useKeyboardOpen();
 
   async function submit() {
     const next: Errors = {};
@@ -55,10 +59,11 @@ export function SignInScreen() {
   return (
     <SafeAreaView className="flex-1 bg-background dark:bg-background-dark">
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
-        <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow px-5 pb-8 pt-16">
+        <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow px-5 pb-8">
+          <View className="-mx-5">{keyboardOpen ? <View className="px-5"><SignInCompactLogo /></View> : <SignInHero />}</View>
           <View className="gap-2 px-1">
             <Text accessibilityRole="header" className={`text-[30px] text-on-surface dark:text-on-surface-dark ${Platform.OS === "android" ? "" : "font-bold"}`}>
-              Sign in to Spine
+              Sign in
             </Text>
             <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Use the email your office invited you with.</Text>
           </View>
@@ -71,7 +76,7 @@ export function SignInScreen() {
 
           {Platform.OS === "android" ? (
             // US-MOB-20 · `MobSignInAndroid`: Material outlined fields, each error under its field, the password with a show/hide eye.
-            <View className="mt-8 gap-4">
+            <View className="mt-6 gap-4">
               <OutlinedTextField
                 label="Server"
                 value={server}
@@ -113,7 +118,7 @@ export function SignInScreen() {
               />
             </View>
           ) : (
-            <View className="mt-8 gap-2">
+            <View className="mt-6 gap-2">
               <FormSection title="Your account">
                 <FormRow error={errors.server}>
                   <FloatingLabelField

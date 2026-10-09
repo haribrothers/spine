@@ -28,6 +28,7 @@ export { ScrollEdgeMask, type ScrollEdgeMaskProps } from "./components/scroll-ed
 export { GaugeIndicator, type GaugeIndicatorProps } from "./components/gauge-indicator";
 export { KpiCard, type KpiCardProps } from "./components/kpi-card";
 export { ActionTile, type ActionTileProps } from "./components/action-tile";
+export { SpineLogo, SPINE_LOGO_MIN, SPINE_MARK_LAYERS, type SpineLogoProps, type SpineLogoVariant } from "./components/spine-logo";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
 export { SpineUIProvider } from "./theme/spine-ui-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";

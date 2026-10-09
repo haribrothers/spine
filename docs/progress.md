@@ -211,7 +211,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-QUO-20 · Show how a quote was accepted
 - [x] US-JOB-15 · Assign crew to a job
 - [x] US-JOB-16 · Show field crew only their assigned jobs
-- [ ] US-MOB-01 · Sign in to my company's Spine on my phone (redrawn with the new logo, D-203)
+- [x] US-MOB-01 · Sign in to my company's Spine on my phone
 - [x] US-MOB-02 · Stay signed in and sign out safely
 - [x] US-MOB-03 · See today's jobs with addresses and tap-to-call
 - [x] US-MOB-04 · Browse my assigned jobs
@@ -234,10 +234,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MOB-21 · Document every native component in a showcase app
 - [x] US-MOB-22 · See my notifications on the phone
 - [x] US-MOB-23 · Search my jobs and my expenses
-- [ ] US-MOB-24 · Recognise Spine on my home screen
-- [ ] US-MOB-25 · See Spine while the app opens
-- [ ] US-MOB-26 · Get a welcome the first time I open the app
-- [ ] US-MOB-27 · Use the Spine brand the same way everywhere in the app
+- [x] US-MOB-24 · Recognise Spine on my home screen
+- [x] US-MOB-25 · See Spine while the app opens
+- [x] US-MOB-26 · Get a welcome the first time I open the app
+- [x] US-MOB-27 · Use the Spine brand the same way everywhere in the app
 
 ## Phase 6 · Fix and harden
 

@@ -17,6 +17,7 @@ import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { NativeTabViewScreen } from "../../app/components/native-tab-view";
 import { NativeHeaderScreen } from "../../app/components/native-header";
+import { SpineLogoScreen } from "../../app/components/spine-logo";
 import { IntroductionScreen } from "../../app/overview";
 import { PrinciplesScreen } from "../../app/principles";
 import { ColorScreen } from "../../app/foundation/color";
@@ -69,6 +70,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "floating-tab-bar": FloatingTabBarScreen,
     "native-tab-view": NativeTabViewScreen,
     "native-header": NativeHeaderScreen,
+    "spine-logo": SpineLogoScreen,
   },
   templates: {
     "job-list": JobListScreen,

@@ -1,4 +1,6 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react-native";
+import { Keyboard, Platform } from "react-native";
+import { useReducedMotion } from "react-native-reanimated";
 import "../test-utils/router-mock";
 import { apiBaseCandidates, authUrl, normalizeServerAddress } from "../lib/server-address";
 import {
@@ -11,6 +13,7 @@ import {
   TOO_MANY_ATTEMPTS_MESSAGE,
 } from "../lib/session/sign-in";
 import { SignInScreen } from "../features/auth/sign-in-screen";
+import { Orbits } from "../features/brand/orbits";
 import { jsonResponse, renderWithSession } from "../test-utils/session";
 
 jest.mock("expo-web-browser", () => ({ openBrowserAsync: jest.fn(async () => ({})) }));
@@ -80,7 +83,8 @@ describe("US-MOB-01 · sign in to my company's Spine on my phone", () => {
       expect(init.credentials).toBe("omit");
     });
 
-    it("shows \"Invalid email or password.\" for wrong credentials", async () => {
+    it("says what to do next for wrong credentials", async () => {
+      expect(INVALID_CREDENTIALS_MESSAGE).toBe("That email and password don't match. Check both, or reset your password.");
       fetchMock.mockResolvedValueOnce(jsonResponse(401, { message: "Invalid email or password" }));
       const error = await passwordSignIn("https://spine.example/api", "marcus@example.com", "wrong").catch((e: unknown) => e);
       expect(error).toBeInstanceOf(SignInError);
@@ -98,7 +102,7 @@ describe("US-MOB-01 · sign in to my company's Spine on my phone", () => {
   describe("the screen", () => {
     it("shows the copy and fields from the story", () => {
       renderWithSession(<SignInScreen />, { state: { status: "signedOut" } });
-      expect(screen.getByText("Sign in to Spine")).toBeTruthy();
+      expect(screen.getByRole("header", { name: "Sign in" })).toBeTruthy();
       expect(screen.getByText("Use the email your office invited you with.")).toBeTruthy();
       expect(screen.getByText("Server")).toBeTruthy();
       expect(screen.getByText("Email")).toBeTruthy();
@@ -106,6 +110,42 @@ describe("US-MOB-01 · sign in to my company's Spine on my phone", () => {
       expect(screen.getByText("The server address is the link you open Spine with on a computer.")).toBeTruthy();
       expect(screen.getByText("You stay signed in on this phone until you sign out.")).toBeTruthy();
       expect(screen.getByTestId("sign-in-forgot")).toBeTruthy();
+    });
+
+    it("shows the Spine logo on the illustration, which screen readers skip", () => {
+      renderWithSession(<SignInScreen />, { state: { status: "signedOut" } });
+      expect(screen.getByLabelText("Spine")).toBeTruthy();
+      const hidden = screen.getByTestId("sign-in-hero").children[0] as unknown as { props: Record<string, unknown> };
+      expect(hidden.props).toMatchObject({ accessibilityElementsHidden: true, importantForAccessibility: "no-hide-descendants" });
+    });
+
+    it("folds the illustration to the horizontal logo while the keyboard is up", () => {
+      const listeners: Record<string, () => void> = {};
+      jest.spyOn(Keyboard, "addListener").mockImplementation(((event: string, listener: () => void) => {
+        listeners[event] = listener;
+        return { remove: jest.fn() };
+      }) as never);
+      renderWithSession(<SignInScreen />, { state: { status: "signedOut" } });
+      expect(screen.getByTestId("sign-in-hero")).toBeTruthy();
+      const opened = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+      const closed = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+      act(() => listeners[opened]!());
+      expect(screen.queryByTestId("sign-in-hero")).toBeNull();
+      expect(screen.getByTestId("sign-in-compact-logo")).toBeTruthy();
+      expect(screen.getByLabelText("Spine")).toBeTruthy();
+      act(() => listeners[closed]!());
+      expect(screen.getByTestId("sign-in-hero")).toBeTruthy();
+      jest.restoreAllMocks();
+    });
+
+    it("only drifts the orbits slowly, and holds still with Reduce Motion", () => {
+      renderWithSession(<SignInScreen />, { state: { status: "signedOut" } });
+      expect(screen.UNSAFE_getByType(Orbits).props.moving).toBe(true);
+      screen.unmount();
+      (useReducedMotion as jest.Mock).mockReturnValue(true);
+      renderWithSession(<SignInScreen />, { state: { status: "signedOut" } });
+      expect(screen.UNSAFE_getByType(Orbits).props.moving).toBe(false);
+      (useReducedMotion as jest.Mock).mockReturnValue(false);
     });
 
     it("puts the error under the field it's about", async () => {

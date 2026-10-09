@@ -454,7 +454,7 @@ Decision: [D-204](../prd/12-decisions.md)
 - **Given** large text, **when** Welcome opens, **then** the illustration shrinks first and the words scroll; "Get started" stays reachable.
 
 **Implementation notes**
-- Route `app/welcome.tsx`, shown by the root layout when nobody is signed in and the "Welcome seen" flag isn't set; the flag lives in the same per-device storage as the appearance setting.
+- Route `app/welcome.tsx`, shown by the root layout when nobody is signed in and the "Welcome seen" flag isn't set; the flag lives in the app's own key-value store (`expo-sqlite/kv-store`), not the keychain, so deleting the app and installing it again shows Welcome again.
 - Motion with Reanimated 4 shared values on the UI thread and `react-native-svg` for the orbits and signature; `useReducedMotion()` turns it off. The idle loop stops when Welcome loses focus or the app goes to the background. Timings and easing are on the canvas "11 Splash and Welcome" (Welcome A storyboard).
 - The cards are drawn with `@spine/ui-native` tokens; brand colours only in the mark, glow, orbits and sparkles (US-MOB-27).
 

@@ -26,6 +26,12 @@ jest.mock("expo-file-system", () => ({
   Paths: { cache: "cache", document: "document" },
 }));
 jest.mock("expo-image-manipulator", () => ({ manipulateAsync: jest.fn(), SaveFormat: { JPEG: "jpeg" } }));
+// Welcome and Sign in animate with Reanimated (D-204); under Jest its own mocks stand in for the UI-thread runtime.
+jest.mock("react-native-worklets", () => jest.requireActual("react-native-worklets/src/mock"));
+// Its mock has no useReducedMotion; tests set it to see the still version.
+jest.mock("react-native-reanimated", () => ({ ...jest.requireActual("react-native-reanimated/mock"), useReducedMotion: jest.fn(() => false) }));
+// The splash is the system's; tests only see that it was asked to hide.
+jest.mock("expo-splash-screen", () => ({ preventAutoHideAsync: jest.fn(async () => true), hideAsync: jest.fn(async () => {}), setOptions: jest.fn() }));
 
 // `pnpm test` runs every package at once; the default 1 s for findBy/waitFor flakes under that load.
 configure({ asyncUtilTimeout: 5000 });

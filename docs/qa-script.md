@@ -4289,10 +4289,10 @@ Use the GST business from section 175.
 
 Run the app on an iPhone simulator and an Android emulator (`pnpm --filter @spine/mobile ios` / `android`, a dev build because of `@expo/ui`). Use the API's own address in development (`http://localhost:4000` on the iOS simulator, `http://10.0.2.2:4000` on the Android emulator). Load the demo business and sign in as Marcus Webb (Field).
 
-1. First launch shows "Sign in to Spine", "Use the email your office invited you with.", Server, Email, Password, "The server address is the link you open Spine with on a computer.", "Sign in", "Forgot password?" and "You stay signed in on this phone until you sign out."
+1. After Welcome (section 197), Sign in shows the Spine logo on its illustration, "Sign in", "Use the email your office invited you with.", Server, Email, Password, "The server address is the link you open Spine with on a computer.", "Sign in", "Forgot password?" and "You stay signed in on this phone until you sign out."
 2. Errors sit under their field:
    - A server that isn't Spine (e.g. `example.com`): "Can't reach that server. Check the address — it's the link you open Spine with on a computer." under Server.
-   - A wrong password: "Invalid email or password." under Password.
+   - A wrong password: "That email and password don't match. Check both, or reset your password." under Password.
    - An empty field: a line under that field; nothing is sent.
 3. "Forgot password?" opens the web app's reset page in the phone's browser. With no server typed it asks for the server first.
 4. Sign in. You land on Today: a large title "Today" (iOS) or "Today" headline (Android), "Good morning, Marcus" and "Riverstone Builders · <date>". Tabs: Today, Jobs, Expenses and Search — on iOS Search is the separate round button beside the glass tab bar; on Android it's a fourth tab with labels on every tab. Expenses says what it will hold (Jobs, Search and the rest of Today are section 192).
@@ -4429,6 +4429,47 @@ On an Android phone, compare each screen with its `Mob…Android` artboard in `d
    - Elsewhere it does what the drawn back arrow does.
 9. TalkBack: swipe through Today, a job, Expenses, New expense, Search, Profile, Sync, Notifications, Mark complete, the camera and a presented quote. Every control is read with a name (no "unlabelled button").
 10. Regression (iOS): Today, Profile, Search, Sign in and New expense look as before (sections 191–195).
+
+## 197. The field app: icon, splash, Welcome and the new Sign in (US-MOB-01, US-MOB-24 to US-MOB-27, Phase 5)
+
+The phone carries the new Spine logo (D-203); the web keeps its own until its rebrand (Q-25). Icons and the splash need a fresh dev build (`npx expo prebuild --clean`, then `pnpm --filter @spine/mobile ios` / `android`). To see Welcome again, delete the app from the device and install it again. Compare against the canvases "10 Brand and app icon", "11 Splash and Welcome" and "12 Sign in" and the `MobSplash*`, `MobWelcome*` and `MobSignIn*` artboards.
+
+1. **App icon (US-MOB-24):**
+   - iPhone home screen: the layered mark on the teal-to-blue gradient, corners rounded by iOS, labelled "Spine".
+   - Long-press the home screen › Edit › Customize › Dark: the mark on iOS's dark backdrop. Tinted: a one-colour silhouette in the chosen tint.
+   - Android launcher: the same art. Change the launcher's icon shape (circle, squircle, rounded square, teardrop) where the launcher allows: the mark is never clipped.
+   - Android 13+: turn on Themed icons in Wallpaper & style: a one-colour silhouette in the phone's colours.
+2. **Splash (US-MOB-25):** cold-start the app in light mode, then dark mode.
+   - Each time: the gradient mark, about 96 dp, centred on `#F7F6F3` (light) or `#121110` (dark). No wordmark, no spinner, no white flash.
+   - Android 12+: only the system splash, no second one after it.
+   - In airplane mode, the splash still hides as soon as the first screen is ready; it never waits on the network.
+3. **Welcome (US-MOB-26),** on a fresh install:
+   - The mark rises out of the splash from the same spot, its layers breathe apart and settle, and five cards slide out from behind it: today's job, "3 photos saved", a fuel receipt, a signed quote with its signature drawing itself, and "Foundations · Completed".
+   - "Today’s jobs, in your pocket", the sentence and "Get started" fade up. Everything is still within about 1.5 s, then the cards float gently.
+   - Tap "Get started" while it's still animating: it works at once and opens Sign in.
+   - Kill and reopen the app: Sign in, not Welcome. Sign in, sign out, reopen: still no Welcome.
+4. Welcome, continued:
+   - Reduce Motion (iOS Settings › Accessibility › Motion) or Remove animations (Android › Accessibility): Welcome appears in its final state and nothing moves. Reinstall to see it.
+   - VoiceOver / TalkBack: the illustration is skipped. You hear "Today’s jobs, in your pocket", heading; the sentence; "Get started", button; and the footer.
+   - Android back on Welcome closes the app.
+   - Dark mode: the brand colours stay; the cards are dark with a hairline border.
+   - Largest text size: the illustration shrinks first, the words scroll, and "Get started" stays reachable.
+5. **Already signed in:** install this build over an older one while signed in. You land on Today; after signing out you see Sign in, never Welcome.
+6. **Sign in (US-MOB-01):**
+   - The vertical logo (mark over SPiNE) sits on the illustration — glow, dashed orbits, three faded cards — fading into the page, then "Sign in".
+   - Only the orbits drift and the sparkles twinkle, slowly; nothing moves with Reduce Motion.
+   - VoiceOver reads the logo as "Spine" and skips the rest of the illustration.
+   - Dark mode: the wordmark turns light.
+7. Sign in, continued:
+   - Tap Email: the illustration folds to the horizontal logo, and Server, Email, Password and "Sign in" stay above the keyboard on a small phone (iPhone SE, small Android). Dismiss the keyboard: the illustration returns.
+   - A wrong password: "That email and password don't match. Check both, or reset your password." What you typed stays.
+8. **Logo and brand colours (US-MOB-27):**
+   - The design-system app (`apps/design-system-native`) has a "Spine logo" page (mark, horizontal, vertical, minimum sizes) and Brand swatches on Color.
+   - `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks.
+9. Regression:
+   - The web app, the docs site and the web design system still show the "S" logo.
+   - Section 191: sign in, errors under their fields, Forgot password, Profile, sign out.
+   - Section 196: Android screens keep Material 3 (outlined fields, pill buttons).
 
 ## Known gaps — don't file these as bugs
 

@@ -80,6 +80,27 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (US-MOB-01, US-MOB-24 to US-MOB-27)
+
+- **App icon (US-MOB-24):**
+  - iOS: the full-bleed gradient icon, plus dark and tinted versions (`ios.icon`).
+  - Android: an adaptive icon (the gradient background, the mark at 62% inside the safe circle) and a themed-icon silhouette.
+  - A 512 px Play Store icon.
+  - The PNGs are rendered from SVGs committed in `apps/mobile/assets/brand/`. Expo's placeholder icon, splash and favicon are gone.
+- **Splash (US-MOB-25):** `expo-splash-screen` shows the 96 dp mark on `#F7F6F3` / `#121110`. It's held until the session and the Welcome flag are known and the first screen has laid out, and never waits on the network.
+- **Welcome (US-MOB-26):**
+  - Shown once per install, before Sign in. The mark rises out of the splash and its layers breathe apart. Today's job, saved photos, a fuel receipt, a signed quote (its signature drawing itself) and a completed milestone slide out from behind it. Then "Today’s jobs, in your pocket" and "Get started".
+  - Built with Reanimated 4 and `react-native-svg`: a gentle idle loop while on screen, and a still frame with Reduce Motion.
+  - "Get started" replaces it with Sign in and sets the per-device flag; a phone already signed in skips it for good.
+- **Brand (US-MOB-27):**
+  - `tokens.json` gains `color.brand` and `color.gradients.brand`.
+  - `@spine/ui-native` adds `brandColors` (no Tailwind class, so brand colours can't be used for text) and `SpineLogo`: mark, horizontal or vertical, drawn from the logo paths, dark-mode aware, read as "Spine", clamped to the brand minimum.
+  - New "Spine logo" page and Brand swatches in `apps/design-system-native`.
+- **Sign in (US-MOB-01):**
+  - The vertical logo on a short version of Welcome's illustration, titled "Sign in". The illustration folds to the horizontal logo while the keyboard is up.
+  - A wrong password reads "That email and password don't match. Check both, or reset your password."
+- **Tests:** `us-mob-24` to `us-mob-27` added; `us-mob-01` updated. Reanimated, Worklets and the splash are mocked in the mobile Jest setup. QA script section 197.
+
 ### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (planning, US-MOB-01, US-MOB-24 to US-MOB-27, D-203, D-204)
 
 - **New logo, phone only (D-203):** the layered mark and SPiNE wordmark in `docs/logos` replace Expo's placeholders in the field app. The web app, docs site and web design system keep the "S" logo for now; when they change is open as Q-25.
