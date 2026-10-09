@@ -2,7 +2,7 @@
 
 Organisation configuration in one Owner-only Settings dialog (business profile, branding, template, currency, financial year, tax, numbering, chart of accounts, purchases, pipeline stages, quote conversion, meeting defaults, demo data), record history on every document, and an organisation-wide audit log. Personal preferences live on Profile & Preferences (02), people and access under Team (15).
 
-**Screens:** `SettingsBusiness` (P1), `SettingsSearch` (P3), `SettingsTemplate` (P2), `SettingsCurrency` (P2), `SettingsFiscalYear` (P2), `SettingsNumbering` (P2), `SettingsDemoData` (P2), `DeleteDemoDataConfirm` (P2), `HistoryDialog` (P2), `ContactHistory` (P2), `UserMenu` (P1), `SettingsBranding` (P3), `OrgAuditLog` (P3), `SettingsAccounts` (P2), `QuotePdf` (P1), `SettingsDataExport` (P2), `SettingsPaymentInstructions` (P2), `SettingsDocumentLayout` (P1), `SettingsEmailTemplates` (P1), `SettingsModules` (P1), `ModuleOffConfirm` (P1)
+**Screens:** `SettingsBusiness` (P1), `SettingsSearch` (P3), `SettingsTemplate` (P2), `SettingsCurrency` (P2), `SettingsFiscalYear` (P2), `SettingsNumbering` (P2), `SettingsDemoData` (P2), `DeleteDemoDataConfirm` (P2), `HistoryDialog` (P2), `ContactHistory` (P2), `UserMenu` (P1), `SettingsBranding` (P3), `OrgAuditLog` (P3), `SettingsAccounts` (P2), `QuotePdf` (P1), `SettingsDataExport` (P2), `SettingsPaymentInstructions` (P2), `SettingsDocumentLayout` (P1), `SettingsEmailTemplates` (P1), `SettingsModules` (P1), `ModuleOffConfirm` (P1), `BrandSidebar` (P2), `BrandSidebarDark` (P2), `BrandSignIn` (P2), `BrandBrowserIcons` (P2), `BrandPublicQuoteFooter` (P3)
 **Depends on:** 01 Onboarding (same step components), 15 Team (Owner-only rule), every module (audit entries).
 
 ## Features
@@ -20,6 +20,7 @@ Organisation configuration in one Owner-only Settings dialog (business profile, 
 | F-SET-09 | Document layout options and fonts | P1 | 9 | `SettingsDocumentLayout`, `InvoicePdfGst` |
 | F-SET-10 | Email templates | P1 | 9 | `SettingsEmailTemplates` |
 | F-SET-11 | Modules | P1 | 9 | `SettingsModules`, `ModuleOffConfirm` |
+| F-SET-12 | The Spine brand on the web | P2 | Refinements | `BrandSidebar`, `BrandSidebarDark`, `BrandSignIn`, `BrandBrowserIcons`, `BrandPublicQuoteFooter` |
 
 ## User stories
 
@@ -379,3 +380,28 @@ Decision: D-154
 
 **Implementation notes**
 - On switching on, `next_run_on` of active schedules is moved to the next future occurrence.
+
+### US-SET-26 · See the Spine logo across the web app
+**Feature:** F-SET-12 · **Priority:** P2 · **Phase:** Refinements (before Phase 10) · **Screens:** `BrandSidebar`, `BrandSidebarDark`, `BrandSignIn`, `BrandBrowserIcons`, `BrandPublicQuoteFooter`
+**As** anyone using Spine in a browser, **I want** the Spine logo and icon wherever the app shows itself, **so that** I recognise it in my tabs, bookmarks and home screen, the same as on my phone.
+
+Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** a signed-in page, **when** the sidebar is expanded, **then** its header shows the horizontal logo (the mark beside SPiNE); **when** it's collapsed, **then** the gradient mark alone (28 px) replaces the "S".
+- **Given** login, sign-up, onboarding, accept invite, forgot password, reset password and invite-only, **when** they open, **then** they show the horizontal logo where the old one was.
+- **Given** dark mode, **when** a page with the logo renders, **then** the wordmark is light text from the first frame, with no swap after the page loads.
+- **Given** a business has picked another theme (US-SET-09), **when** the logo renders, **then** the wordmark stays Spine blue (`#2954E5`); the theme changes only the app's accent colour.
+- **Given** a browser tab or bookmark, **when** Spine is open, **then** its icon is the app-icon tile (the white-edged mark on the teal-to-blue square): an SVG for current browsers, and `favicon.ico` at 16, 32 and 48 px for the rest.
+- **Given** "Add to Home Screen", **when** it's used on an iPhone or iPad, **then** the icon is the 180 px iOS app-icon art; **when** it's used in Chrome on Android, **then** the web manifest's 192 and 512 px icons and a maskable icon are used. The browser's bar takes the page colour (`#F7F6F3` light, `#121110` dark), and Spine stays a normal website (no install prompt).
+- **Given** a browser push notification, **when** it shows, **then** it carries the square app icon, and on Android a one-colour badge.
+- **Given** the public quote page, **when** a customer opens it, **then** "Sent with Spine" has the 20 px mark before it.
+- **Given** a screen reader, **when** it reaches the logo, **then** it hears "Spine" once; where the word Spine is already next to it (the quote footer), the logo is skipped.
+- **Given** emails and PDFs, **when** they're sent, **then** they keep the business's own logo and name, unchanged.
+- **Given** the web design system, **when** this story is done, **then** `SpineLogo` has a doc page and an accessibility test, Color shows the brand swatches, and the old logo PNGs are gone from `apps/web` and `apps/design-system`.
+
+**Implementation notes**
+- `SpineLogo` in `@spine/ui`: inline SVG from the `docs/logos` paths (the same as `@spine/ui-native`'s), mark, horizontal or vertical, clamped to the brand minimums (20 px mark, 96 px wide lockup), read as "Spine" unless `decorative`.
+- Brand tokens in `packages/config`: `--color-brand-teal`, `--color-brand-sky`, `--color-brand-deep` and `--color-brand-wordmark` (light `#2954E5`, dark `#F3F2EE`), outside the `[data-brand]` theme rules so no theme changes them; for the logo and icons only (US-MOB-27).
+- Icons through Next.js's file conventions: `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`, and `app/manifest.ts` (`display: "browser"`). `public/sw.js` uses `/icons/notification-192.png` and `/icons/badge-96.png`. `themeColor` in the root layout's viewport, per colour scheme.
+

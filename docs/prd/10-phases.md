@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 431 stories.
+Total: 432 stories.
 
 ## Phase 0 · Foundation
 
@@ -755,6 +755,16 @@ Total: 431 stories.
 - US-SET-23 · Switch optional modules on or off (P1)
 - US-SET-24 · Hide everything a switched-off module owns (P1)
 - US-SET-25 · Switch a module back on with nothing lost (P1)
+
+## Refinements before Phase 10
+
+**Goal:** Web app refinements requested after Phase 9, one at a time, on the branch `refinements-web-pre-phase-10`.
+
+**Stories:**
+
+*Settings & administration*
+
+- US-SET-26 · See the Spine logo across the web app (P2)
 
 ## Phase 10 · AI assistant
 

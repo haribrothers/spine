@@ -432,6 +432,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-SET-24 · Hide everything a switched-off module owns
 - [x] US-SET-25 · Switch a module back on with nothing lost
 
+## Refinements before Phase 10
+
+- [ ] US-SET-26 · See the Spine logo across the web app
+
 ## Phase 10 · AI assistant
 
 - [ ] US-AI-01 · Switch the AI assistant on or off
