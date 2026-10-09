@@ -4527,6 +4527,40 @@ Use a 1280 px-wide window in Chrome and Safari, light and dark. Compare against 
    - Session-expired login from the dialog still returns you to your page (US-AUTH-12).
    - The field app's sign-in is unchanged.
 
+## 200. Onboarding in four stages (US-ONB-22, US-ONB-23, refinements before Phase 10)
+
+Sign up a new owner (an install with open sign-up, or a fresh one). Use a 1440 px-wide window, light and dark, and compare with the canvas "03 Onboarding" and the `Onb*` artboards.
+
+1. **Start (US-ONB-22):**
+   - `/onboarding` shows "Welcome to Spine, <first name>", "Four short stages, about 6 minutes…", the four stages with a line each, and the three buttons.
+   - Beside it: the dashboard, a paid invoice and the phone app drawn with grey lines (no names or amounts), and two people.
+   - "Just show me around (use defaults)" still opens the demo business dialog, and "Skip to dashboard" still skips.
+2. **The rail and tips:**
+   - "Set up my business" shows the rail: Business (Details, Template), Money (Currency, Financial year, Tax), Documents (Numbering) and Books & team (Accounts, Team), with "About 6 min left" and a progress line.
+   - Each Continue ticks the step and the minutes count down (5 at Currency, 1 at Team).
+   - Every step has "Stage n of 4 · <stage> · Step n of n" above it and a tip under it ending "Change it later in Settings › …".
+   - From the second step on, **Back** opens the previous step with what was saved.
+3. **The preview (1280 px and wider):**
+   - Typing the business name, address and logo shows them on the invoice before Continue; with no name it says "Your business".
+   - Currency INR and locale en-IN show "₹1,25,000.00" and the date in Indian format.
+   - Tax: India shows "CGST 9% + SGST 9%" and "₹22,500.00"; the UK shows "VAT 20%"; "Another country" shows the rate you type.
+   - Numbering: an invoice starting number of 1042 shows "INV-1042".
+   - Accounts and Team: the preview turns to "Your books" (accounts per group), "Your team" (you, then each invite as "Invited") and "Set so far".
+4. **Narrow windows:** at 1100 px the preview is gone; below 1024 px the rail becomes the bar at the top with the stage and minutes left.
+5. **Screen reader and motion:**
+   - VoiceOver reads "Stage 2 of 4 · Money · Step 1 of 3", the heading, the form and the tip. The rail is "Setup steps", with the current step marked and "(done)" after done steps. The preview and the drawn screens are skipped.
+   - With Reduce Motion, nothing slides or rises.
+6. **Finish (US-ONB-23):**
+   - On Team, "Finish" (or "Skip — finish setup") shows "You're set up" and "Spine is ready for <business>.".
+   - The summary shows Business, Money ("INR · India (GST)"), Documents ("First invoice INV-1042") and Team ("1 invite sent" or "Just you for now").
+   - Change opens the matching Settings pane over the screen; Team's Change opens Team › Users.
+   - The three cards open New contact, the Catalogue and New quote; "See what's left to set up — <n> left" opens Set up Spine.
+   - "Go to dashboard" leaves. Refreshing the finish screen, or opening `/onboarding` again, goes to the dashboard.
+7. Regression:
+   - Skipping from any step, or loading a demo business, still goes straight to the dashboard (US-ONB-02, US-ONB-18).
+   - The template, tax (with GST details for India), numbering and accounts steps save as before (US-ONB-04 to US-ONB-07, US-ONB-14, US-ONB-20, US-TAX-09, US-TAX-12).
+   - Documents are numbered as before (`INV-0001`, demo `DEMO-INV-0001`).
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

@@ -14,12 +14,14 @@ const PEOPLE = {
   customer: "1115 / 2971",
   morning: "824 / 1135",
 } as const;
-type Person = keyof typeof PEOPLE;
-type Outfit = "mint" | "sky" | "periwinkle";
+export type Person = keyof typeof PEOPLE;
+export type Outfit = "mint" | "sky" | "periwinkle";
 
-function Figure({ who, outfit, delay, className }: { who: Person; outfit: Outfit; delay: string; className?: string }) {
+/** One person from the sprite, on their halo. `height` overrides the default size (a CSS length, e.g. "min(40cqh, 30cqw)"). */
+export function Figure({ who, outfit, delay, className, height }: { who: Person; outfit: Outfit; delay: string; className?: string; height?: string }) {
+  const style = { "--d": delay, ...(height ? { "--h": height } : {}) } as Timing;
   return (
-    <div className={[styles.person, styles[outfit], className].filter(Boolean).join(" ")} style={{ "--d": delay } as Timing}>
+    <div className={[styles.person, styles[outfit], className].filter(Boolean).join(" ")} style={style}>
       <span className={styles.halo} />
       <svg className={styles.figure} style={{ aspectRatio: PEOPLE[who] }}>
         <use href={`/illustrations/people.svg#${who}`} />
@@ -150,7 +152,7 @@ function LoginScene() {
   );
 }
 
-function Caption({ title, body }: { title: string; body: string }) {
+export function Caption({ title, body }: { title: string; body: string }) {
   return (
     <div className={styles.caption}>
       <div className="text-[20px] font-semibold leading-snug tracking-tight text-on-surface">{title}</div>
@@ -169,9 +171,16 @@ function Caption({ title, body }: { title: string; body: string }) {
  */
 export function AuthIllustration({ scene }: { scene: AuthScene }) {
   return (
-    <div className={`${styles.panel} h-full w-full`} aria-hidden data-testid={`auth-illustration-${scene}`}>
+    <IllustrationPanel testId={`auth-illustration-${scene}`}>{scene === "welcome" ? <WelcomeScene /> : <LoginScene />}</IllustrationPanel>
+  );
+}
+
+/** The soft brand panel, its ground and the centred stage everything else sits on; hidden from screen readers. */
+export function IllustrationPanel({ testId, children }: { testId: string; children: ReactNode }) {
+  return (
+    <div className={`${styles.panel} h-full w-full`} aria-hidden data-testid={testId}>
       <div className={styles.ground} />
-      <div className={styles.stage}>{scene === "welcome" ? <WelcomeScene /> : <LoginScene />}</div>
+      <div className={styles.stage}>{children}</div>
     </div>
   );
 }

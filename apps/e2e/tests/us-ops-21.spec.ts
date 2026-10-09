@@ -18,8 +18,9 @@ base.describe("US-OPS-21 · onboarding", () => {
 
     let sawFinancialYear = false;
     for (let i = 0; i < 10; i++) {
-      if (await page.getByText("Invite your team").isVisible()) break;
-      if (await page.getByText("Financial year", { exact: true }).isVisible()) {
+      if (await page.getByRole("heading", { name: "Invite your team" }).isVisible()) break;
+      // US-ONB-22: the rail lists every step's name, so look for the step's heading.
+      if (await page.getByRole("heading", { name: "Financial year", exact: true }).isVisible()) {
         sawFinancialYear = true;
         await baseExpect(page.getByText("Document numbers never reset.")).toBeVisible();
         await baseExpect(page.getByText(/sequences reset/i)).toHaveCount(0);

@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — Onboarding in four stages and a finish screen (US-ONB-22, US-ONB-23, D-208)
+
+- **Start screen:** `/onboarding` opens in the signed-out frame: "Welcome to Spine, <first name>", the four stages, the same three buttons, and Spine's dashboard, an invoice and the phone app drawn small with the people (`OnboardingStartIllustration`).
+- **Four stages (US-ONB-22):**
+  - The eight steps keep their forms and labels, grouped as Business · Money · Documents · Books & team (`ONBOARDING_STAGES`).
+  - A rail (a bar below 1024 px) ticks steps off and counts down "About <n> min left"; every step has "Stage n of 4 · …", **Back** and a tip saying where to change it later (`OnboardingShell`).
+- **Live preview (from 1280 px):**
+  - The start of the first invoice, from what's typed before it's saved: name, logo and address, money in the chosen currency and locale, the tax line, and the first invoice number. The last stage shows "Your books", "Your team" and "Set so far" (`OnboardingPreview`).
+  - Business, Currency, Tax country, Default tax rate and Numbering steps gain an optional `onChange`.
+  - New `formatDocumentNumber` in `@spine/shared`, now also used by the numbering service, so the preview's number and the real one can't differ.
+- **Finish screen (US-ONB-23):** Finish now ends on "You're set up": a summary with Change links (Settings panes over the screen), three next actions and "See what's left to set up — <n> left". Skipping and the demo business still go straight to the dashboard.
+- **Finished means finished:** `/onboarding` now sends a finished or skipped onboarding to the dashboard (US-ONB-01), so the finish screen doesn't come back on refresh.
+- **Reuse:** `AuthFrame` takes a custom `panel` and a `wide` column; `Figure`, `Caption` and `IllustrationPanel` are exported from the auth illustration.
+- **Tests:**
+  - New: `us-onb-22` (web unit and shared) and `us-onb-22` / `us-onb-23` E2E.
+  - `us-ops-21` finds the step by its heading, since the rail now names every step.
+  - QA script section 200.
+- **Design:** canvas "03 Onboarding"; ten `Onb*` artboards.
+
 ### 2026-10-10 — People in the signed-out illustration (US-AUTH-13, US-AUTH-14, D-207)
 
 - **The illustration is now people:** welcome shows a team of three (a tradesperson pointing at the quote, the owner and a customer; two men, one woman) and login shows one man with a coffee. They're Open Peeps (CC0, Pablo Stanley), shipped as one sprite, `apps/web/public/illustrations/people.svg`, and drawn with `<use>`. The Spine mark and its orbits leave the panel.

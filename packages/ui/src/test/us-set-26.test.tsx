@@ -82,7 +82,9 @@ describe("US-SET-26 · see the Spine logo across the web app", () => {
     expect(layout).toContain('<SpineLogo variant="mark" size={28} />');
     expect(layout).toContain('<SpineLogo variant="horizontal" size={96} />');
     expect(layout).not.toMatch(/>S<\/span>/);
-    expect(read("apps/web/src/app/onboarding/page.tsx")).toContain('<SpineLogo variant="horizontal" size={140} />');
+    // US-ONB-22: onboarding's start and finish use AuthFrame; the steps carry the logo in their rail.
+    expect(read("apps/web/src/app/onboarding/page.tsx")).toContain("<AuthFrame");
+    expect(read("apps/web/src/app/onboarding/onboarding-shell.tsx")).toContain('<SpineLogo variant="horizontal" size={96} />');
     // US-AUTH-13, US-AUTH-14 (D-207): every signed-out page now sits in AuthFrame, which carries the logo.
     expect(read("apps/web/src/components/auth-frame.tsx")).toContain('<SpineLogo variant="horizontal" size={96} />');
     for (const page of ["apps/web/src/app/login/page.tsx", "apps/web/src/app/signup/page.tsx", "apps/web/src/app/accept-invite/[id]/accept-invite-view.tsx"]) {

@@ -416,13 +416,13 @@ Decision: D-208
 - **Given** any step, **when** I look under the form, **then** a tip says why it matters and where to change it later, e.g. "Spine uses one currency for everything. The locale decides how dates and numbers look." · "Change it later in Settings › Currency & locale.".
 - **Given** the Business, Money or Documents stage, **when** I type or pick, **then** a preview beside the form shows the start of my first invoice and updates before I save: my logo, business name and address; the date and an example amount in my currency and locale; my tax name and rate on a line; and the invoice number my numbering will give (e.g. "INV-0001"). Until I've typed a name it says "Your business".
 - **Given** the Books & team stage, **when** it shows, **then** the preview turns to "Your books": the account groups with how many accounts each has, and "Your team" with everyone I've invited and their role.
-- **Given** any step after the first, **when** I press "Back", **then** the previous step opens with what I saved.
+- **Given** any step after the first, **when** I press "Back" (above the step, beside where I am), **then** the previous step opens with what I saved.
 - **Given** a window narrower than 1280 px, **when** a step shows, **then** the preview is left out; below 1024 px the rail becomes a bar at the top ("Stage 2 of 4 · Money · About 4 min left") with a progress line.
-- **Given** a screen reader, **when** it reads a step, **then** it hears the stage and step ("Money, step 1 of 3: Currency"), the form and the tip, and skips the preview and the drawn screens.
+- **Given** a screen reader, **when** it reads a step, **then** it hears where it is ("Stage 2 of 4 · Money · Step 1 of 3"), the step's heading, the form and the tip; the rail is a "Setup steps" list with the current step marked and done steps read as "(done)"; it skips the preview and the drawn screens.
 - **Given** Reduce Motion, **when** steps change, **then** nothing slides; the preview changes without animating.
 
 **Implementation notes**
-- UI: `apps/web/src/app/onboarding/page.tsx` gets a new shell (`OnboardingShell`: rail, step area, tip, preview); the step components stay and keep their labels ("Continue", "Skip to dashboard"). Each step gains an optional `onChange(value)` so the preview sees unsaved input. `OnboardingPreview` formats with the same money and date helpers as documents (`@spine/shared`), so the preview can't disagree with the real invoice.
+- UI: `apps/web/src/app/onboarding/page.tsx` gets a new shell (`OnboardingShell`: rail, step area, tip, preview); the step components stay and keep their labels ("Continue", "Skip to dashboard"). Each step that feeds the preview (Business, Currency, Tax country, Default tax rate, Numbering) gains an optional `onChange(value)`, so the preview sees unsaved input. `OnboardingPreview` formats money with `formatMoney` and the number with `formatDocumentNumber` (both `@spine/shared`; the numbering service uses the same one), so those can't disagree with the real invoice; the date is shown in the chosen locale, as on the web's screens. A preset country's tax line is its usual rate (India's 18% as CGST 9% + SGST 9%, otherwise the highest standard rate).
 - Data: no new API. The preview reads the saved settings each step already loads (`business_profile`, `currency`, `/org/tax/profile`, `/org/numbering`, `/org/accounts`) plus invitations sent in this session.
 - Content: stages, steps, minutes and tips live in one list (`ONBOARDING_STAGES`) in the web app.
 - Edge: Tax's GST details (India) and "Default tax rate" (another country) are part of the Tax step, so they don't change the count of steps.
@@ -442,6 +442,6 @@ Decision: D-208
 - **Given** Reduce Motion, **when** the finish screen opens, **then** its tick and people show still.
 
 **Implementation notes**
-- UI: a `done` state of `/onboarding` (`FinishStep`), shown after `PUT /org/settings/onboarding_status { completedAt }` succeeds. The "<n> left" comes from `GET /org/setup-status` with `setupProgress` (`@spine/shared`); if that call fails, the line reads "See what's left to set up".
+- UI: `/onboarding` checks `onboarding_status` when it opens and sends a finished or skipped onboarding to the dashboard (US-ONB-01). A `done` state (`FinishStep`) is shown after `PUT /org/settings/onboarding_status { completedAt }` succeeds. The "<n> left" comes from `GET /org/setup-status` with `setupProgress` (`@spine/shared`); if that call fails, the line reads "See what's left to set up".
 - Links: customer → `/contacts/new`, catalogue → `/catalog`, quote → `/quotes/new`; "Change" opens Settings at the matching pane.
 

@@ -2649,6 +2649,100 @@ Links to: `DashboardOwnerRedesign`
 
 Shows: The logo above "Log in" and the form; no illustration
 
+## Onboarding in four stages
+
+Drawn in Claude Design for US-ONB-22 and US-ONB-23 (D-208): project "Spine web — refinements before Phase 10", canvas "03 Onboarding". The start and finish screens use the signed-out frame (`AuthFrame`) with their own illustration; the steps sit in a shell with the stage rail, a tip under each form and, from 1280 px, a live preview. In the built wizard Back sits above the step, beside "Stage n of 4 · …", rather than in the form's footer, and the preview's tax line reads "Tax — set in the Tax step" until then. `OnbWelcome` and the per-step `Onb*` screens above show the old single-card wizard; these replace their look, and the forms inside are unchanged.
+
+### OnbStart — Start: four stages, and Spine drawn small
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStart](screens/OnbStart.webp)
+
+Links to: `OnbStageBusiness`, `SettingsDemoData`, `DashboardOwnerRedesign`
+
+Shows: "Welcome to Spine, <first name>" · "Four short stages, about 6 minutes. Skip anything — it's all in Settings later." · the four stages with a line each · "Set up my business" · "Just show me around (use defaults)" · "Skip to dashboard" · "Everything in one place."
+
+### OnbStartDark — Start, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStartDark](screens/OnbStartDark.webp)
+
+Links to: `OnbStageBusiness`
+
+Shows: As `OnbStart`
+
+### OnbStageBusiness — Business · Details, with the preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageBusiness](screens/OnbStageBusiness.webp)
+
+Links to: `OnbStageMoney`
+
+Shows: "Set up Spine" · "About 6 min left" · the rail · "Stage 1 of 4 · Business · Step 1 of 2" · "Tell us about your business" · "Why this matters" · "Change it later in Settings › Business profile." · "Preview · your first invoice" · "Updates as you type"
+
+### OnbStageMoney — Money · Currency, rupees in the preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageMoney](screens/OnbStageMoney.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: "Stage 2 of 4 · Money · Step 1 of 3" · "Currency & locale" · "Back" · "Good to know" · "Change it later in Settings › Currency & locale." · "Amounts and dates use your currency and locale."
+
+### OnbStageDocuments — Documents · Numbering, the first invoice number
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageDocuments](screens/OnbStageDocuments.webp)
+
+Links to: `OnbStageBooks`
+
+Shows: "Stage 3 of 4 · Documents · Step 1 of 1" · "Document numbering" · "Your first invoice will be INV-1042."
+
+### OnbStageBooks — Books & team · Team, the books and team preview
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22, US-ONB-23 · **Source:** Claude Design
+
+![OnbStageBooks](screens/OnbStageBooks.webp)
+
+Links to: `OnbFinish`
+
+Shows: "Stage 4 of 4 · Books & team · Step 2 of 2" · "Invite your team" · "Who sees what" · "Preview · your books and team" · "Your books" · "Your team" · "Set so far" · "Finish"
+
+### OnbStageDark — Money · Currency, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbStageDark](screens/OnbStageDark.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: As `OnbStageMoney`
+
+### OnbNarrow — A step in a narrow window
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-22 · **Source:** Claude Design
+
+![OnbNarrow](screens/OnbNarrow.webp)
+
+Links to: `OnbStageDocuments`
+
+Shows: "Stage 2 of 4 · Money · About 4 min left" and a progress line above the step; no rail or preview
+
+### OnbFinish — Finish: what you set, and what to do next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-23 · **Source:** Claude Design
+
+![OnbFinish](screens/OnbFinish.webp)
+
+Links to: `DashboardOwnerRedesign`, `SetupSpine`, `ContactCreateDrawer`, `CatalogList`, `QuoteBuilder`
+
+Shows: "You're set up" · "Spine is ready for <business>." · Business, Money, Documents and Team with "Change" · "What to do next" · "Add your first customer" · "Add something you sell" · "Send your first quote" · "See what's left to set up — <n> left" · "Go to dashboard"
+
+### OnbFinishDark — Finish, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-ONB-23 · **Source:** Claude Design
+
+![OnbFinishDark](screens/OnbFinishDark.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: As `OnbFinish`
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

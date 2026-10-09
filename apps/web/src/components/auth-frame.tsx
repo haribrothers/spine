@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { SpineLogo } from "@spine/ui";
 import { ThemeToggle } from "./theme-toggle";
 import { AuthIllustration, type AuthScene } from "./auth-illustration";
@@ -6,8 +7,20 @@ import { AuthIllustration, type AuthScene } from "./auth-illustration";
  * US-AUTH-13, US-AUTH-14 (D-207) — the frame every signed-out page uses:
  * the logo and theme toggle on top, the page's own content centred, and the
  * illustration beside it from 1024 px up (below that, the content alone).
+ * Onboarding's start and finish screens (US-ONB-22, US-ONB-23) use the same
+ * frame with their own `panel` and a `wide` content column.
  */
-export function AuthFrame({ scene = "login", children }: { scene?: AuthScene; children: React.ReactNode }) {
+export function AuthFrame({
+  scene = "login",
+  panel,
+  wide = false,
+  children,
+}: {
+  scene?: AuthScene;
+  panel?: ReactNode;
+  wide?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-[1fr_1.12fr]">
       <main className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14">
@@ -15,11 +28,11 @@ export function AuthFrame({ scene = "login", children }: { scene?: AuthScene; ch
           <SpineLogo variant="horizontal" size={96} />
           <ThemeToggle placement="inline" />
         </div>
-        <div className="mx-auto flex w-full max-w-[380px] flex-1 flex-col justify-center py-10">{children}</div>
+        <div className={`mx-auto flex w-full ${wide ? "max-w-[500px]" : "max-w-[380px]"} flex-1 flex-col justify-center py-10`}>{children}</div>
         <p className="text-center text-[12px] text-on-surface-muted">Spine · self-hosted business management</p>
       </main>
       <div className="hidden py-4 pr-4 lg:block">
-        <AuthIllustration scene={scene} />
+        {panel ?? <AuthIllustration scene={scene} />}
       </div>
     </div>
   );

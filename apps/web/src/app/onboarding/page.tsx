@@ -1,14 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, SpineLogo, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
-import type { TaxCountry, TaxProfile } from "@spine/shared";
+import { Button, Spinner } from "@spine/ui";
+import { formatDocumentNumber, taxCountryLabel, type TaxCountry, type TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
-import { ThemeToggle } from "../../components/theme-toggle";
+import { authClient } from "../../lib/auth-client";
+import { AuthFrame } from "../../components/auth-frame";
 import { DemoBusinessDialog } from "../../components/demo-business-dialog";
 import { BusinessProfileStep, type BusinessProfileValue } from "./steps/business-profile-step";
 import { WelcomeStep } from "./steps/welcome-step";
+import { FinishStep } from "./steps/finish-step";
 import { IndustryTemplateStep, type IndustryTemplate } from "./steps/industry-template-step";
 import { CurrencyLocaleStep, type CurrencyLocaleValue } from "./steps/currency-locale-step";
 import { FinancialYearStep, type FinancialYearValue } from "./steps/financial-year-step";
@@ -18,37 +20,104 @@ import { GstRegistrationForm } from "../settings/panes/gst-pane";
 import { NumberingStep, type NumberingSequenceValue } from "./steps/numbering-step";
 import { ChartOfAccountsStep, type AccountsByType } from "./steps/chart-of-accounts-step";
 import { InviteTeamStep, type MemberRole } from "./steps/invite-team-step";
+import { OnboardingShell, StepCard } from "./onboarding-shell";
+import { OnboardingPreview, presetTaxLine, type PreviewData } from "./onboarding-preview";
+import { OnboardingFinishIllustration, OnboardingStartIllustration } from "./onboarding-illustration";
+import { nextStep, previousStep, type OnboardingStepKey } from "./onboarding-stages";
 
-const STEP_DEFS: StepperStepDef[] = [
-  { key: "profile", label: "Business" },
-  { key: "template", label: "Template" },
-  { key: "currency", label: "Currency" },
-  { key: "fiscal_year", label: "Fiscal year" },
-  { key: "tax", label: "Tax" },
-  { key: "numbering", label: "Numbering" },
-  { key: "accounts", label: "Accounts" },
-  { key: "team", label: "Team" },
-];
+type Step = "welcome" | OnboardingStepKey | "done";
 
-type Step = "welcome" | (typeof STEP_DEFS)[number]["key"];
+/** What's saved so far, read when the wizard opens and again after each step saves. */
+interface Saved {
+  business: BusinessProfileValue | null;
+  currency: CurrencyLocaleValue | null;
+  taxCountry: TaxCountry | null;
+  defaultRate: TaxRateValue | null;
+  invoiceSeries: NumberingSequenceValue | null;
+  accounts: Record<string, number> | null;
+}
+
+/** What's typed or picked on the current step but not saved yet (US-ONB-22's live preview). */
+interface Draft {
+  business?: Pick<BusinessProfileValue, "name" | "logoUrl" | "address">;
+  currency?: CurrencyLocaleValue;
+  taxCountry?: TaxCountry;
+  taxRate?: TaxRateValue;
+  invoiceSeries?: NumberingSequenceValue;
+}
+
+const EMPTY_SAVED: Saved = { business: null, currency: null, taxCountry: null, defaultRate: null, invoiceSeries: null, accounts: null };
+
+async function loadSaved(): Promise<Saved> {
+  const [business, currency, profile, defaultRate, numbering, accounts] = await Promise.allSettled([
+    apiClient.get<{ value: BusinessProfileValue | null }>("/org/settings/business_profile"),
+    apiClient.get<{ value: CurrencyLocaleValue | null }>("/org/settings/currency"),
+    apiClient.get<TaxProfile>("/org/tax/profile"),
+    apiClient.get<TaxRateValue>("/org/tax/default-rate"),
+    apiClient.get<NumberingSequenceValue[]>("/org/numbering"),
+    apiClient.get<AccountsByType>("/org/accounts"),
+  ]);
+  const ok = <T,>(r: PromiseSettledResult<T>) => (r.status === "fulfilled" ? r.value : null);
+  const accountRows = ok(accounts);
+  return {
+    business: ok(business)?.value ?? null,
+    currency: ok(currency)?.value ?? null,
+    taxCountry: ok(profile)?.country ?? null,
+    defaultRate: ok(defaultRate),
+    invoiceSeries: ok(numbering)?.find((row) => row.documentType === "invoice") ?? null,
+    accounts: accountRows ? Object.fromEntries(Object.values(accountRows).flat().reduce((m, a) => m.set(a.type, (m.get(a.type) ?? 0) + 1), new Map<string, number>())) : null,
+  };
+}
 
 /**
- * The onboarding wizard shell (F12 / FEAT-12). Linear, always-skippable —
- * every step renders a "Skip to dashboard" action that marks onboarding
- * skipped and routes straight to /dashboard, per PRD's "MUST NOT require
- * the wizard to be completed before the app is usable".
+ * The onboarding wizard (F12 / FEAT-12; US-ONB-22 and US-ONB-23, D-208).
+ * Linear, always skippable — every step renders a "Skip to dashboard"
+ * action that marks onboarding skipped and routes straight to /dashboard,
+ * per PRD's "MUST NOT require the wizard to be completed before the app is
+ * usable". The eight steps run in four stages, with a rail, a tip under each
+ * step and a live preview of the first invoice; Finish ends on a finish
+ * screen.
  *
  * State is intentionally not centralized into one big form: each step
  * loads only the settings it needs on mount and saves immediately via its
  * own onSave, so a partial run through the wizard (someone closes the tab
- * halfway) still leaves everything they did complete persisted, not lost
- * in unsaved local state.
+ * halfway) still leaves everything they did complete persisted. The page
+ * only keeps what the preview needs: the saved values and the current
+ * step's unsaved input.
  */
 export default function OnboardingPage() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
   const [step, setStep] = useState<Step>("welcome");
+  const [checked, setChecked] = useState(false);
   const [loading, setLoading] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
+  const [saved, setSaved] = useState<Saved>(EMPTY_SAVED);
+  const [draft, setDraft] = useState<Draft>({});
+  const [invites, setInvites] = useState<{ email: string; role: MemberRole }[]>([]);
+
+  // US-ONB-01, US-ONB-23: a finished or skipped onboarding goes to the dashboard, refreshes included.
+  useEffect(() => {
+    let cancelled = false;
+    apiClient
+      .get<{ value: { skipped?: boolean; completedAt?: string } | null }>("/org/settings/onboarding_status")
+      .then((res) => {
+        if (cancelled) return;
+        if (res.value?.skipped || res.value?.completedAt) router.replace("/dashboard");
+        else setChecked(true);
+      })
+      .catch(() => {
+        if (!cancelled) setChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
+
+  // Drafts stay: once a step saves, its draft equals what was saved, so the preview never flickers back.
+  const refresh = useCallback(async () => {
+    setSaved(await loadSaved());
+  }, []);
 
   async function markOnboardingStatus(status: { completedSteps?: string[]; skipped?: boolean; completedAt?: string }) {
     await apiClient.put("/org/settings/onboarding_status", { value: status });
@@ -76,103 +145,171 @@ export default function OnboardingPage() {
     }
   }
 
+  // US-ONB-23: Finish marks onboarding done, then shows the finish screen rather than the dashboard.
   async function handleFinish() {
     setLoading(true);
     try {
       await markOnboardingStatus({ skipped: false, completedAt: new Date().toISOString() });
-    } finally {
+      await refresh();
+      setStep("done");
+    } catch {
       goToDashboard();
+    } finally {
+      setLoading(false);
     }
   }
 
-  const currentIndex = STEP_DEFS.findIndex((s) => s.key === step);
+  function start() {
+    setStep("profile");
+    void refresh();
+  }
 
-  return (
-    <main className="flex min-h-screen flex-col items-center gap-6 p-4 py-10">
-      <div className="flex w-full max-w-2xl items-center justify-center">
-        <SpineLogo variant="horizontal" size={140} />
+  /** After a step saves: re-read what the preview shows, then move on. */
+  function advance(from: OnboardingStepKey) {
+    void refresh();
+    const next = nextStep(from);
+    if (next) setStep(next);
+  }
+
+  const preview: PreviewData = useMemo(() => {
+    const currency = draft.currency ?? saved.currency ?? { code: "USD", locale: "en-US" };
+    const country = draft.taxCountry ?? saved.taxCountry;
+    const ownRate = draft.taxRate ?? (saved.defaultRate && saved.defaultRate.percentage > 0 ? saved.defaultRate : null);
+    const tax =
+      country && country !== "other" ? presetTaxLine(country) : ownRate ? { label: `${ownRate.name} ${ownRate.percentage}%`, percentage: ownRate.percentage } : null;
+    const series = draft.invoiceSeries ?? saved.invoiceSeries ?? { documentType: "invoice", prefix: "INV", padding: 4, nextValue: 1 };
+    return {
+      business: { ...(saved.business ?? {}), ...(draft.business ?? {}) },
+      currency,
+      tax,
+      invoiceNumber: formatDocumentNumber(series, series.nextValue),
+      accounts: saved.accounts,
+      owner: session?.user?.name ?? "",
+      invites,
+      taxCountryLabel: country && country !== "other" ? taxCountryLabel(country) : (tax?.label ?? null),
+    };
+  }, [saved, draft, invites, session]);
+
+  if (!checked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Spinner />
       </div>
-      <ThemeToggle />
-      {step !== "welcome" && (
-        <div className="w-full max-w-2xl">
-          <Stepper steps={STEP_DEFS} currentIndex={currentIndex} />
-        </div>
-      )}
+    );
+  }
 
-      {step === "welcome" && (
-        <WelcomeStep
-          onStartManual={() => setStep("profile")}
-          onUseDemoDefaults={() => setDemoOpen(true)}
-          onSkip={handleSkip}
+  if (step === "welcome") {
+    return (
+      <>
+        <AuthFrame wide panel={<OnboardingStartIllustration />}>
+          <WelcomeStep ownerName={session?.user?.name} onStartManual={start} onUseDemoDefaults={() => setDemoOpen(true)} onSkip={handleSkip} />
+        </AuthFrame>
+        <DemoBusinessDialog open={demoOpen} onOpenChange={setDemoOpen} onLoaded={handleDemoLoaded} />
+        {loading && <Busy />}
+      </>
+    );
+  }
+
+  if (step === "done") {
+    return (
+      <AuthFrame wide panel={<OnboardingFinishIllustration />}>
+        <FinishStep
+          summary={{
+            businessName: preview.business.name?.trim() || undefined,
+            money: [preview.currency.code, preview.taxCountryLabel].filter(Boolean).join(" · "),
+            invoiceNumber: preview.invoiceNumber,
+            invitesSent: invites.length,
+          }}
+          onDashboard={goToDashboard}
         />
-      )}
-      <DemoBusinessDialog open={demoOpen} onOpenChange={setDemoOpen} onLoaded={handleDemoLoaded} />
+      </AuthFrame>
+    );
+  }
 
-      {step === "profile" && (
-        <StepCard title="Tell us about your business" description="Name, logo and address — shown on quotes and invoices.">
-          <ProfileStepBody onSaved={() => setStep("template")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+  const back = previousStep(step);
+  return (
+    <>
+      <OnboardingShell current={step} onBack={back ? () => setStep(back) : undefined} preview={<OnboardingPreview step={step} data={preview} />}>
+        {step === "profile" && (
+          <StepCard title="Tell us about your business" description="Name, logo and address — shown on quotes and invoices.">
+            <ProfileStepBody
+              onSaved={() => advance("profile")}
+              onSkip={handleSkip}
+              onChange={(business) => setDraft((d) => ({ ...d, business }))}
+            />
+          </StepCard>
+        )}
 
-      {step === "template" && (
-        <StepCard title="Pick an industry template" description="Pre-sets sensible defaults — you can change anything later.">
-          <TemplateStepBody onSaved={() => setStep("currency")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+        {step === "template" && (
+          <StepCard title="Pick an industry template" description="Pre-sets sensible defaults — you can change anything later.">
+            <TemplateStepBody onSaved={() => advance("template")} onSkip={handleSkip} />
+          </StepCard>
+        )}
 
-      {step === "currency" && (
-        <StepCard title="Currency & locale" description="Used for every document and report from now on.">
-          <CurrencyStepBody onSaved={() => setStep("fiscal_year")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+        {step === "currency" && (
+          <StepCard title="Currency & locale" description="Used for every document and report from now on.">
+            <CurrencyStepBody
+              onSaved={() => advance("currency")}
+              onSkip={handleSkip}
+              onChange={(currency) => setDraft((d) => ({ ...d, currency }))}
+            />
+          </StepCard>
+        )}
 
-      {step === "fiscal_year" && (
-        <StepCard title="Financial year" description="The day your financial year starts, used for reports and closing periods. Document numbers never reset.">
-          <FiscalYearStepBody onSaved={() => setStep("tax")} onSkip={handleSkip} />
-        </StepCard>
-      )}
+        {step === "fiscal_year" && (
+          <StepCard title="Financial year" description="The day your financial year starts, used for reports and closing periods. Document numbers never reset.">
+            <FiscalYearStepBody onSaved={() => advance("fiscal_year")} onSkip={handleSkip} />
+          </StepCard>
+        )}
 
-      {step === "tax" && <TaxStepBody onSaved={() => setStep("numbering")} onSkip={handleSkip} />}
-
-      {step === "numbering" && (
-        <StepCard title="Document numbering" description="Prefix and starting number for each document type.">
-          <NumberingStepBody onSaved={() => setStep("accounts")} onSkip={handleSkip} />
-        </StepCard>
-      )}
-
-      {step === "accounts" && (
-        <StepCard title="Chart of accounts" description="This is what we'll post your transactions to. System accounts can't be renamed.">
-          <AccountsStepBody onSaved={() => setStep("team")} onSkip={handleSkip} />
-        </StepCard>
-      )}
-
-      {step === "team" && (
-        <StepCard title="Invite your team" description="You can invite people later from Team › Users.">
-          <InviteTeamStep
-            onInvite={(email, role) => apiClient.post("/org/invitations", { email, role })}
-            onFinish={handleFinish}
+        {step === "tax" && (
+          <TaxStepBody
+            onSaved={() => advance("tax")}
+            onSkip={handleSkip}
+            onCountryChange={(taxCountry) => setDraft((d) => ({ ...d, taxCountry, taxRate: undefined }))}
+            onRateChange={(taxRate) => setDraft((d) => ({ ...d, taxRate }))}
+            onCountrySaved={() => void refresh()}
           />
-        </StepCard>
-      )}
+        )}
 
-      {loading && (
-        <div className="fixed inset-0 flex items-center justify-center bg-background/60">
-          <Spinner />
-        </div>
-      )}
-    </main>
+        {step === "numbering" && (
+          <StepCard title="Document numbering" description="Prefix and starting number for each document type.">
+            <NumberingStepBody
+              onSaved={() => advance("numbering")}
+              onSkip={handleSkip}
+              onChange={(rows) => setDraft((d) => ({ ...d, invoiceSeries: rows.find((row) => row.documentType === "invoice") }))}
+            />
+          </StepCard>
+        )}
+
+        {step === "accounts" && (
+          <StepCard title="Chart of accounts" description="This is what we'll post your transactions to. System accounts can't be renamed.">
+            <AccountsStepBody onSaved={() => advance("accounts")} onSkip={handleSkip} />
+          </StepCard>
+        )}
+
+        {step === "team" && (
+          <StepCard title="Invite your team" description="You can invite people later from Team › Users.">
+            <InviteTeamStep
+              onInvite={async (email, role) => {
+                await apiClient.post("/org/invitations", { email, role });
+                setInvites((prev) => [...prev, { email, role }]);
+              }}
+              onFinish={handleFinish}
+            />
+          </StepCard>
+        )}
+      </OnboardingShell>
+      {loading && <Busy />}
+    </>
   );
 }
 
-function StepCard({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function Busy() {
   return (
-    <Card className="w-full max-w-2xl">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent>{children}</CardContent>
-    </Card>
+    <div className="fixed inset-0 flex items-center justify-center bg-background/60">
+      <Spinner />
+    </div>
   );
 }
 
@@ -200,12 +337,21 @@ function useSettingsValue<T>(key: string, fallback: T) {
   return { value, ready };
 }
 
-function ProfileStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+function ProfileStepBody({
+  onSaved,
+  onSkip,
+  onChange,
+}: {
+  onSaved: () => void;
+  onSkip: () => void;
+  onChange: (value: Pick<BusinessProfileValue, "name" | "logoUrl" | "address">) => void;
+}) {
   const { value, ready } = useSettingsValue<BusinessProfileValue>("business_profile", { name: "" });
   if (!ready) return <StepLoading />;
   return (
     <BusinessProfileStep
       initialValue={value}
+      onChange={onChange}
       onSave={async (v) => {
         await apiClient.put("/org/settings/business_profile", { value: v });
         onSaved();
@@ -231,12 +377,13 @@ function TemplateStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: ()
   );
 }
 
-function CurrencyStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+function CurrencyStepBody({ onSaved, onSkip, onChange }: { onSaved: () => void; onSkip: () => void; onChange: (value: CurrencyLocaleValue) => void }) {
   const { value, ready } = useSettingsValue<CurrencyLocaleValue>("currency", { code: "USD", locale: "en-US" });
   if (!ready) return <StepLoading />;
   return (
     <CurrencyLocaleStep
       initialValue={value}
+      onChange={onChange}
       onSave={async (v) => {
         await apiClient.put("/org/settings/currency", { value: v });
         onSaved();
@@ -265,7 +412,19 @@ function FiscalYearStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
  * US-TAX-09 — pick the tax country first; a preset country gets its rates.
  * "Another country" goes on to the single default rate, as before (US-ONB-06).
  */
-function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+function TaxStepBody({
+  onSaved,
+  onSkip,
+  onCountryChange,
+  onRateChange,
+  onCountrySaved,
+}: {
+  onSaved: () => void;
+  onSkip: () => void;
+  onCountryChange: (country: TaxCountry) => void;
+  onRateChange: (rate: TaxRateValue) => void;
+  onCountrySaved: () => void;
+}) {
   const [country, setCountry] = useState<TaxCountry | null>(null);
   const [profile, setProfile] = useState<TaxProfile>({});
   const [phase, setPhase] = useState<"country" | "rate" | "gst">("country");
@@ -276,7 +435,9 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
       .then(([saved, currency]) => {
         if (cancelled) return;
         setProfile(saved);
-        setCountry(saved.country ?? taxCountryForCurrency(currency.value?.code));
+        const initial = saved.country ?? taxCountryForCurrency(currency.value?.code);
+        setCountry(initial);
+        onCountryChange(initial);
       })
       .catch(() => {
         if (!cancelled) setCountry("other");
@@ -284,6 +445,7 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
     return () => {
       cancelled = true;
     };
+    // Loads once when the step opens; the callback only feeds the preview.
   }, []);
 
   if (phase === "gst") {
@@ -306,7 +468,7 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
   if (phase === "rate") {
     return (
       <StepCard title="Default tax rate" description="Confirm the rate your first quote should use.">
-        <DefaultTaxRateBody onSaved={onSaved} onSkip={onSkip} />
+        <DefaultTaxRateBody onSaved={onSaved} onSkip={onSkip} onChange={onRateChange} />
       </StepCard>
     );
   }
@@ -317,9 +479,11 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
       ) : (
         <TaxCountryStep
           initialValue={country}
+          onChange={onCountryChange}
           onSave={async (v) => {
             const res = await apiClient.put<{ profile: TaxProfile }>("/org/tax/profile", { country: v });
             setProfile(res.profile);
+            onCountrySaved();
             if (v === "other") setPhase("rate");
             else if (v === "IN") setPhase("gst");
             else onSaved();
@@ -331,7 +495,7 @@ function TaxStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => v
   );
 }
 
-function DefaultTaxRateBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+function DefaultTaxRateBody({ onSaved, onSkip, onChange }: { onSaved: () => void; onSkip: () => void; onChange: (value: TaxRateValue) => void }) {
   const [value, setValue] = useState<TaxRateValue>({ name: "Tax", percentage: 0 });
   const [ready, setReady] = useState(false);
 
@@ -354,6 +518,7 @@ function DefaultTaxRateBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
   return (
     <TaxRateStep
       initialValue={value}
+      onChange={onChange}
       onSave={async (v) => {
         await apiClient.put("/org/tax/default-rate", v);
         onSaved();
@@ -363,16 +528,14 @@ function DefaultTaxRateBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: 
   );
 }
 
-function NumberingStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: () => void }) {
+function NumberingStepBody({ onSaved, onSkip, onChange }: { onSaved: () => void; onSkip: () => void; onChange: (rows: NumberingSequenceValue[]) => void }) {
   const [rows, setRows] = useState<NumberingSequenceValue[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    apiClient
-      .get<{ documentType: string; prefix: string; padding: number; nextValue: number }[]>("/org/numbering")
-      .then((res) => {
-        if (!cancelled) setRows(res);
-      });
+    apiClient.get<NumberingSequenceValue[]>("/org/numbering").then((res) => {
+      if (!cancelled) setRows(res);
+    });
     return () => {
       cancelled = true;
     };
@@ -382,6 +545,7 @@ function NumberingStepBody({ onSaved, onSkip }: { onSaved: () => void; onSkip: (
   return (
     <NumberingStep
       initialValue={rows}
+      onChange={onChange}
       onSave={async (values) => {
         await Promise.all(
           values.map((row) =>

@@ -17,12 +17,24 @@ export interface CurrencyLocaleStepProps {
   onSkip?: () => void;
   /** Rendered on the save button — defaults to the wizard's "Continue"; Settings passes "Save". */
   saveLabel?: string;
+  /** US-ONB-22 — the currency and locale picked so far, before they're saved, for the live preview. */
+  onChange?: (value: CurrencyLocaleValue) => void;
 }
 
 /** S-12.4 (currency/locale half). Free-text fallback beneath the common-value pickers so nothing is a dead end for a currency/locale not in the short list. */
-export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: CurrencyLocaleStepProps) {
-  const [code, setCode] = useState(initialValue.code || "USD");
-  const [locale, setLocale] = useState(initialValue.locale || "en-US");
+export function CurrencyLocaleStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: CurrencyLocaleStepProps) {
+  const [code, setCodeState] = useState(initialValue.code || "USD");
+  const [locale, setLocaleState] = useState(initialValue.locale || "en-US");
+
+  function setCode(next: string) {
+    setCodeState(next);
+    onChange?.({ code: next.toUpperCase(), locale });
+  }
+
+  function setLocale(next: string) {
+    setLocaleState(next);
+    onChange?.({ code: code.toUpperCase(), locale: next });
+  }
   const [saving, setSaving] = useState(false);
 
   async function handleContinue() {

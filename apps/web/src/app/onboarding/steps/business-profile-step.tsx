@@ -22,6 +22,8 @@ export interface BusinessProfileStepProps {
   /** Rendered by the wizard shell only — lets this step stay reusable from Settings, which has no "skip". */
   onSkip?: () => void;
   saveLabel?: string;
+  /** US-ONB-22 — what's typed so far, before it's saved, for the wizard's live preview. */
+  onChange?: (value: Pick<BusinessProfileValue, "name" | "logoUrl" | "address">) => void;
 }
 
 /**
@@ -32,7 +34,7 @@ export interface BusinessProfileStepProps {
  * the uploaded file), so the `business_profile` settings shape is
  * unchanged from when it was a hand-typed URL field.
  */
-export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = "Continue" }: BusinessProfileStepProps) {
+export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = "Continue", onChange }: BusinessProfileStepProps) {
   const [name, setName] = useState(initialValue.name ?? "");
   const [logoUrl, setLogoUrl] = useState(initialValue.logoUrl ?? "");
   const [address, setAddress] = useState(initialValue.address ?? "");
@@ -41,6 +43,11 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
   const [industry, setIndustry] = useState(initialValue.industry ?? "");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  function emit(patch: { name?: string; logoUrl?: string; address?: string }) {
+    const next = { name, logoUrl, address, ...patch };
+    onChange?.({ name: next.name, logoUrl: next.logoUrl || undefined, address: next.address || undefined });
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -74,16 +81,38 @@ export function BusinessProfileStep({ initialValue, onSave, onSkip, saveLabel = 
 
       <FormField label="Business name" required>
         {(field) => (
-          <Input {...field} value={name} onChange={(e) => setName(e.target.value)} required autoComplete="organization" />
+          <Input
+            {...field}
+            value={name}
+            onChange={(e) => {
+              setName(e.target.value);
+              emit({ name: e.target.value });
+            }}
+            required
+            autoComplete="organization"
+          />
         )}
       </FormField>
 
       <FormField label="Logo">
-        {() => <BusinessLogoUpload logoUrl={logoUrl || undefined} onChange={(url) => setLogoUrl(url ?? "")} />}
+        {() => <BusinessLogoUpload logoUrl={logoUrl || undefined} onChange={(url) => {
+              setLogoUrl(url ?? "");
+              emit({ logoUrl: url ?? "" });
+            }} />}
       </FormField>
 
       <FormField label="Address">
-        {(field) => <Textarea {...field} value={address} onChange={(e) => setAddress(e.target.value)} rows={3} />}
+        {(field) => (
+          <Textarea
+            {...field}
+            value={address}
+            onChange={(e) => {
+              setAddress(e.target.value);
+              emit({ address: e.target.value });
+            }}
+            rows={3}
+          />
+        )}
       </FormField>
 
       <div className="grid gap-4 sm:grid-cols-2">
