@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — CI confirms instead of discovering: `pnpm verify` and a faster, cheaper pipeline (D-205)
+
+- **`pnpm verify`** runs what CI runs, locally and in CI's order: lint → typecheck → unit → integration → E2E.
+  - It creates and migrates `spine_test` and `spine_e2e` when they're missing.
+  - It stops at the first failure and says `pnpm verify --from <step>`; `--skip e2e` leaves a step out.
+  - Run it before opening a PR or marking it ready.
+- **CI (`.github/workflows/ci.yml`):**
+  - "Lint, typecheck and unit" runs first, with no services (about 5 min). Integration and E2E then run side by side instead of one after the other.
+  - Each suite runs only when the code it covers changed: a mobile-only change skips both.
+  - The first of integration and E2E to fail cancels the other. Integration stops at five failing tests (`--bail=5`); E2E after five failing specs (`maxFailures`) and now keeps an HTML report for the failure artifact.
+  - The required checks keep their names ("Unit and integration" is now a gate over the static and integration jobs), so `main`'s branch protection is unchanged.
+- Expected: a full run goes from about 45 minutes of wall time to about 25, and a failure stops within minutes instead of running to the end.
+
 ### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (US-MOB-01, US-MOB-24 to US-MOB-27)
 
 - **App icon (US-MOB-24):**
