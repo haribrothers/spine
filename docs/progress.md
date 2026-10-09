@@ -438,6 +438,8 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-AUTH-13 · See a welcome page on a new install
 - [x] US-AUTH-14 · Log in on a page that feels like Spine
 - [x] US-AUTH-15 · Choose a strong password I can see
+- [ ] US-ONB-22 · Set up my business in four short stages with a live preview
+- [ ] US-ONB-23 · Finish setup on a screen that shows what's next
 
 ## Phase 10 · AI assistant
 

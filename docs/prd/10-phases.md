@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 435 stories.
+Total: 437 stories.
 
 ## Phase 0 · Foundation
 
@@ -771,6 +771,11 @@ Total: 435 stories.
 - US-AUTH-13 · See a welcome page on a new install (P2)
 - US-AUTH-14 · Log in on a page that feels like Spine (P2)
 - US-AUTH-15 · Choose a strong password I can see (P2)
+
+*Onboarding & first run*
+
+- US-ONB-22 · Set up my business in four short stages with a live preview (P2)
+- US-ONB-23 · Finish setup on a screen that shows what's next (P2)
 
 ## Phase 10 · AI assistant
 

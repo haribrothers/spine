@@ -2,7 +2,7 @@
 
 A linear setup wizard that runs after the first owner signs up, configures the business in eight short steps, and can be skipped at any point. Every step stays editable later in Settings, demo data can replace manual setup, and a dashboard checklist guides the first real transaction.
 
-**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1), `OnbTaxCountry` (P1), `SettingsModules` (P1), `SetupSpine` (P1)
+**Screens:** `OnbWelcome` (P1), `OnbBusinessProfile` (P1), `OnbIndustryTemplate` (P1), `OnbCurrencyLocale` (P1), `OnbFinancialYear` (P1), `OnbTaxRate` (P1), `OnbNumbering` (P1), `OnbChartOfAccounts` (P1), `OnbInviteTeam` (P1), `OnbInviteTeamSent` (P2), `DashboardSetupChecklist` (P1), `DashboardCaughtUp` (P1), `DashboardStaffRedesign` (P1), `ExpenseCategoriesConstruction` (P1), `OnbTaxCountry` (P1), `SettingsModules` (P1), `SetupSpine` (P1), `OnbStart` (P2), `OnbStartDark` (P2), `OnbStageBusiness` (P2), `OnbStageMoney` (P2), `OnbStageDocuments` (P2), `OnbStageBooks` (P2), `OnbStageDark` (P2), `OnbNarrow` (P2), `OnbFinish` (P2), `OnbFinishDark` (P2)
 **Depends on:** 02 Sign-in & account (first owner exists), 16 Settings (same panes reused), 15 Team (invitations).
 
 ## Features
@@ -15,6 +15,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-04 | Load demo data, by country and industry | P1 | 11 (9 for US-ONB-17–US-ONB-19, US-ONB-21) | `OnbWelcome`, `SettingsDemoData` |
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
+| F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
 
 ## User stories
 
@@ -26,7 +27,7 @@ Legacy: S-12.1
 
 **Acceptance criteria**
 - **Given** I have just created the first account on a fresh instance, **when** sign-up completes, **then** I land on `/onboarding` showing "Welcome to Spine" with the buttons "Set up my business", "Just show me around (use defaults)" (loads demo data, US-ONB-09) and "Skip to dashboard".
-- **Given** I am on the welcome screen, **when** I choose "Set up my business", **then** the stepper shows eight steps in this order: Business, Template, Currency, Fiscal year, Tax, Numbering, Accounts, Team, with Business active.
+- **Given** I am on the welcome screen, **when** I choose "Set up my business", **then** the steps run in this order: Business, Template, Currency, Fiscal year, Tax, Numbering, Accounts, Team, with Business active. Since US-ONB-22 they're grouped into four stages (Business · Money · Documents · Books & team).
 - **Given** I am on any step, **when** I press "Continue" with valid input, **then** the step is saved and the stepper marks it done with a check.
 - **Given** onboarding is already finished or skipped, **when** I open `/onboarding` again, **then** I am taken to the dashboard.
 - **Given** a staff or field user signs in, **when** they reach the app, **then** they never see the wizard.
@@ -156,7 +157,7 @@ Legacy: S-12.7
 - **Given** I am on the Team step, **when** I view it, **then** I see "Email" (placeholder "teammate@example.com"), "Role" with "Staff" and "Field", and "Send invite".
 - **Given** I enter a valid email and press "Send invite", **when** the invite is created, **then** a line "Invited <email> as <role>" appears and an email is queued.
 - **Given** I have sent no invites, **when** I view the footer, **then** the button reads "Skip — finish setup"; after one invite it reads "Finish".
-- **Given** I press "Finish", **when** setup completes, **then** I land on the dashboard.
+- **Given** I press "Finish" (or "Skip — finish setup"), **when** setup completes, **then** I see the finish screen (US-ONB-23), and "Go to dashboard" takes me there.
 - **Given** the email address already has a pending invite, **when** I send again, **then** I see "Could not send invite." with the reason.
 
 **Implementation notes**
@@ -396,3 +397,51 @@ Decision: D-192
 
 **Implementation notes**
 - Content: each industry pack localised by the country pack (names, addresses, phone formats, price scale rounded to whole local units, tax roles mapped to preset rates).
+
+### US-ONB-22 · Set up my business in four short stages with a live preview
+**Feature:** F-ONB-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `OnbStart`, `OnbStartDark`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbStageDark`, `OnbNarrow`
+**As** a new owner, **I want** setup to feel short and show me what my answers do, **so that** I finish it instead of skipping it.
+
+Decision: D-208
+
+**Acceptance criteria**
+- **Given** I land on `/onboarding`, **when** it opens, **then** one side shows:
+  - "Welcome to Spine, <first name>";
+  - "Four short stages, about 6 minutes. Skip anything — it's all in Settings later.";
+  - the four stages, each with one line: **Business** "Your name, logo and kind of work", **Money** "Currency, financial year and tax", **Documents** "How your quotes and invoices are numbered", **Books & team** "Your accounts and the people you work with";
+  - "Set up my business", "Just show me around (use defaults)" and "Skip to dashboard" (US-ONB-01, US-ONB-02, US-ONB-18).
+
+  The other side shows Spine's own screens drawn small (dashboard, an invoice, the phone app) with placeholder lines instead of names and amounts, and the people from the signed-out pages (D-207).
+- **Given** I choose "Set up my business", **when** a step shows, **then** a rail lists the four stages with their steps (Business: Details, Template · Money: Currency, Financial year, Tax · Documents: Numbering · Books & team: Accounts, Team). Done steps are ticked, the current step is marked, and under it "About <n> min left" counts down as steps are done.
+- **Given** any step, **when** I look under the form, **then** a tip says why it matters and where to change it later, e.g. "Spine uses one currency for everything. The locale decides how dates and numbers look." · "Change it later in Settings › Currency & locale.".
+- **Given** the Business, Money or Documents stage, **when** I type or pick, **then** a preview beside the form shows the start of my first invoice and updates before I save: my logo, business name and address; the date and an example amount in my currency and locale; my tax name and rate on a line; and the invoice number my numbering will give (e.g. "INV-0001"). Until I've typed a name it says "Your business".
+- **Given** the Books & team stage, **when** it shows, **then** the preview turns to "Your books": the account groups with how many accounts each has, and "Your team" with everyone I've invited and their role.
+- **Given** any step after the first, **when** I press "Back", **then** the previous step opens with what I saved.
+- **Given** a window narrower than 1280 px, **when** a step shows, **then** the preview is left out; below 1024 px the rail becomes a bar at the top ("Stage 2 of 4 · Money · About 4 min left") with a progress line.
+- **Given** a screen reader, **when** it reads a step, **then** it hears the stage and step ("Money, step 1 of 3: Currency"), the form and the tip, and skips the preview and the drawn screens.
+- **Given** Reduce Motion, **when** steps change, **then** nothing slides; the preview changes without animating.
+
+**Implementation notes**
+- UI: `apps/web/src/app/onboarding/page.tsx` gets a new shell (`OnboardingShell`: rail, step area, tip, preview); the step components stay and keep their labels ("Continue", "Skip to dashboard"). Each step gains an optional `onChange(value)` so the preview sees unsaved input. `OnboardingPreview` formats with the same money and date helpers as documents (`@spine/shared`), so the preview can't disagree with the real invoice.
+- Data: no new API. The preview reads the saved settings each step already loads (`business_profile`, `currency`, `/org/tax/profile`, `/org/numbering`, `/org/accounts`) plus invitations sent in this session.
+- Content: stages, steps, minutes and tips live in one list (`ONBOARDING_STAGES`) in the web app.
+- Edge: Tax's GST details (India) and "Default tax rate" (another country) are part of the Tax step, so they don't change the count of steps.
+
+### US-ONB-23 · Finish setup on a screen that shows what's next
+**Feature:** F-ONB-07 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `OnbFinish`, `OnbFinishDark`
+**As** a new owner, **I want** to see that setup is done and what to do first, **so that** I start working straight away.
+
+Decision: D-208
+
+**Acceptance criteria**
+- **Given** the Team step, **when** I press "Finish" or "Skip — finish setup", **then** onboarding is marked finished and a finish screen shows "You're set up" and "Spine is ready for <business name>." (or "Spine is ready." without a name).
+- **Given** the finish screen, **when** it shows, **then** it lists what I set, each with a "Change" link to its Settings pane: Business (name), Money (currency and tax), Documents (first invoice number), Team ("2 invites sent" or "Just you for now").
+- **Given** the finish screen, **when** I look for what's next, **then** three cards link to "Add your first customer", "Add something you sell" and "Send your first quote", and a line "See what's left to set up — <n> left" opens the Set up Spine page (US-ONB-15).
+- **Given** the finish screen, **when** I press "Go to dashboard", **then** I land on the dashboard; refreshing the finish screen also goes there, since onboarding is finished.
+- **Given** I skipped setup or loaded a demo business, **when** I leave onboarding, **then** I go straight to the dashboard, without the finish screen (US-ONB-02, US-ONB-18).
+- **Given** Reduce Motion, **when** the finish screen opens, **then** its tick and people show still.
+
+**Implementation notes**
+- UI: a `done` state of `/onboarding` (`FinishStep`), shown after `PUT /org/settings/onboarding_status { completedAt }` succeeds. The "<n> left" comes from `GET /org/setup-status` with `setupProgress` (`@spine/shared`); if that call fails, the line reads "See what's left to set up".
+- Links: customer → `/contacts/new`, catalogue → `/catalog`, quote → `/quotes/new`; "Change" opens Settings at the matching pane.
+
