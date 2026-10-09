@@ -3,6 +3,7 @@ import { TextFieldScreen } from "../../app/components/text-field";
 import { NativeTextFieldScreen } from "../../app/components/native-text-field";
 import { SelectScreen } from "../../app/components/select";
 import { SelectFieldScreen } from "../../app/components/select-field";
+import { OutlinedTextFieldScreen } from "../../app/components/outlined-text-field";
 import { DateTimePickerScreen } from "../../app/components/date-time-picker";
 import { CardScreen } from "../../app/components/card";
 import { AvatarScreen } from "../../app/components/avatar";
@@ -16,6 +17,7 @@ import { TabBarScreen } from "../../app/components/tab-bar";
 import { FloatingTabBarScreen } from "../../app/components/floating-tab-bar";
 import { NativeTabViewScreen } from "../../app/components/native-tab-view";
 import { NativeHeaderScreen } from "../../app/components/native-header";
+import { SpineLogoScreen } from "../../app/components/spine-logo";
 import { IntroductionScreen } from "../../app/overview";
 import { PrinciplesScreen } from "../../app/principles";
 import { ColorScreen } from "../../app/foundation/color";
@@ -54,6 +56,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "native-text-field": NativeTextFieldScreen,
     select: SelectScreen,
     "select-field": SelectFieldScreen,
+    "outlined-text-field": OutlinedTextFieldScreen,
     "date-time-picker": DateTimePickerScreen,
     card: CardScreen,
     avatar: AvatarScreen,
@@ -67,6 +70,7 @@ export const DOC_SCREENS: DocScreenMap = {
     "floating-tab-bar": FloatingTabBarScreen,
     "native-tab-view": NativeTabViewScreen,
     "native-header": NativeHeaderScreen,
+    "spine-logo": SpineLogoScreen,
   },
   templates: {
     "job-list": JobListScreen,

@@ -75,6 +75,11 @@ function toTailwindClassNames(colors) {
     surfaceSunken: "surface-sunken",
     onSurface: "on-surface",
     onSurfaceMuted: "on-surface-muted",
+    // US-OPS-25 (D-099) — text on filled primary / danger controls; without these,
+    // `text-on-primary` matched nothing and fell back to black (the avatar's initials).
+    onPrimary: "on-primary",
+    onDanger: "on-danger",
+    overlaySubtle: "overlay-subtle",
     border: "border",
     borderStrong: "border-strong",
     paid: "paid",
@@ -87,6 +92,10 @@ function toTailwindClassNames(colors) {
     draftBg: "draft-bg",
     info: "info",
     infoBg: "info-bg",
+    primaryContainer: "primary-container",
+    onPrimaryContainer: "on-primary-container",
+    surfaceContainer: "surface-container",
+    outlineVariant: "outline-variant",
   };
   const out = {};
   for (const [key, value] of Object.entries(colors)) {

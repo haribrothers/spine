@@ -4,7 +4,7 @@ import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, contacts, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines, milestones } from "../../db/schema";
+import { jobs, jobVariationOrders, contacts, contactPersons, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines, milestones } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -17,6 +17,13 @@ export type UpdateJobInput = z.infer<typeof updateJobSchema>;
 export type AddJobNoteInput = z.infer<typeof addJobNoteSchema>;
 export type AddJobPhotoInput = z.infer<typeof addJobPhotoSchema>;
 export type AssignJobInput = z.infer<typeof assignJobSchema>;
+
+/** The person the field crew calls about a job (US-MOB-05). */
+export interface SiteContact {
+  name: string;
+  title: string | null;
+  phone: string | null;
+}
 
 /**
  * PRD F4 (Phase 3 · Jobs & Construction Billing) — job CRUD and the S-04.1
@@ -64,6 +71,46 @@ export class JobsService {
     return rows.map((r) => ({ ...r, nextMilestone: next.get(r.id) ?? null }));
   }
 
+  /** US-MOB-04 — how many milestones each job has and how many are done, for "All milestones complete". */
+  async withMilestoneCounts<T extends { id: string }>(rows: T[]): Promise<(T & { milestoneCounts: { total: number; completed: number } })[]> {
+    if (rows.length === 0) return [];
+    const counts = await this.db
+      .select({ jobId: milestones.jobId, total: sql<number>`count(*)::int`, completed: sql<number>`count(*) filter (where ${milestones.status} <> 'pending')::int` })
+      .from(milestones)
+      .where(inArray(milestones.jobId, rows.map((r) => r.id)))
+      .groupBy(milestones.jobId);
+    const byJob = new Map(counts.map((c) => [c.jobId, { total: c.total, completed: c.completed }]));
+    return rows.map((r) => ({ ...r, milestoneCounts: byJob.get(r.id) ?? { total: 0, completed: 0 } }));
+  }
+
+  /**
+   * US-MOB-03, US-MOB-05 — who to call on site: the customer's primary
+   * contact person (else their first), with the customer's own phone when
+   * that person has none; for a customer with no people, the customer
+   * itself. `phone` is null when nobody has a number.
+   */
+  async withSiteContact<T extends { contactId: string }>(rows: T[]): Promise<(T & { siteContact: SiteContact | null })[]> {
+    if (rows.length === 0) return [];
+    const contactIds = [...new Set(rows.map((r) => r.contactId))];
+    const customers = await this.db.select({ id: contacts.id, name: contacts.name, phone: contacts.phone }).from(contacts).where(inArray(contacts.id, contactIds));
+    const people = await this.db
+      .select({ contactId: contactPersons.contactId, name: contactPersons.name, title: contactPersons.title, phone: contactPersons.phone })
+      .from(contactPersons)
+      .where(inArray(contactPersons.contactId, contactIds))
+      .orderBy(desc(contactPersons.isPrimary), asc(contactPersons.createdAt));
+    const byContact = new Map<string, SiteContact>();
+    for (const customer of customers) {
+      const person = people.find((p) => p.contactId === customer.id);
+      byContact.set(
+        customer.id,
+        person
+          ? { name: person.name, title: person.title ?? null, phone: person.phone || customer.phone || null }
+          : { name: customer.name, title: null, phone: customer.phone || null },
+      );
+    }
+    return rows.map((r) => ({ ...r, siteContact: byContact.get(r.contactId) ?? null }));
+  }
+
   async list(orgId: string, options: { status?: string; contactId?: string; assignedToUserId?: string }) {
     const conditions = [eq(jobs.orgId, orgId)];
     if (options.contactId) conditions.push(eq(jobs.contactId, options.contactId));
@@ -89,6 +136,34 @@ export class JobsService {
       .orderBy(desc(jobs.createdAt));
 
     return rows.map((r) => ({ ...r.job, contactName: r.contactName }));
+  }
+
+  /** US-MOB-05 (D-073) — `GET /jobs/:id/quotes`: variation-order quotes and the source quote, while `sent`, newest first, titled by their first line. */
+  async quotesToPresent(orgId: string, jobId: string) {
+    const job = await this.getOne(orgId, jobId);
+    const variations = await this.db.select({ quoteId: jobVariationOrders.quoteId }).from(jobVariationOrders).where(and(eq(jobVariationOrders.orgId, orgId), eq(jobVariationOrders.jobId, jobId)));
+    const variationIds = new Set(variations.map((v) => v.quoteId));
+    const ids = [...variationIds, ...(job.sourceQuoteId ? [job.sourceQuoteId] : [])];
+    if (ids.length === 0) return [];
+    const rows = await this.db
+      .select({ id: quotes.id, number: quotes.number, sentAt: quotes.sentAt, validUntil: quotes.validUntil })
+      .from(quotes)
+      .where(and(eq(quotes.orgId, orgId), inArray(quotes.id, ids), eq(quotes.status, "sent")))
+      .orderBy(desc(quotes.sentAt));
+    if (rows.length === 0) return [];
+    const lines = await this.db
+      .select({ quoteId: quoteLines.quoteId, name: quoteLines.name })
+      .from(quoteLines)
+      .where(inArray(quoteLines.quoteId, rows.map((r) => r.id)))
+      .orderBy(asc(quoteLines.sortOrder));
+    return rows.map((r) => ({
+      id: r.id,
+      number: r.number,
+      kind: variationIds.has(r.id) ? ("variation" as const) : ("source" as const),
+      title: lines.find((l) => l.quoteId === r.id)?.name ?? null,
+      sentAt: r.sentAt,
+      validUntil: r.validUntil ? r.validUntil.toISOString().slice(0, 10) : null,
+    }));
   }
 
   async getOne(orgId: string, id: string) {
@@ -292,6 +367,10 @@ export class JobsService {
    */
   async addPhoto(orgId: string, jobId: string, actorUserId: string, input: AddJobPhotoInput) {
     const job = await this.getOne(orgId, jobId);
+    if (input.milestoneId) {
+      const [milestone] = await this.db.select({ id: milestones.id }).from(milestones).where(and(eq(milestones.id, input.milestoneId), eq(milestones.jobId, jobId)));
+      if (!milestone) throw new BadRequestException("Choose one of this job's milestones.");
+    }
 
     const row = await this.db.transaction(async (tx) => {
       const [photo] = await tx
@@ -299,7 +378,7 @@ export class JobsService {
         .values({
           jobId,
           orgId,
-          milestoneId: null,
+          milestoneId: input.milestoneId ?? null,
           fileId: input.fileId,
           caption: input.caption ?? null,
           uploadedByUserId: actorUserId,
@@ -471,6 +550,7 @@ export class JobsService {
       return assignment;
     });
 
+    await this.notifyCrewChange(orgId, actorUserId, input.userId, job, "added");
     return row;
   }
 
@@ -504,6 +584,26 @@ export class JobsService {
       });
     });
 
+    await this.notifyCrewChange(orgId, actorUserId, targetUserId, job, "removed");
     return { success: true };
+  }
+
+  /**
+   * US-MOB-22 — tells a person they were put on (`crew_assigned`) or taken
+   * off (`crew_removed`) a job's crew, unless they did it themselves. A
+   * removal has no link: the job is no longer theirs to open.
+   */
+  private async notifyCrewChange(orgId: string, actorUserId: string, targetUserId: string, job: { id: string; name: string; siteAddress: string | null }, change: "added" | "removed") {
+    if (targetUserId === actorUserId) return;
+    const [actor] = await this.db.select({ name: user.name }).from(user).where(eq(user.id, actorUserId));
+    const who = actor?.name || "Your office";
+    const message = change === "added" ? `You're on the crew for ${job.name}` : `You're off the crew for ${job.name}`;
+    const detail = change === "added" ? [`Added by ${who}`, ...(job.siteAddress ? [job.siteAddress.replace(/\s*\n\s*/g, ", ")] : [])].join(" · ") : `Removed by ${who}`;
+    await this.notifications.notify(orgId, {
+      subject: message,
+      text: `${message}. ${detail}.`,
+      recipientUserIds: [targetUserId],
+      inApp: { type: change === "added" ? "crew_assigned" : "crew_removed", message, detail, link: change === "added" ? `/jobs/${job.id}` : undefined },
+    });
   }
 }

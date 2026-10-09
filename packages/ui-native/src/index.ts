@@ -3,6 +3,7 @@ export { FullWidthButton, type FullWidthButtonProps } from "./components/full-wi
 export { TextField, type TextFieldProps } from "./components/text-field";
 export { NativeTextField, type NativeTextFieldProps } from "./components/native-text-field";
 export { FloatingLabelField, type FloatingLabelFieldProps } from "./components/floating-label-field";
+export { OutlinedFrame, OutlinedTextField, type OutlinedFrameProps, type OutlinedTextFieldProps } from "./components/outlined-text-field";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/card";
 export { Badge } from "./components/badge";
 export { StatusChip, statusChipVariants, type StatusChipProps } from "./components/status-chip";
@@ -27,6 +28,7 @@ export { ScrollEdgeMask, type ScrollEdgeMaskProps } from "./components/scroll-ed
 export { GaugeIndicator, type GaugeIndicatorProps } from "./components/gauge-indicator";
 export { KpiCard, type KpiCardProps } from "./components/kpi-card";
 export { ActionTile, type ActionTileProps } from "./components/action-tile";
+export { SpineLogo, SPINE_LOGO_MIN, SPINE_MARK_LAYERS, type SpineLogoProps, type SpineLogoVariant } from "./components/spine-logo";
 export { ThemeProvider, useTheme, type ThemePreference, type ThemeStorage } from "./theme/theme-provider";
 export { SpineUIProvider } from "./theme/spine-ui-provider";
 export { useNativeColors, useNativeHostTheme } from "./theme/use-native-colors";

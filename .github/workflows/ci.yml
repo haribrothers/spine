@@ -1,10 +1,21 @@
 name: CI
 
 # Runs only on pull requests into main (and on demand). Work happens on a
-# phase branch; the pipeline runs once the phase is ready for review.
-# Tuned for a private repo's Actions-minutes budget: docs-only changes skip
-# the test jobs (via the "Detect changes" job), draft PRs and superseded runs
-# are skipped, and installs, Turbo results and Playwright browsers are cached.
+# phase branch; `pnpm verify` runs the same checks locally first, and the
+# PR stays a draft (no minutes) until that's green — CI confirms, it
+# shouldn't discover.
+#
+# Tuned for a private repo's Actions-minutes budget:
+# - docs-only changes skip everything, and each suite runs only when the
+#   code it covers changed (a mobile-only change runs lint, typecheck and
+#   unit tests alone);
+# - lint, typecheck and unit tests run first (a few minutes); integration
+#   and E2E then run side by side, and the first of them to fail cancels the
+#   other;
+# - integration stops at five failing tests and E2E at five failing specs;
+# - draft PRs and superseded runs are skipped, and installs, Turbo results
+#   and Playwright browsers are cached.
+# After a failure, use "Re-run failed jobs", not "Re-run all jobs".
 on:
   pull_request:
     branches: [main]
@@ -23,10 +34,9 @@ env:
   TURBO_TELEMETRY_DISABLED: 1
 
 jobs:
-  # Decides whether code changed. Docs-only PRs skip the two jobs below; GitHub
-  # treats a skipped required check as passing, so they can still be merged
-  # into the protected main (a workflow-level paths-ignore would leave the
-  # required checks waiting forever).
+  # Decides what changed. A skipped job counts as passing for a required
+  # check, so skipping by path keeps main's protection working (a
+  # workflow-level paths-ignore would leave the required checks waiting forever).
   changes:
     name: Detect changes
     # Draft PRs don't use minutes; marking the PR "Ready for review" starts the run.
@@ -36,10 +46,12 @@ jobs:
     permissions:
       pull-requests: read
     outputs:
-      code: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.code == 'true' }}
+      code: ${{ github.event_name == 'workflow_dispatch' || steps.code.outputs.code == 'true' }}
+      integration: ${{ github.event_name == 'workflow_dispatch' || steps.suites.outputs.integration == 'true' }}
+      e2e: ${{ github.event_name == 'workflow_dispatch' || steps.suites.outputs.e2e == 'true' }}
     steps:
       - uses: dorny/paths-filter@v3
-        id: filter
+        id: code
         if: github.event_name == 'pull_request'
         with:
           predicate-quantifier: every
@@ -50,16 +62,85 @@ jobs:
               - "!**/*.md"
               - "!.vscode/**"
               - "!LICENSE"
+      # What each suite exercises; the field app and its native packages are
+      # covered by the unit tests alone.
+      - uses: dorny/paths-filter@v3
+        id: suites
+        if: github.event_name == 'pull_request'
+        with:
+          filters: |
+            shared: &shared
+              - "packages/shared/**"
+              - "packages/config/**"
+              - "package.json"
+              - "pnpm-lock.yaml"
+              - "turbo.json"
+              - ".github/workflows/**"
+            integration:
+              - *shared
+              - "apps/api/**"
+              - ".env.test"
+            e2e:
+              - *shared
+              - "apps/api/**"
+              - "apps/web/**"
+              - "apps/e2e/**"
+              - "packages/ui/**"
+              - "packages/sdk/**"
+              - ".env.e2e"
 
-  test:
-    name: Unit and integration
+  static:
+    name: Lint, typecheck and unit
     needs: changes
     if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
-    # The integration suite grows each phase (about 18 minutes on a slow runner by Phase 9).
-    timeout-minutes: 35
-    # Scoped to this job: the E2E job must read its own values from .env.e2e,
-    # and dotenv never overrides variables that are already set.
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        # Node 22: the test tooling needs it (jsdom 30 requires ^22.22.2, undici 8 >=22.19).
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Restore Turbo cache
+        uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-test-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-test-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # lint/typecheck/test depend on ^build, so Turbo builds the shared
+      # packages they need. The apps' production builds run once, in the E2E job.
+      - name: Lint
+        run: pnpm turbo run lint --cache-dir=.turbo
+
+      - name: Typecheck
+        run: pnpm turbo run typecheck --cache-dir=.turbo
+
+      # Unit tests need no database. @spine/e2e's "test" is the Playwright suite (the E2E job).
+      - name: Unit tests
+        run: pnpm turbo run test --cache-dir=.turbo --filter=!@spine/e2e
+
+  integration:
+    name: Integration
+    needs: [changes, static]
+    if: needs.changes.outputs.integration == 'true'
+    runs-on: ubuntu-latest
+    # The integration suite grows each phase (about 14 minutes by Phase 9).
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write # cancels the run when this job fails
     env:
       DATABASE_URL: postgres://spine:spine@localhost:5432/spine
       AUTH_SECRET: ci-test-secret-not-for-production-use-only
@@ -104,13 +185,12 @@ jobs:
 
       - name: Set up Node
         uses: actions/setup-node@v4
-        # Node 22: the test tooling needs it (jsdom 30 requires ^22.22.2, undici 8 >=22.19).
         with:
           node-version: 22
           cache: pnpm
 
       - name: Restore Turbo cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: .turbo
           key: turbo-test-${{ runner.os }}-${{ github.sha }}
@@ -119,30 +199,48 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # lint/typecheck/test depend on ^build, so Turbo builds the shared
-      # packages they need. The apps' production builds run once, in the E2E job.
-      - name: Lint
-        run: pnpm turbo run lint --cache-dir=.turbo
-
-      - name: Typecheck
-        run: pnpm turbo run typecheck --cache-dir=.turbo
-
-      # @spine/e2e's "test" is the Playwright suite; it runs in the E2E job, not here.
-      - name: Unit tests
-        run: pnpm turbo run test --cache-dir=.turbo --filter=!@spine/e2e
+      - name: Build workspace dependencies
+        run: pnpm turbo run build --cache-dir=.turbo --filter=@spine/api^...
 
       - name: Run DB migrations
         run: pnpm --filter @spine/api db:migrate
 
+      # --bail: a broken branch fails the same way everywhere, so five failing tests are enough to act on.
       - name: Integration tests
-        run: pnpm --filter @spine/api test:integration
+        run: pnpm --filter @spine/api test:integration --bail=5
+
+      - name: Stop the rest of the run
+        if: failure()
+        run: gh run cancel ${{ github.run_id }} --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  # Required by main's branch protection under this name: passes when lint,
+  # typecheck, unit and (when it ran) integration all passed.
+  unit-and-integration:
+    name: Unit and integration
+    needs: [changes, static, integration]
+    if: always() && needs.changes.result == 'success' && needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Check results
+        run: |
+          echo "Lint, typecheck and unit: ${{ needs.static.result }}"
+          echo "Integration: ${{ needs.integration.result }}"
+          [ "${{ needs.static.result }}" = "success" ] || exit 1
+          case "${{ needs.integration.result }}" in success|skipped) ;; *) exit 1 ;; esac
 
   e2e:
     name: E2E
-    # Only spend E2E minutes once unit and integration tests pass.
-    needs: test
+    # Starts once lint, typecheck and unit pass, alongside integration.
+    needs: [changes, static]
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: write # cancels the run when this job fails
 
     services:
       postgres:
@@ -210,6 +308,7 @@ jobs:
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: pnpm --filter @spine/e2e exec playwright install-deps chromium
 
+      # Stops after five failing specs (maxFailures in playwright.config.ts).
       - name: Run E2E suite
         run: pnpm --filter @spine/e2e test
         env:
@@ -224,3 +323,9 @@ jobs:
           path: apps/e2e/playwright-report
           retention-days: 3
           if-no-files-found: ignore
+
+      - name: Stop the rest of the run
+        if: failure()
+        run: gh run cancel ${{ github.run_id }} --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}

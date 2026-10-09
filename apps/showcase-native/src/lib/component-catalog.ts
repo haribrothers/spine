@@ -38,6 +38,7 @@ export const COMPONENT_CATALOG: ComponentCatalogEntry[] = [
   { slug: "floating-label-field", title: "Floating Label Field", description: "A Material-style floating-label text field.", native: false },
   { slug: "form-row", title: "Form Row / Form Section", description: "The grouped-card form layout — a captioned card of fixed-height rows.", native: false },
   { slug: "divider", title: "Divider", description: "A full-bleed 1px row separator for inside a form card.", native: false },
+  { slug: "scroll-edge-mask", title: "Scroll Edge Mask", description: "A background fade over a scroll view's top or bottom edge (Android).", native: false },
   { slug: "stepper", title: "Stepper", description: "A numeric +/- stepper.", native: false },
   { slug: "card", title: "Card", description: "A grouping container with Header/Title/Description/Content/Footer.", native: false },
   { slug: "badge", title: "Badge", description: "A neutral pill label for tags and metadata.", native: false },

@@ -113,7 +113,7 @@ Legacy: S-10.20
 - **Given** a notification email fails to send, **when** SMTP recovers, **then** it's retried and the in-app notice was already delivered.
 
 **Implementation notes**
-- Queue `notify-email`; types `milestone_completed`, `expense_approved`.
+- Queue `notify-email`; types `milestone_completed`, `expense_approved`. Since US-MOB-22 the submitter's own row reads "<Approver> approved your expense" with the category and amount as its detail (and `expense_rejected` gives the reason); Owners and Staff other than the submitter keep "Expense approved — <category>, <amount>".
 
 ### US-NTF-08 · Get a reminder before a meeting starts
 **Feature:** F-NTF-04 · **Priority:** P2 · **Phase:** 1 · **Screens:** `SettingsMeetingReminders`

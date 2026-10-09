@@ -71,6 +71,16 @@ export interface Quote {
   /** The version-1 ancestor's id, walked server-side from parentQuoteId — every version of "the same quote" shares this value, used by quotes-table.tsx to group rows (item 4, user feedback). */
   rootQuoteId: string;
   lines?: QuoteLine[];
+  /** When the customer answered (link or on site), and what they said. */
+  respondedAt?: string | null;
+  responseComment?: string | null;
+  /** US-QUO-20 — "in_person" for an answer recorded on a phone or in the app; else it came through the link. */
+  acceptanceMethod?: "public_link" | "in_person" | null;
+  /** Who recorded an on-site answer (the witness). */
+  acceptedByName?: string | null;
+  /** US-QUO-19 — what an on-site acceptance captured. */
+  acceptedSignerName?: string | null;
+  signatureFileId?: string | null;
 }
 
 export const QUOTE_STATUS_LABELS: Record<QuoteStatus, string> = {

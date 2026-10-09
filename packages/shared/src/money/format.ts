@@ -87,6 +87,8 @@ export function formatMoney(
   } catch {
     formatter = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" });
   }
+  // Hermes (the field app's engine) has no formatToParts: format the Number and swap in the true minus sign.
+  if (typeof formatter.formatToParts !== "function") return formatter.format(Number(decimal)).replace("-", MINUS_SIGN);
   // A decimal string keeps every digit exact; engines without string support get a Number.
   let parts: Intl.NumberFormatPart[];
   try {

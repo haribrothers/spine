@@ -4285,8 +4285,195 @@ Use the GST business from section 175.
     - `GET /org/setup-status` answers 403.
 11. Regression: Settings still opens from the user menu and from `?settings=<pane>` links.
 
+## 191. The field app: sign in, Profile, errors (US-MOB-01, US-MOB-02, US-MOB-10, US-MOB-19, US-MOB-20, US-MOB-21, Phase 5)
+
+Run the app on an iPhone simulator and an Android emulator (`pnpm --filter @spine/mobile ios` / `android`, a dev build because of `@expo/ui`). Use the API's own address in development (`http://localhost:4000` on the iOS simulator, `http://10.0.2.2:4000` on the Android emulator). Load the demo business and sign in as Marcus Webb (Field).
+
+1. After Welcome (section 197), Sign in shows the Spine logo on its illustration, "Sign in", "Use the email your office invited you with.", Server, Email, Password, "The server address is the link you open Spine with on a computer.", "Sign in", "Forgot password?" and "You stay signed in on this phone until you sign out."
+2. Errors sit under their field:
+   - A server that isn't Spine (e.g. `example.com`): "Can't reach that server. Check the address — it's the link you open Spine with on a computer." under Server.
+   - A wrong password: "That email and password don't match. Check both, or reset your password." under Password.
+   - An empty field: a line under that field; nothing is sent.
+3. "Forgot password?" opens the web app's reset page in the phone's browser. With no server typed it asks for the server first.
+4. Sign in. You land on Today: a large title "Today" (iOS) or "Today" headline (Android), "Good morning, Marcus" and "Riverstone Builders · <date>". Tabs: Today, Jobs, Expenses and Search — on iOS Search is the separate round button beside the glass tab bar; on Android it's a fourth tab with labels on every tab. Expenses says what it will hold (Jobs, Search and the rest of Today are section 192).
+5. Scroll Today on iOS: the large title collapses into the bar.
+6. Tap the avatar: Profile opens as a sheet (iOS) or a page (Android) with "Marcus Webb", "Field · Riverstone Builders", email, server, Appearance (System, Light, Dark), Sync "All synced", the Field note and "Sign out". Switch Appearance to Dark and back: every screen, the tab bar and the sheet follow it.
+7. Kill the app and reopen it: you're on Today without signing in. Turn the phone's dark mode on: the app follows it (Appearance on System).
+8. Sign out: you're back on Sign in with the server and email filled in; the session no longer works on the server.
+9. As the Owner on the web, deactivate Marcus. In the app, pull Today down to refresh: you're signed out to Sign in with "Your access to Riverstone Builders was removed." Reactivate him and sign in again.
+10. Stop the API with the app open and pull Today down: "Couldn't load your jobs", "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." and "Try again" — no saved-jobs link yet. Start the API and tap "Try again".
+11. Turn on airplane mode and pull Today down: "You're offline" — not "Couldn't load".
+12. Restart the API with `MOBILE_MIN_VERSION=99.0.0` and pull Today down: "Update Spine to keep going", "Your company's Spine server needs a newer version of this app. It only takes a minute." and "Open App Store" / "Open Google Play". Restart without it; reopen the app.
+13. Android: the system back gesture closes Profile like the back arrow; TalkBack reads "Profile, Marcus Webb" on the avatar and a label on every control.
+14. Regression (API, US-TEAM-04): a deactivated member's existing session — web cookie or phone token — gets 403 "Your access to <Business> was removed." from every API route. Other members are unaffected, and reactivating restores access.
+15. Android colours (US-MOB-20): Sign in is Spine blue and Sign out Spine red (not a muted purple or brown); the selected Appearance segment reads clearly in light and dark.
+16. Regression (component docs, US-MOB-21): `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks; the showcase app's Components list has Scroll Edge Mask, and Floating Label Field shows the sign-in (email and password) example.
+
+## 192. The field app: Today, Jobs, a job, Search and Notifications (US-JOB-16, US-MOB-03 to US-MOB-06, US-MOB-19, US-MOB-22, US-MOB-23, Phase 5)
+
+Same setup as section 191: load a demo business (any country; its first job has a milestone due this week and Marcus Webb is on every demo job's crew) and sign in as Marcus on the iPhone simulator and the Android emulator. Money and dates follow the business's currency and locale.
+
+1. Today: the header has "All synced" (left on iOS, before the bell on Android), the bell and the avatar. The welcome card shows "Good morning, Marcus", "<Business> · <weekday, date>" and the gauge "Milestones this month" with "<n> of <n> done".
+2. Switch "This week" / "This month" / "This year": the gauge label and its count, and the KPI cards ("Due this week/month/year", "Overdue", "Photos", "My expenses") change with it. Swipe the cards sideways. The only money on Today is "My expenses" — Marcus's own.
+3. Quick actions: Add photo, Log expense, Scan receipt and Directions. Directions opens the maps app at the first of today's sites. The other three say they arrive in the next update (US-MOB-11, US-MOB-13).
+4. "YOUR JOBS TODAY · <n>" (iOS) / "Your jobs today · <n>" (Android) lists only Active jobs with a milestone overdue or due in the next 7 days: name, customer, site address, the due chip ("Due Sat", "Due tomorrow", or "<n> days late" in red) and "Next: <milestone>". On the web, move that milestone's due date three weeks out and pull Today down: the card goes (the job is still on the Jobs tab). Put it back.
+5. On a job card, "Call <name>" (iOS: full name; Android: first name) opens the dialler with the contact's number; "Directions" opens the maps app at the site. Tapping the card opens the job in the Jobs tab, and back returns to the Jobs list.
+6. "NEXT MEETING": as the Owner on the web, create a meeting in the next 7 days and invite Marcus. Pull Today down: it shows with its day, time and place, and opens the meeting. Decline it as Marcus on the web (or remove him): it goes. Switch Leads & meetings off in Settings › Modules: no meeting section. Switch it back on.
+7. Jobs tab: "ASSIGNED TO YOU · <n>" (Android: "Assigned to you · <n>") with each job's name, "<customer> · <town>" and a chip ("Milestone due …", "Milestone <n> days late" or "All milestones complete"), and "Only jobs your office has put you on the crew for. Pull down to refresh." There's no search field. Pull down: it refreshes.
+8. US-JOB-16: as the Owner, take Marcus off one job's crew (Job › Crew). Pull Jobs down: the job is gone, and opening it from an old notification says "This job isn't on your list". Take him off every crew: "No jobs assigned to you yet", "When your office adds you to a job's crew, it shows up here with its address and contact." and "Check again". Put him back on and tap "Check again".
+9. Open a job: status ("Active"), the name, "<job number> · <customer>", the site address with "Directions", the contact (name, title) with the green call button, "MILESTONES" (each pending one with "Due <day date>" and "Mark complete" — the first filled; completed ones "Completed <date>"), "PHOTOS · <n>" with four thumbnails ("+<n>" on the last when there are more) and "See all", and "QUOTES TO PRESENT" (a sent variation-order quote: "<number> · <first line>", "Sent <date> · waiting for the customer", "Present"). No contract value, milestone amount or invoice anywhere. "Add photos" is the camera in the toolbar on iOS and a floating button on Android. Mark complete, Present and Add photos say they arrive in the next update.
+10. "See all" opens "Photos · <n>" with "<job> · <number>", photos grouped by day ("Today", "Mon, Oct 5"…) newest first, three to a row.
+11. Search (iOS: the round search button; Android: the fourth tab): with nothing typed, "Search jobs and expenses" and "Find a job by name, customer or address, or one of your expenses by category or description." Type a job's street: "JOBS · 1" with the match highlighted. Type an expense category Marcus used: "YOUR EXPENSES · <n>" with amount and status. A group with no matches isn't shown. Type "zebra": "No results for “zebra”" and "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
+12. Tap a job result: it opens in the Jobs tab. Back on Search, clear the field: the search is under "Recent searches" (newest first, up to 10). iOS: "Edit" then the red minus removes one. Android: "Clear" removes them all.
+13. Turn airplane mode on and search again: results still come (from the phone). Turn it off.
+14. Notifications: the bell shows the unread count ("9+" above nine). As the Owner on the web, reject an expense Marcus submitted with a reason, approve another, and add Marcus to a crew and take him off another. Bring the app to the front: the bell's count goes up. Tap the bell: "NEW" and "EARLIER" (Android: "New", "Earlier"), each with its icon, message, detail line and time — "<Owner> rejected your expense" with "<category> · <amount> · “<reason>”", "<Owner> approved your expense", "You're on the crew for <job>" with "Added by <Owner> · <address>", "You're off the crew for <job>". Unread ones have a blue dot (iOS) or a tinted row (Android).
+15. Tap the rejection: it opens the expense with its amount, "Rejected" and the reason, and the notification is read. Tap the crew one: the job opens. Tap "Read all": every dot goes and the bell has no count. With none at all: "You're all caught up" and "Expense decisions, crew changes and meeting invitations show up here."
+16. Jobs & field off (as the Owner, after changing Marcus to Staff): the Jobs tab, job cards, the job KPIs and the Add photo and Directions tiles are hidden, and Search finds only expenses. Switch it back on and change Marcus back to Field.
+17. Dark mode (US-MOB-19, US-MOB-20): Today and a job follow the phone's dark mode — iOS grouped background near-black, cards a shade lighter, Spine blue with dark text on filled buttons ("Mark complete"); Android the Material dark roles. Text stays readable on every chip and card.
+18. Regression (web): the Owner still gets "Expense approved — <category>, <amount>" in the bell when someone else's expense is approved; the person who submitted it gets "<name> approved your expense" instead. Job › Crew still adds and removes people.
+19. Regression (demo data): loading a demo business reports `crewAssignmentsCreated` and the demo's first job shows on the web dashboard's "Today" with its milestone due this week.
+20. Loading (D-201): sign out and in again (the phone's copy is cleared), then slow the network (Network Link Conditioner on the simulator's Mac, or the emulator's "Network › Poor" profile). Today shows grey blocks in the shape of the gauge, the KPI cards, the job cards and the meeting, while the heading and quick actions are already there; nothing jumps when the data arrives. Switch to "This week": only the gauge and cards turn to blocks — the month's numbers don't linger — and switching back to "This month" shows it at once. Jobs, a job (heading, milestones, photos, quotes), Photos, Notifications, Search (typed before anything loaded), an expense and a meeting each show their own blocks, never "No jobs…", "You're all caught up" or "No results" while loading. With Reduce Motion on, the blocks don't pulse. VoiceOver/TalkBack reads "Loading jobs" (and so on) once per section. There's no full-page spinner anywhere; pull to refresh keeps the content and shows the system spinner.
+
+## 193. The field app: offline, Sync and Fix (US-MOB-07, US-MOB-08, US-MOB-09, Phase 5)
+
+Same setup as section 191. Until Group 4 lands (taking photos, new expenses, Mark complete), nothing in the app puts items in the outbox; steps 5–11 need a build with Group 4, and the automated tests (`apps/mobile/src/__tests__/us-mob-07`, `08`, `09`) cover them meanwhile.
+
+1. Today with a connection: the pill reads "All synced". Tap it: Sync opens (a sheet with Close on iOS, a page with the back arrow on Android) with "All synced" and "Everything has reached your office." Profile's Sync row opens it too.
+2. Open a job, then turn on airplane mode (Android: `e2e/us-mob-07-offline.yaml` does steps 2–4). Today shows "You're offline" and "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of <time>." with the time the jobs were last fetched; the saved jobs, figures and meeting are still there.
+3. Still offline, open the job you saw before: its details, contact, milestones, photos and quotes load from the phone. A job never opened shows its name from the list and skeletons for the rest.
+4. Turn airplane mode off: the banner goes by itself and the screens refresh.
+5. Offline, add two photos to a job, log an expense and mark a milestone complete. The pill reads "3 waiting to sync" in amber; the job's card on Today shows "2 photos waiting" (and "Completion waiting" on the other); on the job the milestone shows "Completion waiting" and the photos show "Waiting". Sync shows "3 items waiting", "You're offline · sends automatically when you reconnect" and WAITING with each item, its job and time.
+6. Sign out while they wait: the warning says "<n> site photos and <n> expense are still waiting to sync. Signing out deletes them from this phone."; "Send them first" opens Sync.
+7. Back online: they send by themselves (no button needed) and move to SENT TODAY; the pill says "All synced"; on the web the photos, expense and completion are there once each.
+8. Exactly once: offline, add a photo; turn the connection on and off quickly while it sends, a few times. On the web the job has that photo once. (The API test us-mob-09 replays every step with the same key.)
+9. Needing fixing: log an expense with a receipt over 10 MB (a large photo from the library on a test phone with compression turned off, or the API test). Sync shows NEEDS FIXING · 1 with "Expense · <category> · <amount>" and "Didn't send: the receipt photo is over 10 MB" in red, and "Fix".
+10. Fix: the reason in red, Category, Amount, Job, Date, the receipt with "<size> · over the 10 MB limit", "Retake photo", "Choose a different photo", "Remove photo", "Send again" and "Delete this expense" (Android: the bin at the top, with a note). Retake or choose a photo (allow the camera or photos when asked; refusing offers Settings), then "Send again": it sends. "Delete this expense" asks first and removes it from the phone.
+11. Someone else first: queue a completion offline; as the Owner on the web complete the same milestone; reconnect. Sync shows it under SENT TODAY as "Milestone completed · Already completed by <Owner>"; the milestone keeps the Owner's completion, and the phone's photos are on the job.
+12. Network trouble isn't a failure: stop the API with items waiting. They stay "Waiting" (not red), and Sync says "Couldn't reach your Spine server · tries again automatically"; start it and they send within a few minutes, or at once with "Try sending now".
+13. Update required: restart the API with `MOBILE_MIN_VERSION=99.0.0` with items waiting: "Update Spine to keep going" says "<n> items waiting to send are kept on this phone and sent after you update." Restart without it: they send.
+14. Regression (web): completing a milestone twice from the web (two tabs) now succeeds quietly the second time instead of "Only a pending milestone can be marked complete"; the milestone keeps the first completion.
+
+## 194. The field app: photos, expenses and Mark complete (US-MOB-11 to US-MOB-15, Phase 5)
+
+Same setup as section 191. Use a real phone or the Android emulator for the camera (the iOS Simulator has none; on the emulator the saved picture is the emulator's own test frame). `e2e/us-mob-11-photos.yaml` (Android) and `e2e/us-mob-13-expense.yaml` (both) cover steps 2–5 and 8–9.
+
+1. Camera explainer (US-MOB-14): on a fresh install, tap "Add photos" on a job. Before any system prompt: "Allow camera access", "Spine uses the camera for site photos and receipt pictures. Photos go only to your company's Spine server — never anywhere else.", the three reasons, "Continue", "Not now" and where to turn it on (iOS "Settings › Spine › Camera"; Android "Settings › Apps › Spine › Permissions"). "Not now" goes back to the job. "Continue" then the system prompt: allow, and the camera opens. Refuse it on another install: "Continue" becomes "Open Settings" and opens them.
+2. Camera (US-MOB-11): the job's name is at the top with a chevron (tap to choose another of your jobs), flash on/off, the shutter and "Done". Take two: "2 taken · saved on this phone" and the latest thumbnail with "2". Close with photos taken: "Discard 2 photos?" — "Keep taking" or "Discard".
+3. "Done": "2 photos", each photo large with the strip below ("+" takes more), "Caption" per photo, "Job" and "Milestone (optional)", the note about uploading in the background, and "Save 2 photos" (iOS, bottom) / "Save" (Android, top). iOS "Retake" drops the photo shown and goes back to the camera. Android: three outlined fields with their labels on the outline — "Caption" (hint "What does this photo show?"), "Job" ▾, "Milestone (optional)" ▾ — no white card; the caption's outline turns blue and thicker while typing, without the text moving. Check light and dark.
+4. Save: you're back on the job; "PHOTOS · <n>" counts them, marked "Waiting" until sent; the pill on Today shows them, then "All synced". On the web, the job's Photos tab has them with the caption, and under the milestone when one was chosen.
+5. Offline (airplane mode): steps 2–4 work the same; they send when you're back online (section 193).
+6. Today's "Add photo" opens the camera on today's first job; "Directions" still opens maps.
+7. Expenses tab (US-MOB-12): "WAITING TO SYNC" (expenses still on the phone; a refused one shows "Didn't send: …" in red and opens Fix) and "SUBMITTED BY YOU" with the category icon, category, date, job, amount and "Submitted" (blue), "Approved" (green) or "Rejected" (red). A rejection shows the reason in red with "— <reviewer>" (Android: "Rejected · <reason>"). "+" beside the avatar (iOS) / the floating "Log expense" (Android) opens New expense. With no expenses: "No expenses yet". Only your own are ever listed.
+8. New expense (US-MOB-13): "Amount" / "Headcount × day rate"; "Amount (<currency>)", "Category", "Job" (with "No job"; hidden when Jobs & field is off), "Date", "PAID BY" "Me — pay me back" / "Company", "Description", "RECEIPT" ("Take a photo" / "Choose a photo") and "Your office approves it before it's paid back. No signal? It's saved and sent later." "Submit" with nothing filled in: "Choose a category." and "Enter an amount above zero." under their fields. Android: outlined fields (labels on the outline) — the amount with the currency symbol, "Category" ▾, "Job" ▾, "Date" with a calendar icon (tap: the date dialog), "Description"; the two errors turn those outlines red with the message underneath. Check light and dark.
+9. Fill it in with a receipt (the receipt camera shows a frame, "Fit the whole receipt inside the frame", flash and a gallery button) and Submit: it shows under WAITING TO SYNC, then moves to SUBMITTED BY YOU once sent, with the receipt attached on the web. A receipt over 10 MB (a large photo from the library on a test build with compression off) says "This photo is over 10 MB. Retake it closer, or choose a smaller one." and isn't queued.
+10. "Headcount × day rate" (D-199): the category posting to 5200 Direct Labour is preselected; "TRADES" rows of Trade, Workers and Day rate with each row's total, "Add trade", "Total for the day" and "Labour is always for a job. Only trades, headcounts and day rates — no names or hours." Typing a trade you've used before suggests it with its last day rate (only your own — another person's trades never appear). Submit without a job: "Labour is always for a job — choose one."; with an incomplete row: "Every row needs a trade, at least one worker and a day rate." On the web the expense shows the rows and the total.
+11. Today's "Log expense" opens New expense; "Scan receipt" opens it with the receipt camera already up.
+12. Fix → "Edit expense" (US-MOB-09): a refused expense opens in the same form ("Fix expense", "Send"); change it and send: it goes again.
+13. Mark complete (US-MOB-15): on a job, "Mark complete" opens a sheet with the milestone, "<job> · due <date>", "PHOTOS OF THE FINISHED WORK" (with "Add", opening the camera), "NOTE FOR THE OFFICE (OPTIONAL)", "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online." and "Mark complete" (Android: "Mark complete?", with "Cancel" and "Mark complete" at the bottom, and the note as an outlined field labelled "Note for the office (optional)", its text starting at the top; tapping anywhere in it focuses it). Complete it: the milestone shows "Completion waiting", then "Completed"; on the web it's completed with the note and photos, and the office got one "Milestone completed" notification.
+14. Two phones complete the same milestone offline, then both reconnect: it's completed once (the first); the other's Sync shows "Milestone completed · Already completed by <name>".
+15. Regression (web, US-PUR-23): an Owner's labour expense still suggests every trade used in the business; a Field user's phone suggests only their own.
+
+## 195. The field app: present a quote, accept with a signature or decline (US-QUO-19, US-QUO-20, US-MOB-16 to US-MOB-18, Phase 5)
+
+Same setup as section 191. You need a sent quote that is a variation order on (or the source quote of) a job the phone's user is on. As an Owner, send a quote for the job's customer and add it as a variation order on the job.
+
+1. On the job, "QUOTES TO PRESENT" lists it with "Present". Tap it (US-MOB-16):
+   - The quote opens full-screen with "Hand the phone to your customer" (iOS beside "Done"; Android under the ✕ and the number).
+   - It shows the business and address, "QUOTE <number>" (iOS), "Prepared for <customer>", "Valid until <date>", each line with "<qty> × <price>" and its amount, Subtotal, each tax by name, Total and NOTES.
+   - In India the taxes are "CGST (9%)" and "SGST (9%)". Elsewhere they're the rates' names, e.g. "Sales Tax (15%)". The figures match the quote's PDF.
+   - "Decline" and "Accept quote" are at the bottom.
+2. "Decline": a sheet titled "Decline quote" says "<customer> is declining <number> for <total>. <Business>'s office is told straight away.", with "Reason (optional)" ("For example, the price or the timing"), a red "Decline quote" and "Cancel". Android uses an outlined reason field, with Cancel beside the button. "Cancel" goes back to the quote.
+3. "Accept quote" (US-MOB-17):
+   - The screen shows "Accept <number>", the customer and total, "Your name", "Sign below" with "Clear", and "By signing, I accept this quote for <total> on behalf of <customer>. Spine records your signature, the time and the <Business> staff member present (<your name>)."
+   - "Accept and sign" is off: "Type the customer's name to continue.", then "Sign in the box to continue." once a name is typed.
+   - Sign with a finger from left to right: the stroke draws and the screen doesn't go back. "Clear" empties the box.
+4. Type a name, sign, "Accept and sign":
+   - The phone shows "Quote accepted", "<number> · <total>", "Signed by <name> at <time>. <Business>'s office has been told and the quote is now locked." and Customer, "Witnessed by <you>", "Method: In person, on this phone".
+   - "Back to job" (or Android's back) returns to the job, and the quote is no longer under QUOTES TO PRESENT.
+   - On the web, Owners and Staff got "Quote <number> was accepted in person." A variation order also says to apply it to the job.
+5. On the web, open that quote (US-QUO-20):
+   - It shows "Accepted on site", "Signed by <name> on <date> at <time>, witnessed by <name>", the signature, and "View signature full size", which opens the image.
+   - "More" › "View history" reads "<you> recorded the customer's acceptance of this quote on site, signed by <name>".
+   - A quote accepted through the emailed link instead says "Accepted online by the customer on <date>", and its history reads "The customer accepted this quote online".
+6. Present another quote, "Decline", give a reason, "Decline quote": you're back on the job without it. The web quote shows "Declined on site", who recorded it and the reason, and the office got "Quote <number> was declined in person."
+7. Offline (US-MOB-18), with airplane mode on:
+   - iOS: "Present" shows "Quotes need a connection", "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again.", "Photos, expenses and milestone updates still work offline.", "Try again" and "Back to job". Turn the connection back on and "Try again" opens the quote.
+   - Android: the same words in an alert over the job, with "Back to job" and "Try again".
+   - With the quote already open, going offline makes the decline sheet say "Needs a connection — declining can't be saved offline." and its button stays off.
+8. Security: a Field user can't open, accept or decline a quote on a job they aren't on (404), and can't open the signature file (404). Staff and Owners can.
+9. Regression: Mark complete, Add photos and the job's photos still work from the same job screen (section 194). The web quote page for a draft or sent quote shows no acceptance panel.
+
+## 196. The field app on Android follows Material 3 (US-MOB-20, Phase 5)
+
+On an Android phone, compare each screen with its `Mob…Android` artboard in `docs/design/screens/`, in light and then dark mode (Today and a job against `MobHomeAndroidDark` and `MobJobDetailAndroidDark`).
+
+1. Today: the sync pill top left, the bell and avatar top right, and a large "Today" below. Scroll: "Today" moves into the bar with the pill beside the bell, and the bar turns grey. The welcome card and job cards are grey-filled with no border. Tonal pills ("Call …") and the tab bar's selected pill are pale blue (deep blue in dark mode).
+2. A job: the site and contact sit in an outlined card. Milestones and quotes are plain lists. The other milestones' "Mark complete" is tonal. "Add photos" floats bottom right. The photos show (not blank). "+n" over the last tile is dark with light text in both themes.
+3. Profile: the avatar beside the name. Then Email and Server rows with icons, and the sync row with "Last sent <time>" once something has been sent. Then "Appearance", the Field note, an outlined red "Sign out" with an icon, and the version.
+4. Search: a rounded search bar with the avatar inside. Tap it: it becomes a full-width bar with ← and, once you type, ✕. ← (or the back gesture) leaves the search. With recent searches: "Recent searches" in blue with "Clear". No results: the icon sits in a grey rounded square.
+5. Every outlined field (Sign in, New expense, photo review, Mark complete's note, a quote's name and reason) matches its artboard:
+   - 56 dp tall, a mid-grey outline (blue and thicker while typing, red on error), corners barely rounded.
+   - The label sits in the outline's top edge. Dropdowns end in a small ▾.
+   - A date reads "8 Oct 2026" (or "Oct 8, 2026" by the phone's locale).
+   - Segmented buttons have the same grey outline and semibold labels.
+   Sign in: outlined Server, Email and Password fields. The server hint is under the Server field. A wrong server shows the field in red with an error icon and the message under it. The eye shows and hides the password.
+6. New expense: outlined fields, muted "Paid by" and "Receipt" labels, the receipt buttons without a card. "Headcount × day rate":
+   - The trade being edited is an outlined card (Trade, Workers, Day rate with the currency).
+   - "Add trade" folds it to one line ("Mason / 4 × $220.00   $880.00"). Tap that line to edit it again.
+   - "Total for the day" has no card.
+7. Receipt camera: ✕ top left with "Receipt" beside it.
+8. Back gesture:
+   - On the camera with photos taken: "Discard <n> photos?".
+   - On New expense with a receipt taken, or Mark complete with photos: it closes and the photos aren't left waiting on the phone.
+   - On Quote accepted: back to the job.
+   - Elsewhere it does what the drawn back arrow does.
+9. TalkBack: swipe through Today, a job, Expenses, New expense, Search, Profile, Sync, Notifications, Mark complete, the camera and a presented quote. Every control is read with a name (no "unlabelled button").
+10. Regression (iOS): Today, Profile, Search, Sign in and New expense look as before (sections 191–195).
+
+## 197. The field app: icon, splash, Welcome and the new Sign in (US-MOB-01, US-MOB-24 to US-MOB-27, Phase 5)
+
+The phone carries the new Spine logo (D-203); the web keeps its own until its rebrand (Q-25). Icons and the splash need a fresh dev build (`npx expo prebuild --clean`, then `pnpm --filter @spine/mobile ios` / `android`). To see Welcome again, delete the app from the device and install it again. Compare against the canvases "10 Brand and app icon", "11 Splash and Welcome" and "12 Sign in" and the `MobSplash*`, `MobWelcome*` and `MobSignIn*` artboards.
+
+1. **App icon (US-MOB-24):**
+   - iPhone home screen: the layered mark on the teal-to-blue gradient, corners rounded by iOS, labelled "Spine".
+   - Long-press the home screen › Edit › Customize › Dark: the mark on iOS's dark backdrop. Tinted: a one-colour silhouette in the chosen tint.
+   - Android launcher: the same art. Change the launcher's icon shape (circle, squircle, rounded square, teardrop) where the launcher allows: the mark is never clipped.
+   - Android 13+: turn on Themed icons in Wallpaper & style: a one-colour silhouette in the phone's colours.
+2. **Splash (US-MOB-25):** cold-start the app in light mode, then dark mode.
+   - Each time: the gradient mark, about 96 dp, centred on `#F7F6F3` (light) or `#121110` (dark). No wordmark, no spinner, no white flash.
+   - Android 12+: only the system splash, no second one after it.
+   - In airplane mode, the splash still hides as soon as the first screen is ready; it never waits on the network.
+3. **Welcome (US-MOB-26),** on a fresh install:
+   - The mark rises out of the splash from the same spot, its layers breathe apart and settle, and five cards slide out from behind it: today's job, "3 photos saved", a fuel receipt, a signed quote with its signature drawing itself, and "Foundations · Completed".
+   - "Today’s jobs, in your pocket", the sentence and "Get started" fade up. Everything is still within about 1.5 s, then the cards float gently.
+   - Tap "Get started" while it's still animating: it works at once and opens Sign in.
+   - Kill and reopen the app: Sign in, not Welcome. Sign in, sign out, reopen: still no Welcome.
+4. Welcome, continued:
+   - Reduce Motion (iOS Settings › Accessibility › Motion) or Remove animations (Android › Accessibility): Welcome appears in its final state and nothing moves. Reinstall to see it.
+   - VoiceOver / TalkBack: the illustration is skipped. You hear "Today’s jobs, in your pocket", heading; the sentence; "Get started", button; and the footer.
+   - Android back on Welcome closes the app.
+   - Dark mode: the brand colours stay; the cards are dark with a hairline border.
+   - Largest text size: the illustration shrinks first, the words scroll, and "Get started" stays reachable.
+5. **Already signed in:** install this build over an older one while signed in. You land on Today; after signing out you see Sign in, never Welcome.
+6. **Sign in (US-MOB-01):**
+   - The vertical logo (mark over SPiNE) sits on the illustration — glow, dashed orbits, three faded cards — fading into the page, then "Sign in".
+   - Only the orbits drift and the sparkles twinkle, slowly; nothing moves with Reduce Motion.
+   - VoiceOver reads the logo as "Spine" and skips the rest of the illustration.
+   - Dark mode: the wordmark turns light.
+7. Sign in, continued:
+   - Tap Email: the illustration folds to the horizontal logo, and Server, Email, Password and "Sign in" stay above the keyboard on a small phone (iPhone SE, small Android). Dismiss the keyboard: the illustration returns.
+   - A wrong password: "That email and password don't match. Check both, or reset your password." What you typed stays.
+8. **Logo and brand colours (US-MOB-27):**
+   - The design-system app (`apps/design-system-native`) has a "Spine logo" page (mark, horizontal, vertical, minimum sizes) and Brand swatches on Color.
+   - `pnpm --filter @spine/ui-native test` passes its doc-screen and a11y coverage checks.
+9. Regression:
+   - The web app, the docs site and the web design system still show the "S" logo.
+   - Section 191: sign in, errors under their fields, Forgot password, Profile, sign out.
+   - Section 196: Android screens keep Material 3 (outlined fields, pill buttons).
+
 ## Known gaps — don't file these as bugs
 
+- The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.
 - Settings › Modules has no "AI assistant" row yet; it arrives with Settings › AI (US-AI-01). Expenses already waiting when Approvals is switched off stay waiting until it's back on (D-190).

@@ -27,6 +27,8 @@ export function SkeletonScreen() {
             "A plain sizable block — pass width/height utility classes to match the content it replaces.",
             "The pulse is driven by RN's own Animated API, not a className — NativeWind (checked directly against the installed v4 dist) doesn't implement Tailwind's animate-* keyframe utilities, so a bare animate-pulse className would silently do nothing here.",
             "A real, confirmed-live bug found building this: putting className directly on the outer Animated.View compiled the opacity animation correctly but silently dropped every NativeWind class (bg-border-strong, h-4, w-48 — all gone) specifically on Expo web, even though the same code renders correctly on real iOS/Android. Fixed by moving className onto a plain View nested inside the Animated.View, which only carries the animated opacity style.",
+            "Respects Reduce Motion: with it on, the block holds still at a steady tint instead of pulsing, and follows the setting if it changes while visible.",
+            "Decorative: hidden from VoiceOver and TalkBack. Wrap a loading section in a View with accessibilityLabel (e.g. \"Loading jobs\") and accessibilityState={{ busy: true }} so it's announced once.",
             "A second real, confirmed-live bug, reported after the first fix: the block was invisible specifically in dark mode. Skeleton originally used the plain border token (bg-border), whose dark value is identical to surface-sunken's dark value — the background this preview box (and any similarly sunken container) renders against — so the block was the exact same color as its own background. Fixed by switching to border-strong, which is a genuinely distinct color from surface-sunken in both themes.",
           ]}
         />

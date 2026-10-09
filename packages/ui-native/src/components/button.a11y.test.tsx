@@ -149,3 +149,41 @@ describe("Button a11y", () => {
     expect(modifiers.find((m) => m.$type === "buttonBorderShape")).toBeUndefined();
   });
 });
+
+describe("Button a11y — on Android (Compose buttons with exact Spine colours, US-MOB-20)", () => {
+  const { Platform } = jest.requireActual<typeof import("react-native")>("react-native");
+  const originalOS = Platform.OS;
+  beforeEach(() => {
+    Platform.OS = "android";
+  });
+  afterEach(() => {
+    Platform.OS = originalOS;
+  });
+
+  function nativeButton(root: ReturnType<typeof render>) {
+    const nodes = root.UNSAFE_root.findAll((n) => "onClick" in n.props && "colors" in n.props);
+    if (nodes.length === 0) throw new Error("No Compose button node with onClick and colors");
+    return nodes[0]!;
+  }
+
+  it("fills primary and danger buttons with the exact token colours", () => {
+    const primary = render(<Button label="Try again" onPress={() => {}} />);
+    expect(nativeButton(primary).props.colors).toEqual({ containerColor: "#2954E5", contentColor: "#FFFFFF" });
+    primary.unmount();
+    const danger = render(<Button variant="danger" label="Delete" onPress={() => {}} />);
+    expect(nativeButton(danger).props.colors).toEqual({ containerColor: "#B3261E", contentColor: "#FFFFFF" });
+  });
+
+  it("colours ghost and secondary text with the fill colour, and disables via enabled", () => {
+    const ghost = render(<Button variant="ghost" label="Forgot password?" onPress={() => {}} disabled />);
+    const node = nativeButton(ghost);
+    expect(node.props.colors).toEqual({ contentColor: "#2954E5" });
+    expect(node.props.enabled).toBe(false);
+  });
+
+  it("passes testID through as a Compose test tag", () => {
+    const root = render(<Button label="Try again" onPress={() => {}} testID="retry" />);
+    const modifiers = nativeButton(root).props.modifiers as Array<Record<string, unknown>>;
+    expect(modifiers.some((m) => m.$type === "testID")).toBe(true);
+  });
+});

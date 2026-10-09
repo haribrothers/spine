@@ -33,7 +33,8 @@ Bundle ids are placeholders until the owner registers a domain; changing them af
 
 - `expo-updates` with a runtime version policy of `appVersion`: JS-only fixes ship OTA within the same `X.Y`; any native change (new module, SDK bump, permission) requires a store build.
 - OTA updates are never used to change what data the app can reach; server authorisation is the boundary.
-- The server rejects clients below its minimum supported version with `426 CLIENT_TOO_OLD`; the app shows "Update Spine to keep going" with a store link.
+- The server rejects clients below its minimum supported version with `426 CLIENT_TOO_OLD`; the app shows "Update Spine to keep going" with a store link. The links live in `app.json` › `extra.storeLinks`; the App Store one is a placeholder until the listing exists.
+- Server address: people type the link they open Spine with on a computer. The app looks for the API at `<address>/api` (a real install, behind Caddy) and then at the address itself (the API's own port in development), using `GET /health`'s `service: "spine"` to know it found Spine.
 
 ## Permissions
 

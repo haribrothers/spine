@@ -57,7 +57,8 @@ export class ExpensesController {
   @Get("labour-trades")
   @OrgRoles(["owner", "staff", "field"])
   async labourTrades(@Session() session: UserSession, @Query("q") q?: string) {
-    return this.expensesService.labourTrades(requireOrgId(session), q);
+    const orgId = requireOrgId(session);
+    return this.expensesService.labourTrades(orgId, q, await this.expensesService.readScope(orgId, session.user.id));
   }
 
   @Get(":id")

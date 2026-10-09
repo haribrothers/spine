@@ -71,7 +71,11 @@ export class JobsController {
     });
     const includes = new Set((include ?? "").split(",").filter(Boolean));
     // US-DASH-18: each job's next pending milestone, for the dashboard's "My jobs".
-    const withNext = includes.has("next_milestone") ? await this.jobsService.withNextMilestone(rows) : rows;
+    const withNextOnly = includes.has("next_milestone") ? await this.jobsService.withNextMilestone(rows) : rows;
+    // US-MOB-03: who to call on site, for the phone's job cards.
+    const withContact = includes.has("site_contact") ? await this.jobsService.withSiteContact(withNextOnly) : withNextOnly;
+    // US-MOB-04: milestone counts for the phone's "All milestones complete".
+    const withNext = includes.has("milestone_counts") ? await this.jobsService.withMilestoneCounts(withContact) : withContact;
     if (field) return withNext.map(withoutMoney);
     // US-JOB-25: budget used per job, only for members who may see job profitability.
     return includes.has("costing") ? this.jobCostingService.withCosting(orgId, session.user.id, withNext) : withNext;
@@ -98,8 +102,8 @@ export class JobsController {
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
     const { field } = await this.jobAccess.check(orgId, session.user.id, id);
-    const job = await this.jobsService.getOne(orgId, id);
-    return field ? withoutMoney(job) : job;
+    const [job] = await this.jobsService.withSiteContact([await this.jobsService.getOne(orgId, id)]);
+    return field ? withoutMoney(job!) : job!;
   }
 
   /** `GET /jobs/:id/history` — a real read against AuditLogService.record()'s existing writes (`entityType: "job"`), same pattern as InvoicesController.getHistory. No `@RequireCapability` — a read, matching every other GET in this controller. */
@@ -148,6 +152,18 @@ export class JobsController {
     const parsed = updateJobSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the job and try again.");
     return this.jobsService.update(orgId, id, session.user.id, parsed.data);
+  }
+
+  /**
+   * US-MOB-05 (D-073) — the quotes a crew member can present on site: the
+   * job's variation-order quotes and its source quote, while `sent`. No
+   * amounts here; the quote itself is read when it's presented (US-MOB-16).
+   */
+  @Get(":id/quotes")
+  async quotesToPresent(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    await this.jobAccess.check(orgId, session.user.id, id);
+    return this.jobsService.quotesToPresent(orgId, id);
   }
 
   /** Phase 5 (Mobile) — who's on a job's crew. Read is unconditional, same as every other GET on this controller. */

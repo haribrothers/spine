@@ -780,13 +780,13 @@ Links to: `QuoteConvertWarning`
 Shows: "Overview > Dashboard" · "Welcome, Alex Morgan" · "You're signed in to Spine." · "Get started" · "Q Search settings" · "Repeat quote conversion" · "Nothing stops "Convert to job" or "Convert to Invoice" from being used more than once on" · "ORGANISATION" · "the same quote - each conversion creates a full, separate job or invoice for the quote's" · "‹E Business profile" · "whole amount, not a split. Choose how the app should behave when that happens." · "* Industry template" · "Warn (recommended)" · "° Currency & locale" · "If a quote already has a job or invoice, show what already exists and ask for" · "confirmation before creating another." · "# Financial year" · "% Tax" · "evenue this month" · "Block" · "lE Numbering" · "Refuse to create a second job or invoice from the same quote. You'd need to change" · "15265.00 USD" · "this setting to override it." · "Chart of accounts" · "?. Purchases" · "Off" · "0 Edit layout" · "No check at all - convert the same quote as many times as you like, with no" · "warning." · "to Upcoming meetings" · "View board" · "@ Meeting reminders" · "Save" · "A Browser notifications" · "• Demo data" · "Won 422.00 USD • 4" · "Lost 155.00 USD • 1" · "Dec" · "Feb" · "Apr" · "Jun" · "Ang" · "Oct" · "Receivables aging" · …
 
 ### MobQuoteAccept — Sign to accept
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-QUO-19, US-MOB-17 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-QUO-19, US-MOB-17 · **Source:** Claude Design
 
 ![MobQuoteAccept](screens/MobQuoteAccept.webp)
 
 Links to: `MobQuotePresent`, `MobQuoteAccepted`
 
-Shows: "Quote" · "Accept QUO-0004" · "Harborview Construction Co." · "Additional electrical outlets" · "510.00 USD" · "Your name" · "SIGN BELOW" · "Clear" · "By signing, I accept this quote for" · "on behalf of Harborview Construction Co. Spine records your signature, the time and the Riverstone Builders staff member present (Marcus Webb)." · "Accept and sign"
+Shows: "Accept QUO-0004" · "Customer" · "Harborview Construction Co." · "Total" · "$601.16" · "Your name" · "Alan Reyes" · "Sign below" · "Clear" · "By signing, I accept this quote for $601.16 on behalf of Harborview Construction Co. Spine records your signature, the time and the Riverstone Builders staff member present (Marcus Webb)." · "Accept and sign"
 
 ### QuoteActionsMenu — Quote actions menu — duplicate, save as bundle
 **Priority:** P2 · **Phase:** 7 · **Stories:** US-QUO-24 · **Source:** Drawn
@@ -977,13 +977,13 @@ Links to: `JobMilestones`
 Shows: "Billing > Invoices > Detail" · "OVERVIEW" · "Invoice" · "98 Dashboard" · "< Back to invoices" · "SALES" · "•, Contacts" · "INV-0009" · "Issued" · "Pipeline" · "Download PDF" · "Record payment" · "Issue credit note" · "Email invoice" · "Void" · "Bluewater Hospitality Group" · "Meetings" · "Catalogue" · "Quotes" · "Lines" · "JOBS" · "Hotel lobby renovation - Final walkthrough & sign-off" · "5250.00" · "• Jobs" · "1 × 5250.00" · "BILLING" · "Invoices" · "Payments" · "5 Credit Notes" · "No payments recorded against this invoice yet." · "•• Payments" · "• Receivables" · "PURCHASES" · "Subtotal" · "5250.00 USD" · "• Vendor Bills" · "Discount" · "-0.00" · "Tax" · "0.00 USD" · "E Expenses" · "2g Vendor Payments" · "Total" · "• Payables" · "REPORTS" · …
 
 ### MobJobsList — Jobs
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-JOB-16, US-JOB-19, US-MOB-04 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-JOB-16, US-JOB-19, US-MOB-04 · **Source:** Claude Design
 
 ![MobJobsList](screens/MobJobsList.webp)
 
 Links to: `MobJobDetail`, `MobHome`, `MobExpensesList`, `MobProfile`
 
-Shows: "Jobs" · "Search jobs" · "ASSIGNED TO YOU · 3" · "Marina office fit-out" · "Harborview Construction Co. · Portland" · "Milestone due Sat" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · Burlington" · "Milestone due today" · "Hotel lobby renovation" · "Bluewater Hospitality Group · [CITY]" · "All milestones complete" · "Only jobs your office has put you on the crew for. Pull down to refresh." · "Today" · "Expenses" · "Profile"
+Shows: "Jobs" · "ASSIGNED TO YOU · 3" · "Marina office fit-out" · "Harborview Construction Co. · Portland" · "Milestone due Sat" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · Burlington" · "Milestone 2 days late" · "Hotel lobby renovation" · "Bluewater Hospitality Group · Providence" · "All milestones complete" · "Only jobs your office has put you on the crew for. Pull down to refresh." · "Today" · "Expenses"
 
 ### InvoiceDetailRetention — Progress invoice with retention rows
 **Priority:** P1 · **Phase:** 6 · **Stories:** US-JOB-21 · **Source:** Drawn
@@ -2517,125 +2517,244 @@ Shows: "Settings — Emails — Spine" · "Overview" · "Dashboard" · "Good aft
 
 ## Mobile field companion
 
+Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.
+
+### MobSplash — Splash
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplash](screens/MobSplash.webp)
+
+Links to: `MobWelcome`, `MobSignIn`, `MobHome`
+
+Shows: The Spine mark, 96 dp, centred on `#F7F6F3`
+
+### MobSplashDark — Splash, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashDark](screens/MobSplashDark.webp)
+
+Links to: `MobWelcomeDark`, `MobSignInDark`, `MobHomeDark`
+
+Shows: The Spine mark, 96 dp, centred on `#121110`
+
+### MobSplashAndroid — Splash — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashAndroid](screens/MobSplashAndroid.webp)
+
+Links to: `MobWelcomeAndroid`, `MobSignInAndroid`, `MobHomeAndroid`
+
+Shows: The Spine mark, 96 dp, centred on `#F7F6F3` (Android 12 splash API)
+
+### MobSplashAndroidDark — Splash, dark — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashAndroidDark](screens/MobSplashAndroidDark.webp)
+
+Links to: `MobWelcomeAndroidDark`, `MobSignInAndroidDark`, `MobHomeAndroidDark`
+
+Shows: The Spine mark, 96 dp, centred on `#121110` (Android 12 splash API)
+
+### MobWelcome — Welcome
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcome](screens/MobWelcome.webp)
+
+Links to: `MobSignIn`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeAndroid — Welcome — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeAndroid](screens/MobWelcomeAndroid.webp)
+
+Links to: `MobSignInAndroid`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeDark — Welcome, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeDark](screens/MobWelcomeDark.webp)
+
+Links to: `MobSignInDark`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeAndroidDark — Welcome, dark — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeAndroidDark](screens/MobWelcomeAndroidDark.webp)
+
+Links to: `MobSignInAndroidDark`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
 ### MobSignIn — Sign in
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
 
 ![MobSignIn](screens/MobSignIn.webp)
 
 Links to: `MobHome`
 
-Shows: "Sign in to Spine" · "Use the email your office invited you with." · "Server" · "Email" · "Password" · "The server address is the link you open Spine with on a computer." · "Sign in" · "You stay signed in on this phone until you sign out." · "Forgot password?"
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
 
 ### MobSignInAndroid — Sign in — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
 
 ![MobSignInAndroid](screens/MobSignInAndroid.webp)
 
 Links to: `MobHomeAndroid`
 
-Shows: "Sign in to Spine" · "Use the email your office invited you with." · "Server" · "Email" · "Password" · "The server address is the link you open Spine with on a computer." · "Forgot password?" · "Sign in" · "You stay signed in on this phone until you sign out."
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInDark — Sign in, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInDark](screens/MobSignInDark.webp)
+
+Links to: `MobHomeDark`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInAndroidDark — Sign in, dark, server error — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInAndroidDark](screens/MobSignInAndroidDark.webp)
+
+Links to: `MobHomeAndroidDark`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.exmaple" · "Can't reach that server. Check the address — it's the link you open Spine with on a computer." · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInKeyboard — Sign in, keyboard open
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInKeyboard](screens/MobSignInKeyboard.webp)
+
+Links to: `MobHome`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverst" · "Password" · "Required" · "Sign in"
+
+### MobSignInKeyboardAndroid — Sign in, keyboard open — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInKeyboardAndroid](screens/MobSignInKeyboardAndroid.webp)
+
+Links to: `MobHomeAndroid`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••" · "Sign in"
+
+### MobSignInError — Sign in, wrong email or password
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInError](screens/MobSignInError.webp)
+
+Links to: `MobHome`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••" · "That email and password don't match. Check both, or reset your password." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
 
 ### MobHome — Today
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19 · **Source:** Claude Design
 
 ![MobHome](screens/MobHome.webp)
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "All synced" · "MONDAY 5 OCTOBER" · "Today" · "Monday site stand-up" · "8:00 AM · Marina office fit-out — site cabin" · "YOUR JOBS TODAY · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Due today" · "Next: Backfill & inspection sign-off" · "Add photos" · "Log expense" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "Jobs" · "Expenses"
 
 ### MobHomeAndroid — Today — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19, US-MOB-20 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19, US-MOB-20 · **Source:** Claude Design
 
 ![MobHomeAndroid](screens/MobHomeAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "All synced" · "Monday 5 October" · "Today" · "Monday site stand-up" · "8:00 AM · Marina office fit-out — site cabin" · "Your jobs today" · "Marina office fit-out" · "Harborview Construction Co. · 48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Directions" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · 220 Ridge Rd, Burlington, VT 05401" · "Due today" · "Next: Backfill & inspection sign-off" · "Call Sarah" · "Add photos" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "check This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobHomeOffline — Today, offline
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Claude Design
 
 ![MobHomeOffline](screens/MobHomeOffline.webp)
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "3 waiting to sync" · "MONDAY 5 OCTOBER" · "Today" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "YOUR JOBS TODAY · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "2 photos waiting" · "Mobilisation & site setup" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Completion waiting" · "Backfill & inspection sign-off" · "Add photos" · "Log expense" · "Jobs" · "Expenses" · "Profile"
+Shows: "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Completion waiting" · "Call Sarah Kim" · "Today" · "Jobs" · "Expenses"
 
 ### MobHomeOfflineAndroid — Today, offline — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-07 · **Source:** Claude Design
 
 ![MobHomeOfflineAndroid](screens/MobHomeOfflineAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "3 waiting to sync" · "Monday 5 October" · "Today" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "Your jobs today" · "Marina office fit-out" · "Harborview Construction Co. · 48 Harbor Way, Portland" · "2 photos waiting" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · 220 Ridge Rd, Burlington" · "Completion waiting" · "Backfill & inspection sign-off" · "Add photos" · "Jobs" · "Expenses" · "Profile"
+Shows: "Today" · "3 waiting to sync" · "You're offline" · "Photos, expenses and milestone updates are saved on this phone and sync when you're back online. Showing jobs as of 7:42 AM." · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "2 photos waiting" · "Call Alan" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Completion waiting" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobJobsListAndroid — Jobs — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
 
 ![MobJobsListAndroid](screens/MobJobsListAndroid.webp)
 
 Links to: `MobJobDetailAndroid`, `MobHomeAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Jobs" · "Search jobs" · "Assigned to you · 3" · "Marina office fit-out" · "Harborview Construction Co. · Portland" · "Milestone due Sat" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · Burlington" · "Milestone due today" · "Hotel lobby renovation" · "Bluewater Hospitality Group · [CITY]" · "All milestones complete" · "Only jobs your office has put you on the crew for. Pull down to refresh." · "Today" · "Expenses" · "Profile"
+Shows: "Jobs" · "Assigned to you · 3" · "Marina office fit-out" · "Harborview Construction Co. · Portland" · "Milestone due Sat" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · Burlington" · "Milestone 2 days late" · "Hotel lobby renovation" · "Bluewater Hospitality Group · Providence" · "All milestones complete" · "Only jobs your office has put you on the crew for. Pull down to refresh." · "Today" · "Expenses" · "Search"
 
 ### MobJobsEmpty — Jobs, none assigned
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
 
 ![MobJobsEmpty](screens/MobJobsEmpty.webp)
 
 Links to: `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "Jobs" · "No jobs assigned to you yet" · "When your office adds you to a job's crew, it shows up here with its address and contact." · "Check again" · "Today" · "Expenses" · "Profile"
+Shows: "Jobs" · "No jobs assigned to you yet" · "When your office adds you to a job's crew, it shows up here with its address and contact." · "Check again" · "Today" · "Expenses"
 
 ### MobJobsEmptyAndroid — Jobs, none assigned — Spine Android
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-04 · **Source:** Claude Design
 
 ![MobJobsEmptyAndroid](screens/MobJobsEmptyAndroid.webp)
 
 Links to: `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Jobs" · "No jobs assigned to you yet" · "When your office adds you to a job's crew, it shows up here with its address and contact." · "Check again" · "Today" · "Expenses" · "Profile"
+Shows: "Jobs" · "No jobs assigned to you yet" · "When your office adds you to a job's crew, it shows up here with its address and contact." · "Check again" · "Today" · "Expenses" · "Search"
 
 ### MobJobDetail — Job detail
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-JOB-19, US-JOB-22, US-MOB-05, US-MOB-06 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-JOB-19, US-JOB-22, US-MOB-05, US-MOB-06 · **Source:** Claude Design
 
 ![MobJobDetail](screens/MobJobDetail.webp)
 
 Links to: `MobJobsList`, `MobMilestoneComplete`, `MobPhotoCapture`, `MobQuotePresent`, `MobHome`, `MobExpensesList`, `MobProfile`
 
-Shows: "Jobs" · "Active" · "Marina office fit-out" · "Harborview Construction Co. · [JOB NUMBER]" · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "MILESTONES" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Pending" · "Final fit-out & handover" · "Due Fri 11 Dec" · "PHOTOS · 12" · "See all" · "QUOTES TO PRESENT" · "QUO-0004 · Additional electrical outlets" · "Waiting for the customer" · "Present" · "Today" · "Expenses" · "Profile"
+Shows: "Active" · "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "MILESTONES" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Final fit-out & handover" · "Due Fri 11 Dec" · "PHOTOS · 12" · "See all" · "SITE" · "+9" · "QUOTES TO PRESENT" · "QUO-0004 · Additional electrical outlets" · "Sent 6 Oct · waiting for the customer" · "Present" · "Today" · "Jobs" · "Expenses"
 
 ### MobJobDetailAndroid — Job detail — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Claude Design
 
 ![MobJobDetailAndroid](screens/MobJobDetailAndroid.webp)
 
 Links to: `MobJobsListAndroid`, `MobMilestoneCompleteAndroid`, `MobQuotePresentAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Marina office fit-out" · "Harborview Construction Co. · [JOB NUMBER]" · "Active" · "48 Harbor Way, Portland, ME 04101" · "AR" · "Alan Reyes" · "Procurement Manager" · "Milestones" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Pending" · "Final fit-out & handover" · "Due Fri 11 Dec" · "Photos · 12" · "See all" · "QUO-0004 · Additional electrical outlets" · "Waiting for the customer" · "Present" · "Today" · "Jobs" · "Expenses" · "Profile"
+Shows: "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "Active" · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "Milestones" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Final fit-out & handover" · "Due Fri 11 Dec" · "Photos · 12" · "See all" · "SITE" · "+9" · "Quotes to present" · "QUO-0004 · Additional electrical outlets" · "Sent 6 Oct · waiting for the customer" · "Add photos" · "Today" · "Jobs" · "Expenses" · "Search"
 
 ### MobMilestoneComplete — Mark milestone complete
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-15 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-15 · **Source:** Claude Design
 
 ![MobMilestoneComplete](screens/MobMilestoneComplete.webp)
 
 Links to: `MobJobDetail`, `MobPhotoCapture`
 
-Shows: "‹ Jobs" · "Marina office fit-out" · "Cancel" · "Mark complete" · "Mobilisation & site setup" · "Marina office fit-out · due Sat 10 Oct" · "PHOTOS OF THE FINISHED WORK" · "NOTE FOR THE OFFICE (OPTIONAL)" · "Site cabin, fencing and temporary power in place." · "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online."
+Shows: "Marina office fit-out" · "Cancel" · "Mark complete" · "Mobilisation & site setup" · "Marina office fit-out · due Sat 10 Oct" · "PHOTOS OF THE FINISHED WORK" · "Add" · "NOTE FOR THE OFFICE (OPTIONAL)" · "Site cabin, fencing and temporary power in place." · "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online."
 
 ### MobMilestoneCompleteAndroid — Mark milestone complete — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-15 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-15 · **Source:** Claude Design
 
 ![MobMilestoneCompleteAndroid](screens/MobMilestoneCompleteAndroid.webp)
 
 Links to: `MobPhotoCaptureAndroid`, `MobJobDetailAndroid`
 
-Shows: "← Marina office fit-out" · "Mark complete?" · "Mobilisation & site setup" · "Marina office fit-out · due Sat 10 Oct" · "Photos of the finished work" · "Add" · "Note for the office (optional)" · "Site cabin, fencing and temporary power in place." · "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online." · "Cancel" · "Mark complete"
+Shows: "Marina office fit-out" · "Mark complete?" · "Mobilisation & site setup" · "Marina office fit-out · due Sat 10 Oct" · "Photos of the finished work" · "Add" · "Site cabin, fencing and temporary power in place." · "Note for the office (optional)" · "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online." · "Cancel" · "Mark complete"
 
 ### MobCameraPermission — Camera access
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-14 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-14 · **Source:** Claude Design
 
 ![MobCameraPermission](screens/MobCameraPermission.webp)
 
@@ -2644,7 +2763,7 @@ Links to: `MobJobDetail`, `MobPhotoCapture`
 Shows: "Allow camera access" · "Spine uses the camera for site photos and receipt pictures. Photos go only to your company's Spine server — never anywhere else." · "Progress photos tagged to the job" · "Receipts attached to your expenses" · "Works with no signal — uploads later" · "Continue" · "Not now" · "Said no before? Turn it on in Settings › Spine › Camera."
 
 ### MobCameraPermissionAndroid — Camera access — Spine Android
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-14 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-14 · **Source:** Claude Design
 
 ![MobCameraPermissionAndroid](screens/MobCameraPermissionAndroid.webp)
 
@@ -2653,268 +2772,268 @@ Links to: `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`
 Shows: "Allow camera access" · "Spine uses the camera for site photos and receipt pictures. Photos go only to your company's Spine server — never anywhere else." · "Progress photos tagged to the job" · "Receipts attached to your expenses" · "Works with no signal — uploads later" · "Said no before? Turn it on in Settings › Apps › Spine › Permissions." · "Not now" · "Continue"
 
 ### MobPhotoCapture — Take site photos
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Claude Design
 
 ![MobPhotoCapture](screens/MobPhotoCapture.webp)
 
 Links to: `MobJobDetail`, `MobPhotoReview`
 
-Shows: "Marina office fit-out" · "[LIVE CAMERA VIEW]" · "2 taken · saved on this phone" · "Done"
+Shows: "Marina office fit-out" · "2 taken · saved on this phone" · "2" · "Done"
 
 ### MobPhotoCaptureAndroid — Take site photos — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Claude Design
 
 ![MobPhotoCaptureAndroid](screens/MobPhotoCaptureAndroid.webp)
 
 Links to: `MobJobDetailAndroid`, `MobPhotoReviewAndroid`
 
-Shows: "Marina office fit-out" · "[LIVE CAMERA VIEW]" · "2 taken · saved on this phone" · "Done"
+Shows: "Marina office fit-out arrow_drop_down" · "2 taken · saved on this phone" · "2" · "Done"
 
 ### MobPhotoReview — Review photos
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Claude Design
 
 ![MobPhotoReview](screens/MobPhotoReview.webp)
 
 Links to: `MobPhotoCapture`, `MobJobDetail`
 
-Shows: "Retake" · "2 photos" · "[PHOTO 1 OF 2]" · "Caption" · "Job" · "Marina office fit-out" · "Milestone" · "Mobilisation & site setup ›" · "Photos upload in the background. You can keep working — check progress from the sync pill on Today." · "Save 2 photos"
+Shows: "Retake" · "2 photos" · "Caption" · "What does this photo show?" · "Job" · "Marina office fit-out" · "Milestone (optional)" · "Mobilisation & site setup" · "Photos upload in the background. You can keep working — check progress from the sync pill on Today." · "Save 2 photos"
 
 ### MobPhotoReviewAndroid — Review photos — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-11 · **Source:** Claude Design
 
 ![MobPhotoReviewAndroid](screens/MobPhotoReviewAndroid.webp)
 
 Links to: `MobPhotoCaptureAndroid`, `MobJobDetailAndroid`
 
-Shows: "2 photos" · "Save" · "[PHOTO 1 OF 2]" · "Caption" · "Job" · "Marina office fit-out" · "Milestone" · "Mobilisation & site setup" · "Photos upload in the background. You can keep working — check progress from the sync chip on Today."
+Shows: "2 photos" · "Save" · "Caption" · "What does this photo show?" · "Marina office fit-out" · "Job" · "Mobilisation & site setup" · "Milestone (optional)" · "Photos upload in the background. You can keep working — check progress from the sync chip on Today."
 
 ### MobExpensesList — My expenses
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-12 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-12 · **Source:** Claude Design
 
 ![MobExpensesList](screens/MobExpensesList.webp)
 
 Links to: `MobExpenseNew`, `MobSyncQueue`, `MobHome`, `MobJobsList`, `MobProfile`
 
-Shows: "Expenses" · "WAITING TO SYNC" · "Fuel & Vehicle" · "Today · Marina office fit-out" · "64.20 USD" · "Waiting to sync" · "SUBMITTED BY YOU" · "1 Oct · Waiting for review" · "85.00 USD" · "Submitted" · "Site Meals" · "27 Sep · Marina office fit-out" · "42.00 USD" · "Approved" · "25 Sep · “No receipt attached”" · "38.50 USD" · "Rejected" · "Tools & Small Equipment" · "13 Sep" · "150.00 USD" · "Today" · "Jobs" · "Profile"
+Shows: "Expenses" · "WAITING TO SYNC" · "Fuel & Vehicle" · "Today · Marina office fit-out" · "$64.20" · "Waiting" · "SUBMITTED BY YOU" · "Materials" · "Thu 1 Oct · Phase 2 townhomes" · "$192.00" · "Submitted" · "Site Meals" · "Sun 27 Sep · Marina office fit-out" · "$42.00" · "Approved" · "Fri 25 Sep" · "“No receipt attached — please add one next time.” — Sarah Mendes" · "$38.50" · "Rejected" · "Tools & Small Equipment" · "Sun 13 Sep" · "$150.00" · "Today" · "Jobs"
 
 ### MobExpensesListAndroid — My expenses — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-12 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-12 · **Source:** Claude Design
 
 ![MobExpensesListAndroid](screens/MobExpensesListAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobExpenseNewAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobProfileAndroid`
 
-Shows: "Expenses" · "Waiting to sync" · "Fuel & Vehicle" · "Today · waiting to sync" · "64.20 USD" · "Submitted by you" · "1 Oct · Submitted" · "85.00 USD" · "Site Meals" · "27 Sep · Approved" · "42.00 USD" · "Rejected · “No receipt attached”" · "38.50 USD" · "Tools & Small Equipment" · "13 Sep · Approved" · "150.00 USD" · "Log expense" · "Today" · "Jobs" · "Profile"
+Shows: "Expenses" · "Waiting to sync" · "Fuel & Vehicle" · "Today · waiting to sync" · "$64.20" · "Submitted by you" · "Materials" · "Thu 1 Oct · Submitted" · "$192.00" · "Site Meals" · "Sun 27 Sep ·" · "Approved" · "$42.00" · "Rejected · “No receipt attached — please add one next time.”" · "$38.50" · "Tools & Small Equipment" · "Sun 13 Sep ·" · "$150.00" · "Log expense" · "Today" · "Jobs" · "Search"
 
 ### MobExpenseNew — New expense
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Claude Design
 
 ![MobExpenseNew](screens/MobExpenseNew.webp)
 
 Links to: `MobExpensesList`, `MobReceiptCapture`
 
-Shows: "Cancel" · "New expense" · "Submit" · "Amount (USD)" · "Category" · "Fuel & Vehicle ›" · "Job" · "Marina office fit-out ›" · "Date" · "5 Oct 2026" · "Paid by" · "Me — pay me back" · "Company" · "Description" · "RECEIPT" · "[RECEIPT]" · "Retake receipt" · "Your office approves it before it's paid back. No signal? It's saved and sent later."
+Shows: "Cancel" · "New expense" · "Submit" · "Amount" · "Headcount × day rate" · "Amount (USD)" · "$64.20" · "Category" · "Fuel & Vehicle" · "Job" · "Marina office fit-out" · "Date" · "8 Oct 2026" · "PAID BY" · "Me — pay me back" · "Company" · "Description" · "Diesel for the site generator" · "RECEIPT" · "receipt.jpg · 1.2 MB" · "Retake receipt" · "Your office approves it before it's paid back. No signal? It's saved and sent later."
 
 ### MobExpenseNewAndroid — New expense — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Claude Design
 
 ![MobExpenseNewAndroid](screens/MobExpenseNewAndroid.webp)
 
 Links to: `MobExpensesListAndroid`, `MobReceiptCaptureAndroid`
 
-Shows: "New expense" · "Submit" · "Amount (USD)" · "Category" · "Fuel & Vehicle" · "Job" · "Marina office fit-out" · "Date" · "Paid by" · "Me — pay me back" · "Company" · "Description" · "[RECEIPT]" · "Retake receipt" · "Your office approves it before it's paid back. Works offline."
+Shows: "New expense" · "Submit" · "check Amount" · "Headcount × day rate" · "64.20" · "Amount (USD)" · "$" · "Fuel & Vehicle" · "Category" · "Marina office fit-out" · "Job" · "8 Oct 2026" · "Date" · "Paid by" · "check Me — pay me back" · "Company" · "Diesel for the site generator" · "Description" · "receipt.jpg · 1.2 MB" · "Retake receipt" · "Your office approves it before it's paid back. No signal? It's saved and sent later."
 
 ### MobReceiptCapture — Photograph receipt
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Claude Design
 
 ![MobReceiptCapture](screens/MobReceiptCapture.webp)
 
 Links to: `MobExpenseNew`
 
-Shows: "Cancel" · "Receipt" · "[LIVE CAMERA VIEW]" · "Fit the whole receipt inside the frame"
+Shows: "Cancel" · "Receipt" · "Fit the whole receipt inside the frame"
 
 ### MobReceiptCaptureAndroid — Photograph receipt — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13 · **Source:** Claude Design
 
 ![MobReceiptCaptureAndroid](screens/MobReceiptCaptureAndroid.webp)
 
 Links to: `MobExpenseNewAndroid`
 
-Shows: "Receipt" · "[LIVE CAMERA VIEW]" · "Fit the whole receipt inside the frame"
+Shows: "Receipt" · "Fit the whole receipt inside the frame"
 
 ### MobQuotePresent — Present quote
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Claude Design
 
 ![MobQuotePresent](screens/MobQuotePresent.webp)
 
 Links to: `MobJobDetail`, `MobQuoteAccept`
 
-Shows: "Done" · "Hand the phone to your customer" · "Riverstone Builders" · "14 Harbour Road, Marina District" · "QUOTE" · "QUO-0004" · "Prepared for" · "Harborview Construction Co." · "Valid until 17 Oct 2026" · "Additional electrical outlets (site-requested)" · "6 × 85.00 USD" · "510.00 USD" · "Subtotal" · "Tax" · "0.00 USD" · "Total" · "Notes" · "Additional scope requested on site — see attached line items." · "Decline" · "Accept quote"
+Shows: "Done" · "Hand the phone to your customer" · "Riverstone Builders" · "220 Timberline Ave, Suite 4, Burlington, VT 05401" · "QUOTE" · "QUO-0004" · "Prepared for" · "Harborview Construction Co." · "Valid until" · "17 Oct 2026" · "Additional electrical outlets (site-requested)" · "$510.00" · "6 × $85.00" · "Subtotal" · "Sales Tax (15%)" · "$76.50" · "State Surcharge (2.5%)" · "$14.66" · "Total" · "$601.16" · "NOTES" · "Additional scope requested on site — see attached line items." · "Decline" · "Accept quote"
 
 ### MobQuotePresentAndroid — Present quote — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Claude Design
 
 ![MobQuotePresentAndroid](screens/MobQuotePresentAndroid.webp)
 
 Links to: `MobJobDetailAndroid`, `MobQuoteAcceptAndroid`
 
-Shows: "QUO-0004" · "Hand the phone to your customer" · "Riverstone Builders" · "14 Harbour Road, Marina District" · "Prepared for" · "Harborview Construction Co." · "Valid until 17 Oct 2026" · "Additional electrical outlets (site-requested)" · "6 × 85.00 USD" · "510.00 USD" · "Subtotal" · "Tax" · "0.00 USD" · "Total" · "Notes" · "Additional scope requested on site — see attached line items." · "Decline" · "Accept quote"
+Shows: "QUO-0004" · "Hand the phone to your customer" · "Riverstone Builders" · "220 Timberline Ave, Suite 4, Burlington, VT 05401" · "Prepared for" · "Harborview Construction Co." · "Valid until" · "17 Oct 2026" · "Additional electrical outlets (site-requested)" · "$510.00" · "6 × $85.00" · "Subtotal" · "Sales Tax (15%)" · "$76.50" · "State Surcharge (2.5%)" · "$14.66" · "Total" · "$601.16" · "Notes" · "Additional scope requested on site — see attached line items." · "Decline" · "Accept quote"
 
 ### MobQuoteAcceptAndroid — Sign to accept — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Claude Design
 
 ![MobQuoteAcceptAndroid](screens/MobQuoteAcceptAndroid.webp)
 
 Links to: `MobQuotePresentAndroid`, `MobQuoteAcceptedAndroid`
 
-Shows: "Accept QUO-0004" · "Harborview Construction Co." · "Additional electrical outlets" · "510.00 USD" · "Your name" · "Sign below" · "Clear" · "By signing, I accept this quote for" · "on behalf of Harborview Construction Co. Spine records your signature, the time and the Riverstone Builders staff member present (Marcus Webb)." · "Accept and sign"
+Shows: "Accept QUO-0004" · "Customer" · "Harborview Construction Co." · "Total" · "$601.16" · "Alan Reyes" · "Your name" · "Sign below" · "Clear" · "By signing, I accept this quote for $601.16 on behalf of Harborview Construction Co. Spine records your signature, the time and the Riverstone Builders staff member present (Marcus Webb)." · "Sign in the box to continue." · "Accept and sign"
 
 ### MobQuoteAccepted — Quote accepted
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Claude Design
 
 ![MobQuoteAccepted](screens/MobQuoteAccepted.webp)
 
 Links to: `MobJobDetail`
 
-Shows: "Quote accepted" · "QUO-0004 · 510.00 USD" · "Signed by Alan Reyes at 10:42 AM. Riverstone Builders' office has been told and the quote is now locked." · "Customer" · "Harborview Construction Co." · "Witnessed by" · "Marcus Webb" · "Method" · "In person, on this phone" · "Back to job"
+Shows: "Quote accepted" · "QUO-0004 · $601.16" · "Signed by Alan Reyes at 10:42 AM. Riverstone Builders' office has been told and the quote is now locked." · "Customer" · "Harborview Construction Co." · "Witnessed by" · "Marcus Webb" · "Method" · "In person, on this phone" · "Back to job"
 
 ### MobQuoteAcceptedAndroid — Quote accepted — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-17 · **Source:** Claude Design
 
 ![MobQuoteAcceptedAndroid](screens/MobQuoteAcceptedAndroid.webp)
 
 Links to: `MobJobDetailAndroid`
 
-Shows: "Quote accepted" · "QUO-0004 · 510.00 USD" · "Signed by Alan Reyes at 10:42 AM. Riverstone Builders' office has been told and the quote is now locked." · "Customer" · "Harborview Construction Co." · "Witnessed by" · "Marcus Webb" · "Method" · "In person, on this phone" · "Back to job"
+Shows: "Quote accepted" · "QUO-0004 · $601.16" · "Signed by Alan Reyes at 10:42 AM. Riverstone Builders' office has been told and the quote is now locked." · "Customer" · "Harborview Construction Co." · "Witnessed by" · "Marcus Webb" · "Method" · "In person, on this phone" · "Back to job"
 
 ### MobQuoteNeedsConnection — Quote needs a connection
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-18 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-18 · **Source:** Claude Design
 
 ![MobQuoteNeedsConnection](screens/MobQuoteNeedsConnection.webp)
 
 Links to: `MobJobDetail`
 
-Shows: "Job" · "Quotes need a connection" · "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again." · "Photos, expenses and milestone updates still work offline." · "Try again" · "Back to job"
+Shows: "Quotes need a connection" · "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again." · "Photos, expenses and milestone updates still work offline." · "Try again" · "Back to job"
 
 ### MobQuoteNeedsConnectionAndroid — Quote needs a connection — Spine Android
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-18 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-18 · **Source:** Claude Design
 
 ![MobQuoteNeedsConnectionAndroid](screens/MobQuoteNeedsConnectionAndroid.webp)
 
 Links to: `MobJobDetailAndroid`
 
-Shows: "Quotes need a connection" · "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again. Photos, expenses and milestone updates still work offline." · "Back to job" · "Try again"
+Shows: "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "Quotes need a connection" · "Accepting a quote locks the price, so it has to reach your office straight away. Move somewhere with signal or Wi-Fi, then try again." · "Photos, expenses and milestone updates still work offline." · "Back to job" · "Try again"
 
 ### MobSyncQueue — Sync queue
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-08, US-MOB-09 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-08, US-MOB-09 · **Source:** Claude Design
 
 ![MobSyncQueue](screens/MobSyncQueue.webp)
 
 Links to: `MobHome`
 
-Shows: "Today" · "Sync" · "4 items waiting" · "You're offline · sends automatically when you reconnect" · "WAITING" · "2 site photos" · "Marina office fit-out · 9:58 AM" · "Waiting" · "Milestone complete" · "Backfill & inspection sign-off · 10:15 AM" · "Expense · Fuel & Vehicle 64.20 USD" · "Didn't send: the receipt photo is over 10 MB" · "Fix" · "SENT TODAY" · "Expense · Site Meals 18.40 USD" · "Sent 7:40 AM" · "Sent" · "Everything stays on this phone until your office has it. Sending twice never creates duplicates." · "Try sending now"
+Shows: "Sync" · "3 items waiting" · "You're offline · sends automatically when you reconnect" · "Try sending now" · "NEEDS FIXING · 1" · "Expense · Fuel & Vehicle · $64.20" · "Didn't send: the receipt photo is over 10 MB" · "Fix" · "WAITING" · "2 site photos" · "Marina office fit-out · 9:12 AM" · "Waiting" · "Milestone completed" · "Foundation walls poured · 9:20 AM" · "SENT TODAY" · "4 site photos" · "Phase 2 townhomes · 8:05 AM" · "Already completed by Sarah Mendes"
 
 ### MobSyncQueueAndroid — Sync queue — Spine Android
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-08, US-MOB-09 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-08, US-MOB-09 · **Source:** Claude Design
 
 ![MobSyncQueueAndroid](screens/MobSyncQueueAndroid.webp)
 
 Links to: `MobHomeAndroid`
 
-Shows: "Sync" · "4 items waiting" · "You're offline · sends automatically when you reconnect" · "Waiting" · "2 site photos" · "Marina office fit-out · 9:58 AM" · "Milestone complete" · "Backfill & inspection sign-off · 10:15 AM" · "Expense · Fuel & Vehicle 64.20 USD" · "Didn't send: the receipt photo is over 10 MB" · "Fix" · "Sent today" · "Expense · Site Meals 18.40 USD" · "Sent 7:40 AM" · "Sent" · "Everything stays on this phone until your office has it. Sending twice never creates duplicates." · "Try sending now"
+Shows: "Sync" · "3 items waiting" · "You're offline · sends automatically when you reconnect" · "Try sending now" · "Needs fixing · 1" · "Expense · Fuel & Vehicle · $64.20" · "Didn't send: the receipt photo is over 10 MB" · "Fix" · "Waiting" · "2 site photos" · "Marina office fit-out · 9:12 AM" · "Milestone completed" · "Foundation walls poured · 9:20 AM" · "Sent today" · "4 site photos" · "Phase 2 townhomes · 8:05 AM" · "Already completed by Sarah Mendes"
 
 ### MobProfile — Profile
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-02, US-MOB-06 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-02, US-MOB-06 · **Source:** Claude Design
 
 ![MobProfile](screens/MobProfile.webp)
 
 Links to: `MobSyncQueue`, `MobSignIn`, `MobHome`, `MobJobsList`, `MobExpensesList`
 
-Shows: "Profile" · "MW" · "Marcus Webb" · "Field · Riverstone Builders" · "Email" · "marcus.webb@riverstone.example" · "Server" · "spine.riverstone.example" · "Appearance" · "System ›" · "Sync" · "All sent ›" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine [VERSION] ([BUILD])" · "Today" · "Jobs" · "Expenses"
+Shows: "Profile" · "Marcus Webb" · "Field · Riverstone Builders" · "Email" · "marcus.webb@riverstone.example" · "Server" · "spine.riverstone.example" · "APPEARANCE" · "System" · "Light" · "Dark" · "SYNC" · "All synced" · "Last sent 9:38 AM" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine 1.0.0 (42)"
 
 ### MobProfileAndroid — Profile — Spine Android
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Claude Design
 
 ![MobProfileAndroid](screens/MobProfileAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobSignInAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`
 
-Shows: "Profile" · "MW" · "Marcus Webb" · "Field · Riverstone Builders" · "Email" · "marcus.webb@riverstone.example" · "Server" · "spine.riverstone.example" · "Theme" · "System default" · "Sync" · "All sent" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine [VERSION] ([BUILD])" · "Today" · "Jobs" · "Expenses"
+Shows: "Profile" · "Marcus Webb" · "Field · Riverstone Builders" · "marcus.webb@riverstone.example" · "Email" · "spine.riverstone.example" · "Server" · "All synced" · "Last sent 9:38 AM" · "Appearance" · "check System" · "Light" · "Dark" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine 1.0.0 (42)"
 
 ### MobError — Couldn't load jobs
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Claude Design
 
 ![MobError](screens/MobError.webp)
 
 Links to: `MobHomeOffline`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "MONDAY 5 OCTOBER" · "Today" · "Couldn't load your jobs" · "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." · "Try again" · "Show jobs saved at 7:42 AM" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "Today" · "Couldn't load your jobs" · "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." · "Try again" · "Show jobs saved at 7:42 AM" · "Jobs" · "Expenses"
 
 ### MobErrorAndroid — Couldn't load jobs — Spine Android
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Claude Design
 
 ![MobErrorAndroid](screens/MobErrorAndroid.webp)
 
 Links to: `MobHomeOfflineAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Monday 5 October" · "Today" · "Couldn't load your jobs" · "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." · "Try again" · "Show jobs saved at 7:42 AM" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "Today" · "Couldn't load your jobs" · "The Spine server didn't answer. You're online, so it may be restarting — try again in a minute." · "Try again" · "Show jobs saved at 7:42 AM" · "Jobs" · "Expenses" · "Search"
 
 ### MobSignOutConfirm — Sign out with unsent items (iOS)
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Claude Design
 
 ![MobSignOutConfirm](screens/MobSignOutConfirm.webp)
 
 Links to: `MobSyncQueue`, `MobSignIn`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "Profile" · "MW" · "Marcus Webb" · "Field · Riverstone Builders" · "Email" · "marcus.webb@riverstone.example" · "Server" · "spine.riverstone.example" · "Appearance" · "System ›" · "Sync" · "All sent ›" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine [VERSION] ([BUILD])" · "Today" · "Jobs" · "Expenses" · "3 items haven't reached your office yet. Sign out anyway?" · "2 site photos and 1 expense are still waiting to sync. Signing out deletes them from this phone." · "Send them first" · "Sign out anyway" · "Cancel"
+Shows: "Profile" · "Marcus Webb" · "Field · Riverstone Builders" · "3 items haven't reached your office yet. Sign out anyway?" · "2 site photos and 1 expense are still waiting to sync. Signing out deletes them from this phone." · "Send them first" · "Sign out anyway" · "Cancel"
 
 ### MobSignOutConfirmAndroid — Sign out with unsent items (Android)
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-02 · **Source:** Claude Design
 
 ![MobSignOutConfirmAndroid](screens/MobSignOutConfirmAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobSignInAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Profile" · "MW" · "Marcus Webb" · "Field · Riverstone Builders" · "Email" · "marcus.webb@riverstone.example" · "Server" · "spine.riverstone.example" · "Theme" · "System default" · "Sync" · "All sent" · "Field accounts don't show invoices, payments or reports. Ask your office if you need something changed on your account." · "Sign out" · "Spine [VERSION] ([BUILD])" · "Today" · "Jobs" · "Expenses" · "Sign out anyway?" · "3 items haven't reached your office yet — 2 site photos and 1 expense. Signing out deletes them from this phone." · "Cancel" · "Send first"
+Shows: "Profile" · "Marcus Webb" · "Field · Riverstone Builders" · "3 items haven't reached your office yet" · "2 site photos and 1 expense are still waiting to sync. Signing out deletes them from this phone." · "Cancel" · "Send first" · "Sign out"
 
 ### MobJobPhotos — Job photo gallery (iOS)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Claude Design
 
 ![MobJobPhotos](screens/MobJobPhotos.webp)
 
 Links to: `MobJobDetail`, `MobPhotoCapture`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "Job" · "Add photos" · "Photos · 12" · "Marina office fit-out · JOB-001" · "Today" · "Waiting" · "Fri 2 Oct" · "Tue 29 Sep" · "Tap a photo to see it full size with who took it and when. "Waiting" photos send when you're back online." · "Jobs" · "Expenses" · "Profile"
+Shows: "Photos · 12" · "Marina office fit-out · JOB-001" · "TODAY" · "Waiting" · "MON 5 OCT" · "THU 1 OCT" · "Today" · "Jobs" · "Expenses"
 
 ### MobJobPhotosAndroid — Job photo gallery (Android)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-05 · **Source:** Claude Design
 
 ![MobJobPhotosAndroid](screens/MobJobPhotosAndroid.webp)
 
 Links to: `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Photos · 12" · "Marina office fit-out · JOB-001" · "Today" · "Waiting" · "Fri 2 Oct" · "Tue 29 Sep" · "＋ Add photos" · "Jobs" · "Expenses" · "Profile"
+Shows: "Photos · 12" · "Marina office fit-out · JOB-001" · "Today" · "Waiting" · "Mon 5 Oct" · "Thu 1 Oct" · "Add photos" · "Jobs" · "Expenses" · "Search"
 
 ### MobQuoteDecline — Decline a quote on site (iOS)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Claude Design
 
 ![MobQuoteDecline](screens/MobQuoteDecline.webp)
 
 Links to: `MobQuotePresent`
 
-Shows: "QUOTE QUO-0004" · "$510.00" · "Cancel" · "Decline quote" · "Harborview Construction Co. is declining QUO-0004 for $510.00. Riverstone Builders' office is told straight away." · "Reason (optional)" · "Going with a cheaper option for now." · "Needs a connection — declining can't be saved offline."
+Shows: "Done" · "Riverstone Builders" · "QUO-0004" · "Cancel" · "Decline quote" · "Harborview Construction Co. is declining QUO-0004 for $601.16. Riverstone Builders' office is told straight away." · "Reason (optional)" · "For example, the price or the timing"
 
 ### MobQuoteDeclineAndroid — Decline a quote on site (Android)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-16 · **Source:** Claude Design
 
 ![MobQuoteDeclineAndroid](screens/MobQuoteDeclineAndroid.webp)
 
 Links to: `MobQuotePresentAndroid`
 
-Shows: "QUOTE QUO-0004" · "$510.00" · "Decline quote?" · "Harborview Construction Co. is declining QUO-0004 for $510.00. Riverstone Builders' office is told straight away." · "Reason (optional)" · "Going with a cheaper option for now." · "Cancel" · "Decline quote"
+Shows: "QUO-0004" · "Riverstone Builders" · "Decline quote" · "Harborview Construction Co. is declining QUO-0004 for $601.16. Riverstone Builders' office is told straight away." · "Reason (optional)" · "For example, the price or the timing" · "Needs a connection — declining can't be saved offline." · "Cancel"
 
 ### MobUpdateRequired — Update required (iOS)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Claude Design
 
 ![MobUpdateRequired](screens/MobUpdateRequired.webp)
 
@@ -2923,7 +3042,7 @@ Links to: `MobError`, `MobErrorAndroid`, `MobUpdateRequiredAndroid`
 Shows: "Update Spine to keep going" · "Your company's Spine server needs a newer version of this app. It only takes a minute." · "3 items waiting to send are kept on this phone and sent after you update." · "Open App Store"
 
 ### MobUpdateRequiredAndroid — Update required (Android)
-**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Drawn
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-10 · **Source:** Claude Design
 
 ![MobUpdateRequiredAndroid](screens/MobUpdateRequiredAndroid.webp)
 
@@ -2932,58 +3051,184 @@ Links to: `MobError`, `MobErrorAndroid`, `MobUpdateRequired`
 Shows: "Update Spine to keep going" · "Your company's Spine server needs a newer version of this app. It only takes a minute." · "3 items waiting to send are kept on this phone and sent after you update." · "Open Google Play"
 
 ### MobSyncFix — Fix a failed sync item (iOS)
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-09 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-09 · **Source:** Claude Design
 
 ![MobSyncFix](screens/MobSyncFix.webp)
 
 Links to: `MobSyncQueue`, `MobReceiptCapture`
 
-Shows: "Sync" · "Fix expense" · "Didn't send: the receipt photo is over 10 MB." · "Retake it or choose a smaller one, then send again." · "Category" · "Materials" · "Amount" · "$192.00" · "Job" · "Phase 2 townhomes" · "Receipt photo" · "14.2 MB — too large" · "Retake photo" · "Choose a different photo" · "Remove photo" · "Send again" · "Delete this expense"
+Shows: "Fix expense" · "Didn't send: the receipt photo is over 10 MB." · "Category" · "Fuel & Vehicle" · "Amount" · "$64.20" · "Job" · "Marina office fit-out" · "Date" · "Thu 8 Oct" · "receipt.heic" · "14.2 MB · over the 10 MB limit" · "Retake photo" · "Choose a different photo" · "Remove photo" · "Send again" · "Delete this expense"
 
 ### MobSyncFixAndroid — Fix a failed sync item (Android)
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-09 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-09 · **Source:** Claude Design
 
 ![MobSyncFixAndroid](screens/MobSyncFixAndroid.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobReceiptCaptureAndroid`
 
-Shows: "Fix expense" · "Didn't send: the receipt photo is over 10 MB." · "Retake it or choose a smaller one, then send again." · "Category" · "Materials" · "Amount" · "$192.00" · "Job" · "Phase 2 townhomes" · "Receipt photo" · "14.2 MB — too large" · "Retake photo" · "Choose another" · "Remove photo" · "Delete expense" · "Send again"
+Shows: "Fix expense" · "Didn't send: the receipt photo is over 10 MB." · "Category" · "Fuel & Vehicle" · "Amount" · "$64.20" · "Job" · "Marina office fit-out" · "Date" · "Thu 8 Oct" · "receipt.heic" · "14.2 MB · over the 10 MB limit" · "Retake photo" · "Choose a different photo" · "Remove photo" · "“Delete this expense” is the bin icon at the top. It removes the expense from this phone." · "Send again"
 
 ### MobHomeDark — Today (iOS), dark mode
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-19 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-19 · **Source:** Claude Design
 
 ![MobHomeDark](screens/MobHomeDark.webp)
 
 Links to: `MobSyncQueue`, `MobJobDetail`, `MobPhotoCapture`, `MobExpenseNew`, `MobHome`, `MobJobsList`, `MobExpensesList`, `MobProfile`
 
-Shows: "All synced" · "MONDAY 5 OCTOBER" · "Today" · "Monday site stand-up" · "8:00 AM · Marina office fit-out — site cabin" · "YOUR JOBS TODAY · 2" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Directions" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "Due today" · "Next: Backfill & inspection sign-off" · "Add photos" · "Log expense" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "Jobs" · "Expenses"
 
 ### MobJobDetailDark — Job detail (iOS), dark mode
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-19 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-19 · **Source:** Claude Design
 
 ![MobJobDetailDark](screens/MobJobDetailDark.webp)
 
 Links to: `MobJobsList`, `MobMilestoneComplete`, `MobPhotoCapture`, `MobQuotePresent`, `MobHome`, `MobExpensesList`, `MobProfile`
 
-Shows: "Jobs" · "Active" · "Marina office fit-out" · "Harborview Construction Co. · [JOB NUMBER]" · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "MILESTONES" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Pending" · "Final fit-out & handover" · "Due Fri 11 Dec" · "PHOTOS · 12" · "See all" · "QUOTES TO PRESENT" · "QUO-0004 · Additional electrical outlets" · "Waiting for the customer" · "Present" · "Today" · "Expenses" · "Profile"
+Shows: "Active" · "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "MILESTONES" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Final fit-out & handover" · "Due Fri 11 Dec" · "PHOTOS · 12" · "See all" · "SITE" · "+9" · "QUOTES TO PRESENT" · "QUO-0004 · Additional electrical outlets" · "Sent 6 Oct · waiting for the customer" · "Present" · "Today" · "Jobs" · "Expenses"
 
 ### MobHomeAndroidDark — Today (Android), dark mode
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-20 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-20 · **Source:** Claude Design
 
 ![MobHomeAndroidDark](screens/MobHomeAndroidDark.webp)
 
 Links to: `MobSyncQueueAndroid`, `MobJobDetailAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobJobsListAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "All synced" · "Monday 5 October" · "Today" · "Monday site stand-up" · "8:00 AM · Marina office fit-out — site cabin" · "Your jobs today" · "Marina office fit-out" · "Harborview Construction Co. · 48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Directions" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments · 220 Ridge Rd, Burlington, VT 05401" · "Due today" · "Next: Backfill & inspection sign-off" · "Call Sarah" · "Add photos" · "Jobs" · "Expenses" · "Profile"
+Shows: "All synced" · "2" · "Today" · "Good morning, Marcus" · "Riverstone Builders · Thursday 8 October" · "60%" · "Milestones this month" · "3 of 5 done" · "This week" · "check This month" · "This year" · "Due this month" · "3" · "milestones · next Sat" · "Overdue" · "1" · "milestone · 2 days late" · "Photos" · "38" · "this month · all sent" · "My expenses" · "$234.00" · "1 waiting for approval" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Jobs" · "Expenses" · "Search"
 
 ### MobJobDetailAndroidDark — Job detail (Android), dark mode
-**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-20 · **Source:** Drawn
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-20 · **Source:** Claude Design
 
 ![MobJobDetailAndroidDark](screens/MobJobDetailAndroidDark.webp)
 
 Links to: `MobJobsListAndroid`, `MobMilestoneCompleteAndroid`, `MobQuotePresentAndroid`, `MobPhotoCaptureAndroid`, `MobHomeAndroid`, `MobExpensesListAndroid`, `MobProfileAndroid`
 
-Shows: "Marina office fit-out" · "Harborview Construction Co. · [JOB NUMBER]" · "Active" · "48 Harbor Way, Portland, ME 04101" · "AR" · "Alan Reyes" · "Procurement Manager" · "Milestones" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Pending" · "Final fit-out & handover" · "Due Fri 11 Dec" · "Photos · 12" · "See all" · "QUO-0004 · Additional electrical outlets" · "Waiting for the customer" · "Present" · "Today" · "Jobs" · "Expenses" · "Profile"
+Shows: "Marina office fit-out" · "JOB-001 · Harborview Construction Co." · "Active" · "48 Harbor Way, Portland, ME 04101" · "Directions" · "AR" · "Alan Reyes" · "Procurement Manager" · "Milestones" · "Mobilisation & site setup" · "Due Sat 10 Oct" · "Mark complete" · "Framing & rough-in complete" · "Due Tue 3 Nov" · "Final fit-out & handover" · "Due Fri 11 Dec" · "Photos · 12" · "See all" · "SITE" · "+9" · "Quotes to present" · "QUO-0004 · Additional electrical outlets" · "Sent 6 Oct · waiting for the customer" · "Add photos" · "Today" · "Jobs" · "Expenses" · "Search"
+
+### MobHomeJobs — Today, scrolled to the jobs
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03 · **Source:** Claude Design
+
+![MobHomeJobs](screens/MobHomeJobs.webp)
+
+Links to: `MobJobDetail`, `MobNotifications`, `MobSyncQueue`, `MobProfile`, `MobSearch`
+
+Shows: "All synced" · "Today" · "2" · "QUICK ACTIONS" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "YOUR JOBS TODAY · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan Reyes" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah Kim" · "NEXT MEETING" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses"
+
+### MobHomeJobsAndroid — Today, scrolled to the jobs — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03 · **Source:** Claude Design
+
+![MobHomeJobsAndroid](screens/MobHomeJobsAndroid.webp)
+
+Links to: `MobJobDetailAndroid`, `MobNotificationsAndroid`, `MobSyncQueueAndroid`, `MobProfileAndroid`, `MobSearchAndroid`
+
+Shows: "Today" · "All synced" · "2" · "Quick actions" · "Add photo" · "Log expense" · "Scan receipt" · "Directions" · "Your jobs today · 2" · "All jobs" · "Marina office fit-out" · "Harborview Construction Co." · "48 Harbor Way, Portland, ME 04101" · "Due Sat" · "Next: Mobilisation & site setup" · "Call Alan" · "Phase 2 townhomes — foundations" · "Maple Ridge Developments" · "220 Ridge Rd, Burlington, VT 05401" · "2 days late" · "Next: Foundation walls poured" · "Call Sarah" · "Next meeting" · "Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Jobs" · "Expenses" · "Search"
+
+### MobExpenseLabour — New expense, headcount × day rate
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13, US-PUR-23 · **Source:** Claude Design
+
+![MobExpenseLabour](screens/MobExpenseLabour.webp)
+
+Links to: `MobExpensesList`
+
+Shows: "Cancel" · "New expense" · "Submit" · "Amount" · "Headcount × day rate" · "Category" · "Site Labour" · "Job" · "Phase 2 townhomes — foundations" · "Date" · "8 Oct 2026" · "TRADES" · "Mason" · "4 workers × $220.00 a day" · "$880.00" · "Steel fixer" · "2 workers × $260.00 a day" · "$520.00" · "Helper" · "6 workers × $140.00 a day" · "$840.00" · "Add trade" · "Total for the day" · "$2,240.00" · "Labour is always for a job. Only trades, headcounts and day rates — no names or hours."
+
+### MobExpenseLabourAndroid — New expense, headcount × day rate — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-13, US-PUR-23 · **Source:** Claude Design
+
+![MobExpenseLabourAndroid](screens/MobExpenseLabourAndroid.webp)
+
+Links to: `MobExpensesListAndroid`
+
+Shows: "New expense" · "Submit" · "Amount" · "check Headcount × day rate" · "Phase 2 townhomes — foundations" · "Job" · "Trades" · "Mason" · "Trade" · "4" · "Workers" · "220.00" · "Day rate" · "$" · "4 × $220.00" · "$880.00" · "Steel fixer" · "2 × $260.00" · "$520.00" · "Add trade" · "Total for the day" · "$1,400.00"
+
+### MobSearch — Search
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearch](screens/MobSearch.webp)
+
+Links to: `MobSearchResults`
+
+Shows: "Search" · "Recent searches" · "Edit" · "ridge rd" · "Find a job by name, customer or address, or one of your expenses by category or description." · "Search jobs and expenses"
+
+### MobSearchResults — Search results
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchResults](screens/MobSearchResults.webp)
+
+Links to: `MobJobDetail`, `MobExpensesList`
+
+Shows: "Search" · "JOBS · 1" · "office fit-out" · "Marina" · "Harborview Construction Co. · 48 Harbor Way, Portland" · "YOUR EXPENSES · 2" · "Fuel & Vehicle" · "Today · office fit-out" · "$64.20" · "Waiting" · "Site Meals" · "Sun 27 Sep · office fit-out" · "$42.00" · "Approved"
+
+### MobSearchAndroid — Search — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchAndroid](screens/MobSearchAndroid.webp)
+
+Links to: `MobSearchResultsAndroid`
+
+Shows: "Search jobs and expenses" · "Recent searches" · "Clear" · "ridge rd" · "Find a job by name, customer or address, or one of your expenses by category or description." · "Today" · "Jobs" · "Expenses" · "Search"
+
+### MobSearchResultsAndroid — Search results — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchResultsAndroid](screens/MobSearchResultsAndroid.webp)
+
+Links to: `MobJobDetailAndroid`, `MobExpensesListAndroid`
+
+Shows: "Jobs · 1" · "office fit-out" · "Marina" · "Harborview Construction Co. · 48 Harbor Way, Portland" · "Your expenses · 2" · "Fuel & Vehicle" · "Today · waiting to sync" · "$64.20" · "Site Meals" · "Sun 27 Sep ·" · "Approved" · "$42.00"
+
+### MobSearchEmpty — Search, no results
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchEmpty](screens/MobSearchEmpty.webp)
+
+Links to: `MobSearch`
+
+Shows: "Search" · "No results for “quarry”" · "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
+
+### MobSearchEmptyAndroid — Search, no results — Spine Android
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-23 · **Source:** Claude Design
+
+![MobSearchEmptyAndroid](screens/MobSearchEmptyAndroid.webp)
+
+Links to: `MobSearchAndroid`
+
+Shows: "No results for “quarry”" · "Search covers the jobs you're on and your own expenses. Try a customer name, a street or an expense category."
+
+### MobNotifications — Notifications
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-22 · **Source:** Claude Design
+
+![MobNotifications](screens/MobNotifications.webp)
+
+Links to: `MobHome`, `MobExpensesList`, `MobJobDetail`
+
+Shows: "Notifications" · "Read all" · "NEW" · "Sarah Mendes rejected your expense" · "Fuel & Vehicle · $38.50 · “No receipt attached — please add one next time.”" · "10 min ago" · "You're on the crew for Phase 2 townhomes — foundations" · "Added by Sarah Mendes · 220 Ridge Rd, Burlington" · "1 h ago" · "EARLIER" · "Sarah Mendes approved your expense" · "Materials · $192.00" · "Yesterday" · "Invitation: Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Tue" · "Starting in 15 minutes: Weekly crew scheduling" · "Office" · "Mon" · "Today" · "Jobs" · "Expenses"
+
+### MobNotificationsAndroid — Notifications — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-22 · **Source:** Claude Design
+
+![MobNotificationsAndroid](screens/MobNotificationsAndroid.webp)
+
+Links to: `MobHomeAndroid`, `MobExpensesListAndroid`, `MobJobDetailAndroid`
+
+Shows: "Notifications" · "Read all" · "New" · "Sarah Mendes rejected your expense" · "Fuel & Vehicle · $38.50 · “No receipt attached — please add one next time.”" · "10m" · "You're on the crew for Phase 2 townhomes — foundations" · "Added by Sarah Mendes" · "1h" · "Earlier" · "Sarah Mendes approved your expense" · "Materials · $192.00" · "Wed" · "Invitation: Progress review — Phase 2 townhomes" · "Sun 11 Oct, 9:00 AM · 220 Ridge Rd" · "Tue" · "Starting in 15 minutes: Weekly crew scheduling" · "Office" · "Mon" · "Today" · "Jobs" · "Expenses" · "Search"
+
+### MobNotificationsEmpty — Notifications, none yet
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-22 · **Source:** Claude Design
+
+![MobNotificationsEmpty](screens/MobNotificationsEmpty.webp)
+
+Links to: `MobHome`
+
+Shows: "Notifications" · "You're all caught up" · "Expense decisions, crew changes and meeting invitations show up here." · "Today" · "Jobs" · "Expenses"
+
+### MobNotificationsEmptyAndroid — Notifications, none yet — Spine Android
+**Priority:** P2 · **Phase:** 5 · **Stories:** US-MOB-22 · **Source:** Claude Design
+
+![MobNotificationsEmptyAndroid](screens/MobNotificationsEmptyAndroid.webp)
+
+Links to: `MobHomeAndroid`
+
+Shows: "Notifications" · "You're all caught up" · "Expense decisions, crew changes and meeting invitations show up here." · "Today" · "Jobs" · "Expenses" · "Search"
 
 ## Self-hosting & system states
 

@@ -1,5 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
-import { legacyGstRates, splitLineTax, type SupplyType, type TaxComponent, type TaxType } from "@spine/shared";
+import { legacyGstRates, splitLineTax, TAX_TYPE_LABELS, type SupplyType, type TaxComponent, type TaxType } from "@spine/shared";
 import type { Database, Transaction } from "../../db/client";
 import { taxGroupRates, taxGroups, taxRates } from "../../db/schema";
 
@@ -57,10 +57,44 @@ export class RateBook {
     return line.taxRatePercentage > 0 ? [{ taxType: "other", rate: line.taxRatePercentage }] : [];
   }
 
+  /**
+   * US-MOB-16 — a document's tax as the customer reads it, by named rate:
+   * "Sales Tax (15%)", "State Surcharge (2.5%)", or "CGST (9%)" and
+   * "SGST (9%)" on a GST document. In order of first appearance; the
+   * amounts always add up to the document's tax.
+   */
+  taxLines(lines: readonly TaxedLine[], supplyType: SupplyType | null): { label: string; amount: bigint }[] {
+    const totals = new Map<string, bigint>();
+    const add = (label: string, amount: bigint) => totals.set(label, (totals.get(label) ?? 0n) + amount);
+    for (const line of lines) {
+      if (line.lineTaxAmount === 0n) continue;
+      const named = this.namedRatesFor(line, supplyType).filter((r) => r.rate > 0);
+      const parts = splitLineTax(line.lineTaxAmount, named);
+      if (parts.length === 0) add(withRate("Tax", line.taxRatePercentage), line.lineTaxAmount);
+      parts.forEach((part, i) => add(withRate(named[i]!.name, part.rate), part.amount));
+    }
+    return [...totals].map(([label, amount]) => ({ label, amount }));
+  }
+
+  /** `ratesFor`, with each rate's name: the rate's own (or its group members'), or the GST component on a GST document. */
+  private namedRatesFor(line: TaxedLine, supplyType: SupplyType | null): { name: string; taxType: TaxType; rate: number }[] {
+    if (supplyType) return this.ratesFor(line, supplyType).map((r) => ({ ...r, name: TAX_TYPE_LABELS[r.taxType] }));
+    const rate = line.taxRateId ? this.rates.get(line.taxRateId) : undefined;
+    if (rate) return [rate];
+    const group = line.taxGroupId ? this.groups.get(line.taxGroupId) : undefined;
+    if (group) return group.rateIds.flatMap((id) => (this.rates.get(id) ? [this.rates.get(id)!] : []));
+    return [{ name: "Tax", taxType: "other", rate: line.taxRatePercentage }];
+  }
+
   /** The line's tax split by type; the parts always add up to the line's tax. */
   components(line: TaxedLine, supplyType: SupplyType | null): TaxComponent[] {
     const parts = splitLineTax(line.lineTaxAmount, this.ratesFor(line, supplyType));
     if (parts.length === 0 && line.lineTaxAmount !== 0n) return [{ taxType: "other", rate: line.taxRatePercentage, amount: line.lineTaxAmount }];
     return parts;
   }
+}
+
+/** "Sales Tax (15%)" — unless the name already carries its rate ("GST 18%"). */
+function withRate(name: string, rate: number): string {
+  return /\d\s*%/.test(name) ? name : `${name} (${Number(rate.toFixed(4))}%)`;
 }

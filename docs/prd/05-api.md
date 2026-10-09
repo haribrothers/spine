@@ -38,11 +38,11 @@ NestJS REST API in `apps/api`. OpenAPI document at `/api/docs` (Swagger UI) — 
 |---|---|---|
 | 400 | Validation failed; business rule broken (e.g. "This quote's discount requires owner approval before it can be sent", "falls within a closed fiscal period", percentages ≠ 100) | `{ statusCode, message, error }` or Zod `issues` |
 | 401 | No or expired session | `{ statusCode: 401 }` |
-| 403 | Role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) or an AI feature is off (`AI_FEATURE_OFF`, US-AI-03) | `{ statusCode: 403, message, error? }` |
+| 403 | The caller's membership was deactivated (`error: "ACCESS_REMOVED"`, message "Your access to <Business> was removed.", on every route; US-TEAM-04, US-MOB-02); role, capability or ownership check failed; no active organisation; the route's module is switched off (Phase 9, `error: "MODULE_OFF"`, US-SET-24) or an AI feature is off (`AI_FEATURE_OFF`, US-AI-03) | `{ statusCode: 403, message, error? }` |
 | 404 | Record not in this organisation | `{ statusCode: 404 }` |
 | 409 | Idempotency key in flight; repeat quote conversion in `warn` mode (body lists existing jobs/invoices; retry with `confirm: true`); unique conflict | `{ statusCode: 409, message, existing? }` |
 | 413 | Upload over 10 MB | |
-| 426 | Mobile client older than the server's minimum (`X-Spine-Client-Version` header below `MOBILE_MIN_VERSION`); Phase 5 ([D-071](12-decisions.md)) | `{ statusCode: 426, error: "CLIENT_TOO_OLD" }` |
+| 426 | Mobile client older than the server's minimum (`X-Spine-Client-Version` header below `MOBILE_MIN_VERSION`); Phase 5 ([D-071](12-decisions.md), US-MOB-10) | `{ statusCode: 426, error: "CLIENT_TOO_OLD", message: "Update Spine to keep going", minimumVersion }` |
 | 429 | Rate limit on public routes | |
 | 500 | Unexpected; logged with a request id | `{ statusCode: 500, requestId }` |
 
@@ -50,7 +50,7 @@ Ownership checks run **before** status checks, so a non-owner gets 403 rather th
 
 ## Events
 
-Notifications emitted through `NotificationsService.notify` (in-app row; email and browser push when enabled): `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon`. Queues: `quote-send-email`, `invoice-send-email`, `notify-email`, `meeting-starting-soon-poll`.
+Notifications emitted through `NotificationsService.notify` (in-app row; email and browser push when enabled): `quote_viewed`, `quote_accepted`, `quote_rejected`, `payment_received`, `payment_credit_applied`, `expense_approved`, `expense_rejected`, `crew_assigned`, `crew_removed`, `milestone_completed`, `milestone_invoiced`, `job_completed`, `variation_order_created`, `variation_order_accepted`, `variation_order_applied`, `invoice_void`, `meeting_invited`, `meeting_removed`, `meeting_cancelled`, `meeting_response_changed`, `meeting_starting_soon`. Queues: `quote-send-email`, `invoice-send-email`, `notify-email`, `meeting-starting-soon-poll`.
 
 ## Routes
 
@@ -164,7 +164,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/health` | Public | — |
+| GET | `/health` → `{ status: "ok", service: "spine", appUrl }` — the field app checks a typed address is a Spine server and opens "Forgot password?" at `appUrl` (US-MOB-01) | Public | — |
 
 ### Invoices — `/invoices`
 
@@ -237,13 +237,13 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | PUT | `/meetings/:id` | roles: owner, staff | Yes |
 | GET | `/meetings/:id/attendees` | Any member | — |
 | POST | `/meetings/:id/respond` | roles: owner, staff, field | Yes |
-| GET | `/meetings/upcoming` | Any member | — |
+| GET | `/meetings/upcoming` (`?withinDays=`; `?attending=true` → meetings the caller organises or is invited to and hasn't declined, whatever the dashboard's meetings scope says — the field app's next meeting, US-MOB-03) | Any member | — |
 
 ### Notifications and push — `/notifications`
 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
-| GET | `/notifications` | Any member | — |
+| GET | `/notifications` → rows `{ id, type, message, detail, link, readAt, createdAt }`; `detail` is the line under the message on the phone (null on older types, US-MOB-22) | Any member | — |
 | POST | `/notifications/:id/read` | Any member | Yes |
 | GET | `/notifications/push/public-key` | Any member | — |
 | DELETE | `/notifications/push/subscribe` | Any member | No |
@@ -273,7 +273,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | PUT | `/org/members/:id/promote` | roles: owner | Yes |
 | PUT | `/org/members/:id/reactivate` | roles: owner | Yes |
 | GET | `/org/members/:id/teams` | roles: owner | — |
-| GET | `/org/members/me` | Any member | — |
+| GET | `/org/members/me` → the caller's member row plus `organizationName` (the field app's Profile, US-MOB-02) and the business `currency` and `locale` (Settings › Currency & locale; the field app formats money and dates with them, US-MOB-03) | Any member | — |
 | GET | `/org/members/me/capabilities` | Any member | — |
 | POST | `/org/members/transfer-primary-owner` | roles: owner | Yes |
 | GET | `/org/numbering` | Any member | — |
@@ -325,9 +325,10 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | GET | `/quotes` | roles: owner, staff | — |
 | POST | `/quotes` | roles: owner, staff; `quotes.edit_own` | Yes |
 | DELETE | `/quotes/:id` | roles: owner, staff | Yes |
-| GET | `/quotes/:id` | roles: owner, staff | — |
+| GET | `/quotes/:id` | roles: owner, staff, field (Field: a quote to present on an assigned job, service-scoped) | — |
 | PUT | `/quotes/:id` | roles: owner, staff | Yes |
 | POST | `/quotes/:id/accept-in-person` | roles: owner, staff, field; `quotes.accept_in_person` | Yes |
+| POST | `/quotes/:id/reject-in-person` | roles: owner, staff, field; `quotes.accept_in_person` | Yes |
 | POST | `/quotes/:id/approve-discount` | roles: owner, staff; `quotes.approve_discount` | Yes |
 | GET | `/quotes/:id/history` | roles: owner, staff | — |
 | GET | `/quotes/:id/pdf` | roles: owner, staff | — |
@@ -432,21 +433,23 @@ Routes the stories add. Each is created by the story named.
 | AUTH | GET | `/public/forgot-password` → 302 to `APP_URL/forgot-password` (the phone app's "Forgot password?") | Public | US-AUTH-09 |
 | CRM | GET/PUT | `/org/lead-stages` → `[{ id, name, kind, color, sortOrder, leadCount }]` in board order. PUT `{ stages: [{ id?, name, kind, color? }], moves?: [{ fromStageId, toStageId }] }` replaces the ordered set (`putLeadStagesSchema`): 400 "Up to 12 stages.", "Keep exactly one Won and one Lost stage.", "Won and Lost stay last, with at least one open stage before them.", "Every stage needs a name.", "Give each stage a different name."; Won/Lost can be renamed but not deleted or changed in kind; a deleted stage that still has leads needs a move. Each added, renamed, moved or deleted stage is audited (`lead_stage`) | GET any member; PUT Owner | US-CRM-19, US-CRM-20 |
 | CRM | — | Lead responses (`GET /leads`, `GET /leads/:id`, `GET /contacts/:id/leads`, create, update) carry `stageId`, `stageName` and `stageKind` instead of `stage`; create/update take `stageId` (another organisation's stage → 400 "Choose one of your pipeline stages."; omitted on create → the first open stage); `GET /leads?stageId=`; `GET /leads/summary-by-stage` → `[{ stageId, name, kind, color, count, totalValue }]` per stage in board order | as the route | US-CRM-19 |
-| QUO | — | `POST /quotes/:id/accept-in-person` gains `signerName` (required) and stores `signatureFileId` | `quotes.accept_in_person` | US-QUO-19 |
+| QUO | — | `POST /quotes/:id/accept-in-person` (built) gains `signerName` (required, trimmed; blank → 400) and stores `signatureFileId` and `acceptedSignerName` with the accepting user, the time and `acceptanceMethod: "in_person"`. The signature must be an image the caller uploaded in this organisation (else 400 "Signature file not found" / "The signature must be an image."). Field reaches only a quote to present on an assigned job (404 otherwise, checked before the status: not `sent` → 410). Audited `accepted_in_person` with `signedBy`; notifies `quote_accepted`, and `variation_order_accepted` for a variation order's quote. Returns the quote as `GET /quotes/:id` | `quotes.accept_in_person` | US-QUO-19 |
 | RPT | GET | `/reports/trial-balance?asOf=&includeZero=` and `/reports/trial-balance/export.csv` (lines: accountId, code, name, debit, credit; totalDebit, totalCredit, balanced) | `reports.view_financial_statements` (US-RPT-36) | US-RPT-13 |
 | RPT | — | Existing `GET /org/tax/summary` is now shown on Reports instead of Settings; no route change | `reports.view_financial_statements` (US-RPT-36) | US-RPT-14 |
 | SET | GET/PUT | `/org/settings/branding` (generic settings route, new key). PUT validates with `brandingSchema` (`@spine/shared`): `themePreset` outside `spine-blue`/`harbour-teal`/`plum`/`graphite` → 400 "Choose one of the listed themes."; `documentColor` not `#RRGGBB` → 400 "Enter a colour as # and six hex digits, e.g. #2954E5.", below 4.5:1 on white → 400 "Too light to read on white (<ratio>). Pick a darker colour — documents need at least 4.5:1."; `documentFooter` over 300 characters → 400 "Keep the footer under 300 characters."; other fields are kept as sent. New and draft quote, invoice, credit-note and receipt PDFs and every customer email use the colour and footer; issued documents keep their stored PDF (US-INV-17) | GET any member; PUT Owner | US-SET-09, US-SET-10 |
 | SET | GET | `/org/audit-log?from=&to=&userId=&entityType=&action=&cursor=` → `AuditLogPage` `{ entries: AuditLogEntry[], total, offset, limit: 50, facets: { people, entityTypes, actions } }`; `from`/`to` are `YYYY-MM-DD` organisation dates, inclusive (400 otherwise); `cursor` is the first entry's position (0, 50, 100…). `AuditLogEntry` `{ id, createdAt, actor: { userId, name, email } \| null, action, entityType, entityId, recordLabel, link, changes }` — the server names each record (number, name or title) and gives its in-app link (a milestone or note opens its job, a credit note its invoice, a user `/team/users`). And `/org/audit-log.csv` (same filters, no paging): `text/csv` attachment `audit-log-<date>.csv`, columns `timestamp` (ISO 8601 UTC), `actor_name`, `actor_email`, `action`, `record_type`, `record_id`, `record`, `changes` (JSON), streamed in keyset batches of 1,000 (`created_at`, `id`) so large logs never time out | roles: owner | US-SET-11, US-SET-12 |
 | OPS | GET | `/health/ready` (database and queue reachable) | Public | US-OPS-05 |
 | OPS | GET | `/org/update-status` → `{ current, latest?, checkedAt? }` | roles: owner | US-OPS-06 |
-| MOB | GET | `/jobs?assignedToMe=true` (exists) — documented as the mobile home feed | Any member | US-MOB-03 |
+| MOB | GET | `/jobs?assignedToMe=true` (exists) — the mobile job feed, for every role (an Owner or Staff member on no crew gets `[]`). `include=` takes `next_milestone`, `site_contact` (built: `siteContact { name, title, phone }` — the customer's primary contact person, else their first, with the customer's own phone when that person has none; the customer itself when it has no people; `phone` null when nobody has one) and `milestone_counts` (built: `milestoneCounts { total, completed }`) | Any member | US-MOB-03, US-MOB-04, US-JOB-16 |
+| MOB | GET | `/mobile/today?period=week\|month\|year` (built) → `{ period, today, from, to, milestones: { done, total, due, nextDueDate, overdue, oldestOverdueDate } \| null, photos: { taken } \| null, expenses: { total, count, awaitingApproval, currency } }` — Today's gauge and KPI cards for the calendar week (Monday–Sunday), month or year around the organisation's today: milestones on the caller's crews (not cancelled jobs; `done` completed in the period, `total` = done + pending due in the period, `due` pending from today to the period's end, `overdue` pending before today), photos the caller uploaded in the period, and the caller's own expenses dated in the period (not rejected). `milestones`/`photos` are null while Jobs & field is off. Unknown period → 400 "Choose a period: week, month or year." No other money (D-048) | Any member (always the caller's own) | US-MOB-03 |
+| JOB | — | `GET /jobs/:id` gains `siteContact` (as `include=site_contact` above) | Any member; Field only on assigned jobs | US-MOB-05 |
 | MOB | GET | `/expenses?mine=true` (exists) — documented as the mobile expenses feed | Any member | US-MOB-12 |
 | JOB | — | `GET /jobs`, `GET /jobs/:id`, `/jobs/:id/milestones`, `/photos`, `/notes`, `GET /jobs/milestones/due`: Field is forced to assigned jobs (404 otherwise) and money fields are omitted | Any member (service-scoped) | US-JOB-19 |
 | JOB | — | `GET /jobs/:id/costing` gains `@RequireCapability("reports.view_job_profitability")` | `reports.view_job_profitability` | US-JOB-19 |
-| JOB | GET | `/jobs/:id/quotes` → quotes to present (variation-order quotes on the job and the job's source quote, while `sent`) | Any member; Field only on assigned jobs | US-MOB-05, US-MOB-16 |
-| QUO | — | `GET /quotes/:id` readable by Field for quotes returned by `/jobs/:id/quotes` on an assigned job | Field (service-scoped) | US-MOB-16 |
-| QUO | POST | `/quotes/:id/reject-in-person` `{ comment? }` → status `rejected`, `acceptance_method: "in_person"`, notifies `quote_rejected` | `quotes.accept_in_person` | US-MOB-16 |
-| JOB | — | `POST /jobs/:id/milestones/:milestoneId/complete` on an already-completed milestone returns 200 `{ alreadyCompleted: true }` and changes nothing | `milestones.edit_*` (Field always) | US-MOB-15 |
+| JOB | GET | `/jobs/:id/quotes` (built) → quotes to present: `[{ id, number, kind: variation\|source, title, sentAt, validUntil }]` — variation-order quotes on the job and the job's source quote, while `sent`, newest sent first; `title` is the quote's first line. No amounts: the quote itself is read when it's presented | Any member; Field only on assigned jobs (404 otherwise) | US-MOB-05, US-MOB-16 |
+| QUO | — | `GET /quotes/:id` (built) readable by Field for quotes returned by `/jobs/:id/quotes` on an assigned job (`sent`, 404 otherwise). Every reader also gets `business { name, address }` (the business profile, as on the PDF), `taxLines [{ label, amount }]` — the quote's tax by named rate as the customer reads it ("Sales Tax (15%)", "State Surcharge (2.5%)"; "CGST (9%)" and "SGST (9%)" on a GST quote), summing to `taxAmount` — and `acceptedByName` (who recorded an on-site answer), plus `signatureFileId` and `acceptedSignerName` | Field (service-scoped) | US-MOB-16, US-QUO-20 |
+| QUO | POST | `/quotes/:id/reject-in-person` (built) `{ comment? }` → status `rejected`, `acceptance_method: "in_person"`, `acceptedByUserId` (who recorded it), `responseComment`; audited `rejected_in_person` with `reason`; notifies `quote_rejected` "Quote <number> was declined in person." Same reach and checks as accept-in-person | `quotes.accept_in_person` | US-MOB-16 |
+| JOB | — | `POST /jobs/:id/milestones/:milestoneId/complete` on a milestone that's no longer pending (built with the outbox, US-MOB-09) answers 201 like any completion with the milestone plus `alreadyCompleted: true` and `completedBy { name } \| null`, and changes nothing about the milestone (first write wins; ownership is still checked first). Photos sent with it are still attached (appends never conflict), and history records `milestone_completion_ignored`. Before, it was 400 "Only a pending milestone can be marked complete" | `milestones.edit_*` (Field always) | US-MOB-15, US-MOB-09 |
 | JOB | — | `PUT /jobs/:id/milestones` ownership is the job's creator | `milestones.edit_own`/`edit_others` | US-JOB-20 |
 | PAY | — | `POST /payments` accepts allocations to advance invoices; that portion posts Dr Bank / Cr 2200 | `payments.edit_own` | US-PAY-13 |
 | OPS | — | `GET /org/invitations`, `POST /demo-data/seed`, `DELETE /demo-data` become `@OrgRoles(["owner"])` | roles: owner | US-OPS-20 |
@@ -486,7 +489,9 @@ Routes the stories add. Each is created by the story named.
 | DASH | GET | `/dashboard/retention` → `RetentionHeld` `{ total, jobCount, jobs: [{ id, number, name, held }] }` (minor units as strings; the three jobs holding the most): the balance of 1150 Retention Receivable from `journal_lines` grouped by `job_id`, jobs with a positive balance only. The "Jobs in progress" card reuses `GET /jobs?status=active&include=costing`. Both cards (`retention-held`, `jobs-in-progress`) start hidden unless the industry template is Construction (`defaultHiddenWidgets`, `mergeDashboardLayout(saved, visible, defaultHidden)`) | `reports.view_receivables` (owner, staff) | US-DASH-20 |
 | PUR | — | `GET /vendor-bills?jobId=` and `GET /expenses?jobId=` list only what's tagged to the job (both already existed; now used by the job filter). For Field, `GET /expenses?jobId=` returns `[]` unless they're assigned to that job (and, as always, only their own expenses) | as the list route | US-PUR-22 |
 | PUR | — | `POST/PUT /expenses` accept `entryMode: amount\|labour` and `labourLines [{ trade, headcount, dayRateAmount }]` (1–20; the client sends `amount` = the rows' total and the server checks it against its own sum: a mismatch → 400 "The amount must equal the labour rows' total, <amount>."; labour without `jobId` → 400 "Labour is always for a job — choose one."; an incomplete row → 400 "Every row needs a trade, at least one worker and a day rate."). `GET /expenses/:id` returns `entryMode` and `labourLines`. Invalid expense bodies now return 400 with the first problem, not 500. `GET /expense-categories` rows gain `accountCode` and `accountName` | `expenses.edit_own` (Field always for own) | US-PUR-23 |
-| PUR | GET | `/expenses/labour-trades?q=` → `[{ trade, lastDayRateAmount }]` (distinct trades, case-insensitive, with the most recent day rate; up to 20) | Readers of expenses (Owner, Staff, Field) | US-PUR-23 |
+| PUR | GET | `/expenses/labour-trades?q=` → `[{ trade, lastDayRateAmount }]` (distinct trades, case-insensitive, with the most recent day rate; up to 20). Field get only the trades from their own expenses (US-MOB-13; before, every expense in the organisation) | Readers of expenses (Owner, Staff, Field) | US-PUR-23, US-MOB-13 |
+| PUR | — | `GET /expenses` rows gain `reviewerName` (who rejected it, else who approved it; null while submitted) | as the list route | US-MOB-12 |
+| JOB | — | `POST /jobs/:id/photos` takes an optional `milestoneId` (one of the job's milestones, else 400 "Choose one of this job's milestones."), stored on the photo | `job_photos.edit_own` (Field always) | US-MOB-11 |
 | ONB | — | `PUT /org/settings/industry_template` validates `{ template: construction\|general_services\|generic }` (else 400 "Pick one of the industry templates."). With `construction` it seeds accounts 5300/5400/5500 and the six expense categories in the same transaction (existing codes and names, case-insensitive, are kept, never duplicated, deleted or remapped); response gains `seeded { accounts: ["5300 · Plant & Equipment Hire"…], categories: [names], kept: ["Kept your existing account 5300 · Vehicle Lease"…] }`. The last run that created something is stored as setting `industry_template_seed` for the note on Expenses › Categories. Demo data uses these categories when the template is Construction | roles: owner | US-ONB-13 |
 | RPT | — | `GET /reports/job-profitability?status=active_on_hold\|active\|on_hold\|completed\|all` (default `active_on_hold`; the dashboard widget asks for `all`) rows gain `billedToDate`, `billedPct`, `costBudget`, `budgetUsedPct`, `budgetState` — computed by the same `billedByJob` / `costByJob` / `budgetFigures` as `/jobs/:id/costing`. `export.csv` takes the same `status` and gains "Billed to date", "Billed %", "Budget used %"; its money columns are now decimals ("48500.00") like every other export | `reports.view_job_profitability` | US-RPT-15 |
 | OPS | — | `GET /files/:id`: `local` driver streams (with `ETag`, range); `s3` driver redirects to a presigned URL; session-less links use `?sig=&exp=` signed with `AUTH_SECRET` (≤ 5 min); damaged or missing file → 409 "This file is damaged. Restore it from your latest backup." (streamed files are verified on every read; presigned `s3` files are verified by the weekly check and refused once flagged) | Readers of the owning record | US-OPS-27, US-OPS-28 |
@@ -570,7 +575,7 @@ Routes the stories add. Each is created by the story named.
 | AI | POST | `/ai/draft-email { type, documentId, tone?: friendly\|formal\|firm }` → `{ subject, body }` (placeholders kept) | `ai.use` + the document's send capability | US-AI-11, US-AI-12 |
 | AI | POST | `/ai/draft-quote-lines { text (≤ 4,000 chars), currency }` → `{ lines: [{ catalogItemId?, bundleId?, name, description, quantity }] }` | `ai.use` + `quotes.edit_own` | US-AI-13 |
 | AI | POST | `/ai/bank-suggestions { reconciliationId }` → `[{ statementLineId, rankedJournalLineIds, reason, create?: { kind, accountId?, contactId?, reason } }]` | `ai.use` + `banking.reconcile` | US-AI-14 |
-| ONB | POST | `/demo-data/seed { country?: US\|IN\|GB\|AU\|NZ\|AE\|SA, industry?: construction\|interior_design\|trades\|it_services\|professional_services }` — no body loads US construction (Riverstone Builders). 409 `DEMO_DATA_LOADED` ("Demo data is already loaded. Delete it first to load another demo business.") while one is loaded; 409 `DEMO_COUNTRY_LOCKED` ("Your business already has its own records, so demo data uses its country: <country>.") for another country once the business has records of its own; 400 for an unknown country or industry. Returns `{ country, industry, businessName }` and counts (D-192) | roles: owner | US-ONB-18 |
+| ONB | POST | `/demo-data/seed { country?: US\|IN\|GB\|AU\|NZ\|AE\|SA, industry?: construction\|interior_design\|trades\|it_services\|professional_services }` — no body loads US construction (Riverstone Builders). 409 `DEMO_DATA_LOADED` ("Demo data is already loaded. Delete it first to load another demo business.") while one is loaded; 409 `DEMO_COUNTRY_LOCKED` ("Your business already has its own records, so demo data uses its country: <country>.") for another country once the business has records of its own; 400 for an unknown country or industry. Returns `{ country, industry, businessName }` and counts (D-192); the demo Field person is put on every demo job's crew (`crewAssignmentsCreated`, US-MOB-04) | roles: owner | US-ONB-18 |
 | ONB | GET | `/demo-data/status` → `{ hasDemoData, loaded: { country, industry, businessName } \| null, country: DemoCountry \| null, countryLocked }` (`DemoDataStatus`) | Any member | US-ONB-18 |
 | ONB | DELETE | `/demo-data` also deletes the demo's journal entries and number series, and returns `kept: { contacts }` — demo contacts left because the person's own records use them (D-191) | roles: owner | US-ONB-17 |
 | AI | — | Every `/ai/*` route: 403 `MODULE_OFF` when AI is off, 403 `AI_FEATURE_OFF` when the feature is off, 429 `AI_RATE_LIMIT` ("Too many AI requests. Try again in a few minutes."), 409 `AI_BUDGET_USED` ("AI is paused until <date> — this month's budget is used up."), 503 `AI_UNAVAILABLE`, 504 on a 30-second timeout. All are read-only and don't take `Idempotency-Key` (no writes) | — | US-AI-07 |
@@ -582,6 +587,10 @@ Routes the stories add. Each is created by the story named.
 | `ledger_out_of_balance` | Owners | "Your books are out of balance by <amount>." | US-RPT-12 |
 | `quote_accepted` (in person) | Readers of quotes | "Quote <number> was accepted in person." (exists) | US-MOB-17 |
 | `quote_rejected` (in person) | Readers of quotes | "Quote <number> was declined in person." | US-MOB-16 |
+| `expense_approved` (to the submitter, built) | The person who submitted the expense, unless they approved it themselves | "<Approver> approved your expense", detail "<Category> · <amount>", link `/expenses/<id>`. The office's own "Expense approved — …" row (Owners and Staff) no longer goes to the submitter | US-MOB-22 |
+| `expense_rejected` (built) | The person who submitted the expense, unless they rejected it themselves | "<Reviewer> rejected your expense", detail "<Category> · <amount> · “<reason>”", link `/expenses/<id>` (Approvals module) | US-MOB-22 |
+| `crew_assigned` (built) | The person put on a job's crew, unless they did it themselves | "You're on the crew for <job>", detail "Added by <name> · <site address>", link `/jobs/<id>` (Jobs & field module) | US-MOB-22 |
+| `crew_removed` (built) | The person taken off a job's crew, unless they did it themselves | "You're off the crew for <job>", detail "Removed by <name>", no link (Jobs & field module) | US-MOB-22 |
 | `recurring_invoice_draft` | Owners | "Recurring invoice ready to review: <name>" | US-INV-21 |
 | `files_damaged` | Owners | "<n> stored files are damaged or missing — restore from your latest backup." | US-OPS-28 |
 | `data_export_ready` | The Owner who asked | Email "Your Spine data export is ready" linking to Settings › Data export | US-SET-15 |

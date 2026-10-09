@@ -1,15 +1,16 @@
 import { moduleOn } from "../../common/modules";
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { EmailJobOverride } from "../email/email-text";
-import type { acceptQuoteInPersonSchema, createQuoteSchema, updateQuoteSchema } from "@spine/shared";
+import type { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
 import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { quotes, quoteLines, contacts, files } from "../../db/schema";
+import { quotes, quoteLines, contacts, files, jobs, jobAssignments, jobVariationOrders, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
-import { hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
+import { getMemberRole, hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
+import { RateBook } from "../tax/line-tax-components";
 import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { QueueService } from "../queue/queue.service";
@@ -342,6 +343,62 @@ export class QuotesService {
       supersededByQuoteId: supersededBy?.id ?? null,
       lines,
     };
+  }
+
+  /**
+   * `GET /quotes/:id` — the quote, plus what reading it needs beyond the
+   * row: the business as printed on the PDF (US-MOB-16's present screen),
+   * its tax by named rate (US-MOB-16), and who recorded an on-site
+   * response (US-QUO-20). Field reads only a quote they can present:
+   * `sent`, on a job they're assigned to (404 otherwise, US-JOB-19).
+   */
+  async getDetail(orgId: string, userId: string, id: string) {
+    const role = await getMemberRole(this.db, orgId, userId);
+    if (role === "field" && !(await this.presentableByField(orgId, userId, id))) throw new NotFoundException("Quote not found");
+    const quote = await this.getOne(orgId, id);
+    if (role === "field" && quote.status !== "sent") throw new NotFoundException("Quote not found");
+    return this.withDetail(orgId, quote);
+  }
+
+  private async withDetail(orgId: string, quote: Awaited<ReturnType<QuotesService["getOne"]>>) {
+    const [business, book, acceptedBy] = await Promise.all([
+      this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile"),
+      RateBook.load(this.db, orgId, quote.lines),
+      quote.acceptedByUserId ? this.db.select({ name: user.name }).from(user).where(eq(user.id, quote.acceptedByUserId)) : Promise.resolve([]),
+    ]);
+    return {
+      ...quote,
+      business: { name: business?.name || "Your business", address: business?.address || null },
+      taxLines: book.taxLines(
+        quote.lines.filter((l) => l.type === "item"),
+        quote.supplyType,
+      ),
+      acceptedByName: acceptedBy[0]?.name ?? null,
+    };
+  }
+
+  /** D-073 / US-MOB-16 — a quote a Field user may present: a variation order on, or the source quote of, a job they're assigned to. */
+  private async presentableByField(orgId: string, userId: string, quoteId: string): Promise<boolean> {
+    const [fromJobs, fromVariations] = await Promise.all([
+      this.db.select({ id: jobs.id }).from(jobs).where(and(eq(jobs.orgId, orgId), eq(jobs.sourceQuoteId, quoteId))),
+      this.db.select({ id: jobVariationOrders.jobId }).from(jobVariationOrders).where(and(eq(jobVariationOrders.orgId, orgId), eq(jobVariationOrders.quoteId, quoteId))),
+    ]);
+    const jobIds = [...fromJobs, ...fromVariations].map((r) => r.id);
+    if (jobIds.length === 0) return false;
+    const [assigned] = await this.db
+      .select({ id: jobAssignments.id })
+      .from(jobAssignments)
+      .where(and(eq(jobAssignments.userId, userId), inArray(jobAssignments.jobId, jobIds)))
+      .limit(1);
+    return Boolean(assigned);
+  }
+
+  /** Field reaches only the quotes they can present — checked before any status check (07-security). */
+  private async assertMayRespondInPerson(orgId: string, userId: string, quoteId: string) {
+    const granted = await hasCapability(this.db, { orgId, userId }, "quotes.accept_in_person", true);
+    if (!granted) throw new ForbiddenException("Missing capability: quotes.accept_in_person");
+    const role = await getMemberRole(this.db, orgId, userId);
+    if (role === "field" && !(await this.presentableByField(orgId, userId, quoteId))) throw new NotFoundException("Quote not found");
   }
 
   /**
@@ -925,14 +982,18 @@ export class QuotesService {
    * only "am I allowed to."
    */
   async acceptInPerson(orgId: string, id: string, actorUserId: string, input: z.infer<typeof acceptQuoteInPersonSchema>) {
-    const granted = await hasCapability(this.db, { orgId, userId: actorUserId }, "quotes.accept_in_person", true);
-    if (!granted) {
-      throw new ForbiddenException("Missing capability: quotes.accept_in_person");
-    }
+    await this.assertMayRespondInPerson(orgId, actorUserId, id);
 
-    const [signatureFile] = await this.db.select({ id: files.id }).from(files).where(and(eq(files.orgId, orgId), eq(files.id, input.signatureFileId)));
+    // US-QUO-19: the signature is an image this user just uploaded, in this organisation.
+    const [signatureFile] = await this.db
+      .select({ id: files.id, mimeType: files.mimeType })
+      .from(files)
+      .where(and(eq(files.orgId, orgId), eq(files.id, input.signatureFileId), eq(files.uploadedByUserId, actorUserId)));
     if (!signatureFile) {
       throw new BadRequestException("Signature file not found");
+    }
+    if (!signatureFile.mimeType.startsWith("image/")) {
+      throw new BadRequestException("The signature must be an image.");
     }
 
     const [preCheck] = await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id)));
@@ -967,6 +1028,8 @@ export class QuotesService {
           responseComment: input.comment ?? null,
           acceptanceMethod: "in_person",
           acceptedByUserId: actorUserId,
+          signatureFileId: signatureFile.id,
+          acceptedSignerName: input.signerName,
           updatedAt: respondedAt,
         })
         .where(eq(quotes.id, id));
@@ -978,11 +1041,14 @@ export class QuotesService {
         entityType: "quote",
         entityId: id,
         contactId: existing.contactId,
-        changes: [{ field: "status", from: "sent", to: "accepted" }],
+        changes: [
+          { field: "status", from: "sent", to: "accepted" },
+          { field: "signedBy", from: null, to: input.signerName },
+        ],
       });
     });
 
-    const updated = await this.getOne(orgId, id);
+    const updated = await this.withDetail(orgId, await this.getOne(orgId, id));
 
     const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
     const businessName = business?.name || "Your business";
@@ -997,8 +1063,76 @@ export class QuotesService {
         link: `/quotes/${updated.id}`,
       },
     });
+    await this.nudgeVariationOrder(orgId, updated, businessName);
 
     return updated;
+  }
+
+  /**
+   * US-MOB-16 — `POST /quotes/:id/reject-in-person`: the customer declines
+   * on site, with an optional reason. Needs a connection like accepting
+   * (D-050). Same checks as `acceptInPerson`; the office is told straight
+   * away.
+   */
+  async rejectInPerson(orgId: string, id: string, actorUserId: string, input: z.infer<typeof rejectQuoteInPersonSchema>) {
+    await this.assertMayRespondInPerson(orgId, actorUserId, id);
+    const respondedAt = new Date();
+    const comment = input.comment?.trim() || null;
+
+    await this.db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
+      if (!existing) throw new NotFoundException("Quote not found");
+      if (existing.status !== "sent") {
+        throw new GoneException(
+          existing.status === "accepted" || existing.status === "rejected" ? `This quote has already been ${existing.status}` : "This quote is not currently open for a response",
+        );
+      }
+      await tx
+        .update(quotes)
+        .set({ status: "rejected", respondedAt, responseComment: comment, acceptanceMethod: "in_person", acceptedByUserId: actorUserId, updatedAt: respondedAt })
+        .where(eq(quotes.id, id));
+      await this.auditLog.record(tx, {
+        orgId,
+        actorUserId,
+        action: "rejected_in_person",
+        entityType: "quote",
+        entityId: id,
+        contactId: existing.contactId,
+        changes: [{ field: "status", from: "sent", to: "rejected" }, ...(comment ? [{ field: "reason", from: null, to: comment }] : [])],
+      });
+    });
+
+    const updated = await this.withDetail(orgId, await this.getOne(orgId, id));
+    void this.notifications.notify(orgId, {
+      subject: `Quote ${updated.number ?? ""} declined in person`.trim(),
+      text: [`Quote ${updated.number ?? ""} was declined in person on ${updated.business.name}.`, comment ? `\nTheir reason: "${comment}"` : ""].join("\n"),
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "quote_rejected",
+        message: `Quote ${updated.number ?? "your quote"} was declined in person.`,
+        link: `/quotes/${updated.id}`,
+      },
+    });
+    return updated;
+  }
+
+  /** S-04.9 — an accepted variation order's quote: ask the office to apply it to the job (same nudge as the public link). */
+  private async nudgeVariationOrder(orgId: string, quote: { id: string; number: string | null; contactName: string | null }, businessName: string) {
+    const [variation] = await this.db
+      .select({ jobId: jobVariationOrders.jobId })
+      .from(jobVariationOrders)
+      .where(and(eq(jobVariationOrders.orgId, orgId), eq(jobVariationOrders.quoteId, quote.id)));
+    if (!variation) return;
+    void this.notifications.notify(orgId, {
+      subject: `Variation order accepted — ready to apply to job`,
+      text: `${quote.contactName ?? "Your customer"} accepted variation order ${quote.number ?? ""} on ${businessName}. Review it and apply it to the job to update the contract value.`,
+      recipientRoles: ["owner", "staff"],
+      inApp: {
+        type: "variation_order_accepted",
+        message: `${quote.contactName ?? "Your customer"} accepted variation order ${quote.number ?? ""} — apply it to the job.`,
+        link: `/jobs/${variation.jobId}?tab=variations`,
+      },
+    });
   }
 
   private async persistDraft(

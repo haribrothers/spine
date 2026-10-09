@@ -10,7 +10,7 @@ Spine is a self-hosted business management app for small service and project bus
 5. Touching auth, roles or any endpoint's authorization: read `docs/prd/07-security.md` first, including its appendix. Touching `packages/ui-native` or a native app: read `docs/design/native-notes.md` first.
 
 ## How to work
-- Never commit to `main`. Each phase is a branch `phase-<n>-<short-name>` from `main`; commit each story there with its id in the message; open one PR into `main` when the phase's stories are done. CI runs only on that PR, so run lint, typecheck and tests locally before committing.
+- Never commit to `main`. Each phase is a branch `phase-<n>-<short-name>` from `main`; commit each story there with its id in the message; open one PR into `main` when the phase's stories are done. CI runs only on that PR, so run lint, typecheck and tests locally before committing, and `pnpm verify` (everything CI runs, including E2E) before opening the PR or marking it ready.
 - Work one story at a time. Say which story (e.g. `US-INV-05`) you're implementing.
 - A story is done only when every acceptance criterion passes with an automated test named after the story id (`us-inv-05.spec.ts` or `describe('US-INV-05', …)`), plus the definition of done in `docs/prd/11-testing-release.md`.
 - Tick the story in `docs/progress.md`, add a `CHANGELOG.md` entry and update `docs/qa-script.md` (new steps plus regression checks for every screen the change touches) in the same change.
@@ -50,7 +50,7 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 - Accessibility is required: WCAG 2.1 AA, keyboard, focus rings, 4.5:1 text contrast, reduce motion, no colour-only state, 44px touch targets on phone.
 
 ## Commands
-`pnpm dev:infra:up` · `pnpm db:migrate:dev` · `pnpm db:seed:dev` · `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm --filter @spine/api test:integration` · `pnpm test:e2e` · `pnpm dev:mobile` · `pnpm create:native-app <name>`
+`pnpm dev:infra:up` · `pnpm db:migrate:dev` · `pnpm db:seed:dev` · `pnpm dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm --filter @spine/api test:integration` · `pnpm test:e2e` · `pnpm verify` · `pnpm dev:mobile` · `pnpm create:native-app <name>`
 
 ## Where things are
 `apps/api` NestJS · `apps/web` Next.js · `apps/mobile` field app · `apps/e2e` Playwright · `apps/design-system`, `apps/design-system-native`, `apps/showcase-native` component docs · `packages/shared` money/tax/schemas · `packages/ui`, `packages/ui-native` · `packages/config` · `docs/` spec.

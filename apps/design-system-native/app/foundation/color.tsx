@@ -1,6 +1,29 @@
 import { DocScreen } from "../../src/components/doc-section";
 import { DocTitle, DocLead, DocSection } from "../../src/components/doc-page";
+import { Text, View } from "react-native";
+import { brandColors } from "@spine/ui-native/tokens";
 import { ColorSwatchGrid } from "../../src/components/color-swatch-grid";
+
+const BRAND_SWATCHES = [
+  { name: "Brand teal", value: brandColors.teal },
+  { name: "Brand sky", value: brandColors.sky },
+  { name: "Brand deep", value: brandColors.deep },
+];
+
+/** The brand colours are the same in both modes, so they're read straight from brandColors. */
+function BrandSwatches() {
+  return (
+    <View className="my-2 flex-row flex-wrap gap-3">
+      {BRAND_SWATCHES.map((swatch) => (
+        <View key={swatch.name} className="w-[104px] gap-1.5">
+          <View style={{ backgroundColor: swatch.value }} className="h-14 rounded-lg border border-border dark:border-border-dark" />
+          <Text className="text-[12px] font-medium text-on-surface dark:text-on-surface-dark">{swatch.name}</Text>
+          <Text className="font-mono text-[11px] text-on-surface-muted dark:text-on-surface-muted-dark">{swatch.value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export function ColorScreen() {
   return (
@@ -50,6 +73,31 @@ export function ColorScreen() {
             { name: "Border strong", token: "borderStrong" },
           ]}
         />
+      </DocSection>
+
+      <DocSection title="Material 3 roles (Android)">
+        <DocLead>
+          From tokens.json color.android and color.android-dark. Android screens use them where Material does: tonal
+          buttons, the selected segment, the tab indicator and floating action buttons (primary container), filled
+          cards (surface container) and outlined cards (outline variant). iOS keeps the surfaces above.
+        </DocLead>
+        <ColorSwatchGrid
+          swatches={[
+            { name: "Primary container", token: "primaryContainer" },
+            { name: "On primary container", token: "onPrimaryContainer" },
+            { name: "Surface container", token: "surfaceContainer" },
+            { name: "Outline variant", token: "outlineVariant" },
+          ]}
+        />
+      </DocSection>
+
+      <DocSection title="Brand (logo and illustrations only)">
+        <DocLead>
+          From tokens.json color.brand (D-203): the colours of the Spine mark, the same in light and dark. They appear
+          only in the logo, the app icon, the splash and illustrations — never on text, buttons or status, which keep
+          primary and the status colours.
+        </DocLead>
+        <BrandSwatches />
       </DocSection>
 
       <DocSection title="Financial status (reserved)">

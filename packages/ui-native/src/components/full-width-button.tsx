@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Platform, Pressable, Text } from "react-native";
 import { Button as ComposeButton, OutlinedButton, Shape, Text as ComposeText, type ShapeJSXElement } from "@expo/ui/jetpack-compose";
-import { fillMaxWidth } from "@expo/ui/jetpack-compose/modifiers";
+import { fillMaxWidth, testID as testIDModifier } from "@expo/ui/jetpack-compose/modifiers";
 import { Host } from "@expo/ui";
 import { useNativeHostTheme, useNativeColors } from "../theme/use-native-colors";
 import type { ButtonControlSize, ButtonVariant } from "./button";
@@ -339,6 +339,11 @@ export function FullWidthButton({
   }
 
   const AndroidButtonComponent = expoUiVariant === "filled" ? ComposeButton : OutlinedButton;
+  // Exact Spine colours (D-099): a Host seed colour alone makes Material
+  // derive its own tonal palette, so the fill came out muted purple/brown
+  // instead of primary/overdue on a real device (Phase 5, US-MOB-20).
+  const fill = seedColor ?? colors.primary;
+  const androidColors = expoUiVariant === "filled" ? { containerColor: fill, contentColor: variant === "danger" ? colors.onDanger : colors.onPrimary } : { contentColor: fill };
 
   return (
     <Host matchContents={{ vertical: true, horizontal: false }} colorScheme={hostTheme.colorScheme} seedColor={hostTheme.seedColor}>
@@ -346,7 +351,8 @@ export function FullWidthButton({
         onClick={disabled ? undefined : onPress}
         enabled={!disabled}
         shape={androidShapeElement(shape)}
-        modifiers={[fillMaxWidth()]}
+        colors={androidColors}
+        modifiers={[fillMaxWidth(), ...(testID ? [testIDModifier(testID)] : [])]}
       >
         <ComposeText>{label}</ComposeText>
       </AndroidButtonComponent>

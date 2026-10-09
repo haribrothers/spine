@@ -1,0 +1,36 @@
+# US-MOB-12 / US-MOB-13 — log an expense on the phone: it's queued, sent,
+# and listed under "Submitted by you". Uses the demo business's "Materials"
+# category. Run like us-mob-01-sign-in.yaml.
+appId: com.spine.app
+---
+- runFlow: _sign-in.yaml
+- tapOn: "Expenses"
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn:
+          id: "expenses-add"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - tapOn:
+          id: "expenses-log"
+- extendedWaitUntil:
+    visible: "Amount \\(.*\\)"
+    timeout: 10000
+# Nothing filled in: it says what's missing.
+- tapOn: "Submit"
+- assertVisible: "Choose a category."
+- assertVisible: "Enter an amount above zero."
+- tapOn:
+    id: "expense-amount"
+- inputText: "642"
+- tapOn: "Category.*"
+- tapOn: "Materials"
+- tapOn: "Submit"
+- extendedWaitUntil:
+    visible: "(SUBMITTED BY YOU|Submitted by you)"
+    timeout: 30000
+- assertVisible: "Materials.*"

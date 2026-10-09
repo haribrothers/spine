@@ -69,6 +69,21 @@ export const lightColors = {
 
   /** A subtle translucent scrim over `surface` — e.g. a gauge/progress track. */
   overlaySubtle: "rgba(33,31,26,0.12)",
+  /** tokens.json `scrim` — dims what's behind a control laid over a photo or the camera. */
+  scrim: "rgba(18,17,16,0.32)",
+
+  /**
+   * US-MOB-20 — Material 3 roles from tokens.json `color.android`, for the
+   * Android screens: tonal buttons, the selected segment, the tab
+   * indicator and the floating action button (`primaryContainer`), filled
+   * cards (`surfaceContainer`) and outlined cards (`outlineVariant`).
+   */
+  primaryContainer: "#DCE4FC",
+  onPrimaryContainer: "#1C3AA9",
+  surfaceContainer: "#F2F1EE",
+  outlineVariant: "#D3D0C9",
+  /** Material's `outline`: the border of outlined text fields and segmented buttons. */
+  outline: "#726C5A",
 } as const;
 
 export const darkColors = {
@@ -117,6 +132,14 @@ export const darkColors = {
   },
 
   overlaySubtle: "rgba(243,242,238,0.16)",
+  scrim: "rgba(0,0,0,0.62)",
+
+  /** tokens.json `color.android-dark` — see `lightColors.primaryContainer`. */
+  primaryContainer: "#1C3AA9",
+  onPrimaryContainer: "#DCE4FC",
+  surfaceContainer: "#201F1B",
+  outlineVariant: "#3B392F",
+  outline: "#9A9786",
 } as const;
 
 /** Flat colour tokens only — `gradients` is a nested object, not a colour string (see `GradientTone`). */

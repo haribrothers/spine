@@ -93,4 +93,20 @@ describe("FloatingLabelField a11y", () => {
     expect(rootCandidate).toBeTruthy();
     expect((rootCandidate!.props.className as string).includes("h-full")).toBe(false);
   });
+
+  it("hides a secure value and takes the RN TextField branch even on iOS (US-MOB-01)", () => {
+    render(<FloatingLabelField label="Password" value="hunter22" onChangeText={() => {}} secureTextEntry autoComplete="current-password" testID="password" />);
+    const field = screen.getByTestId("password");
+    expect(field.props.secureTextEntry).toBe(true);
+    expect(field.props.autoComplete).toBe("current-password");
+    expect(field.props.accessibilityLabel).toBe("Password");
+  });
+
+  it("turns off auto-capitalisation and autocorrect for an address (US-MOB-01)", () => {
+    render(<FloatingLabelField label="Email" value="" onChangeText={() => {}} forceTextField autoCapitalize="none" keyboardType="email" testID="email" />);
+    const field = screen.getByTestId("email");
+    expect(field.props.autoCapitalize).toBe("none");
+    expect(field.props.autoCorrect).toBe(false);
+    expect(field.props.keyboardType).toBe("email-address");
+  });
 });

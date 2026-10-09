@@ -86,7 +86,6 @@ const ACTION_VERBS: Record<string, string> = {
   unassigned: "unassigned",
   email_queued: "emailed",
   reminder_queued: "sent a reminder for",
-  accepted_in_person: "recorded in-person acceptance of",
   discount_approved: "approved the discount on",
   milestone_completed: "completed",
   milestone_invoiced: "invoiced",
@@ -166,6 +165,19 @@ export function describeHistoryEntry(entry: HistoryEntryLike, subjectLabel: stri
     const name = changes.find((c) => c.field === "attachment")?.from;
     const reason = changes.find((c) => c.field === "reason")?.to;
     return `${actor} removed attachment ${name ? String(name) : "a file"}${reason ? ` — ${String(reason)}` : ""}${own ? "" : ` from ${subject}`}`;
+  }
+
+  // US-QUO-20: a quote's answer names how it came — online through the link (no actor), or on site.
+  if (entry.entityType === "quote" && (entry.action === "accepted" || entry.action === "rejected") && !entry.actorName) {
+    return `The customer ${entry.action === "accepted" ? "accepted" : "declined"} ${subject} online`;
+  }
+  if (entry.action === "accepted_in_person") {
+    const signer = changes.find((c) => c.field === "signedBy")?.to;
+    return `${actor} recorded the customer's acceptance of ${subject} on site${signer ? `, signed by ${String(signer)}` : ""}`;
+  }
+  if (entry.action === "rejected_in_person") {
+    const reason = changes.find((c) => c.field === "reason")?.to;
+    return `${actor} recorded the customer declining ${subject} on site${reason ? ` — ${String(reason)}` : ""}`;
   }
 
   // US-QUO-24: "Duplicated from QUO-0004 by Sarah Mendes".

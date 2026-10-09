@@ -76,6 +76,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "text-field", name: "Text Field", description: "Single-line text input with an error state." },
       { slug: "native-text-field", name: "Native Text Field (iOS)", description: "Real SwiftUI TextField, colored with this design system's own tokens — iOS only." },
       { slug: "select", name: "Select", description: "Single-choice picker using the OS's native picker chrome." },
+      { slug: "outlined-text-field", name: "Outlined Text Field", description: "Material 3 outlined field with a notched label — Android forms in the field app." },
       { slug: "select-field", name: "Select Field", description: "TextField-styled select opening a native menu — matches surrounding form fields." },
       { slug: "date-time-picker", name: "Date & Time Picker", description: "TextField-styled trigger with a calendar/clock icon, opening a native date/time popup." },
       { slug: "card", name: "Card", description: "Card, Header, Title, Description, Content, and Footer composition." },
@@ -90,6 +91,7 @@ export const NAV_SECTIONS: DocSection[] = [
       { slug: "floating-tab-bar", name: "Floating Tab Bar", description: "Fully custom floating pill tab bar with an active-tab highlight capsule." },
       { slug: "native-tab-view", name: "Native Tab View (iOS)", description: "@expo/ui's real SwiftUI TabView with liquid glass — iOS only, embedded in-screen, not a router replacement." },
       { slug: "native-header", name: "Native Header", description: "React Navigation native-stack's real native header — iOS blur/large-title, Android Material — with themed controls." },
+      { slug: "spine-logo", name: "Spine logo", description: "The layered mark and SPiNE wordmark — mark, horizontal and vertical lockups." },
     ],
   },
   {

@@ -102,4 +102,24 @@ describe("FormSection", () => {
     );
     expect(screen.getByText("a field")).toBeTruthy();
   });
+
+  it("leaves out the heading when a section has no title, and marks a title as a header", () => {
+    const untitled = render(
+      <FormSection>
+        <FormRow last>
+          <Text>Caption</Text>
+        </FormRow>
+      </FormSection>,
+    );
+    expect(untitled.queryAllByRole("header")).toHaveLength(0);
+    untitled.unmount();
+    const titled = render(
+      <FormSection title="Details">
+        <FormRow last>
+          <Text>Caption</Text>
+        </FormRow>
+      </FormSection>,
+    );
+    expect(titled.getByRole("header").props.children).toBe("Details");
+  });
 });

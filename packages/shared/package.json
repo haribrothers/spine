@@ -9,7 +9,8 @@
     ".": "./dist/index.js",
     "./money": "./dist/money/index.js",
     "./tax": "./dist/tax/index.js",
-    "./schemas": "./dist/schemas/index.js"
+    "./schemas": "./dist/schemas/index.js",
+    "./mobile": "./dist/mobile.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

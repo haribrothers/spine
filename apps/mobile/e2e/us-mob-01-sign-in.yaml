@@ -1,0 +1,89 @@
+# US-MOB-01 / US-MOB-02 — sign in, see Today and Profile, sign out.
+# Needs the API running with the demo business loaded (Marcus Webb, Field).
+# SERVER is the API as the device sees it: http://localhost:4000 on the iOS
+# Simulator, http://10.0.2.2:4000 on the Android emulator.
+#   maestro test apps/mobile/e2e/us-mob-01-sign-in.yaml                       (iOS Simulator)
+#   maestro test -e SERVER=http://10.0.2.2:4000 \
+#     -e DEV_CLIENT_URL='spine://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8081' \
+#     apps/mobile/e2e/us-mob-01-sign-in.yaml                                   (Android emulator)
+# With both running, pick one with `maestro --device <id>`.
+appId: com.spine.app
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+- runFlow: _open-app.yaml
+# A clean install opens on Welcome (US-MOB-26); Get started opens Sign in.
+- extendedWaitUntil:
+    visible: "Get started"
+    timeout: 60000
+- assertVisible: "Today’s jobs, in your pocket"
+- tapOn: "Get started"
+- extendedWaitUntil:
+    visible: "Use the email your office invited you with."
+    timeout: 10000
+- assertVisible: "Spine"
+- assertVisible: "Sign in"
+- assertVisible: "You stay signed in on this phone until you sign out."
+
+# Buttons are tapped by their text: Compose buttons on Android don't expose a test ID.
+# A wrong password says so under the field.
+- tapOn:
+    id: "sign-in-server"
+- eraseText: 60
+- inputText: ${SERVER || "http://localhost:4000"}
+- tapOn:
+    id: "sign-in-email"
+- eraseText: 60
+- inputText: ${EMAIL || "marcus.webb.demo@example.com"}
+- tapOn:
+    id: "sign-in-password"
+- inputText: "not-the-password"
+# The title also says "Sign in"; the button is the one below the password.
+- tapOn:
+    text: "Sign in"
+    below:
+      id: "sign-in-password"
+- assertVisible: "That email and password don't match. Check both, or reset your password."
+
+# The right one lands on Today.
+- tapOn:
+    id: "sign-in-password"
+- eraseText: 30
+- inputText: ${PASSWORD || "DemoPassword123!"}
+# The title also says "Sign in"; the button is the one below the password.
+- tapOn:
+    text: "Sign in"
+    below:
+      id: "sign-in-password"
+# iOS offers to save the password (the field is marked current-password).
+- runFlow:
+    when:
+      visible: "Save Password?"
+    commands:
+      - tapOn: "Not Now"
+- extendedWaitUntil:
+    visible:
+      id: "today-welcome"
+    timeout: 20000
+- assertVisible: "Good .*, Marcus"
+- assertVisible: "Jobs"
+- assertVisible: "Expenses"
+
+# Reopening stays signed in.
+- stopApp
+- launchApp
+- runFlow: _open-app.yaml
+- extendedWaitUntil:
+    visible:
+      id: "today-welcome"
+    timeout: 60000
+
+# Profile (whatever demo business is loaded), then sign out.
+- tapOn: "Profile, Marcus Webb"
+- assertVisible: "Field · .*"
+- assertVisible: "All synced.*"
+- tapOn: "Sign out"
+# Signing out goes to Sign in, never back to Welcome.
+- assertVisible: "Use the email your office invited you with."
+- assertNotVisible: "Get started"

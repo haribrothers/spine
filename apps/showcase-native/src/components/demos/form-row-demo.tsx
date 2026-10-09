@@ -34,6 +34,16 @@ export function FormRowDemo() {
           </FormSection>
         </DemoPreview>
       </DemoSection>
+      <DemoSection title="Without a title">
+        <DemoPreview>
+          {/* `title` is optional — a section straight under a screen's own heading (the field app's forms). */}
+          <FormSection>
+            <FormRow last>
+              <Text className="text-on-surface-muted dark:text-on-surface-muted-dark">A section with no caption above it</Text>
+            </FormRow>
+          </FormSection>
+        </DemoPreview>
+      </DemoSection>
     </>
   );
 }

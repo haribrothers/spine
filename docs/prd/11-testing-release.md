@@ -14,12 +14,28 @@
 
 Story tests are named after the story id: `describe('US-INV-04', …)` or `us-inv-04.spec.ts`. This applies to new work; stories built before the rule keep their tick while their criteria pass ([D-076](12-decisions.md)).
 
+### Testing the field app (Phase 5)
+
+Phase 5 is done when the app works end to end in airplane mode and syncs with no duplicates. That is tested in four layers, most of it automated:
+
+| Layer | Tool | What it proves |
+|---|---|---|
+| Outbox and cache | Jest (jest-expo) in `apps/mobile`, with a fake transport and an in-memory SQLite | Each outbox item keeps one `Idempotency-Key` across retries. A network error stays `waiting` and backs off. A lost response is retried and treated as sent. A 4xx goes to `failed` with the server's reason. A 426 stops sending and keeps the queue. Items send in order. The cache serves jobs and milestones when offline |
+| Server replay | Vitest integration (`apps/api`) | Replaying the same key for a photo, expense or milestone completion returns the first result and creates nothing. A second completion returns `alreadyCompleted: true`. `reject-in-person` and `accept-in-person` need a live call. `X-Spine-Client-Version` under `MOBILE_MIN_VERSION` returns 426 |
+| Flows on a simulator | Maestro (`apps/mobile/e2e/*.yaml`), iOS Simulator and Android emulator, against the local API with the seeded e2e org | Sign in, Today, a job, expense with a receipt, photos, mark complete, present and accept a quote. Offline replay: go offline, add 2 photos, an expense and a completion, check the waiting count, come back online, then check through the API (`runScript` with `http`) that each exists exactly once |
+| Real phone | `docs/qa-script.md` | One iPhone and one Android phone in real airplane mode, plus a flaky-signal walk, before the Phase 5 PR |
+
+Going offline on a simulator: on Android, Maestro toggles airplane mode on the emulator. The iOS Simulator can't, so the E2E build (`EXPO_PUBLIC_E2E=1`, never in a store build) has a hidden network override. It makes the transport fail the way no network does and makes NetInfo report offline. Maestro flows run locally (`pnpm --filter @spine/mobile test:e2e`) before the Phase 5 PR. CI runs the Jest and integration layers, since macOS runners for simulators aren't part of CI.
+
 ## CI
 
 | Job | Trigger | Steps | Blocks merge |
 |---|---|---|---|
-| `test` ("Unit and integration") | PR into `main`, manual | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · install (frozen lockfile) → lint → typecheck → unit → migrate → integration (files run one at a time: they share one database) | Yes |
-| `e2e` ("E2E") | after `test` passes; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test` | Yes |
+| `changes` ("Detect changes") | PR into `main` (not drafts), manual | Decides what runs: docs-only changes run nothing; integration runs when the API, shared packages, lockfile or workflow changed; E2E when the API, web, E2E, `ui`, `sdk`, shared packages, lockfile or workflow changed ([D-205](12-decisions.md)) | — |
+| `static` ("Lint, typecheck and unit") | any code change | install (frozen lockfile) → lint → typecheck → unit (no services) | Through "Unit and integration" |
+| `integration` ("Integration") | after `static`, when its paths changed | Postgres + S3Mock services (S3Mock for the `s3` storage-driver tests) · build shared packages → migrate → integration (files run one at a time: they share one database), stopping at five failing tests; a failure cancels the run | Through "Unit and integration" |
+| `unit-and-integration` ("Unit and integration") | after `static` and `integration` | Passes when `static` passed and `integration` passed or was skipped — the required check, keeping its name | Yes |
+| `e2e` ("E2E") | after `static`, alongside `integration`, when its paths changed; files use the `local` storage driver (no storage service) | Postgres + maildev services → Playwright browsers (cached) → production build → `@spine/e2e test`, stopping after five failing specs; a failure cancels the run | Yes |
 | `a11y-routes` | PR (Phase 11) | Playwright + axe on every route with demo data (US-OPS-17) | Yes |
 | `restore-verify` | nightly and on `v*` tags (Phase 11) | install → seed → backup → clean install → restore → compare trial balance and file count (US-OPS-04) | Opens an issue on failure |
 | `audit` | PR + release | `pnpm audit --prod` (NFR-SEC-04), secret scan | Yes |
@@ -31,7 +47,9 @@ Story tests are named after the story id: `describe('US-INV-04', …)` or `us-in
 - `main` is protected: no direct pushes, no force-pushes, no deletion; changes arrive only by pull request with both CI checks green ([D-101](12-decisions.md)).
 - Each phase gets its own branch from `main`, named `phase-<n>-<short-name>` (e.g. `phase-6-fix-and-harden`). Stories are committed on that branch, one commit (or more) per story, with the story id in the message (`US-OPS-08: add idempotency to the remaining routes`).
 - Run the checks locally while working (`pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm --filter @spine/api test:integration`, `pnpm test:e2e`); CI does not run on branch pushes.
-- When every story in the phase is done, open one pull request into `main`. Open it as a draft if you want to share it early — drafts don't run CI; "Ready for review" does.
+- Before a pull request is opened (or marked ready for review), `pnpm verify` runs everything CI runs, in CI's order, against the local Docker database: lint → typecheck → unit → integration → E2E. It creates and migrates `spine_test` and `spine_e2e` if they're missing, stops at the first failure, and `pnpm verify --from <step>` resumes there ([D-205](12-decisions.md)). CI should confirm a green branch, not discover failures.
+- When every story in the phase is done and `pnpm verify` passes, open one pull request into `main`. Open it as a draft if you want to share it early — drafts don't run CI; "Ready for review" does.
+- After a CI failure, fix it locally, then push (a new run) or use "Re-run failed jobs" for a flaky job — never "Re-run all jobs", which repeats the jobs that passed.
 - Each new push to the PR cancels the run in progress and starts a fresh one.
 
 ### Keeping within a private repo's Actions limits

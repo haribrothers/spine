@@ -1,7 +1,7 @@
 import { ownedByOffModule } from "@spine/shared";
 import { loadModules } from "../../common/modules";
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import { and, desc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, notInArray, or } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { member, notifications, user } from "../../db/schema";
@@ -85,10 +85,13 @@ export class NotificationsService {
       html?: string;
       recipientRoles?: string[];
       recipientUserIds?: string[];
-      inApp?: { type: string; message: string; link?: string };
+      /** Members never notified this time, e.g. the person the event is about when they get their own message (US-MOB-22). */
+      excludeUserIds?: string[];
+      /** `detail` is the second line under the message (the phone's list, US-MOB-22). */
+      inApp?: { type: string; message: string; detail?: string; link?: string };
     },
   ): Promise<void> {
-    const { recipientRoles, recipientUserIds } = params;
+    const { recipientRoles, recipientUserIds, excludeUserIds } = params;
     // US-SET-24: nothing about a switched-off module is sent.
     if (params.inApp && ownedByOffModule(await loadModules(this.db, orgId), "notifications", params.inApp.type)) return;
     const useDefaultRole = !recipientRoles && !recipientUserIds;
@@ -107,7 +110,14 @@ export class NotificationsService {
         .select({ userId: member.userId, email: user.email })
         .from(member)
         .innerJoin(user, eq(member.userId, user.id))
-        .where(and(eq(member.organizationId, orgId), eq(member.isActive, true), or(...matchers)));
+        .where(
+          and(
+            eq(member.organizationId, orgId),
+            eq(member.isActive, true),
+            or(...matchers),
+            excludeUserIds?.length ? notInArray(member.userId, excludeUserIds) : undefined,
+          ),
+        );
 
       if (!recipients.length) {
         this.logger.warn(`No active member matched roles=[${(roleFilter ?? []).join(", ")}] userIds=[${(recipientUserIds ?? []).join(", ")}] for org ${orgId} — notification "${params.subject}" was not sent to anyone`);
@@ -127,13 +137,14 @@ export class NotificationsService {
       );
 
       if (params.inApp) {
-        const { type, message, link } = params.inApp;
+        const { type, message, detail, link } = params.inApp;
         await this.db.insert(notifications).values(
           recipients.map((recipient) => ({
             orgId,
             recipientUserId: recipient.userId,
             type,
             message,
+            detail: detail ?? null,
             link: link ?? null,
           })),
         );

@@ -81,5 +81,12 @@ export const updateQuoteSchema = createQuoteSchema.partial().extend({ lines: z.a
  */
 export const acceptQuoteInPersonSchema = z.object({
   signatureFileId: uuidSchema,
+  /** US-QUO-19 — the name the customer typed above their signature. */
+  signerName: z.string().trim().min(1, "Enter the name of the person signing.").max(200),
   comment: z.string().optional().nullable(),
+});
+
+/** US-MOB-16 — `POST /quotes/:id/reject-in-person`: the customer declines on site, with an optional reason. */
+export const rejectQuoteInPersonSchema = z.object({
+  comment: z.string().trim().max(2000).optional().nullable(),
 });

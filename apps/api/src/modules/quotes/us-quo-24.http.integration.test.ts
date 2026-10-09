@@ -80,7 +80,14 @@ describe("US-QUO-24 · duplicate a quote as a new draft (requires local Postgres
   });
 
   it("copies the original lines' prices, not today's catalogue prices", async () => {
-    const original = await sentQuote();
+    // A sent quote with a catalogue line — the demo has several sent quotes, not all with one, and no order is guaranteed.
+    const [withCatalogue] = await db
+      .select({ quote: quotes })
+      .from(quotes)
+      .innerJoin(quoteLines, eq(quoteLines.quoteId, quotes.id))
+      .where(and(eq(quotes.orgId, orgId), eq(quotes.status, "sent"), isNotNull(quotes.number), isNotNull(quoteLines.catalogItemId)))
+      .limit(1);
+    const original = withCatalogue!.quote;
     const [line] = await db.select().from(quoteLines).where(and(eq(quoteLines.quoteId, original.id), isNotNull(quoteLines.catalogItemId))).limit(1);
     expect(line, "a demo quote line comes from the catalogue").toBeTruthy();
     await db.update(catalogItems).set({ defaultPriceAmount: 999_999n }).where(eq(catalogItems.id, line!.catalogItemId!));

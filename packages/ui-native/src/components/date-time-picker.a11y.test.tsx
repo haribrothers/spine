@@ -101,6 +101,17 @@ describe("DateTimePicker a11y — on Android", () => {
     expect(screen.UNSAFE_queryAllByProps({ presentation: "dialog" })).toHaveLength(0);
   });
 
+  it('variant="outlined" puts the label on a Material outline and names the button by label and value, opening the same dialog', () => {
+    const date = new Date("2026-01-15T00:00:00Z");
+    render(<DateTimePicker variant="outlined" label="Date" value={date} onChange={() => {}} mode="date" />);
+    expect(screen.getByText("Date")).toBeTruthy();
+    const trigger = screen.getByRole("button");
+    // Spelled out, as the Android design draws it: "15 Jan 2026" / "Jan 15, 2026" by locale.
+    expect(trigger.props.accessibilityLabel).toBe(`Date: ${date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`);
+    fireEvent.press(trigger);
+    expect(screen.UNSAFE_queryAllByProps({ presentation: "dialog" })).toHaveLength(1);
+  });
+
   it("mounts the native dialog picker on trigger press", () => {
     const date = new Date("2026-01-15T00:00:00Z");
     render(<DateTimePicker value={date} onChange={() => {}} mode="date" />);

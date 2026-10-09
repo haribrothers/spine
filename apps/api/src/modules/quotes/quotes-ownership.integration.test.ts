@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import type { Capability } from "@spine/shared";
 import { auth } from "../../auth/auth";
 import { createDb, type Database } from "../../db/client";
-import { contacts, files, member, quotes, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
+import { contacts, files, jobAssignments, jobs, member, quotes, teamMemberships, teamPrivileges, teams, user } from "../../db/schema";
 import { QuotesService } from "./quotes.service";
 import { AuditLogService } from "../audit/audit-log.service";
 import { NumberingService } from "../numbering/numbering.service";
@@ -184,16 +184,23 @@ describe("Quotes ownership split (requires local Postgres)", () => {
    * records.
    */
   describe("Accept in person", () => {
+    /** A sent quote that is the source quote of a job the Field user is on (D-073: a quote they can present). */
     async function sentQuote() {
       const quote = await quotesService.create(orgId, creatorUserId, { contactId, currency: "USD", lines: [] });
       await grantTeam(creatorMemberId, { "quotes.edit_own": true, "quotes.send": true });
-      return quotesService.send(orgId, quote.id, creatorUserId);
+      const sent = await quotesService.send(orgId, quote.id, creatorUserId);
+      const [job] = await db
+        .insert(jobs)
+        .values({ orgId, contactId, name: "Marina office fit-out", number: `JOB-${randomUUID().slice(0, 6)}`, currency: "USD", sourceQuoteId: quote.id, createdByUserId: creatorUserId })
+        .returning();
+      await db.insert(jobAssignments).values({ orgId, jobId: job!.id, userId: fieldUserId });
+      return sent;
     }
 
-    async function signatureFileId() {
+    async function signatureFileId(uploadedByUserId = fieldUserId) {
       const [file] = await db
         .insert(files)
-        .values({ orgId, key: `test/${randomUUID()}.png`, originalFilename: "signature.png", mimeType: "image/png", sizeBytes: 512, uploadedByUserId: fieldUserId })
+        .values({ orgId, key: `test/${randomUUID()}.png`, originalFilename: "signature.png", mimeType: "image/png", sizeBytes: 512, uploadedByUserId })
         .returning();
       return file!.id;
     }
@@ -202,21 +209,21 @@ describe("Quotes ownership split (requires local Postgres)", () => {
       const quote = await sentQuote();
       const signatureFileId1 = await signatureFileId();
       await expect(
-        quotesService.acceptInPerson(orgId, quote.id, otherUserId, { signatureFileId: signatureFileId1, comment: null }),
+        quotesService.acceptInPerson(orgId, quote.id, otherUserId, { signatureFileId: signatureFileId1, signerName: "Alan Reyes", comment: null }),
       ).rejects.toThrow(/missing capability/i);
     });
 
     it("Field always passes quotes.accept_in_person unconditionally, with zero Team grants", async () => {
       const quote = await sentQuote();
       const signature = await signatureFileId();
-      const updated = await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, comment: "Signed on site" });
+      const updated = await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, signerName: "Alan Reyes", comment: "Signed on site" });
       expect(updated.status).toBe("accepted");
     });
 
     it("records acceptedByUserId and acceptanceMethod: in_person, distinct from the public accept-link path", async () => {
       const quote = await sentQuote();
       const signature = await signatureFileId();
-      await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, comment: null });
+      await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, signerName: "Alan Reyes", comment: null });
 
       const [row] = await db.select().from(quotes).where(eq(quotes.id, quote.id));
       expect(row!.status).toBe("accepted");
@@ -227,25 +234,25 @@ describe("Quotes ownership split (requires local Postgres)", () => {
     it("a second accept-in-person attempt on an already-accepted quote is rejected, not silently re-applied", async () => {
       const quote = await sentQuote();
       const signature = await signatureFileId();
-      await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, comment: null });
+      await quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, signerName: "Alan Reyes", comment: null });
 
       await expect(
-        quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, comment: null }),
+        quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: signature, signerName: "Alan Reyes", comment: null }),
       ).rejects.toThrow(/already been accepted/i);
     });
 
     it("rejects a signatureFileId that doesn't belong to this org", async () => {
       const quote = await sentQuote();
       await expect(
-        quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: randomUUID(), comment: null }),
+        quotesService.acceptInPerson(orgId, quote.id, fieldUserId, { signatureFileId: randomUUID(), signerName: "Alan Reyes", comment: null }),
       ).rejects.toThrow(/signature file not found/i);
     });
 
     it("Owner bypasses the capability check entirely", async () => {
       const quote = await sentQuote();
-      const signature = await signatureFileId();
       const [ownerMembership] = await db.select().from(member).where(and(eq(member.organizationId, orgId), eq(member.role, "owner")));
-      const updated = await quotesService.acceptInPerson(orgId, quote.id, ownerMembership!.userId, { signatureFileId: signature, comment: null });
+      const signature = await signatureFileId(ownerMembership!.userId);
+      const updated = await quotesService.acceptInPerson(orgId, quote.id, ownerMembership!.userId, { signatureFileId: signature, signerName: "Alan Reyes", comment: null });
       expect(updated.status).toBe("accepted");
     });
   });

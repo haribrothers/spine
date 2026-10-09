@@ -5,7 +5,7 @@ import type {
   respondToMeetingSchema,
   updateMeetingSchema,
 } from "@spine/shared";
-import { and, asc, desc, eq, exists, gte, inArray, lte, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, exists, gte, inArray, lte, ne, or, sql } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
@@ -152,7 +152,12 @@ export class MeetingsService {
    * member's dashboard widget could surface a private meeting they weren't
    * invited to; that gap is closed here, not just for `list`/`getOne`.
    */
-  async upcomingForDashboard(orgId: string, userId: string, options: { withinDays?: number; from?: Date } = {}) {
+  /**
+   * `attending` (US-MOB-03) — "my meetings" for the field app: ones I
+   * organise or am invited to and haven't declined, whatever the
+   * dashboard's own/org scope setting says.
+   */
+  async upcomingForDashboard(orgId: string, userId: string, options: { withinDays?: number; from?: Date; attending?: boolean } = {}) {
     const withinDays = options.withinDays ?? 7;
     // US-NTF-13: the daily digest asks "from the moment it runs".
     const from = options.from ? new Date(options.from) : new Date();
@@ -178,7 +183,22 @@ export class MeetingsService {
           eq(meetings.orgId, orgId),
           gte(meetings.endAt, from),
           lte(meetings.startAt, to),
-          ...(organizerUserId ? [eq(meetings.organizerUserId, organizerUserId)] : []),
+          ...(options.attending
+            ? [
+                or(
+                  eq(meetings.organizerUserId, userId),
+                  inArray(
+                    meetings.id,
+                    this.db
+                      .select({ id: meetingAttendees.meetingId })
+                      .from(meetingAttendees)
+                      .where(and(eq(meetingAttendees.userId, userId), ne(meetingAttendees.status, "declined"))),
+                  ),
+                ),
+              ]
+            : organizerUserId
+              ? [eq(meetings.organizerUserId, organizerUserId)]
+              : []),
           ...(visibility ? [visibility] : []),
         ),
       )

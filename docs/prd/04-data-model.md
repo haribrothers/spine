@@ -51,7 +51,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `lead_stages` (new) | `id`, `org_id`, `name`, `kind` enum `lead_stage_kind` (`open`,`won`,`lost`), `sort_order`, `color` (a design-token category name — slate, blue, teal, amber, purple, pink, green, red — never hex), timestamps; index (`org_id`, `sort_order`). Seeded with New / Qualified / Proposal / Won / Lost for every organisation (migration `0063`, sign-up, and `LeadStagesService.ensureSeeded` for orgs made any other way); max 12 per org; exactly one `won` and one `lost`, always last (service + `putLeadStagesSchema`) | US-CRM-19 |
 | `leads` | `stage_id uuid not null → lead_stages (restrict)` replaces the `lead_stage` enum column: migration `0063` maps new/qualified/proposal/won/lost to the seeded stages at the same position, `0064` makes it not null and drops the old column and enum; index (`org_id`, `stage_id`) | US-CRM-19 |
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
-| `quotes` | `signature_file_id uuid → files` and `accepted_signer_name text` (on-site acceptance stores what it captured) | US-QUO-19 |
+| `quotes` | `signature_file_id uuid → files (set null)` and `accepted_signer_name text` (on-site acceptance stores what it captured; migration `0110`). An on-site decline (US-MOB-16) also sets `acceptance_method = in_person` and `accepted_by_user_id` (who recorded the answer) | US-QUO-19, US-MOB-16 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
 | `organization.name` | Kept in sync with `business_profile.name`: `SettingsService.set` renames the organisation in the same transaction whenever a non-empty business name is saved; migration `0062` copied it for existing installs | US-TEAM-15 |
 | Better Auth `verification` | Used for password-reset tokens (no new table) | US-AUTH-09, US-AUTH-10 |
@@ -240,7 +240,7 @@ A generic, org-scoped uploaded-file record — the storage key (inside the drive
 
 PRD S-10.11 (added 2026-08-08 at the user's explicit request — see CHANGELOG for the scope discussion) — the persisted, in-app-visible half of a notification. `NotificationsService.notify()` (built in Quotes Stage 3, S-03.7) already queues an email per recipient; this table is the second, additive delivery channel for…
 
-`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `recipient_user_id` text (not null, → user (cascade)) · `type` text (not null) · `message` text (not null) · `link` text · `read_at` timestamp · `created_at` timestamp (not null, default now)
+`id` uuid (PK, default random) · `org_id` text (not null, → organization (cascade)) · `recipient_user_id` text (not null, → user (cascade)) · `type` text (not null) · `message` text (not null) · `detail` text (US-MOB-22, migration 0109: the line under the message, e.g. "Fuel & Vehicle · $38.50 · “No receipt attached”"; null on older types) · `link` text · `read_at` timestamp · `created_at` timestamp (not null, default now)
 
 ### CRM
 

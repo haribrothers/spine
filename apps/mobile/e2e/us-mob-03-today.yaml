@@ -1,0 +1,32 @@
+# US-MOB-03 / US-MOB-22 — Today: welcome card and gauge, the period switch,
+# KPI cards, quick actions, today's jobs with call and directions, and the
+# bell. Needs a demo business loaded (its first job has a milestone due this
+# week and the demo Field user is on its crew). Run like us-mob-01-sign-in.yaml.
+appId: com.spine.app
+---
+- runFlow: _sign-in.yaml
+- assertVisible: "Good (morning|afternoon|evening), .*"
+- assertVisible: "Milestones this month: .*"
+- assertVisible:
+    id: "today-kpi-due"
+- assertVisible: "All synced.*"
+- tapOn: "This week"
+- assertVisible: "Milestones this week: .*"
+- tapOn: "This month"
+- assertVisible: "Add photo"
+- assertVisible: "Log expense"
+- scrollUntilVisible:
+    element: "(YOUR JOBS TODAY|Your jobs today) · .*"
+    direction: DOWN
+- scrollUntilVisible:
+    element: "Directions to .*"
+    direction: DOWN
+- assertVisible: "Call .*"
+# The bell opens Notifications.
+- scrollUntilVisible:
+    element:
+      id: "today-welcome"
+    direction: UP
+- tapOn:
+    id: "today-bell"
+- assertVisible: "Notifications"

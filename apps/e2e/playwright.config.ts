@@ -24,8 +24,12 @@ export default defineConfig({
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // A broken branch fails the same way everywhere: stop after five failures
+  // instead of spending Actions minutes on the rest of the suite.
+  maxFailures: process.env.CI ? 5 : 0,
   workers: 1,
-  reporter: process.env.CI ? "github" : "list",
+  // The HTML report is the artifact CI uploads when the job fails.
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   timeout: 60_000,
   use: {
     baseURL: "http://localhost:3110",

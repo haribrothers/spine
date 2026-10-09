@@ -80,6 +80,337 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — CI confirms instead of discovering: `pnpm verify` and a faster, cheaper pipeline (D-205)
+
+- **`pnpm verify`** runs what CI runs, locally and in CI's order: lint → typecheck → unit → integration → E2E.
+  - It creates and migrates `spine_test` and `spine_e2e` when they're missing.
+  - It stops at the first failure and says `pnpm verify --from <step>`; `--skip e2e` leaves a step out.
+  - Run it before opening a PR or marking it ready.
+- **CI (`.github/workflows/ci.yml`):**
+  - "Lint, typecheck and unit" runs first, with no services (about 5 min). Integration and E2E then run side by side instead of one after the other.
+  - Each suite runs only when the code it covers changed: a mobile-only change skips both.
+  - The first of integration and E2E to fail cancels the other. Integration stops at five failing tests (`--bail=5`); E2E after five failing specs (`maxFailures`) and now keeps an HTML report for the failure artifact.
+  - The required checks keep their names ("Unit and integration" is now a gate over the static and integration jobs), so `main`'s branch protection is unchanged.
+- Expected: a full run goes from about 45 minutes of wall time to about 25, and a failure stops within minutes instead of running to the end.
+
+### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (US-MOB-01, US-MOB-24 to US-MOB-27)
+
+- **App icon (US-MOB-24):**
+  - iOS: the full-bleed gradient icon, plus dark and tinted versions (`ios.icon`).
+  - Android: an adaptive icon (the gradient background, the mark at 62% inside the safe circle) and a themed-icon silhouette.
+  - A 512 px Play Store icon.
+  - The PNGs are rendered from SVGs committed in `apps/mobile/assets/brand/`. Expo's placeholder icon, splash and favicon are gone.
+- **Splash (US-MOB-25):** `expo-splash-screen` shows the 96 dp mark on `#F7F6F3` / `#121110`. It's held until the session and the Welcome flag are known and the first screen has laid out, and never waits on the network.
+- **Welcome (US-MOB-26):**
+  - Shown once per install, before Sign in. The mark rises out of the splash and its layers breathe apart. Today's job, saved photos, a fuel receipt, a signed quote (its signature drawing itself) and a completed milestone slide out from behind it. Then "Today’s jobs, in your pocket" and "Get started".
+  - Built with Reanimated 4 and `react-native-svg`: a gentle idle loop while on screen, and a still frame with Reduce Motion.
+  - "Get started" replaces it with Sign in and sets the per-device flag; a phone already signed in skips it for good.
+- **Brand (US-MOB-27):**
+  - `tokens.json` gains `color.brand` and `color.gradients.brand`.
+  - `@spine/ui-native` adds `brandColors` (no Tailwind class, so brand colours can't be used for text) and `SpineLogo`: mark, horizontal or vertical, drawn from the logo paths, dark-mode aware, read as "Spine", clamped to the brand minimum.
+  - New "Spine logo" page and Brand swatches in `apps/design-system-native`.
+- **Sign in (US-MOB-01):**
+  - The vertical logo on a short version of Welcome's illustration, titled "Sign in". The illustration folds to the horizontal logo while the keyboard is up.
+  - A wrong password reads "That email and password don't match. Check both, or reset your password."
+- **Development builds:**
+  - A launch from the dev-client link (`spine://expo-development-client/…`) now opens the first screen (`app/+native-intent.tsx`). Before, the router tried to open that link as a screen and raised a red error toast, which covered "Get started".
+  - Reanimated's "Reduced motion setting is enabled" notice is silenced, since both screens handle Reduce Motion themselves.
+- **End-to-end:** `us-mob-01-sign-in` passes on the iOS simulator (Welcome → Sign in → wrong password → Today → Profile → sign out, never back to Welcome). On the Android emulator, Maestro's driver hangs on `eraseText` in the Server field, with the previous Sign in screen as well; that flow is in the iOS e2e script only.
+- **Tests:** `us-mob-24` to `us-mob-27` added; `us-mob-01` updated. Reanimated, Worklets and the splash are mocked in the mobile Jest setup. QA script section 197.
+
+### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (planning, US-MOB-01, US-MOB-24 to US-MOB-27, D-203, D-204)
+
+- **New logo, phone only (D-203):** the layered mark and SPiNE wordmark in `docs/logos` replace Expo's placeholders in the field app. The web app, docs site and web design system keep the "S" logo for now; when they change is open as Q-25.
+- **Designs:** three new Claude Design canvases.
+  - "10 Brand and app icon": lockups, clear space, the brand colours, and the iOS (light, dark, tinted) and Android (adaptive, themed) icons.
+  - "11 Splash and Welcome": the live motion and a storyboard.
+  - "12 Sign in".
+- **New artboards:** `MobSplash` and `MobWelcome`, each with Android and dark versions. `MobSignInDark`, `MobSignInAndroidDark`, `MobSignInKeyboard`, `MobSignInKeyboardAndroid` and `MobSignInError` are added; `MobSignIn` and `MobSignInAndroid` are redrawn.
+- **New stories:**
+  - **US-MOB-24:** the app icon.
+  - **US-MOB-25:** the splash, held until the first screen draws.
+  - **US-MOB-26:** a one-time animated Welcome — the mark rises from the splash, the app's work slides out from behind it, then "Get started" opens Sign in.
+  - **US-MOB-27:** brand tokens (`color.brand`, decorative only) and a `SpineLogo` component.
+- **US-MOB-01 redrawn:** Sign in gets the logo on a short version of Welcome's illustration and the title "Sign in". The illustration folds to the horizontal logo while the keyboard is open. A wrong password now reads "That email and password don't match. Check both, or reset your password." US-MOB-01 is unticked until the redraw ships.
+- **Motion (D-204):** built with Reanimated and `react-native-svg`. Welcome settles in about 1.4 s; Sign in only drifts slowly. Nothing moves with Reduce Motion or Remove animations.
+- Phase 5 now has 31 stories.
+
+### 2026-10-09 — The field app on Android follows Material 3 (US-MOB-20)
+
+- **Material roles:** `@spine/ui-native` gains Material's primary-container, on-primary-container, surface-container and outline-variant (light and dark, from `tokens.json › color.android`). On Android they're used for:
+  - tonal buttons ("Mark complete", Present, Call), the selected segment, the tab bar's selected pill and the floating action buttons (one shared `Fab`);
+  - filled cards on Today (no border) and the outlined site and contact card on a job.
+- **Top app bars** are flat on Android, with no shadow line.
+- **Outlined fields measured against the artboards:**
+  - 56 dp tall: they were 49, because NativeWind's `h-14` is 3.5 × 14 px.
+  - Material's `outline` role for the border (new token, #726C5A / #9A9786). It was the pale border-strong.
+  - The tokens' 6 px input radius instead of 12.
+  - Material's small ▾ (`arrow_drop_down`) on dropdowns.
+  - An 8 dp gap after a prefix ("$  64.20").
+  - Dates spelled out ("8 Oct 2026" / "Oct 9, 2026" by the phone's locale).
+  - Segmented buttons use the `outline` border and semibold labels.
+- **Screens now drawn as their `…Android` artboards:**
+  - Today: a large "Today" that collapses into the bar on scroll; the bar turns surface-container.
+  - A job: milestones and quotes as plain lists.
+  - Profile: the avatar beside the name, two-line rows with icons, "Last sent <time>" under the sync status, an outlined red "Sign out".
+  - Search: Material's search bar with the avatar inside, turning into a full-width search view with back and ✕ while searching; "Recent searches" in the section style; no-results icon in a tinted box.
+  - Sign in: outlined fields, each error under its field with an error icon, and a show/hide eye on the password.
+  - New expense: muted "Paid by" and "Receipt" labels, the receipt without a card. In labour mode the trade being edited is an outlined card with outlined fields and the others fold to one line each.
+  - Receipt camera: ✕ with the title beside it.
+  - Notifications: icons for quote notifications.
+  - The "+n" on a job's photos stays dark in dark mode.
+- **Android back now does what the drawn back arrow or ✕ does:**
+  - The camera asks before discarding photos.
+  - New expense and Mark complete drop the receipt or photos they kept. Before, back left those files on the phone.
+  - Search leaves the search.
+- **Job photos show on Android:** React Native's Android image loader drops the `Authorization` header, so every photo was a 401. The phone now downloads each photo once with the bearer token into its cache, and shows it from there. Photos seen once also show offline.
+- Today on Android sets its header after mount, so no "state update on a component that hasn't mounted yet" warning at launch.
+- **Tests:**
+  - A TalkBack check renders 16 Android screens and asserts every control has a spoken label. It also catches an unlabelled one.
+  - Tests for the collapsing trades and the Material roles in `tokens.json`.
+  - US-MOB-19's dark-pair scan covers the new role classes.
+
+### 2026-10-09 — Phase 5 Group 5: present a quote on site, accept with a signature or decline (US-QUO-19, US-QUO-20, US-MOB-16, US-MOB-17, US-MOB-18)
+
+- **Present (US-MOB-16):**
+  - "Present" on a job's quote opens it full-screen, read live from the server. It shows "Hand the phone to your customer", the business and address, "QUOTE <number>", "Prepared for", "Valid until", the lines with quantity × price, Subtotal, each tax by name ("Sales Tax (15%)", or CGST and SGST in India), Total and Notes.
+  - At the bottom are "Decline" and "Accept quote".
+  - Decline is a sheet: "<customer> is declining <number> for <total>. <Business>'s office is told straight away.", "Reason (optional)" and a red "Decline quote". Offline it says "Needs a connection — declining can't be saved offline." and the button stays off.
+  - New `POST /quotes/:id/reject-in-person`, which notifies "Quote <number> was declined in person."
+- **Accept (US-MOB-17):**
+  - The customer types their name and signs in the box. The statement names the total, the customer, the business and the staff member present.
+  - "Accept and sign" stays off with a hint ("Type the customer's name to continue." / "Sign in the box to continue.") until both are there.
+  - "Quote accepted" then shows who signed and when, that the office was told and the quote is locked, the witness, and "In person, on this phone".
+  - The quote leaves the job's "Quotes to present" straight away.
+  - The signature is drawn and encoded as a PNG on the phone, with no new native module (D-202). The accept screen turns off the swipe-back gesture so a signature isn't taken as "back".
+- **Needs a connection (US-MOB-18):** offline, "Present" shows "Quotes need a connection" with why, "Photos, expenses and milestone updates still work offline.", "Try again" and "Back to job". On Android this is an alert over the job.
+- **Signature stored (US-QUO-19):**
+  - `quotes.signature_file_id` and `accepted_signer_name` (migration `0110`).
+  - `signerName` is required.
+  - The signature must be an image the caller uploaded in the organisation.
+  - The signature file is read by Owners and Staff with the quote, never by Field.
+  - Accepting in person now also sends the variation-order "apply it to the job" nudge, as the link does.
+- **Field reaches only quotes to present:** `GET /quotes/:id`, accept and decline in person, for Field, only reach a sent variation order or source quote on a job they're on (404 otherwise, before the status check). Before, Field could accept any sent quote in the organisation by id.
+- **`GET /quotes/:id`** also returns `business`, `taxLines` (tax by named rate, summing to the tax) and `acceptedByName`.
+- **How it was accepted (US-QUO-20):**
+  - The quote page shows "Accepted on site — Signed by <name> on <date> at <time>, witnessed by <name>" with the signature and "View signature full size", or "Accepted online by the customer on <date>".
+  - Declines show the same way, with the reason.
+  - History reads "The customer accepted this quote online" / "<person> recorded the customer's acceptance of this quote on site, signed by <name>".
+- The temporary "arrives in the next update" message for "Present" is gone.
+
+### 2026-10-09 — Field app: Material outlined fields on Android forms (US-MOB-11, US-MOB-13, US-MOB-15)
+
+- **Android forms now match their designs** (`MobPhotoReviewAndroid`, `MobExpenseNewAndroid`, `MobMilestoneCompleteAndroid`): Material 3 outlined fields with the label in a notch on the outline, no grouped white card. iOS keeps `FormSection`/`FormRow`.
+  - Photo review: "Caption" (hint "What does this photo show?"), "Job" ▾ and "Milestone (optional)" ▾.
+  - New expense: "Amount (<currency>)" with the currency symbol, "Category" ▾, "Job" ▾, "Date" with a calendar icon and "Description". Errors turn the outline red and show the message under it (also read as the field's hint).
+  - Mark complete: "Note for the office (optional)", multi-line, on the sheet's surface.
+- **`@spine/ui-native`:**
+  - New `OutlinedTextField` and `OutlinedFrame`, with an a11y test and a design-system-native page ("Outlined Text Field").
+  - `SelectListField` `variant="outlined"`, Material's exposed dropdown: label on the outline, ▾ and `helperText`.
+  - `DateTimePicker` `variant="outlined"` + `label` (Android).
+  - The outline thickens to 2 px when focused or in error without moving its content.
+
+### 2026-10-09 — Phase 5 Group 4: photos, expenses and Mark complete (US-MOB-11 to US-MOB-15)
+
+- **Camera explainer (US-MOB-14):**
+  - Before the system asks: "Allow camera access", why, three reasons, "Continue", "Not now", and where to turn it on.
+  - Once refused for good, "Continue" opens Settings.
+  - Purpose strings come from the `expo-camera` and `expo-image-picker` plugins, with no microphone.
+- **Site photos (US-MOB-11):**
+  - An in-app camera (`expo-camera`) with the job at the top (changeable), flash, shutter, "<n> taken · saved on this phone" and the latest thumbnail with its count.
+  - Then a review: a caption per photo, the job, an optional milestone, and "Save <n> photos" into the outbox.
+  - Opened from "Add photos" on a job and its Photos, and from Today's "Add photo".
+- **Expenses tab (US-MOB-12):**
+  - "WAITING TO SYNC" (from the outbox; a refused one opens Fix) and "SUBMITTED BY YOU", with category icon, date, job, amount and Submitted/Approved/Rejected.
+  - A rejection shows the reason and the reviewer.
+  - "+" beside the avatar (iOS) or a floating "Log expense" (Android).
+- **New expense (US-MOB-13):**
+  - Amount in the business currency, or "Headcount × day rate" (D-199): trades with totals, Direct Labour preselected, a job required, past trades suggested with their day rate.
+  - Category, job, date, paid by, description, and a receipt from the receipt camera (frame and gallery) or the library.
+  - Errors appear under each field; a receipt over 10 MB is refused before it's queued.
+  - "Scan receipt" on Today opens it with the camera up.
+  - Fix's "Edit expense" opens a refused expense in this form and sends it again.
+- **Mark complete (US-MOB-15):** a sheet with the milestone and job, photos of the finished work (camera), a note for the office and the offline note. It queues the completion, so the job shows "Completion waiting" until sent.
+- **The placeholders are gone:** Add photo, Log expense, Scan receipt, Mark complete and Add photos now do what they say. Only "Present" (US-MOB-16) still says it arrives in the next update.
+- **API (05-api, 07-security):**
+  - `POST /jobs/:id/photos` takes `milestoneId`.
+  - `GET /expenses` rows carry `reviewerName`.
+  - **Security fix:** `GET /expenses/labour-trades` gives Field only their own trades and day rates. It used to return everyone's in the organisation.
+- **Components:**
+  - `@spine/ui-native` gains the `scrim` colour token from tokens.json (light/dark) for controls over the camera.
+  - `FormSection`'s title is optional (a11y test and showcase demo added).
+- **Fixes found on the devices:**
+  - Uploads failed with "Unsupported FormDataPart implementation": Expo's fetch needs an `expo-file-system` `File` (a Blob), not React Native's `{ uri, name, type }`. This was hidden in Group 3 because Jest never builds a real upload.
+  - The trade fields grew without limit, because the floating-label field fills a fixed-height parent.
+  - The Mark complete button sat below the sheet.
+  - iOS "Submit" was system blue; it's now the token primary.
+  - The camera explainer sat under Android's status bar.
+- **Also:** screens refetch when the outbox sends something they show, so a sent expense moves to "Submitted by you" and a completion moves the job on.
+- **Test fix:** US-QUO-24 picked "any sent demo quote" with no order and failed in full runs whenever that quote had no catalogue line. It now picks a sent quote that has one. The full API suite passed apart from it (984 tests).
+- **Tests:**
+  - Phone: us-mob-11 to us-mob-15 (151 Jest tests); `expo-camera` mocked in `src/test-utils/camera-mock.ts`.
+  - API: `us-mob-group4.http.integration.test.ts` (a photo with a milestone and one from another job, the reviewer's name, labour trades scoped to Field, a completion with its note and photos telling the office once).
+  - Maestro: `us-mob-13-expense.yaml` passes on iOS and Android; `us-mob-11-photos.yaml` on Android (the iOS Simulator has no camera) uploads with the caption and reaches "All synced". Expenses, New expense (both modes) and Mark complete checked on iOS against the designs, and the camera, explainer and review on Android.
+
+### 2026-10-09 — Phase 5 Group 3: offline, the outbox, Sync and Fix (US-MOB-07, US-MOB-08, US-MOB-09)
+
+- **The outbox:** photos, expenses and milestone completions made on the phone wait in a SQLite outbox, with compressed copies of their photos (long edge 2048 px, JPEG 70%, D-053) in the app's documents folder, until the server has them.
+  - Each item's id is its `Idempotency-Key`, and each step uses a key derived from it. Progress is saved after every step, so a retry resumes and never duplicates.
+  - It sends oldest first: when something is queued, when the phone reconnects or returns to the foreground, and on "Try sending now".
+  - Network errors, 5xx, 408, 409 and 429 retry with back-off (5 s doubling to 5 min) and stay "Waiting". Other refusals become "Didn't send: <reason>" with Fix. A 426 or an ended session pauses sending and keeps everything. Photos over 10 MB, or no longer on the phone, need fixing before anything is sent.
+  - The outbox belongs to one person on one server. Signing out or losing access deletes it; an expired session keeps it; someone else signing in never sends it.
+  - Group 4's screens add items with `outbox.addPhotos/addExpense/addCompletion`.
+- **Offline (US-MOB-07):**
+  - Today says "You're offline" and what still works, with "Showing jobs as of <time>", following the phone's own connection (expo-network).
+  - Jobs seen before open from the phone.
+  - Job cards show "2 photos waiting" / "Completion waiting"; a job shows "Completion waiting" on the milestone and "Waiting" on its photos; Search lists waiting expenses.
+  - Back online, the banner goes, every screen refetches and the outbox sends.
+- **Sync (US-MOB-08):**
+  - The pill reads "<n> waiting to sync" in amber and opens Sync (also from Profile's Sync row and the sign-out warning's "Send them first").
+  - Sync shows "<n> items waiting" and why, "Try sending now", NEEDS FIXING, WAITING and SENT TODAY ("Already completed by <name>").
+  - A page sheet on iOS, a page on Android.
+- **Fix (US-MOB-09):**
+  - The reason in red and the item's details.
+  - For an expense: the receipt with its size ("14.2 MB · over the 10 MB limit"), "Retake photo", "Choose a different photo" (expo-image-picker, offering Settings if access is refused), "Remove photo", "Send again" and "Delete this expense" (the bin in the top bar on Android).
+  - Photos and milestone updates can lose a photo, be sent again or be deleted.
+- **API — completing a milestone that's already completed** (first write wins, 02-architecture; built for US-MOB-15):
+  - Answers 201 with `alreadyCompleted` and `completedBy`, and changes nothing about the milestone (previously 400).
+  - The photos sent with it are still attached.
+  - History records `milestone_completion_ignored`.
+- **Tests:**
+  - Phone: us-mob-07, 08 and 09 (124 Jest tests in total).
+  - API: us-mob-09 (each step replayed with the same key creates nothing twice; the late completion; the 10 MB limit).
+  - Maestro: `e2e/us-mob-07-offline.yaml` (airplane mode on Android) and the earlier flows pass on both phones. Sync and Fix checked on both against `MobSyncQueue` and `MobSyncFix`.
+- **Docs:** 02-architecture §Offline (keys, retries, ownership), 05-api, 07-security, the story notes, native notes, and QA section 193.
+
+### 2026-10-08 — Field app loading states: skeletons per section (D-201)
+
+- **Skeletons while data loads:** a section with nothing saved on the phone and its first request still out shows blocks in its own shape. Headings and quick actions don't wait. This covers:
+  - Today: the gauge (an arc), the KPI cards, the job cards and the next meeting.
+  - The Jobs list.
+  - A job: the heading, milestones, photos and quotes.
+  - Photos, Notifications, Search, an expense and a meeting.
+  - An empty state ("No jobs…", "You're all caught up", "No results") never shows while loading.
+- **Today's period switch:** switching shows skeletons for the gauge and KPI cards only; the jobs and meeting stay. A period already fetched shows at once from the phone. `useCachedQuery` now keeps its state per key, so the previous period's numbers are never shown for the new one, and a late answer for an old key is ignored. It also returns `loading`.
+- **No page loader** (D-201): the read cache makes most screens instant, a full-page spinner would hide saved data during a slow refresh, and pull to refresh already has the system spinner.
+- **`@spine/ui-native` Skeleton:** holds still with Reduce Motion on, and is hidden from VoiceOver and TalkBack. Each loading region is announced once instead ("Loading jobs", busy). Updated a11y test and doc page.
+- **Fix:** the Jobs list showed the state as the town for addresses ending in "<state> <postcode>" ("Karnataka" instead of "Bengaluru").
+- **Tests:** skeleton cases added to us-mob-03, 04, 05, 22 and 23 (100 phone tests). Checked on the iPhone simulator with requests slowed down for the check.
+
+### 2026-10-08 — Phase 5 Group 2: Today, Jobs, a job, Search and Notifications (US-JOB-16, US-MOB-03, US-MOB-04, US-MOB-05, US-MOB-06, US-MOB-19, US-MOB-22, US-MOB-23)
+
+- **Today (US-MOB-03):** built like the showcase-native home and `MobHome`/`MobHomeJobs`.
+  - Welcome card with the milestones gauge ("<n> of <n> done").
+  - "This week" / "This month" / "This year" switch, and KPI cards: due, overdue, photos, my expenses.
+  - Quick actions Add photo, Log expense, Scan receipt and Directions.
+  - "YOUR JOBS TODAY": Active jobs with a milestone overdue or due within 7 days, with the due chip, "Call <contact>" (full name on iOS, first name on Android) and Directions.
+  - The next meeting I organise or am invited to.
+  - The header has the sync pill, the bell with the unread count, and the avatar.
+  - The story's tiles and periods now match the drawn Today: four tiles, three periods.
+- **Jobs (US-MOB-04, US-JOB-16):**
+  - "ASSIGNED TO YOU · <n>" with customer, town and a milestone chip, pull to refresh, and the empty state with "Check again".
+  - A job someone is taken off disappears on refresh, and its cached copy goes with it.
+- **A job (US-MOB-05):**
+  - Status, name, "<number> · <customer>", the site with Directions, the contact with a call button, MILESTONES ("Due …" with Mark complete, or "Completed"), PHOTOS with "See all", and QUOTES TO PRESENT with "Present".
+  - "Add photos" is in the toolbar on iOS and a floating button on Android.
+  - "Photos · <n>" groups photos by day, newest first.
+  - Mark complete, Present and the photo and expense tiles say they arrive in the next update until US-MOB-11 to US-MOB-17 land.
+- **Search (US-MOB-23):**
+  - Searches the phone's cache by job name, customer, number or address, and my expenses by category, description or job, ignoring case and accents.
+  - Groups "JOBS · <n>" and "YOUR EXPENSES · <n>", with the match highlighted.
+  - Up to 10 recent searches on the phone (Edit on iOS, Clear on Android), and a no-results message.
+- **Notifications (US-MOB-22):**
+  - "NEW" and "EARLIER", with an icon, message, detail and time; a dot on iOS, a tinted row on Android.
+  - Tapping one marks it read and opens its job, expense or meeting (small read-only screens for an expense and a meeting). "Read all" marks every one read.
+  - Refreshes when the app returns to the front (no push, D-200).
+- **No money but my own (US-MOB-06):** the app has no invoice, payment or report screens and calls none of those endpoints (tested by scanning the source). A Field phone session gets 403 from each.
+- **Read cache:** every read goes through a SQLite cache (`expo-sqlite`, 02-architecture §Offline). It shows what was last fetched first and is cleared on sign-out. Group 3 adds the outbox on top.
+- **API (05-api, 04-data-model, 07-security):**
+  - New `GET /mobile/today?period=`.
+  - `GET /jobs` gains `include=site_contact,milestone_counts`; `GET /jobs/:id` gains `siteContact`.
+  - `GET /jobs/:id/quotes` is built.
+  - `GET /meetings/upcoming?attending=true`.
+  - `GET /org/members/me` adds the business `currency` and `locale`.
+  - Notifications gain a `detail` column (migration 0109).
+  - New types `expense_rejected`, `crew_assigned` and `crew_removed`. `expense_approved` now reaches the submitter ("<name> approved your expense"), and the office's copy no longer goes to them.
+  - `NotificationsService.notify` takes `excludeUserIds`.
+- **Demo data:**
+  - The demo Field user is put on every demo job's crew (`crewAssignmentsCreated`).
+  - The first demo job's first milestone is due in 4 days instead of 10, so Today shows a job.
+- **Fixes found on the devices:**
+  - `formatMoney` crashed on the phone: Hermes has no `Intl.NumberFormat.formatToParts`. It now falls back to `format` with the true minus sign (shared test).
+  - `@spine/ui-native`'s Tailwind preset never mapped `onPrimary`/`onDanger`, so `text-on-primary` was black (avatar initials, filled buttons). Now mapped, and tested for every token.
+  - `KpiCard` text uses the on-fill role, so dark mode's lighter cards have dark text as `MobHomeDark` draws them.
+  - Pushed screens' headers were white in dark mode. The app now gives navigation a theme from its own tokens.
+  - On iOS, Search's empty state is a scroll view at the screen's root, so it sits under the large title.
+- **Tests:**
+  - Phone Jest tests (91), named per story: us-mob-03, 04, 05, 06, 22, 23 and us-job-16; us-mob-19 and 20 extended.
+  - API integration tests us-mob-03, 04, 05, 06, 22 and us-job-16.
+  - Maestro flows `us-mob-03-today`, `us-mob-04-jobs` and `us-mob-23-search` pass on the iPhone 17 simulator and the Pixel 9 emulator. Dark mode was checked on both.
+- **Still open:** US-MOB-20 ("every `Mob…Android` artboard matches") stays open until the photo, expense, quote and sync screens exist (Groups 3–5). Today, a job, Jobs, Search and Notifications match theirs.
+
+### 2026-10-08 — Phase 5 Group 1: the new field app, sign in, Profile and errors (US-MOB-01, US-MOB-02, US-MOB-10, US-MOB-21)
+
+- **New app (D-196):** the old React Navigation `apps/mobile` is gone. A new expo-router app was generated with `scripts/create-native-app.mjs`, built the way `apps/showcase-native` is:
+  - Native tabs Today, Jobs and Expenses, plus Search (the iOS search tab, a fourth tab on Android).
+  - A large title on each tab, with the avatar opening Profile (a form sheet on iOS, a page on Android).
+  - `Stack.Protected` routing between Sign in, the app and "Update Spine to keep going".
+  - Jobs, Expenses and Search say what they'll hold until their groups land.
+- **Sign in (US-MOB-01):**
+  - Server, email and password in `FloatingLabelField` rows. Errors sit under their field ("Can't reach that server…", "Invalid email or password.").
+  - The typed address is checked with `GET /health` at `<address>/api`, then at `<address>`.
+  - "Forgot password?" opens the web reset page.
+  - The bearer token from `set-auth-token` is kept in the secure store.
+- **Profile and sign out (US-MOB-02):**
+  - Profile shows the name, "Field · <Business>", email, server, Appearance, Sync, the Field note and Sign out.
+  - Sign out revokes the session. With items waiting, it warns first: an iOS confirmation dialog, or an Android alert with Cancel, Send first and Sign out.
+  - Reopening the app lands on Today without signing in.
+- **Deactivated members (security fix):** a deactivated member's sessions kept working on every route, despite US-TEAM-04. A new global `ActiveMemberGuard` now answers 403 `ACCESS_REMOVED`, "Your access to <Business> was removed.", and the app signs out with that message.
+- **Errors (US-MOB-10):**
+  - The app sends `X-Spine-Client-Version`. A new `ClientVersionGuard` answers 426 `CLIENT_TOO_OLD` below `MOBILE_MIN_VERSION` (new in `.env.example`), and the app shows "Update Spine to keep going" with the store button.
+  - Requests tell offline, "server didn't answer" (`MobError`, "Couldn't load your jobs"), expired and removed apart.
+- **API additions:**
+  - `GET /health` adds `service: "spine"` and `appUrl`.
+  - `GET /org/members/me` adds `organizationName`.
+  - `@spine/shared/mobile` holds the shared header, error codes and version comparison.
+- **Components (US-MOB-21):**
+  - `FloatingLabelField` gains `secureTextEntry`, `autoCapitalize`, `autoComplete`, `returnKeyType` and `onSubmitEditing`, with its a11y test and showcase example.
+  - New Scroll Edge Mask demo.
+  - New `check-doc-coverage.mjs` (run by `@spine/ui-native`'s tests) fails when a component has no doc screen. 29/29 are documented.
+- **Tests:**
+  - Story Jest tests in `apps/mobile/src/__tests__` (36).
+  - API integration tests `us-mob-01`, `us-mob-02` and `us-mob-10` (real HTTP with bearer sign-in).
+  - Shared tests `us-mob-02` and `us-mob-10`.
+- **Run on devices:** built for the iPhone 17 simulator and the Pixel 9 emulator. `apps/mobile/e2e/us-mob-01-sign-in.yaml` passes on both: wrong password, sign in, reopen still signed in, Profile, sign out. "Couldn't load your jobs" was checked by stopping the API. Fixes found on the devices:
+  - Requests now omit cookies; a stored session cookie broke the second sign-in.
+  - Profile's iOS sheet uses the stack's own header, with the scroll view as its root.
+  - A rate-limited sign-in says "Too many sign-in attempts. Wait a minute, then try again."
+  - `@spine/ui-native` on Android: `Button`, `FullWidthButton` and `SegmentedControl` now use exact Spine colours instead of a Material-derived tone, and pass `testID` as a Compose test tag (with a11y tests).
+  - `expo-system-ui` added so Android follows dark mode.
+  - In development, `EXPO_PUBLIC_DEFAULT_SERVER` pre-fills the Server field.
+- **Still open:** US-MOB-19 and US-MOB-20 stay open until Today and job detail are built (Group 2), since their dark-mode and Android criteria are about those screens.
+
+### 2026-10-08 — US-MOB-23 and Today redrawn like the showcase-native home (planning)
+
+- **Today:** follows `apps/showcase-native`'s home:
+  - Large title, with the sync pill on the left and the bell and a filled avatar on the right.
+  - A welcome card with the GaugeIndicator-style gauge (rounded arc, ticks and end dot) showing milestones done this month.
+  - A This week / This month / This year switch and KPI cards.
+  - "QUICK ACTIONS" with four tiles (Add photo, Log expense, Scan receipt, Directions).
+  - "YOUR JOBS TODAY" in bordered cards with "All jobs ↗".
+- **Search:** new story **US-MOB-23** (search my jobs and my expenses). It covers the tab on both platforms, recent searches, grouped and highlighted results, offline search of the cache, and nothing outside the person's own records. New `MobSearchEmpty` artboards. The search criteria moved out of US-MOB-04. Phase 5 now has 27 stories.
+
+### 2026-10-08 — D-196 to D-200: Phase 5 redesigned and its stories refreshed (planning)
+
+- **Rebuild from scratch (D-196):** the old `apps/mobile` (React Navigation, five screens) will be replaced by a new expo-router app on `@spine/ui-native` and `@expo/ui`, built the way `apps/showcase-native` is.
+- **Designs:** every Phase 5 screen was redrawn in Claude Design ("Spine Field — mobile app (Phase 5)", nine canvases) for iOS 26 and Material 3, light and dark. There are 66 artboards in `docs/design/screens/Mob*.webp`, and `screens.md` is updated, including 12 new screens.
+- **Navigation (D-197):** native tabs Today, Jobs and Expenses plus Search. Profile opens from the avatar and Notifications from the bell on Today. Today follows the showcase-native home: a welcome card with a milestone gauge, a This week / This month switch, KPI cards, and the quick actions as tiles.
+- **Stories:**
+  - The refresh reflects today's API: business currency and locale, module rules, the default money account, tax lines as on the PDF, "Forgot password?" now shown, the demo Field user on the demo crews, and labour entry on the phone (D-199).
+  - Jobs & field off hides the jobs (D-198).
+  - New **US-MOB-22** for notifications on the phone, with no push in 1.0 (D-200).
+- **Testing:** `11-testing-release.md` describes how the field app is tested. The outbox is covered by Jest, replay by integration tests, offline flows by Maestro (Android airplane mode, and an E2E-build network override on iOS), and a real-phone check is in the QA script.
+
 ### 2026-10-08 — D-195: the AI assistant becomes Phase 10 (planning)
 
 - **New phase:** the 14 AI stories (US-AI-01 to US-AI-14) move out of Phase 9 into **Phase 10 · AI assistant**, with its own goal, deliverables, "done when" and branch.

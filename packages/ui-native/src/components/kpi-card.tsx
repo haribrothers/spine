@@ -1,5 +1,6 @@
 import { Text, View } from "react-native";
 import Svg, { Defs, LinearGradient, Rect, Stop } from "react-native-svg";
+import { useNativeColors } from "../theme/use-native-colors";
 
 /**
  * A gradient-filled stat card — label, value, trend text, and an icon.
@@ -45,6 +46,9 @@ export interface KpiCardProps {
 }
 
 export function KpiCard({ label, value, trend, icon: Icon, gradient, width = 168, gradientId }: KpiCardProps) {
+  // Text on the gradient is the on-fill role (D-099): white on light mode's
+  // deep gradients, near-black on dark mode's lighter ones (MobHomeDark).
+  const colors = useNativeColors();
   return (
     <View style={{ width, borderRadius: 16, overflow: "hidden" }}>
       <Svg width="100%" height="100%" style={{ position: "absolute" }}>
@@ -58,11 +62,11 @@ export function KpiCard({ label, value, trend, icon: Icon, gradient, width = 168
       </Svg>
       <View className="gap-3 p-4">
         <View className="flex-row items-center justify-between">
-          <Text className="text-[13px] text-white/80">{label}</Text>
-          <Icon size={16} color="#FFFFFF" opacity={0.8} />
+          <Text className="text-[13px] text-on-primary/80 dark:text-on-primary-dark/80">{label}</Text>
+          <Icon size={16} color={colors.onPrimary} opacity={0.8} />
         </View>
-        <Text className="text-[22px] font-semibold text-white">{value}</Text>
-        <Text className="text-[12px] text-white/80">{trend}</Text>
+        <Text className="text-[22px] font-semibold text-on-primary dark:text-on-primary-dark">{value}</Text>
+        <Text className="text-[12px] text-on-primary/80 dark:text-on-primary-dark/80">{trend}</Text>
       </View>
     </View>
   );
