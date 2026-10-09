@@ -80,6 +80,23 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (planning, US-MOB-01, US-MOB-24 to US-MOB-27, D-203, D-204)
+
+- **New logo, phone only (D-203):** the layered mark and SPiNE wordmark in `docs/logos` replace Expo's placeholders in the field app. The web app, docs site and web design system keep the "S" logo for now; when they change is open as Q-25.
+- **Designs:** three new Claude Design canvases.
+  - "10 Brand and app icon": lockups, clear space, the brand colours, and the iOS (light, dark, tinted) and Android (adaptive, themed) icons.
+  - "11 Splash and Welcome": the live motion and a storyboard.
+  - "12 Sign in".
+- **New artboards:** `MobSplash` and `MobWelcome`, each with Android and dark versions. `MobSignInDark`, `MobSignInAndroidDark`, `MobSignInKeyboard`, `MobSignInKeyboardAndroid` and `MobSignInError` are added; `MobSignIn` and `MobSignInAndroid` are redrawn.
+- **New stories:**
+  - **US-MOB-24:** the app icon.
+  - **US-MOB-25:** the splash, held until the first screen draws.
+  - **US-MOB-26:** a one-time animated Welcome — the mark rises from the splash, the app's work slides out from behind it, then "Get started" opens Sign in.
+  - **US-MOB-27:** brand tokens (`color.brand`, decorative only) and a `SpineLogo` component.
+- **US-MOB-01 redrawn:** Sign in gets the logo on a short version of Welcome's illustration and the title "Sign in". The illustration folds to the horizontal logo while the keyboard is open. A wrong password now reads "That email and password don't match. Check both, or reset your password." US-MOB-01 is unticked until the redraw ships.
+- **Motion (D-204):** built with Reanimated and `react-native-svg`. Welcome settles in about 1.4 s; Sign in only drifts slowly. Nothing moves with Reduce Motion or Remove animations.
+- Phase 5 now has 31 stories.
+
 ### 2026-10-09 — The field app on Android follows Material 3 (US-MOB-20)
 
 - **Material roles:** `@spine/ui-native` gains Material's primary-container, on-primary-container, surface-container and outline-variant (light and dark, from `tokens.json › color.android`). On Android they're used for:

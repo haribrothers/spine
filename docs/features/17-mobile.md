@@ -1,17 +1,17 @@
 # 17 · Mobile field companion
 
-A native iOS and Android app for field crew: sign in once, see today's assigned jobs with addresses and tap-to-call, capture site photos and receipts with no signal, complete milestones, present a quote and take the customer's signature on site, and see what's still waiting to sync. It never shows invoices, payments or reports. Designed native-first (expo-router native tabs, `@expo/ui` SwiftUI and Jetpack Compose controls) for both platforms, and built from scratch on that stack ([D-196](../prd/12-decisions.md)). The designs are in the Claude Design project "Spine Field — mobile app (Phase 5)"; the exported artboards are in `docs/design/screens/Mob*.webp`.
+A native iOS and Android app for field crew: sign in once, see today's assigned jobs with addresses and tap-to-call, capture site photos and receipts with no signal, complete milestones, present a quote and take the customer's signature on site, and see what's still waiting to sync. It never shows invoices, payments or reports. It carries the Spine brand — the layered mark on its icon, splash, Welcome and Sign in ([D-203](../prd/12-decisions.md)). Designed native-first (expo-router native tabs, `@expo/ui` SwiftUI and Jetpack Compose controls) for both platforms, and built from scratch on that stack ([D-196](../prd/12-decisions.md)). The designs are in the Claude Design project "Spine Field — mobile app (Phase 5)"; the exported artboards are in `docs/design/screens/Mob*.webp`.
 
 **Throughout the app:** money is shown in the business currency and formatted for the business locale ("$64.20", "₹1,250.00"), never with a trailing currency code. Native tabs Today, Jobs and Expenses plus Search (iOS `role="search"`, a fourth tab on Android); the person's avatar at the top right of every tab opens Profile, and the bell on Today opens Notifications ([D-197](../prd/12-decisions.md)). When the **Jobs & field** module is off, the Jobs tab, job pickers, job cards and job KPIs are hidden and the app is for expenses ([D-198](../prd/12-decisions.md)); when **Leads & meetings** is off, the next meeting is hidden. While a section's first data loads, it shows a skeleton in its own shape; there's no full-page loader, and anything saved on the phone shows at once ([D-201](../prd/12-decisions.md)).
 
-**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1), `MobHomeJobs` (P1), `MobHomeJobsAndroid` (P1), `MobSearch` (P1), `MobSearchAndroid` (P1), `MobSearchResults` (P1), `MobSearchResultsAndroid` (P1), `MobExpenseLabour` (P1), `MobExpenseLabourAndroid` (P1), `MobNotifications` (P1), `MobNotificationsAndroid` (P1), `MobNotificationsEmpty` (P2), `MobNotificationsEmptyAndroid` (P2), `MobSearchEmpty` (P2), `MobSearchEmptyAndroid` (P2)
+**Screens:** `MobSignIn` (P1), `MobSignInAndroid` (P1), `MobHome` (P1), `MobHomeAndroid` (P1), `MobHomeOffline` (P1), `MobHomeOfflineAndroid` (P1), `MobJobsList` (P1), `MobJobsListAndroid` (P1), `MobJobsEmpty` (P2), `MobJobsEmptyAndroid` (P2), `MobJobDetail` (P1), `MobJobDetailAndroid` (P1), `MobMilestoneComplete` (P1), `MobMilestoneCompleteAndroid` (P1), `MobCameraPermission` (P2), `MobCameraPermissionAndroid` (P2), `MobPhotoCapture` (P1), `MobPhotoCaptureAndroid` (P1), `MobPhotoReview` (P1), `MobPhotoReviewAndroid` (P1), `MobExpensesList` (P1), `MobExpensesListAndroid` (P1), `MobExpenseNew` (P1), `MobExpenseNewAndroid` (P1), `MobReceiptCapture` (P1), `MobReceiptCaptureAndroid` (P1), `MobQuotePresent` (P1), `MobQuotePresentAndroid` (P1), `MobQuoteAccept` (P1), `MobQuoteAcceptAndroid` (P1), `MobQuoteAccepted` (P1), `MobQuoteAcceptedAndroid` (P1), `MobQuoteNeedsConnection` (P2), `MobQuoteNeedsConnectionAndroid` (P2), `MobSyncQueue` (P1), `MobSyncQueueAndroid` (P1), `MobProfile` (P2), `MobProfileAndroid` (P2), `MobError` (P2), `MobErrorAndroid` (P2), `MobSignOutConfirm` (P1), `MobSignOutConfirmAndroid` (P1), `MobJobPhotos` (P2), `MobJobPhotosAndroid` (P2), `MobQuoteDecline` (P2), `MobQuoteDeclineAndroid` (P2), `MobUpdateRequired` (P2), `MobUpdateRequiredAndroid` (P2), `MobSyncFix` (P1), `MobSyncFixAndroid` (P1), `MobHomeDark` (P1), `MobJobDetailDark` (P1), `MobHomeAndroidDark` (P1), `MobJobDetailAndroidDark` (P1), `MobHomeJobs` (P1), `MobHomeJobsAndroid` (P1), `MobSearch` (P1), `MobSearchAndroid` (P1), `MobSearchResults` (P1), `MobSearchResultsAndroid` (P1), `MobExpenseLabour` (P1), `MobExpenseLabourAndroid` (P1), `MobNotifications` (P1), `MobNotificationsAndroid` (P1), `MobNotificationsEmpty` (P2), `MobNotificationsEmptyAndroid` (P2), `MobSearchEmpty` (P2), `MobSearchEmptyAndroid` (P2), `MobSignInDark` (P1), `MobSignInAndroidDark` (P1), `MobSignInKeyboard` (P1), `MobSignInKeyboardAndroid` (P1), `MobSignInError` (P1), `MobSplash` (P1), `MobSplashDark` (P1), `MobSplashAndroid` (P1), `MobSplashAndroidDark` (P1), `MobWelcome` (P1), `MobWelcomeAndroid` (P1), `MobWelcomeDark` (P1), `MobWelcomeAndroidDark` (P1)
 **Depends on:** 02 Sign-in (accounts), 07 Jobs (crew, milestones, photos), 10 Purchases (expenses), 06 Quotes (in-person acceptance), `packages/ui-native`, [15-mobile-release](../prd/15-mobile-release.md).
 
 ## Features
 
 | ID | Feature | Priority | Phase | Screens |
 |---|---|---|---|---|
-| F-MOB-01 | Sign in and session | P1 | 5 | `MobSignIn`, `MobSignInAndroid`, `MobProfile`, `MobProfileAndroid` |
+| F-MOB-01 | Sign in and session | P1 | 5 | `MobSignIn`, `MobSignInAndroid`, `MobSignInDark`, `MobSignInAndroidDark`, `MobSignInKeyboard`, `MobSignInKeyboardAndroid`, `MobSignInError`, `MobProfile`, `MobProfileAndroid` |
 | F-MOB-02 | Today, jobs and job detail | P1 | 5 | `MobHome`, `MobHomeAndroid`, `MobJobsList`, `MobJobsListAndroid`, `MobJobsEmpty`, `MobJobsEmptyAndroid`, `MobJobDetail`, `MobJobDetailAndroid` |
 | F-MOB-03 | Offline use and sync | P1 | 5 | `MobHomeOffline`, `MobHomeOfflineAndroid`, `MobSyncQueue`, `MobSyncQueueAndroid`, `MobError`, `MobErrorAndroid` |
 | F-MOB-04 | Photos and milestone completion | P1 | 5 | `MobPhotoCapture`, `MobPhotoCaptureAndroid`, `MobPhotoReview`, `MobPhotoReviewAndroid`, `MobCameraPermission`, `MobCameraPermissionAndroid`, `MobMilestoneComplete`, `MobMilestoneCompleteAndroid` |
@@ -20,26 +20,31 @@ A native iOS and Android app for field crew: sign in once, see today's assigned 
 | F-MOB-07 | Native app foundation | P1 | 5 | `MobHome`, `MobHomeAndroid` |
 | F-MOB-09 | Search | P1 | 5 | `MobSearch`, `MobSearchAndroid`, `MobSearchResults`, `MobSearchResultsAndroid`, `MobSearchEmpty`, `MobSearchEmptyAndroid` |
 | F-MOB-08 | Notifications on the phone | P1 | 5 | `MobNotifications`, `MobNotificationsAndroid`, `MobNotificationsEmpty`, `MobNotificationsEmptyAndroid` |
+| F-MOB-10 | Brand and first run | P1 | 5 | `MobSplash`, `MobSplashDark`, `MobSplashAndroid`, `MobSplashAndroidDark`, `MobWelcome`, `MobWelcomeAndroid`, `MobWelcomeDark`, `MobWelcomeAndroidDark` |
 
 ## User stories
 
 ### US-MOB-01 · Sign in to my company's Spine on my phone
-**Feature:** F-MOB-01 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSignIn`, `MobSignInAndroid`
+**Feature:** F-MOB-01 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSignIn`, `MobSignInAndroid`, `MobSignInDark`, `MobSignInAndroidDark`, `MobSignInKeyboard`, `MobSignInKeyboardAndroid`, `MobSignInError`
 **As** a field user, **I want** to sign in with my server address, email and password, **so that** the app connects to my company's Spine.
 
-Legacy: S-11.1 · Decision: D-049
+Legacy: S-11.1 · Decisions: D-049, [D-203](../prd/12-decisions.md), [D-204](../prd/12-decisions.md)
 
 **Acceptance criteria**
-- **Given** the app's first launch, **when** it opens, **then** I see "Sign in to Spine", "Use the email your office invited you with.", "Server", "Email", "Password" and "Sign in".
+- **Given** I tapped "Get started" on Welcome (US-MOB-26), or I'm signed out, **when** Sign in opens, **then** I see the Spine logo (mark over the wordmark) on an illustration — the brand glow, dashed orbits and three faded cards (today's job, photos, a milestone) fading into the page — then "Sign in", "Use the email your office invited you with.", "Server", "Email", "Password" and "Sign in".
 - **Given** a server address that isn't a Spine server or is unreachable, **when** I sign in, **then** I see "Can't reach that server. Check the address — it's the link you open Spine with on a computer.".
-- **Given** wrong credentials, **when** I sign in, **then** I see "Invalid email or password.".
+- **Given** wrong credentials, **when** I sign in, **then** I see "That email and password don't match. Check both, or reset your password." under the fields, and what I typed stays.
 - **Given** I tap "Forgot password?", **when** it opens, **then** the server's reset page (US-AUTH-09) opens in the phone's browser (D-052).
 - **Given** an error, **when** it shows, **then** it sits under the field it's about (the server error under "Server").
+- **Given** the keyboard opens, **when** I type, **then** the illustration folds away to the horizontal logo so the fields and "Sign in" stay above the keyboard, and it comes back when the keyboard closes.
+- **Given** Sign in, **when** it's on screen, **then** only the orbits drift and the sparkles twinkle, slowly, with no intro animation; with Reduce Motion (iOS) or Remove animations (Android) nothing moves.
+- **Given** VoiceOver or TalkBack, **when** Sign in opens, **then** the logo is read as "Spine" and the rest of the illustration is skipped.
+- **Given** dark mode, **when** Sign in opens, **then** it matches `MobSignInDark` / `MobSignInAndroidDark`, with the light-text wordmark.
 - **Given** valid details, **when** I sign in, **then** I land on Today.
 
 **Implementation notes**
 - API: Better Auth sign-in (`POST <api>/api/auth/sign-in/email`), keeping the bearer token from `set-auth-token`; stored with expo-secure-store; sent as Bearer (D-016). The typed address is checked with `GET /health` at `<address>/api`, then at `<address>` (`service: "spine"`); "Forgot password?" opens `<appUrl>/forgot-password`.
-- UI: `FloatingLabelField` rows in a `FormSection`; the password uses its `secureTextEntry` (always the RN text field — `@expo/ui`'s field has no secure mode).
+- UI: `FloatingLabelField` rows in a `FormSection` on iOS, `OutlinedTextField`s on Android; the password uses its `secureTextEntry` (always the RN text field — `@expo/ui`'s field has no secure mode). The logo is `SpineLogo` (US-MOB-27); the header illustration shares its parts with Welcome's (US-MOB-26).
 
 ### US-MOB-02 · Stay signed in and sign out safely
 **Feature:** F-MOB-01 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobProfile`, `MobProfileAndroid`, `MobSignOutConfirm`, `MobSignOutConfirmAndroid`
@@ -396,3 +401,78 @@ Decision: [D-197](../prd/12-decisions.md)
 **Implementation notes**
 - Searches the local SQLite cache (jobs and expenses already synced plus the outbox) — no new API; matching is case- and accent-insensitive and runs as you type with a short debounce. Opening Search refreshes the cached jobs and expenses when there's a connection.
 - Recent searches live in the same per-device storage as the appearance setting, never on the server.
+
+### US-MOB-24 · Recognise Spine on my home screen
+**Feature:** F-MOB-10 · **Priority:** P1 · **Phase:** 5 · **Screens:** —
+**As** a field user, **I want** the Spine icon on my phone, **so that** I find the app at a glance.
+
+Decision: [D-203](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** an iPhone, **when** the app is installed, **then** its icon is the layered mark on the teal-to-blue gradient, edge to edge (iOS rounds the corners), as drawn on the canvas "10 Brand and app icon".
+- **Given** iOS 18 or later with dark or tinted icons, **when** the home screen draws the app, **then** it uses the dark version (the mark on iOS's dark backdrop) or the tinted one (a greyscale silhouette iOS colours).
+- **Given** an Android phone, **when** the app is installed, **then** the launcher shows an adaptive icon — the gradient as the background layer and the mark as the foreground, inside the 66 dp safe circle — so a circle, squircle, rounded square or teardrop never clips the mark.
+- **Given** Android 13 or later with themed icons on, **when** the launcher draws the app, **then** it shows the one-colour silhouette in the phone's colours.
+- **Given** the store listings, **when** the app is published, **then** the App Store uses the 1024 px master and Google Play the 512 px full-bleed version.
+- **Given** `apps/mobile/assets`, **when** this story is done, **then** Expo's placeholder icon and splash images are gone.
+
+**Implementation notes**
+- Source art: `docs/logos/spine-app-icon-ios.svg` and `spine-app-icon-android.svg`, made full bleed (no baked-in corners or circle); the adaptive foreground is the mark at 62% of the 108 dp canvas and the monochrome silhouette (from `spine-logo-black.svg`) at 37.5%. The derived SVGs are committed next to the PNGs so they can be exported again.
+- `app.json`: `ios.icon` `{ light, dark, tinted }`, `android.adaptiveIcon` `{ foregroundImage, backgroundImage, monochromeImage }`; needs a native rebuild. No notification icon — the app doesn't push ([D-200](../prd/12-decisions.md)).
+
+### US-MOB-25 · See Spine while the app opens
+**Feature:** F-MOB-10 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobSplash`, `MobSplashDark`, `MobSplashAndroid`, `MobSplashAndroidDark`
+**As** a field user, **I want** a clean branded screen while the app starts, **so that** I know it's opening and never see a blank or white flash.
+
+Decision: [D-204](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** a cold start, **when** the app launches, **then** the splash shows the gradient mark, 96 dp, centred on the page colour — `#F7F6F3` in light mode, `#121110` in dark — and nothing else (no wordmark, spinner or tagline).
+- **Given** Android 12 or later, **when** the app launches, **then** the system splash shows the same mark and colour, with no second splash after it.
+- **Given** the app is restoring the session, **when** the first screen isn't ready, **then** the splash stays and hides as soon as Today, Welcome or Sign in has drawn; it never waits on the network.
+- **Given** the first launch, **when** the splash hides, **then** Welcome's mark starts from the same place and size, so the hand-off doesn't jump.
+
+**Implementation notes**
+- `expo-splash-screen` config plugin: `splash-mark.png`, `imageWidth: 96`, `backgroundColor` light and `dark.backgroundColor`. The root layout calls `SplashScreen.preventAutoHideAsync()` and `hideAsync()` once the session state is known and the first screen has laid out. Needs a native rebuild.
+
+### US-MOB-26 · Get a welcome the first time I open the app
+**Feature:** F-MOB-10 · **Priority:** P1 · **Phase:** 5 · **Screens:** `MobWelcome`, `MobWelcomeAndroid`, `MobWelcomeDark`, `MobWelcomeAndroidDark`
+**As** a new field user, **I want** to see what the app is for before I sign in, **so that** I know why my office asked me to install it.
+
+Decision: [D-204](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** the first launch after install, **when** the splash hides, **then** I see Welcome: an illustration, "Today's jobs, in your pocket", "Photos, expenses and sign-offs reach your office — even when there's no signal.", "Get started" and "Your office sets up your account — you'll sign in next."
+- **Given** Welcome opens, **when** it animates, **then** the mark rises from the splash and its three layers breathe apart and settle; five cards — today's job, "3 photos saved", a fuel receipt, a signed quote and a completed milestone — slide out from behind it; then the words and the button fade up. It's still within about 1.4 seconds, after which the cards float gently while Welcome is on screen.
+- **Given** the animation is running, **when** I tap "Get started", **then** it works straight away.
+- **Given** I tap "Get started", **when** it responds, **then** Sign in opens and Welcome isn't shown again on this phone — not after signing out, not after an update.
+- **Given** I'm already signed in when this version is installed, **when** the app opens, **then** I go straight to Today and Welcome is skipped for good.
+- **Given** Reduce Motion (iOS) or Remove animations (Android), **when** Welcome opens, **then** it appears already in its final state and nothing moves.
+- **Given** VoiceOver or TalkBack, **when** Welcome opens, **then** the illustration is skipped and I hear the headline (a heading), the sentence, "Get started" (a button) and the footer.
+- **Given** Android back on Welcome, **when** I press it, **then** the app closes.
+- **Given** dark mode, **when** Welcome opens, **then** it matches `MobWelcomeDark` / `MobWelcomeAndroidDark`: the brand colours stay, the cards use the dark surface with a hairline border.
+- **Given** large text, **when** Welcome opens, **then** the illustration shrinks first and the words scroll; "Get started" stays reachable.
+
+**Implementation notes**
+- Route `app/welcome.tsx`, shown by the root layout when nobody is signed in and the "Welcome seen" flag isn't set; the flag lives in the same per-device storage as the appearance setting.
+- Motion with Reanimated 4 shared values on the UI thread and `react-native-svg` for the orbits and signature; `useReducedMotion()` turns it off. The idle loop stops when Welcome loses focus or the app goes to the background. Timings and easing are on the canvas "11 Splash and Welcome" (Welcome A storyboard).
+- The cards are drawn with `@spine/ui-native` tokens; brand colours only in the mark, glow, orbits and sparkles (US-MOB-27).
+
+### US-MOB-27 · Use the Spine brand the same way everywhere in the app
+**Feature:** F-MOB-10 · **Priority:** P1 · **Phase:** 5 · **Screens:** —
+**As** a developer, **I want** the brand colours as tokens and the logo as one component, **so that** every screen draws the same logo the same way.
+
+Decision: [D-203](../prd/12-decisions.md)
+
+**Acceptance criteria**
+- **Given** `docs/design/tokens.json`, **when** this story is done, **then** `color.brand` holds teal `#04E9BC`, sky `#51A5F8` and deep `#054DC1`, and `color.gradients.brand` holds the icon gradient (teal → deep) and the three layer gradients (top `#5DF3BD` → `#10A9C2`, middle `#A8E1E3` → `#63A4E0`, base `#69AAE1` → `#0545AF`) — the same in light and dark — and `packages/ui-native/src/tokens` exposes them.
+- **Given** a screen needs the logo, **when** it renders `SpineLogo` from `@spine/ui-native`, **then** it draws the mark, the horizontal lockup or the vertical lockup from the supplied SVG paths, with the wordmark in primary in light mode and the light-text wordmark in dark mode.
+- **Given** `SpineLogo`, **when** a screen reader reaches it, **then** it's read as "Spine", unless the screen marks it decorative.
+- **Given** a size below the minimum (20 dp for the mark, 96 dp wide for a lockup), **when** asked for, **then** `SpineLogo` draws it at the minimum.
+- **Given** text, buttons and status, **when** they're drawn, **then** they keep the primary and status tokens; brand colours appear only in the logo, the app icon, the splash and illustrations.
+- **Given** `SpineLogo`, **when** this story is done, **then** it has a doc screen in `apps/design-system-native` and an accessibility test.
+- **Given** the web app, the docs site and the web design system, **when** this story is done, **then** they keep their current logo until their own rebrand ([Q-25](../prd/13-risks-open-questions.md)).
+
+**Implementation notes**
+- The logo SVGs are `docs/logos/spine-logo*.svg`; `SpineLogo` renders their paths with `react-native-svg` (no image files), so it stays sharp at every size and follows dark mode.
+

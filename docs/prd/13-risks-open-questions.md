@@ -56,6 +56,7 @@
 | Q-22 | ~~What does the field app show an Owner or Staff user when Jobs & field is off?~~ — closed by [D-198](12-decisions.md): jobs are hidden and expenses keep working | — | — | — |
 | Q-23 | ~~Should "New expense" on the phone offer the labour entry mode from US-PUR-23?~~ — closed by [D-199](12-decisions.md): yes | — | — | — |
 | Q-24 | ~~Should the field app get push notifications on the lock screen?~~ — closed by [D-200](12-decisions.md): no push in 1.0; the in-app list only | — | — | — |
+| Q-25 | When do the web app, the docs site and the web design system move to the new Spine logo and brand colours the field app uses ([D-203](12-decisions.md))? The web still shows the "S" logo. | A web rebrand story in Phase 6 · In Phase 11's 1.0 polish · After 1.0 | Phase 11 | Product owner |
 | Q-20 | ~~An invoice posts to the ledger on the day it's issued, not on its issue date, so a backdated invoice lands in a different period in the Tax Summary (ledger) than in GSTR-1 (issue date), and US-TAX-17 flags the totals. Should invoices (and credit notes) post on their document date instead?~~ — closed by [D-185](12-decisions.md): invoices post on their issue date | Owner | Closed |
 
 ## Design follow-ups

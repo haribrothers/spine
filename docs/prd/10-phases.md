@@ -352,7 +352,7 @@ Total: 427 stories.
 
 **Goal:** The app works end-to-end in airplane mode and syncs without duplicates.
 
-**Deliverables:** `apps/mobile` on expo-router native tabs (iOS and Material 3 Android), sign-in to a self-hosted server, assigned jobs, offline cache, idempotent outbox, photo capture, expenses, milestone completion, on-site quote acceptance with signature, crew assignment, showcase docs.
+**Deliverables:** `apps/mobile` on expo-router native tabs (iOS and Material 3 Android), sign-in to a self-hosted server, assigned jobs, offline cache, idempotent outbox, photo capture, expenses, milestone completion, on-site quote acceptance with signature, crew assignment, showcase docs, and the Spine brand on the phone — app icon, splash, a first-run Welcome and a redrawn Sign in ([D-203](12-decisions.md), [D-204](12-decisions.md)).
 
 **Done when:**
 - The app is used end-to-end in airplane mode and syncs cleanly on reconnect with no duplicates (NFR-REL-06).
@@ -395,6 +395,10 @@ Total: 427 stories.
 - US-MOB-21 · Document every native component in a showcase app (P2)
 - US-MOB-22 · See my notifications on the phone (P1)
 - US-MOB-23 · Search my jobs and my expenses (P1)
+- US-MOB-24 · Recognise Spine on my home screen (P1)
+- US-MOB-25 · See Spine while the app opens (P1)
+- US-MOB-26 · Get a welcome the first time I open the app (P1)
+- US-MOB-27 · Use the Spine brand the same way everywhere in the app (P1)
 
 ## Phase 6 · Fix and harden
 

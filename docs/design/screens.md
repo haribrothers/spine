@@ -2517,7 +2517,79 @@ Shows: "Settings — Emails — Spine" · "Overview" · "Dashboard" · "Good aft
 
 ## Mobile field companion
 
-Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications). Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.
+Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.
+
+### MobSplash — Splash
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplash](screens/MobSplash.webp)
+
+Links to: `MobWelcome`, `MobSignIn`, `MobHome`
+
+Shows: The Spine mark, 96 dp, centred on `#F7F6F3`
+
+### MobSplashDark — Splash, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashDark](screens/MobSplashDark.webp)
+
+Links to: `MobWelcomeDark`, `MobSignInDark`, `MobHomeDark`
+
+Shows: The Spine mark, 96 dp, centred on `#121110`
+
+### MobSplashAndroid — Splash — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashAndroid](screens/MobSplashAndroid.webp)
+
+Links to: `MobWelcomeAndroid`, `MobSignInAndroid`, `MobHomeAndroid`
+
+Shows: The Spine mark, 96 dp, centred on `#F7F6F3` (Android 12 splash API)
+
+### MobSplashAndroidDark — Splash, dark — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-25 · **Source:** Claude Design
+
+![MobSplashAndroidDark](screens/MobSplashAndroidDark.webp)
+
+Links to: `MobWelcomeAndroidDark`, `MobSignInAndroidDark`, `MobHomeAndroidDark`
+
+Shows: The Spine mark, 96 dp, centred on `#121110` (Android 12 splash API)
+
+### MobWelcome — Welcome
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcome](screens/MobWelcome.webp)
+
+Links to: `MobSignIn`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeAndroid — Welcome — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeAndroid](screens/MobWelcomeAndroid.webp)
+
+Links to: `MobSignInAndroid`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeDark — Welcome, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeDark](screens/MobWelcomeDark.webp)
+
+Links to: `MobSignInDark`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
+
+### MobWelcomeAndroidDark — Welcome, dark — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-26 · **Source:** Claude Design
+
+![MobWelcomeAndroidDark](screens/MobWelcomeAndroidDark.webp)
+
+Links to: `MobSignInAndroidDark`
+
+Shows: "Today · 8:00" · "Marina office fit-out" · "14 Harbour St" · "Due Sat" · "3 photos saved" · "Fuel" · "$64.20" · "QUO-0004" · "Signed" · "Alan Reyes" · "Foundations" · "Completed" · "Today’s jobs, in your pocket" · "Photos, expenses and sign-offs reach your office — even when there’s no signal." · "Get started" · "Your office sets up your account — you’ll sign in next."
 
 ### MobSignIn — Sign in
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
@@ -2526,7 +2598,7 @@ Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): pr
 
 Links to: `MobHome`
 
-Shows: "Sign in to Spine" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
 
 ### MobSignInAndroid — Sign in — Spine Android
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
@@ -2535,7 +2607,52 @@ Shows: "Sign in to Spine" · "Use the email your office invited you with." · "S
 
 Links to: `MobHomeAndroid`
 
-Shows: "Sign in to Spine" · "Use the email your office invited you with." · "spine.riverstone.exmaple" · "Server" · "Can't reach that server. Check the address — it's the link you open Spine with on a computer." · "marcus.webb@riverstone.example" · "Email" · "Password" · "••••••••••" · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInDark — Sign in, dark
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInDark](screens/MobSignInDark.webp)
+
+Links to: `MobHomeDark`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "The server address is the link you open Spine with on a computer." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInAndroidDark — Sign in, dark, server error — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInAndroidDark](screens/MobSignInAndroidDark.webp)
+
+Links to: `MobHomeAndroidDark`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.exmaple" · "Can't reach that server. Check the address — it's the link you open Spine with on a computer." · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••••" · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
+
+### MobSignInKeyboard — Sign in, keyboard open
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInKeyboard](screens/MobSignInKeyboard.webp)
+
+Links to: `MobHome`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverst" · "Password" · "Required" · "Sign in"
+
+### MobSignInKeyboardAndroid — Sign in, keyboard open — Spine Android
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInKeyboardAndroid](screens/MobSignInKeyboardAndroid.webp)
+
+Links to: `MobHomeAndroid`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••" · "Sign in"
+
+### MobSignInError — Sign in, wrong email or password
+**Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-01 · **Source:** Claude Design
+
+![MobSignInError](screens/MobSignInError.webp)
+
+Links to: `MobHome`
+
+Shows: "Spine" · "Sign in" · "Use the email your office invited you with." · "Server" · "spine.riverstone.example" · "Email" · "marcus.webb@riverstone.example" · "Password" · "••••••••" · "That email and password don't match. Check both, or reset your password." · "Sign in" · "Forgot password?" · "You stay signed in on this phone until you sign out."
 
 ### MobHome — Today
 **Priority:** P1 · **Phase:** 5 · **Stories:** US-MOB-03, US-MOB-19 · **Source:** Claude Design
