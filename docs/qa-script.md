@@ -4493,14 +4493,17 @@ Use a 1280 px-wide window in Chrome and Safari, light and dark. Compare against 
 1. **Welcome (US-AUTH-13),** on a brand-new install with an empty database (`pnpm db:reset:dev`, no seed):
    - `/` and `/login` open `/welcome`.
    - It shows the logo, "Run your business on Spine", the three next steps and **Create your account**, which goes to `/signup`.
-   - The illustration plays: the quote turns Accepted, the job and invoice appear, the invoice turns Paid, then "Payment received". After about 2 seconds it settles and drifts gently.
+   - The illustration plays: three people (a tradesperson pointing up, the owner and a customer; two men, one woman) rise onto the ground in soft mint, sky and periwinkle, then the cards come in: the quote turns Accepted, the invoice turns Paid, a payment shows Paid. After about 3 seconds it settles and the cards drift gently.
+   - The cards show only icons, grey placeholder lines and statuses — no names, document numbers or amounts.
+   - In dark mode the people keep their light colours (ink on paper) and the cards turn dark.
+   - At 1024, 1440 and 1920 px wide the people and cards stay together in the middle of the panel; nothing overlaps a face.
    - With Reduce Motion on, everything shows already settled and nothing moves.
    - A screen reader reads the heading, steps and button and skips the illustration.
 2. Welcome, continued:
    - Create the first account. `/welcome` now goes to `/login` when signed out, and to the dashboard when signed in.
    - Below 1024 px wide the illustration disappears and the content is centred.
 3. **Login (US-AUTH-14):**
-   - The illustration shows today's jobs, "Bluewater accepted QUO-0006" and a paid invoice, with made-up names.
+   - The illustration shows one man with a coffee beside today's jobs (placeholder rows) and a quote marked Accepted — no names or amounts.
    - Email is focused. The eye shows and hides the password, and its label says "Show password" / "Hide password".
    - With Caps Lock on, typing in Password shows "Caps Lock is on.".
    - A wrong password: "That email and password don't match. Check both, or reset your password.", and Email keeps what you typed.

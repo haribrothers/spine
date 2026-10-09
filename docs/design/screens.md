@@ -2566,7 +2566,7 @@ Shows: The 20 px mark before "Sent with Spine", light and dark
 
 ## Welcome, login and sign-up
 
-Drawn in Claude Design for US-AUTH-13 to US-AUTH-15 (D-207): project "Spine web — refinements before Phase 10", canvas "02 Welcome, login and sign-up". Every signed-out page uses the same frame (`AuthFrame`): the form on one side, an illustration of made-up work on the other (left out below 1024 px). The built illustration leaves out the drawn dashed connector between the cards, which couldn't line up at every width. `SignIn`, `SignUp` and `SignUpClosed` above show the old card layout; these replace them.
+Drawn in Claude Design for US-AUTH-13 to US-AUTH-15 (D-207): project "Spine web — refinements before Phase 10", canvas "02 Welcome, login and sign-up" (the people were chosen on "02b Signed-out illustration - people": Open Peeps, soft colours). Every signed-out page uses the same frame (`AuthFrame`): the form on one side, the illustration on the other (left out below 1024 px) — people in soft brand outfits with Spine's cards around them, showing only icons, placeholder lines and statuses. `SignIn`, `SignUp` and `SignUpClosed` above show the old card layout; these replace them.
 
 ### AuthWelcome — Welcome on a new install
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
@@ -2575,7 +2575,7 @@ Drawn in Claude Design for US-AUTH-13 to US-AUTH-15 (D-207): project "Spine web 
 
 Links to: `AuthSignUp`
 
-Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place."
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place." · the team of three and the cards: quote Sent → Accepted, invoice Due → Paid, payment Paid
 
 ### AuthWelcomeDark — Welcome on a new install, dark
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-13 · **Source:** Claude Design
@@ -2584,7 +2584,7 @@ Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and yo
 
 Links to: `AuthSignUp`
 
-Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place."
+Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and your books in one place — on your own server." · "Create your account" · "Set up your business in a few minutes" · "Invite your team" · "Everything you enter stays on this server." · "From quote to paid, in one place." · the team of three and the cards: quote Sent → Accepted, invoice Due → Paid, payment Paid
 
 ### AuthLogin — Log in
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
@@ -2593,7 +2593,7 @@ Shows: "Spine" · "Run your business on Spine" · "Quotes, jobs, invoices and yo
 
 Links to: `DashboardOwnerRedesign`, `ForgotPassword`
 
-Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back."
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote
 
 ### AuthLoginDark — Log in, dark
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
@@ -2602,7 +2602,7 @@ Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" 
 
 Links to: `DashboardOwnerRedesignDark`, `ForgotPassword`
 
-Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back."
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote
 
 ### AuthLoginError — Log in, wrong password and Caps Lock
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-14 · **Source:** Claude Design
@@ -2611,7 +2611,7 @@ Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" 
 
 Links to: `ForgotPassword`
 
-Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · "That email and password don't match. Check both, or reset your password." · "Caps Lock is on."
+Shows: "Spine" · "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Forgot password?" · "Log in" · "Welcome back." · a man with a coffee beside today's jobs and an "Accepted" quote · "That email and password don't match. Check both, or reset your password." · "Caps Lock is on."
 
 ### AuthSignUp — Create your account, password shown, Fair
 **Priority:** P2 · **Phase:** Refinements · **Stories:** US-AUTH-15 · **Source:** Claude Design

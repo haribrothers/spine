@@ -1,14 +1,34 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Calendar, CircleCheck, FileCheck, FileText, HardHat, Receipt } from "lucide-react";
-import { SpineLogo } from "@spine/ui";
 import styles from "./auth-illustration.module.css";
 
 export type AuthScene = "welcome" | "login";
 
-/** Animation timing and placement per card, as on the canvas "02 Welcome, login and sign-up". */
-type CardStyle = CSSProperties & { "--d"?: string; "--fd"?: string };
+/** Animation timing per card or person, as on the canvas "02 Welcome, login and sign-up". */
+type Timing = CSSProperties & { "--d"?: string; "--fd"?: string };
 
-function Card({ style, className, children }: { style: CardStyle; className?: string; children: ReactNode }) {
+/** The people in public/illustrations/people.svg (Open Peeps, CC0), with each one's drawn proportions. */
+const PEOPLE = {
+  trades: "1340 / 2658",
+  owner: "1111 / 2911",
+  customer: "1115 / 2971",
+  morning: "824 / 1135",
+} as const;
+type Person = keyof typeof PEOPLE;
+type Outfit = "mint" | "sky" | "periwinkle";
+
+function Figure({ who, outfit, delay, className }: { who: Person; outfit: Outfit; delay: string; className?: string }) {
+  return (
+    <div className={[styles.person, styles[outfit], className].filter(Boolean).join(" ")} style={{ "--d": delay } as Timing}>
+      <span className={styles.halo} />
+      <svg className={styles.figure} style={{ aspectRatio: PEOPLE[who] }}>
+        <use href={`/illustrations/people.svg#${who}`} />
+      </svg>
+    </div>
+  );
+}
+
+function Card({ style, className, children }: { style: Timing; className?: string; children: ReactNode }) {
   return (
     <div className={[styles.card, className].filter(Boolean).join(" ")} style={style}>
       {children}
@@ -16,8 +36,20 @@ function Card({ style, className, children }: { style: CardStyle; className?: st
   );
 }
 
-function Kicker({ icon, children }: { icon?: ReactNode; children: ReactNode }) {
-  return <div className="flex items-center gap-1.5 text-[11px] font-medium text-on-surface-muted">{icon}{children}</div>;
+/** Placeholder lines: the cards show what happens, never names or amounts. */
+function Lines({ widths, strong = false }: { widths: string[]; strong?: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-[7px]">
+      {widths.map((w, i) => (
+        <i key={i} className={`block h-2 rounded-full ${strong && i === 0 ? "bg-border-strong" : "bg-border"}`} style={{ width: w }} />
+      ))}
+    </div>
+  );
+}
+
+function Icon({ tone, children }: { tone: "info" | "paid" | "due"; children: ReactNode }) {
+  const cls = { info: "bg-info-bg text-primary", paid: "bg-paid-bg text-paid", due: "bg-due-soon-bg text-due-soon" }[tone];
+  return <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${cls}`}>{children}</span>;
 }
 
 function Chip({ tone, children }: { tone: "info" | "paid" | "due"; children: string }) {
@@ -35,58 +67,61 @@ function Swap({ at, from, to }: { at: string; from: ReactNode; to: ReactNode }) 
   );
 }
 
-const ICON = { size: 14, "aria-hidden": true } as const;
+const ICON = { size: 17, "aria-hidden": true } as const;
+
+function DocCard({ style, icon, tone, status }: { style: Timing; icon: ReactNode; tone: "info" | "due"; status: ReactNode }) {
+  return (
+    <Card style={style}>
+      <div className="flex items-center gap-2">
+        <Icon tone={tone}>{icon}</Icon>
+        {status}
+      </div>
+      <div className="mt-3">
+        <Lines widths={["78%", "46%"]} />
+      </div>
+      <i className="mt-3 block h-3 w-[54%] rounded-full bg-border-strong" />
+    </Card>
+  );
+}
 
 function WelcomeScene() {
   return (
     <>
-      <Card style={{ left: "6%", top: "8%", width: 240, "--d": "0.2s", "--fd": "2.2s" }}>
-        <Kicker icon={<FileText {...ICON} />}>
-          QUO-0004 · Quote
-          <Swap at="0.9s" from={<Chip tone="info">Sent</Chip>} to={<Chip tone="paid">Accepted</Chip>} />
-        </Kicker>
-        <div className="mt-1 text-[14px] font-semibold text-on-surface">Harborview Construction</div>
-        <div className="mt-1.5 text-[18px] font-semibold tabular-nums text-on-surface">$12,800.00</div>
-      </Card>
-      <Card style={{ right: "5%", top: "20%", width: 236, "--d": "0.7s", "--fd": "3s" }}>
-        <Kicker icon={<HardHat {...ICON} />}>JOB-012 · Job</Kicker>
-        <div className="mt-1 text-[14px] font-semibold text-on-surface">Deck &amp; pergola</div>
-        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-sunken">
-          <div className="h-full w-3/5 rounded-full bg-paid" />
-        </div>
-        <div className="mt-1.5 text-[11px] font-medium text-on-surface-muted">3 of 5 milestones</div>
-      </Card>
-      <Card style={{ left: "6%", top: "57%", width: 246, "--d": "1.2s", "--fd": "2.6s" }}>
-        <Kicker icon={<Receipt {...ICON} />}>
-          INV-0018 · Invoice
-          <Swap at="2s" from={<Chip tone="due">Due 30 Oct</Chip>} to={<Chip tone="paid">Paid</Chip>} />
-        </Kicker>
-        <div className="mt-1 text-[14px] font-semibold text-on-surface">Harborview Construction</div>
-        <div className="mt-1.5 text-[18px] font-semibold tabular-nums text-on-surface">$12,800.00</div>
-      </Card>
-      <Card className="flex items-center gap-2.5" style={{ right: "6%", top: "68%", width: 256, "--d": "1.8s", "--fd": "3.4s" }}>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paid-bg text-paid">
-          <CircleCheck size={17} aria-hidden />
-        </span>
-        <div>
-          <div className="text-[14px] font-semibold text-on-surface">Payment received</div>
-          <div className="text-[11px] font-medium text-on-surface-muted">$12,800.00 · Bank transfer</div>
-        </div>
-      </Card>
       <Caption title="From quote to paid, in one place." body="Send a quote, win the job, invoice it and get paid — Spine keeps the books as you go." />
+      <DocCard
+        style={{ left: "5%", top: "20%", "--d": "0.9s", "--fd": "2.6s" }}
+        icon={<FileText {...ICON} />}
+        tone="info"
+        status={<Swap at="1.6s" from={<Chip tone="info">Sent</Chip>} to={<Chip tone="paid">Accepted</Chip>} />}
+      />
+      <DocCard
+        style={{ right: "5%", top: "27%", "--d": "1.3s", "--fd": "3s" }}
+        icon={<Receipt {...ICON} />}
+        tone="due"
+        status={<Swap at="2.4s" from={<Chip tone="due">Due</Chip>} to={<Chip tone="paid">Paid</Chip>} />}
+      />
+      <Card className={styles.toast} style={{ left: "28%", top: "43%", "--d": "2.6s", "--fd": "3.4s" }}>
+        <Icon tone="paid">
+          <CircleCheck {...ICON} />
+        </Icon>
+        <Lines widths={["84%", "52%"]} strong />
+        <Chip tone="paid">Paid</Chip>
+      </Card>
+      <div className={styles.team}>
+        <Figure who="trades" outfit="mint" delay="0.1s" />
+        <Figure who="owner" outfit="sky" delay="0.25s" />
+        <Figure who="customer" outfit="periwinkle" delay="0.4s" />
+      </div>
     </>
   );
 }
 
-function TodayRow({ icon, tone, title, place, time }: { icon: ReactNode; tone: "info" | "due"; title: string; place: string; time: string }) {
+function TodayRow({ icon, tone }: { icon: ReactNode; tone: "info" | "due" }) {
   return (
     <div className="flex items-center gap-2.5 border-t border-border py-2 first:border-t-0">
-      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${tone === "info" ? "bg-info-bg text-primary" : "bg-due-soon-bg text-due-soon"}`}>{icon}</span>
-      <div className="text-[13px] font-medium text-on-surface">
-        {title}
-        <div className="text-[11px] font-normal text-on-surface-muted">{place}</div>
-      </div>
-      <span className="ml-auto text-[12px] font-medium text-on-surface-muted">{time}</span>
+      <Icon tone={tone}>{icon}</Icon>
+      <Lines widths={["70%", "42%"]} strong />
+      <i className="block h-2 w-[34px] shrink-0 rounded-full bg-border" />
     </div>
   );
 }
@@ -94,35 +129,23 @@ function TodayRow({ icon, tone, title, place, time }: { icon: ReactNode; tone: "
 function LoginScene() {
   return (
     <>
-      <Card style={{ left: "6%", top: "9%", width: 300, "--d": "0.2s", "--fd": "2.4s" }}>
-        <Kicker>Today · Fri 9 Oct</Kicker>
-        <div className="mt-1 text-[14px] font-semibold text-on-surface">Good morning, Alex</div>
-        <div className="mt-2">
-          <TodayRow icon={<HardHat size={17} aria-hidden />} tone="info" title="Marina office fit-out" place="14 Harbour St" time="8:00" />
-          <TodayRow icon={<HardHat size={17} aria-hidden />} tone="info" title="Townhomes, phase 2" place="220 Ridge Rd" time="11:30" />
-          <TodayRow icon={<Calendar size={17} aria-hidden />} tone="due" title="Site visit, Clinic" place="Meeting" time="2:00" />
-        </div>
-      </Card>
-      <Card className="flex items-center gap-2.5" style={{ right: "5%", top: "56%", width: 268, "--d": "0.8s", "--fd": "3.2s" }}>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-paid-bg text-paid">
-          <FileCheck size={17} aria-hidden />
-        </span>
-        <div>
-          <div className="text-[14px] font-semibold text-on-surface">Bluewater accepted QUO-0006</div>
-          <div className="text-[11px] font-medium text-on-surface-muted">$12,800.00 · just now</div>
-        </div>
-      </Card>
-      <Card style={{ left: "10%", top: "70%", width: 236, "--d": "1.2s", "--fd": "2.8s" }}>
-        <Kicker icon={<Receipt {...ICON} />}>
-          INV-0017 · Invoice
-          <span className="ml-auto">
-            <Chip tone="paid">Paid</Chip>
-          </span>
-        </Kicker>
-        <div className="mt-1 text-[14px] font-semibold text-on-surface">Maple Ridge Developments</div>
-        <div className="mt-1.5 text-[18px] font-semibold tabular-nums text-on-surface">$4,542.50</div>
-      </Card>
       <Caption title="Welcome back." body="Today’s jobs, quotes and payments are where you left them." />
+      <Card className={styles.today} style={{ left: "5%", top: "20%", "--d": "0.5s", "--fd": "2.4s" }}>
+        <div className="mb-1.5 mt-0.5">
+          <Lines widths={["36%", "62%"]} />
+        </div>
+        <TodayRow icon={<HardHat {...ICON} />} tone="info" />
+        <TodayRow icon={<HardHat {...ICON} />} tone="info" />
+        <TodayRow icon={<Calendar {...ICON} />} tone="due" />
+      </Card>
+      <Card className={styles.toast} style={{ left: "5%", top: "54%", "--d": "1s", "--fd": "3.2s" }}>
+        <Icon tone="paid">
+          <FileCheck {...ICON} />
+        </Icon>
+        <Lines widths={["84%", "52%"]} strong />
+        <Chip tone="paid">Accepted</Chip>
+      </Card>
+      <Figure who="morning" outfit="sky" delay="0.1s" className={styles.solo} />
     </>
   );
 }
@@ -130,31 +153,25 @@ function LoginScene() {
 function Caption({ title, body }: { title: string; body: string }) {
   return (
     <div className={styles.caption}>
-      <div className="text-[18px] font-semibold leading-snug text-on-surface">{title}</div>
-      <div className="mt-1 text-[13px] leading-relaxed text-on-surface-muted">{body}</div>
+      <div className="text-[20px] font-semibold leading-snug tracking-tight text-on-surface">{title}</div>
+      <div className="mt-1 max-w-[420px] text-[13px] leading-relaxed text-on-surface-muted">{body}</div>
     </div>
   );
 }
 
 /**
  * US-AUTH-13, US-AUTH-14 (D-207) — the illustration beside every signed-out
- * form: made-up work drawn with Spine's own card styles (never the install's
- * data, D-084), around the Spine mark and its orbits. "welcome" tells the
- * quote → job → invoice → paid story; "login" is a calmer day. Hidden from
- * screen readers; still unless the person allows motion.
+ * form: people (Open Peeps, CC0) in the illustration tokens' soft outfits,
+ * and Spine's own cards with placeholder lines — no names or amounts, never
+ * the install's data (D-084). "welcome" is the team and the quote → paid
+ * story; "login" is one person and a calmer morning. Hidden from screen
+ * readers; still unless the person allows motion.
  */
 export function AuthIllustration({ scene }: { scene: AuthScene }) {
   return (
     <div className={`${styles.panel} h-full w-full`} aria-hidden data-testid={`auth-illustration-${scene}`}>
-      <div className={styles.glow} />
-      <svg className={styles.orbit} viewBox="0 0 560 300">
-        <ellipse cx="280" cy="150" rx="272" ry="130" />
-        <ellipse cx="280" cy="150" rx="190" ry="88" />
-      </svg>
-      <div className={styles.mark}>
-        <SpineLogo variant="mark" size={76} decorative />
-      </div>
-      {scene === "welcome" ? <WelcomeScene /> : <LoginScene />}
+      <div className={styles.ground} />
+      <div className={styles.stage}>{scene === "welcome" ? <WelcomeScene /> : <LoginScene />}</div>
     </div>
   );
 }

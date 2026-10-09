@@ -299,3 +299,7 @@ list:
 ## License
 
 Not yet decided.
+
+### Artwork
+
+The people on the signed-out pages are [Open Peeps](https://www.openpeeps.com/) by Pablo Stanley, released under CC0.

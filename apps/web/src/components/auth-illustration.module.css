@@ -1,6 +1,7 @@
-/* US-AUTH-13, US-AUTH-14 (D-207) — the signed-out pages' illustration: Spine's own cards on a soft
-   brand panel. Colours come from tokens (brand colours for the panel only); motion runs only when
-   the person hasn't asked for less. */
+/* US-AUTH-13, US-AUTH-14 (D-207) — the signed-out pages' illustration: people and Spine's own cards on
+   a soft brand panel. Colours come from tokens (brand and illustration colours, constant in both themes);
+   sizes follow the panel (container units), so nothing drifts out of place at other widths. Motion runs
+   only when the person hasn't asked for less. */
 .panel {
   position: relative;
   overflow: hidden;
@@ -19,48 +20,124 @@
   background-image: radial-gradient(color-mix(in srgb, var(--color-brand-deep) 11%, transparent) 1.2px, transparent 1.3px);
   background-size: 22px 22px;
 }
-.glow {
+/* The scene stays together on wide screens: a centred stage, and every size follows it (container units). */
+.stage {
   position: absolute;
+  inset-block: 0;
   left: 50%;
-  top: 46%;
-  width: 520px;
-  height: 520px;
-  margin: -260px 0 0 -260px;
+  width: min(100%, 700px);
+  transform: translateX(-50%);
+  container-type: size;
+}
+.caption {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  top: 30px;
+  z-index: 4;
+}
+
+/* The ground the people stand on, in the mark's layer colours. */
+.ground {
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  bottom: -150px;
+  height: 260px;
   border-radius: 50%;
-  background: radial-gradient(
-    closest-side,
-    color-mix(in srgb, var(--color-brand-teal) 20%, transparent),
-    color-mix(in srgb, var(--color-brand-sky) 14%, transparent) 55%,
-    transparent
+  background: linear-gradient(
+    90deg,
+    var(--color-brand-layer-top-from),
+    var(--color-brand-layer-mid-from) 45%,
+    var(--color-brand-layer-base-from)
   );
+  opacity: 0.55;
 }
-.orbit {
+:global([data-theme="dark"]) .ground {
+  opacity: 0.28;
+}
+
+/* People: navy ink, white skin and an outfit per person, from the illustration tokens. */
+.team {
   position: absolute;
-  left: 50%;
-  top: 46%;
-  width: 560px;
-  height: 300px;
-  margin: -150px 0 0 -280px;
-  overflow: visible;
+  left: 6%;
+  right: 7%;
+  bottom: 18px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
 }
-.orbit ellipse {
-  fill: none;
-  stroke: var(--color-border-strong);
-  stroke-width: 1.5;
-  stroke-dasharray: 2 7;
-  stroke-linecap: round;
+.person {
+  --h: min(42cqh, 62cqw);
+  position: relative;
+  height: var(--h);
 }
-.mark {
+.team .person:nth-child(2) {
+  --h: min(40cqh, 58cqw);
+}
+.team .person:nth-child(3) {
+  --h: min(40cqh, 58cqw);
+}
+.solo {
+  --h: min(52cqh, 56cqw);
   position: absolute;
-  left: 50%;
-  top: 46%;
-  margin: -38px 0 0 -38px;
+  right: 4%;
+  bottom: 0;
   z-index: 3;
 }
+.figure {
+  position: relative;
+  display: block;
+  height: 100%;
+  width: auto;
+  overflow: visible;
+}
+.mint {
+  --illustration-outfit: var(--color-illustration-outfit-mint);
+}
+.sky {
+  --illustration-outfit: var(--color-illustration-outfit-sky);
+}
+.periwinkle {
+  --illustration-outfit: var(--color-illustration-outfit-periwinkle);
+}
+.halo {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  width: calc(var(--h) * 0.47);
+  height: calc(var(--h) * 0.47);
+  transform: translateX(-50%);
+  border-radius: 50%;
+}
+.solo .halo {
+  top: 2%;
+  width: calc(var(--h) * 0.78);
+  height: calc(var(--h) * 0.78);
+}
+.mint .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-top-from), var(--color-brand-layer-top-to));
+  opacity: 0.5;
+}
+.sky .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-mid-from), var(--color-brand-layer-mid-to));
+  opacity: 0.6;
+}
+.periwinkle .halo {
+  background: linear-gradient(160deg, var(--color-brand-layer-base-from), var(--color-brand-layer-base-to));
+  opacity: 0.45;
+}
+:global([data-theme="dark"]) .halo {
+  opacity: 0.7;
+}
+
+/* Cards: Spine's own surfaces with placeholder lines, never names or amounts. */
 .card {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   box-sizing: border-box;
+  width: min(226px, 42cqw);
   border-radius: 14px;
   background: var(--color-surface);
   box-shadow: var(--shadow-overlay);
@@ -69,19 +146,21 @@
 :global([data-theme="dark"]) .card {
   border: 1px solid var(--color-border);
 }
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(240px, 46cqw);
+}
+.today {
+  width: min(290px, 56cqw);
+}
 .swap {
   display: inline-grid;
   margin-left: auto;
 }
 .swap > * {
   grid-area: 1 / 1;
-}
-.caption {
-  position: absolute;
-  left: 32px;
-  right: 32px;
-  bottom: 28px;
-  z-index: 4;
 }
 
 /* The first status shows until the story reaches it; with less motion, only the final one shows. */
@@ -90,12 +169,8 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .orbit ellipse {
-    animation: flow 16s linear infinite;
-  }
-  .orbit ellipse:nth-child(2) {
-    animation-direction: reverse;
-    animation-duration: 12s;
+  .person {
+    animation: rise 0.7s var(--d, 0s) cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
   }
   .card {
     animation:
@@ -112,6 +187,12 @@
   }
 }
 
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
 @keyframes enter {
   from {
     opacity: 0;
@@ -121,11 +202,6 @@
 @keyframes float {
   50% {
     transform: translateY(-6px);
-  }
-}
-@keyframes flow {
-  to {
-    stroke-dashoffset: -180;
   }
 }
 @keyframes fade {

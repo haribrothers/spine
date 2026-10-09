@@ -239,7 +239,7 @@ Decision: [D-207](../prd/12-decisions.md)
   - **Create your account** (to `/signup`).
 
   The other side shows an animated illustration.
-- **Given** the illustration, **when** it plays, **then** a sample quote is sent and accepted, becomes a job, then an invoice, and is paid. Its cards are drawn from Spine's own components with made-up names, and it settles within about 2 seconds, then drifts gently.
+- **Given** the illustration, **when** it plays, **then** three people (a tradesperson, the owner and a customer) rise into place and the story plays above them: the quote turns Accepted, the invoice turns Paid and a payment arrives. Its cards are drawn from Spine's own components with placeholder lines — no names, document numbers or amounts — and it settles within about 3 seconds, then drifts gently.
 - **Given** Reduce Motion, **when** the page opens, **then** the illustration shows its final frame and nothing moves.
 - **Given** a screen reader, **when** it reads the page, **then** it skips the illustration.
 - **Given** an install that already has an owner, **when** someone opens `/welcome`, **then** they go to `/login`.
@@ -263,7 +263,7 @@ Decision: [D-207](../prd/12-decisions.md)
   - "Password" with a show/hide eye;
   - "Forgot password?" and **Log in**.
 
-  The illustration side shows a calmer scene: today's jobs, a quote accepted, an invoice paid. It uses made-up names, never the install's data.
+  The illustration side shows a calmer scene: one person with a coffee beside today's jobs and a quote just accepted. Like the welcome page, its cards show placeholder lines and statuses, never names, amounts or the install's data.
 - **Given** Caps Lock is on, **when** I type in Password, **then** "Caps Lock is on." shows under the field.
 - **Given** a wrong email or password, **when** I log in, **then** I see "That email and password don't match. Check both, or reset your password.". It doesn't say which one was wrong, and what I typed stays.
 - **Given** too many attempts, **when** the server refuses, **then** I see "Too many sign-in attempts. Wait a minute, then try again.".

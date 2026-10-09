@@ -80,6 +80,15 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — People in the signed-out illustration (US-AUTH-13, US-AUTH-14, D-207)
+
+- **The illustration is now people:** welcome shows a team of three (a tradesperson pointing at the quote, the owner and a customer; two men, one woman) and login shows one man with a coffee. They're Open Peeps (CC0, Pablo Stanley), shipped as one sprite, `apps/web/public/illustrations/people.svg`, and drawn with `<use>`. The Spine mark and its orbits leave the panel.
+- **No names or amounts on the cards:** each card is an icon, placeholder lines and its status (quote Sent → Accepted, invoice Due → Paid, payment Paid; login's today list and an Accepted quote).
+- **Colour from tokens:** new `illustration` tokens (`--color-illustration-ink`, `-skin`, `-outfit-mint`, `-outfit-sky`, `-outfit-periwinkle`) in `tokens.json` and the preset, the same in light and dark like the brand colours; listed on the design-system colour page. The ground and halos use the logo's layer colours.
+- **Holds together at any width:** the scene sits on a centred stage up to 700 px wide and sizes itself with container units.
+- **Design:** canvas "02 Welcome, login and sign-up" redrawn with the people (chosen on "02b Signed-out illustration - people": Open Peeps, soft colours); all nine `Auth*` artboards re-exported.
+- **Tests:** `us-auth-13` checks the team comes from the sprite, the cards carry no names or amounts, and the sprite parses (an XML comment containing two hyphens had blanked it).
+
 ### 2026-10-10 — Welcome, login and passwords (US-AUTH-13 to US-AUTH-15, D-207)
 
 - **One frame for every signed-out page (`AuthFrame`):** the logo and theme toggle on top, the form centred, and beside it, from 1024 px up, an illustration of made-up work drawn with Spine's own card styles around the Spine mark. It's still under Reduce Motion and skipped by screen readers. It's used by welcome, login, sign-up, invite-only, forgot password, "Check your email", reset password and invitations; the old card shell is gone.

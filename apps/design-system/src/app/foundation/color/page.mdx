@@ -52,6 +52,18 @@ The colours of the Spine logo (D-206): its gradient, the layer colours and the w
   { name: "Wordmark", variable: "--color-brand-wordmark" },
 ]} />
 
+## Illustration (signed-out pages only)
+
+The people beside the welcome, login and other signed-out forms (US-AUTH-13, D-207) — Open Peeps (CC0), drawn from one sprite in `apps/web/public/illustrations/people.svg`. Navy ink, white skin and a soft outfit per person. Like the brand colours, they're the same in light and dark (ink on paper, like PDFs) and appear only in the illustration — never on text, buttons or status.
+
+<ColorSwatchGrid swatches={[
+  { name: "Ink", variable: "--color-illustration-ink" },
+  { name: "Skin", variable: "--color-illustration-skin" },
+  { name: "Outfit mint", variable: "--color-illustration-outfit-mint" },
+  { name: "Outfit sky", variable: "--color-illustration-outfit-sky" },
+  { name: "Outfit periwinkle", variable: "--color-illustration-outfit-periwinkle" },
+]} />
+
 ## Financial status (reserved)
 
 These four map directly to invoice/quote/job status everywhere they appear — dashboards, the invoice list, AR aging, the PDF itself — and are never used for anything else. A re-themed `primary` color must never collide with these.
