@@ -113,6 +113,7 @@ export const nav: TopLevelSection[] = [
           { title: "ScrollArea", href: "/components/scroll-area" },
           { title: "AspectRatio", href: "/components/aspect-ratio" },
           { title: "Kbd", href: "/components/kbd" },
+          { title: "SpineLogo", href: "/components/spine-logo" },
           { title: "Typography", href: "/components/typography" },
         ],
       },

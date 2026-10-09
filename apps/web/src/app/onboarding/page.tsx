@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, SpineLogo, Spinner, Stepper, type StepperStepDef } from "@spine/ui";
 import type { TaxCountry, TaxProfile } from "@spine/shared";
 import { apiClient } from "../../lib/api-client";
 import { ThemeToggle } from "../../components/theme-toggle";
@@ -91,22 +90,7 @@ export default function OnboardingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center gap-6 p-4 py-10">
       <div className="flex w-full max-w-2xl items-center justify-center">
-        <Image
-          src="/spine-logo-horizontal.png"
-          alt="Spine"
-          width={140}
-          height={41}
-          priority
-          className="dark:hidden"
-        />
-        <Image
-          src="/spine-logo-horizontal-light.png"
-          alt="Spine"
-          width={140}
-          height={41}
-          priority
-          className="hidden dark:block"
-        />
+        <SpineLogo variant="horizontal" size={140} />
       </div>
       <ThemeToggle />
       {step !== "welcome" && (

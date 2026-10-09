@@ -80,6 +80,26 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — The Spine logo across the web app (US-SET-26, D-206, closes Q-25)
+
+- **`SpineLogo` in `@spine/ui`:**
+  - Draws the mark, horizontal or vertical lockup as inline SVG from the same artwork as the phone app, with a test keeping the two copies identical.
+  - Read as "Spine" unless decorative, and clamped to the brand minimums.
+  - The wordmark uses the new `--color-brand-wordmark` token (Spine blue, light text in dark), outside the theme rules, so a business's theme never recolours it. The brand teal, sky, deep and layer gradients are now web tokens too.
+- **Where it shows:**
+  - The sidebar (horizontal logo; collapsed, the mark alone, which is also the expand button).
+  - Login, sign-up, onboarding, accept invite and the password pages.
+  - The public quote page's "Sent with Spine" footer.
+  - Dark mode now comes from CSS instead of a swap after load, and the old logo PNGs are gone.
+- **Icons:**
+  - An SVG favicon and `favicon.ico` (16/32/48) with a solid white mark that reads at tab size.
+  - A 180 px Apple touch icon, and a web manifest with 192, 512 and maskable icons (`display: browser`, no install prompt).
+  - The browser bar takes the page colour in light and dark.
+  - Push notifications use the square app icon and a one-colour badge.
+- **`SidebarHeader` (`@spine/ui`):** collapsed with a logo, the logo is the expand button, showing the expand icon on hover or focus.
+- **Design system:** a SpineLogo doc page, Brand swatches on Color, and the new logo in the Sidebar, AppShell and Templates demos.
+- **Tests:** `us-set-26` (unit, in `@spine/ui`) and `us-set-26.spec.ts` (E2E: the signed-out icons and manifest, the sidebar expanded and collapsed). QA script section 198.
+
 ### 2026-10-09 — CI confirms instead of discovering: `pnpm verify` and a faster, cheaper pipeline (D-205)
 
 - **`pnpm verify`** runs what CI runs, locally and in CI's order: lint → typecheck → unit → integration → E2E.

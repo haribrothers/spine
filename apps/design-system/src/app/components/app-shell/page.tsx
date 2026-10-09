@@ -7,6 +7,7 @@ import {
   AppShellSidebar,
   Avatar,
   AvatarFallback,
+  SpineLogo,
   type AppShellNavSection,
 } from "@spine/ui";
 import { Bell, ChevronDown, FileText, HelpCircle, LayoutDashboard, Receipt, Settings, Users } from "lucide-react";
@@ -42,7 +43,7 @@ function AppShellDemo() {
     <div className="h-[560px] w-full overflow-hidden rounded-lg border border-border">
       <AppShell className="h-full">
         <AppShellSidebar
-          logo={<span className="truncate text-[14px] font-semibold text-on-surface">{collapsed ? "S" : "Spine"}</span>}
+          logo={collapsed ? <SpineLogo variant="mark" size={28} /> : <SpineLogo variant="horizontal" size={96} />}
           collapsed={collapsed}
           onCollapsedChange={setCollapsed}
           sections={DEMO_SECTIONS}

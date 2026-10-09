@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Badge, Button, Card, RichTextContent, RichTextEditor, SpineLogo, Spinner } from "@spine/ui";
 import { CheckCircle2, Clock, LinkIcon, XCircle } from "lucide-react";
 import type { PublicQuoteUnavailableBusiness, PublicQuoteView as PublicQuoteViewData } from "./types";
 import { formatMoney } from "../../../lib/money";
@@ -275,7 +275,11 @@ function QuoteLinkExpired({ business }: { business: PublicQuoteUnavailableBusine
           )}
         </address>
       </Card>
-      <p className="text-center text-[12px] text-on-surface-muted">Sent with Spine</p>
+      {/* US-SET-26: the mark before the words, skipped by screen readers since the words say it. */}
+      <p className="flex items-center justify-center gap-1.5 text-[12px] text-on-surface-muted">
+        <SpineLogo decorative size={20} />
+        Sent with Spine
+      </p>
     </PageShell>
   );
 }

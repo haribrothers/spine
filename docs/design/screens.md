@@ -2515,6 +2515,55 @@ Links to: —
 Shows: "Settings — Emails — Spine" · "Overview" · "Dashboard" · "Good afternoon, Alex" · "Cash position" · "Profit this month" · "Receivables" · "Overdue" · "Search settings" · "ORGANISATION" · "Business profile" · "Industry template" · "Currency & locale" · "Financial year" · "Tax" · "GST" · "Numbering" · "Chart of accounts" · "Opening balances" · "Payment instructions" · "Documents" · "Emails" · "Automatic reminders" · "Modules" · "Repeat quote conversion" · "Upcoming meetings" · "Meeting reminders" · "Branding" · "Data export" · "Demo data" · "Your own words in the emails customers get. The branded layout around them stays the same." · "Quote" · "Invoice" · "Payment reminder" · "Receipt" · "Credit note" · "Statement" · "Subject" · "Invoice {document_number} from {business_name}" · "Message" · "Hi {customer_name}, Your invoice {document_number} for {amount} is attached. It's due on {due_date}. Thanks for choosing us, {business_name}" · "Insert" · "{customer_name}" · "{document_number}" · "{amount}"
 
 
+## Spine brand on the web
+
+Drawn in Claude Design for US-SET-26 (D-206): project "Spine web — refinements before Phase 10", canvas "01 Spine logo on the web". Screens captured before this change still show the old "S" logo; retake each one when its screen is next touched.
+
+### BrandSidebar — Sidebar with the Spine logo
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSidebar](screens/BrandSidebar.webp)
+
+Links to: `DashboardOwnerRedesign`
+
+Shows: The horizontal logo (96 × 28) · collapsed, the 28 px mark as the "Expand sidebar" button, showing the expand icon on hover · "Overview" · "Dashboard" · "Sales" · "Contacts" · "Pipeline" · "Quotes" · "Billing" · "Invoices"
+
+### BrandSidebarDark — Sidebar with the Spine logo, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSidebarDark](screens/BrandSidebarDark.webp)
+
+Links to: `DashboardOwnerRedesignDark`
+
+Shows: The horizontal logo with the light-text wordmark · the collapsed rail's mark
+
+### BrandSignIn — Login with the Spine logo
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandSignIn](screens/BrandSignIn.webp)
+
+Links to: `SignIn`
+
+Shows: The horizontal logo (140 × 41) above "Log in" · "Welcome back to Spine." · "Email" · "Password" · "Log in"
+
+### BrandBrowserIcons — Favicon in the browser tab
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandBrowserIcons](screens/BrandBrowserIcons.webp)
+
+Links to: —
+
+Shows: The app-icon tile with a solid white mark in the tab "Dashboard — Spine", light and dark browser chrome
+
+### BrandPublicQuoteFooter — Public quote footer
+**Priority:** P3 · **Phase:** Refinements · **Stories:** US-SET-26 · **Source:** Claude Design
+
+![BrandPublicQuoteFooter](screens/BrandPublicQuoteFooter.webp)
+
+Links to: `PublicQuote`
+
+Shows: The 20 px mark before "Sent with Spine", light and dark
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

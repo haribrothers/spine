@@ -3,9 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { useTheme } from "next-themes";
-import { AppShell, AppShellContent, AppShellSidebar } from "@spine/ui";
+import { AppShell, AppShellContent, AppShellSidebar, SpineLogo } from "@spine/ui";
 import { AppUserMenu } from "./app-user-menu";
 import { HelpButton } from "./help-button";
 import { SearchButton, SearchPalette } from "./search-palette";
@@ -29,19 +27,13 @@ const COLLAPSE_STORAGE_KEY = "spine.sidebar.collapsed";
 // not a form/prose page) where the cap would only waste space.
 const FULL_WIDTH_ROUTES = ["/leads", "/meetings"];
 
+/**
+ * US-SET-26 (D-206) — the horizontal logo, or the gradient mark alone when
+ * the sidebar is collapsed. Dark mode comes from CSS, so it's right from the
+ * first frame.
+ */
 function AppLogo({ collapsed }: { collapsed: boolean }) {
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  // Avoid a hydration mismatch on the theme-dependent src by rendering the
-  // light-mode asset until mounted, matching ThemeToggle's own pattern.
-  const src = mounted && resolvedTheme === "dark" ? "/spine-logo-horizontal-light.png" : "/spine-logo-horizontal.png";
-
-  if (collapsed) {
-    return <span className="text-[16px] font-bold text-primary">S</span>;
-  }
-  return <Image src={src} alt="Spine" width={92} height={24} priority />;
+  return collapsed ? <SpineLogo variant="mark" size={28} /> : <SpineLogo variant="horizontal" size={96} />;
 }
 
 export interface AppLayoutProps {

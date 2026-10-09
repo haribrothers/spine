@@ -86,9 +86,12 @@ describe("US-MOB-27 · use the Spine brand the same way everywhere in the app", 
     expect(preset).not.toMatch(/brand/);
   });
 
-  it("keeps the web app on its own logo until its rebrand (Q-25)", () => {
-    const web = sourceFiles(join(ROOT, "apps/web/src"));
-    expect(web.filter((file) => /SpineLogo|docs\/logos|brandColors/.test(readFileSync(file, "utf8")))).toEqual([]);
+  it("shares its artwork with the web app's logo (US-SET-26, D-206)", () => {
+    // The web draws the same paths through @spine/ui's own SpineLogo; it never imports the native one.
+    const web = readFileSync(join(ROOT, "packages/ui/src/components/spine-logo.tsx"), "utf8");
+    const native = readFileSync(join(ROOT, "packages/ui-native/src/components/spine-logo.tsx"), "utf8");
+    for (const d of native.match(/"M[0-9][^"]+Z"/g) ?? []) expect(web).toContain(d);
+    expect(sourceFiles(join(ROOT, "apps/web/src")).filter((file) => /@spine\/ui-native/.test(readFileSync(file, "utf8")))).toEqual([]);
   });
 
   it("documents SpineLogo in the design-system app", () => {

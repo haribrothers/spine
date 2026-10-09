@@ -388,7 +388,7 @@ Decision: D-154
 Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
 
 **Acceptance criteria**
-- **Given** a signed-in page, **when** the sidebar is expanded, **then** its header shows the horizontal logo (the mark beside SPiNE); **when** it's collapsed, **then** the gradient mark alone (28 px) replaces the "S".
+- **Given** a signed-in page, **when** the sidebar is expanded, **then** its header shows the horizontal logo (the mark beside SPiNE); **when** it's collapsed, **then** the gradient mark alone (28 px) replaces the "S" and is itself the expand button: it's named "Expand sidebar" and shows the expand icon on hover or keyboard focus.
 - **Given** login, sign-up, onboarding, accept invite, forgot password, reset password and invite-only, **when** they open, **then** they show the horizontal logo where the old one was.
 - **Given** dark mode, **when** a page with the logo renders, **then** the wordmark is light text from the first frame, with no swap after the page loads.
 - **Given** a business has picked another theme (US-SET-09), **when** the logo renders, **then** the wordmark stays Spine blue (`#2954E5`); the theme changes only the app's accent colour.

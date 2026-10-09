@@ -407,7 +407,7 @@ Decision: D-100
 **Acceptance criteria**
 - **Given** dark mode, **when** any Phase 7 screen renders, **then** every colour comes from a token with a dark value (no hex in components), matching the dark designs on the canvas.
 - **Given** the dashboard in dark mode, **when** charts, sparklines, aging bars and status chips render, **then** they use the dark status tokens (`paid` `#4ADE94`, `due-soon` `#F2B23D`, `overdue` `#F17B72`, `primary` `#6B8AFF`) and money-out bars use `border-strong`.
-- **Given** dark mode, **when** the sidebar renders, **then** the logo switches to the light wordmark (`spine-logo-horizontal-light.png`).
+- **Given** dark mode, **when** the sidebar renders, **then** the logo's wordmark turns light (`SpineLogo`, `--color-brand-wordmark`; US-SET-26).
 - **Given** dialogs, menus, the search palette and drawers in dark mode, **when** they open, **then** they use `surface` on a darkened overlay and stay distinguishable from the page (`background`).
 - **Given** PDFs and customer emails, **when** they're produced, **then** they're always light, whatever the viewer's theme.
 - **Given** the E2E suite, **when** it runs, **then** each Phase 7 screen has a light and a dark screenshot test, and axe passes in both.

@@ -41,6 +41,17 @@ A warm-leaning stone scale rather than a cool blue-grey, so dense tables and for
 
 An Owner can switch the whole organisation to Harbour Teal, Plum or Graphite in Settings › Branding (US-SET-09). A preset replaces only Primary and Primary hover, through `[data-brand]` rules in the preset CSS; neutrals and the financial status colours below never change. Values for both modes are in `docs/DESIGN.md` and `tokens.json` (`themePresets`).
 
+## Brand (logo and icons only)
+
+The colours of the Spine logo (D-206): its gradient, the layer colours and the wordmark (Spine blue in light mode, light text in dark). They're outside the theme rules, so a business's theme never recolours Spine's own logo. They appear only in `SpineLogo` and the app icons — never on text, buttons or status.
+
+<ColorSwatchGrid swatches={[
+  { name: "Brand teal", variable: "--color-brand-teal" },
+  { name: "Brand sky", variable: "--color-brand-sky" },
+  { name: "Brand deep", variable: "--color-brand-deep" },
+  { name: "Wordmark", variable: "--color-brand-wordmark" },
+]} />
+
 ## Financial status (reserved)
 
 These four map directly to invoice/quote/job status everywhere they appear — dashboards, the invoice list, AR aging, the PDF itself — and are never used for anything else. A re-themed `primary` color must never collide with these.

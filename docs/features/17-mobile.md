@@ -471,7 +471,7 @@ Decision: [D-203](../prd/12-decisions.md)
 - **Given** a size below the minimum (20 dp for the mark, 96 dp wide for a lockup), **when** asked for, **then** `SpineLogo` draws it at the minimum.
 - **Given** text, buttons and status, **when** they're drawn, **then** they keep the primary and status tokens; brand colours appear only in the logo, the app icon, the splash and illustrations.
 - **Given** `SpineLogo`, **when** this story is done, **then** it has a doc screen in `apps/design-system-native` and an accessibility test.
-- **Given** the web app, the docs site and the web design system, **when** this story is done, **then** they keep their current logo until their own rebrand ([Q-25](../prd/13-risks-open-questions.md)).
+- **Given** the web app and the web design system, **when** they draw the logo, **then** they use the same artwork through `@spine/ui`'s own `SpineLogo` (US-SET-26, [D-206](../prd/12-decisions.md)).
 
 **Implementation notes**
 - The logo SVGs are `docs/logos/spine-logo*.svg`; `SpineLogo` renders their paths with `react-native-svg` (no image files), so it stays sharp at every size and follows dark mode.

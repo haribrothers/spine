@@ -41,6 +41,7 @@ export * from "./components/input-group";
 export * from "./components/kanban";
 export * from "./components/reorderable-list";
 export * from "./components/kbd";
+export * from "./components/spine-logo";
 export * from "./components/label";
 export * from "./components/layout";
 export * from "./components/menubar";

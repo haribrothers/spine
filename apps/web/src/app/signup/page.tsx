@@ -3,20 +3,7 @@
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  FormField,
-  Input,
-  Spinner,
-} from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, CardDescription, CardHeader, CardTitle, FormField, Input, SpineLogo, Spinner } from "@spine/ui";
 import { authClient } from "../../lib/auth-client";
 import { ThemeToggle } from "../../components/theme-toggle";
 import { useSignupStatus } from "../../lib/signup-status";
@@ -81,22 +68,7 @@ function SignupForm() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-4">
       <div className="flex w-full max-w-sm items-center justify-center">
-        <Image
-          src="/spine-logo-horizontal.png"
-          alt="Spine"
-          width={140}
-          height={41}
-          priority
-          className="dark:hidden"
-        />
-        <Image
-          src="/spine-logo-horizontal-light.png"
-          alt="Spine"
-          width={140}
-          height={41}
-          priority
-          className="hidden dark:block"
-        />
+        <SpineLogo variant="horizontal" size={140} />
       </div>
       <ThemeToggle />
       {/* US-AUTH-08: an existing install takes new people by invitation only. */}

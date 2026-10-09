@@ -15,7 +15,9 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(title || "Spine", {
       body,
-      icon: "/spine-logo-horizontal.png",
+      // US-SET-26: the square app icon, and a one-colour badge for Android's status bar.
+      icon: "/icons/notification-192.png",
+      badge: "/icons/badge-96.png",
       data: { link },
     }),
   );

@@ -52,6 +52,24 @@ export function SidebarHeader({
   children,
   ...props
 }: SidebarHeaderProps) {
+  // Collapsed, the header is only as wide as the rail: the logo itself is the
+  // expand button, showing the expand icon on hover or keyboard focus (US-SET-26).
+  if (collapsed && logo && onCollapsedChange) {
+    return (
+      <div className={cn("flex h-14 shrink-0 items-center justify-center border-b border-border", className)} {...props}>
+        <button
+          type="button"
+          onClick={() => onCollapsedChange(false)}
+          aria-label="Expand sidebar"
+          className="group relative flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:bg-surface-sunken"
+        >
+          <span className="flex items-center justify-center group-hover:invisible group-focus-visible:invisible">{logo}</span>
+          <PanelLeftOpen size={18} strokeWidth={2} className="invisible absolute group-hover:visible group-focus-visible:visible" />
+        </button>
+      </div>
+    );
+  }
+
   if (logo || onCollapsedChange) {
     return (
       <div

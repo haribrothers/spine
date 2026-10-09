@@ -11,7 +11,7 @@ The design system is already built and is reused, not redesigned ([D-037](12-dec
 | [motion.md](../design/motion.md) | Durations, easing, per-pattern motion, reduced motion |
 | [components/](../design/components/) | One page per component: 79 web (`@spine/ui`), 31 native (`@spine/ui-native`) |
 | [index.d.ts](../design/index.d.ts) | Points to the packages' real type entry points |
-| [logo/](../design/logo/) | Horizontal (light and dark) and square marks |
+| [logos/](../logos/) | The Spine mark, horizontal and vertical lockups, silhouettes and app-icon art (SVG); drawn in apps by `SpineLogo` (D-206) |
 | [native-notes.md](../design/native-notes.md) | Native implementation rules (moved from CLAUDE.md) |
 | [screens.md](../design/screens.md) and `screens/` | Every screen: captured from the app or drawn on the design canvas |
 

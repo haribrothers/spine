@@ -434,7 +434,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 
 ## Refinements before Phase 10
 
-- [ ] US-SET-26 · See the Spine logo across the web app
+- [x] US-SET-26 · See the Spine logo across the web app
 
 ## Phase 10 · AI assistant
 

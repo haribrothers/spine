@@ -4471,6 +4471,21 @@ The phone carries the new Spine logo (D-203); the web keeps its own until its re
    - Section 191: sign in, errors under their fields, Forgot password, Profile, sign out.
    - Section 196: Android screens keep Material 3 (outlined fields, pill buttons).
 
+## 198. The Spine logo across the web app (US-SET-26, refinements before Phase 10)
+
+Run the web app (`pnpm dev`) in Chrome and Safari, light and dark (the theme toggle and the system setting). Compare against the canvas "01 Spine logo on the web" and the `Brand*` artboards.
+
+1. **Sign-in pages:** log out. Login, sign-up, forgot password, reset password, invite-only and an invitation link each show the horizontal logo (mark beside SPiNE) above the card. Switch to dark: the wordmark is light text straight away, with no flash of the blue one after the page loads.
+2. **Sidebar:** sign in. The sidebar header shows the horizontal logo. Collapse it: only the gradient mark shows, centred. Hover it: it turns into the expand icon and expands the sidebar on click. Tab to it with the keyboard: the expand icon shows and a screen reader says "Expand sidebar".
+3. **Theme:** as an Owner, pick Plum in Settings › Branding. The selected item and buttons turn plum; the SPiNE wordmark stays Spine blue (light) or light text (dark). Switch back to Spine Blue.
+4. **Browser tab:** the tab and a bookmark show the app-icon tile (white mark on the teal-to-blue square), readable at the tab's size, in light and dark browser chrome. `/favicon.ico` and `/icon.svg` open while signed out.
+5. **Home screen:** on an iPhone, Share › Add to Home Screen shows the iOS app-icon art. On Android Chrome, Add to Home screen shows the round icon (from the manifest's maskable icon). Opening it opens the normal website, with no install prompt. The browser bar is the page colour in light and dark mode.
+6. **Push:** turn on browser notifications and trigger one (for example accept a quote from its public link). The notification shows the square app icon; on Android, the status bar shows the one-colour badge.
+7. **Public quote page:** open a quote's public link. The footer shows the small mark before "Sent with Spine"; a screen reader says "Sent with Spine" once. The rest of the page is the business's own branding, unchanged.
+8. **Unchanged:** a quote or invoice email and PDF still carry the business's logo and name, not Spine's.
+9. **Design system:** `pnpm --filter @spine/design-system dev` has a SpineLogo page (horizontal, vertical, mark, minimum sizes), Brand swatches on Color, and the Sidebar, AppShell and Templates demos use the new logo.
+10. Regression: section 191 (field app sign-in) still shows the phone's own logo; Settings › Branding's theme swatches still change only the accent colour (US-SET-09).
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

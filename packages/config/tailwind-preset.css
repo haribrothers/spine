@@ -134,6 +134,20 @@
   --z-popover: 1600;
   --z-toast: 1700;
   --z-tooltip: 1800;
+  /* US-SET-26 (D-206) — the Spine logo's colours, for the logo and icons
+     only: never text or status. Outside the [data-brand] theme rules, so a
+     business's theme never recolours Spine's own logo. */
+  --color-brand-teal: #04e9bc;
+  --color-brand-sky: #51a5f8;
+  --color-brand-deep: #054dc1;
+  --color-brand-wordmark: #2954e5;
+  /* The mark's three layers, top to bottom (tokens.json color.gradients.brand). */
+  --color-brand-layer-top-from: #5df3bd;
+  --color-brand-layer-top-to: #10a9c2;
+  --color-brand-layer-mid-from: #a8e1e3;
+  --color-brand-layer-mid-to: #63a4e0;
+  --color-brand-layer-base-from: #69aae1;
+  --color-brand-layer-base-to: #0545af;
 }
 
 :root[data-theme="dark"] {
@@ -191,6 +205,7 @@
   --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
   --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
   --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
+  --color-brand-wordmark: #f3f2ee;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -249,6 +264,7 @@
     --shadow-raised: 0 4px 14px rgba(0, 0, 0, 0.45);
     --shadow-overlay: 0 10px 30px rgba(0, 0, 0, 0.55);
     --shadow-toast: 0 4px 14px rgba(0, 0, 0, 0.55);
+    --color-brand-wordmark: #f3f2ee;
   }
 }
 
