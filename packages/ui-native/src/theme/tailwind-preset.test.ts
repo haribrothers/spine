@@ -18,4 +18,18 @@ describe("tailwind preset colours", () => {
     expect(themeExtend.colors["on-primary-dark"]).toBe(darkColors.onPrimary);
     expect(themeExtend.colors["on-danger"]).toBe(lightColors.onDanger);
   });
+
+  it("takes the Android Material 3 roles from tokens.json (US-MOB-20)", () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const tokens = require("../../../../docs/design/tokens.json") as { color: Record<string, Record<string, string>> };
+    for (const [scheme, colors] of [["android", lightColors], ["android-dark", darkColors]] as const) {
+      expect([colors.primaryContainer, colors.onPrimaryContainer, colors.surfaceContainer, colors.outlineVariant]).toEqual([
+        tokens.color[scheme]!["primary-container"],
+        tokens.color[scheme]!["on-primary-container"],
+        tokens.color[scheme]!["surface-container"],
+        tokens.color[scheme]!["outline-variant"],
+      ]);
+    }
+    expect(themeExtend.colors["primary-container-dark"]).toBe(darkColors.primaryContainer);
+  });
 });

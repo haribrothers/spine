@@ -4403,6 +4403,28 @@ Same setup as section 191. You need a sent quote that is a variation order on (o
 8. Security: a Field user can't open, accept or decline a quote on a job they aren't on (404), and can't open the signature file (404). Staff and Owners can.
 9. Regression: Mark complete, Add photos and the job's photos still work from the same job screen (section 194). The web quote page for a draft or sent quote shows no acceptance panel.
 
+## 196. The field app on Android follows Material 3 (US-MOB-20, Phase 5)
+
+On an Android phone, compare each screen with its `Mob…Android` artboard in `docs/design/screens/`, in light and then dark mode (Today and a job against `MobHomeAndroidDark` and `MobJobDetailAndroidDark`).
+
+1. Today: the sync pill top left, the bell and avatar top right, and a large "Today" below. Scroll: "Today" moves into the bar with the pill beside the bell, and the bar turns grey. The welcome card and job cards are grey-filled with no border. Tonal pills ("Call …") and the tab bar's selected pill are pale blue (deep blue in dark mode).
+2. A job: the site and contact sit in an outlined card. Milestones and quotes are plain lists. The other milestones' "Mark complete" is tonal. "Add photos" floats bottom right. The photos show (not blank). "+n" over the last tile is dark with light text in both themes.
+3. Profile: the avatar beside the name. Then Email and Server rows with icons, and the sync row with "Last sent <time>" once something has been sent. Then "Appearance", the Field note, an outlined red "Sign out" with an icon, and the version.
+4. Search: a rounded search bar with the avatar inside. Tap it: it becomes a full-width bar with ← and, once you type, ✕. ← (or the back gesture) leaves the search. With recent searches: "Recent searches" in blue with "Clear". No results: the icon sits in a grey rounded square.
+5. Sign in: outlined Server, Email and Password fields. The server hint is under the Server field. A wrong server shows the field in red with an error icon and the message under it. The eye shows and hides the password.
+6. New expense: outlined fields, muted "Paid by" and "Receipt" labels, the receipt buttons without a card. "Headcount × day rate":
+   - The trade being edited is an outlined card (Trade, Workers, Day rate with the currency).
+   - "Add trade" folds it to one line ("Mason / 4 × $220.00   $880.00"). Tap that line to edit it again.
+   - "Total for the day" has no card.
+7. Receipt camera: ✕ top left with "Receipt" beside it.
+8. Back gesture:
+   - On the camera with photos taken: "Discard <n> photos?".
+   - On New expense with a receipt taken, or Mark complete with photos: it closes and the photos aren't left waiting on the phone.
+   - On Quote accepted: back to the job.
+   - Elsewhere it does what the drawn back arrow does.
+9. TalkBack: swipe through Today, a job, Expenses, New expense, Search, Profile, Sync, Notifications, Mark complete, the camera and a presented quote. Every control is read with a name (no "unlabelled button").
+10. Regression (iOS): Today, Profile, Search, Sign in and New expense look as before (sections 191–195).
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

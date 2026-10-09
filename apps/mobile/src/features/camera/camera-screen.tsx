@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { Alert, Image, Pressable, Text, View } from "react-native";
+import { Alert, Image, Platform, Pressable, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { CameraView, type FlashMode } from "expo-camera";
 import Check from "lucide-react-native/icons/check";
@@ -8,7 +8,7 @@ import ImageIcon from "lucide-react-native/icons/image";
 import X from "lucide-react-native/icons/x";
 import Zap from "lucide-react-native/icons/zap";
 import ZapOff from "lucide-react-native/icons/zap-off";
-import { useNativeColors, useTheme } from "@spine/ui-native";
+import { useCameraInk } from "../../lib/camera/ink";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { outbox } from "../../lib/outbox/outbox";
 import { pickPhoto } from "../../lib/outbox/pick-photo";
@@ -18,6 +18,7 @@ import { useAssignedJobs } from "../../lib/data/jobs";
 import { PickerSheet } from "../../components/picker-sheet";
 import { CameraPermissionGate } from "./camera-permission";
 import { PhotoReview } from "./photo-review";
+import { useAndroidBack } from "../../lib/use-android-back";
 
 export type CameraMode = "photos" | "milestone" | "receipt";
 
@@ -26,16 +27,7 @@ export function takenLabel(count: number): string {
   return `${count} taken · saved on this phone`;
 }
 
-/**
- * The camera is dark in both themes: controls are light "ink" on the token
- * scrim over a near-black base.
- */
-export function useCameraInk() {
-  const colors = useNativeColors();
-  const { resolvedMode } = useTheme();
-  const dark = resolvedMode === "dark";
-  return { ink: dark ? colors.onSurface : colors.surface, onInk: dark ? colors.background : colors.onSurface, glass: colors.scrim, base: dark ? colors.background : colors.onSurface, primary: colors.primary, onPrimary: colors.onPrimary };
-}
+export { useCameraInk };
 
 /** Round glass control on the camera (close, flash). */
 function GlassButton({ label, onPress, children, testID }: { label: string; onPress: () => void; children: React.ReactNode; testID?: string }) {
@@ -93,6 +85,7 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
       },
     ]);
   };
+  useAndroidBack(close);
 
   const shoot = async () => {
     if (busy || !camera.current) return;
@@ -123,22 +116,33 @@ export function CameraScreen({ mode, jobId: initialJobId, request }: { mode: Cam
   }
 
   const receipt = mode === "receipt";
+  const android = Platform.OS === "android";
   return (
     <CameraPermissionGate>
       <View testID={`camera-${mode}`} className="flex-1" style={{ backgroundColor: base }}>
         <CameraView ref={camera} style={{ flex: 1 }} facing="back" flash={flash} />
         {/* Top bar */}
         <View className="absolute left-0 right-0 flex-row items-center justify-between px-4" style={{ top: insets.top + 8 }}>
-          {receipt ? (
+          {receipt && !android ? (
             <Pressable onPress={close} accessibilityRole="button" className="min-h-[44px] justify-center rounded-full px-4" style={{ backgroundColor: glass }}>
               <Text className="text-[16px] font-medium" style={{ color: ink }}>Cancel</Text>
             </Pressable>
+          ) : receipt ? (
+            // US-MOB-20 · `MobReceiptCaptureAndroid`: ✕ with the title beside it.
+            <View className="flex-1 flex-row items-center gap-4">
+              <GlassButton testID="camera-close" label="Close" onPress={close}>
+                <X size={22} color={ink} />
+              </GlassButton>
+              <Text accessibilityRole="header" className="text-[20px]" style={{ color: ink }}>
+                Receipt
+              </Text>
+            </View>
           ) : (
             <GlassButton testID="camera-close" label="Close" onPress={close}>
               <X size={22} color={ink} />
             </GlassButton>
           )}
-          {receipt ? (
+          {receipt && android ? null : receipt ? (
             <Text accessibilityRole="header" className="text-[17px] font-semibold" style={{ color: ink }}>Receipt</Text>
           ) : (
             <Pressable

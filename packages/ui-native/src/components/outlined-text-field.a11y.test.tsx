@@ -32,4 +32,12 @@ describe("OutlinedTextField a11y", () => {
     );
     expect(screen.getByText("Date")).toBeTruthy();
   });
+
+  it("hides a password with a labelled show/hide control", () => {
+    render(<OutlinedTextField label="Password" value="secret" onChangeText={() => {}} secureTextEntry testID="password" />);
+    expect(screen.getByTestId("password").props.secureTextEntry).toBe(true);
+    fireEvent.press(screen.getByRole("button", { name: "Show password" }));
+    expect(screen.getByTestId("password").props.secureTextEntry).toBe(false);
+    expect(screen.getByRole("button", { name: "Hide password" })).toBeTruthy();
+  });
 });

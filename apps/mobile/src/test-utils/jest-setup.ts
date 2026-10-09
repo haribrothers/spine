@@ -16,8 +16,13 @@ jest.mock("expo-file-system", () => ({
     create() {}
     write() {}
     delete() {}
+    exists = false;
+    static downloadFileAsync: jest.Mock = jest.fn(async () => ({ uri: "file:///cache/files/downloaded" }));
   },
-  Directory: class {},
+  Directory: class {
+    exists = true;
+    create() {}
+  },
   Paths: { cache: "cache", document: "document" },
 }));
 jest.mock("expo-image-manipulator", () => ({ manipulateAsync: jest.fn(), SaveFormat: { JPEG: "jpeg" } }));

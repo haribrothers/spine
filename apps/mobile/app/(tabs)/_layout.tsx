@@ -15,12 +15,15 @@ import { useModules } from "../../src/lib/data/modules";
 export default function TabsLayout() {
   const colors = useNativeColors();
   const modules = useModules();
+  const android = Platform.OS === "android";
 
   return (
+    // Android: Material 3's navigation bar — surface-container, with the selected tab in a primary-container pill (US-MOB-20).
     <NativeTabs
-      tintColor={colors.primary}
-      iconColor={{ default: colors.onSurfaceMuted, selected: colors.primary }}
-      backgroundColor={colors.surfaceSunken}
+      tintColor={android ? colors.onSurface : colors.primary}
+      iconColor={{ default: colors.onSurfaceMuted, selected: android ? colors.onPrimaryContainer : colors.primary }}
+      backgroundColor={android ? colors.surfaceContainer : colors.surfaceSunken}
+      indicatorColor={colors.primaryContainer}
       labelVisibilityMode="labeled"
     >
       <NativeTabs.Trigger name="(today)">

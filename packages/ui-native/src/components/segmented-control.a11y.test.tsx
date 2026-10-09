@@ -1,3 +1,4 @@
+import { lightColors } from "../tokens";
 import { render } from "@testing-library/react-native";
 import { SegmentedButton } from "@expo/ui/jetpack-compose";
 import { SegmentedControl } from "./segmented-control";
@@ -69,10 +70,10 @@ describe("SegmentedControl a11y — on Android (readable selected segment, US-MO
     expect(segments.map((n) => n.props.selected)).toEqual([false, true, false]);
   });
 
-  it("uses the tonal pair (info-bg behind primary text) for the selected segment", () => {
+  it("uses Material's tonal pair (primary-container behind on-primary-container) for the selected segment", () => {
     const root = render(<SegmentedControl values={["A", "B"]} value="A" onValueChange={() => {}} />);
     const [first] = root.UNSAFE_root.findAllByType(SegmentedButton);
-    expect(first!.props.colors).toMatchObject({ activeContainerColor: "#EAEFFD", activeContentColor: "#2954E5" });
+    expect(first!.props.colors).toMatchObject({ activeContainerColor: lightColors.primaryContainer, activeContentColor: lightColors.onPrimaryContainer });
   });
 
   it("calls onValueChange with the tapped label", () => {

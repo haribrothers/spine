@@ -1,7 +1,7 @@
-import { Platform } from "react-native";
 import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
 import { useTabHeaderOptions } from "../../../src/components/header-items";
+import { androidHeaderOptions } from "../../../src/lib/android-header";
 
 /** A job opened from Today, Search or a notification still has the list under it. */
 export const unstable_settings = { initialRouteName: "index" };
@@ -16,7 +16,7 @@ export default function JobsLayout() {
         headerTintColor: colors.onSurface,
         headerTitleStyle: { color: colors.onSurface },
         headerBackButtonDisplayMode: "minimal",
-        ...(Platform.OS === "android" ? { headerStyle: { backgroundColor: colors.background } } : {}),
+        ...androidHeaderOptions(colors),
       }}
     >
       <Stack.Screen name="index" options={tabHeader} />

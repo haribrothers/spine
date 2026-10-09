@@ -7,6 +7,9 @@ import BellOff from "lucide-react-native/icons/bell-off";
 import CalendarPlus from "lucide-react-native/icons/calendar-plus";
 import CalendarX from "lucide-react-native/icons/calendar-x";
 import CircleCheck from "lucide-react-native/icons/circle-check";
+import FileCheck from "lucide-react-native/icons/file-check";
+import FileText from "lucide-react-native/icons/file-text";
+import FileX from "lucide-react-native/icons/file-x";
 import HardHat from "lucide-react-native/icons/hard-hat";
 import ReceiptText from "lucide-react-native/icons/receipt-text";
 import { EmptyState, useNativeColors } from "@spine/ui-native";
@@ -50,6 +53,14 @@ export function notificationIcon(type: string): { icon: React.ComponentType<{ si
     case "meeting_cancelled":
     case "meeting_removed":
       return { icon: CalendarX, tone: "overdue" };
+    // Group 5: quotes answered on site or online (Owners and Staff).
+    case "quote_accepted":
+      return { icon: FileCheck, tone: "paid" };
+    case "quote_rejected":
+      return { icon: FileX, tone: "overdue" };
+    case "quote_viewed":
+    case "variation_order_accepted":
+      return { icon: FileText, tone: "primary" };
     default:
       return { icon: Bell, tone: "primary" };
   }

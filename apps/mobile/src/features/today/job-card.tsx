@@ -10,6 +10,7 @@ import { dueChip, oneLine } from "../../lib/format";
 import { callNumber, openDirections } from "../../lib/linking";
 import { PillButton } from "../../components/pill-button";
 import { WaitingChip } from "../../components/waiting-chip";
+import { CARD } from "../../lib/card";
 
 /** "Call Alan Reyes" on iOS, "Call Alan" on Android (US-MOB-03). */
 export function callLabel(name: string, os: typeof Platform.OS = Platform.OS): string {
@@ -27,7 +28,7 @@ export function TodayJobCard({ job, locale, onOpen, now, waiting = [] }: { job: 
   const chip = next?.dueDate ? dueChip(next.dueDate, locale, now) : null;
   const phone = job.siteContact?.phone;
   return (
-    <View testID={`today-job-${job.id}`} className="gap-3 rounded-2xl border border-border bg-surface p-4 dark:border-border-dark dark:bg-surface-dark">
+    <View testID={`today-job-${job.id}`} className={`gap-3 rounded-2xl p-4 ${CARD}`}>
       <Pressable onPress={onOpen} accessibilityRole="button" accessibilityLabel={`${job.name}, ${job.contactName ?? ""}`} className="gap-1.5">
         <View className="flex-row items-center justify-between gap-2">
           <Text className="flex-1 text-[17px] font-semibold text-on-surface dark:text-on-surface-dark">{job.name}</Text>

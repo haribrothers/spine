@@ -33,6 +33,12 @@ export function usePendingSummary(): PendingSummary {
 }
 
 /** Items not yet sent — photos counted per batch, as the Sync screen lists them. */
+/** When the phone last sent something to the office (Profile's "Last sent 9:38 AM"), or null. */
+export function lastSentAt(items: readonly OutboxItem[]): number | null {
+  const times = items.filter((item) => item.status === "sent" && item.sentAt).map((item) => item.sentAt!);
+  return times.length ? Math.max(...times) : null;
+}
+
 export function pendingItems(items: readonly OutboxItem[]): number {
   return items.filter((item) => item.status !== "sent").length;
 }

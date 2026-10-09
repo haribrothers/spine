@@ -2,7 +2,7 @@ import { useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as WebBrowser from "expo-web-browser";
-import { Button, FloatingLabelField, FormRow, FormSection, FullWidthButton, Spinner } from "@spine/ui-native";
+import { Button, FloatingLabelField, FormRow, FormSection, FullWidthButton, OutlinedTextField, Spinner } from "@spine/ui-native";
 import { useSession } from "../../lib/session/session-provider";
 import { discoverServer, SignInError, type SignInField } from "../../lib/session/sign-in";
 
@@ -14,6 +14,8 @@ type Errors = Partial<Record<SignInField, string>>;
  * server's reset page in the phone's browser (D-052, US-AUTH-09). A removed
  * membership comes back here with its notice (US-MOB-02).
  */
+export const SERVER_HINT = "The server address is the link you open Spine with on a computer.";
+
 export function SignInScreen() {
   const { state, signIn } = useSession();
   const signedOut = state.status === "signedOut" ? state : undefined;
@@ -55,7 +57,7 @@ export function SignInScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} className="flex-1">
         <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="flex-grow px-5 pb-8 pt-16">
           <View className="gap-2 px-1">
-            <Text accessibilityRole="header" className="text-[30px] font-bold text-on-surface dark:text-on-surface-dark">
+            <Text accessibilityRole="header" className={`text-[30px] text-on-surface dark:text-on-surface-dark ${Platform.OS === "android" ? "" : "font-bold"}`}>
               Sign in to Spine
             </Text>
             <Text className="text-[15px] text-on-surface-muted dark:text-on-surface-muted-dark">Use the email your office invited you with.</Text>
@@ -67,54 +69,99 @@ export function SignInScreen() {
             </View>
           ) : null}
 
-          <View className="mt-8 gap-2">
-            <FormSection title="Your account">
-              <FormRow error={errors.server}>
-                <FloatingLabelField
-                  label="Server"
-                  value={server}
-                  onChangeText={setServer}
-                  error={Boolean(errors.server)}
-                  forceTextField
-                  autoCapitalize="none"
-                  autoComplete="url"
-                  returnKeyType="next"
-                  testID="sign-in-server"
-                />
-              </FormRow>
-              <FormRow error={errors.email || undefined}>
-                <FloatingLabelField
-                  label="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  error={errors.email !== undefined}
-                  keyboardType="email"
-                  forceTextField
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  returnKeyType="next"
-                  testID="sign-in-email"
-                />
-              </FormRow>
-              <FormRow error={errors.password} last>
-                <FloatingLabelField
-                  label="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  error={Boolean(errors.password)}
-                  secureTextEntry
-                  autoComplete="current-password"
-                  returnKeyType="go"
-                  onSubmitEditing={submit}
-                  inputRef={passwordRef}
-                  testID="sign-in-password"
-                />
-              </FormRow>
-            </FormSection>
-            <Text className="px-1 text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
-              The server address is the link you open Spine with on a computer.
-            </Text>
-          </View>
+          {Platform.OS === "android" ? (
+            // US-MOB-20 · `MobSignInAndroid`: Material outlined fields, each error under its field, the password with a show/hide eye.
+            <View className="mt-8 gap-4">
+              <OutlinedTextField
+                label="Server"
+                value={server}
+                onChangeText={setServer}
+                error={Boolean(errors.server)}
+                helperText={errors.server ?? SERVER_HINT}
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="url"
+                keyboardType="url"
+                returnKeyType="next"
+                testID="sign-in-server"
+              />
+              <OutlinedTextField
+                label="Email"
+                value={email}
+                onChangeText={setEmail}
+                error={errors.email !== undefined}
+                helperText={errors.email || undefined}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoComplete="email"
+                returnKeyType="next"
+                testID="sign-in-email"
+              />
+              <OutlinedTextField
+                label="Password"
+                value={password}
+                onChangeText={setPassword}
+                error={Boolean(errors.password)}
+                helperText={errors.password}
+                secureTextEntry
+                autoComplete="current-password"
+                returnKeyType="go"
+                onSubmitEditing={submit}
+                inputRef={passwordRef}
+                testID="sign-in-password"
+              />
+            </View>
+          ) : (
+            <View className="mt-8 gap-2">
+              <FormSection title="Your account">
+                <FormRow error={errors.server}>
+                  <FloatingLabelField
+                    label="Server"
+                    value={server}
+                    onChangeText={setServer}
+                    error={Boolean(errors.server)}
+                    forceTextField
+                    autoCapitalize="none"
+                    autoComplete="url"
+                    returnKeyType="next"
+                    testID="sign-in-server"
+                  />
+                </FormRow>
+                <FormRow error={errors.email || undefined}>
+                  <FloatingLabelField
+                    label="Email"
+                    value={email}
+                    onChangeText={setEmail}
+                    error={errors.email !== undefined}
+                    keyboardType="email"
+                    forceTextField
+                    autoCapitalize="none"
+                    autoComplete="email"
+                    returnKeyType="next"
+                    testID="sign-in-email"
+                  />
+                </FormRow>
+                <FormRow error={errors.password} last>
+                  <FloatingLabelField
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    error={Boolean(errors.password)}
+                    secureTextEntry
+                    autoComplete="current-password"
+                    returnKeyType="go"
+                    onSubmitEditing={submit}
+                    inputRef={passwordRef}
+                    testID="sign-in-password"
+                  />
+                </FormRow>
+              </FormSection>
+              <Text className="px-1 text-[12px] text-on-surface-muted dark:text-on-surface-muted-dark">
+                {SERVER_HINT}
+              </Text>
+            </View>
+          )}
 
           {errors.form ? (
             <Text accessibilityRole="alert" className="mt-4 px-1 text-[13px] text-overdue dark:text-overdue-dark">

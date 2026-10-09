@@ -54,10 +54,11 @@ export function SegmentedControl({ values, value, onValueChange, disabled = fals
   // "secondary container" look the Android designs use.
   if (Platform.OS === "android") {
     const segmentColors = {
-      activeContainerColor: colors.infoBg,
-      activeContentColor: colors.primary,
+      // Material 3 roles (US-MOB-20): the selected segment is primary-container.
+      activeContainerColor: colors.primaryContainer,
+      activeContentColor: colors.onPrimaryContainer,
       activeBorderColor: colors.borderStrong,
-      inactiveContainerColor: colors.surface,
+      inactiveContainerColor: colors.background,
       inactiveContentColor: colors.onSurface,
       inactiveBorderColor: colors.borderStrong,
     };

@@ -11,12 +11,13 @@ import { Avatar, EmptyState, useNativeColors } from "@spine/ui-native";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { jobKey, milestonesKey, photosKey, quotesKey, useAssignedJobs, type FieldJob, type FieldMilestone, type JobPhoto, type QuoteToPresent } from "../../lib/data/jobs";
 import { useBusinessFormat } from "../../lib/data/business";
-import { useFileSource } from "../../lib/data/files";
+import { useFileUri } from "../../lib/data/files";
 import { calendarDay, dayMonth, daysUntil, oneLine, weekdayDayMonth } from "../../lib/format";
 import { initials } from "../../lib/member-display";
 import { callNumber, openDirections } from "../../lib/linking";
 import { connectivity } from "../../lib/connectivity";
 import { alertNeedsConnection } from "../quotes/needs-connection";
+import { Fab } from "../../components/fab";
 import { PillButton } from "../../components/pill-button";
 import { SectionHeader } from "../../components/section-header";
 import { JobStatusChip } from "./job-status";
@@ -25,6 +26,7 @@ import { jobWaiting } from "../../lib/outbox/job-waiting";
 import { WaitingChip } from "../../components/waiting-chip";
 import type { OutboxItem } from "../../lib/outbox/types";
 import { CardRowsSkeleton, HeadingSkeleton, ListRowsSkeleton, PhotoGridSkeleton } from "../../components/skeletons";
+import { useCameraInk } from "../../lib/camera/ink";
 
 const PREVIEW_PHOTOS = 4;
 
@@ -37,6 +39,9 @@ function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }
   const done = milestone.status !== "pending";
   const due = milestone.dueDate ? calendarDay(milestone.dueDate) : null;
   const days = due ? daysUntil(due) : null;
+  // US-MOB-20: the other milestones' button is tonal — Material's primary-container on Android.
+  const tonal = Platform.OS === "android" ? "bg-primary-container dark:bg-primary-container-dark" : "bg-info-bg dark:bg-info-bg-dark";
+  const tonalText = Platform.OS === "android" ? "text-on-primary-container dark:text-on-primary-container-dark" : "text-primary dark:text-primary-dark";
   const dueClass = days === null ? "text-on-surface-muted dark:text-on-surface-muted-dark" : days < 0 ? "text-overdue dark:text-overdue-dark" : days < 7 ? "text-due-soon dark:text-due-soon-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark";
   return (
     <View testID={`milestone-${milestone.id}`} className={`flex-row items-center gap-3 px-4 py-3 ${first ? "" : "border-t border-border dark:border-border-dark"}`}>
@@ -64,9 +69,9 @@ function MilestoneRow({ milestone, primary, first, locale, waiting, onComplete }
           onPress={onComplete}
           accessibilityRole="button"
           accessibilityLabel={`Mark ${milestone.name} complete`}
-          className={`min-h-[44px] items-center justify-center rounded-full px-4 active:opacity-70 ${primary ? "bg-primary dark:bg-primary-dark" : "bg-info-bg dark:bg-info-bg-dark"}`}
+          className={`min-h-[44px] items-center justify-center rounded-full px-4 active:opacity-70 ${primary ? "bg-primary dark:bg-primary-dark" : tonal}`}
         >
-          <Text className={`text-[15px] font-semibold ${primary ? "text-on-primary dark:text-on-primary-dark" : "text-primary dark:text-primary-dark"}`}>Mark complete</Text>
+          <Text className={`text-[15px] font-semibold ${primary ? "text-on-primary dark:text-on-primary-dark" : tonalText}`}>Mark complete</Text>
         </Pressable>
       )}
     </View>
@@ -81,19 +86,25 @@ export function tileKey(tile: TilePhoto): string {
 }
 
 export function PhotoTile({ tile, overlay, size }: { tile: TilePhoto; overlay?: string; size?: number }) {
-  const source = useFileSource();
+  const sent = useFileUri(tile.kind === "sent" ? tile.photo.fileId : "");
+  const ink = useCameraInk();
   const waiting = tile.kind === "waiting";
+  const uri = tile.kind === "sent" ? sent : tile.localUri;
   return (
     <View testID={waiting ? "photo-waiting" : undefined} className="overflow-hidden rounded-md bg-surface-sunken dark:bg-surface-sunken-dark" style={size ? { width: size, height: size } : { flex: 1, aspectRatio: 1 }}>
       <Image
-        source={tile.kind === "sent" ? source(tile.photo.fileId) : { uri: tile.localUri }}
+        source={uri ? { uri } : undefined}
         accessibilityLabel={tile.kind === "sent" ? (tile.photo.caption ?? "Site photo") : "Site photo, waiting to sync"}
         style={{ width: "100%", height: "100%" }}
         resizeMode="cover"
       />
       {overlay ? (
-        <View className="absolute inset-0 items-center justify-center bg-on-surface/60 dark:bg-on-surface-dark/60">
-          <Text className="text-[17px] font-semibold text-surface dark:text-surface-dark">{overlay}</Text>
+        // "+9" over the last tile: a dark veil with light text in both themes (the camera's ink, US-MOB-20).
+        <View className="absolute inset-0 items-center justify-center">
+          <View className="absolute inset-0" style={{ backgroundColor: ink.base, opacity: 0.6 }} />
+          <Text className="text-[17px] font-semibold" style={{ color: ink.ink }}>
+            {overlay}
+          </Text>
         </View>
       ) : null}
       {waiting ? (
@@ -125,9 +136,16 @@ function QuoteRow({ quote, first, locale, onPresent }: { quote: QuoteToPresent; 
 }
 
 /** An iOS grouped card or Android's outlined card. */
-function Group({ children, testID }: { children: React.ReactNode; testID?: string }) {
+function Group({ children, testID, list = false }: { children: React.ReactNode; testID?: string; list?: boolean }) {
+  // US-MOB-20 · `MobJobDetailAndroid`: Android draws the site and contact as an outlined card and lists without a card.
+  const android = Platform.OS === "android";
+  const surface = !android
+    ? "overflow-hidden rounded-2xl border border-border bg-surface dark:border-border-dark dark:bg-surface-dark"
+    : list
+      ? "-mx-3"
+      : "overflow-hidden rounded-2xl border border-outline-variant dark:border-outline-variant-dark";
   return (
-    <View testID={testID} className="overflow-hidden rounded-2xl border border-border bg-surface dark:border-border-dark dark:bg-surface-dark">
+    <View testID={testID} className={surface}>
       {children}
     </View>
   );
@@ -271,7 +289,7 @@ export function JobDetailScreen({ id }: { id: string }) {
         <View className="gap-2">
           <SectionHeader title="Milestones" testID="job-milestones-header" />
           {ordered.length ? (
-            <Group testID="job-milestones">
+            <Group testID="job-milestones" list>
               {ordered.map((milestone, index) => (
                 <MilestoneRow
                   key={milestone.id}
@@ -317,7 +335,7 @@ export function JobDetailScreen({ id }: { id: string }) {
         <View className="gap-2">
           <SectionHeader title="Quotes to present" testID="job-quotes-header" />
           {(quotes.data ?? []).length ? (
-            <Group testID="job-quotes">
+            <Group testID="job-quotes" list>
               {quotes.data!.map((quote, index) => (
                 <QuoteRow key={quote.id} quote={quote} first={index === 0} locale={locale} onPresent={() => present(quote.id)} />
               ))}
@@ -330,16 +348,7 @@ export function JobDetailScreen({ id }: { id: string }) {
         </View>
       </ScrollView>
       {android ? (
-        <Pressable
-          testID="job-add-photos"
-          onPress={addPhotos}
-          accessibilityRole="button"
-          accessibilityLabel="Add photos"
-          className="absolute bottom-6 right-4 h-14 flex-row items-center gap-3 rounded-2xl bg-info-bg px-5 shadow-md active:opacity-80 dark:bg-info-bg-dark"
-        >
-          <Camera size={22} color={colors.primary} />
-          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Add photos</Text>
-        </Pressable>
+        <Fab testID="job-add-photos" label="Add photos" icon={Camera} onPress={addPhotos} />
       ) : null}
     </View>
   );

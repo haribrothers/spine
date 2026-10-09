@@ -4,6 +4,7 @@ import { useNativeColors } from "@spine/ui-native";
 import { useTabHeaderOptions } from "../../../src/components/header-items";
 import { SyncPill } from "../../../src/components/sync-pill";
 import { BellButton } from "../../../src/components/bell-button";
+import { androidHeaderOptions } from "../../../src/lib/android-header";
 
 /**
  * The Today tab's own native stack: a large title on iOS; the sync pill,
@@ -19,7 +20,7 @@ export default function TodayLayout() {
         headerTintColor: colors.onSurface,
         headerTitleStyle: { color: colors.onSurface },
         headerBackButtonDisplayMode: "minimal",
-        ...(Platform.OS === "android" ? { headerStyle: { backgroundColor: colors.background } } : {}),
+        ...androidHeaderOptions(colors),
       }}
     >
       <Stack.Screen name="index" options={tabHeader} />

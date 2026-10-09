@@ -12,6 +12,14 @@ jest.mock("expo-router", () => {
     useRouter: () => mockRouter,
     useFocusEffect: (effect: () => void | (() => void)) => mockReact.useEffect(effect, [effect]),
     useLocalSearchParams: () => ({}),
+    // Screens that set options after mount record them like <Stack.Screen options>.
+    useNavigation: () => ({
+      setOptions: (options: Record<string, unknown>) => {
+        mockScreen.options = options;
+      },
+      getParent: () => undefined,
+      canGoBack: () => false,
+    }),
     Stack: { Screen },
   };
 });

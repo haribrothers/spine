@@ -30,6 +30,8 @@ import { SectionHeader } from "../../components/section-header";
 import { GaugeSkeleton, JobCardsSkeleton, KpiCardsSkeleton, MeetingCardSkeleton } from "../../components/skeletons";
 import { ServerErrorState } from "../errors/server-error-state";
 import { TodayJobCard } from "./job-card";
+import { CARD } from "../../lib/card";
+import { TodayLargeTitle, useTodayAndroidHeader } from "./today-header";
 
 const KPI_CARD_WIDTH = 168;
 const KPI_CARD_GAP = 12;
@@ -104,7 +106,7 @@ function WelcomeCard({ summary, loading, period }: { summary: TodaySummary | nul
   const format = useBusinessFormat();
   const m = summary?.milestones;
   return (
-    <View testID="today-welcome" className="items-center gap-2 rounded-[20px] bg-surface-sunken p-5 dark:bg-surface-sunken-dark">
+    <View testID="today-welcome" className={`items-center gap-2 rounded-[20px] p-5 ${Platform.OS === "android" ? "bg-surface-container dark:bg-surface-container-dark" : "bg-surface-sunken dark:bg-surface-sunken-dark"}`}>
       <View className="w-full">
         <Text className="text-[26px] font-semibold text-on-surface dark:text-on-surface-dark">{greeting(member)}</Text>
         <Text className="text-[13px] text-on-surface-muted dark:text-on-surface-muted-dark">
@@ -135,7 +137,7 @@ function NextMeetingCard({ meeting, locale, onOpen }: { meeting: Meeting; locale
       testID="today-next-meeting"
       onPress={onOpen}
       accessibilityRole="button"
-      className="flex-row items-center gap-3 rounded-2xl border border-border bg-surface p-4 active:opacity-80 dark:border-border-dark dark:bg-surface-dark"
+      className={`flex-row items-center gap-3 rounded-2xl p-4 active:opacity-80 ${CARD}`}
     >
       <View className="h-11 w-11 items-center justify-center rounded-xl bg-info-bg dark:bg-info-bg-dark">
         <CalendarClock size={22} color={colors.primary} />
@@ -165,6 +167,7 @@ export function TodayScreen() {
   const queued = useOutboxItems();
   const online = useOnline();
   const [period, setPeriod] = useState<TodayPeriod>("month");
+  const androidHeader = useTodayAndroidHeader(Platform.OS === "android");
 
   const summary = useCachedQuery<TodaySummary>(todayKey(period), todayPath(period), { refreshOnForeground: true, refreshOnSent: () => true });
   const jobs = useAssignedJobs(modules.jobsField);
@@ -291,8 +294,11 @@ export function TodayScreen() {
           contentInsetAdjustmentBehavior="automatic"
           contentContainerClassName="gap-6 p-4"
           contentContainerStyle={{ paddingBottom: 48 }}
+          onScroll={androidHeader.onScroll}
+          scrollEventThrottle={16}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.onSurfaceMuted} />}
         >
+          <TodayLargeTitle />
           {content}
         </ScrollView>
         <ScrollEdgeMask edge="bottom" />

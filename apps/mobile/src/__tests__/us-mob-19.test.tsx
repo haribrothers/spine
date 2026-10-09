@@ -77,7 +77,7 @@ describe("US-MOB-19 · run the field app on native tabs", () => {
   });
 
   it("follows dark mode: every themed colour class carries its dark: pair", () => {
-    const THEMED = /^(?:bg|text|border)-(?:background|surface|surface-sunken|on-surface|on-surface-muted|on-primary|primary|overdue|overdue-bg|due-soon|due-soon-bg|paid|paid-bg|draft|draft-bg|info|info-bg|border|border-strong)$/;
+    const THEMED = /^(?:bg|text|border)-(?:background|surface|surface-sunken|on-surface|on-surface-muted|on-primary|primary|overdue|overdue-bg|due-soon|due-soon-bg|paid|paid-bg|draft|draft-bg|info|info-bg|border|border-strong|primary-container|on-primary-container|surface-container|outline-variant)$/;
     const missing: string[] = [];
     for (const file of allSources) {
       // Every string or template literal: class lists are also built in ternaries and template strings.

@@ -43,6 +43,7 @@ export function OutlinedTextFieldScreen() {
             "The label sits on the top edge; the outline turns primary and thicker while focused, and the overdue colour on error.",
             "Errors also show as text under the field and are read as the input's hint — never colour alone.",
             "Optional prefix (e.g. \"$\") and multiline for notes.",
+            "secureTextEntry hides a password and adds Material's labelled show/hide eye; an error adds the trailing error icon.",
             "OutlinedFrame wraps any content in the same outline — SelectListField's variant=\"outlined\" uses it for Material's exposed dropdown (▾).",
             "The notch is the label's own background: pass labelBackgroundClassName when the field sits on a card rather than the page.",
           ]}
@@ -82,6 +83,8 @@ export function OutlinedTextFieldScreen() {
             { prop: "multiline", type: "boolean", defaultValue: "false" },
             { prop: "error", type: "boolean", defaultValue: "false" },
             { prop: "helperText", type: "string" },
+            { prop: "secureTextEntry", type: "boolean", defaultValue: "false" },
+            { prop: "inputRef", type: "Ref<TextInput>" },
             { prop: "labelBackgroundClassName", type: "string", defaultValue: '"bg-background dark:bg-background-dark"' },
           ]}
         />

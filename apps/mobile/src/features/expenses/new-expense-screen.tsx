@@ -20,6 +20,7 @@ import { DIRECT_LABOUR_CODE, useExpenseCategories, useLabourTrades } from "../..
 import { money } from "../../lib/format";
 import { SectionHeader } from "../../components/section-header";
 import { EXPENSE_NOTE, fromPayload, LABOUR_NOTE, parseAmount, rowAmount, toPayload, tradesTotal, validateDraft, type DraftErrors, type ExpenseDraft, type TradeRow } from "./expense-form";
+import { useAndroidBack } from "../../lib/use-android-back";
 
 const MODES = [
   { value: "amount", label: "Amount" },
@@ -39,6 +40,19 @@ export function currencySymbol(currency: string, locale: string): string {
   return money("0", { currency, locale }).replace(/[\d.,\s ]/g, "") || currency;
 }
 
+/**
+ * A group's label: iOS's section header ("PAID BY"); Android's muted field
+ * label above the control, as `MobExpenseNewAndroid` draws it (US-MOB-20).
+ */
+function FieldGroupLabel({ title }: { title: string }) {
+  if (Platform.OS !== "android") return <SectionHeader title={title} />;
+  return (
+    <Text accessibilityRole="header" className="px-1 text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
+      {title}
+    </Text>
+  );
+}
+
 /** A trade field's box: the floating-label field fills a fixed-height parent, as in a form row. */
 function FieldBox({ children, grow = false }: { children: React.ReactNode; grow?: boolean }) {
   return (
@@ -48,11 +62,98 @@ function FieldBox({ children, grow = false }: { children: React.ReactNode; grow?
   );
 }
 
-function TradeEditor({ row, currency, locale, suggestions, onChange, onRemove, index }: { row: TradeRow; currency: string; locale: string; suggestions: { trade: string; lastDayRateAmount: string }[]; onChange: (row: TradeRow) => void; onRemove?: () => void; index: number }) {
+function TradeEditor({
+  row,
+  currency,
+  locale,
+  suggestions,
+  onChange,
+  onRemove,
+  index,
+  active = true,
+  onActivate,
+}: {
+  row: TradeRow;
+  currency: string;
+  locale: string;
+  suggestions: { trade: string; lastDayRateAmount: string }[];
+  onChange: (row: TradeRow) => void;
+  onRemove?: () => void;
+  index: number;
+  /** Android: only the trade being edited shows its fields; the others are one line each (`MobExpenseLabourAndroid`). */
+  active?: boolean;
+  onActivate?: () => void;
+}) {
   const colors = useNativeColors();
   const amount = rowAmount(row, currency);
   const typed = row.trade.trim().toLowerCase();
   const matches = typed ? suggestions.filter((s) => s.trade.toLowerCase().startsWith(typed) && s.trade.toLowerCase() !== typed).slice(0, 3) : [];
+  const perDay = `${row.headcount || "0"} × ${money(parseAmount(row.dayRate, currency)?.toString() ?? "0", { currency, locale })}`;
+  const total = money((amount ?? 0n).toString(), { currency, locale });
+  const suggestionChips = matches.length ? (
+    <View className="flex-row flex-wrap gap-2">
+      {matches.map((s) => (
+        <Pressable
+          key={s.trade}
+          testID={`trade-suggestion-${s.trade}`}
+          onPress={() => onChange({ ...row, trade: s.trade, dayRate: row.dayRate || toDecimalString({ amount: BigInt(s.lastDayRateAmount), currency }) })}
+          accessibilityRole="button"
+          accessibilityLabel={`${s.trade}, last day rate ${money(s.lastDayRateAmount, { currency, locale })}`}
+          className="min-h-[36px] justify-center rounded-full bg-info-bg px-3 dark:bg-info-bg-dark"
+        >
+          <Text className="text-[14px] text-primary dark:text-primary-dark">
+            {s.trade} · {money(s.lastDayRateAmount, { currency, locale })}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  ) : null;
+
+  if (Platform.OS === "android") {
+    if (!active) {
+      return (
+        <Pressable testID={`trade-row-${index}`} onPress={onActivate} accessibilityRole="button" accessibilityLabel={`${row.trade || "Trade"}, ${perDay}, ${total}. Edit`} className="min-h-[56px] flex-row items-center gap-3 px-1 py-2">
+          <View className="flex-1">
+            <Text className="text-[16px] text-on-surface dark:text-on-surface-dark">{row.trade || "New trade"}</Text>
+            <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{perDay}</Text>
+          </View>
+          <Text testID={`trade-total-${index}`} className="text-[16px] text-on-surface dark:text-on-surface-dark">
+            {total}
+          </Text>
+        </Pressable>
+      );
+    }
+    return (
+      <View testID={`trade-row-${index}`} className="gap-3 rounded-2xl border border-outline-variant p-3 dark:border-outline-variant-dark">
+        <View className="flex-row items-center gap-1">
+          <View className="flex-1">
+            <OutlinedTextField testID={`trade-name-${index}`} label="Trade" value={row.trade} onChangeText={(trade) => onChange({ ...row, trade })} autoCapitalize="words" />
+          </View>
+          {onRemove ? (
+            <Pressable onPress={onRemove} accessibilityRole="button" accessibilityLabel={`Remove ${row.trade || "this trade"}`} hitSlop={10} className="h-11 w-11 items-center justify-center">
+              <X size={20} color={colors.onSurfaceMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+        {suggestionChips}
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <OutlinedTextField testID={`trade-workers-${index}`} label="Workers" value={row.headcount} onChangeText={(headcount) => onChange({ ...row, headcount: headcount.replace(/\D/g, "") })} keyboardType="number-pad" />
+          </View>
+          <View className="flex-1">
+            <OutlinedTextField testID={`trade-rate-${index}`} label="Day rate" prefix={currencySymbol(currency, locale)} value={row.dayRate} onChangeText={(dayRate) => onChange({ ...row, dayRate })} keyboardType="decimal-pad" />
+          </View>
+        </View>
+        <View className="flex-row justify-between px-1">
+          <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{perDay}</Text>
+          <Text testID={`trade-total-${index}`} className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">
+            {total}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View testID={`trade-row-${index}`} className={`gap-2 px-4 py-3 ${index ? "border-t border-border dark:border-border-dark" : ""}`}>
       <View className="flex-row items-center gap-2">
@@ -65,24 +166,7 @@ function TradeEditor({ row, currency, locale, suggestions, onChange, onRemove, i
           </Pressable>
         ) : null}
       </View>
-      {matches.length ? (
-        <View className="flex-row flex-wrap gap-2">
-          {matches.map((s) => (
-            <Pressable
-              key={s.trade}
-              testID={`trade-suggestion-${s.trade}`}
-              onPress={() => onChange({ ...row, trade: s.trade, dayRate: row.dayRate || toDecimalString({ amount: BigInt(s.lastDayRateAmount), currency }) })}
-              accessibilityRole="button"
-              accessibilityLabel={`${s.trade}, last day rate ${money(s.lastDayRateAmount, { currency, locale })}`}
-              className="min-h-[36px] justify-center rounded-full bg-info-bg px-3 dark:bg-info-bg-dark"
-            >
-              <Text className="text-[14px] text-primary dark:text-primary-dark">
-                {s.trade} · {money(s.lastDayRateAmount, { currency, locale })}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
+      {suggestionChips}
       <View className="flex-row gap-3">
         <FieldBox grow>
           <FloatingLabelField forceTextField testID={`trade-workers-${index}`} label="Workers" value={row.headcount} onChangeText={(headcount) => onChange({ ...row, headcount: headcount.replace(/\D/g, "") })} keyboardType="numeric" />
@@ -92,11 +176,9 @@ function TradeEditor({ row, currency, locale, suggestions, onChange, onRemove, i
         </FieldBox>
       </View>
       <View className="flex-row justify-between">
-        <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">
-          {row.headcount || "0"} × {money(parseAmount(row.dayRate, currency)?.toString() ?? "0", { currency, locale })}
-        </Text>
+        <Text className="text-[14px] text-on-surface-muted dark:text-on-surface-muted-dark">{perDay}</Text>
         <Text testID={`trade-total-${index}`} className="text-[15px] font-semibold text-on-surface dark:text-on-surface-dark">
-          {money((amount ?? 0n).toString(), { currency, locale })}
+          {total}
         </Text>
       </View>
     </View>
@@ -162,6 +244,7 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
     if (draft.receipt && draft.receipt.uri !== original?.uri) outbox.discardPhoto(draft.receipt);
     router.back();
   };
+  useAndroidBack(cancel);
   const submit = async () => {
     const found = validateDraft(draft, currency);
     setErrors(found);
@@ -182,6 +265,8 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
 
   const total = tradesTotal(draft.trades, currency);
   const labour = draft.mode === "labour";
+  // Android: which trade's fields are open (the first, or the one just added).
+  const [activeTrade, setActiveTrade] = useState<string | null>(null);
   const categoryField = {
     floatingLabel: "Category",
     placeholder: "Choose a category",
@@ -292,7 +377,8 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
       {labour ? (
         <View className="gap-2">
           <SectionHeader title="Trades" />
-          <View className="overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark">
+          {/* Android (US-MOB-20): no card — the trade being edited is an outlined card, the rest one line each. */}
+          <View className={android ? "gap-1" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
             {draft.trades.map((row, index) => (
               <TradeEditor
                 key={row.key}
@@ -301,17 +387,28 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
                 currency={currency}
                 locale={format.locale}
                 suggestions={trades}
+                active={(activeTrade ?? draft.trades[0]?.key) === row.key}
+                onActivate={() => setActiveTrade(row.key)}
                 onChange={(next) => update({ trades: draft.trades.map((r) => (r.key === row.key ? next : r)) })}
                 onRemove={draft.trades.length > 1 ? () => update({ trades: draft.trades.filter((r) => r.key !== row.key) }) : undefined}
               />
             ))}
-            <Pressable testID="trade-add" onPress={() => update({ trades: [...draft.trades, newRow()] })} accessibilityRole="button" className="min-h-[52px] flex-row items-center gap-2 border-t border-border px-4 dark:border-border-dark">
+            <Pressable
+              testID="trade-add"
+              onPress={() => {
+                const row = newRow();
+                update({ trades: [...draft.trades, row] });
+                setActiveTrade(row.key);
+              }}
+              accessibilityRole="button"
+              className={`min-h-[52px] flex-row items-center gap-2 px-4 ${android ? "self-start" : "border-t border-border dark:border-border-dark"}`}
+            >
               <Plus size={20} color={colors.primary} />
               <Text className="text-[16px] font-medium text-primary dark:text-primary-dark">Add trade</Text>
             </Pressable>
           </View>
           {shown.trades ? <Text className="px-1 text-[14px] text-overdue dark:text-overdue-dark">{shown.trades}</Text> : null}
-          <View className="flex-row items-center justify-between rounded-2xl bg-surface px-4 py-4 dark:bg-surface-dark">
+          <View className={`flex-row items-center justify-between px-4 py-4 ${android ? "" : "rounded-2xl bg-surface dark:bg-surface-dark"}`}>
             <Text className="text-[16px] font-semibold text-on-surface dark:text-on-surface-dark">Total for the day</Text>
             <Text testID="trades-total" className="text-[22px] font-bold text-on-surface dark:text-on-surface-dark">{money(total.toString(), format)}</Text>
           </View>
@@ -320,7 +417,7 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
       ) : (
         <>
           <View className="gap-2">
-            <SectionHeader title="Paid by" />
+            <FieldGroupLabel title="Paid by" />
             <SegmentedControl testID="expense-paid-by" values={PAID_BY.map((p) => p.label)} value={PAID_BY.find((p) => p.value === draft.paidBy)!.label} onValueChange={(label) => update({ paidBy: PAID_BY.find((p) => p.label === label)!.value })} />
           </View>
           {android ? (
@@ -336,8 +433,8 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
       )}
 
       <View className="gap-2">
-        <SectionHeader title="Receipt" />
-        <View className="flex-row items-center gap-4 rounded-2xl bg-surface p-3 dark:bg-surface-dark">
+        <FieldGroupLabel title="Receipt" />
+        <View className={`flex-row items-center gap-4 ${android ? "" : "rounded-2xl bg-surface p-3 dark:bg-surface-dark"}`}>
           {draft.receipt ? (
             <>
               <Image source={{ uri: draft.receipt.uri }} accessibilityLabel="Receipt" className="h-[84px] w-[72px] rounded-lg" />
@@ -346,7 +443,12 @@ export function NewExpenseScreen({ scan = false, editId }: { scan?: boolean; edi
                   {draft.receipt.name} · {formatBytes(draft.receipt.size)}
                 </Text>
                 <View className="flex-row flex-wrap gap-2">
-                  <Pressable testID="receipt-retake" onPress={openReceiptCamera} accessibilityRole="button" className="min-h-[44px] flex-row items-center gap-2 rounded-full bg-info-bg px-4 dark:bg-info-bg-dark">
+                  <Pressable
+                    testID="receipt-retake"
+                    onPress={openReceiptCamera}
+                    accessibilityRole="button"
+                    className={`min-h-[44px] flex-row items-center gap-2 rounded-full px-4 ${android ? "border border-border-strong dark:border-border-strong-dark" : "bg-info-bg dark:bg-info-bg-dark"}`}
+                  >
                     <Camera size={18} color={colors.primary} />
                     <Text className="text-[15px] font-semibold text-primary dark:text-primary-dark">Retake receipt</Text>
                   </Pressable>

@@ -52,6 +52,22 @@ export function ColorScreen() {
         />
       </DocSection>
 
+      <DocSection title="Material 3 roles (Android)">
+        <DocLead>
+          From tokens.json color.android and color.android-dark. Android screens use them where Material does: tonal
+          buttons, the selected segment, the tab indicator and floating action buttons (primary container), filled
+          cards (surface container) and outlined cards (outline variant). iOS keeps the surfaces above.
+        </DocLead>
+        <ColorSwatchGrid
+          swatches={[
+            { name: "Primary container", token: "primaryContainer" },
+            { name: "On primary container", token: "onPrimaryContainer" },
+            { name: "Surface container", token: "surfaceContainer" },
+            { name: "Outline variant", token: "outlineVariant" },
+          ]}
+        />
+      </DocSection>
+
       <DocSection title="Financial status (reserved)">
         <DocLead>
           These four map directly to invoice/quote/job status wherever they appear, and are never used for anything

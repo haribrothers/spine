@@ -14,7 +14,8 @@ import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { useBusinessFormat } from "../../lib/data/business";
 import { calendarDay, weekdayDayMonth } from "../../lib/format";
 import { SectionHeader } from "../../components/section-header";
-import { useCameraInk } from "../camera/camera-screen";
+import { useCameraInk } from "../../lib/camera/ink";
+import { useAndroidBack } from "../../lib/use-android-back";
 
 export const COMPLETE_NOTE = "Your office is told straight away so they can bill this stage. No signal? It's saved and sent when you're back online.";
 
@@ -44,6 +45,7 @@ export function MilestoneCompleteScreen({ jobId, milestoneId }: { jobId: string;
     photos.forEach((p) => outbox.discardPhoto(p));
     router.back();
   };
+  useAndroidBack(cancel);
   const complete = async () => {
     if (saving || !milestone) return;
     setSaving(true);

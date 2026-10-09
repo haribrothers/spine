@@ -18,6 +18,8 @@ export default function SyncLayout() {
         headerTitleStyle: { color: colors.onSurface },
         headerBackButtonDisplayMode: "minimal",
         headerStyle: { backgroundColor: colors.background },
+        // US-MOB-20: Android's top app bar is flat.
+        headerShadowVisible: ios,
       }}
     >
       <Stack.Screen

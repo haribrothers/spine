@@ -230,7 +230,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MOB-17 · Capture the customer's acceptance and signature
 - [x] US-MOB-18 · Require a connection to accept a quote
 - [x] US-MOB-19 · Run the field app on native tabs
-- [ ] US-MOB-20 · Give Android users a designed Material 3 app
+- [x] US-MOB-20 · Give Android users a designed Material 3 app
 - [x] US-MOB-21 · Document every native component in a showcase app
 - [x] US-MOB-22 · See my notifications on the phone
 - [x] US-MOB-23 · Search my jobs and my expenses

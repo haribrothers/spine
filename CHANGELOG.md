@@ -80,6 +80,33 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-09 — The field app on Android follows Material 3 (US-MOB-20)
+
+- **Material roles:** `@spine/ui-native` gains Material's primary-container, on-primary-container, surface-container and outline-variant (light and dark, from `tokens.json › color.android`). On Android they're used for:
+  - tonal buttons ("Mark complete", Present, Call), the selected segment, the tab bar's selected pill and the floating action buttons (one shared `Fab`);
+  - filled cards on Today (no border) and the outlined site and contact card on a job.
+- **Top app bars** are flat on Android, with no shadow line.
+- **Screens now drawn as their `…Android` artboards:**
+  - Today: a large "Today" that collapses into the bar on scroll; the bar turns surface-container.
+  - A job: milestones and quotes as plain lists.
+  - Profile: the avatar beside the name, two-line rows with icons, "Last sent <time>" under the sync status, an outlined red "Sign out".
+  - Search: Material's search bar with the avatar inside, turning into a full-width search view with back and ✕ while searching; "Recent searches" in the section style; no-results icon in a tinted box.
+  - Sign in: outlined fields, each error under its field with an error icon, and a show/hide eye on the password.
+  - New expense: muted "Paid by" and "Receipt" labels, the receipt without a card. In labour mode the trade being edited is an outlined card with outlined fields and the others fold to one line each.
+  - Receipt camera: ✕ with the title beside it.
+  - Notifications: icons for quote notifications.
+  - The "+n" on a job's photos stays dark in dark mode.
+- **Android back now does what the drawn back arrow or ✕ does:**
+  - The camera asks before discarding photos.
+  - New expense and Mark complete drop the receipt or photos they kept. Before, back left those files on the phone.
+  - Search leaves the search.
+- **Job photos show on Android:** React Native's Android image loader drops the `Authorization` header, so every photo was a 401. The phone now downloads each photo once with the bearer token into its cache, and shows it from there. Photos seen once also show offline.
+- Today on Android sets its header after mount, so no "state update on a component that hasn't mounted yet" warning at launch.
+- **Tests:**
+  - A TalkBack check renders 16 Android screens and asserts every control has a spoken label. It also catches an unlabelled one.
+  - Tests for the collapsing trades and the Material roles in `tokens.json`.
+  - US-MOB-19's dark-pair scan covers the new role classes.
+
 ### 2026-10-09 — Phase 5 Group 5: present a quote on site, accept with a signature or decline (US-QUO-19, US-QUO-20, US-MOB-16, US-MOB-17, US-MOB-18)
 
 - **Present (US-MOB-16):**

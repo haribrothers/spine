@@ -3,6 +3,7 @@ import { Stack } from "expo-router";
 import { useNativeColors } from "@spine/ui-native";
 import { useTabHeaderOptions } from "../../../src/components/header-items";
 import { LogExpenseButton } from "../../../src/components/log-expense-button";
+import { androidHeaderOptions } from "../../../src/lib/android-header";
 
 /** An expense opened from Search or a notification still has the list under it. */
 export const unstable_settings = { initialRouteName: "index" };
@@ -17,7 +18,7 @@ export default function ExpensesLayout() {
         headerTintColor: colors.onSurface,
         headerTitleStyle: { color: colors.onSurface },
         headerBackButtonDisplayMode: "minimal",
-        ...(Platform.OS === "android" ? { headerStyle: { backgroundColor: colors.background } } : {}),
+        ...androidHeaderOptions(colors),
       }}
     >
       <Stack.Screen name="index" options={tabHeader} />

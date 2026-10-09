@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { Platform, Pressable, SectionList, Text, View, useWindowDimensions } from "react-native";
+import { Platform, SectionList, Text, View, useWindowDimensions } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import Camera from "lucide-react-native/icons/camera";
-import { EmptyState, useNativeColors } from "@spine/ui-native";
+import { EmptyState } from "@spine/ui-native";
 import { useCachedQuery } from "../../lib/data/use-cached-query";
 import { jobKey, photosKey, useAssignedJobs, type FieldJob, type JobPhoto } from "../../lib/data/jobs";
 import { useBusinessFormat } from "../../lib/data/business";
@@ -12,6 +12,7 @@ import { PhotoTile, tileKey, type TilePhoto } from "./job-detail-screen";
 import { useOutboxItems } from "../../lib/outbox/pending";
 import { jobWaiting } from "../../lib/outbox/job-waiting";
 import { PhotoGridSkeleton } from "../../components/skeletons";
+import { Fab } from "../../components/fab";
 
 const COLUMNS = 3;
 const GAP = 2;
@@ -42,7 +43,6 @@ export function photosByDay(photos: (JobPhoto | TilePhoto)[], locale: string, no
  */
 export function JobPhotosScreen({ id }: { id: string }) {
   const router = useRouter();
-  const colors = useNativeColors();
   const { locale } = useBusinessFormat();
   const { width } = useWindowDimensions();
   const listed = useAssignedJobs(false).data?.find((job) => job.id === id) ?? null;
@@ -113,16 +113,7 @@ export function JobPhotosScreen({ id }: { id: string }) {
         }
       />
       {android ? (
-        <Pressable
-          testID="photos-add"
-          onPress={addPhotos}
-          accessibilityRole="button"
-          accessibilityLabel="Add photos"
-          className="absolute bottom-6 right-4 h-14 flex-row items-center gap-3 rounded-2xl bg-info-bg px-5 shadow-md active:opacity-80 dark:bg-info-bg-dark"
-        >
-          <Camera size={22} color={colors.primary} />
-          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Add photos</Text>
-        </Pressable>
+        <Fab testID="photos-add" label="Add photos" icon={Camera} onPress={addPhotos} />
       ) : null}
     </View>
   );

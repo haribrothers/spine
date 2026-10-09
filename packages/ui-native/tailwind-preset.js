@@ -92,6 +92,10 @@ function toTailwindClassNames(colors) {
     draftBg: "draft-bg",
     info: "info",
     infoBg: "info-bg",
+    primaryContainer: "primary-container",
+    onPrimaryContainer: "on-primary-container",
+    surfaceContainer: "surface-container",
+    outlineVariant: "outline-variant",
   };
   const out = {};
   for (const [key, value] of Object.entries(colors)) {

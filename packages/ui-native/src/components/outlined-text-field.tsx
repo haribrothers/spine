@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { Text, TextInput, View, type TextInputProps } from "react-native";
+import { Pressable, Text, TextInput, View, type TextInputProps } from "react-native";
+import CircleAlert from "lucide-react-native/icons/circle-alert";
+import EyeIcon from "lucide-react-native/icons/eye";
+import EyeOff from "lucide-react-native/icons/eye-off";
 import { cn } from "../lib/cn";
 import { useNativeColors } from "../theme/use-native-colors";
 
@@ -55,7 +58,7 @@ export function OutlinedFrame({ label, focused = false, error = false, multiline
   );
 }
 
-export interface OutlinedTextFieldProps extends Pick<TextInputProps, "keyboardType" | "autoCapitalize" | "autoComplete" | "returnKeyType" | "onSubmitEditing" | "maxLength"> {
+export interface OutlinedTextFieldProps extends Pick<TextInputProps, "keyboardType" | "autoCapitalize" | "autoComplete" | "autoCorrect" | "returnKeyType" | "onSubmitEditing" | "maxLength"> {
   label: string;
   value: string;
   onChangeText: (text: string) => void;
@@ -66,17 +69,23 @@ export interface OutlinedTextFieldProps extends Pick<TextInputProps, "keyboardTy
   /** Text before the value, e.g. "$" on an amount. */
   prefix?: string;
   labelBackgroundClassName?: string;
+  /** A password: hidden, with Material's show/hide eye at the end. */
+  secureTextEntry?: boolean;
+  inputRef?: React.Ref<TextInput>;
   testID?: string;
 }
 
-export function OutlinedTextField({ label, value, onChangeText, placeholder, multiline = false, error = false, helperText, prefix, labelBackgroundClassName, testID, ...input }: OutlinedTextFieldProps) {
+export function OutlinedTextField({ label, value, onChangeText, placeholder, multiline = false, error = false, helperText, prefix, labelBackgroundClassName, secureTextEntry = false, inputRef, testID, ...input }: OutlinedTextFieldProps) {
   const colors = useNativeColors();
   const [focused, setFocused] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const Eye = revealed ? EyeOff : EyeIcon;
   return (
     <OutlinedFrame label={label} focused={focused} error={error} multiline={multiline} helperText={helperText} labelBackgroundClassName={labelBackgroundClassName}>
       <View className={cn("flex-row gap-1", multiline ? "flex-1 items-start" : "items-center")}>
         {prefix ? <Text className="text-[16px] text-on-surface-muted dark:text-on-surface-muted-dark">{prefix}</Text> : null}
         <TextInput
+          ref={inputRef}
           testID={testID}
           value={value}
           onChangeText={onChangeText}
@@ -89,8 +98,17 @@ export function OutlinedTextField({ label, value, onChangeText, placeholder, mul
           onBlur={() => setFocused(false)}
           className={cn("flex-1 px-0 py-0 text-[16px] text-on-surface dark:text-on-surface-dark", multiline ? "min-h-[68px]" : "")}
           style={multiline ? { textAlignVertical: "top" } : undefined}
+          secureTextEntry={secureTextEntry && !revealed}
           {...input}
         />
+        {secureTextEntry ? (
+          <Pressable onPress={() => setRevealed((shown) => !shown)} hitSlop={8} accessibilityRole="button" accessibilityLabel={revealed ? "Hide password" : "Show password"} className="h-11 w-11 items-center justify-center">
+            <Eye size={22} color={colors.onSurfaceMuted} />
+          </Pressable>
+        ) : error && !multiline ? (
+          // Material's trailing error icon; the message itself is under the outline.
+          <CircleAlert size={22} color={colors.overdue} accessibilityElementsHidden importantForAccessibility="no" />
+        ) : null}
       </View>
     </OutlinedFrame>
   );

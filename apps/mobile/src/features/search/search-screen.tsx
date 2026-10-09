@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, SectionList, Text, TextInput, View } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import ArrowLeft from "lucide-react-native/icons/arrow-left";
 import ArrowUpLeft from "lucide-react-native/icons/arrow-up-left";
 import Briefcase from "lucide-react-native/icons/briefcase";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
@@ -8,6 +10,7 @@ import Clock from "lucide-react-native/icons/clock";
 import CircleMinus from "lucide-react-native/icons/circle-minus";
 import ReceiptText from "lucide-react-native/icons/receipt-text";
 import SearchIcon from "lucide-react-native/icons/search";
+import SearchX from "lucide-react-native/icons/search-x";
 import X from "lucide-react-native/icons/x";
 import { EmptyState, StatusChip, useNativeColors } from "@spine/ui-native";
 import { useAssignedJobs, type FieldJob } from "../../lib/data/jobs";
@@ -19,8 +22,10 @@ import { calendarDay, daysUntil, dayMonth, weekday, money, oneLine } from "../..
 import { highlightParts, searchCache, type ExpenseHit } from "../../lib/search/search";
 import { addRecentSearch, clearRecentSearches, getRecentSearches, removeRecentSearch } from "../../lib/search/recent-searches";
 import { ListRowsSkeleton } from "../../components/skeletons";
+import { ProfileAvatarButton } from "../../components/header-items";
 import { useOutboxItems } from "../../lib/outbox/pending";
 import type { OutboxItem } from "../../lib/outbox/types";
+import { useAndroidBack } from "../../lib/use-android-back";
 
 /** Expenses still on the phone, as search rows (US-MOB-23: "Waiting"). */
 export function waitingExpenses(items: readonly OutboxItem[]): MyExpense[] {
@@ -96,6 +101,9 @@ export function SearchScreen() {
   const [query, setQuery] = useState("");
   const [recent, setRecent] = useState<string[]>([]);
   const [editing, setEditing] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+  const insets = useSafeAreaInsets();
   const android = Platform.OS === "android";
 
   useEffect(() => {
@@ -142,7 +150,7 @@ export function SearchScreen() {
       {recent.length ? (
         <>
           <View className="flex-row items-center justify-between">
-            <Text accessibilityRole="header" className="text-[20px] font-semibold text-on-surface dark:text-on-surface-dark">
+            <Text accessibilityRole="header" className={android ? "text-[15px] font-medium text-primary dark:text-primary-dark" : "text-[20px] font-semibold text-on-surface dark:text-on-surface-dark"}>
               Recent searches
             </Text>
             <Pressable
@@ -157,7 +165,7 @@ export function SearchScreen() {
                 } else setEditing((value) => !value);
               }}
             >
-              <Text className="text-[16px] text-primary dark:text-primary-dark">{android ? "Clear" : editing ? "Done" : "Edit"}</Text>
+              <Text className={`text-[16px] text-primary dark:text-primary-dark ${android ? "font-medium" : ""}`}>{android ? "Clear" : editing ? "Done" : "Edit"}</Text>
             </Pressable>
           </View>
           <View className={android ? "" : "overflow-hidden rounded-2xl bg-surface dark:bg-surface-dark"}>
@@ -259,7 +267,15 @@ export function SearchScreen() {
         <EmptyState
           testID="search-empty"
           className="pt-12"
-          icon={<SearchIcon size={28} color={colors.onSurfaceMuted} />}
+          icon={
+            android ? (
+              <View className="h-16 w-16 items-center justify-center rounded-2xl bg-surface-container dark:bg-surface-container-dark">
+                <SearchX size={28} color={colors.onSurfaceMuted} />
+              </View>
+            ) : (
+              <SearchIcon size={28} color={colors.onSurfaceMuted} />
+            )
+          }
           title={`No results for “${query.trim()}”`}
           description={NO_RESULTS_HINT}
         />
@@ -269,6 +285,15 @@ export function SearchScreen() {
   );
 
   const body = searching ? resultsList : recentList;
+
+  // US-MOB-20 · `MobSearchAndroid` / `MobSearchResultsAndroid`: Material 3's search bar — a pill with the
+  // avatar inside — becomes the full-width search view (back arrow, ✕) while searching.
+  const active = focused || typed.length > 0;
+  const leave = () => {
+    searchFor("");
+    inputRef.current?.blur();
+  };
+  useAndroidBack(leave, active);
 
   if (!android) {
     return (
@@ -293,13 +318,22 @@ export function SearchScreen() {
   }
 
   return (
-    <View className="flex-1 bg-background dark:bg-background-dark">
-      <View className="px-4 pb-2 pt-3">
-        <View className="h-14 flex-row items-center gap-3 rounded-full bg-surface-sunken px-4 dark:bg-surface-sunken-dark">
-          <SearchIcon size={20} color={colors.onSurfaceMuted} />
+    <View className="flex-1 bg-background dark:bg-background-dark" style={{ paddingTop: insets.top }}>
+      <View className={active ? "bg-surface-container dark:bg-surface-container-dark" : "px-4 pb-2 pt-2"}>
+        <View className={`h-14 flex-row items-center gap-3 ${active ? "px-2" : "rounded-full bg-surface-container px-4 dark:bg-surface-container-dark"}`}>
+          {active ? (
+            <Pressable testID="search-back" onPress={leave} hitSlop={8} accessibilityRole="button" accessibilityLabel="Back" className="h-12 w-12 items-center justify-center">
+              <ArrowLeft size={24} color={colors.onSurface} />
+            </Pressable>
+          ) : (
+            <SearchIcon size={22} color={colors.onSurfaceMuted} />
+          )}
           <TextInput
+            ref={inputRef}
             testID="search-input"
             value={typed}
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             onChangeText={setTyped}
             placeholder={SEARCH_PLACEHOLDER}
             placeholderTextColor={colors.onSurfaceMuted}
@@ -311,10 +345,12 @@ export function SearchScreen() {
             className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark"
           />
           {typed.length ? (
-            <Pressable onPress={() => searchFor("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search">
-              <X size={20} color={colors.onSurfaceMuted} />
+            <Pressable onPress={() => searchFor("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Clear search" className="h-12 w-12 items-center justify-center">
+              <X size={22} color={colors.onSurface} />
             </Pressable>
-          ) : null}
+          ) : active ? null : (
+            <ProfileAvatarButton />
+          )}
         </View>
       </View>
       {body}

@@ -14,6 +14,7 @@ import { ListRowsSkeleton } from "../../components/skeletons";
 import { ExpenseStatusChip, expenseStatusLabel, expenseStatusTextClass } from "../../components/expense-status";
 import { categoryIcon } from "../../components/category-icon";
 import { WaitingChip } from "../../components/waiting-chip";
+import { Fab } from "../../components/fab";
 
 export const EXPENSES_EMPTY_TITLE = "No expenses yet";
 export const EXPENSES_EMPTY_MESSAGE = "Log fuel, materials or meals here with a photo of the receipt. Your office approves them before you're paid back.";
@@ -162,16 +163,7 @@ export function ExpensesScreen() {
         ) : null}
       </ScrollView>
       {android ? (
-        <Pressable
-          testID="expenses-log"
-          onPress={logExpense}
-          accessibilityRole="button"
-          accessibilityLabel="Log expense"
-          className="absolute bottom-6 right-4 h-14 flex-row items-center gap-3 rounded-2xl bg-info-bg px-5 shadow-md active:opacity-80 dark:bg-info-bg-dark"
-        >
-          <Plus size={22} color={colors.primary} />
-          <Text className="text-[16px] font-semibold text-primary dark:text-primary-dark">Log expense</Text>
-        </Pressable>
+        <Fab testID="expenses-log" label="Log expense" icon={Plus} onPress={logExpense} />
       ) : null}
     </View>
   );
