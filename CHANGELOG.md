@@ -86,6 +86,14 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
   - tonal buttons ("Mark complete", Present, Call), the selected segment, the tab bar's selected pill and the floating action buttons (one shared `Fab`);
   - filled cards on Today (no border) and the outlined site and contact card on a job.
 - **Top app bars** are flat on Android, with no shadow line.
+- **Outlined fields measured against the artboards:**
+  - 56 dp tall: they were 49, because NativeWind's `h-14` is 3.5 × 14 px.
+  - Material's `outline` role for the border (new token, #726C5A / #9A9786). It was the pale border-strong.
+  - The tokens' 6 px input radius instead of 12.
+  - Material's small ▾ (`arrow_drop_down`) on dropdowns.
+  - An 8 dp gap after a prefix ("$  64.20").
+  - Dates spelled out ("8 Oct 2026" / "Oct 9, 2026" by the phone's locale).
+  - Segmented buttons use the `outline` border and semibold labels.
 - **Screens now drawn as their `…Android` artboards:**
   - Today: a large "Today" that collapses into the bar on scroll; the bar turns surface-container.
   - A job: milestones and quotes as plain lists.

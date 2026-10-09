@@ -2,10 +2,9 @@ import { useMemo, useRef, useState, type Context } from "react";
 import { FlatList, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import ChevronRight from "lucide-react-native/icons/chevron-right";
 import CheckIcon from "lucide-react-native/icons/check";
-import Triangle from "lucide-react-native/icons/triangle";
 import { useNativeColors } from "../theme/use-native-colors";
 import { BottomSheet } from "./bottom-sheet";
-import { OutlinedFrame } from "./outlined-text-field";
+import { DropdownArrow, OutlinedFrame } from "./outlined-text-field";
 import { cn } from "../lib/cn";
 
 /**
@@ -199,10 +198,7 @@ export function SelectListField<T extends string>({
             <Text numberOfLines={1} className={cn("flex-1 text-[16px]", selected ? "text-on-surface dark:text-on-surface-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark")}>
               {selected?.label ?? placeholder}
             </Text>
-            {/* Material's arrow_drop_down. Rotated on a wrapper: react-native-svg reads a transform on the Svg as an SVG one (about 0,0). */}
-            <View style={{ transform: [{ rotate: "180deg" }] }}>
-              <Triangle size={10} color={colors.onSurfaceMuted} fill={colors.onSurfaceMuted} />
-            </View>
+            <DropdownArrow color={colors.onSurfaceMuted} />
           </View>
         </OutlinedFrame>
       </Pressable>

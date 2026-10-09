@@ -5,6 +5,9 @@ import EyeIcon from "lucide-react-native/icons/eye";
 import EyeOff from "lucide-react-native/icons/eye-off";
 import { cn } from "../lib/cn";
 import { useNativeColors } from "../theme/use-native-colors";
+import { radius } from "../tokens";
+import { FORM_ROW_HEIGHT } from "./form-row";
+import Svg, { Path } from "react-native-svg";
 
 /**
  * Material 3's outlined field, the Android form look in the field app's
@@ -36,7 +39,9 @@ const LABEL_LEFT = 12;
 const LABEL_TOP = -10;
 
 export function OutlinedFrame({ label, focused = false, error = false, multiline = false, labelBackgroundClassName = "bg-background dark:bg-background-dark", helperText, testID, children }: OutlinedFrameProps) {
-  const tone = error ? "border-overdue dark:border-overdue-dark" : focused ? "border-primary dark:border-primary-dark" : "border-border-strong dark:border-border-strong-dark";
+  const colors = useNativeColors();
+  // Material 3: the `outline` role at rest, primary while focused, the error colour on error.
+  const borderColor = error ? colors.overdue : focused ? colors.primary : colors.outline;
   const labelTone = error ? "text-overdue dark:text-overdue-dark" : focused ? "text-primary dark:text-primary-dark" : "text-on-surface-muted dark:text-on-surface-muted-dark";
   // The thicker outline takes its extra pixel from the padding and the
   // label's inset (both measured inside the border), so nothing shifts.
@@ -45,8 +50,9 @@ export function OutlinedFrame({ label, focused = false, error = false, multiline
   return (
     <View testID={testID} className="gap-1 pt-2">
       <View
-        className={cn("rounded-lg", multiline ? "min-h-[96px]" : "h-14 justify-center", tone)}
-        style={{ borderWidth: border, paddingHorizontal: PAD_X - inset, paddingVertical: multiline ? PAD_Y - inset : 0 }}
+        className={multiline ? "min-h-[96px]" : "justify-center"}
+        // 56 tall like Material's field (FORM_ROW_HEIGHT), with the tokens' input radius.
+        style={{ borderWidth: border, borderColor, borderRadius: radius.sm, height: multiline ? undefined : FORM_ROW_HEIGHT, paddingHorizontal: PAD_X - inset, paddingVertical: multiline ? PAD_Y - inset : 0 }}
       >
         {children}
         <View pointerEvents="none" className={cn("absolute px-1", labelBackgroundClassName)} style={{ left: LABEL_LEFT - inset, top: LABEL_TOP - inset }}>
@@ -82,7 +88,7 @@ export function OutlinedTextField({ label, value, onChangeText, placeholder, mul
   const Eye = revealed ? EyeOff : EyeIcon;
   return (
     <OutlinedFrame label={label} focused={focused} error={error} multiline={multiline} helperText={helperText} labelBackgroundClassName={labelBackgroundClassName}>
-      <View className={cn("flex-row gap-1", multiline ? "flex-1 items-start" : "items-center")}>
+      <View className={cn("flex-row gap-2", multiline ? "flex-1 items-start" : "items-center")}>
         {prefix ? <Text className="text-[16px] text-on-surface-muted dark:text-on-surface-muted-dark">{prefix}</Text> : null}
         <TextInput
           ref={inputRef}
@@ -111,5 +117,14 @@ export function OutlinedTextField({ label, value, onChangeText, placeholder, mul
         ) : null}
       </View>
     </OutlinedFrame>
+  );
+}
+
+/** Material's `arrow_drop_down`: the small filled ▾ at the end of an exposed dropdown. */
+export function DropdownArrow({ color }: { color: string }) {
+  return (
+    <Svg width={24} height={24} viewBox="0 0 24 24" accessibilityElementsHidden importantForAccessibility="no">
+      <Path d="M7 10l5 5 5-5z" fill={color} />
+    </Svg>
   );
 }

@@ -106,7 +106,8 @@ describe("DateTimePicker a11y — on Android", () => {
     render(<DateTimePicker variant="outlined" label="Date" value={date} onChange={() => {}} mode="date" />);
     expect(screen.getByText("Date")).toBeTruthy();
     const trigger = screen.getByRole("button");
-    expect(trigger.props.accessibilityLabel).toBe(`Date: ${date.toLocaleDateString()}`);
+    // Spelled out, as the Android design draws it: "15 Jan 2026" / "Jan 15, 2026" by locale.
+    expect(trigger.props.accessibilityLabel).toBe(`Date: ${date.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}`);
     fireEvent.press(trigger);
     expect(screen.UNSAFE_queryAllByProps({ presentation: "dialog" })).toHaveLength(1);
   });

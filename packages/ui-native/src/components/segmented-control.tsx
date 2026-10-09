@@ -57,10 +57,10 @@ export function SegmentedControl({ values, value, onValueChange, disabled = fals
       // Material 3 roles (US-MOB-20): the selected segment is primary-container.
       activeContainerColor: colors.primaryContainer,
       activeContentColor: colors.onPrimaryContainer,
-      activeBorderColor: colors.borderStrong,
+      activeBorderColor: colors.outline,
       inactiveContainerColor: colors.background,
       inactiveContentColor: colors.onSurface,
-      inactiveBorderColor: colors.borderStrong,
+      inactiveBorderColor: colors.outline,
     };
     return (
       <Host matchContents={{ vertical: true }} style={style} colorScheme={hostTheme.colorScheme}>
@@ -68,7 +68,8 @@ export function SegmentedControl({ values, value, onValueChange, disabled = fals
           {values.map((label, index) => (
             <SegmentedButton key={label} selected={index === selectedIndex} onClick={() => onValueChange(label)} enabled={!disabled} colors={segmentColors}>
               <SegmentedButton.Label>
-                <ComposeText>{label}</ComposeText>
+                {/* Semibold labels, as the Android designs draw the segments. */}
+                <ComposeText style={{ fontWeight: "600" }}>{label}</ComposeText>
               </SegmentedButton.Label>
             </SegmentedButton>
           ))}

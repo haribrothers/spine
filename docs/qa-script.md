@@ -4411,7 +4411,12 @@ On an Android phone, compare each screen with its `Mob…Android` artboard in `d
 2. A job: the site and contact sit in an outlined card. Milestones and quotes are plain lists. The other milestones' "Mark complete" is tonal. "Add photos" floats bottom right. The photos show (not blank). "+n" over the last tile is dark with light text in both themes.
 3. Profile: the avatar beside the name. Then Email and Server rows with icons, and the sync row with "Last sent <time>" once something has been sent. Then "Appearance", the Field note, an outlined red "Sign out" with an icon, and the version.
 4. Search: a rounded search bar with the avatar inside. Tap it: it becomes a full-width bar with ← and, once you type, ✕. ← (or the back gesture) leaves the search. With recent searches: "Recent searches" in blue with "Clear". No results: the icon sits in a grey rounded square.
-5. Sign in: outlined Server, Email and Password fields. The server hint is under the Server field. A wrong server shows the field in red with an error icon and the message under it. The eye shows and hides the password.
+5. Every outlined field (Sign in, New expense, photo review, Mark complete's note, a quote's name and reason) matches its artboard:
+   - 56 dp tall, a mid-grey outline (blue and thicker while typing, red on error), corners barely rounded.
+   - The label sits in the outline's top edge. Dropdowns end in a small ▾.
+   - A date reads "8 Oct 2026" (or "Oct 8, 2026" by the phone's locale).
+   - Segmented buttons have the same grey outline and semibold labels.
+   Sign in: outlined Server, Email and Password fields. The server hint is under the Server field. A wrong server shows the field in red with an error icon and the message under it. The eye shows and hides the password.
 6. New expense: outlined fields, muted "Paid by" and "Receipt" labels, the receipt buttons without a card. "Headcount × day rate":
    - The trade being edited is an outlined card (Trade, Workers, Day rate with the currency).
    - "Add trade" folds it to one line ("Mason / 4 × $220.00   $880.00"). Tap that line to edit it again.

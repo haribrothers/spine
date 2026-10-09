@@ -82,6 +82,8 @@ export const lightColors = {
   onPrimaryContainer: "#1C3AA9",
   surfaceContainer: "#F2F1EE",
   outlineVariant: "#D3D0C9",
+  /** Material's `outline`: the border of outlined text fields and segmented buttons. */
+  outline: "#726C5A",
 } as const;
 
 export const darkColors = {
@@ -137,6 +139,7 @@ export const darkColors = {
   onPrimaryContainer: "#DCE4FC",
   surfaceContainer: "#201F1B",
   outlineVariant: "#3B392F",
+  outline: "#9A9786",
 } as const;
 
 /** Flat colour tokens only — `gradients` is a nested object, not a colour string (see `GradientTone`). */

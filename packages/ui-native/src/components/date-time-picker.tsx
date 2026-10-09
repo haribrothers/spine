@@ -182,6 +182,12 @@ function formatValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
   return value.toLocaleDateString();
 }
 
+/** The outlined field's value as `MobExpenseNewAndroid` draws it: "8 Oct 2026" (a date spelled out, in the phone's locale order). */
+function outlinedValue(value: Date, mode: ExpoDateTimePickerProps["mode"]) {
+  if (mode !== "date") return formatValue(value, mode);
+  return value.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
 /**
  * All three real branches — see this file's own doc comment (SIXTH
  * design) for why `"datetime"` falling through to a two-branch `? :`
@@ -297,10 +303,10 @@ function AndroidDateTimePickerField({
   return (
     <>
       {outlined ? (
-        <Pressable disabled={disabled} onPress={handlePress} accessibilityRole="button" accessibilityLabel={`${outlinedLabel}: ${formatValue(value, mode)}`} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
+        <Pressable disabled={disabled} onPress={handlePress} accessibilityRole="button" accessibilityLabel={`${outlinedLabel}: ${outlinedValue(value, mode)}`} accessibilityState={{ disabled }} testID={testID} className={disabled ? "opacity-50" : ""}>
           <OutlinedFrame label={outlinedLabel}>
             <View className="flex-row items-center justify-between gap-2">
-              <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">{formatValue(value, mode)}</Text>
+              <Text className="flex-1 text-[16px] text-on-surface dark:text-on-surface-dark">{outlinedValue(value, mode)}</Text>
               <Icon size={20} color={iconColor} />
             </View>
           </OutlinedFrame>
