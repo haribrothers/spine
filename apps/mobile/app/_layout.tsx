@@ -2,7 +2,7 @@ import "../global.css";
 // First, so the splash is held before anything else loads (US-MOB-25).
 import { hideSplash } from "../src/lib/splash";
 import { useEffect } from "react";
-import { Platform, View } from "react-native";
+import { LogBox, Platform, View } from "react-native";
 import { Stack, ThemeProvider, useRouter } from "expo-router";
 import { SpineUIProvider, useNativeColors } from "@spine/ui-native";
 import { persistentThemeStorage } from "../src/lib/theme-storage";
@@ -11,6 +11,10 @@ import { SyncProvider } from "../src/lib/outbox/sync-provider";
 import { profileScreenOptions } from "../src/features/profile/profile-screen";
 import { useNavigationTheme } from "../src/lib/navigation-theme";
 import { showsWelcome, useWelcome, WelcomeProvider } from "../src/lib/welcome/welcome-seen";
+
+// Welcome and Sign in read Reduce Motion themselves and show their still
+// version (D-204), so Reanimated's development notice adds nothing.
+LogBox.ignoreLogs(["[Reanimated] Reduced motion setting is enabled on this device"]);
 
 /**
  * Which part of the app is reachable: Sign in when signed out, the tabs and

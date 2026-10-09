@@ -99,6 +99,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 - **Sign in (US-MOB-01):**
   - The vertical logo on a short version of Welcome's illustration, titled "Sign in". The illustration folds to the horizontal logo while the keyboard is up.
   - A wrong password reads "That email and password don't match. Check both, or reset your password."
+- **Development builds:**
+  - A launch from the dev-client link (`spine://expo-development-client/…`) now opens the first screen (`app/+native-intent.tsx`). Before, the router tried to open that link as a screen and raised a red error toast, which covered "Get started".
+  - Reanimated's "Reduced motion setting is enabled" notice is silenced, since both screens handle Reduce Motion themselves.
+- **End-to-end:** `us-mob-01-sign-in` passes on the iOS simulator (Welcome → Sign in → wrong password → Today → Profile → sign out, never back to Welcome). On the Android emulator, Maestro's driver hangs on `eraseText` in the Server field, with the previous Sign in screen as well; that flow is in the iOS e2e script only.
 - **Tests:** `us-mob-24` to `us-mob-27` added; `us-mob-01` updated. Reanimated, Worklets and the splash are mocked in the mobile Jest setup. QA script section 197.
 
 ### 2026-10-09 — Phase 5 Group 6: the Spine brand on the phone (planning, US-MOB-01, US-MOB-24 to US-MOB-27, D-203, D-204)

@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { darkColors, lightColors } from "@spine/ui-native/tokens";
+import { redirectSystemPath } from "../../app/+native-intent";
 
 const MOBILE = join(__dirname, "../..");
 type SplashConfig = { image: string; imageWidth: number; backgroundColor: string; dark: { image: string; backgroundColor: string } };
@@ -34,5 +35,10 @@ describe("US-MOB-25 · see Spine while the app opens", () => {
     expect(layout.indexOf('from "../src/lib/splash"')).toBeLessThan(layout.indexOf("expo-router"));
     expect(layout).toContain('if (state.status === "loading" || welcomeSeen === null) return null;');
     expect(layout).toContain("onLayout={welcome ? undefined : hideSplash}");
+  });
+
+  it("opens on the first screen when a development build is launched from its dev-client link", () => {
+    expect(redirectSystemPath({ path: "spine://expo-development-client/?url=http%3A%2F%2F10.0.2.2%3A8081", initial: true })).toBe("/");
+    expect(redirectSystemPath({ path: "/quote/q-1", initial: false })).toBe("/quote/q-1");
   });
 });
