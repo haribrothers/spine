@@ -297,7 +297,7 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
     );
 
   const figure = (label: string, value: string, note: React.ReactNode, bar?: number, testId?: string) => (
-    <div className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-r sm:[&:not(:last-child)]:border-b-0" data-testid={testId}>
+    <div key={label} className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-r sm:[&:not(:last-child)]:border-b-0" data-testid={testId}>
       <span className="text-[12.5px] text-on-surface-muted">{label}</span>
       <span className="text-[19px] font-bold tabular-nums leading-tight text-on-surface">{value}</span>
       <span className="text-[12px] text-on-surface-muted">{note}</span>
