@@ -16,6 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -444,4 +445,71 @@ Decision: D-208
 **Implementation notes**
 - UI: `/onboarding` checks `onboarding_status` when it opens and sends a finished or skipped onboarding to the dashboard (US-ONB-01). A `done` state (`FinishStep`) is shown after `PUT /org/settings/onboarding_status { completedAt }` succeeds. The "<n> left" comes from `GET /org/setup-status` with `setupProgress` (`@spine/shared`); if that call fails, the line reads "See what's left to set up".
 - Links: customer → `/contacts/new`, catalogue → `/catalog`, quote → `/quotes/new`; "Change" opens Settings at the matching pane.
+
+### US-ONB-24 · Explore a pipeline that's being worked
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`PipelineBoard`, `LeadDrawer` with demo data)
+**As** an evaluator, **I want** the demo's pipeline to look like one a team is working, **so that** the board's owners, ages, nudges and history show what they're for.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo (Riverstone Builders included), **when** it's loaded, **then** its open leads belong to the owner who loaded it and to Sarah Mendes (the demo Staff person), so cards show both and the Owner filter narrows to each; won and lost leads are the owner's.
+- **Given** the board, **when** it shows, **then** open leads have been in their stage for different lengths of time (from a few days to about three weeks), each has an expected close date in the next two months, and exactly one says "No activity for 14 days".
+- **Given** the lost lead, **when** I open it, **then** it says why it was lost ("Price") with a note.
+- **Given** any lead's drawer, **when** I look at its history, **then** it shows when it was created and each stage it moved through, with who and when, ending in its current stage.
+- **Given** the strip above the board, **when** it shows, **then** "Won this month" and "Win rate" count the demo's won and lost leads (the won lead closed within the last 30 days).
+
+**Implementation notes**
+- Shared: each plan lead gains `owner` ("owner" | "staff"), `daysInStage`, `expectedCloseInDays`, `lostReason` and `lostNote`; `cold` marks the one lead with no activity for 14 days.
+- API: `DemoSeederService` creates the demo people before the contacts; it writes `stage_changed_at`, `updated_at`, `expected_close_date`, `lost_reason` and `lost_note`, and the lead's audit trail (created, then one `stageId` change per stage, dated) as the app would have.
+
+### US-ONB-25 · Explore quotes at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`QuotesListRefined`, `QuoteDetailRefined`, `QuoteDetailAcceptedRefined` with demo data)
+**As** an evaluator, **I want** the demo's quotes to be at every stage, **so that** the cards, countdowns, views and panels have something to show.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** every quote has a title.
+- **Given** the quotes list, **when** it shows, **then** sent quotes were sent on different days over the last few weeks; one sent quote expires within 7 days and one has expired.
+- **Given** a sent quote, **when** the customer has looked at it, **then** the list shows "Viewed 2×" (or more) with the last view on a recent day; at least one sent quote hasn't been viewed.
+- **Given** the cards, **when** they show, **then** one quote was accepted this month (for the customer whose lead is won) and one declined with a comment (for the customer whose lead is lost), so "Won this month" and "Win rate" have figures.
+- **Given** the newest job, **when** I open it, **then** it says "From QUO-…": it was made from an accepted quote for its contract, whose Related panel lists the job and whose Activity says "Converted to a job".
+- **Given** a quote for a customer with a lead, **when** I open it, **then** its Related panel shows the lead.
+
+**Implementation notes**
+- Shared: each plan quote gains `title`, `sentInDays`, `views` (count and last view), `respondedInDays` and `comment`; `outcome` gains "accepted" and "declined"; a job's `fromQuote` adds its contract quote (one lump-sum line at the contract value, with the job's milestone tax).
+- API: sent through `QuotesService.send` and answered through the customer link (`PublicQuotesService.accept`/`reject`), then their send, view and answer dates and audit rows are set to the plan's days; views are `quote_events` rows. The job is created with the quote as its source (`JobsService.create`'s `sourceQuoteId`), so its contract value stays the plan's.
+
+### US-ONB-26 · Explore jobs that need something
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`JobsListRefined`, `JobDetailRefined`, `JobDetailCompleted` with demo data)
+**As** an evaluator, **I want** the demo's jobs to need billing, watching and closing, **so that** the Jobs cards, next steps and figures show what they do.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo with jobs, **when** it's loaded, **then** every job has an end date, the finished job's in the past.
+- **Given** the job in progress, **when** I look at it, **then** a completed milestone hasn't been invoiced yet: "Ready to bill" counts it and the job's next step is "Invoice <milestone>".
+- **Given** the jobs, **when** they show, **then** each has a cost budget and the newest is near it ("Over or near budget" shows 1 for people who can see job profitability), and one job has a % complete estimate.
+- **Given** the finished job, **when** I open it, **then** its status is Completed; where the demo releases retention it's released, and otherwise (India, Q-21) it's held and "Release retention" is the next step.
+- **Given** a customer with a job, **when** I start a new job for them, **then** the drawer fills in their site address.
+
+**Implementation notes**
+- Shared: each plan job gains `endInDays`, `budget` ("near" or a share of the contract), `percentComplete` and `status`; a milestone gains `completeInDays` (completed, not invoiced).
+- API: the near budget is set after the timeline from the job's journal-line cost, so it's near whatever the costs come to; customers with a job get a "site" address, the job's site.
+
+### US-ONB-27 · Explore a catalogue and calendar that look kept
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`CatalogueRefined`, `MeetingsCalendar` with demo data)
+**As** an evaluator, **I want** the demo's catalogue and calendar to look like a business's, **so that** bundles, income accounts and the calendar's lists aren't empty.
+
+Decision: D-216
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** goods (materials, fixtures, hardware) post to 4000 Sales — Goods, so "No income account" counts only the services, which post to 4100.
+- **Given** the catalogue, **when** I open Bundles, **then** the demo has two bundles made from its items, offered in a quote's line picker.
+- **Given** the calendar, **when** it opens, **then** meetings start at different times of day, at least three fall in the next two weeks (one tomorrow), and the mini calendar and "Upcoming" show them.
+
+**Implementation notes**
+- Shared: items gain `income` ("goods" | "services"); a plan gains `bundles` (name, description, item keys and quantities); meetings gain `startTime` ("14:30").
+- API: bundles through `CatalogBundlesService.create` with `items`; meetings at the plan's local time.
 

@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 479 stories.
+Total: 483 stories.
 
 ## Phase 0 · Foundation
 
@@ -839,6 +839,13 @@ Total: 479 stories.
 - US-JOB-36 · Browse, upload and group site photos (P2)
 - US-JOB-37 · Follow what happened on a job (P2)
 - US-JOB-38 · Show real site photos in the demo (P3)
+
+*Demo data*
+
+- US-ONB-24 · Explore a pipeline that's being worked (P2)
+- US-ONB-25 · Explore quotes at every stage (P2)
+- US-ONB-26 · Explore jobs that need something (P2)
+- US-ONB-27 · Explore a catalogue and calendar that look kept (P2)
 
 ## Phase 10 · AI assistant
 
