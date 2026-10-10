@@ -447,6 +447,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-CRM-21 · Read long names and emails in every contacts view
 - [x] US-CRM-22 · Refresh the contacts list to see changes
 - [x] US-CRM-23 · Search, filter and come back to the same contacts list
+- [ ] US-CRM-24 · See the whole pipeline at a glance
+- [ ] US-CRM-25 · Spot leads going cold, and move a lead without dragging
+- [ ] US-CRM-26 · Say why a lead was lost, and quote a lead that's won
+- [ ] US-CRM-27 · Work a lead from one drawer
+- [ ] US-CRM-28 · Filter the pipeline by owner and source, and come back to it
 
 ## Phase 10 · AI assistant
 

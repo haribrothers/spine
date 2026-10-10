@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 444 stories.
+Total: 449 stories.
 
 ## Phase 0 · Foundation
 
@@ -789,6 +789,14 @@ Total: 444 stories.
 - US-CRM-21 · Read long names and emails in every contacts view (P2)
 - US-CRM-22 · Refresh the contacts list to see changes (P2)
 - US-CRM-23 · Search, filter and come back to the same contacts list (P2)
+
+*Pipeline*
+
+- US-CRM-24 · See the whole pipeline at a glance (P2)
+- US-CRM-25 · Spot leads going cold, and move a lead without dragging (P2)
+- US-CRM-26 · Say why a lead was lost, and quote a lead that's won (P2)
+- US-CRM-27 · Work a lead from one drawer (P2)
+- US-CRM-28 · Filter the pipeline by owner and source, and come back to it (P2)
 
 ## Phase 10 · AI assistant
 

@@ -2,7 +2,7 @@
 
 The customers and vendors a business deals with, the people and addresses behind each one, a timeline of everything that happened with them, logged activities with follow-ups, and a pipeline board of leads. Contacts are read by everyone; who may edit or delete them is controlled per Team.
 
-**Screens:** `ContactsList` (P1), `ContactsCards` (P3), `ContactsEmpty` (P1), `ContactCreateDrawer` (P1), `ContactTimeline` (P1), `ContactPersons` (P1), `ContactPersonDialog` (P1), `ContactAddresses` (P1), `AddressDialog` (P1), `ContactActivities` (P1), `ActivityDialog` (P1), `ContactLeads` (P2), `ContactDeleteConfirm` (P2), `ImportContactsDialog` (P2), `LeadsBoard` (P1), `LeadsBoardEmpty` (P1), `LeadDialog` (P1), `LeadStagesSettings` (P2), `ContactsCardsPolish` (P2), `ContactsCardsPolishDark` (P2), `ContactsTablePolish` (P2)
+**Screens:** `ContactsList` (P1), `ContactsCards` (P3), `ContactsEmpty` (P1), `ContactCreateDrawer` (P1), `ContactTimeline` (P1), `ContactPersons` (P1), `ContactPersonDialog` (P1), `ContactAddresses` (P1), `AddressDialog` (P1), `ContactActivities` (P1), `ActivityDialog` (P1), `ContactLeads` (P2), `ContactDeleteConfirm` (P2), `ImportContactsDialog` (P2), `LeadsBoard` (P1), `LeadsBoardEmpty` (P1), `LeadDialog` (P1), `LeadStagesSettings` (P2), `ContactsCardsPolish` (P2), `ContactsCardsPolishDark` (P2), `ContactsTablePolish` (P2), `PipelineBoard` (P2), `PipelineBoardDark` (P2), `PipelineClosedOpen` (P2), `LeadWonDialog` (P2), `LeadLostDialog` (P2), `LeadDrawer` (P2)
 **Depends on:** 15 Team (capabilities), 06 Quotes / 08 Invoicing / 09 Payments (timeline entries), 04 Meetings (timeline entries).
 
 ## Features
@@ -18,6 +18,7 @@ The customers and vendors a business deals with, the people and addresses behind
 | F-CRM-07 | Own/others edit and delete rights for CRM records | P1 | 4 | `ContactsList`, `ContactPersons`, `LeadsBoard`, `ContactActivities` |
 | F-CRM-08 | Configurable pipeline stages | P2 | 7 | `LeadStagesSettings`, `LeadsBoard` |
 | F-CRM-09 | Contacts list polish: names that fit, refresh, search in every view, filters that stay | P2 | Refinements | `ContactsCardsPolish`, `ContactsCardsPolishDark`, `ContactsTablePolish` |
+| F-CRM-10 | A pipeline that works: a board that fits, cards that show what needs doing, won and lost with a purpose, a lead drawer, filters that stay | P2 | Refinements | `PipelineBoard`, `PipelineBoardDark`, `PipelineClosedOpen`, `LeadWonDialog`, `LeadLostDialog`, `LeadDrawer` |
 
 ## User stories
 
@@ -206,6 +207,7 @@ Legacy: S-01.5
 - API: `GET /leads`, `PUT /leads/:id`, `GET /leads/summary-by-stage` (no capability).
 - UI: `leads-board.tsx` (`Kanban`).
 - Edge: values in different currencies don't occur (single currency).
+- Extended by US-CRM-24 and US-CRM-25 (D-211): the keyboard move is the card's "Move to…" menu.
 
 ### US-CRM-12 · See a contact's leads
 **Feature:** F-CRM-05 · **Priority:** P2 · **Phase:** 1 · **Screens:** `ContactLeads`
@@ -395,3 +397,89 @@ Decision: D-210
 **Implementation notes**
 - UI: pagination stays the existing `PaginationBar` / `Table` pager. The search moves from `DataTable` (Table view only) into `contacts-explorer.tsx`, which filters the loaded list for all three views; `DataTable` gets the search from its parent and hides its own box (`searchValue` prop). URL state through `useSearchParams` and `router.replace` (no extra history entry per keystroke). Stat counts come from a separate unfiltered active list.
 - No API change.
+
+### US-CRM-24 · See the whole pipeline at a glance
+**Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PipelineBoard`, `PipelineBoardDark`, `PipelineClosedOpen`
+**As** an owner, **I want** the open pipeline to fit the screen with its key figures above it, **so that** I can see what's in play without scrolling sideways.
+
+Decision: D-211
+
+**Acceptance criteria**
+- **Given** the board at 1280 px or wider, **when** it shows, **then** the open stages share the width (no sideways scroll for up to 6 open stages), and Won and Lost are slim columns at the right with their name, count and total for the last 30 days.
+- **Given** a slim Won or Lost column, **when** I press it, **then** it opens to full width and lists the leads won (or lost) in the last 30 days, newest first; pressing its header again closes it. Older closed leads stay reachable by choosing that stage in the stage filter.
+- **Given** more open stages than fit, **when** the board scrolls sideways, **then** a shadow at the edge shows there's more, and the column headers stay in view while the cards scroll.
+- **Given** the board, **when** it shows, **then** a strip above it shows "Open pipeline" (the open leads' total per currency, and how many), "Won this month" (total and count), "Win rate" (won ÷ won and lost, closed in the last 90 days) and "Overdue follow-ups" (open leads with a follow-up past due); pressing "Overdue follow-ups" filters the board to those leads.
+- **Given** each column, **when** it shows, **then** its header has the stage's colour dot, name, count and total; an empty open column says "No leads in this stage" at its own height, not a full-height empty box.
+- **Given** the page header, **when** it shows, **then** it says "Your open leads by stage, and what you've won and lost lately."
+
+**Implementation notes**
+- UI: `leads-board.tsx`; columns use the stage `color` (category tokens). Figures come from the leads already loaded (closed leads by `stage_changed_at`), no new endpoint.
+- Data: `leads.stage_changed_at` (US-CRM-25).
+
+### US-CRM-25 · Spot leads going cold, and move a lead without dragging
+**Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PipelineBoard`
+**As** office staff, **I want** each card to show who owns it, how long it's sat and when I next follow up, and a menu to move it, **so that** nothing goes cold and I can move leads by keyboard or touch.
+
+Decision: D-211
+
+**Acceptance criteria**
+- **Given** a lead card, **when** it shows, **then** it has the title (or the contact's name, once, when there's no title), the contact, the value, the owner's initials (with their name on hover; "Unassigned" when none), and "12 days in stage".
+- **Given** a lead with an open follow-up, **when** its card shows, **then** it shows the next one ("Call · Fri 16 Oct"), in the overdue colour with "Overdue" when it's past due; with none it shows nothing extra.
+- **Given** an open lead with no activity and no change for 14 days or more, **when** its card shows, **then** it carries "No activity for 14 days" (the overdue colour is not used; it's a nudge, not an alarm).
+- **Given** a card, **when** I open its "⋯" menu (or focus the card and press the menu key), **then** I can "Move to…" any other stage, "Open", or "Delete" (if allowed); moving updates the counts and totals and announces "Moved to Proposal".
+- **Given** a keyboard, **when** I Tab to a card and press Enter, **then** the lead drawer opens (US-CRM-27); dragging with a mouse still works.
+
+**Implementation notes**
+- Data: `leads.stage_changed_at` (set when the stage changes; backfilled from `updated_at`).
+- API: `GET /leads` adds `stageChangedAt`, `nextFollowUp` (`{ id, type, dueAt }` or null, the earliest open activity on the lead) and `lastActivityAt`; owners' names come from `GET /org/members`.
+- UI: `leads-board.tsx`, `KanbanCard` (a menu slot; the card is focusable).
+
+### US-CRM-26 · Say why a lead was lost, and quote a lead that's won
+**Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `LeadLostDialog`, `LeadWonDialog`, `LeadDrawer`
+**As** an owner, **I want** to record why a lead was lost and to start a quote from a won lead, **so that** I learn from losses and don't retype a winning job.
+
+Decision: D-211
+
+**Acceptance criteria**
+- **Given** I move a lead to a Lost stage (by drag, menu or the drawer), **when** it moves, **then** a dialog asks "Why was it lost?" with Price, Timing, Went with a competitor, No response and Other, and an optional note; "Save" records it and "Skip" moves it without one. The reason shows on the card and in the drawer.
+- **Given** a lost lead moves back to an open or won stage, **when** it moves, **then** its lost reason is cleared.
+- **Given** I move a lead to a Won stage and may create quotes, **when** it moves, **then** a dialog says "Won — {title}" and offers "Create quote" and "Not now".
+- **Given** I press "Create quote" (from that dialog or the drawer), **when** the new quote opens, **then** it has the lead's contact and the lead's title as its reference, and the quote is linked to the lead; the drawer lists the lead's quotes with number, status and total, each opening the quote.
+- **Given** I lack the right to create quotes, **when** a lead is won, **then** no quote offer is shown.
+
+**Implementation notes**
+- Data: `leads.lost_reason` (`price`, `timing`, `competitor`, `no_response`, `other`, or null) and `leads.lost_note`; `quotes.lead_id uuid → leads (set null)`.
+- API: `PUT /leads/:id` accepts `lostReason`, `lostNote` (kept only while the stage is a Lost stage); `POST /quotes` accepts `leadId` (the same organisation and the same contact, else 400 "Choose a lead for this contact."); `GET /quotes?leadId=`.
+- Security: creating the quote needs the quote create capability as before; `leadId` is checked in the service.
+
+### US-CRM-27 · Work a lead from one drawer
+**Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `LeadDrawer`
+**As** office staff, **I want** one place for a lead's details, follow-ups, quotes and history, **so that** I can work it without hunting around.
+
+Decision: D-211
+
+**Acceptance criteria**
+- **Given** I open a lead (card, Enter, or "Open"), **when** the drawer opens, **then** it shows the title, contact (opens the contact), stage, value, currency, source, owner and expected close date, editable with the same rights as before; "Save changes" saves and the card updates.
+- **Given** the drawer, **when** I choose an owner, **then** I can pick any active member or "Unassigned"; the creator (and edit rights) doesn't change.
+- **Given** the drawer's "Follow-ups" section, **when** it shows, **then** it lists the lead's activities (open ones first, by due date), and I can "Log activity" or "Add follow-up" for this lead and mark one done, as on the contact page.
+- **Given** the drawer's "Quotes" and "History" sections, **when** they show, **then** Quotes lists the linked quotes (US-CRM-26) and History lists when the lead was created and each stage change, with who and when.
+- **Given** a new lead ("Add lead"), **when** the drawer opens, **then** it has the same fields, with the stage of the column I pressed it from; follow-ups, quotes and history appear once it's saved.
+
+**Implementation notes**
+- Data: `leads.expected_close_date date`.
+- API: `PUT /leads/:id` accepts `ownerUserId` (an active member, else 400 "Choose someone in your organisation.") and `expectedCloseDate`; `GET /leads/:id/history` → `[{ at, actorName, kind: "created" | "stage", fromStage, toStage }]` from the audit log; activities use `GET /activities?leadId=` and `POST /activities` with `leadId`.
+- UI: `lead-drawer.tsx` (`Drawer`) replaces `lead-dialog.tsx` on the board; the contact page's Leads tab keeps its own dialog.
+
+### US-CRM-28 · Filter the pipeline by owner and source, and come back to it
+**Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PipelineBoard`
+**As** office staff, **I want** to see just my leads or one source, keep my filters when I come back, and refresh the board, **so that** it works like Contacts.
+
+Decision: D-210, D-211
+
+**Acceptance criteria**
+- **Given** the toolbar, **when** it shows, **then** it has search, the stage filter, an owner filter ("My leads", each member, "Unassigned"), a source filter (the sources in use), sort and View; the filters combine.
+- **Given** a search, filter or sort, **when** I set it, **then** the address keeps it (for example `/leads?owner=me&source=Referral`), so Back and bookmarks return to the same board.
+- **Given** the toolbar, **when** it shows, **then** Refresh and "Updated … ago" work as on Contacts (US-CRM-22): the board reloads in place, and also when the tab is shown again after 30 seconds away.
+
+**Implementation notes**
+- UI: `leads-board.tsx`; the contacts list-state pattern (`contacts-list-state.ts`) for the address. No API change beyond US-CRM-25.

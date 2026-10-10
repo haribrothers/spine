@@ -53,6 +53,10 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `branding` | `{ themePreset: "spine-blue"\|"harbour-teal"\|"plum"\|"graphite", documentColor: "#RRGGBB", documentFooter: text }` | US-SET-09, US-SET-10 |
 | `quotes` | `signature_file_id uuid → files (set null)` and `accepted_signer_name text` (on-site acceptance stores what it captured; migration `0110`). An on-site decline (US-MOB-16) also sets `acceptance_method = in_person` and `accepted_by_user_id` (who recorded the answer) | US-QUO-19, US-MOB-16 |
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
+| `leads` | `stage_changed_at timestamptz not null default now()` (set whenever `stage_id` changes; backfilled from `updated_at`) | US-CRM-25 |
+| `leads` | `lost_reason text` (`price`, `timing`, `competitor`, `no_response`, `other`; null unless the stage is a Lost stage) and `lost_note text` | US-CRM-26 |
+| `quotes` | `lead_id uuid → leads (set null)`, same organisation and contact as the quote; index (`org_id`, `lead_id`) | US-CRM-26 |
+| `leads` | `expected_close_date date` | US-CRM-27 |
 | `organization.name` | Kept in sync with `business_profile.name`: `SettingsService.set` renames the organisation in the same transaction whenever a non-empty business name is saved; migration `0062` copied it for existing installs | US-TEAM-15 |
 | Better Auth `verification` | Used for password-reset tokens (no new table) | US-AUTH-09, US-AUTH-10 |
 | `idempotency_keys` | `user_id text → user`; unique index becomes (`org_id`, `user_id`, `endpoint`, `key`) | US-OPS-08 |
