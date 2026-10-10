@@ -473,6 +473,15 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-QUO-34 · Build a quote in compact rows
 - [x] US-QUO-35 · Save, preview and send from a bar that stays in view
 - [x] US-QUO-36 · Start a quote valid for my usual number of days
+- [ ] US-JOB-30 · Start a job from the jobs list
+- [ ] US-JOB-31 · See active, ready-to-bill, over-budget jobs and retention at a glance
+- [ ] US-JOB-32 · Search, filter and come back to the same jobs list
+- [ ] US-JOB-33 · Read a job's next milestone and progress in the list
+- [ ] US-JOB-34 · See a job at a glance, change its status and take the next step
+- [ ] US-JOB-35 · Follow a job's milestones and billing at a glance
+- [ ] US-JOB-36 · Browse, upload and group site photos
+- [ ] US-JOB-37 · Follow what happened on a job
+- [ ] US-JOB-38 · Show real site photos in the demo
 
 ## Phase 10 · AI assistant
 

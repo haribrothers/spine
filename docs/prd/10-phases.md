@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 470 stories.
+Total: 479 stories.
 
 ## Phase 0 · Foundation
 
@@ -827,6 +827,18 @@ Total: 470 stories.
 - US-QUO-34 · Build a quote in compact rows (P2)
 - US-QUO-35 · Save, preview and send from a bar that stays in view (P2)
 - US-QUO-36 · Start a quote valid for my usual number of days (P2)
+
+*Jobs*
+
+- US-JOB-30 · Start a job from the jobs list (P2)
+- US-JOB-31 · See active, ready-to-bill, over-budget jobs and retention at a glance (P2)
+- US-JOB-32 · Search, filter and come back to the same jobs list (P2)
+- US-JOB-33 · Read a job's next milestone and progress in the list (P2)
+- US-JOB-34 · See a job at a glance, change its status and take the next step (P2)
+- US-JOB-35 · Follow a job's milestones and billing at a glance (P2)
+- US-JOB-36 · Browse, upload and group site photos (P2)
+- US-JOB-37 · Follow what happened on a job (P2)
+- US-JOB-38 · Show real site photos in the demo (P3)
 
 ## Phase 10 · AI assistant
 
