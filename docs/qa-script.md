@@ -4546,7 +4546,10 @@ Sign up a new owner (an install with open sign-up, or a fresh one). Use a 1440 p
    - Tax: India shows "CGST 9% + SGST 9%" and "₹22,500.00"; the UK shows "VAT 20%"; "Another country" shows the rate you type.
    - Numbering: an invoice starting number of 1042 shows "INV-1042".
    - Accounts and Team: the preview turns to "Your books" (accounts per group), "Your team" (you, then each invite as "Invited") and "Set so far".
-4. **Narrow windows:** at 1100 px the preview is gone; below 1024 px the rail becomes the bar at the top with the stage and minutes left.
+4. **Narrow and short windows:**
+   - At 1100 px the preview is gone; below 1024 px the rail becomes the bar at the top with the stage and minutes left.
+   - In a short window (a laptop, 700 px tall), the wheel or trackpad scrolls each step down to Continue while the rail and preview stay put. Sign-up, login and the finish screen scroll the same way.
+   - A long business name ("H2Z Facades and Interiors Factory Private Limited") wraps in the preview; the invoice number stays inside the card.
 5. **Screen reader and motion:**
    - VoiceOver reads "Stage 2 of 4 · Money · Step 1 of 3", the heading, the form and the tip. The rail is "Setup steps", with the current step marked and "(done)" after done steps. The preview and the drawn screens are skipped.
    - With Reduce Motion, nothing slides or rises.

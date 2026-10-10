@@ -21,8 +21,9 @@ export function AuthFrame({
   wide?: boolean;
   children: ReactNode;
 }) {
+  // The page scrolls here: globals.css stops the body scrolling, as the app shell scrolls its own content.
   return (
-    <div className="grid min-h-screen bg-background lg:grid-cols-[1fr_1.12fr]">
+    <div className="grid h-screen overflow-y-auto bg-background lg:grid-cols-[1fr_1.12fr]" data-testid="auth-frame">
       <main className="flex min-h-screen flex-col px-5 py-6 sm:px-10 lg:px-14">
         <div className="flex items-center justify-between">
           <SpineLogo variant="horizontal" size={96} />
@@ -31,7 +32,7 @@ export function AuthFrame({
         <div className={`mx-auto flex w-full ${wide ? "max-w-[500px]" : "max-w-[380px]"} flex-1 flex-col justify-center py-10`}>{children}</div>
         <p className="text-center text-[12px] text-on-surface-muted">Spine · self-hosted business management</p>
       </main>
-      <div className="hidden py-4 pr-4 lg:block">
+      <div className="sticky top-0 hidden h-screen py-4 pr-4 lg:block">
         {panel ?? <AuthIllustration scene={scene} />}
       </div>
     </div>

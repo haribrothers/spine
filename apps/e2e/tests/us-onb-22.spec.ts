@@ -89,4 +89,25 @@ test.describe("US-ONB-22", () => {
     await expect(page.getByRole("navigation", { name: "Setup steps" })).toBeHidden();
     await expect(page.getByTestId("onboarding-preview")).toBeHidden();
   });
+
+  test("a short window scrolls with the wheel, and a long business name keeps the invoice number inside the preview", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 640 });
+    await signUpToOnboarding(page, "Scroll Owner");
+    await page.getByRole("button", { name: "Set up my business" }).click();
+
+    // A person can scroll to Continue (the body itself never scrolls; the wizard does).
+    const continueButton = page.getByRole("button", { name: "Continue", exact: true });
+    await expect(continueButton).not.toBeInViewport();
+    await page.mouse.move(800, 400);
+    await page.mouse.wheel(0, 1200);
+    await expect(continueButton).toBeInViewport();
+
+    await page.getByLabel(/^Business name/).fill("H2Z Facades and Interiors Factory Private Limited");
+    const preview = page.getByTestId("onboarding-preview");
+    const card = await preview.locator("> div").first().boundingBox();
+    const number = await preview.getByText("INV-0001", { exact: true }).boundingBox();
+    expect(card && number).toBeTruthy();
+    expect(number!.x + number!.width).toBeLessThanOrEqual(card!.x + card!.width);
+  });
 });
+

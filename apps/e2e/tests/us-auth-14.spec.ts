@@ -57,4 +57,16 @@ test.describe("US-AUTH-14", () => {
     await expect(page.getByRole("heading", { level: 1, name: "Log in" })).toBeVisible();
     await expect(page.getByTestId("auth-illustration-login")).toBeHidden();
   });
+
+  test("in a short window the signed-out frame scrolls with the wheel", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 560 });
+    await page.goto("/signup");
+    const create = page.getByRole("button", { name: "Create account" });
+    await page.getByLabel(/^Password/).fill("riverstone8");
+    await expect(create).not.toBeInViewport();
+    await page.mouse.move(300, 300);
+    await page.mouse.wheel(0, 1200);
+    await expect(create).toBeInViewport();
+  });
 });
+

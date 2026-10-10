@@ -98,6 +98,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
   - `us-ops-21` finds the step by its heading, since the rail now names every step.
   - QA script section 200.
 - **Design:** canvas "03 Onboarding"; ten `Onb*` artboards.
+- **Fixes after review:**
+  - The wizard and every signed-out page now scroll with the wheel or trackpad in a short window. `globals.css` stops the body scrolling (the app shell scrolls its own content), so `OnboardingShell` and `AuthFrame` are their own scroll areas; the rail, the preview and the illustration stay in place.
+  - In the preview, a long business name wraps instead of pushing the invoice number out of the card.
+  - `us-onb-22` and `us-auth-14` now scroll with the mouse wheel, as a person would.
 
 ### 2026-10-10 — People in the signed-out illustration (US-AUTH-13, US-AUTH-14, D-207)
 

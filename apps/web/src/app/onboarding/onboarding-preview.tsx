@@ -108,7 +108,7 @@ function InvoicePaper({ step, data }: { step: OnboardingStepKey; data: PreviewDa
     <>
       <div className="rounded-xl bg-surface p-5 text-on-surface shadow-[var(--shadow-overlay)] dark:border dark:border-border">
         <div className="flex gap-3">
-          <div className={`flex gap-3 p-1 ${ring === "brand" ? RING : ""}`}>
+          <div className={`flex min-w-0 flex-1 gap-3 p-1 ${ring === "brand" ? RING : ""}`}>
             {data.business.logoUrl ? (
               <img src={data.business.logoUrl} alt="" className="h-10 w-10 shrink-0 rounded-[9px] object-contain" />
             ) : (
@@ -117,11 +117,11 @@ function InvoicePaper({ step, data }: { step: OnboardingStepKey; data: PreviewDa
               </span>
             )}
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-bold">{name}</div>
+              <div className="line-clamp-2 break-words text-[14px] font-bold leading-snug">{name}</div>
               {data.business.address && <div className="whitespace-pre-line text-[11px] leading-snug text-on-surface-muted">{data.business.address}</div>}
             </div>
           </div>
-          <div className="ml-auto shrink-0 text-right">
+          <div className="shrink-0 pl-2 text-right">
             <div className="text-[12px] font-bold tracking-[0.08em] text-on-surface-muted">INVOICE</div>
             <div className={`mt-0.5 font-mono text-[14px] font-semibold ${ring === "number" ? RING : ""}`}>{data.invoiceNumber}</div>
             <div className={`mt-0.5 text-[11px] text-on-surface-muted ${ring === "money" ? RING : ""}`}>Issued {formatToday(locale)}</div>

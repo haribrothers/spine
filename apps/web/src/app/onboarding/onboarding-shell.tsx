@@ -134,7 +134,11 @@ export function OnboardingShell({
 }) {
   const { stage, stageNumber, stepNumber } = stepPosition(current);
   return (
-    <div className="min-h-screen bg-background lg:grid lg:grid-cols-[264px_minmax(0,1fr)] xl:grid-cols-[264px_minmax(0,1fr)_440px]">
+    // The page scrolls here: globals.css stops the body scrolling. The rail and the preview stay in place.
+    <div
+      data-testid="onboarding-scroll"
+      className="h-screen overflow-y-auto bg-background lg:grid lg:grid-cols-[264px_minmax(0,1fr)] lg:items-start xl:grid-cols-[264px_minmax(0,1fr)_440px]"
+    >
       <OnboardingRail current={current} />
       <OnboardingTopBar current={current} />
       <main className="px-5 py-8 sm:px-10 lg:px-14 lg:py-12">
@@ -154,8 +158,8 @@ export function OnboardingShell({
           <StepTip current={current} />
         </div>
       </main>
-      <aside className="hidden xl:block">
-        <div className={`${styles.previewPanel} sticky top-4 m-4 ml-0 px-[26px] py-7`}>{preview}</div>
+      <aside className="sticky top-0 hidden xl:block">
+        <div className={`${styles.previewPanel} m-4 ml-0 px-[26px] py-7`}>{preview}</div>
       </aside>
     </div>
   );
