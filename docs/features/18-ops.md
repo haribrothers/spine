@@ -2,7 +2,7 @@
 
 What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 11 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
@@ -558,3 +558,20 @@ Decision: D-156
 
 **Implementation notes**
 - API: `DELETE /attachments/:id { reason? }` (edit capability; Owner-only on locked records; audited).
+
+### US-OPS-36 · See which toggle is on, and what each one does
+**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToggleStates`, `ContactsCardsPolish`
+**As** any member, **I want** the chosen option in a toggle group to stand out and an icon-only toggle to tell me what it does, **so that** I can tell at a glance which view, range or basis I'm on.
+
+Decision: D-210
+
+**Acceptance criteria**
+- **Given** a toggle group (the contacts view switcher, Accrual / Cash, 3M / 6M / 12M, the theme switch on Profile and in the user menu, the expense entry mode), **when** it renders, **then** its options sit in one grey track and the chosen one is a raised white chip with an outline, a semibold label and a primary-coloured icon; the others are muted with no fill. It looks the same on every screen, in light and dark.
+- **Given** the chosen option, **when** it's checked, **then** its chip and outline differ from the track by at least 3:1 and its text by 4.5:1, in light and dark, and the choice is also announced (`aria-checked`), so colour is never the only cue.
+- **Given** an option that isn't chosen, **when** I hover it, **then** its text darkens and the track lightens under it; keyboard focus shows the focus ring; a disabled option is dimmed.
+- **Given** a toggle with only an icon (the view switcher), **when** I hover it or move focus to it, **then** after a short pause a tooltip shows its name ("Card view"); Escape hides it. The tooltip doesn't replace the accessible name.
+- **Given** a single toggle (`Toggle`, for example a formatting button), **when** it's on, **then** it has a light primary tint and a primary outline, not just a coloured icon.
+
+**Implementation notes**
+- UI: `packages/ui` `ToggleGroup` draws the track and `ToggleGroupItem` the chip (one style, no per-screen overrides; the expense form, Profile, the user menu and the dashboard drop theirs). `Toggle` and `ToggleGroupItem` take an optional `tooltip`; an icon-only item uses its `aria-label`. `TooltipProvider` is mounted once in the web app's providers and the design-system app. Doc pages (`toggle`, `toggle-group`, `tooltip`) and a11y tests change in the same commit.
+- No API change.

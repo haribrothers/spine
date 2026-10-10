@@ -2,7 +2,7 @@
 
 The customers and vendors a business deals with, the people and addresses behind each one, a timeline of everything that happened with them, logged activities with follow-ups, and a pipeline board of leads. Contacts are read by everyone; who may edit or delete them is controlled per Team.
 
-**Screens:** `ContactsList` (P1), `ContactsCards` (P3), `ContactsEmpty` (P1), `ContactCreateDrawer` (P1), `ContactTimeline` (P1), `ContactPersons` (P1), `ContactPersonDialog` (P1), `ContactAddresses` (P1), `AddressDialog` (P1), `ContactActivities` (P1), `ActivityDialog` (P1), `ContactLeads` (P2), `ContactDeleteConfirm` (P2), `ImportContactsDialog` (P2), `LeadsBoard` (P1), `LeadsBoardEmpty` (P1), `LeadDialog` (P1), `LeadStagesSettings` (P2)
+**Screens:** `ContactsList` (P1), `ContactsCards` (P3), `ContactsEmpty` (P1), `ContactCreateDrawer` (P1), `ContactTimeline` (P1), `ContactPersons` (P1), `ContactPersonDialog` (P1), `ContactAddresses` (P1), `AddressDialog` (P1), `ContactActivities` (P1), `ActivityDialog` (P1), `ContactLeads` (P2), `ContactDeleteConfirm` (P2), `ImportContactsDialog` (P2), `LeadsBoard` (P1), `LeadsBoardEmpty` (P1), `LeadDialog` (P1), `LeadStagesSettings` (P2), `ContactsCardsPolish` (P2), `ContactsCardsPolishDark` (P2), `ContactsTablePolish` (P2)
 **Depends on:** 15 Team (capabilities), 06 Quotes / 08 Invoicing / 09 Payments (timeline entries), 04 Meetings (timeline entries).
 
 ## Features
@@ -17,6 +17,7 @@ The customers and vendors a business deals with, the people and addresses behind
 | F-CRM-06 | Import contacts from CSV | P2 | 1 | `ImportContactsDialog` |
 | F-CRM-07 | Own/others edit and delete rights for CRM records | P1 | 4 | `ContactsList`, `ContactPersons`, `LeadsBoard`, `ContactActivities` |
 | F-CRM-08 | Configurable pipeline stages | P2 | 7 | `LeadStagesSettings`, `LeadsBoard` |
+| F-CRM-09 | Contacts list polish: names that fit, refresh, search in every view, filters that stay | P2 | Refinements | `ContactsCardsPolish`, `ContactsCardsPolishDark`, `ContactsTablePolish` |
 
 ## User stories
 
@@ -342,3 +343,54 @@ Gap: G1
 **Implementation notes**
 - API: `PUT /org/lead-stages` with `{ stages, moves }`.
 - Edge: a reporting snapshot of won/lost uses `kind`, so renaming Won never breaks reports.
+
+### US-CRM-21 · Read long names and emails in every contacts view
+**Feature:** F-CRM-09 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ContactsCardsPolish`, `ContactsTablePolish`
+**As** office staff, **I want** long company names and emails to stay inside their card or row, **so that** the list stays readable with real Indian and UK business names.
+
+Decision: D-210
+
+**Acceptance criteria**
+- **Given** the Card view, **when** a contact has a long name ("H2Z Facades and Interiors Factory Private Limited"), **then** the name wraps to two lines at most and ends with "…", and the full name shows on hover; nothing crosses the card's edge.
+- **Given** a long email or phone, **when** it shows in a card or a List row, **then** it stays on one line, ends with "…" when it doesn't fit, and shows in full on hover.
+- **Given** the "⋯" menu in a card's corner, **when** the name is long, **then** the name never runs under the menu.
+- **Given** the Table view at 1280 px or wider, **when** a contact has a long email, **then** the email is cut short with "…" (full on hover) and every column, Status included, fits without scrolling sideways. Narrower than that, the table scrolls sideways inside its own frame, never the page.
+- **Given** the type badges, **when** a card is narrow, **then** they wrap onto a second line rather than being clipped.
+
+**Implementation notes**
+- UI: `contacts-card-view.tsx`, `contacts-list-view.tsx`, `contacts-table.tsx`: `min-w-0` on each flexible child, `line-clamp-2` and `break-words` on card names, `truncate` with `title` on emails, phones and names; the Email column gets a maximum width.
+- No API change.
+
+### US-CRM-22 · Refresh the contacts list to see changes
+**Feature:** F-CRM-09 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ContactsCardsPolish`
+**As** office staff sharing contacts with my team, **I want** to refresh the list without reloading the page, **so that** I see contacts others have just added or changed.
+
+Decision: D-210
+
+**Acceptance criteria**
+- **Given** the contacts toolbar, **when** it shows, **then** there's a "Refresh" icon button beside the view switcher with the tooltip "Refresh list", and "Updated just now" (then "Updated 2 min ago", and so on) beside it.
+- **Given** I press Refresh, **when** the list reloads, **then** the contacts, the stat cards and the active-lead count reload together; the current list stays on screen (no grey placeholder), the icon turns while it loads (not with Reduce Motion) and the button can't be pressed twice.
+- **Given** a contact someone else added, **when** the refresh finishes, **then** it appears in its place for the current filters, search and sort, and a screen reader hears "Contacts updated".
+- **Given** I come back to the browser tab after 30 seconds or more away, **when** the tab is shown again, **then** the list refreshes the same quiet way.
+- **Given** the refresh fails, **when** the error returns, **then** the list I had stays, and a message says "Couldn't refresh the list. Check your connection and try again." with "Try again".
+
+**Implementation notes**
+- UI: `contacts-explorer.tsx` keeps the last list while reloading (`refreshing` state, separate from the first load); `visibilitychange` triggers a refresh when the tab was hidden 30 s or more. "Updated …" uses `formatDistanceToNow`, re-rendered every 30 s.
+- No API change: the same `GET /contacts` and `GET /leads`.
+
+### US-CRM-23 · Search, filter and come back to the same contacts list
+**Feature:** F-CRM-09 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ContactsCardsPolish`, `ContactsTablePolish`
+**As** office staff, **I want** search in every view, filters that stay when I come back, and stat cards I can click, **so that** I find a contact quickly and don't lose my place.
+
+Decision: D-210
+
+**Acceptance criteria**
+- **Given** any view (Table, List or Card), **when** I type in "Search contacts" in the toolbar, **then** the list narrows to contacts whose name, email or phone matches, as I type. With no match it says "No contacts match "<text>"" with "Clear search".
+- **Given** a type, status or search, or a page other than the first, **when** I set it, **then** the address keeps it (for example `/contacts?type=vendor&q=steel&page=2`). Opening a contact and pressing Back, or opening that address later, shows the same list.
+- **Given** the stat cards, **when** they show, **then** they count all active contacts whatever the filters (they no longer change when I filter), and "Customers" and "Vendors" are buttons: pressing one filters to that type (customers include "Customer & vendor", and so do vendors) and shows as pressed; pressing it again clears the filter. "Total contacts" clears the type filter, and "Active leads" opens the pipeline.
+- **Given** a filter, search or page from the address that matches nothing, **when** the list loads, **then** it shows the "No contacts match these filters" state with "Clear filters", which also clears the search.
+- **Given** a keyboard or screen reader, **when** I use the stat cards, **then** each says what it does ("Show customers, 8"), with its pressed state announced.
+
+**Implementation notes**
+- UI: the search moves from `DataTable` (Table view only) into `contacts-explorer.tsx`, which filters the loaded list for all three views; `DataTable` gets the search from its parent and hides its own box (`searchValue` prop). URL state through `useSearchParams` and `router.replace` (no extra history entry per keystroke). Stat counts come from a separate unfiltered active list.
+- No API change.

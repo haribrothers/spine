@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 440 stories.
+Total: 444 stories.
 
 ## Phase 0 · Foundation
 
@@ -782,6 +782,13 @@ Total: 440 stories.
 - US-DASH-27 · See the dashboard take shape while it loads (P2)
 - US-DASH-28 · Read big figures on calm, colour-coded cards (P2)
 - US-DASH-29 · Keep cards their own height, with my tasks in a side column (P2)
+
+*Contacts*
+
+- US-OPS-36 · See which toggle is on, and what each one does (P2)
+- US-CRM-21 · Read long names and emails in every contacts view (P2)
+- US-CRM-22 · Refresh the contacts list to see changes (P2)
+- US-CRM-23 · Search, filter and come back to the same contacts list (P2)
 
 ## Phase 10 · AI assistant
 
