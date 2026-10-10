@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 483 stories.
+Total: 493 stories.
 
 ## Phase 0 · Foundation
 
@@ -846,6 +846,19 @@ Total: 483 stories.
 - US-ONB-25 · Explore quotes at every stage (P2)
 - US-ONB-26 · Explore jobs that need something (P2)
 - US-ONB-27 · Explore a catalogue and calendar that look kept (P2)
+- US-ONB-28 · Explore invoices at every stage (P2)
+
+*Invoices*
+
+- US-INV-27 · See what I'm owed, what's late and what's come in at a glance (P2)
+- US-INV-28 · Search, filter and come back to the same invoices list (P2)
+- US-INV-29 · Read an invoice's state in the list, and act on it from the row (P2)
+- US-INV-30 · See an invoice at a glance, with one next step (P2)
+- US-INV-31 · Read an invoice's lines and totals together (P2)
+- US-INV-32 · Follow what happened to an invoice (P2)
+- US-INV-33 · Give every invoice a due date from my payment terms (P1)
+- US-INV-34 · Build an invoice in compact rows, with a bar that stays in view (P2)
+- US-INV-35 · Duplicate an invoice (P2)
 
 ## Phase 10 · AI assistant
 

@@ -19,6 +19,7 @@ Standard, advance (deposit), progress and retention-release invoices. Drafts are
 | F-INV-08 | Recurring invoices | P2 | 7 | `RecurringInvoiceDialog`, `RecurringInvoicesList` |
 | F-INV-09 | Bulk invoice actions | P2 | 7 | `InvoicesBulkSelect` |
 | F-INV-10 | UPI QR code on invoices | P1 | 9 | `SettingsPaymentInstructionsUpi`, `InvoicePdfGst` |
+| F-INV-11 | Invoices you can work from: cards that filter, rows that read at a glance, a page with one next step and its story, payment terms, a compact builder and duplicate | P2 | Refinements | `InvoicesListRefined`, `InvoicesListRefinedDark`, `InvoiceDetailRefined`, `InvoiceDetailDraftRefined`, `InvoiceBuilderCompact` |
 
 ## User stories
 
@@ -411,3 +412,130 @@ Decision: D-150
 
 **Implementation notes**
 - `qrcode` renders a PNG at issue into the stored PDF (D-083); the invoice keeps `upi_qr_amount` for the reminder text.
+
+### US-INV-27 · See what I'm owed, what's late and what's come in at a glance
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoicesListRefined`, `InvoicesListRefinedDark`
+**As** an owner, **I want** the invoice cards to show money, not just counts, **so that** I know what to chase and what's come in.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** Invoices, **when** it shows, **then** the cards read "Outstanding" (issued invoices with a balance, their total balance and count), "Overdue" (past their due date with a balance, total and count, in the overdue colour when above 0), "Due in 7 days" (not yet overdue, due within 7 days, total and count) and "Paid this month" (payments received this calendar month against invoices, with how many invoices).
+- **Given** "Outstanding", "Overdue" or "Due in 7 days", **when** I press it, **then** the table shows just those invoices, the card shows pressed ("Showing these · press again to clear") and the address keeps it; pressing again clears it. With a keyboard or screen reader each is a button ("Show overdue invoices, 2") with its pressed state.
+- **Given** amounts in more than one currency, **when** a card shows a total, **then** it sums the business's currency and says "+ other currencies" when some invoices are in another.
+- **Given** a void, draft or opening-balance invoice, **when** the cards count, **then** drafts and voids are left out; opening balances count like any issued invoice.
+
+**Implementation notes**
+- UI: `invoices-list-state.ts` (`invoiceStats`, filters) replaces `use-invoice-stats.ts`; "Paid this month" from `GET /payments` (allocations to invoices, by payment date). The dashboard's links (`?status=overdue&select=overdue`, US-DASH-13) keep working.
+
+### US-INV-28 · Search, filter and come back to the same invoices list
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoicesListRefined`
+**As** office staff, **I want** the invoices list to keep my search and filters and refresh on request, **so that** it works like the rest of the app.
+
+Decision: D-210, D-217
+
+**Acceptance criteria**
+- **Given** the toolbar, **when** it shows, **then** it has Status (Draft, Due, Overdue, Part paid, Paid, Void), Contact (only contacts with an invoice), "Updated … ago", Refresh, Recurring invoices and "New invoice", with search on its own row beside Columns.
+- **Given** a search, **when** I type, **then** it matches the number, the customer, a line's name or the job's number or name.
+- **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (`/invoices?status=overdue&card=due7`); Back and bookmarks return to the same list; "Clear filters" clears them; Refresh, and coming back after 30 seconds, reload in place. The list is newest first.
+
+**Implementation notes**
+- API: `GET /invoices` rows gain `lineNames`, `job` (`{ id, number, name }` or null) and `lastPaidAt`. UI: the list-state pattern (`quotes-list-state.ts`), `replaceQuery`.
+
+### US-INV-29 · Read an invoice's state in the list, and act on it from the row
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoicesListRefined`
+**As** office staff, **I want** each row to say where the invoice stands and offer what to do next, **so that** I don't open every invoice.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** the table, **when** a row shows, **then** it reads Number (a draft says "Draft" in italics; a progress invoice "Progress claim 3 · JOB-002" under it, a deposit "Deposit"), Contact, Status (one badge: Draft, Due, Part paid, Paid, Overdue or Void), Issued, Due ("in 5 days", "today", "Overdue 6 days" in the overdue colour, or "Paid 2 Oct"), Total and Balance due (with a small bar of what's paid when part paid); dates in the business's format.
+- **Given** a row's menu, **when** I open it, **then** it offers what fits: a draft View, Edit, Issue, Duplicate and Delete; an issued invoice View, Record payment, Email, Send reminder (when it has a balance), Download PDF, Duplicate and Void, each only with the right to do it.
+- **Given** Record payment or Email from a row, **when** I choose it, **then** the invoice's page opens with that dialog open.
+
+**Implementation notes**
+- UI: `invoices-table.tsx`, `invoice-row-actions.tsx`; `?action=pay|email|remind|issue` on the invoice page.
+
+### US-INV-30 · See an invoice at a glance, with one next step
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`, `InvoiceDetailDraftRefined`
+**As** office staff, **I want** the invoice page to lead with where it stands and what to do, **so that** I act without scanning seven buttons.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** an invoice, **when** its page opens, **then** the page title is its number ("Draft invoice" for a draft), with its status, the customer (a link), "Issued 12 Sept", "Due 12 Oct · in 2 days" or "Overdue 6 days", the place of supply and, when it has one, the job (and milestone) or quote it came from as links; there's no "Back to invoices".
+- **Given** the invoice, **when** the page shows, **then** one primary button offers the next step: "Issue invoice" for a draft, "Send reminder" when it's overdue, "Record payment" while it has a balance, else "Download PDF"; the others (Edit, Preview or Download PDF, Email invoice, Apply credit, Issue credit note, Duplicate, View history, Void, Delete draft) sit beside it or under More, each only with the right to do it.
+- **Given** an issued invoice, **when** the page shows, **then** a strip reads Total, Paid (with the last payment's date), Credited (when any) and Balance due (with a bar of what's paid).
+
+**Implementation notes**
+- UI: `invoice-detail.tsx` renders its own header (as `quote-detail.tsx`); `?action=` opens a dialog. API: `GET /invoices/:id` gains `sourceQuoteNumber` and `lastPaidAt`.
+
+### US-INV-31 · Read an invoice's lines and totals together
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`
+**As** office staff, **I want** the lines as a table with the totals under them, **so that** I can check an invoice the way the customer reads it.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** an invoice's lines, **when** they show, **then** they're a table — Item (with its description), Qty, Rate, Disc. and Tax only when a line has them, Amount — with headings in bold across the row and text lines muted.
+- **Given** the totals, **when** they show, **then** they sit under the lines: Subtotal, Discount only when there is one, tax by name (CGST and SGST, or IGST, on a GST invoice), Retention held when there is one, Total, then Paid and Balance due.
+- **Given** payments, credit notes and attachments, **when** the page shows, **then** they follow the lines and totals.
+
+**Implementation notes**
+- UI: reuse `QuoteLinesTable` (rename it `DocumentLinesTable` in `components/`).
+
+### US-INV-32 · Follow what happened to an invoice
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`
+**As** an owner, **I want** an invoice's story in one place, **so that** I know whether it was sent, chased and paid without opening the history.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** an invoice's page, **when** it shows, **then** an "Activity" panel lists, newest first: created (from quote … or milestone …), issued, emailed to … (or "Email failed: …"), reminder sent (by whom, or "Automatic reminder"), payment recorded (amount, method, receipt number as a link), credit applied, credit note issued (as a link), voided (with the reason), duplicated from …, with who and when; more than six show "Show N earlier". "View history" keeps the field-level history.
+- **Given** a Field user, **when** they could reach an invoice, **then** they can't: invoices stay closed to Field (US-JOB-19).
+
+**Implementation notes**
+- API: `GET /invoices/:id/activity` → `[{ at, type, actorName, detail, linkId }]` from the invoice's audit entries, its payment allocations, its credit notes and its email status (roles: owner, staff), as `InvoiceActivityEntry` (`@spine/shared`).
+
+### US-INV-33 · Give every invoice a due date from my payment terms
+**Feature:** F-INV-11 · **Priority:** P1 · **Phase:** Refinements · **Screens:** `InvoiceBuilderCompact`
+**As** an owner, **I want** invoices to be due when my terms say, **so that** late invoices are flagged and reminded without me setting each date.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** Settings › Documents › Invoices, **when** I open it, **then** "Invoices due in" takes 0 to 365 days (30 to start; 0 is "on receipt").
+- **Given** the invoice builder, **when** I start an invoice, **then** Due date starts at the issue date (today when blank) plus that many days, with "On receipt", "+15 days", "+30 days" and "+60 days" to set it (the matching one shows pressed).
+- **Given** an invoice issued with no due date — from a quote, a milestone, a retention release or a draft saved without one — **when** it's issued, **then** it's due its issue date plus the setting's days, so it can become overdue and get reminders.
+- **Given** an opening-balance or recurring invoice, **when** it's created, **then** it keeps its own due date (its import or its schedule's `dueDays`).
+
+**Implementation notes**
+- Data: `document_layout.invoice.dueDays` (integer 0–365; `resolveDocumentLayout` fills 30). API: `InvoicesService.issue` sets `due_date` when null, in the issuing transaction.
+
+### US-INV-34 · Build an invoice in compact rows, with a bar that stays in view
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceBuilderCompact`
+**As** office staff, **I want** the invoice builder to work like the quote builder, **so that** building, previewing and issuing an invoice is quick and safe.
+
+Decision: D-214, D-217
+
+**Acceptance criteria**
+- **Given** the builder's lines, **when** they show, **then** each item is one row (handle, Item, Qty, Rate, Disc. %, Tax, Amount, menu) with its description, HSN/SAC and supply type under it, moved by drag, the row's menu or Alt + ↑/↓, as on quotes (US-QUO-34).
+- **Given** the builder, **when** I scroll, **then** a bar stays at the bottom with Subtotal, Tax, Total, Cancel, Preview PDF, Save draft and "Save and issue" (with the right to issue; it saves, then issues, with the same checks as Issue invoice).
+- **Given** Preview PDF, **when** I press it, **then** the invoice as it is on screen opens as a PDF with a faint "DRAFT — Preview only — not a valid invoice" watermark on every page, and nothing is saved.
+- **Given** unsaved changes, **when** I press Cancel, a link or Back, **then** "Leave without saving?" asks first; closing the tab asks too.
+
+**Implementation notes**
+- UI: the quote builder's line editor and bar shared (`components/document-line-editor.tsx`, `DocumentBuilderBar`); `invoice-builder.tsx` keeps its own fields (type, issue date, due date). API: `POST /invoices/preview-pdf` (`invoices.edit_own`; a read, no Idempotency-Key, as `POST /quotes/preview-pdf`); a draft invoice's PDF carries the watermark too.
+
+### US-INV-35 · Duplicate an invoice
+**Feature:** F-INV-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `InvoiceDetailRefined`
+**As** office staff, **I want** to start a new invoice from an old one, **so that** I don't retype the lines for repeat work.
+
+Decision: D-217
+
+**Acceptance criteria**
+- **Given** any invoice I may see (draft, issued, paid or void), **when** I choose Duplicate, **then** a new draft opens in the builder with the same customer, currency, type (a progress or retention-release invoice becomes standard), lines, notes and terms, no number, today's issue date and a due date from my terms, and a toast says "Duplicated from INV-0012".
+- **Given** a line whose catalogue item is archived, **when** it's duplicated, **then** it's copied as typed.
+
+**Implementation notes**
+- API: `POST /invoices/:id/duplicate` (`invoices.edit_own`; Idempotency-Key) → the new draft; an audit row `duplicated` on it naming the source.

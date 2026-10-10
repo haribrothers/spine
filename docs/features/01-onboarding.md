@@ -513,3 +513,16 @@ Decision: D-216
 - Shared: items gain `income` ("goods" | "services"); a plan gains `bundles` (name, description, item keys and quantities); meetings gain `startTime` ("14:30").
 - API: bundles through `CatalogBundlesService.create` with `items`; meetings at the plan's local time.
 
+### US-ONB-28 · Explore invoices at every stage
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`InvoicesListRefined`, `InvoiceDetailRefined` with demo data)
+**As** an evaluator, **I want** the demo's invoices to be due, late, chased and paid, **so that** the invoice cards and Activity show what they do.
+
+Decision: D-216, D-217
+
+**Acceptance criteria**
+- **Given** any demo, **when** it's loaded, **then** every issued invoice has a due date (from its plan or the business's 30-day terms), at least one is due within 7 days and at least one is overdue.
+- **Given** the demo's invoices, **when** I open one that was emailed and one that was reminded, **then** their Activity shows "Emailed to …" and "Reminder sent" on their own days.
+
+**Implementation notes**
+- Shared: plan invoices gain `emailedInDays` and `remindedInDays`; Riverstone's deposit invoice is due in 5 days.
+
