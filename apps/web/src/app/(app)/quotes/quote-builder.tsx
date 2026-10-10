@@ -1,9 +1,30 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Alert, AlertDescription, Button, Card, Combobox, DatePicker, FormField, RichTextEditor, Spinner } from "@spine/ui";
+import {
+  Alert,
+  AlertDescription,
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Button,
+  Card,
+  Combobox,
+  DatePicker,
+  FormField,
+  Input,
+  RichTextEditor,
+  Spinner,
+  cn,
+} from "@spine/ui";
+import { DEFAULT_QUOTE_VALID_DAYS, QUOTE_TITLE_MAX, resolveDocumentLayout, type DocumentLayout } from "@spine/shared";
+import { Eye, Send } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
+import { useCapability } from "../../../lib/capabilities-context";
 import { useDocumentDefaults } from "../../../lib/document-defaults";
 import { PlaceOfSupplyField, PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../components/place-of-supply";
 import { ContactPicker } from "./contact-picker";
@@ -87,6 +108,21 @@ async function saveOneOffLinesToCatalogue(lines: EditableQuoteLine[], currency: 
   return next;
 }
 
+/** US-QUO-36 — today plus a number of days, at midnight. */
+export function daysFromToday(days: number, today = new Date()): Date {
+  const d = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
+/** US-QUO-36 — which quick pick (if any) the date is. */
+export function pickedDays(validUntil: Date | undefined, picks: number[], today = new Date()): number | null {
+  if (!validUntil) return null;
+  return picks.find((n) => daysFromToday(n, today).getTime() === new Date(validUntil.getFullYear(), validUntil.getMonth(), validUntil.getDate()).getTime()) ?? null;
+}
+
+const VALIDITY_PICKS = [15, 30, 60];
+
 /** US-CRM-26 — the lead a new quote is started from ("Create quote" on the pipeline). */
 interface QuoteLead {
   id: string;
@@ -97,6 +133,20 @@ interface QuoteLead {
 
 export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string }) {
   const router = useRouter();
+  const canSend = useCapability("quotes.send");
+  // US-QUO-35: changes since the page opened; leaving asks first.
+  const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  dirtyRef.current = dirty;
+  const [leaveTo, setLeaveTo] = useState<string | "back" | null>(null);
+  // Fields can settle their own values as they load (a picker resolving its option, say); only a change after the person
+  // has pressed or typed in the form counts.
+  const interacted = useRef(false);
+  const touch = <A extends unknown[]>(fn: (...args: A) => void) => (...args: A) => {
+    if (interacted.current) setDirty(true);
+    fn(...args);
+  };
+  const [title, setTitle] = useState(quote?.title ?? "");
   const [contactId, setContactId] = useState(quote?.contactId ?? "");
   const [lead, setLead] = useState<QuoteLead | null>(null);
   const [currency, setCurrency] = useState(quote?.currency ?? "USD");
@@ -109,6 +159,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   // US-TAX-13 — the place of supply follows the contact and switches item lines between CGST + SGST and IGST.
   const pos = usePlaceOfSupply({ contactId, initial: quote ? quote.placeOfSupply : undefined, lines, setLines });
   const [saving, setSaving] = useState(false);
+  const [previewing, setPreviewing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
@@ -122,6 +173,8 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
         setLead(row);
         setContactId(row.contactId);
         setCurrency(row.valueCurrency);
+        // US-QUO-30: a quote from a lead starts with the lead's title.
+        if (row.title) setTitle((current) => current || row.title!);
       })
       .catch(() => setLead(null));
   }, [quote, leadId]);
@@ -137,6 +190,65 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       })
       .catch(() => {});
   }, [quote]);
+
+  // US-QUO-36: a new quote is valid for the business's usual number of days.
+  useEffect(() => {
+    if (quote) return;
+    apiClient
+      .get<{ value: DocumentLayout | null }>("/org/settings/document_layout")
+      .then((res) => {
+        const days = resolveDocumentLayout(res.value, "quote").validDays;
+        setValidUntil((current) => current ?? daysFromToday(days));
+      })
+      .catch(() => setValidUntil((current) => current ?? daysFromToday(DEFAULT_QUOTE_VALID_DAYS)));
+  }, [quote]);
+
+  // US-QUO-35: closing or reloading the tab with unsaved changes asks the browser to confirm.
+  useEffect(() => {
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      if (!dirtyRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, []);
+
+  // US-QUO-35: a link elsewhere in the app, or Back, asks first while there are unsaved changes.
+  useEffect(() => {
+    function onClick(e: MouseEvent) {
+      if (!dirtyRef.current || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as HTMLElement | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank" || anchor.origin !== window.location.origin) return;
+      if (anchor.pathname === window.location.pathname) return;
+      // Stopped here, before the link (and the route loader) see the click.
+      e.preventDefault();
+      e.stopPropagation();
+      setLeaveTo(anchor.pathname + anchor.search);
+    }
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, []);
+  useEffect(() => {
+    if (!dirty) return;
+    window.history.pushState({ quoteBuilderGuard: true }, "", window.location.href);
+    function onPopState() {
+      if (!dirtyRef.current) return;
+      window.history.pushState({ quoteBuilderGuard: true }, "", window.location.href);
+      setLeaveTo("back");
+    }
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [dirty]);
+
+  function leave() {
+    const target = leaveTo;
+    setDirty(false);
+    dirtyRef.current = false;
+    setLeaveTo(null);
+    if (target === "back") window.history.go(-2);
+    else if (target) router.push(target);
+  }
 
   useEffect(() => {
     apiClient.get<TaxRateOption[]>("/tax-rates").then(setTaxRates).catch(() => {});
@@ -164,6 +276,7 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
   function buildPayload(lines: EditableQuoteLine[]) {
     return {
       contactId,
+      title: title.trim() || null,
       ...(!quote && linkedLead ? { leadId: linkedLead.id } : {}),
       placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       currency,
@@ -190,10 +303,41 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
     };
   }
 
-  async function handleSaveDraft() {
+  /**
+   * US-QUO-35 — "Preview PDF": the quote as it is on screen, in a new tab.
+   * Nothing is saved; the draft (and "Unsaved changes") stay as they were.
+   */
+  async function preview() {
+    setError(null);
+    if (!contactId) {
+      setError("Select a contact to preview the quote.");
+      return;
+    }
+    // Opened before the request so the browser doesn't block it as a pop-up.
+    const tab = window.open("", "_blank");
+    setPreviewing(true);
+    try {
+      const { blob } = await apiClient.download("/quotes/preview-pdf", { ...buildPayload(lines), ...(quote ? { quoteId: quote.id } : {}) });
+      const url = URL.createObjectURL(blob);
+      if (tab) tab.location.href = url;
+      else window.open(url, "_blank");
+    } catch (err) {
+      tab?.close();
+      setError(err instanceof Error ? err.message : "Couldn't make the preview. Try again.");
+    } finally {
+      setPreviewing(false);
+    }
+  }
+
+  /** Saves the draft; "send" then opens the send dialog on the quote's page. */
+  async function save(then: "view" | "send" = "view") {
     setError(null);
     if (!contactId) {
       setError("Select a contact before saving.");
+      return;
+    }
+    if (title.trim().length > QUOTE_TITLE_MAX) {
+      setError("Keep the title under 120 characters.");
       return;
     }
     setSaving(true);
@@ -205,36 +349,72 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
       const saved = quote
         ? await apiClient.put<Quote>(`/quotes/${quote.id}`, payload)
         : await apiClient.post<Quote>("/quotes", payload);
-      router.push(`/quotes/${saved.id}`);
+      setDirty(false);
+      dirtyRef.current = false;
+      const sendNow = then === "send" && !saved.discountRequiresApproval;
+      router.push(`/quotes/${saved.id}${sendNow ? "?action=send" : ""}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not save quote.");
       setSaving(false);
     }
   }
 
+  function cancel() {
+    if (dirty) setLeaveTo(quote ? `/quotes/${quote.id}` : "/quotes");
+    else router.back();
+  }
+
+  const picked = pickedDays(validUntil, VALIDITY_PICKS);
+
   return (
-    <div className="flex flex-col gap-6">
+    <div
+      className="flex flex-col gap-4"
+      onPointerDownCapture={() => (interacted.current = true)}
+      onKeyDownCapture={() => (interacted.current = true)}
+      onInputCapture={() => (interacted.current = true)}
+    >
       {error && (
         <Alert variant="critical">
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      <Card className="flex flex-col gap-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <FormField label="Contact" required>
-            {() => <ContactPicker value={contactId} onValueChange={setContactId} />}
-          </FormField>
-          <FormField label="Currency" required>
-            {() => <Combobox options={currencyOptions} value={currency} onValueChange={setCurrency} />}
-          </FormField>
+      <Card className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FormField label="Title (optional)" className="sm:col-span-2" helperText={title.length > QUOTE_TITLE_MAX - 20 ? `${title.length} of ${QUOTE_TITLE_MAX} characters` : undefined}>
+          {(field) => (
+            <Input {...field} value={title} maxLength={QUOTE_TITLE_MAX} onChange={(e) => touch(setTitle)(e.target.value)} placeholder="For example, Bathroom refit — 2nd floor" />
+          )}
+        </FormField>
+        <FormField label="Contact" required>
+          {(field) => <ContactPicker id={field.id} aria-describedby={field["aria-describedby"]} aria-invalid={field["aria-invalid"]} aria-required={field["aria-required"]} value={contactId} onValueChange={touch(setContactId)} />}
+        </FormField>
+        <div className="flex flex-col gap-1.5">
           <FormField label="Valid until" helperText="Quote shows as expired after this date.">
-            {() => <DatePicker value={validUntil} onChange={setValidUntil} />}
+            {() => <DatePicker value={validUntil} onChange={touch(setValidUntil)} />}
           </FormField>
-          {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Valid for">
+            {VALIDITY_PICKS.map((days) => (
+              <button
+                key={days}
+                type="button"
+                aria-pressed={picked === days}
+                onClick={() => touch(setValidUntil)(daysFromToday(days))}
+                className={cn(
+                  "h-7 rounded-md border px-2.5 text-[12px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                  picked === days ? "border-primary bg-info-bg text-primary" : "border-border bg-surface-sunken text-on-surface hover:border-border-strong",
+                )}
+              >
+                +{days} days
+              </button>
+            ))}
+          </div>
         </div>
+        <FormField label="Currency" required>
+          {() => <Combobox options={currencyOptions} value={currency} onValueChange={touch(setCurrency)} />}
+        </FormField>
+        {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={touch(pos.setPlaceOfSupply)} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         {linkedLead && (
-          <p className="text-[13px] text-on-surface-muted" data-testid="quote-lead">
+          <p className="self-end text-[13px] text-on-surface-muted sm:col-span-2" data-testid="quote-lead">
             For lead <span className="font-medium text-on-surface">{linkedLead.title || "Untitled lead"}</span>. It&apos;s linked to the lead, so it shows in the lead&apos;s Quotes.
           </p>
         )}
@@ -242,38 +422,77 @@ export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string
 
       <PlaceOfSupplyNotice notice={pos.notice} />
 
-      <Card className="flex flex-col gap-4">
-        <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
-        <QuoteLineEditor lines={lines} onChange={setLines} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
+      <Card className="flex flex-col gap-0 overflow-hidden p-0">
+        <div className="flex items-center justify-between px-4 pb-2 pt-4">
+          <h2 className="text-[15px] font-semibold text-on-surface">Lines</h2>
+          <a href="#quote-notes" className="text-[12.5px] font-medium text-primary hover:underline">
+            Notes and terms ↓
+          </a>
+        </div>
+        <QuoteLineEditor lines={lines} onChange={touch(setLines)} currency={currency} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} flaggedKeys={pos.flagged} showHsn={pos.active} />
       </Card>
 
-      <Card className="flex flex-col gap-4">
+      <Card id="quote-notes" className="flex flex-col gap-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField label="Notes" helperText="Visible to the customer on the quote.">
-            {(field) => <RichTextEditor {...field} value={notes} onValueChange={setNotes} placeholder="Notes for the customer…" />}
+            {(field) => <RichTextEditor {...field} value={notes} onValueChange={touch(setNotes)} placeholder="Notes for the customer…" />}
           </FormField>
           <FormField label="Terms & conditions">
-            {(field) => <RichTextEditor {...field} value={terms} onValueChange={setTerms} placeholder="Payment terms, validity, etc…" />}
+            {(field) => <RichTextEditor {...field} value={terms} onValueChange={touch(setTerms)} placeholder="Payment terms, validity, etc…" />}
           </FormField>
         </div>
       </Card>
 
-      <Card className="ml-auto flex w-full max-w-sm flex-col gap-2 sm:w-80">
-        <TotalRow label="Subtotal" value={totals.subtotal} currency={currency} />
-        <TotalRow label="Tax" value={totals.tax} currency={currency} />
-        <div className="border-t border-border pt-2">
+      {/* US-QUO-35: totals and actions stay in view. */}
+      <div className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-lg border border-border bg-surface px-5 py-3 shadow-[0_-6px_20px_rgba(0,0,0,0.06)]" data-testid="quote-builder-bar">
+        <dl className="flex gap-6">
+          <TotalRow label="Subtotal" value={totals.subtotal} currency={currency} />
+          <TotalRow label="Tax" value={totals.tax} currency={currency} />
           <TotalRow label="Total" value={totals.total} currency={currency} emphasize />
+        </dl>
+        <span className="flex-1" />
+        {dirty && (
+          <span className="flex items-center gap-1.5 text-[12px] text-on-surface-muted" data-testid="quote-unsaved">
+            <span className="h-1.5 w-1.5 rounded-full bg-due-soon" aria-hidden />
+            Unsaved changes
+          </span>
+        )}
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" variant="secondary" onClick={cancel} disabled={saving}>
+            Cancel
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => void preview()} disabled={saving || previewing} aria-busy={previewing}>
+            {previewing ? <Spinner size="sm" /> : <Eye size={14} aria-hidden />}
+            Preview PDF
+          </Button>
+          <Button type="button" variant={canSend ? "secondary" : "primary"} onClick={() => void save("view")} disabled={saving}>
+            {saving ? <Spinner size="sm" /> : quote ? "Save draft" : "Save as draft"}
+          </Button>
+          {canSend && (
+            <Button type="button" onClick={() => void save("send")} disabled={saving}>
+              <Send size={14} aria-hidden />
+              Save and send
+            </Button>
+          )}
         </div>
-      </Card>
-
-      <div className="flex justify-end gap-2">
-        <Button type="button" variant="secondary" onClick={() => router.back()} disabled={saving}>
-          Cancel
-        </Button>
-        <Button type="button" onClick={handleSaveDraft} disabled={saving}>
-          {saving ? <Spinner size="sm" /> : quote ? "Save draft" : "Save as draft"}
-        </Button>
       </div>
+
+      <AlertDialog open={leaveTo !== null} onOpenChange={(open) => !open && setLeaveTo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Leave without saving?</AlertDialogTitle>
+            <AlertDialogDescription>Your changes to this quote will be lost.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="secondary" onClick={leave}>
+              Leave
+            </Button>
+            <Button onClick={() => setLeaveTo(null)} autoFocus>
+              Keep editing
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -290,13 +509,12 @@ function TotalRow({
   emphasize?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className={emphasize ? "text-[14px] font-semibold text-on-surface" : "text-[13px] text-on-surface-muted"}>
-        {label}
-      </span>
-      <span className={`tabular-nums ${emphasize ? "text-[16px] font-bold text-on-surface" : "text-[14px] text-on-surface"}`}>
+    <div className="flex flex-col">
+      <dt className="text-[12px] text-on-surface-muted">{label}</dt>
+      <dd className={cn("tabular-nums text-on-surface", emphasize ? "text-[17px] font-bold" : "text-[13.5px] font-medium")} data-testid={`quote-total-${label.toLowerCase()}`}>
         {formatMoney(value, currency)}
-      </span>
+      </dd>
     </div>
   );
 }
+

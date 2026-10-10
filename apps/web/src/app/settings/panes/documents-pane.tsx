@@ -124,6 +124,24 @@ export function DocumentsPane() {
                 {(field) => <Input {...field} maxLength={60} value={layout[type]?.title ?? current.title} onChange={(e) => update({ title: e.target.value })} />}
               </FormField>
             )}
+            {/* US-QUO-36: new quotes start valid for this many days. */}
+            {type === "quote" && (
+              <FormField label="Quotes valid for" helperText="Days, 1 to 365. New quotes start with this validity.">
+                {(field) => (
+                  <Input
+                    {...field}
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={365}
+                    step={1}
+                    value={layout.quote?.validDays ?? current.validDays}
+                    onChange={(e) => update({ validDays: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    className="w-32"
+                  />
+                )}
+              </FormField>
+            )}
           </div>
           {LINE_DOCUMENT_TYPES.includes(type) && (
             <fieldset className="flex flex-col gap-2">

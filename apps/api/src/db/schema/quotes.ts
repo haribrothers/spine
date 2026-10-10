@@ -117,6 +117,8 @@ export const quotes = pgTable(
       .references(() => contacts.id, { onDelete: "restrict" }),
     /** Gapless, permanent, allocated only on send — see NumberingService. Null on every draft. */
     number: text("number"),
+    /** US-QUO-30 — an optional name for the quote ("Bathroom refit — 2nd floor"), ≤ 120 characters; copied by duplicate and revise. */
+    title: text("title"),
     status: quoteStatusEnum("status").notNull().default("draft"),
     /** Self-FK for versioning — null on a version-1 quote, set on every revision. */
     parentQuoteId: uuid("parent_quote_id"),

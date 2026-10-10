@@ -54,6 +54,8 @@ const styles = StyleSheet.create({
   gstRate: { fontSize: 7, color: "#888888", textAlign: "right" },
   lineName: { fontSize: 10 },
   lineHeading: { fontSize: 11, fontWeight: 700 },
+  /** US-QUO-02 — a text line reads as plain text, not as another heading. */
+  lineText: { fontSize: 9.5, fontWeight: 400, color: "#444444" },
   lineDescription: { fontSize: 8.5, color: "#666666", marginTop: 2 },
 });
 
@@ -112,7 +114,7 @@ export function DocumentLinesTable({
         if (line.type !== "item") {
           return (
             <View key={line.id} style={styles.headingRow} wrap={false}>
-              <Text style={styles.lineHeading}>{line.name}</Text>
+              <Text style={line.type === "heading" ? styles.lineHeading : styles.lineText}>{line.name}</Text>
               {line.description && <Text style={styles.lineDescription}>{line.description}</Text>}
             </View>
           );

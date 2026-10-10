@@ -16,11 +16,14 @@ import { StatCard } from "@spine/ui";
 |---|---|---|
 | `label` | string | — |
 | `value` | string | — |
+| `detail` | string | — |
+| `tone` | 'default' \| 'warning' | 'default' |
 | `trend` | { direction: 'up' \| 'down' \| 'neutral'; label: string } | — |
 
 ## Rules and behaviour
 
 - An optional trend indicator colors green/red/neutral by direction, independent of financial-status semantics.
+- `detail` shows a smaller figure beside the value (the amount behind a count, US-QUO-27); `tone="warning"` colours the value due-soon, with the label saying why.
 
 ## Exports
 

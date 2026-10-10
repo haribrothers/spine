@@ -19,6 +19,16 @@ describe("RichTextEditor a11y", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("keeps the placeholder inside the box when empty (US-QUO-35)", async () => {
+    const { container } = render(<RichTextEditor value="" onValueChange={() => {}} placeholder="Payment terms, validity, etc…" />);
+    await waitFor(() => {
+      expect(container.querySelector('[data-testid="rich-text-placeholder"]')).toBeTruthy();
+    });
+    const placeholder = container.querySelector('[data-testid="rich-text-placeholder"]')!;
+    expect(placeholder.parentElement?.className).toContain("relative");
+    expect(placeholder.textContent).toBe("Payment terms, validity, etc…");
+  });
+
   it("has no violations when disabled", async () => {
     const { container } = render(
       <RichTextEditor value="<p>Notes</p>" onValueChange={() => {}} disabled />,

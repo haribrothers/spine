@@ -146,6 +146,13 @@ export function LeadsBoard() {
   const [deleteLead, setDeleteLead] = useState<Lead | null>(null);
   const [deleting, setDeleting] = useState(false);
   const loading = useRef(false);
+  // US-QUO-33: `?lead=<id>` (a quote's Related panel) opens that lead in the drawer.
+  const leadParam = searchParams.get("lead");
+  useEffect(() => {
+    if (!leadParam) return;
+    setDrawerLeadId(leadParam);
+    setDrawerOpen(true);
+  }, [leadParam]);
   const { stages, error: stagesError, reload: reloadStages } = useLeadStages();
   const board = useFillHeight({ minHeight: BOARD_MIN_HEIGHT });
 

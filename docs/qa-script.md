@@ -4725,6 +4725,42 @@ Use an owner on a business with demo data, a Staff member, and about a dozen cat
    - Any other table with a Columns menu (Contacts, Invoices, Reports) sorts, pages and hides columns as before; no checkboxes appear on them.
    - Field users still can't open Catalogue's usage counts.
 
+## 206. Quotes you can work from (US-QUO-27 to US-QUO-36, refinements before Phase 10)
+
+Use an owner on a business with demo data (India and elsewhere), a Staff member without `quotes.send`, and quotes in every state: drafts, sent (one expiring within a week, one expired), revised, accepted (one converted to a job and an invoice) and declined. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "09 Quotes".
+
+1. **Cards (US-QUO-27):**
+   - "Open" counts sent, current quotes with their total value beside it ("+ other currencies" when some are in another currency); "Expiring in 7 days" (amber when above 0); "Won this month" with its value; "Win rate" with "5 of 12 in the last 90 days" (or "—" and "None closed in the last 90 days").
+   - A revised quote counts once. Press each of the first three: the table shows just those quotes, the card says "Showing these · press again to clear", the address has `card=…`; press again to clear. Win rate isn't a button. The dashboard's "Quotes won this month" link still filters to accepted quotes.
+2. **The list (US-QUO-28, US-QUO-29):**
+   - Search by number, title, contact or a line's name; filter by status and by contact (only contacts with a quote are offered). Reload, or open a quote and press Back: the same list. "Clear filters" clears them. Refresh and "Updated just now"; switch tabs for a minute and come back: it refreshes.
+   - Rows: the title under the number; a draft says "Draft" in italics; "Viewed 2×" beside a viewed quote's status, with "Last viewed …" on hover and for screen readers; Sent ("12 Oct", in the business's locale); Valid until with "in 5 days" (amber within a week), "today" or "Expired 6 days ago", or when it was accepted or declined. Expand a revised quote to see its earlier versions.
+   - Row menu: a draft offers View, Edit, Send (opens the send dialog on its page), Preview PDF, Duplicate and Delete; a sent quote Copy customer link ("Link copied"), Download PDF, Duplicate and Revise; an accepted one Convert to invoice and Convert to job (each lands on the quote page and converts, with the repeat warning when it applies). As Staff without `quotes.send`, no Send or Copy customer link.
+3. **A title (US-QUO-30):** add "Bathroom refit — 2nd floor" in the builder; it shows in the list, as the quote page's subtitle, on the PDF under the number and on the customer's page. Duplicate and revise keep it. A quote started from a won lead starts with the lead's title. A title over 120 characters can't be typed.
+4. **The quote page (US-QUO-31):**
+   - The number is the page title (a draft says "Draft quote"), with the status, "Viewed 3×", the title, the contact (a link), "Sent 12 Oct", "Valid until 15 Oct · in 5 days" and the place of supply. There's no "Back to quotes" — the breadcrumb leads back.
+   - The primary button: Send quote (draft; hidden while a discount waits for approval), Copy customer link (sent, current), Convert to invoice (accepted), Revise (declined, expired or superseded). The rest sit beside it or under More (Duplicate as new draft, Save lines as a bundle…, Email again, View history, Delete draft).
+   - Copy customer link: "Link copied — it works for 30 days, or until you revise the quote." Open the copied link in a private window: the customer's page loads; an earlier emailed link still works.
+   - Lines are a table: Item with its description, Qty, Rate, Disc. and Tax only when a line has them, Amount; headings in bold across the row, text lines muted. Totals: Discount only when there is one; on a GST quote, CGST and SGST (or IGST) by name. A superseded version says "Superseded by v2" with a link.
+5. **Activity and Related (US-QUO-32, US-QUO-33):**
+   - Activity lists, newest first: Created, Edited, Sent, Emailed to … (or "Email failed: …"), Link copied, Viewed by the customer N times (views in a row grouped, "last …"), Revised from v1 (a link), Accepted or Declined online or in person with the comment, Converted to an invoice or a job (links), with who and when. A sent quote no one has opened ends with "Not viewed yet". "View history" opens the field-level history. More than six entries: "Show N earlier".
+   - Related lists the lead (opens it in the pipeline's drawer), every version ("this one" marked), and the jobs and invoices made from any version; with none it isn't shown. With Jobs & field off, no jobs. Field users never see Activity or Related.
+6. **The builder (US-QUO-34 to US-QUO-36):**
+   - Each item is one row: handle, Item, Qty, Rate, Disc. %, Tax, Amount and a menu; its description (and HSN/SAC for GST, supply type when untaxed) sits under it, or "Add description" on a taxed line with none. Headings and text lines span the row.
+   - Drag a row by its handle (text in the fields still selects normally); use the row's menu (Move up, Move down, Price includes tax, Remove line); or Alt + ↑/↓ — VoiceOver says "Moved to position 2 of 3". Enter in the last row's Tax adds a row with its Item field focused, as does "Add item".
+   - Under 1024 px each row wraps into two lines; nothing scrolls sideways.
+   - The bar stays at the bottom while you scroll: Subtotal, Tax, Total; Cancel, Preview PDF (opens the quote as it is on screen in a new tab, unsaved changes included; nothing is saved — "Unsaved changes" stays, and the quote's history has no new entry; every page has a faint diagonal "DRAFT — Preview only — not a valid quote" watermark, as does a draft's Preview PDF on its page, but not a sent quote's PDF), Save as draft / Save draft, Save and send (saves, then opens the send dialog; with a discount waiting for approval it opens the quote instead; hidden without `quotes.send`).
+   - Change anything: "Unsaved changes" shows. Press Cancel, click Contacts in the sidebar, or press the browser's Back: "Leave without saving?" with "Keep editing" and "Leave". Close the tab: the browser asks. Opening the builder alone never shows "Unsaved changes".
+   - Settings › Documents › Quotes: "Quotes valid for" (1–365, 30 to start). A new quote starts valid that many days ahead; "+15 days", "+30 days" and "+60 days" set it (the matching one shows pressed). Duplicate a quote with no validity: the copy uses the setting.
+   - The Notes and Terms boxes show their placeholders inside the box when empty (and so does every other rich-text box, e.g. Settings › Documents' default terms).
+7. Regression:
+   - Build, edit, send, revise, duplicate and delete quotes; bundles in the line picker and "Save lines as a bundle…"; one-off lines with "Also save to catalogue" (US-QUO-01 to US-QUO-26, US-CAT-06).
+   - GST quotes: place of supply switches lines between CGST + SGST and IGST, flagged lines warn; HSN/SAC carried (US-TAX-13, US-TAX-14).
+   - The customer's page: view, accept and decline; on-site acceptance on the phone and its card on the quote page (US-QUO-08, US-QUO-09, US-QUO-19, US-QUO-20).
+   - Convert to invoice and to job with the repeat warning (US-QUO-14 to US-QUO-16, US-QUO-23); discount approval (US-QUO-12).
+   - Invoices', credit notes' and variation orders' line editors look and work as before.
+   - A quote, invoice and credit note with a heading and a text line: on the PDF the heading is bold and larger, the text line plain and lighter; on the customer's quote page too (US-QUO-02).
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

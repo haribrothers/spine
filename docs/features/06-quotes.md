@@ -552,12 +552,15 @@ Decision: D-214
 
 **Acceptance criteria**
 - **Given** the builder, **when** I scroll, **then** a bar stays at the bottom with Subtotal, Tax and Total, "Cancel", "Preview PDF", "Save draft" and "Save and send" (the last only with `quotes.send` and when no discount needs approval).
-- **Given** "Save and send", **when** I press it, **then** the draft saves and the send dialog opens on the quote's page; "Preview PDF" saves the draft and opens the preview.
+- **Given** "Save and send", **when** I press it, **then** the draft saves and the send dialog opens on the quote's page.
+- **Given** "Preview PDF", **when** I press it, **then** the quote as it is on screen opens as a PDF in a new tab, and nothing is saved: the draft, its history and "Unsaved changes" stay as they were.
+- **Given** a quote that hasn't been sent, **when** its PDF opens (the builder's preview or a draft's "Preview PDF"), **then** every page has a faint diagonal "DRAFT — Preview only — not a valid quote" watermark behind the content; a sent quote's PDF has none.
 - **Given** unsaved changes, **when** I press Cancel, go Back or close the tab, **then** it asks "Leave without saving? Your changes to this quote will be lost." with "Keep editing" and "Leave".
 - **Given** Notes or Terms is empty, **when** it shows, **then** its placeholder sits inside the box (it showed at the bottom of the page in every empty rich-text editor).
 
 **Implementation notes**
 - UI: `quote-builder.tsx`; the placeholder fix is in `@spine/ui`'s `RichTextEditor` (every screen that uses it).
+- API: `POST /quotes/preview-pdf` renders the unsaved quote (`quotes.edit_own`); nothing is written.
 
 ### US-QUO-36 · Start a quote valid for my usual number of days
 **Feature:** F-QUO-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `QuoteBuilderCompact`

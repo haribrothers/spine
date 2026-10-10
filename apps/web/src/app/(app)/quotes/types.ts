@@ -37,6 +37,8 @@ export interface Quote {
   supplyType: "intra" | "inter" | "export" | null;
   contactName: string | null;
   number: string | null;
+  /** US-QUO-30 — an optional name for the quote. */
+  title: string | null;
   status: QuoteStatus;
   parentQuoteId: string | null;
   version: number;
@@ -70,6 +72,13 @@ export interface Quote {
   supersededByQuoteId?: string | null;
   /** The version-1 ancestor's id, walked server-side from parentQuoteId — every version of "the same quote" shares this value, used by quotes-table.tsx to group rows (item 4, user feedback). */
   rootQuoteId: string;
+  /** US-QUO-29 — the customer's views of the link (list rows only). */
+  viewCount?: number;
+  lastViewedAt?: string | null;
+  /** US-QUO-28 — the quote's line names, for search (list rows only). */
+  lineNames?: string[];
+  /** US-CRM-26 — the lead the quote is for. */
+  leadId?: string | null;
   lines?: QuoteLine[];
   /** When the customer answered (link or on site), and what they said. */
   respondedAt?: string | null;

@@ -152,6 +152,7 @@ export function PublicQuoteView({ token }: { token: string }) {
             <div>
               <p className="text-[13px] text-on-surface-muted">{quote.business?.name ?? "Quote"}</p>
               <h1 className="text-[20px] font-semibold text-on-surface">{quote.number ?? "Quote"}</h1>
+              {quote.title && <p className="text-[15px] font-medium text-on-surface" data-testid="public-quote-title">{quote.title}</p>}
             </div>
           </div>
           <StatusBadge status={quote.status} />
@@ -167,7 +168,7 @@ export function PublicQuoteView({ token }: { token: string }) {
           {quote.lines.map((line) => (
             <div key={line.id} className="flex items-start justify-between gap-4 py-2">
               <div>
-                <p className={line.type === "heading" ? "font-semibold text-on-surface" : "text-on-surface"}>{line.name}</p>
+                <p className={line.type === "heading" ? "text-[15px] font-semibold text-on-surface" : line.type === "text" ? "text-[14px] text-on-surface-muted" : "text-on-surface"}>{line.name}</p>
                 {line.description && <p className="text-[13px] text-on-surface-muted">{line.description}</p>}
                 {line.type === "item" && (
                   <p className="text-[12px] text-on-surface-muted">

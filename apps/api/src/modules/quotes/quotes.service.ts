@@ -2,12 +2,12 @@ import { moduleOn } from "../../common/modules";
 import { BadRequestException, ForbiddenException, GoneException, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import type { EmailJobOverride } from "../email/email-text";
 import type { acceptQuoteInPersonSchema, createQuoteSchema, rejectQuoteInPersonSchema, updateQuoteSchema } from "@spine/shared";
-import { computeDocumentLine, lineSupplyClass, supplyClassTaxError, type SupplyClass } from "@spine/shared";
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { computeDocumentLine, lineSupplyClass, resolveDocumentLayout, supplyClassTaxError, QUOTE_NO_LINK, type DocumentLayout, type QuoteActivityEntry, type QuoteCustomerLink, type QuoteRelated, type SupplyClass } from "@spine/shared";
+import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { quotes, quoteLines, contacts, files, jobs, jobAssignments, jobVariationOrders, leads, user } from "../../db/schema";
+import { quotes, quoteLines, quoteEvents, contacts, files, invoices, jobs, jobAssignments, jobVariationOrders, leads, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { getMemberRole, hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 import { RateBook } from "../tax/line-tax-components";
@@ -21,6 +21,7 @@ import { NotificationsService } from "../notifications/notifications.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { QuotePublicTokenService } from "./quote-public-token.service";
+import { appUrl } from "../email/email-layout";
 
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
 export type UpdateQuoteInput = z.infer<typeof updateQuoteSchema>;
@@ -262,9 +263,29 @@ export class QuotesService {
       return current?.id ?? quoteId;
     }
 
+    // US-QUO-29: how often the customer opened the link, and when last.
+    const views = await this.db
+      .select({ quoteId: quoteEvents.quoteId, viewCount: count(), lastViewedAt: max(quoteEvents.createdAt) })
+      .from(quoteEvents)
+      .where(and(eq(quoteEvents.orgId, orgId), eq(quoteEvents.type, "viewed")))
+      .groupBy(quoteEvents.quoteId);
+    const viewsById = new Map(views.map((v) => [v.quoteId, v]));
+    // US-QUO-28: search covers the quotes' line names too.
+    const lineRows = rows.length
+      ? await this.db
+          .select({ quoteId: quoteLines.quoteId, name: quoteLines.name })
+          .from(quoteLines)
+          .where(inArray(quoteLines.quoteId, rows.map((r) => r.quote.id)))
+      : [];
+    const lineNamesById = new Map<string, string[]>();
+    for (const l of lineRows) lineNamesById.set(l.quoteId, [...(lineNamesById.get(l.quoteId) ?? []), l.name]);
+
     let result = rows.map((r) => ({
       ...r.quote,
       contactName: r.contactName,
+      viewCount: Number(viewsById.get(r.quote.id)?.viewCount ?? 0),
+      lastViewedAt: viewsById.get(r.quote.id)?.lastViewedAt ?? null,
+      lineNames: lineNamesById.get(r.quote.id) ?? [],
       isExpired: isExpired(r.quote),
       isSuperseded: supersededIds.has(r.quote.id),
       rootQuoteId: resolveRootId(r.quote.id),
@@ -487,6 +508,7 @@ export class QuotesService {
           placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
           ...(leadId !== undefined ? { leadId } : {}),
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
+          ...(input.title !== undefined ? { title: input.title || null } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
           ...(input.notes !== undefined ? { notes: input.notes } : {}),
@@ -701,6 +723,7 @@ export class QuotesService {
         .values({
           orgId,
           contactId: existing.contactId,
+          title: existing.title,
           status: "draft",
           parentQuoteId: existing.id,
           version: existing.version + 1,
@@ -789,7 +812,9 @@ export class QuotesService {
 
     const DAY = 24 * 60 * 60 * 1000;
     const start = source.sentAt ?? source.createdAt;
-    const periodDays = source.validUntil ? Math.max(1, Math.round((new Date(source.validUntil).getTime() - new Date(start).getTime()) / DAY)) : 30;
+    // US-QUO-36: with no validity on the original, the business's usual period.
+    const layout = await this.settings.get<DocumentLayout>(orgId, "document_layout").catch(() => null);
+    const periodDays = source.validUntil ? Math.max(1, Math.round((new Date(source.validUntil).getTime() - new Date(start).getTime()) / DAY)) : resolveDocumentLayout(layout, "quote").validDays;
     const validUntil = new Date(Date.now() + periodDays * DAY);
 
     const copy = await this.db.transaction(async (tx) => {
@@ -798,6 +823,7 @@ export class QuotesService {
         .values({
           orgId,
           contactId: source.contactId,
+          title: source.title,
           status: "draft",
           parentQuoteId: null,
           version: 1,
@@ -883,6 +909,210 @@ export class QuotesService {
       this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
     }
     return this.getOne(orgId, id);
+  }
+
+  /**
+   * US-QUO-35 (D-214) — "Preview PDF" in the builder: the PDF of the quote
+   * as it is on screen, saved or not. Nothing is written: totals, tax and
+   * the place of supply are worked out exactly as a save would, then
+   * rendered from memory. `quoteId` (an existing draft) keeps its version
+   * and dates.
+   */
+  async previewDraft(orgId: string, actorUserId: string, input: CreateQuoteInput, quoteId?: string) {
+    const [contact] = await this.db.select().from(contacts).where(and(eq(contacts.orgId, orgId), eq(contacts.id, input.contactId)));
+    if (!contact) throw new BadRequestException("Contact not found");
+    const [existing] = quoteId ? await this.db.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, quoteId))) : [];
+    if (quoteId && !existing) throw new NotFoundException("Quote not found");
+
+    const totals = await computeQuoteTotals(orgId, input.currency, input.lines, this.taxResolver);
+    const supply = await this.placeOfSupply.resolve(orgId, input.contactId, input.placeOfSupply, "sale");
+    const now = new Date();
+    const id = existing?.id ?? "00000000-0000-0000-0000-000000000000";
+    const quote: typeof quotes.$inferSelect = {
+      id,
+      orgId,
+      contactId: input.contactId,
+      number: existing?.number ?? null,
+      title: input.title || null,
+      status: "draft",
+      parentQuoteId: existing?.parentQuoteId ?? null,
+      version: existing?.version ?? 1,
+      validUntil: input.validUntil ?? null,
+      currency: input.currency,
+      subtotalAmount: totals.subtotalAmount,
+      discountAmount: totals.discountAmount,
+      taxAmount: totals.taxAmount,
+      totalAmount: totals.totalAmount,
+      discountRequiresApproval: false,
+      approvedByUserId: null,
+      approvedAt: null,
+      notes: input.notes ?? null,
+      termsAndConditions: input.termsAndConditions ?? null,
+      createdByUserId: existing?.createdByUserId ?? actorUserId,
+      sentAt: null,
+      respondedAt: null,
+      responseComment: null,
+      acceptanceMethod: null,
+      acceptedByUserId: null,
+      signatureFileId: null,
+      acceptedSignerName: null,
+      issuedPdfFileId: null,
+      emailStatus: null,
+      emailError: null,
+      emailSentAt: null,
+      isDemo: false,
+      placeOfSupply: supply.placeOfSupply,
+      supplyType: supply.supplyType,
+      leadId: input.leadId ?? null,
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    };
+    const lines = totals.lines.map((line, index) => ({ ...line, id: `preview-${index}`, quoteId: id })) as (typeof quoteLines.$inferSelect)[];
+    return { quote, lines, contactName: contact.name, contactEmail: contact.email };
+  }
+
+  /**
+   * US-QUO-31 (D-214) — "Copy customer link": a fresh link to the
+   * customer's page, as an emailed one, with nothing emailed. Earlier links
+   * keep working (US-QUO-22). Only a sent quote that hasn't been revised.
+   */
+  async link(orgId: string, id: string, actorUserId: string): Promise<QuoteCustomerLink> {
+    const issued = await this.db.transaction(async (tx) => {
+      const [existing] = await tx.select().from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.id, id))).for("update");
+      if (!existing) throw new NotFoundException("Quote not found");
+      const [newer] = await tx.select({ id: quotes.id }).from(quotes).where(and(eq(quotes.orgId, orgId), eq(quotes.parentQuoteId, id)));
+      if (existing.status !== "sent" || newer) throw new BadRequestException(QUOTE_NO_LINK);
+      await this.auditLog.record(tx, { orgId, actorUserId, action: "link_copied", entityType: "quote", entityId: id, contactId: existing.contactId, changes: [] });
+      return this.publicTokens.issue(tx, orgId, id);
+    });
+    return { url: appUrl(`/quote/${issued.token}`), expiresAt: issued.expiresAt.toISOString() };
+  }
+
+  /**
+   * US-QUO-32 (D-214) — the quote's story for its Activity panel, newest
+   * first: its audit entries, the customer's views and answers
+   * (`quote_events`), its email status, and the invoices and jobs made
+   * from it. "View history" keeps the field-level changes.
+   */
+  async activity(orgId: string, id: string): Promise<QuoteActivityEntry[]> {
+    const quote = await this.getOne(orgId, id);
+    const entries: QuoteActivityEntry[] = [];
+    const iso = (d: Date | string) => new Date(d).toISOString();
+
+    for (const row of await this.auditLog.listForEntity(orgId, "quote", id)) {
+      const actorName = row.actorName ?? null;
+      const changes = (row.changes ?? []) as { field: string; from: unknown; to: unknown }[];
+      switch (row.action) {
+        case "created":
+          entries.push({ at: iso(row.createdAt), type: "created", actorName, detail: null });
+          break;
+        case "updated":
+          entries.push({ at: iso(row.createdAt), type: "edited", actorName, detail: null });
+          break;
+        case "sent":
+          entries.push({ at: iso(row.createdAt), type: "sent", actorName, detail: null });
+          break;
+        case "discount_approved":
+          entries.push({ at: iso(row.createdAt), type: "discount_approved", actorName, detail: null });
+          break;
+        case "link_copied":
+          entries.push({ at: iso(row.createdAt), type: "link_copied", actorName, detail: null });
+          break;
+        case "duplicated":
+          entries.push({ at: iso(row.createdAt), type: "duplicated", actorName, detail: String(changes.find((c) => c.field === "duplicatedFrom")?.to ?? "") || null });
+          break;
+        case "revised":
+          entries.push({ at: iso(row.createdAt), type: "revised", actorName, detail: quote.parentQuoteId ? `v${quote.version - 1}` : null, linkId: quote.parentQuoteId });
+          break;
+        case "accepted_in_person":
+          entries.push({ at: iso(row.createdAt), type: "accepted", actorName, detail: quote.responseComment ?? null, method: "in_person" });
+          break;
+        case "rejected_in_person":
+          entries.push({ at: iso(row.createdAt), type: "rejected", actorName, detail: quote.responseComment ?? null, method: "in_person" });
+          break;
+        default:
+          break;
+      }
+    }
+
+    const events = await this.db
+      .select({ type: quoteEvents.type, comment: quoteEvents.comment, createdAt: quoteEvents.createdAt })
+      .from(quoteEvents)
+      .where(and(eq(quoteEvents.orgId, orgId), eq(quoteEvents.quoteId, id)));
+    for (const ev of events) {
+      if (ev.type === "viewed") entries.push({ at: iso(ev.createdAt), type: "viewed", actorName: null, detail: null });
+      else entries.push({ at: iso(ev.createdAt), type: ev.type, actorName: quote.contactName ?? null, detail: ev.comment ?? null, method: "public_link" });
+    }
+
+    if (quote.emailStatus === "sent" && quote.emailSentAt) {
+      const [contact] = await this.db.select({ email: contacts.email }).from(contacts).where(eq(contacts.id, quote.contactId));
+      entries.push({ at: iso(quote.emailSentAt), type: "emailed", actorName: null, detail: contact?.email ?? null });
+    } else if (quote.emailStatus === "failed") {
+      entries.push({ at: iso(quote.updatedAt), type: "email_failed", actorName: null, detail: quote.emailError ?? null });
+    }
+
+    const made = await this.madeFrom(orgId, [id]);
+    for (const inv of made.invoices) entries.push({ at: iso(inv.createdAt), type: "converted_to_invoice", actorName: inv.actorName, detail: inv.number, linkId: inv.id });
+    for (const job of made.jobs) entries.push({ at: iso(job.createdAt), type: "converted_to_job", actorName: job.actorName, detail: job.number ?? job.name, linkId: job.id });
+
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
+  }
+
+  /** The invoices and jobs made from any of these quotes (no jobs while Jobs & field is off). */
+  private async madeFrom(orgId: string, quoteIds: string[]) {
+    const invoiceRows = await this.db
+      .select({ id: invoices.id, number: invoices.number, status: invoices.status, createdAt: invoices.createdAt, actorName: user.name })
+      .from(invoices)
+      .leftJoin(user, eq(invoices.createdByUserId, user.id))
+      .where(and(eq(invoices.orgId, orgId), inArray(invoices.sourceQuoteId, quoteIds)))
+      .orderBy(invoices.createdAt);
+    const jobRows = (await moduleOn(this.db, orgId, "jobsField"))
+      ? await this.db
+          .select({ id: jobs.id, number: jobs.number, name: jobs.name, status: jobs.status, createdAt: jobs.createdAt, actorName: user.name })
+          .from(jobs)
+          .leftJoin(user, eq(jobs.createdByUserId, user.id))
+          .where(and(eq(jobs.orgId, orgId), inArray(jobs.sourceQuoteId, quoteIds)))
+          .orderBy(jobs.createdAt)
+      : [];
+    return {
+      invoices: invoiceRows.map((r) => ({ ...r, actorName: r.actorName ?? null })),
+      jobs: jobRows.map((r) => ({ ...r, actorName: r.actorName ?? null })),
+    };
+  }
+
+  /**
+   * US-QUO-33 (D-214) — what a quote is connected to: the lead it's for,
+   * every version of it, and the jobs and invoices made from any version.
+   */
+  async related(orgId: string, id: string): Promise<QuoteRelated> {
+    const quote = await this.getOne(orgId, id);
+    const family = await this.db
+      .select({ id: quotes.id, parentQuoteId: quotes.parentQuoteId, version: quotes.version, number: quotes.number, status: quotes.status, validUntil: quotes.validUntil, createdAt: quotes.createdAt, leadId: quotes.leadId })
+      .from(quotes)
+      .where(and(eq(quotes.orgId, orgId), eq(quotes.contactId, quote.contactId)));
+    // Walk up to the first version, then collect everything descended from it.
+    const byId = new Map(family.map((q) => [q.id, q]));
+    let root = byId.get(id)!;
+    const seen = new Set<string>();
+    while (root.parentQuoteId && byId.has(root.parentQuoteId) && !seen.has(root.id)) {
+      seen.add(root.id);
+      root = byId.get(root.parentQuoteId)!;
+    }
+    const versions = [root];
+    for (let i = 0; i < versions.length; i++) {
+      for (const q of family) if (q.parentQuoteId === versions[i]!.id) versions.push(q);
+    }
+    versions.sort((a, b) => a.version - b.version);
+
+    const leadId = quote.leadId ?? versions.find((v) => v.leadId)?.leadId ?? null;
+    const [lead] = leadId ? await this.db.select({ id: leads.id, title: leads.title }).from(leads).where(and(eq(leads.orgId, orgId), eq(leads.id, leadId))) : [];
+    const made = await this.madeFrom(orgId, versions.map((v) => v.id));
+    return {
+      lead: lead ?? null,
+      versions: versions.map((v) => ({ id: v.id, version: v.version, number: v.number, status: v.status, isExpired: isExpired(v), createdAt: v.createdAt.toISOString() })),
+      jobs: made.jobs.map((j) => ({ id: j.id, number: j.number, name: j.name, status: j.status })),
+      invoices: made.invoices.map((i) => ({ id: i.id, number: i.number, status: i.status })),
+    };
   }
 
   /**
@@ -1183,6 +1413,7 @@ export class QuotesService {
         .values({
           orgId,
           contactId: input.contactId,
+          title: input.title || null,
           status: "draft",
           parentQuoteId: versioning.parentQuoteId,
           version: versioning.version,
@@ -1254,7 +1485,7 @@ async function insertLines(tx: Transaction, quoteId: string, lines: ComputedLine
  * draft has no customer-facing validity yet, and accepted/rejected are
  * terminal states that expiry shouldn't override.
  */
-function isExpired(quote: typeof quotes.$inferSelect): boolean {
+function isExpired(quote: Pick<typeof quotes.$inferSelect, "status" | "validUntil">): boolean {
   if (quote.status !== "sent" || !quote.validUntil) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);

@@ -6,7 +6,7 @@ import type { Invoice } from "./types";
 /**
  * Real counts derived client-side from the already-fetched invoice list,
  * per this codebase's established rule against fabricated stat-card
- * numbers (see quotes/use-quote-stats.ts's own comment). "Overdue" counts
+ * numbers (see contacts/use-contact-stats.ts's own comment). "Overdue" counts
  * the API's own computed `isOverdue` flag (S-05.9) — never recomputed
  * client-side.
  */

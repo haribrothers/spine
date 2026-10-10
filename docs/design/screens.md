@@ -583,6 +583,8 @@ Shows: "Sales > Catalogue" · "Catalogue" · "Goods and services you quote, invo
 
 ![QuoteBuilder](screens/QuoteBuilder.webp)
 
+Refined by `QuoteBuilderCompact` (D-214).
+
 Links to: `QuoteBuilderDraft`, `TaxRateDialog`, `OnbFinancialYear`, `OnbInviteTeam`, `TeamPrivilegesExpanded`, `QuoteDetailAccepted`
 
 Shows: "Sales › Quotes > New" · "New quote" · "Build a multi-line quote. It saves as a draft until you send it." · "Contact *" · "Currency*" · "Valid until" · "Select a contact..." · "USD" · "Pick a date" · "Quote shows as expired after this date (S-03.11)." · "Lines" · "Item name" · "Prefill from catalogu... -" · "Description (optional)" · "Qty" · "Unit price" · "Discount %" · "Line total" · "0.00" · "Tax" · "No tax" · "Price includes tax" · "+ Add item" · "+ Add heading" · "+ Add text line" · "Notes" · "Terms & conditions" · "в І" · "в I" · "Notes for the customer..." · "Payment terms, validity, etc..." · "Visible to the customer on the quote." · "Subtotal" · "0.00 USD" · "Total" · "Cancel" · "Save as draft"
@@ -631,6 +633,8 @@ Shows: "Edit item — Spine" · "Sales" · "Catalogue" · "Goods and services yo
 
 ![QuotesList](screens/QuotesList.webp)
 
+Refined by `QuotesListRefined` (D-214).
+
 Links to: `QuoteDetail`, `QuotesEmpty`
 
 Shows: "Sales › Quotes" · "OVERVIEW" · "Quotes" · "98 Dashboard" · "Build multi-line quotes, revise sent quotes into new versions, and track validity." · "SALES" · "9, Contacts" · "Total quotes" · "Draft" · "Sent" · "Accepted" · "Pipeline" · "Meetings" · "Catalogue" · "Status" · "All contacts" · "• Email queue" · "New quote" · "JOBS" · "Search quotes" · "*= Columns" · "• Jobs" · "Number 11" · "Contact tu" · "Valid until ti" · "Total Ti" · "BILLING" · "5 Invoices" · "QUO-0004" · "Harborview Construction Co." · "510.00 USD" · "• Credit Notes" · "- (unsent draft)" · "Marcus Webb (Freelance Surveyor)" · "10/13/2026" · "4542.50 USD" · "•.." · "•• Payments" · "> - (unsent draft)" · "Bluewater Hospitality Group" · "V2" · "11/17/2026" · "18860.00 USD" · "..." · "• Receivables" · …
@@ -657,6 +661,8 @@ Shows: "Sales › Quotes > Edit" · "Edit quote" · "Only a draft can be edited 
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-QUO-05, US-QUO-06, US-QUO-11, US-QUO-13, US-QUO-17, US-QUO-18 · **Source:** Captured
 
 ![QuoteDetail](screens/QuoteDetail.webp)
+
+Refined by `QuoteDetailRefined` (D-214).
 
 Links to: `QuotesList`, `QuotePdf`, `EmailQuote`
 
@@ -3033,6 +3039,65 @@ Shows: "No bundles yet" · "Group what you quote together. Select items and choo
 Links to: —
 
 Shows: "Edit item" · "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026" · "DETAILS" · "PRICE AND TAX" · "Intra-state tax" · "Inter-state tax" · "Supply type" · "ACCOUNTS" · "None — posts to 4100 Sales — Services" · "Cancel" · "Save item"
+
+
+## Quotes you can work from
+
+Drawn in Claude Design for US-QUO-27 to US-QUO-36 (D-214): project "Spine web — refinements before Phase 10", canvas "09 Quotes". The list's cards are Open (with its value), Expiring in 7 days, Won this month (with its value) and Win rate; the first three filter. Rows show the title under the number, "Viewed 3×", when the quote was sent and a validity countdown, and the row menu offers what to do next. The quote page has the number as its title, one primary button for the next step, the lines as a table, and Activity and Related panels. The builder has a title, compact rows with the description under each item, a default validity with quick picks, and a bar at the bottom with the totals and Save and send. These refine `QuotesList`, `QuoteDetail`, `QuoteDetailAccepted` and `QuoteBuilder`. In the built page, a new quote's button reads "Save as draft" (an existing draft's, "Save draft"); Email again is under More on a sent quote; an untaxed line's details row is open already, since it shows its supply type; and the accepted quote keeps its existing acceptance card above the lines.
+
+### QuotesListRefined — Cards that filter, progress in each row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-27, US-QUO-28, US-QUO-29, US-QUO-30 · **Source:** Claude Design
+
+![QuotesListRefined](screens/QuotesListRefined.webp)
+
+Links to: `QuoteDetailRefined`, `QuoteBuilderCompact`
+
+Shows: "Open" "4" "₹16,82,330" "Sent and still valid" · "Expiring in 7 days" · "Won this month" · "Win rate" "42%" "5 of 12 in the last 90 days" · "Updated just now" · "Email queue" · "New quote" · "Search quotes, titles or lines" · "Draft" in italics · "Bathroom refit — 2nd floor" under the number · "Viewed 3×" with "Last viewed 14 Oct, 3:20 PM" · "in 5 days" · "Expired 6 days ago" · a row menu with "Copy customer link", "Download PDF", "Email again", "Duplicate", "Revise"
+
+### QuotesListRefinedDark — "Expiring in 7 days" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-27 · **Source:** Claude Design
+
+![QuotesListRefinedDark](screens/QuotesListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · two quotes expiring within the week
+
+### QuoteDetailRefined — A sent quote: one next step, lines, activity
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-31, US-QUO-32, US-QUO-33 · **Source:** Claude Design
+
+![QuoteDetailRefined](screens/QuoteDetailRefined.webp)
+
+Links to: `QuoteDetailAcceptedRefined`, `ContactDetail`
+
+Shows: "QUO-0046" "Sent" "Viewed 3×" · "Bathroom refit — 2nd floor" · "Ananya Rao" · "Sent 12 Oct" · "Valid until 15 Oct · in 5 days" · "Download PDF" · "Copy customer link" · "More" · "Item" "Qty" "Rate" "Disc." "Tax" "Amount" · "CGST (9%)" "SGST (9%)" · "Activity" "Viewed by the customer 3 times" "Link copied" "Emailed to …" "Sent" "Revised from v1" · "Related" "Lead" "Versions" · "Link copied" "It works for 30 days, or until you revise the quote."
+
+### QuoteDetailAcceptedRefined — Accepted, converted to a job and an invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-31, US-QUO-32, US-QUO-33 · **Source:** Claude Design
+
+![QuoteDetailAcceptedRefined](screens/QuoteDetailAcceptedRefined.webp)
+
+Links to: `JobDetail`, `InvoiceDetail`
+
+Shows: "Accepted" · "Convert to invoice" · "Convert to job" · "Accepted online by Ananya Rao on 14 Oct." with the comment · "Converted to a job · JOB-0012" · "Converted to an invoice · INV-0031" · "Show 4 earlier" · "Made from this quote"
+
+### QuoteBuilderCompact — Compact rows and a bar that stays in view
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-30, US-QUO-34, US-QUO-35, US-QUO-36 · **Source:** Claude Design
+
+![QuoteBuilderCompact](screens/QuoteBuilderCompact.webp)
+
+Links to: `QuoteDetailRefined`
+
+Shows: "Title (optional)" · "Valid until" with "+15 days" "+30 days" "+60 days" · "Place of supply" · "For lead" · a row being dragged · "HSN/SAC 9954" under an item · "Add description" · "Search items or bundles…" · "Enter adds a row · Alt + ↑/↓ moves it" · "Subtotal" "Tax" "Total" · "Unsaved changes" · "Cancel" "Preview PDF" "Save draft" "Save and send"
+
+### QuoteBuilderCompactDark — Leaving with unsaved changes, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-QUO-35 · **Source:** Claude Design
+
+![QuoteBuilderCompactDark](screens/QuoteBuilderCompactDark.webp)
+
+Links to: —
+
+Shows: "Leave without saving?" · "Your changes to this quote will be lost." · "Leave" · "Keep editing"
 
 ## Mobile field companion
 

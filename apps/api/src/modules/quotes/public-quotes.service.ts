@@ -67,6 +67,8 @@ export interface PublicQuoteView {
   /** US-OPS-24 — the business's locale for formatting money on the public page. */
   locale: string;
   number: string | null;
+  /** US-QUO-30 — the quote's title, when it has one. */
+  title: string | null;
   status: "sent" | "accepted" | "rejected";
   version: number;
   validUntil: string | null;
@@ -384,6 +386,7 @@ export class PublicQuotesService {
     return {
       id: row.quote.id,
       number: row.quote.number,
+      title: row.quote.title,
       status: row.quote.status as "sent" | "accepted" | "rejected",
       version: row.quote.version,
       validUntil: row.quote.validUntil ? new Date(row.quote.validUntil).toISOString() : null,

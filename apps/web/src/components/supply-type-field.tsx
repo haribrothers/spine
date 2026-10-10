@@ -54,15 +54,41 @@ export function SupplyTypeField({
   onChange,
   label = "Supply type",
   labelClassName = "text-[11px] font-medium text-on-surface-muted",
+  compact = false,
 }: {
   value: SupplyClass | null;
   taxPercent: number;
   onChange: (value: SupplyClass) => void;
   label?: string;
   labelClassName?: string;
+  /** US-QUO-34: one cell in the quote builder's line grid, named for screen readers only. */
+  compact?: boolean;
 }) {
   const id = useId();
   const error = supplyClassTaxError(value, taxPercent);
+  if (compact) {
+    return (
+      <div className="flex min-w-0 flex-col gap-1">
+        <Select value={value ?? "zero_rated"} onValueChange={(v) => onChange(v as SupplyClass)}>
+          <SelectTrigger aria-label={label} aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-error` : undefined} className="h-8 text-[13px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SUPPLY_CLASSES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {SUPPLY_CLASS_LABELS[c]}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {error && (
+          <p id={`${id}-error`} role="alert" className="text-[12px] text-overdue">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
   return (
     <div className="flex flex-col gap-1">
       <span id={`${id}-label`} className={labelClassName}>

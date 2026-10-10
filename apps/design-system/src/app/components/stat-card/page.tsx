@@ -28,6 +28,8 @@ export default () => <StatCard label="Cash position" value="$48,210" />;`} />
           rows={[
             { prop: "label", type: "string" },
             { prop: "value", type: "string" },
+            { prop: "detail", type: "string", description: "A smaller figure beside the value — the amount behind a count (Quotes' \"Open\" card)." },
+            { prop: "tone", type: "'default' | 'warning'", defaultValue: "'default'", description: "Warning colours the value due-soon; the label still says why." },
             { prop: "trend", type: "{ direction: 'up' | 'down' | 'neutral'; label: string }" },
           ]}
         />

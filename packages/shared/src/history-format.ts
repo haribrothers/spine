@@ -85,6 +85,8 @@ const ACTION_VERBS: Record<string, string> = {
   assigned: "assigned",
   unassigned: "unassigned",
   email_queued: "emailed",
+  // US-QUO-31
+  link_copied: "copied the customer link for",
   reminder_queued: "sent a reminder for",
   discount_approved: "approved the discount on",
   milestone_completed: "completed",

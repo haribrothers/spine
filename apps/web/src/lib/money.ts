@@ -13,6 +13,11 @@ export function setMoneyLocale(locale: string | null | undefined): void {
   orgLocale = locale || "en-US";
 }
 
+/** US-QUO-29 — the organisation's locale, for dates shown beside money ("12 Oct" vs "Oct 12"). */
+export function orgLocaleTag(): string {
+  return orgLocale;
+}
+
 export function formatMoney(amount: bigint | string | number, currency: string, locale: string = orgLocale): string {
   return formatWithLocale(amount, currency, locale);
 }

@@ -92,7 +92,7 @@ export async function sendQuoteAndGetPublicLink(
   await page.getByRole("option", { name: contactName }).click();
 
   await page.getByPlaceholder("Item name").fill(itemName);
-  const unitPriceInput = page.locator("div", { hasText: /^Unit price/ }).getByRole("textbox");
+  const unitPriceInput = page.getByLabel("Unit price").first();
   await unitPriceInput.fill(unitPrice);
 
   await page.getByRole("button", { name: /Save as draft/ }).click();

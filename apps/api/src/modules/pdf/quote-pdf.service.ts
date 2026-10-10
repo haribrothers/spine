@@ -51,6 +51,22 @@ export class QuotePdfService {
       .where(eq(quoteLines.quoteId, quoteId))
       .orderBy(quoteLines.sortOrder);
 
+    const buffer = await this.renderQuote(orgId, row.quote, lines, row.contactName, row.contactEmail);
+    const filename = `${row.quote.number ?? "quote-draft"}.pdf`;
+    return { buffer, filename };
+  }
+
+  /**
+   * Renders a quote that may not be saved: `render` passes the stored one,
+   * and US-QUO-35's preview passes the builder's unsaved draft.
+   */
+  async renderQuote(
+    orgId: string,
+    quote: typeof quotes.$inferSelect,
+    lines: (typeof quoteLines.$inferSelect)[],
+    contactName: string | null,
+    contactEmail: string | null,
+  ): Promise<Buffer> {
     const business = await this.settings.get<QuotePdfBusinessProfile>(orgId, "business_profile");
 
     // US-SET-10 — document colour and footer for new and draft documents; issued ones are served from the stored PDF.
@@ -65,19 +81,19 @@ export class QuotePdfService {
       QuotePdfDocument({
         layout,
         signatureDataUri: await loadSignatureDataUri(this.files, orgId, savedLayout, layout),
-        quote: row.quote,
+        quote,
         lines,
-        contactName: row.contactName,
-        contactEmail: row.contactEmail,
+        contactName,
+        contactEmail,
+        // US-QUO-35: only a sent quote is the real thing; its PDF is stored when it's sent.
+        watermark: quote.status === "draft",
         business,
         logoDataUri,
         locale: await orgLocale(this.db, orgId),
         branding,
       }),
     );
-
-    const filename = `${row.quote.number ?? "quote-draft"}.pdf`;
-    return { buffer, filename };
+    return buffer;
   }
 
   /**

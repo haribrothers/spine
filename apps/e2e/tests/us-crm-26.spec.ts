@@ -54,7 +54,7 @@ test.describe("US-CRM-26", () => {
     await expect(page.getByTestId("quote-lead")).toContainText("For lead Ground-floor extension");
     await expect(page.getByText("Ananya Rao").first()).toBeVisible();
     await page.getByPlaceholder("Item name").fill("Ground-floor extension works");
-    await page.locator("div", { hasText: /^Unit price/ }).getByRole("textbox").fill("11400");
+    await page.getByLabel("Unit price").first().fill("11400");
     await page.getByRole("button", { name: "Save as draft" }).click();
     await expect(page).toHaveURL(/\/quotes\/[0-9a-f-]{36}$/, { timeout: 30_000 });
 

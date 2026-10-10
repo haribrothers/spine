@@ -55,7 +55,7 @@ New schema the stories require. Each is created by the story named; until then i
 | `settings` key `update_check` | `{ latestVersion, checkedAt }` written by the daily check | US-OPS-06 |
 | `leads` | `stage_changed_at timestamptz not null default now()` (set whenever `stage_id` changes; backfilled from `updated_at`) | US-CRM-25 |
 | `leads` | `lost_reason text` (`price`, `timing`, `competitor`, `no_response`, `other`; null unless the stage is a Lost stage) and `lost_note text` | US-CRM-26 |
-| `quotes` | `title text?` (≤ 120 characters; copied by duplicate and revise; shown on the PDF and the customer's page) | US-QUO-30 |
+| `quotes` | `title text?` (≤ 120 characters; copied by duplicate and revise; shown on the PDF and the customer's page; migration `0112`) | US-QUO-30 |
 | `quotes` | `lead_id uuid → leads (set null)`, same organisation and contact as the quote; index (`org_id`, `lead_id`) | US-CRM-26 |
 | `leads` | `expected_close_date date` | US-CRM-27 |
 | `organization.name` | Kept in sync with `business_profile.name`: `SettingsService.set` renames the organisation in the same transaction whenever a non-empty business name is saved; migration `0062` copied it for existing installs | US-TEAM-15 |
