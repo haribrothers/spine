@@ -80,6 +80,27 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — Dashboard polish: placeholders, figures that fit, no gaps and a side column (US-DASH-27 to US-DASH-29, D-209)
+
+- **While it loads (US-DASH-27):**
+  - Until the layout, rights and modules are known, the page shows its shape in grey and says "Loading dashboard" once (`DashboardSkeleton`, the body is `aria-busy`).
+  - Then each card shows its title and a grey outline of its own content instead of a spinner (`WidgetSkeleton`); the KPI row keeps four grey cards (`KpiSkeleton`). No shimmer with Reduce Motion.
+  - The organisation's currency is read once for the page (`DashboardCurrencyProvider`) and cards wait for it, so "$" never shows before "₹". The KPI row and the money chart wait for the Accrual/Cash choice, so they load once.
+- **Figures that fit (US-DASH-28):**
+  - KPI cards get an icon chip and a soft tint from the category palette (Cash blue, Profit teal, Receivables purple; Overdue keeps the status red), with the figure on its own line and the 8-week line across the card under it. A long figure steps down a size (container queries).
+  - Payables and Tax this period stack their three figures when they don't fit side by side (`FigureTrio`).
+  - The Receivables aging ring shows the total in short form ("₹44.9L") with the full total under the title: new `formatMoneyCompact` in `@spine/shared`. `DonutChart` puts its legend under the ring below 20rem and lets an amount wrap rather than be cut off (doc page and a11y test updated).
+  - Amounts in Job profitability, Retention held, Top expenses and Ready to bill stay on one line; names beside them are cut short with the full name on hover.
+- **No gaps, and a side column (US-DASH-29):**
+  - Cards keep their own height and drop into the shortest column (a dense grid with measured row spans). Income and expenses, the one wide card, sits first after the KPI row; Jobs in progress is now one column with two-line rows.
+  - From 1440 px (`wide-plus`, new in `tokens.json` and the Tailwind preset), "Needs your attention", "Today" and Recent activity sit in a column on the right that stays in view while it fits the window. Below that attention and Today stay at the top (the same height from 1280 px), with 3 card columns from 1280 px and 2 from 1024 px.
+  - Edit layout keeps Recent activity in the grid so it can still be hidden; keyboard order is unchanged (tasks, KPI row, cards).
+- **Tests:**
+  - New: `us-dash-27` (web unit), `us-dash-28` (shared) and `us-dash-27` / `us-dash-28` / `us-dash-29` E2E.
+  - `us-dash-20` reads Jobs in progress as a list; `us-dash-16` and `dashboard.spec` find Today by its heading.
+  - QA script section 201.
+- **Design:** canvas "04 Dashboard polish"; five `Dashboard*` artboards.
+
 ### 2026-10-10 — Onboarding in four stages and a finish screen (US-ONB-22, US-ONB-23, D-208)
 
 - **Start screen:** `/onboarding` opens in the signed-out frame: "Welcome to Spine, <first name>", the four stages, the same three buttons, and Spine's dashboard, an invoice and the phone app drawn small with the people (`OnboardingStartIllustration`).

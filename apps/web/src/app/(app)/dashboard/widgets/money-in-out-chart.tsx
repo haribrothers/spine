@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
   GroupedBarChart,
-  Spinner,
   ToggleGroup,
   ToggleGroupItem,
   cn,
@@ -16,6 +15,8 @@ import type { MoneyInOutReport } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { minorUnitExponent } from "@spine/shared/money";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { useDashboardBasis } from "../dashboard-basis";
 
 type Range = 3 | 6 | 12;
@@ -45,21 +46,16 @@ function monthName(key: string): string {
  */
 export function MoneyInOutChart() {
   const [months, setMonths] = useState<Range>(12);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [report, setReport] = useState<MoneyInOutReport | null>(null);
   const [failed, setFailed] = useState(false);
   // US-DASH-26 (D-179) — Accrual: income and expenses; Cash: money in and out.
-  const { basis } = useDashboardBasis();
+  const { basis, ready } = useDashboardBasis();
   const accrual = basis === "accrual";
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
+    if (!ready) return;
     setReport(null);
     apiClient
       .get<MoneyInOutReport>(
@@ -70,7 +66,7 @@ export function MoneyInOutChart() {
         setFailed(false);
       })
       .catch(() => setFailed(true));
-  }, [months, basis]);
+  }, [months, basis, ready]);
 
   if (failed) return null;
 
@@ -112,10 +108,8 @@ export function MoneyInOutChart() {
         </ToggleGroup>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
-        {!report ? (
-          <div className="flex h-48 items-center justify-center">
-            <Spinner />
-          </div>
+        {!report || !orgCurrency ? (
+          <WidgetSkeleton kind="chart" />
         ) : !report.hasActivity ? (
           <p className="flex h-48 items-center justify-center text-center text-[13px] text-on-surface-muted">
             {accrual

@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import type { Kpi } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
+import { FigureTrio } from "./figure-trio";
 
 /**
  * US-DASH-21 (D-160) — `DashboardOwnerBooks` › Payables: total owed to
@@ -15,13 +18,10 @@ import { formatMoney } from "../../../../lib/money";
  */
 export function PayablesCard() {
   const [kpi, setKpi] = useState<Kpi | null | undefined>(undefined);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
     apiClient
       .get<Kpi[]>("/dashboard/kpis")
       .then((rows) => setKpi(rows.find((k) => k.key === "payables") ?? null))
@@ -46,26 +46,23 @@ export function PayablesCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!kpi ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+        {!kpi || !orgCurrency ? (
+          <WidgetSkeleton kind="figures" />
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-3 divide-x divide-border rounded-md border border-border">
-              <div className="p-3">
-                <p className="text-[12px] text-on-surface-muted">Current</p>
-                <p className="text-[18px] font-semibold tabular-nums text-on-surface">{money(kpi.detail?.current)}</p>
-              </div>
-              <Link href="/payables?overdue=1" className="p-3 hover:bg-surface-sunken" aria-label={`Overdue ${money(kpi.detail?.overdue)} — open overdue bills`}>
-                <p className="text-[12px] text-on-surface-muted">Overdue</p>
-                <p className={`text-[18px] font-semibold tabular-nums ${overdue > 0n ? "text-overdue" : "text-on-surface"}`}>{money(kpi.detail?.overdue)}</p>
-              </Link>
-              <div className="p-3">
-                <p className="text-[12px] text-on-surface-muted">Total</p>
-                <p className="text-[18px] font-semibold tabular-nums text-on-surface">{money(total.toString())}</p>
-              </div>
-            </div>
+            <FigureTrio
+              figures={[
+                { label: "Current", value: money(kpi.detail?.current) },
+                {
+                  label: "Overdue",
+                  value: money(kpi.detail?.overdue),
+                  className: overdue > 0n ? "text-overdue" : undefined,
+                  href: "/payables?overdue=1",
+                  "aria-label": `Overdue ${money(kpi.detail?.overdue)} — open overdue bills`,
+                },
+                { label: "Total", value: money(total.toString()) },
+              ]}
+            />
             <div
               className="flex h-2 overflow-hidden rounded-full bg-overdue-bg"
               role="img"
@@ -76,13 +73,13 @@ export function PayablesCard() {
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-[14px]">
               <span className="text-on-surface">Bills due in the next 7 days</span>
-              <span className="font-medium tabular-nums text-on-surface">
+              <span className="whitespace-nowrap font-medium tabular-nums text-on-surface">
                 {kpi.detail?.dueSoon?.count ?? 0} · {money(kpi.detail?.dueSoon?.amount)}
               </span>
             </div>
             <div className="flex items-center justify-between border-t border-border pt-3 text-[14px]">
               <span className="text-on-surface">Oldest overdue</span>
-              <span className="font-medium tabular-nums text-on-surface">
+              <span className="whitespace-nowrap font-medium tabular-nums text-on-surface">
                 {kpi.detail?.oldestOverdue ? `${kpi.detail.oldestOverdue.number} · ${kpi.detail.oldestOverdue.days} ${kpi.detail.oldestOverdue.days === 1 ? "day" : "days"}` : "None"}
               </span>
             </div>

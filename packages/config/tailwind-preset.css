@@ -353,6 +353,9 @@
 }
 
 @theme inline {
+  /* US-DASH-29 — tokens.json breakpoints.wide-plus: the dashboard's side column. */
+  --breakpoint-wide-plus: 90rem;
+
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
 

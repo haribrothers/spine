@@ -8,6 +8,7 @@ import {
   HideToggle,
   ReorderableItem,
   ReorderableList,
+  cn,
   useReorderableItemDragState,
 } from "@spine/ui";
 import {
@@ -29,6 +30,9 @@ import { Check, Pencil } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { KpiRow } from "./kpi-row";
 import { BasisSwitch, DashboardBasisProvider } from "./dashboard-basis";
+import { DashboardCurrencyProvider } from "./dashboard-currency";
+import { DashboardSkeleton } from "./dashboard-skeleton";
+import { ROW_UNIT, useFitsWindow, useRowSpan, useWidePlus } from "./dashboard-layout";
 import { SetupChecklist } from "./setup-checklist";
 import { TodayCard } from "./today-card";
 import { LedgerIntegrityAlert } from "./ledger-integrity-alert";
@@ -81,39 +85,40 @@ function visibleForRole(role: string | null, can: (capability: Capability) => bo
   ).map((w) => w.key);
 }
 
-/** Widgets two columns wide on a large screen (US-DASH-15); the rest are one. */
-const WIDE_KEYS = new Set<string>(["money-in-out", "jobs-in-progress"]);
-/** Widgets that fill whatever is left of their row. */
-const FILL_KEYS = new Set<string>(["activity-feed", "my-activity"]);
-const SPAN_CLASS: Record<number, string> = {
-  1: "",
-  2: "lg:col-span-2",
-  3: "lg:col-span-3",
-};
+/** US-DASH-29 (D-209): the one card two columns wide; it sits first, after the KPI row. */
+const WIDE_KEYS = new Set<string>(["money-in-out"]);
+/** From 1440 px the activity feed joins "Needs your attention" and "Today" in the side column. */
+const SIDE_KEYS = new Set<string>(["activity-feed", "my-activity"]);
 
-/** Each cell's column span in a grid of `columns`, walking the cells in order. */
-function columnSpans(keys: string[], columns: number): Map<string, number> {
-  const spans = new Map<string, number>();
-  let col = 0;
-  let previous: string | null = null;
-  for (const key of keys) {
-    let span = Math.min(WIDE_KEYS.has(key) ? 2 : 1, columns);
-    if (col + span > columns) {
-      // No hole at the end of a row: the card before widens to fill it.
-      if (previous && col > 0)
-        spans.set(previous, (spans.get(previous) ?? 1) + (columns - col));
-      col = 0;
-    }
-    if (FILL_KEYS.has(key)) span = columns - col;
-    spans.set(key, span);
-    previous = key;
-    col = (col + span) % columns;
-  }
-  return spans;
+/**
+ * US-DASH-29 — "Needs your attention", "Today" (and, from 1440 px, Recent
+ * activity): a column on the right from 1440 px that stays in view while
+ * it fits the window; a row at the top from 1280 px, the two cards the
+ * same height; stacked below that.
+ */
+function SideColumn({ children }: { children: React.ReactNode }) {
+  const { ref, fits } = useFitsWindow<HTMLDivElement>();
+  return (
+    <div
+      ref={ref}
+      data-testid="dashboard-side"
+      data-sticky={fits ? "true" : "false"}
+      className={cn("grid grid-cols-1 gap-4 xl:grid-cols-3 wide-plus:col-start-2 wide-plus:row-start-1 wide-plus:grid-cols-1 wide-plus:items-start", fits && "wide-plus:sticky wide-plus:top-6")}
+    >
+      {children}
+    </div>
+  );
 }
 
-/** The Today card's place in the grid while the setup checklist holds its spot in the top row. */
-const TODAY_CELL = "today";
+/** One card in the grid, as tall as its content (US-DASH-29). */
+function GridCell({ widgetKey, wide, children }: { widgetKey: string; wide: boolean; children: React.ReactNode }) {
+  const { ref, style } = useRowSpan();
+  return (
+    <div className={cn("min-w-0", wide && "-order-1 lg:col-span-2")} style={style} data-widget={widgetKey}>
+      <div ref={ref}>{children}</div>
+    </div>
+  );
+}
 
 /**
  * S-09.12/S-09.13 (dashboard v2) — the role-adaptive, per-user-
@@ -156,14 +161,13 @@ export function DashboardShell({
   const [attention, setAttention] = useState<AttentionItem[] | null>(null);
   const [business, setBusiness] = useState<string | null>(null);
   const [now] = useState(() => new Date());
-  // US-DASH-16: Today sits beside "Needs your attention", or — while the
-  // setup checklist takes that row — beside the first widget.
-  const [checklistShown, setChecklistShown] = useState(false);
   // US-DASH-18: a Field user's header counts their active jobs.
   const [fieldJobs, setFieldJobs] = useState<number | null>(null);
   // US-DASH-20: the Construction template shows retention and jobs in progress by default.
   const [template, setTemplate] = useState<string | null>(null);
-  const { capabilities } = useCapabilities();
+  const [templateKnown, setTemplateKnown] = useState(false);
+  const wide = useWidePlus();
+  const { capabilities, loading: capabilitiesLoading } = useCapabilities();
   const { modules } = useModules();
   const jobsOn = modules?.jobsField === true;
   const canSendReminder = useCapability("invoices.send_reminder");
@@ -227,7 +231,8 @@ export function DashboardShell({
         "/org/settings/industry_template",
       )
       .then((res) => setTemplate(res.value?.template ?? null))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setTemplateKnown(true));
   }, []);
 
   useEffect(() => {
@@ -294,11 +299,12 @@ export function DashboardShell({
   // Editing shows every widget (dimmed if hidden, so a user can find and
   // re-show one) — the normal view shows only what's actually visible.
   const displayed = editing ? merged : merged.filter((entry) => !entry.hidden);
-  const todayInGrid = role === "owner" && checklistShown;
-  const cells = displayed.map((e) => e.widgetKey);
-  if (todayInGrid) cells.splice(Math.min(1, cells.length), 0, TODAY_CELL);
-  const columns = role === "field" ? 2 : 3;
-  const spans = columnSpans(cells, columns);
+  // US-DASH-27: the page's shape until the layout, rights and modules are known.
+  const layoutKnown = savedLayout !== undefined && !capabilitiesLoading && modules !== null && templateKnown;
+  // US-DASH-29: from 1440 px Recent activity sits in the side column (Edit layout keeps it in the grid, so it can be hidden).
+  const sideKeys = wide && !editing ? displayed.filter((e) => SIDE_KEYS.has(e.widgetKey)).map((e) => e.widgetKey) : [];
+  const gridKeys = displayed.map((e) => e.widgetKey).filter((key) => !sideKeys.includes(key));
+  const columnsClass = role === "field" ? "lg:grid-cols-2" : "lg:grid-cols-2 xl:grid-cols-3 wide-plus:grid-cols-2";
 
   const firstName = userName?.trim().split(/\s+/)[0];
   const dateLine = now.toLocaleDateString("en-GB", {
@@ -332,6 +338,7 @@ export function DashboardShell({
 
   return (
     <DashboardBasisProvider>
+      <DashboardCurrencyProvider>
       <div className="flex flex-col gap-6">
         <AppShellHeader
           className="mb-0"
@@ -358,110 +365,116 @@ export function DashboardShell({
         {role === "owner" && <LedgerIntegrityAlert />}
         {role === "owner" && <StorageIntegrityAlert />}
 
-        <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-3">
-          {role === "owner" && (
-            <SetupChecklist
-              className="lg:col-span-2"
-              onVisibleChange={setChecklistShown}
-            />
-          )}
-          <AttentionCard
-            className={checklistShown ? undefined : "lg:col-span-2"}
-            items={attention}
-            today={localToday()}
-            note={
-              role === "owner"
-                ? "Cleared items disappear automatically"
-                : "Only things you can act on"
-            }
-            actionFor={actionFor}
-            emptyText={
-              role === "field"
-                ? "Milestones due on your jobs and expenses sent back to you will show up here."
-                : undefined
-            }
-          />
-          {!todayInGrid && <TodayCard />}
-        </div>
-        {role !== "field" && <KpiRow />}
-
-        <ReorderableList
-          itemIds={displayed.map((e) => e.widgetKey)}
-          onReorder={handleReorder}
-          className={`grid grid-cols-1 items-stretch gap-4 ${columns === 2 ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}
+        <p role="status" className="sr-only">
+          {layoutKnown ? "" : "Loading dashboard"}
+        </p>
+        <div
+          aria-busy={!layoutKnown}
+          data-testid="dashboard-body"
+          className="grid grid-cols-1 gap-4 wide-plus:grid-cols-[minmax(0,1fr)_340px] wide-plus:items-start"
         >
-          {cells.map((key) => {
-            const spanClass = SPAN_CLASS[spans.get(key) ?? 1] ?? "";
-            if (key === TODAY_CELL) {
-              return (
-                <div
-                  key={TODAY_CELL}
-                  className={`flex min-w-0 [&>*]:min-w-0 [&>*]:flex-1 ${spanClass}`}
-                >
-                  <TodayCard />
-                </div>
-              );
-            }
-            const entry = displayed.find((e) => e.widgetKey === key)!;
-            const Widget =
-              WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
-            if (!Widget) return null;
+          {!layoutKnown ? (
+            <DashboardSkeleton
+              field={role === "field"}
+              side={(cards) => <SideColumn>{cards}</SideColumn>}
+            />
+          ) : (
+            <>
+              <SideColumn>
+                <AttentionCard
+                  className="xl:col-span-2 wide-plus:col-span-1"
+                  items={attention}
+                  today={localToday()}
+                  note={
+                    role === "owner"
+                      ? "Cleared items disappear automatically"
+                      : "Only things you can act on"
+                  }
+                  actionFor={actionFor}
+                  emptyText={
+                    role === "field"
+                      ? "Milestones due on your jobs and expenses sent back to you will show up here."
+                      : undefined
+                  }
+                />
+                <TodayCard />
+                {sideKeys.map((key) => {
+                  const Widget = WIDGET_COMPONENTS[key as DashboardWidgetKey];
+                  return Widget ? <Widget key={key} /> : null;
+                })}
+              </SideColumn>
 
-            if (!editing) {
-              return (
-                <div
-                  key={entry.widgetKey}
-                  className={`flex min-w-0 [&>*]:min-w-0 [&>*]:flex-1 ${spanClass}`}
-                >
-                  <Widget />
-                </div>
-              );
-            }
+              <div className="@container flex min-w-0 flex-col gap-4 wide-plus:col-start-1 wide-plus:row-start-1">
+                {role === "owner" && <SetupChecklist />}
+                {role !== "field" && <KpiRow />}
 
-            return (
-              <EditableWidgetCard
-                key={entry.widgetKey}
-                widgetKey={entry.widgetKey}
-                spanClass={spanClass}
-                hidden={entry.hidden}
-                onToggleHidden={() => toggleHidden(entry.widgetKey)}
-              >
-                <Widget />
-              </EditableWidgetCard>
-            );
-          })}
-        </ReorderableList>
+                <ReorderableList
+                  itemIds={displayed.map((e) => e.widgetKey)}
+                  onReorder={handleReorder}
+                  data-testid="dashboard-grid"
+                  className={`grid grid-flow-row-dense grid-cols-1 gap-x-4 ${columnsClass}`}
+                  style={{ gridAutoRows: `${ROW_UNIT}px` }}
+                >
+                  {/* DOM order is the layout order; CSS `order` puts the wide card first, and the dense grid drops each card into the shortest column. */}
+                  {gridKeys.map((key) => {
+                      const entry = displayed.find((e) => e.widgetKey === key)!;
+                      const Widget =
+                        WIDGET_COMPONENTS[entry.widgetKey as DashboardWidgetKey];
+                      if (!Widget) return null;
+                      const isWide = WIDE_KEYS.has(key);
+
+                      if (!editing) {
+                        return (
+                          <GridCell key={key} widgetKey={key} wide={isWide}>
+                            <Widget />
+                          </GridCell>
+                        );
+                      }
+
+                      return (
+                        <EditableWidgetCard
+                          key={key}
+                          widgetKey={key}
+                          wide={isWide}
+                          hidden={entry.hidden}
+                          onToggleHidden={() => toggleHidden(key)}
+                        >
+                          <Widget />
+                        </EditableWidgetCard>
+                      );
+                    })}
+                </ReorderableList>
+              </div>
+            </>
+          )}
+        </div>
         {toast}
       </div>
+      </DashboardCurrencyProvider>
     </DashboardBasisProvider>
   );
 }
 
 function EditableWidgetCard({
   widgetKey,
-  spanClass,
+  wide,
   hidden,
   onToggleHidden,
   children,
 }: {
   widgetKey: string;
-  spanClass: string;
+  wide: boolean;
   hidden: boolean;
   onToggleHidden: () => void;
   children: React.ReactNode;
 }) {
   const { isOver } = useReorderableItemDragState(widgetKey);
+  const { ref, style } = useRowSpan();
 
   return (
-    <ReorderableItem id={widgetKey} className={`flex min-w-0 ${spanClass}`}>
-      <div
-        className={`relative flex flex-1 flex-col rounded-lg ${isOver ? "ring-2 ring-primary ring-offset-2" : ""}`}
-      >
-        <div
-          className={`flex flex-1 flex-col [&>*]:flex-1 ${hidden ? "opacity-40" : ""}`}
-        >
-          {children}
-        </div>
+    <ReorderableItem id={widgetKey} className={cn("min-w-0", wide && "-order-1 lg:col-span-2")} style={style} data-widget={widgetKey}>
+      <div ref={ref} className={`relative rounded-lg ${isOver ? "ring-2 ring-primary ring-offset-2" : ""}`}>
+        <div className={hidden ? "opacity-40" : ""}>{children}</div>
         <div className="absolute right-3 top-3 flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1 shadow-sm">
           <span className="text-[11px] font-medium text-on-surface-muted">
             {WIDGET_LABELS[widgetKey as DashboardWidgetKey] ?? widgetKey}

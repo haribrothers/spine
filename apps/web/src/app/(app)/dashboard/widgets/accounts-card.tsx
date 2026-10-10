@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Banknote, CreditCard, Landmark } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import type { MoneyAccount } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 
 const KIND_ICON = { bank: Landmark, cash: Banknote, card: CreditCard } as const;
 const KIND_LABEL = { bank: "Bank account", cash: "Cash", card: "Card" } as const;
@@ -26,14 +28,11 @@ function shortDate(iso: string): string {
  */
 export function AccountsCard() {
   const [rows, setRows] = useState<MoneyAccount[] | null>(null);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
     apiClient
       .get<MoneyAccount[]>("/money-accounts")
       .then((all) => setRows(all.filter((a) => !a.archivedAt)))
@@ -53,10 +52,8 @@ export function AccountsCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!rows ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+        {!rows || !orgCurrency ? (
+          <WidgetSkeleton kind="rows" rows={2} />
         ) : rows.length === 0 ? (
           <p className="py-6 text-center text-[14px] text-on-surface-muted">No money accounts yet.</p>
         ) : (

@@ -26,11 +26,25 @@ export default function DonutChartPage() {
         <DonutChart segments={segments} centerLabel="$16,450.00" className="w-full max-w-md" />
       </ComponentPreview>
 
+      <DocSection id="narrow" title="In a narrow card">
+        <p className="mb-3 text-[14px] text-on-surface-muted">
+          Below 20rem of room the legend moves under the ring, and an amount wraps under its label rather than being cut
+          off. Keep the centre label short (the dashboard uses the compact total, &quot;₹44.9L&quot;) and show the full
+          total nearby.
+        </p>
+        <ComponentPreview>
+          <div className="w-64">
+            <DonutChart segments={segments} centerLabel="$16.5K" />
+          </div>
+        </ComponentPreview>
+      </DocSection>
+
       <DocSection id="features" title="Features">
         <FeatureList
           items={[
             "Real legend — every segment shows its label and a pre-formatted value, not just a colored dot.",
             "Optional center label, typically a total.",
+            "Fits its card: ring and legend side by side from 20rem, legend under the ring below that (a container query, so it follows the card, not the window).",
             "A real empty state (emptyState prop) instead of an empty ring when every segment is 0.",
             "Callers own their own segment colors — pass the semantic paid/due-soon/overdue tokens for a financial-status breakdown, the categorical accent for anything else. Never mix the two palettes in one chart.",
           ]}

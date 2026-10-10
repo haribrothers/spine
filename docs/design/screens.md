@@ -2743,6 +2743,55 @@ Links to: `DashboardOwnerRedesign`
 
 Shows: As `OnbFinish`
 
+## Dashboard polish
+
+Drawn in Claude Design for US-DASH-27 to US-DASH-29 (D-209): project "Spine web — refinements before Phase 10", canvas "04 Dashboard polish". The figures are an Indian construction business's (the demo seeded with India), so the long amounts are real. From 1440 px "Needs your attention", "Today" and Recent activity sit in a column on the right; below that attention and Today stay at the top. Income and expenses is the one wide card and follows the KPI row; every other card keeps its height and goes into the shortest column. In the built page the column count is 2 from 1024 px and 3 from 1280 px. These replace the layout of `DashboardOwnerRedesign` and `DashboardOwnerBooks`; the cards' content is unchanged apart from the KPI cards, the stacked figures, the ring's centre and Jobs in progress's two-line rows.
+
+### DashboardLoading — While the dashboard loads
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-27 · **Source:** Claude Design
+
+![DashboardLoading](screens/DashboardLoading.webp)
+
+Links to: `DashboardWide`
+
+Shows: "Good morning, Priya" · "Loading dashboard" · four grey KPI cards · grey cards with their titles: "Income and expenses" · "Accounts" · "Ready to bill" · "Payables" · "Tax this period" · "Needs your attention" · "Today" · "Recent activity"
+
+### DashboardWide — 1440 px and wider: a side column, no gaps between cards
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardWide](screens/DashboardWide.webp)
+
+Links to: `DashboardEditLayout`, `DashboardBigFigures`
+
+Shows: "Get started" · "Cash position" · "₹90,87,504.00" · "Profit this month" · "Receivables" · "Overdue" · "Income and expenses" · "Accounts" · "Payables" · "Current" · "Overdue" · "Total" · "Ready to bill" · "Tax this period" · "Collected" · "Input tax" · "Net payable" · "Top expenses" · "Pipeline by stage" · "Retention held" · "Jobs in progress" · "118% billed · No budget" · "Receivables aging" · "Total ₹44,88,682.00" · "₹44.9L" · "Job profitability" · "−₹1,60,500.00" · "Needs your attention" · "Send reminder" · "Today" · "Open calendar" · "Recent activity"
+
+### DashboardWideDark — 1440 px, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardWideDark](screens/DashboardWideDark.webp)
+
+Links to: `DashboardWide`
+
+Shows: As `DashboardWide`
+
+### DashboardLaptop — Narrower than 1440 px: tasks at the top
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28, US-DASH-29 · **Source:** Claude Design
+
+![DashboardLaptop](screens/DashboardLaptop.webp)
+
+Links to: `DashboardWide`
+
+Shows: "Needs your attention" and "Today" side by side at the same height · the KPI cards four across · "Income and expenses" across two of three columns · the other cards in the shortest column first · "Recent activity" as a card
+
+### DashboardBigFigures — Big figures always fit
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-28 · **Source:** Claude Design
+
+![DashboardBigFigures](screens/DashboardBigFigures.webp)
+
+Links to: —
+
+Shows: KPI figures on their own line · stacked "Current · Overdue · Total" and "Collected · Input tax · Net payable" · "₹44.9L" in the ring with "Total ₹44,88,682.00" under the title · "Office block — structural works" cut short beside "−₹1,60,500.00"
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

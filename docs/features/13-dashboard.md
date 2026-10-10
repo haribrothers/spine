@@ -438,19 +438,20 @@ Decision: D-209
 
 ### US-DASH-29 · Keep cards their own height, with my tasks in a side column
 **Feature:** F-DASH-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardWide`, `DashboardLaptop`
-**As** an owner, **I want** no stretched cards or empty gaps, and my tasks always in view on a wide screen, **so that** the dashboard reads like one tidy page.
+**As** an owner, **I want** no stretched cards or empty gaps, and my tasks and recent activity in view on a wide screen, **so that** the dashboard reads like one tidy page.
 
 Decision: D-209
 
 **Acceptance criteria**
-- **Given** cards of different heights, **when** the dashboard lays them out, **then** each card keeps its own height and the cards pack into the columns in my layout order: a later card moves up into a space left above it, so there are no stretched cards (Pipeline by stage, Receivables aging, Accounts, Ready to bill) and no empty gaps.
-- **Given** a window 1440 px or wider, **when** the dashboard shows, **then** "Needs your attention" and then "Today" sit in a column on the right (about 340 px) that stays in view while the rest scrolls. The KPI row and the cards fill the space beside it, with the cards in 2 columns; wide cards (Income and expenses, Jobs in progress) span both.
-- **Given** a window narrower than 1440 px, **when** the dashboard shows, **then** "Needs your attention" and "Today" stay at the top as now, and the cards use 3 columns (2 for Field).
+- **Given** cards of different heights, **when** the dashboard lays them out, **then** each card keeps its own height and goes into whichever column is shortest so far, in my layout order. Columns only end unevenly at the bottom of the page: there are no stretched cards (Pipeline by stage, Receivables aging, Accounts, Ready to bill) and no empty gaps between cards.
+- **Given** a wide card (Income and expenses), **when** the cards are laid out, **then** it spans the columns and sits straight after the KPI row, ahead of the other cards, whatever its place in my layout; wide cards keep their order among themselves. Every other card, including Jobs in progress, is one column wide.
+- **Given** a window 1440 px or wider, **when** the dashboard shows, **then** "Needs your attention", "Today" and then Recent activity (when it's in my layout) sit in a column on the right (about 340 px) that stays in view while the rest scrolls, as long as it fits the window; if it's taller it scrolls with the page. The KPI row and the cards fill the space beside it, with the cards in 2 columns.
+- **Given** a window narrower than 1440 px, **when** the dashboard shows, **then** "Needs your attention" and "Today" stay at the top (side by side at the same height from 1280 px, one above the other below that), and the cards (Recent activity among them, in its layout place) use 3 columns from 1280 px and 2 from 1024 px (2 for Field).
 - **Given** the setup checklist ("Get started"), **when** it shows, **then** it sits at the top of the main area at its own height, not stretched to match another card.
-- **Given** Edit layout, **when** I drag or hide cards, **then** the side column isn't editable (like the KPI row) and the cards repack in the new order.
+- **Given** Edit layout, **when** I drag or hide cards, **then** "Needs your attention" and "Today" aren't editable (like the KPI row), Recent activity can still be hidden, and the cards repack in the new order.
 - **Given** a keyboard or screen reader, **when** I move through the page, **then** the order is: header, "Needs your attention", "Today", the KPI row, then the cards in my layout order. Tasks still come first (US-DASH-12), wherever they sit on screen.
 
 **Implementation notes**
-- UI: the card grid uses CSS grid with small rows and `grid-auto-flow: dense`; each card's row span comes from its measured height (`ResizeObserver`), so cards keep their height and fill gaps in order. Column spans stay as in US-DASH-15 (wide cards 2 columns). The side column is a sticky grid area from a new `wide-plus` breakpoint (1440 px) in `tokens.json` and the Tailwind preset. `mergeDashboardLayout` and the saved layout are unchanged.
+- UI: the card grid uses CSS grid with small rows and `grid-auto-flow: dense`; each card's row span comes from its measured height (`ResizeObserver`). Wide cards are placed first (a stable sort, so the saved order is untouched), then each one-column card lands in the first column with room, which is the shortest. DOM order stays the layout order. Only `money-in-out` is wide now; `jobs-in-progress` becomes one column with a two-line row (name and number, then the bar with "% billed · budget"), and the activity widgets (`activity-feed`, `my-activity`) no longer fill their row. The side column is a sticky grid area (`max-height: 100vh`, sticky only when it fits) from a new `wide-plus` breakpoint (1440 px) in `tokens.json` and the Tailwind preset. `mergeDashboardLayout` and the saved layout are unchanged.
 - No API change.
 

@@ -2,10 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, Dialog, DialogBody, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@spine/ui";
 import type { UnbilledWork } from "@spine/shared";
 import { apiClient } from "../../../../lib/api-client";
 import { formatMoney } from "../../../../lib/money";
+import { useDashboardCurrency } from "../dashboard-currency";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 
 /**
  * US-DASH-24 (D-160) — `DashboardOwnerBooks` › Ready to bill: completed
@@ -16,14 +18,11 @@ import { formatMoney } from "../../../../lib/money";
 export function ReadyToBillCard() {
   const [data, setData] = useState<UnbilledWork | null>(null);
   const [failed, setFailed] = useState(false);
-  const [currency, setCurrency] = useState("USD");
+  const orgCurrency = useDashboardCurrency();
+  const currency = orgCurrency ?? "USD";
   const [jobsOpen, setJobsOpen] = useState(false);
 
   useEffect(() => {
-    apiClient
-      .get<{ value: { code?: string } | null }>("/org/settings/currency")
-      .then((res) => res.value?.code && setCurrency(res.value.code))
-      .catch(() => {});
     apiClient
       .get<UnbilledWork>("/dashboard/unbilled")
       .then(setData)
@@ -45,10 +44,8 @@ export function ReadyToBillCard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!data ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+        {!data || !orgCurrency ? (
+          <WidgetSkeleton kind="line" />
         ) : nothing ? (
           <p className="py-6 text-center text-[14px] text-on-surface-muted">Nothing waiting to be billed.</p>
         ) : (
@@ -58,7 +55,7 @@ export function ReadyToBillCard() {
                 <button type="button" className="text-left text-primary hover:underline" onClick={() => setJobsOpen(true)}>
                   Completed milestones not invoiced · {data.milestones.count}
                 </button>
-                <span className="font-semibold tabular-nums text-on-surface">{money(data.milestones.amount)}</span>
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-on-surface">{money(data.milestones.amount)}</span>
               </li>
             )}
             {data.billableExpenses.count > 0 && (
@@ -66,7 +63,7 @@ export function ReadyToBillCard() {
                 <Link href="/expenses?billable=unbilled" className="text-primary hover:underline">
                   Approved billable expenses not billed · {data.billableExpenses.count}
                 </Link>
-                <span className="font-semibold tabular-nums text-on-surface">{money(data.billableExpenses.amount)}</span>
+                <span className="shrink-0 whitespace-nowrap font-semibold tabular-nums text-on-surface">{money(data.billableExpenses.amount)}</span>
               </li>
             )}
           </ul>

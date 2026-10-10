@@ -27,6 +27,15 @@ describe("DonutChart a11y", () => {
     await expectNoA11yViolations(container);
   });
 
+  it("has no violations in a narrow card, with the legend under the ring", async () => {
+    const { container } = render(
+      <div style={{ width: 240 }}>
+        <DonutChart segments={[...segments, { key: "long", label: "61–90 days", value: 0, color: "#b8433a", formattedValue: "₹38,72,132.00" }]} centerLabel="₹44.9L" />
+      </div>,
+    );
+    await expectNoA11yViolations(container);
+  });
+
   it("has no violations with no center label", async () => {
     const { container } = render(<DonutChart segments={segments} />);
     await expectNoA11yViolations(container);

@@ -54,7 +54,7 @@ test.describe("Dashboard v2", () => {
     await expect(main.getByText("Receivables aging")).toBeVisible();
     await expect(main.getByText("Job profitability").first()).toBeVisible();
     // US-DASH-16: one "Today" card replaces the follow-ups, meetings and milestones cards.
-    await expect(main.getByTestId("today-card").getByText("Today", { exact: true })).toBeVisible();
+    await expect(main.getByTestId("today-card").getByRole("heading", { name: "Today" })).toBeVisible();
     await expect(main.getByText("Invoices due this week")).toBeVisible();
     await expect(main.getByText("Recent activity")).toBeVisible();
 

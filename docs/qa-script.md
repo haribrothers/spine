@@ -4564,6 +4564,38 @@ Sign up a new owner (an install with open sign-up, or a fresh one). Use a 1440 p
    - The template, tax (with GST details for India), numbering and accounts steps save as before (US-ONB-04 to US-ONB-07, US-ONB-14, US-ONB-20, US-TAX-09, US-TAX-12).
    - Documents are numbered as before (`INV-0001`, demo `DEMO-INV-0001`).
 
+## 201. Dashboard polish (US-DASH-27 to US-DASH-29, refinements before Phase 10)
+
+Use an owner on a business with Indian figures (Settings › Demo data, India, Construction). Check 1440 px, 1280 px and 1024 px wide, light and dark, and compare with the canvas "04 Dashboard polish" and the `Dashboard*` artboards.
+
+1. **Loading (US-DASH-27):**
+   - With a slow connection (DevTools › Network › Slow 4G), the dashboard first shows its shape in grey: Needs your attention, Today, four KPI cards and grey cards. No spinners anywhere.
+   - Then each card shows its title and a grey outline of its content until its figures arrive. Nothing appears later and pushes cards down.
+   - Money is in rupees from the start; "$" never shows first.
+   - VoiceOver says "Loading dashboard" once. With Reduce Motion, the grey blocks don't pulse.
+2. **KPI cards and big figures (US-DASH-28):**
+   - Each KPI card has an icon in a coloured chip and a light tint: Cash position blue, Profit this month teal, Receivables purple, Overdue red. Text is easy to read on the tint, in light and dark.
+   - At 1280 px every figure ("₹90,87,504.00", "₹44,88,682.00") shows whole on one line, with the trend line underneath across the card.
+   - Payables and Tax this period show their three figures one above the other, each with its label; nothing overlaps.
+   - Receivables aging shows "₹44.9L" in the ring and "Total ₹44,88,682.00" under the title; in a narrow card the legend sits under the ring.
+   - Job profitability shows "−₹1,60,500.00" on one line; a long job name is cut short with "…" and shows in full on hover.
+3. **Layout (US-DASH-29):**
+   - At 1440 px and wider: Needs your attention, Today and Recent activity are in a column on the right. Scrolling the page keeps that column in view (on a short window where it doesn't fit, it scrolls with the page).
+   - Income and expenses sits right after the KPI cards, across the main area. Every other card sits directly under the card above it: no stretched cards and no empty gaps between cards; columns only end unevenly at the bottom.
+   - At 1280 px: Needs your attention and Today sit side by side at the top at the same height; the KPI cards are four across; the cards are in three columns, Recent activity among them.
+   - At 1024 px: attention and Today one above the other, KPI cards two by two, cards in two columns.
+   - Get started (a new owner) sits at the top of the cards at its own height.
+   - Tab from the header: Needs your attention, Today, the KPI cards, then the cards in layout order.
+4. **Edit layout:**
+   - At 1440 px, Edit layout shows Recent activity in the grid with Hide and the drag handle; hiding it removes it from the side column after Done.
+   - Dragging a card to a new place repacks the cards with no gaps.
+5. Regression:
+   - Staff and Field dashboards show only their cards (US-DASH-17, US-DASH-18), with the same loading and layout.
+   - Accrual / Cash still switches Profit this month and the money chart (US-DASH-26); KPI cards still open their reports (US-DASH-14).
+   - "Send reminder" and the other attention buttons still work (US-DASH-13); in the side column the button sits under its text.
+   - Jobs in progress shows "% billed · budget" on each job's second line (US-DASH-20).
+   - Job costing's "Cost by category" ring still shows at its size beside its table (US-JOB-26).
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

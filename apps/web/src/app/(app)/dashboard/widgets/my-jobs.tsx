@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Spinner } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 
 interface MyJob {
   id: string;
@@ -56,9 +57,7 @@ export function MyJobs() {
       </CardHeader>
       <CardContent>
         {!jobs ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="rows" rows={3} />
         ) : jobs.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">No jobs assigned to you yet.</p>
         ) : (

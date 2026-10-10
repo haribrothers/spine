@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Spinner, StatusChip } from "@spine/ui";
+import { Card, CardContent, CardHeader, CardTitle, StatusChip } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
+import { WidgetSkeleton } from "../dashboard-skeleton";
 import { formatMoney } from "../../../../lib/money";
 
 interface MyExpense {
@@ -47,9 +48,7 @@ export function MyExpenses() {
       </CardHeader>
       <CardContent>
         {!expenses ? (
-          <div className="flex h-24 items-center justify-center">
-            <Spinner />
-          </div>
+          <WidgetSkeleton kind="rows" rows={4} />
         ) : expenses.length === 0 ? (
           <p className="py-4 text-center text-[13px] text-on-surface-muted">No expenses yet.</p>
         ) : (
