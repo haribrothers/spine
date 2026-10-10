@@ -457,6 +457,12 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-MTG-15 · Get to a meeting or a contact from the sidebar lists
 - [x] US-MTG-16 · Come back to the same calendar view and date
 - [x] US-MTG-17 · Use the calendar on any screen size
+- [ ] US-CAT-10 · Spot items that need setup from the stat cards
+- [ ] US-CAT-11 · Read an item's tax, HSN/SAC and description in the list
+- [ ] US-CAT-12 · Duplicate, change many items at once, and export
+- [ ] US-CAT-13 · Search, filter and come back to the same catalogue
+- [ ] US-CAT-14 · Make a bundle from items, and see bundles at a glance
+- [ ] US-CAT-15 · See where an item is used, in a drawer that's easy to scan
 
 ## Phase 10 · AI assistant
 

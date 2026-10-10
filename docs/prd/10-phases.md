@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 454 stories.
+Total: 460 stories.
 
 ## Phase 0 · Foundation
 
@@ -805,6 +805,15 @@ Total: 454 stories.
 - US-MTG-15 · Get to a meeting or a contact from the sidebar lists (P2)
 - US-MTG-16 · Come back to the same calendar view and date (P2)
 - US-MTG-17 · Use the calendar on any screen size (P2)
+
+*Catalogue*
+
+- US-CAT-10 · Spot items that need setup from the stat cards (P2)
+- US-CAT-11 · Read an item's tax, HSN/SAC and description in the list (P2)
+- US-CAT-12 · Duplicate, change many items at once, and export (P2)
+- US-CAT-13 · Search, filter and come back to the same catalogue (P2)
+- US-CAT-14 · Make a bundle from items, and see bundles at a glance (P2)
+- US-CAT-15 · See where an item is used, in a drawer that's easy to scan (P2)
 
 ## Phase 10 · AI assistant
 
