@@ -463,6 +463,16 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-CAT-13 · Search, filter and come back to the same catalogue
 - [x] US-CAT-14 · Make a bundle from items, and see bundles at a glance
 - [x] US-CAT-15 · See where an item is used, in a drawer that's easy to scan
+- [ ] US-QUO-27 · See open, expiring and won quotes at a glance
+- [ ] US-QUO-28 · Search, filter and come back to the same quotes list
+- [ ] US-QUO-29 · Read a quote's progress in the list, and act on it from the row
+- [ ] US-QUO-30 · Give a quote a title
+- [ ] US-QUO-31 · See a quote at a glance, with one next step
+- [ ] US-QUO-32 · Follow what happened to a quote
+- [ ] US-QUO-33 · Get to a quote's lead, versions, job and invoices
+- [ ] US-QUO-34 · Build a quote in compact rows
+- [ ] US-QUO-35 · Save, preview and send from a bar that stays in view
+- [ ] US-QUO-36 · Start a quote valid for my usual number of days
 
 ## Phase 10 · AI assistant
 

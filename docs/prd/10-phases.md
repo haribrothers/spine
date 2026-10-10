@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 460 stories.
+Total: 470 stories.
 
 ## Phase 0 · Foundation
 
@@ -814,6 +814,19 @@ Total: 460 stories.
 - US-CAT-13 · Search, filter and come back to the same catalogue (P2)
 - US-CAT-14 · Make a bundle from items, and see bundles at a glance (P2)
 - US-CAT-15 · See where an item is used, in a drawer that's easy to scan (P2)
+
+*Quotes*
+
+- US-QUO-27 · See open, expiring and won quotes at a glance (P2)
+- US-QUO-28 · Search, filter and come back to the same quotes list (P2)
+- US-QUO-29 · Read a quote's progress in the list, and act on it from the row (P2)
+- US-QUO-30 · Give a quote a title (P2)
+- US-QUO-31 · See a quote at a glance, with one next step (P2)
+- US-QUO-32 · Follow what happened to a quote (P2)
+- US-QUO-33 · Get to a quote's lead, versions, job and invoices (P2)
+- US-QUO-34 · Build a quote in compact rows (P2)
+- US-QUO-35 · Save, preview and send from a bar that stays in view (P2)
+- US-QUO-36 · Start a quote valid for my usual number of days (P2)
 
 ## Phase 10 · AI assistant
 
