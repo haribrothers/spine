@@ -505,7 +505,7 @@ Decision: D-216
 Decision: D-216
 
 **Acceptance criteria**
-- **Given** any demo, **when** it's loaded, **then** goods (materials, fixtures, hardware) post to 4000 Sales — Goods, so "No income account" counts only the services, which post to 4100.
+- **Given** any demo, **when** it's loaded, **then** goods (materials, fixtures, hardware) post to 4000 Sales — Goods, so "No income account" counts only the services, which post to 4100 (a professional practice sells only services).
 - **Given** the catalogue, **when** I open Bundles, **then** the demo has two bundles made from its items, offered in a quote's line picker.
 - **Given** the calendar, **when** it opens, **then** meetings start at different times of day, at least three fall in the next two weeks (one tomorrow), and the mini calendar and "Upcoming" show them.
 

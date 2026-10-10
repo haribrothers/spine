@@ -45,11 +45,16 @@ export const TRADES: IndustryPack = {
     overseas: { title: "Overseas enquiry", value: 0, stage: "lost", source: "Website", activity: { type: "note", notes: "Outside our service area.", dueInDays: -30 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Annual maintenance contract — renewal.", terms: "Billed yearly in advance. Valid for 30 days.", lines: [["amc", 1], ["callout", 4]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Second production line — bulk pricing on cable and boards.", lines: [["cable", 2500, 30], ["dbboard", 12, 30], ["electrician", 120]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Science block — replace hot water lines.", terms: "Work during the school holidays.", lines: [["pipes", 260], ["plumber", 60]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "House rewiring — revised to add the kitchen; see the latest version.", lines: [["rewire", 4], ["dbboard", 1], ["callout", 1]], outcome: "revised" },
-    { slot: "sez", validUntilInDays: 10, notes: "Server room cooling — pending the heat-load survey.", lines: [["acunit", 4], ["acinstall", 4]], outcome: "draft" },
+    { slot: "anchor", title: "Maintenance contract renewal", validUntilInDays: 30, notes: "Annual maintenance contract — renewal.", terms: "Billed yearly in advance. Valid for 30 days.", lines: [["amc", 1], ["callout", 4]], outcome: "sent" },
+    { slot: "regional", title: "Second production line", validUntilInDays: 21, notes: "Second production line — bulk pricing on cable and boards.", lines: [["cable", 2500, 30], ["dbboard", 12, 30], ["electrician", 120]], outcome: "draft" },
+    { slot: "institution", title: "Science block hot water", validUntilInDays: 14, notes: "Science block — replace hot water lines.", terms: "Work during the school holidays.", lines: [["pipes", 260], ["plumber", 60]], outcome: "sent" },
+    { slot: "consumer", title: "House rewiring", validUntilInDays: 45, notes: "House rewiring — revised to add the kitchen; see the latest version.", lines: [["rewire", 4], ["dbboard", 1], ["callout", 1]], outcome: "revised" },
+    { slot: "sez", title: "Server room cooling", validUntilInDays: 10, notes: "Server room cooling — pending the heat-load survey.", lines: [["acunit", 4], ["acinstall", 4]], outcome: "draft" },
+  ],
+  lostLead: { title: "Second factory rewire — tender", value: 45000, lines: [["rewire", 30], ["dbboard", 4], ["cable", 800]], note: "Another contractor quoted lower." },
+  bundles: [
+    { name: "Split AC fitted", description: "An inverter split AC, installed, with the first call-out.", items: [["acunit", 1], ["acinstall", 1], ["callout", 1]] },
+    { name: "Room rewire", description: "Rewiring one room with cable and an electrician's time.", items: [["rewire", 1], ["cable", 50], ["electrician", 4]] },
   ],
   invoices: {
     inv01: { notes: "Office tower — AC servicing, first quarter.", lines: [["amc", 1]] },

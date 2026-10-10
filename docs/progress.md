@@ -482,10 +482,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-JOB-36 · Browse, upload and group site photos
 - [x] US-JOB-37 · Follow what happened on a job
 - [x] US-JOB-38 · Show real site photos in the demo
-- [ ] US-ONB-24 · Explore a pipeline that's being worked
-- [ ] US-ONB-25 · Explore quotes at every stage
-- [ ] US-ONB-26 · Explore jobs that need something
-- [ ] US-ONB-27 · Explore a catalogue and calendar that look kept
+- [x] US-ONB-24 · Explore a pipeline that's being worked
+- [x] US-ONB-25 · Explore quotes at every stage
+- [x] US-ONB-26 · Explore jobs that need something
+- [x] US-ONB-27 · Explore a catalogue and calendar that look kept
 
 ## Phase 10 · AI assistant
 

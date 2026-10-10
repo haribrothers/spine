@@ -1,7 +1,7 @@
 import { gstinCheckCharacter } from "../tax/gst.ts";
 import type { GstTreatment } from "../tax/gst.ts";
 import type { TaxCountry } from "../tax/presets/types.ts";
-import type { DemoCountry, DemoIndustry, DemoPlan, DemoPlanContact, DemoPlanLine, DemoPlanMilestone, DemoTax, DemoTaxRef } from "./types.ts";
+import type { DemoCountry, DemoIndustry, DemoPlan, DemoPlanContact, DemoPlanLead, DemoPlanLine, DemoPlanMilestone, DemoPlanQuote, DemoTax, DemoTaxRef } from "./types.ts";
 
 /**
  * US-ONB-18 (D-192) — a demo business is an industry pack written once,
@@ -77,7 +77,12 @@ export interface IndustryPack {
   inLegalName: string;
   items: IndustryItem[];
   leads: Record<CustomerSlot, { title: string; value: number; stage: "new" | "qualified" | "proposal" | "won" | "lost"; source: string; activity: { type: "call" | "meeting" | "note" | "task"; notes: string; dueInDays: number } }>;
-  quotes: { slot: CustomerSlot; validUntilInDays: number; notes: string; terms?: string; lines: IndustryLine[]; outcome: "draft" | "sent" | "revised" }[];
+  /** In timeline order (QUOTE_TIMELINE): anchor, regional, institution, consumer, and the SEZ or overseas client. */
+  quotes: { slot: CustomerSlot; title: string; validUntilInDays: number; notes: string; terms?: string; lines: IndustryLine[]; outcome: "draft" | "sent" | "revised" }[];
+  /** US-ONB-24 — a tender the regional customer gave to someone else on price, with its declined quote. */
+  lostLead: { title: string; value: number; lines: IndustryLine[]; note: string };
+  /** US-ONB-27 */
+  bundles: { name: string; description: string; items: [string, number][] }[];
   /** Lines and notes for each invoice of the timeline, by key. */
   invoices: Record<InvoiceKey, { notes: string; lines: IndustryLine[] }>;
   jobs?: { a: IndustryJob; b: IndustryJob; c: IndustryJob; releaseRetention: boolean };
@@ -141,15 +146,44 @@ export const EXPENSE_TIMELINE = [
 export type ExpenseKey = (typeof EXPENSE_TIMELINE)[number]["key"];
 
 /**
+ * US-ONB-25 (D-216) — what happens to each pack quote, by position: the
+ * first went out weeks ago and has expired; the second (the regional
+ * customer's, whose lead is won) was accepted this month; the third
+ * expires this week; the fourth was revised; the fifth is a draft.
+ */
+const QUOTE_TIMELINE: Partial<DemoPlanQuote>[] = [
+  { outcome: "sent", sentInDays: -40, validUntilInDays: -5, views: { count: 2, lastInDays: -31 } },
+  { outcome: "accepted", sentInDays: -6, views: { count: 1, lastInDays: -5 }, respondedInDays: -1, thisMonth: true, comment: "Go ahead — please book the work in." },
+  { outcome: "sent", sentInDays: -18, validUntilInDays: 5, views: { count: 3, lastInDays: -2 } },
+  { outcome: "revised", sentInDays: -30, revisedInDays: -9, views: { count: 1, lastInDays: -26 } },
+  {},
+];
+
+/** US-ONB-24 — days in stage by stage; won leads closed at these ages in turn. */
+const DAYS_IN_STAGE = { new: 3, qualified: 10, proposal: 18, lost: 40 } as const;
+const WON_AGES = [6, 34, 62, 95, 140, 170];
+const EXPECTED_CLOSE = { new: 50, qualified: 30, proposal: 12 } as const;
+/** US-ONB-27 — meetings start at different times of day, in the pack's order. */
+const MEETING_TIMES = ["10:00", "15:30", "11:00", "08:30", "14:00"];
+
+/**
  * Job A has just started, its first milestone due this week (so the field
  * app's Today has a job, US-MOB-03); B is half invoiced; C is finished.
  * Milestone invoices are paid after the days given.
  */
 const JOB_TIMELINE = {
-  a: { start: -10, due: [4, 35, 60], invoice: [undefined, undefined, undefined], paidAfter: [undefined, undefined, undefined] },
-  b: { start: -80, due: [-64, -20, 20], invoice: [-64, -20, undefined], paidAfter: [20, undefined, undefined] },
-  c: { start: -170, due: [-160, -130, -100], invoice: [-160, -130, -100], paidAfter: [15, 20, 25] },
+  a: { start: -10, due: [4, 35, 60], invoice: [undefined, undefined, undefined], complete: [undefined, undefined, undefined], paidAfter: [undefined, undefined, undefined] },
+  // US-ONB-26: B's second milestone is done and waiting to be invoiced.
+  b: { start: -80, due: [-64, -20, 20], invoice: [-64, undefined, undefined], complete: [undefined, -20, undefined], paidAfter: [20, undefined, undefined] },
+  c: { start: -170, due: [-160, -130, -100], invoice: [-160, -130, -100], complete: [undefined, undefined, undefined], paidAfter: [15, 20, 25] },
 } as const;
+
+/** US-ONB-25, US-ONB-26 (D-216) — each job's end, budget and progress; A comes from an accepted contract quote, C is finished. */
+const JOB_STATE: Record<"a" | "b" | "c", { end: number; budget: "near" | number; percentComplete?: number; completed?: boolean; fromQuote?: { sentInDays: number; viewedInDays: number; respondedInDays: number } }> = {
+  a: { end: 75, budget: "near", fromQuote: { sentInDays: -16, viewedInDays: -15, respondedInDays: -12 } },
+  b: { end: 30, budget: 0.75, percentComplete: 60 },
+  c: { end: -95, budget: 0.7, completed: true },
+};
 
 /* ---------------------------- country packs ---------------------------- */
 
@@ -233,6 +267,16 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
   const domain = `${slug(businessName)}.example`;
 
   const customerKeys = (Object.keys(country.customers) as CustomerSlot[]).filter((slot) => slot !== "overseas" || pack.exports);
+  const leadValue = (value: number) => price(value, Math.round((value * 30) / 1000) * 1000);
+  // US-ONB-24: open leads alternate between the owner and the demo Staff person; won leads closed at different ages.
+  let openIndex = 0;
+  let wonIndex = 0;
+  const worked = (slot: CustomerSlot, lead: IndustryPack["leads"][CustomerSlot]): DemoPlanLead => {
+    const base = { stage: lead.stage, value: leadValue(lead.value), title: lead.title, source: lead.source };
+    if (lead.stage === "won") return { ...base, owner: "owner", daysInStage: WON_AGES[wonIndex++ % WON_AGES.length] };
+    if (lead.stage === "lost") return { ...base, owner: "owner", daysInStage: DAYS_IN_STAGE.lost, lostReason: "other", lostNote: lead.activity.notes };
+    return { ...base, owner: openIndex++ % 2 === 0 ? "staff" : "owner", daysInStage: DAYS_IN_STAGE[lead.stage], expectedCloseInDays: EXPECTED_CLOSE[lead.stage], ...(slot === "consumer" ? { cold: true } : {}) };
+  };
   const contacts: DemoPlanContact[] = customerKeys.map((slot) => {
     const who = country.customers[slot];
     const lead = pack.leads[slot];
@@ -250,8 +294,9 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
       ...(india ? { gstTreatment: who.gstTreatment, stateCode: who.place.stateCode } : {}),
       person: { name: who.person.name, title: who.person.title, email: who.isCompany ? personEmail(who.person.name, companyDomain) : email, phone: who.phone },
       address: { line1: who.place.line1, city: who.place.city, state: who.place.state, ...(who.place.stateCode ? { stateCode: who.place.stateCode } : {}), postalCode: who.place.postalCode, country: who.place.country },
-      lead: { stage: lead.stage, value: price(lead.value, Math.round((lead.value * 30) / 1000) * 1000), title: lead.title, source: lead.source },
+      lead: worked(slot, lead),
       activity: lead.activity,
+      ...(slot === "regional" ? { lostLead: { stage: "lost" as const, value: leadValue(pack.lostLead.value), title: pack.lostLead.title, source: "Tender", owner: "owner" as const, daysInStage: 21, lostReason: "price" as const, lostNote: pack.lostLead.note } } : {}),
     };
   });
   for (const slot of Object.keys(pack.vendors) as VendorSlot[]) {
@@ -285,6 +330,7 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     price: price(item.price, item.in.price),
     tax: india ? gstTax(item.in.slab) : (countryTax(country, item.roleIn?.[country.country] ?? item.role ?? "standard", item.service) ?? { intra: null, supplyClass: "zero_rated" as const }),
     ...(india ? { hsnSac: item.in.hsnSac } : {}),
+    income: item.service ? ("services" as const) : ("goods" as const),
   }));
   const itemByKey = new Map(pack.items.map((i) => [i.key, i]));
   /** Outside India, a line to the overseas client carries the export tax. */
@@ -340,6 +386,7 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
             amount,
             dueInDays: timing.due[i]!,
             ...(timing.invoice[i] !== undefined ? { invoiceInDays: timing.invoice[i] } : {}),
+            ...(timing.complete[i] !== undefined ? { completeInDays: timing.complete[i] } : {}),
             ...(timing.paidAfter[i] !== undefined ? { paidAfterDays: timing.paidAfter[i] } : {}),
           })),
           // Not in India: GSTR-1 would count a retention-release invoice as a supply of its own (Q-21).
@@ -347,6 +394,11 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
           milestoneTax: india ? { tax: gstTax(18), hsnSac: job.sac } : { tax: countryTax(country, "standard", false) ?? { intra: null, supplyClass: "zero_rated" as const } },
           note: `Kick-off on site at ${siteAddress}. Crew and dates follow the milestones below.`,
           photoCaption: "Site at kick-off.",
+          endInDays: JOB_STATE[key].end,
+          budget: JOB_STATE[key].budget,
+          ...(JOB_STATE[key].percentComplete !== undefined ? { percentComplete: JOB_STATE[key].percentComplete } : {}),
+          ...(JOB_STATE[key].completed ? { completed: true } : {}),
+          ...(JOB_STATE[key].fromQuote ? { fromQuote: { title: job.name, ...JOB_STATE[key].fromQuote } } : {}),
         };
       })
     : [];
@@ -422,23 +474,54 @@ export function localisedPlan(country: CountryPack, pack: IndustryPack): DemoPla
     ordering: "dated",
     contacts,
     items,
-    quotes: pack.quotes.map((q) => ({ contact: q.slot === "overseas" && !pack.exports ? "anchor" : q.slot, validUntilInDays: q.validUntilInDays, notes: q.notes, ...(q.terms ? { terms: q.terms } : {}), lines: lines(q.lines, q.slot), outcome: q.outcome })),
+    quotes: [
+      ...pack.quotes.map((q, i): DemoPlanQuote => ({
+        contact: q.slot === "overseas" && !pack.exports ? "anchor" : q.slot,
+        title: q.title,
+        validUntilInDays: q.validUntilInDays,
+        notes: q.notes,
+        ...(q.terms ? { terms: q.terms } : {}),
+        lines: lines(q.lines, q.slot),
+        outcome: q.outcome,
+        ...QUOTE_TIMELINE[i],
+      })),
+      // US-ONB-25: the lost tender's quote, declined.
+      {
+        contact: "regional",
+        title: pack.lostLead.title,
+        validUntilInDays: -5,
+        notes: `${pack.lostLead.title} — our tender price.`,
+        lines: lines(pack.lostLead.lines, "regional"),
+        outcome: "declined",
+        forLostLead: true,
+        sentInDays: -35,
+        views: { count: 2, lastInDays: -28 },
+        respondedInDays: -21,
+        comment: "Thanks — we've gone with a lower price this time.",
+      },
+    ],
     invoices,
     jobs,
     ...(pack.jobs && pack.variationOrder ? { variationOrder: { job: "a", notes: pack.variationOrder.notes, lines: pack.variationOrder.lines.map(freeLine) } } : {}),
     bills,
     expenses,
     creditNotes: [{ invoice: "inv13", reason: pack.creditNote.reason, lines: [{ line: pack.creditNote.line, quantity: pack.creditNote.quantity }] }],
-    meetings: pack.meetings.map((m) => {
-      const contact = m.slot ? contacts.find((c) => c.key === m.slot) : undefined;
-      return {
-        title: m.title,
-        contact: contact ? contact.key : null,
-        startInDays: m.startInDays,
-        durationHours: m.durationHours,
-        location: m.atSite && contact ? `${contact.address.line1}, ${contact.address.city}` : null,
-        description: m.description,
-      };
-    }),
+    meetings: [
+      ...pack.meetings.map((m, i) => {
+        const contact = m.slot ? contacts.find((c) => c.key === m.slot) : undefined;
+        return {
+          title: m.title,
+          contact: contact ? contact.key : null,
+          startInDays: m.startInDays,
+          startTime: MEETING_TIMES[i % MEETING_TIMES.length],
+          durationHours: m.durationHours,
+          location: m.atSite && contact ? `${contact.address.line1}, ${contact.address.city}` : null,
+          description: m.description,
+        };
+      }),
+      // US-ONB-27: one more in the coming weeks, with the SEZ customer's open lead.
+      { title: `Scoping meeting — ${pack.leads.sez.title}`, contact: "sez", startInDays: 8, startTime: "14:00", durationHours: 1, location: null, description: "Agree the scope and dates before we quote." },
+    ],
+    bundles: pack.bundles,
   };
 }

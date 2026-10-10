@@ -2,19 +2,21 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
-import { asc, eq, inArray } from "drizzle-orm";
-import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLine, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
+import { and, asc, eq, inArray } from "drizzle-orm";
+import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLead, type DemoPlanLine, type DemoPlanQuote, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, addresses, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, jobAssignments, leads, leadStages, meetings as meetingsTable, member, quotes, teamMemberships, user, account } from "../../db/schema";
+import { accounts, activities, addresses, auditLog, catalogItems, contactPersons, contacts, expenseCategories, invoiceLines, invoices, jobAssignments, jobPhotos, leads, leadStages, meetings as meetingsTable, member, milestones as milestonesTable, quoteEvents, quotes, teamMemberships, user, account } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
+import { CatalogBundlesService } from "../catalog/catalog-bundles.service";
 import { LeadStagesService } from "../contacts/lead-stages.service";
 import { MeetingsService } from "../contacts/meetings.service";
 import { CreditNotesService } from "../credit-notes/credit-notes.service";
 import { FilesService } from "../files/files.service";
 import { InvoicesService } from "../invoices/invoices.service";
+import { costByJob } from "../jobs/job-costing.service";
 import { JobsService } from "../jobs/jobs.service";
 import { MilestonesService } from "../jobs/milestones.service";
 import { VariationOrdersService } from "../jobs/variation-orders.service";
@@ -24,6 +26,8 @@ import { PaymentsService } from "../payments/payments.service";
 import { ExpensesService } from "../purchases/expenses.service";
 import { VendorBillsService } from "../purchases/vendor-bills.service";
 import { VendorPaymentsService } from "../purchases/vendor-payments.service";
+import { PublicQuotesService } from "../quotes/public-quotes.service";
+import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
 import { QuotesService } from "../quotes/quotes.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { TaxGroupsService } from "../tax/tax-groups.service";
@@ -58,9 +62,13 @@ interface TaxIds {
   taxGroupId: string | null;
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 export interface SeedResult {
   createdTaxRateIds: string[];
   createdTaxGroupIds: string[];
+  /** US-ONB-27 — bundles carry no demo flag, so the ones made are recorded and deleted with the demo. */
+  createdBundleIds: string[];
   counts: Record<string, number>;
 }
 
@@ -102,6 +110,9 @@ export class DemoSeederService {
     private readonly meetingsService: MeetingsService,
     private readonly filesService: FilesService,
     private readonly teamsService: TeamsService,
+    private readonly catalogBundles: CatalogBundlesService,
+    private readonly publicQuotes: PublicQuotesService,
+    private readonly publicTokens: QuotePublicTokenService,
   ) {}
 
   async run(orgId: string, actorUserId: string, plan: DemoPlan, options: { locked: boolean }): Promise<SeedResult> {
@@ -110,6 +121,16 @@ export class DemoSeederService {
     const today = orgClock().date;
     /** Midnight UTC of a day relative to the organisation's today, which is how dates are stored. */
     const day = (offset: number) => new Date(Date.UTC(+today.slice(0, 4), +today.slice(5, 7) - 1, +today.slice(8, 10) + offset));
+    /** D-216 — a moment `offset` days from now, for timestamps set the way the app would have written them that day. */
+    const when = (offset: number) => new Date(Date.now() + offset * DAY_MS);
+    /** Kept within this month, so it counts as "this month" whatever today's date is. */
+    const thisMonth = (offset: number) => Math.max(offset, -(+today.slice(8, 10) - 1));
+    /** Moves an entity's audit rows (all, or those with the given actions) to a day, as if they'd happened then. */
+    const backdateAudit = async (entityId: string, when: Date, actions?: string[]) =>
+      this.db
+        .update(auditLog)
+        .set({ createdAt: when })
+        .where(and(eq(auditLog.orgId, orgId), eq(auditLog.entityId, entityId), ...(actions ? [inArray(auditLog.action, actions)] : [])));
     const currency = plan.currency.code;
 
     // 1. The business itself.
@@ -129,8 +150,18 @@ export class DemoSeederService {
     const ids = (ref: DemoTaxRef | null | undefined): TaxIds => ({ taxRateId: ref?.rate ? (rates.get(ref.rate)?.id ?? null) : null, taxGroupId: ref?.group ? (groups.get(ref.group)?.id ?? null) : null });
     const percent = (ref: DemoTaxRef | null | undefined) => (ref?.rate ? (rates.get(ref.rate)?.rate ?? 0) : ref?.group ? (groups.get(ref.group)?.rate ?? 0) : 0);
 
+    // The demo Staff and Field people come first, so leads can belong to them (US-ONB-24).
+    count("usersCreated", await this.seedDemoUsers(orgId));
+    const [staff] = await this.db.select({ id: user.id }).from(user).where(inArray(user.email, DEMO_USERS.filter((u) => u.role === "staff").map((u) => u.email)));
+    const ownerOf = (lead: DemoPlanLead) => (lead.owner === "staff" && staff ? staff.id : actorUserId);
+    // US-ONB-27: goods post to 4000 Sales — Goods.
+    const [goodsAccount] = await this.db.select({ id: accounts.id }).from(accounts).where(and(eq(accounts.orgId, orgId), eq(accounts.code, "4000")));
+    const jobContacts = new Set(plan.jobs.map((j) => j.contact));
+
     // 3. Contacts and the catalogue, in one transaction.
     const contactIds = new Map<string, string>();
+    const leadIds = new Map<string, string>();
+    const lostLeadIds = new Map<string, string>();
     const itemIds = new Map<string, string>();
     await this.db.transaction(async (tx) => {
       await this.leadStagesService.ensureSeeded(orgId, tx);
@@ -138,6 +169,50 @@ export class DemoSeederService {
       const open = stages.filter((st) => st.kind === "open");
       const stageIdFor = (stage: NonNullable<DemoPlanContact["lead"]>["stage"]) =>
         stage === "won" || stage === "lost" ? stages.find((st) => st.kind === stage)!.id : (open[{ new: 0, qualified: 1, proposal: 2 }[stage]] ?? open[open.length - 1]!).id;
+      /** The stages a lead went through to reach its own, a week apart. */
+      const stagePath = (stage: DemoPlanLead["stage"]) => {
+        const opens = open.slice(0, Math.min(open.length, stage === "new" ? 1 : stage === "qualified" ? 2 : 3)).map((st) => st.id);
+        return stage === "won" || stage === "lost" ? [...opens, stageIdFor(stage)] : opens.length ? opens : [stageIdFor(stage)];
+      };
+      /** US-ONB-24 — a lead as a team would have worked it: owner, dated stages, expected close, lost reason, and its history. */
+      const insertLead = async (contactId: string, lead: DemoPlanLead) => {
+        const changedAt = when(-(lead.daysInStage ?? 0));
+        const path = stagePath(lead.stage);
+        const createdAt = new Date(changedAt.getTime() - (path.length - 1) * 7 * DAY_MS);
+        const [row] = await tx
+          .insert(leads)
+          .values({
+            orgId,
+            contactId,
+            stageId: path[path.length - 1]!,
+            valueAmount: lead.value,
+            valueCurrency: currency,
+            source: lead.source,
+            title: lead.title,
+            ownerUserId: ownerOf(lead),
+            stageChangedAt: changedAt,
+            expectedCloseDate: lead.expectedCloseInDays === undefined ? null : day(lead.expectedCloseInDays).toISOString().slice(0, 10),
+            lostReason: lead.lostReason ?? null,
+            lostNote: lead.lostNote ?? null,
+            createdAt,
+            updatedAt: changedAt,
+          })
+          .returning();
+        await tx.insert(auditLog).values(
+          path.map((stageId, i) => ({
+            orgId,
+            actorUserId: ownerOf(lead),
+            action: i === 0 ? "created" : "updated",
+            entityType: "lead" as const,
+            entityId: row!.id,
+            contactId,
+            changes: [{ field: "stageId", from: i === 0 ? null : path[i - 1]!, to: stageId }],
+            createdAt: new Date(createdAt.getTime() + i * 7 * DAY_MS),
+          })),
+        );
+        count("leadsCreated");
+        return row!;
+      };
 
       for (const seed of plan.contacts) {
         const [contact] = await tx
@@ -149,19 +224,32 @@ export class DemoSeederService {
         await this.auditLog.record(tx, { orgId, actorUserId, action: "created", entityType: "contact", entityId: contact!.id, contactId: contact!.id, changes: [{ field: "name", from: null, to: contact!.name }] });
         await tx.insert(contactPersons).values({ contactId: contact!.id, name: seed.person.name, title: seed.person.title, email: seed.person.email, phone: seed.person.phone, isPrimary: true });
         await tx.insert(addresses).values({ contactId: contact!.id, type: "billing", line1: seed.address.line1, city: seed.address.city, state: seed.address.state, stateCode: seed.address.stateCode ?? null, postalCode: seed.address.postalCode, country: seed.address.country, isPrimary: true });
-        let leadId: string | null = null;
-        if (seed.lead) {
-          const [lead] = await tx
-            .insert(leads)
-            .values({ orgId, contactId: contact!.id, stageId: stageIdFor(seed.lead.stage), valueAmount: seed.lead.value, valueCurrency: currency, source: seed.lead.source, title: seed.lead.title })
-            .returning();
-          leadId = lead!.id;
-          count("leadsCreated");
+        // US-ONB-26: a customer with a job has its site address too.
+        if (jobContacts.has(seed.key)) {
+          await tx.insert(addresses).values({ contactId: contact!.id, type: "site", line1: seed.address.line1, city: seed.address.city, state: seed.address.state, stateCode: seed.address.stateCode ?? null, postalCode: seed.address.postalCode, country: seed.address.country, isPrimary: false });
         }
+        let lead: { id: string; stageChangedAt: Date; ownerUserId: string | null } | null = null;
+        if (seed.lead) {
+          lead = await insertLead(contact!.id, seed.lead);
+          leadIds.set(seed.key, lead.id);
+        }
+        if (seed.lostLead) lostLeadIds.set(seed.key, (await insertLead(contact!.id, seed.lostLead)).id);
         if (seed.activity) {
           const dueAt = new Date();
           dueAt.setDate(dueAt.getDate() + seed.activity.dueInDays);
-          await tx.insert(activities).values({ orgId, contactId: contact!.id, leadId, type: seed.activity.type, notes: seed.activity.notes, dueAt, doneAt: seed.activity.dueInDays < 0 ? dueAt : null, assignedToUserId: actorUserId, createdByUserId: actorUserId });
+          await tx.insert(activities).values({
+            orgId,
+            contactId: contact!.id,
+            leadId: lead?.id ?? null,
+            type: seed.activity.type,
+            notes: seed.activity.notes,
+            dueAt,
+            doneAt: seed.activity.dueInDays < 0 ? dueAt : null,
+            assignedToUserId: lead?.ownerUserId ?? actorUserId,
+            createdByUserId: actorUserId,
+            // The cold lead's only activity was logged when it last moved, so it shows "No activity for 14 days".
+            ...(seed.lead?.cold && lead ? { createdAt: lead.stageChangedAt } : {}),
+          });
         }
       }
 
@@ -185,6 +273,7 @@ export class DemoSeederService {
             interTaxGroupId: inter.taxGroupId,
             supplyClass: seed.tax.intra ? "taxable" : (seed.tax.supplyClass ?? "zero_rated"),
             hsnSac: seed.hsnSac ?? null,
+            incomeAccountId: seed.income === "goods" ? (goodsAccount?.id ?? null) : null,
             isDemo: true,
           })
           .returning();
@@ -241,27 +330,92 @@ export class DemoSeederService {
         };
       });
 
-    // 4. Quotes — sent today (quotes have no date of their own).
-    for (const seed of plan.quotes) {
+    // US-ONB-27: bundles made from the catalogue's items.
+    const createdBundleIds: string[] = [];
+    for (const seed of plan.bundles) {
+      const bundle = await this.catalogBundles.create(orgId, actorUserId, { name: seed.name, description: seed.description, items: seed.items.map(([key, quantity]) => ({ catalogItemId: itemIds.get(key)!, quantity })) });
+      createdBundleIds.push(bundle.id);
+      count("bundlesCreated");
+    }
+
+    /**
+     * US-ONB-25 (D-216) — a quote sent, viewed and answered as it would
+     * have been: sent through `QuotesService.send`, answered through the
+     * customer's link, then its dates and audit rows moved to the plan's
+     * days and the customer's views added.
+     */
+    const sentOn = async (quoteId: string, offset: number) => {
+      const sentAt = when(offset);
+      await this.db.update(quotes).set({ sentAt, createdAt: new Date(sentAt.getTime() - 60 * 60 * 1000) }).where(eq(quotes.id, quoteId));
+      await backdateAudit(quoteId, sentAt, ["sent"]);
+      await backdateAudit(quoteId, new Date(sentAt.getTime() - 60 * 60 * 1000), ["created", "discount_approved", "revised"]);
+    };
+    const viewed = async (quoteId: string, views: { count: number; lastInDays: number }, sentInDays: number) => {
+      const span = Math.max(views.lastInDays - sentInDays, 0);
+      await this.db.insert(quoteEvents).values(
+        Array.from({ length: views.count }, (_, i) => ({
+          quoteId,
+          orgId,
+          type: "viewed" as const,
+          createdAt: when(views.count === 1 ? views.lastInDays : sentInDays + (span * (i + 1)) / views.count),
+        })),
+      );
+    };
+    const answer = async (quoteId: string, outcome: "accepted" | "declined", offset: number, comment?: string) => {
+      const token = await this.db.transaction((tx) => this.publicTokens.issue(tx, orgId, quoteId));
+      const provenance = { ipAddress: null, userAgent: "Spine demo data" };
+      if (outcome === "accepted") await this.publicQuotes.accept(token.token, comment, provenance);
+      else await this.publicQuotes.reject(token.token, comment, provenance);
+      const respondedAt = when(offset);
+      await this.db.update(quotes).set({ respondedAt }).where(eq(quotes.id, quoteId));
+      await this.db.update(quoteEvents).set({ createdAt: respondedAt }).where(and(eq(quoteEvents.quoteId, quoteId), inArray(quoteEvents.type, ["accepted", "rejected"])));
+    };
+    const runQuote = async (seed: DemoPlanQuote, lines: ReturnType<typeof lineInputs>, leadId: string | null) => {
       const supply = await supplyFor(seed.contact, "sale");
       const quote = await this.quotesService.create(
         orgId,
         actorUserId,
-        { contactId: contactIds.get(seed.contact)!, currency, validUntil: day(seed.validUntilInDays), notes: seed.notes ?? null, termsAndConditions: seed.terms ?? null, lines: lineInputs(seed.lines, supply.supplyType), ...(supply.placeOfSupply ? { placeOfSupply: supply.placeOfSupply } : {}) } as never,
+        {
+          contactId: contactIds.get(seed.contact)!,
+          title: seed.title,
+          leadId,
+          currency,
+          validUntil: day(seed.validUntilInDays),
+          notes: seed.notes ?? null,
+          termsAndConditions: seed.terms ?? null,
+          lines,
+          ...(supply.placeOfSupply ? { placeOfSupply: supply.placeOfSupply } : {}),
+        } as never,
         true,
       );
       count("quotesCreated");
-      if (seed.outcome === "draft") continue;
+      if (seed.outcome === "draft") return quote;
       // A discount over the approval threshold is approved the way an owner would (US-QUO-09).
       if (quote.discountRequiresApproval) await this.quotesService.approveDiscount(orgId, quote.id, actorUserId);
       await this.quotesService.send(orgId, quote.id, actorUserId);
       count("quotesSent");
+      const sentInDays = seed.sentInDays ?? 0;
+      await sentOn(quote.id, sentInDays);
+      if (seed.views) await viewed(quote.id, seed.views, sentInDays);
       if (seed.outcome === "revised") {
         const revision = await this.quotesService.revise(orgId, quote.id, actorUserId);
         await this.quotesService.send(orgId, revision.id, actorUserId);
+        await sentOn(revision.id, seed.revisedInDays ?? 0);
         count("quotesRevised");
         count("quotesSent");
       }
+      if (seed.outcome === "accepted" || seed.outcome === "declined") {
+        const respondedIn = seed.respondedInDays ?? 0;
+        await answer(quote.id, seed.outcome, seed.thisMonth ? thisMonth(respondedIn) : respondedIn, seed.comment);
+        count(seed.outcome === "accepted" ? "quotesAccepted" : "quotesDeclined");
+      }
+      return quote;
+    };
+
+    // 4. Quotes, sent, viewed and answered on their days.
+    for (const seed of plan.quotes) {
+      const supply = await supplyFor(seed.contact, "sale");
+      await runQuote(seed, lineInputs(seed.lines, supply.supplyType), (seed.forLostLead ? lostLeadIds : leadIds).get(seed.contact) ?? null);
     }
 
     // 5. Jobs, before the timeline that invoices their milestones.
@@ -276,11 +430,35 @@ export class DemoSeederService {
     const jobRows = new Map<string, { id: string; name: string; contact: string; milestoneIds: string[]; index: number }>();
     for (const [jobIndex, seed] of plan.jobs.entries()) {
       const photoFileId = photoFor(jobIndex);
+      // US-ONB-25: made from its accepted contract quote — one lump-sum line at the contract value, with the job's milestone tax.
+      let sourceQuoteId: string | undefined;
+      if (seed.fromQuote) {
+        const supply = await supplyFor(seed.contact, "sale");
+        const lump = lineInputs([{ name: `${seed.name} — contract`, quantity: 1, price: seed.contractValue, tax: seed.milestoneTax?.tax ?? null, ...(seed.milestoneTax?.hsnSac ? { hsnSac: seed.milestoneTax.hsnSac } : {}) }], supply.supplyType);
+        const quote = await runQuote(
+          {
+            contact: seed.contact,
+            title: seed.fromQuote.title,
+            validUntilInDays: seed.fromQuote.sentInDays + 30,
+            notes: `${seed.name} — contract price, billed in the milestones agreed.`,
+            lines: [],
+            outcome: "accepted",
+            sentInDays: seed.fromQuote.sentInDays,
+            views: { count: 1, lastInDays: seed.fromQuote.viewedInDays },
+            respondedInDays: seed.fromQuote.respondedInDays,
+            comment: "Signed off — let's start.",
+          },
+          lump,
+          leadIds.get(seed.contact) ?? null,
+        );
+        sourceQuoteId = quote.id;
+      }
       const job = await this.jobsService.create(
         orgId,
         actorUserId,
-        { contactId: contactIds.get(seed.contact)!, name: seed.name, siteAddress: seed.siteAddress, currency, startDate: day(seed.startInDays), endDate: null, contractValueAmount: seed.contractValue, retentionPct: seed.retentionPct, notes: null } as never,
+        { contactId: contactIds.get(seed.contact)!, name: seed.name, siteAddress: seed.siteAddress, currency, startDate: day(seed.startInDays), endDate: day(seed.endInDays), contractValueAmount: seed.contractValue, retentionPct: seed.retentionPct, notes: null } as never,
         true,
+        sourceQuoteId,
       );
       count("jobsCreated");
       await this.jobsService.addNote(orgId, job.id, actorUserId, { body: seed.note });
@@ -291,6 +469,10 @@ export class DemoSeederService {
       const milestones = await this.milestonesService.setAll(orgId, job.id, actorUserId, {
         milestones: seed.milestones.map((m, i) => ({ name: m.name, sequence: i, amountType: m.amountType, amount: m.amount, dueDate: day(m.dueInDays) })),
       } as never);
+      // The job's own story starts on its start day (US-JOB-37).
+      const started = when(seed.startInDays);
+      await backdateAudit(job.id, started);
+      await this.db.update(jobPhotos).set({ createdAt: started }).where(eq(jobPhotos.jobId, job.id));
       jobRows.set(seed.key, { id: job.id, name: seed.name, contact: seed.contact, milestoneIds: milestones.map((m: { id: string }) => m.id), index: jobIndex });
     }
 
@@ -354,12 +536,29 @@ export class DemoSeederService {
 
     for (const seed of plan.jobs) {
       const job = jobRows.get(seed.key)!;
+      /** Completes a milestone on its day: its completion, its photo and their history dated then. */
+      const complete = async (milestoneId: string, i: number, onDay: number | null) => {
+        await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${seed.milestones[i]!.name} — completed on schedule.`, photoFileIds: photoFor(job.index + i + 1) ? [photoFor(job.index + i + 1)!] : [] } as never);
+        if (onDay === null) return;
+        const done = when(onDay);
+        await this.db.update(milestonesTable).set({ completedAt: done }).where(eq(milestonesTable.id, milestoneId));
+        await this.db.update(jobPhotos).set({ createdAt: done }).where(eq(jobPhotos.milestoneId, milestoneId));
+        await backdateAudit(milestoneId, done, ["milestone_completed"]);
+      };
       seed.milestones.forEach((m, i) => {
+        // US-ONB-26: completed, and waiting for the office to invoice it.
+        if (m.completeInDays !== undefined && m.invoiceInDays === undefined) {
+          at(m.completeInDays, async () => {
+            await complete(job.milestoneIds[i]!, i, m.completeInDays ?? null);
+            count("milestonesCompleted");
+          });
+          return;
+        }
         if (m.invoiceInDays === undefined) return;
         const invoiceDay = m.invoiceInDays;
         at(invoiceDay, async () => {
           const milestoneId = job.milestoneIds[i]!;
-          await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${m.name} — completed on schedule.`, photoFileIds: photoFor(job.index + i + 1) ? [photoFor(job.index + i + 1)!] : [] } as never);
+          await complete(milestoneId, i, invoiceDay);
           const draft = await this.milestonesService.invoiceMilestone(orgId, job.id, milestoneId, actorUserId);
           // As a person would: date the milestone's invoice and give its line the job's tax before issuing.
           if (plan.ordering === "dated") {
@@ -372,6 +571,7 @@ export class DemoSeederService {
             } as never);
           }
           await this.invoicesService.issue(orgId, draft.id, actorUserId);
+          if (invoiceDay !== null) await backdateAudit(milestoneId, when(invoiceDay), ["milestone_invoiced"]);
           count("milestonesInvoiced");
           if (m.paidAfterDays !== undefined) {
             const paidOn = (invoiceDay ?? 0) + m.paidAfterDays;
@@ -477,6 +677,22 @@ export class DemoSeederService {
     }
     for (const draft of drafts) await draft();
 
+    // US-ONB-26: cost budgets (the newest job near what it has cost so far), % complete, and the finished job closed.
+    const costs = await costByJob(this.db, [...jobRows.values()].map((j) => j.id));
+    for (const seed of plan.jobs) {
+      const job = jobRows.get(seed.key)!;
+      const whole = (minor: bigint) => (minor / 100n) * 100n;
+      const cost = costs.get(job.id) ?? 0n;
+      const budget =
+        seed.budget === undefined ? undefined : seed.budget === "near" ? whole(cost > 0n ? (cost * 100n) / 85n : (seed.contractValue * 6n) / 10n) : whole((seed.contractValue * BigInt(Math.round(seed.budget * 100))) / 100n);
+      await this.jobsService.update(orgId, job.id, actorUserId, {
+        ...(budget !== undefined ? { costBudgetAmount: budget } : {}),
+        ...(seed.percentComplete !== undefined ? { percentComplete: seed.percentComplete } : {}),
+        ...(seed.completed ? { status: "completed" as const } : {}),
+      });
+      if (seed.completed) await backdateAudit(job.id, when(seed.endInDays), ["updated"]);
+    }
+
     // 7. A variation order on the newest job, sent and waiting for the customer.
     if (plan.variationOrder) {
       const job = jobRows.get(plan.variationOrder.job)!;
@@ -484,7 +700,8 @@ export class DemoSeederService {
       const orders = await this.variationOrdersService.create(orgId, actorUserId, job.id, { currency, notes: plan.variationOrder.notes, lines: lineInputs(plan.variationOrder.lines, supply.supplyType) } as never);
       const order = orders[orders.length - 1];
       if (order) {
-        await this.db.update(quotes).set({ isDemo: true }).where(eq(quotes.id, order.quoteId));
+        // US-ONB-25: every demo quote has a title.
+        await this.db.update(quotes).set({ isDemo: true, title: `Variation — ${job.name}` }).where(eq(quotes.id, order.quoteId));
         await this.quotesService.send(orgId, order.quoteId, actorUserId);
         count("variationOrdersCreated");
       }
@@ -529,16 +746,15 @@ export class DemoSeederService {
     for (const seed of plan.meetings) {
       const startAt = new Date();
       startAt.setDate(startAt.getDate() + seed.startInDays);
-      startAt.setHours(9, 0, 0, 0);
+      // US-ONB-27: at the plan's time of day.
+      const [hours, minutes] = (seed.startTime ?? "09:00").split(":").map(Number);
+      startAt.setHours(hours ?? 9, minutes ?? 0, 0, 0);
       const endAt = new Date(startAt);
       endAt.setHours(endAt.getHours() + seed.durationHours);
       const meeting = await this.meetingsService.create(orgId, actorUserId, { contactId: seed.contact ? contactIds.get(seed.contact)! : null, title: seed.title, startAt, endAt, location: seed.location, description: seed.description } as never);
       await this.db.update(meetingsTable).set({ isDemo: true }).where(eq(meetingsTable.id, meeting!.id));
       count("meetingsCreated");
     }
-
-    // 10. The demo Staff and Field people.
-    count("usersCreated", await this.seedDemoUsers(orgId));
 
     // 11. US-MOB-04 — the demo Field person is on every demo job's crew, so
     // the field app has jobs to show. Written directly: nobody needs telling.
@@ -550,7 +766,7 @@ export class DemoSeederService {
     if (crew.length) await this.db.insert(jobAssignments).values(crew);
     count("crewAssignmentsCreated", crew.length);
 
-    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, counts };
+    return { createdTaxRateIds: created.rateIds, createdTaxGroupIds: created.groupIds, createdBundleIds, counts };
   }
 
   /** A business without records of its own takes the demo's identity (D-192); its own profile and registration win when set. */

@@ -44,11 +44,16 @@ export const CONSTRUCTION: IndustryPack = {
     overseas: { title: "Overseas enquiry", value: 0, stage: "lost", source: "Website", activity: { type: "note", notes: "Out of our area.", dueInDays: -20 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Car park resurfacing and line marking — phase 2.", terms: "30% advance, balance on completion. Prices valid for 30 days.", lines: [["civil", 320], ["rmc", 45], ["cleanup", 1]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Mezzanine floor — bulk materials pricing.", lines: [["steel", 8000, 30], ["rmc", 60, 30], ["civil", 400]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Ward refurbishment — tiling and painting.", terms: "Prices valid for 14 days. Work out of hours to keep wards open.", lines: [["tiling", 420], ["painting", 900], ["pm", 40]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Ground-floor extension — revised after the site visit; see the latest version.", lines: [["survey", 1], ["civil", 260], ["cement", 120], ["tiling", 40]], outcome: "revised" },
-    { slot: "sez", validUntilInDays: 10, notes: "Data hall civil works — pending their load drawings.", lines: [["civil", 180], ["excavator", 4]], outcome: "draft" },
+    { slot: "anchor", title: "Car park resurfacing — phase 2", validUntilInDays: 30, notes: "Car park resurfacing and line marking — phase 2.", terms: "30% advance, balance on completion. Prices valid for 30 days.", lines: [["civil", 320], ["rmc", 45], ["cleanup", 1]], outcome: "sent" },
+    { slot: "regional", title: "Mezzanine floor", validUntilInDays: 21, notes: "Mezzanine floor — bulk materials pricing.", lines: [["steel", 8000, 30], ["rmc", 60, 30], ["civil", 400]], outcome: "draft" },
+    { slot: "institution", title: "Ward refurbishment", validUntilInDays: 14, notes: "Ward refurbishment — tiling and painting.", terms: "Prices valid for 14 days. Work out of hours to keep wards open.", lines: [["tiling", 420], ["painting", 900], ["pm", 40]], outcome: "sent" },
+    { slot: "consumer", title: "Ground-floor extension", validUntilInDays: 45, notes: "Ground-floor extension — revised after the site visit; see the latest version.", lines: [["survey", 1], ["civil", 260], ["cement", 120], ["tiling", 40]], outcome: "revised" },
+    { slot: "sez", title: "Data hall civil works", validUntilInDays: 10, notes: "Data hall civil works — pending their load drawings.", lines: [["civil", 180], ["excavator", 4]], outcome: "draft" },
+  ],
+  lostLead: { title: "Cold store extension — tender", value: 180000, lines: [["civil", 300], ["rmc", 40], ["steel", 6000]], note: "Lost to a lower bid, about 8% under ours." },
+  bundles: [
+    { name: "Bathroom refurbishment", description: "Tiling, painting and the labour to fit them, for one bathroom.", items: [["tiling", 20], ["painting", 40], ["civil", 24]] },
+    { name: "Slab pour", description: "Concrete, reinforcement and crew for a 12 m³ slab.", items: [["rmc", 12], ["steel", 900], ["civil", 16]] },
   ],
   invoices: {
     inv01: { notes: "Office block — foundation materials.", lines: [["cement", 600], ["steel", 9000]] },

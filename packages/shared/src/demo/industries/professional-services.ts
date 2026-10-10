@@ -43,11 +43,16 @@ export const PROFESSIONAL_SERVICES: IndustryPack = {
     overseas: { title: "Market-entry advisory", value: 20000, stage: "won", source: "Referral", activity: { type: "call", notes: "Monthly update to the client's board.", dueInDays: 5 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Advisory retainer — next 12 months.", terms: "Billed monthly in advance. Valid for 30 days.", lines: [["retainer", 12]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Payroll for three more branches — volume pricing.", lines: [["payroll", 36, 30], ["bookkeeping", 12, 30], ["advisory", 6]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Finance training for the board and managers.", terms: "Two workshops, dates to agree.", lines: [["training", 2], ["advisory", 4]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Personal tax — revised to add the rental property; see the latest version.", lines: [["taxreturn", 1], ["advisory", 3]], outcome: "revised" },
-    { slot: "overseas", validUntilInDays: 10, notes: "Entity set-up advice — pending the client's structure chart.", lines: [["advisory", 24], ["secretarial", 1]], outcome: "draft" },
+    { slot: "anchor", title: "Advisory retainer — 12 months", validUntilInDays: 30, notes: "Advisory retainer — next 12 months.", terms: "Billed monthly in advance. Valid for 30 days.", lines: [["retainer", 12]], outcome: "sent" },
+    { slot: "regional", title: "Payroll for three branches", validUntilInDays: 21, notes: "Payroll for three more branches — volume pricing.", lines: [["payroll", 36, 30], ["bookkeeping", 12, 30], ["advisory", 6]], outcome: "draft" },
+    { slot: "institution", title: "Board finance training", validUntilInDays: 14, notes: "Finance training for the board and managers.", terms: "Two workshops, dates to agree.", lines: [["training", 2], ["advisory", 4]], outcome: "sent" },
+    { slot: "consumer", title: "Personal tax return", validUntilInDays: 45, notes: "Personal tax — revised to add the rental property; see the latest version.", lines: [["taxreturn", 1], ["advisory", 3]], outcome: "revised" },
+    { slot: "overseas", title: "Entity set-up advice", validUntilInDays: 10, notes: "Entity set-up advice — pending the client's structure chart.", lines: [["advisory", 24], ["secretarial", 1]], outcome: "draft" },
+  ],
+  lostLead: { title: "Group audit — tender", value: 22000, lines: [["audit", 1], ["advisory", 20]], note: "Our fee came in above their budget." },
+  bundles: [
+    { name: "Small business compliance", description: "A year of bookkeeping, the tax return and company secretarial work.", items: [["bookkeeping", 12], ["taxreturn", 1], ["secretarial", 1]] },
+    { name: "Payroll set-up", description: "A year of payroll with set-up advice.", items: [["payroll", 12], ["advisory", 4]] },
   ],
   invoices: {
     inv01: { notes: "Statutory audit — last financial year.", lines: [["audit", 1]] },

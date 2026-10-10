@@ -80,6 +80,17 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — Demo data that shows the refined screens (US-ONB-24 to US-ONB-27, D-216)
+
+Every demo — Riverstone Builders and each industry × country — is brought up to the refinements, still through the real services, with past dates written the way the app would have written them (audit trail included). The dev seed (`pnpm db:seed:dev`) is unchanged: it still creates only the owner, the organisation and its accounts.
+
+- **Pipeline (US-ONB-24):** the demo Staff and Field people are created first, so open leads belong to the owner and Sarah Mendes (Staff); each has spent its own time in its stage, has an expected close date and a dated stage history (created, then each stage a week apart); one has gone cold ("No activity for 19 days"); won leads closed at different ages; each demo has one lead lost on price, with a note (industry demos: a tender lost by the regional customer).
+- **Quotes (US-ONB-25):** every quote has a title; sent quotes went out on different days and the customer has viewed some (`quote_events`); one expires this week and one has expired; one was accepted this month and one declined with a comment, through the customer's link; quotes link to their leads; the newest job was made from an accepted contract quote (one lump-sum line at its contract value), so it says "From QUO-…" and the quote says "Converted to a job".
+- **Jobs (US-ONB-26):** every job has an end date and a cost budget, the newest near it; the job in progress has a completed milestone waiting to be invoiced and a % complete estimate; the finished job is Completed; milestones, photos and the job's history carry their own dates; customers with a job have a site address.
+- **Catalogue and calendar (US-ONB-27):** goods post to 4000 Sales — Goods; each demo has two bundles (recorded with the demo and deleted with it); meetings start at different times, with three or more in the next two weeks.
+- **Fixes:** a tax group's rates now always read in the same order (plain before compound, then by name — "CGST (9%) + SGST (9%)"), where it used to depend on the database; `POST /quotes/preview-pdf` is listed with the routes that take no Idempotency-Key (it writes nothing).
+- **Tests:** `us-onb-24-27` shared (all 35 demos, Riverstone included) and API integration (Riverstone, India construction, UK IT services); US-ONB-18's quote-states check includes accepted and declined; the Job Profitability, US-CRM-19 and US-JOB-31 E2E follow the new demo (the finished job is completed; leads have owners; the demo has a milestone ready to bill). QA script section 208.
+
 ### 2026-10-11 — Jobs you can run from one place (US-JOB-30 to US-JOB-38, D-215)
 
 - **New job (US-JOB-30):** "New job" in the Jobs toolbar and empty state opens a drawer: Contact, Job name, Site address (filled from the contact's site address, else its billing address), Currency, Contract value, Retention %, Start and End dates and Notes. "Start from an accepted quote" converts one of the accepted quotes that has no job yet, with the repeat-conversion warning. The new job opens on Milestones ("Set up how this job is billed", "Add milestones") with "Job JOB-007 created". `POST /jobs` refuses an end date before the start ("End the job on or after its start date.").

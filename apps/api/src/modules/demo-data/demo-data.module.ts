@@ -11,12 +11,13 @@ import { TaxModule } from "../tax/tax.module";
 import { PurchasesModule } from "../purchases/purchases.module";
 import { FilesModule } from "../files/files.module";
 import { TeamsModule } from "../teams/teams.module";
+import { CatalogModule } from "../catalog/catalog.module";
 import { DemoDataController } from "./demo-data.controller";
 import { DemoDataService } from "./demo-data.service";
 import { DemoSeederService } from "./demo-seeder.service";
 
 @Module({
-  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, CreditNotesModule, ContactsModule, JobsModule, OrgModule, TaxModule, PurchasesModule, FilesModule, TeamsModule],
+  imports: [AuditModule, QuotesModule, InvoicesModule, PaymentsModule, CreditNotesModule, ContactsModule, JobsModule, OrgModule, TaxModule, PurchasesModule, FilesModule, TeamsModule, CatalogModule],
   controllers: [DemoDataController],
   providers: [DemoDataService, DemoSeederService],
   exports: [DemoDataService],

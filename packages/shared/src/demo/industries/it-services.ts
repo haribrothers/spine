@@ -42,11 +42,16 @@ export const IT_SERVICES: IndustryPack = {
     overseas: { title: "Booking engine integration", value: 30000, stage: "won", source: "Upwork", activity: { type: "call", notes: "Weekly call with the client's CTO.", dueInDays: 5 } },
   },
   quotes: [
-    { slot: "anchor", validUntilInDays: 30, notes: "Phase 2 — mobile app for the customer portal.", terms: "Billed monthly for hours worked. Valid for 30 days.", lines: [["discovery", 1], ["dev", 320], ["design", 80]], outcome: "sent" },
-    { slot: "regional", validUntilInDays: 21, notes: "Laptops and licences for the new store team — volume pricing.", lines: [["laptop", 15, 30], ["licence", 15, 30], ["dev", 16]], outcome: "draft" },
-    { slot: "institution", validUntilInDays: 14, notes: "Support retainer for the booking app, 12 months.", terms: "Billed monthly in advance.", lines: [["support", 12], ["hosting", 12]], outcome: "sent" },
-    { slot: "consumer", validUntilInDays: 45, notes: "Portfolio website — revised with a blog; see the latest version.", lines: [["design", 16], ["dev", 30], ["hosting", 12]], outcome: "revised" },
-    { slot: "overseas", validUntilInDays: 10, notes: "Channel manager integration — pending their API access.", lines: [["dev", 120], ["support", 3]], outcome: "draft" },
+    { slot: "anchor", title: "Customer portal — mobile app", validUntilInDays: 30, notes: "Phase 2 — mobile app for the customer portal.", terms: "Billed monthly for hours worked. Valid for 30 days.", lines: [["discovery", 1], ["dev", 320], ["design", 80]], outcome: "sent" },
+    { slot: "regional", title: "Store laptops and licences", validUntilInDays: 21, notes: "Laptops and licences for the new store team — volume pricing.", lines: [["laptop", 15, 30], ["licence", 15, 30], ["dev", 16]], outcome: "draft" },
+    { slot: "institution", title: "Booking app support retainer", validUntilInDays: 14, notes: "Support retainer for the booking app, 12 months.", terms: "Billed monthly in advance.", lines: [["support", 12], ["hosting", 12]], outcome: "sent" },
+    { slot: "consumer", title: "Portfolio website", validUntilInDays: 45, notes: "Portfolio website — revised with a blog; see the latest version.", lines: [["design", 16], ["dev", 30], ["hosting", 12]], outcome: "revised" },
+    { slot: "overseas", title: "Channel manager integration", validUntilInDays: 10, notes: "Channel manager integration — pending their API access.", lines: [["dev", 120], ["support", 3]], outcome: "draft" },
+  ],
+  lostLead: { title: "Loyalty app — pitch", value: 40000, lines: [["discovery", 1], ["design", 60], ["dev", 200]], note: "Went with an offshore team at a lower day rate." },
+  bundles: [
+    { name: "Website starter", description: "Design, a fixed-price site and a year of hosting.", items: [["design", 16], ["website", 1], ["hosting", 12]] },
+    { name: "New starter kit", description: "A laptop, its software licence and a month of support.", items: [["laptop", 1], ["licence", 1], ["support", 1]] },
   ],
   invoices: {
     inv01: { notes: "Customer portal — discovery workshop.", lines: [["discovery", 1]] },

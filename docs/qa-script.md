@@ -4789,6 +4789,20 @@ Use an owner on a business with demo data, a Staff member without `reports.view_
    - The field app's jobs, milestones and photos are unchanged; a photo taken with a milestone on the phone shows under that milestone on the web (US-MOB-04 to US-MOB-07).
    - Switching Jobs & field off and on keeps the job page (US-SET-25).
 
+## 208. Demo data that shows the refined screens (US-ONB-24 to US-ONB-27, refinements before Phase 10)
+
+Load Riverstone Builders (the default), then delete it and load India · Construction and United Kingdom · IT services & agency in turn (Settings › Data). Repeat the checks for each.
+
+1. **Pipeline (US-ONB-24):** cards carry two owners' initials (the owner's and Sarah Mendes's); the Owner filter narrows to each. Days in stage differ ("3 days in stage" … "24 days in stage"); exactly one open lead says "No activity for 1x days". Every open lead has an expected close date in its drawer. The strip shows "Won this month" (if the won lead closed this month), "Win rate" from the won and lost leads. Open the lost lead: "Price" with a note. Any lead's drawer lists Created and each stage it moved through, a week apart, ending in its stage.
+2. **Quotes (US-ONB-25):** every quote has a title under its number. Sent dates differ; one quote says "in 5 days" (amber, counted in "Expiring in 7 days") and one "Expired 5 days ago". Some show "Viewed 2×"/"Viewed 3×", the newest sent version shows none. One quote is Accepted ("Won this month" counts it) and one Rejected with the customer's comment in its Activity. Open the accepted contract quote: Related lists its job; Activity ends "Converted to a job". A quote for a customer with a lead shows the lead in Related.
+3. **Jobs (US-ONB-26):** every job has an end date. "Ready to bill" is 1 and that job's next step is "Invoice <milestone>"; "Over or near budget" is 1 (the newest job, amber "Nearing"); one job has "Complete 60%" as "Your estimate"; the finished job is Completed (India: retention held and "Release retention" its next step). The newest job says "From QUO-…". Milestones say "completed <date>" on their own days; the Activity panel reads in date order. Start a new job for a demo customer: the site address fills in.
+4. **Catalogue and calendar (US-ONB-27):** "No income account" counts only the services (Riverstone 12 of 15; a professional-services demo counts every item); materials open with "Posts to 4000 Sales — Goods". Bundles shows two, and a quote's line picker offers them. Meetings start at different times; Upcoming lists at least three in the next two weeks, one tomorrow.
+5. **Delete all demo data:** the bundles go with it; nothing of the demo is left in Pipeline, Quotes, Jobs, Catalogue or Meetings.
+6. Regression:
+   - Every demo still loads and deletes (US-ONB-17 to US-ONB-21); India's GSTR-1 and the Tax Summary agree; reports render; the Trial Balance balances.
+   - The field app: the demo Field user sees the demo's jobs on Today (US-MOB-03, US-MOB-04).
+   - The dashboard's Needs your attention, Jobs in progress and Recent activity show the demo's states (US-DASH-16 to US-DASH-29).
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

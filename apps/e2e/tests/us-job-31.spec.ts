@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "./fixtures";
 import { completeMilestone, fieldUserOn, invoiceMilestone, jobWithMilestones } from "./job-seed";
+import { api } from "./quote-seed";
 
 test.describe("US-JOB-31", () => {
   test("the cards: active with its value, ready to bill with its amount, retention held — and the first three filter", async ({ page, seededOrg: _ }) => {
@@ -15,8 +16,12 @@ test.describe("US-JOB-31", () => {
     const stats = page.getByTestId("job-stats");
     await expect(stats).toContainText("Active");
     await expect(stats).toContainText("Over or near budget");
-    const ready = page.getByRole("button", { name: /^Show jobs ready to bill, \d+$/ });
-    await expect(ready).toContainText("$4,000.00");
+    // The demo has a milestone waiting too (US-ONB-26): the card adds this job's $4,000.00 to it.
+    const all = await api<{ readyToBillAmount: string; readyToBillCount: number }[]>(page, "GET", "/jobs?include=billing");
+    const total = all.reduce((sum, j) => sum + BigInt(j.readyToBillAmount), 0n);
+    expect(total).toBeGreaterThanOrEqual(400000n);
+    const ready = page.getByRole("button", { name: `Show jobs ready to bill, ${all.filter((j) => j.readyToBillCount > 0).length}` });
+    await expect(ready).toContainText(new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(total) / 100));
     await expect(stats).toContainText("Retention held");
     await expect(stats).toContainText(/Across \d+ jobs?/);
 

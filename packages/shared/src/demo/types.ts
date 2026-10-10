@@ -1,3 +1,4 @@
+import type { LostReason } from "../schemas/contacts.ts";
 import type { IndustryTemplateValue } from "../schemas/industry-template.ts";
 import type { GstTreatment } from "../tax/gst.ts";
 import type { TaxCountry } from "../tax/presets/types.ts";
@@ -83,8 +84,28 @@ export interface DemoPlanContact {
   stateCode?: string;
   person: { name: string; title: string; email: string; phone: string };
   address: { line1: string; city: string; state: string; stateCode?: string; postalCode: string; country: string };
-  lead?: { stage: "new" | "qualified" | "proposal" | "won" | "lost"; value: bigint; title: string; source: string };
+  lead?: DemoPlanLead;
   activity?: { type: "call" | "meeting" | "note" | "task"; notes: string; dueInDays: number };
+  /** US-ONB-24 — a second lead on the same contact (a tender lost on price). */
+  lostLead?: DemoPlanLead;
+}
+
+/** A lead, with how it's being worked (US-ONB-24, D-216). */
+export interface DemoPlanLead {
+  stage: "new" | "qualified" | "proposal" | "won" | "lost";
+  value: bigint;
+  title: string;
+  source: string;
+  /** Who it belongs to: the person loading the demo, or the demo Staff person. */
+  owner?: "owner" | "staff";
+  /** Days since it moved into its stage (or was closed). */
+  daysInStage?: number;
+  /** Open leads: when it's expected to close. */
+  expectedCloseInDays?: number;
+  /** The one open lead with no activity for 14 days and more. */
+  cold?: boolean;
+  lostReason?: LostReason;
+  lostNote?: string;
 }
 
 export interface DemoPlanItem {
@@ -97,6 +118,15 @@ export interface DemoPlanItem {
   price: bigint;
   tax: DemoTax;
   hsnSac?: string;
+  /** US-ONB-27 — goods post to 4000 Sales — Goods; services keep the default (4100). */
+  income?: "goods" | "services";
+}
+
+/** US-ONB-27 — a bundle made from catalogue items. */
+export interface DemoPlanBundle {
+  name: string;
+  description: string;
+  items: [item: string, quantity: number][];
 }
 
 /** A line from a catalogue item, or one typed in (bills, variation orders). */
@@ -129,12 +159,25 @@ export interface DemoPlanInvoice {
 
 export interface DemoPlanQuote {
   contact: string;
+  /** US-ONB-25 */
+  title: string;
   validUntilInDays: number;
   notes?: string;
   terms?: string;
   lines: DemoPlanLine[];
-  /** "revised" sends it, then sends a revision too (US-QUO-22). */
-  outcome: "draft" | "sent" | "revised";
+  /** "revised" sends it, then sends a revision too (US-QUO-22); "accepted" and "declined" are answered through the customer's link. */
+  outcome: "draft" | "sent" | "revised" | "accepted" | "declined";
+  /** Days from today it was sent (a revised quote's first version; its revision goes out `revisedInDays`). */
+  sentInDays?: number;
+  revisedInDays?: number;
+  /** The customer's views of the link: how many, and the last one's day. */
+  views?: { count: number; lastInDays: number };
+  /** Accepted or declined that day (kept within this month for an acceptance meant to count as "Won this month"). */
+  respondedInDays?: number;
+  thisMonth?: boolean;
+  comment?: string;
+  /** For the contact's lost lead rather than its main one. */
+  forLostLead?: boolean;
 }
 
 export interface DemoPlanMilestone {
@@ -146,6 +189,8 @@ export interface DemoPlanMilestone {
   invoiceInDays?: number | null;
   /** Paid this many days after its invoice ("full"), when set. */
   paidAfterDays?: number;
+  /** US-ONB-26 — completed that day and left for the office to invoice (null: today). */
+  completeInDays?: number | null;
 }
 
 export interface DemoPlanJob {
@@ -163,6 +208,15 @@ export interface DemoPlanJob {
   milestoneTax?: { tax: DemoTax; hsnSac?: string };
   note: string;
   photoCaption: string;
+  /** US-ONB-26 */
+  endInDays: number;
+  /** A cost budget: near what the job has cost so far, or a share of the contract. */
+  budget?: "near" | number;
+  percentComplete?: number;
+  /** Marked completed once its milestones are billed. */
+  completed?: boolean;
+  /** US-ONB-25 — made from an accepted contract quote: one lump-sum line at the contract value. */
+  fromQuote?: { title: string; sentInDays: number; respondedInDays: number; viewedInDays: number };
 }
 
 export interface DemoPlanVariationOrder {
@@ -209,6 +263,8 @@ export interface DemoPlanMeeting {
   title: string;
   contact: string | null;
   startInDays: number;
+  /** US-ONB-27 — local start time, "14:30" (9:00 when unset). */
+  startTime?: string;
   durationHours: number;
   location: string | null;
   description: string | null;
@@ -239,4 +295,5 @@ export interface DemoPlan {
   expenses: DemoPlanExpense[];
   creditNotes: DemoPlanCreditNote[];
   meetings: DemoPlanMeeting[];
+  bundles: DemoPlanBundle[];
 }

@@ -21,6 +21,8 @@ const EXEMPT = new Set([
   // US-INV-24: a read sent as POST (the ids don't fit a URL); it changes
   // nothing, and it streams a ZIP the interceptor can't replay.
   "POST /invoices/bulk/pdf",
+  // US-QUO-35: renders the unsaved quote as a PDF; it writes nothing, and the PDF isn't replayable.
+  "POST /quotes/preview-pdf",
 ]);
 
 function controllerFiles(dir: string): string[] {

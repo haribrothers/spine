@@ -2,7 +2,8 @@ import { test, expect } from "./fixtures";
 import type { Page } from "@playwright/test";
 
 async function openStages(page: Page) {
-  await page.getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
+  // The account menu in the sidebar (a lead's Owner picker can carry the same name, D-216).
+  await page.getByRole("complementary").getByRole("button", { name: /E2E Seeded Owner/ }).last().click();
   await page.getByRole("menuitem", { name: "Settings" }).click();
   const dialog = page.getByRole("dialog");
   await dialog.getByTestId("settings-sections").getByRole("button", { name: "Pipeline stages" }).click();

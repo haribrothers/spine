@@ -21,6 +21,7 @@ import type { Database, Transaction } from "../../db/client";
 import {
   bankStatementLineMatches,
   bankStatementLines,
+  catalogBundles,
   catalogItems,
   contacts,
   creditNotes,
@@ -53,6 +54,8 @@ export interface DemoDataSetting {
   businessName?: string;
   createdTaxRateIds?: string[];
   createdTaxGroupIds?: string[];
+  /** US-ONB-27 — the bundles the demo made (bundles carry no demo flag). */
+  createdBundleIds?: string[];
 }
 
 /** `POST /demo-data/seed` — both optional; no body loads the default (US construction). */
@@ -115,7 +118,7 @@ export class DemoDataService {
       await this.deleteAll(orgId, actorUserId).catch(() => undefined);
       throw error;
     }
-    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds };
+    const loaded: DemoDataSetting = { country, industry, businessName: plan.business.name, createdTaxRateIds: result.createdTaxRateIds, createdTaxGroupIds: result.createdTaxGroupIds, createdBundleIds: result.createdBundleIds };
     await this.settingsService.set(orgId, DEMO_DATA_KEY, loaded);
     return { country, industry, businessName: plan.business.name, ...result.counts };
   }
@@ -222,6 +225,9 @@ export class DemoDataService {
       // rates and group it created (recorded when it was loaded; Riverstone
       // from before then is found by name), once nothing uses them.
       const loaded = await this.settingsService.get<DemoDataSetting>(orgId, DEMO_DATA_KEY);
+      // US-ONB-27: and the bundles it made.
+      const bundleIds = loaded?.createdBundleIds ?? [];
+      const bundlesDeleted = bundleIds.length ? (await tx.delete(catalogBundles).where(and(eq(catalogBundles.orgId, orgId), inArray(catalogBundles.id, bundleIds))).returning({ id: catalogBundles.id })).length : 0;
       const groupIds = loaded?.createdTaxGroupIds ?? (await tx.select({ id: taxGroups.id }).from(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.name, "Sales Tax + Surcharge")))).map((g) => g.id);
       const rateIds = loaded?.createdTaxRateIds ?? (await tx.select({ id: taxRates.id }).from(taxRates).where(and(eq(taxRates.orgId, orgId), inArray(taxRates.name, ["Sales Tax", "State Surcharge"])))).map((r) => r.id);
       for (const id of groupIds) await tx.transaction((sp) => sp.delete(taxGroups).where(and(eq(taxGroups.orgId, orgId), eq(taxGroups.id, id)))).catch(swallowForeignKey);
@@ -244,6 +250,7 @@ export class DemoDataService {
       return {
         contactsDeleted,
         catalogItemsDeleted,
+        bundlesDeleted,
         quotesDeleted,
         invoicesDeleted,
         paymentsDeleted,
