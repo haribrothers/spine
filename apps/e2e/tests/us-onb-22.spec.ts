@@ -97,10 +97,14 @@ test.describe("US-ONB-22", () => {
 
     // A person can scroll to Continue (the body itself never scrolls; the wizard does).
     const continueButton = page.getByRole("button", { name: "Continue", exact: true });
+    await expect(page.getByLabel(/^Business name/)).toBeVisible();
     await expect(continueButton).not.toBeInViewport();
     await page.mouse.move(800, 400);
-    await page.mouse.wheel(0, 1200);
-    await expect(continueButton).toBeInViewport();
+    // Wheel until Continue shows (a slow first paint can swallow the first wheel).
+    await expect(async () => {
+      await page.mouse.wheel(0, 1200);
+      await expect(continueButton).toBeInViewport({ timeout: 1000 });
+    }).toPass({ timeout: 10_000 });
 
     await page.getByLabel(/^Business name/).fill("H2Z Facades and Interiors Factory Private Limited");
     const preview = page.getByTestId("onboarding-preview");

@@ -23,6 +23,8 @@ import { DataTable } from "@spine/ui";
 | `configurablePageSize` | boolean | false |
 | `pageSizeOptions` | number[] | [10, 25, 50, 100] |
 | `footer` | Partial<Record<string, ReactNode>> | — |
+| `page` / `onPageChange` | number / (page) => void | — (uncontrolled) |
+| `toolbarStart` | ReactNode | — (the built-in search box) |
 
 ## Rules and behaviour
 

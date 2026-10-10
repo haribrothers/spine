@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+import { TooltipProvider } from "@spine/ui";
 import "./globals.css";
 import { RouteLoader } from "../components/route-loader";
 import { ThemeProvider } from "../components/theme-provider";
@@ -22,10 +23,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body>
         <ThemeProvider>
-          <Suspense fallback={null}>
-            <RouteLoader />
-          </Suspense>
-          {children}
+          {/* US-OPS-36 (D-210) — one tooltip provider for the whole app. */}
+          <TooltipProvider delayDuration={300}>
+            <Suspense fallback={null}>
+              <RouteLoader />
+            </Suspense>
+            {children}
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

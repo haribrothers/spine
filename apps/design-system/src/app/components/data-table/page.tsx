@@ -87,6 +87,8 @@ export default () => (
             { prop: "configurablePageSize", type: "boolean", defaultValue: "false" },
             { prop: "pageSizeOptions", type: "number[]", defaultValue: "[10, 25, 50, 100]" },
             { prop: "footer", type: "Partial<Record<string, ReactNode>>", description: "A totals row under every page, keyed by column key (a report's \"Total\"). Columns left out stay blank." },
+            { prop: "page / onPageChange", type: "number / (page: number) => void", description: "Passed to Table: the page, when the parent keeps it." },
+            { prop: "toolbarStart", type: "ReactNode", description: "Shown in place of the built-in search box, left of Columns — for a page whose own search covers every view (Contacts)." },
           ]}
         />
       </DocSection>

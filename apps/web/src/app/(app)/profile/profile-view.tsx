@@ -324,9 +324,9 @@ export function ProfileView() {
       <TabsContent value="appearance" className="flex max-w-xl flex-col gap-3">
         {alerts}
         <h2 className="text-[15px] font-semibold text-on-surface">Theme</h2>
-        <ToggleGroup type="single" value={profile.themePreference} onValueChange={(v) => v && handleThemeChange(v)} className="w-fit rounded-sm bg-surface-sunken p-0.5">
+        <ToggleGroup type="single" value={profile.themePreference} onValueChange={(v) => v && handleThemeChange(v)} aria-label="Theme">
           {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-            <ToggleGroupItem key={value} value={value} aria-label={label} className="h-8 gap-1.5 px-3">
+            <ToggleGroupItem key={value} value={value}>
               <Icon size={14} />
               {label}
             </ToggleGroupItem>

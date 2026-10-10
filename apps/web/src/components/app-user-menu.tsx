@@ -149,10 +149,11 @@ export function AppUserMenu({
               type="single"
               value={mounted ? theme : undefined}
               onValueChange={(value) => value && setTheme(value)}
-              className="w-full rounded-sm bg-surface-sunken p-0.5"
+              aria-label="Theme"
+              className="w-full"
             >
               {THEME_OPTIONS.map(({ value, label, icon: Icon }) => (
-                <ToggleGroupItem key={value} value={value} aria-label={label} className="h-7 flex-1 px-0">
+                <ToggleGroupItem key={value} value={value} aria-label={label} size="sm" className="flex-1 px-0">
                   <Icon size={14} />
                 </ToggleGroupItem>
               ))}

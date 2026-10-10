@@ -36,6 +36,8 @@
   --color-background: #f7f6f3;
   --color-surface: #ffffff;
   --color-surface-sunken: var(--color-neutral-50);
+  /* US-OPS-36 (D-210) — the chosen option in a toggle group: white in light, lifted in dark. */
+  --color-control-selected: var(--color-surface);
   --color-on-surface: var(--color-neutral-900);
   --color-on-surface-muted: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
@@ -171,6 +173,7 @@
   --color-background: #121110;
   --color-surface: #191815;
   --color-surface-sunken: var(--color-neutral-200);
+  --color-control-selected: var(--color-neutral-200);
   --color-on-surface: var(--color-neutral-900);
   --color-on-surface-muted: var(--color-neutral-500);
   --color-border: var(--color-neutral-200);
@@ -230,6 +233,7 @@
     --color-background: #121110;
     --color-surface: #191815;
     --color-surface-sunken: var(--color-neutral-200);
+    --color-control-selected: var(--color-neutral-200);
     --color-on-surface: var(--color-neutral-900);
     --color-on-surface-muted: var(--color-neutral-500);
     --color-border: var(--color-neutral-200);
@@ -370,6 +374,7 @@
   --color-background: var(--color-background);
   --color-surface: var(--color-surface);
   --color-surface-sunken: var(--color-surface-sunken);
+  --color-control-selected: var(--color-control-selected);
   --color-inverse-surface: var(--color-inverse-surface);
   --color-inverse-on-surface: var(--color-inverse-on-surface);
   --color-inverse-on-surface-muted: var(--color-inverse-on-surface-muted);

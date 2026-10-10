@@ -72,6 +72,7 @@ Legacy: S-01.2
 - API: `GET /contacts?search=&type=&includeArchived=`.
 - UI: `contacts-explorer.tsx`, `contacts-view-switcher.tsx` (`ToggleGroup` with aria-labels), `EmptyState`.
 - Edge: archived contacts show only with the "Archived" status filter.
+- Extended by US-CRM-23 (D-210): search in every view, filters and page in the address, stat cards that filter.
 
 ### US-CRM-04 · Archive or delete a contact
 **Feature:** F-CRM-01 · **Priority:** P2 · **Phase:** 1 · **Screens:** `ContactDeleteConfirm`, `ContactsList`
@@ -385,12 +386,12 @@ Decision: D-210
 Decision: D-210
 
 **Acceptance criteria**
-- **Given** any view (Table, List or Card), **when** I type in "Search contacts" in the toolbar, **then** the list narrows to contacts whose name, email or phone matches, as I type. With no match it says "No contacts match "<text>"" with "Clear search".
+- **Given** any view (Table, List or Card), **when** I type in "Search contacts", on its own row under the filters (with "Columns" on the right in the Table view), **then** the list narrows to contacts whose name, email or phone matches, as I type. With no match it says "No contacts match "<text>"" with "Clear search".
 - **Given** a type, status or search, or a page other than the first, **when** I set it, **then** the address keeps it (for example `/contacts?type=vendor&q=steel&page=2`). Opening a contact and pressing Back, or opening that address later, shows the same list.
 - **Given** the stat cards, **when** they show, **then** they count all active contacts whatever the filters (they no longer change when I filter), and "Customers" and "Vendors" are buttons: pressing one filters to that type (customers include "Customer & vendor", and so do vendors) and shows as pressed; pressing it again clears the filter. "Total contacts" clears the type filter, and "Active leads" opens the pipeline.
 - **Given** a filter, search or page from the address that matches nothing, **when** the list loads, **then** it shows the "No contacts match these filters" state with "Clear filters", which also clears the search.
 - **Given** a keyboard or screen reader, **when** I use the stat cards, **then** each says what it does ("Show customers, 8"), with its pressed state announced.
 
 **Implementation notes**
-- UI: the search moves from `DataTable` (Table view only) into `contacts-explorer.tsx`, which filters the loaded list for all three views; `DataTable` gets the search from its parent and hides its own box (`searchValue` prop). URL state through `useSearchParams` and `router.replace` (no extra history entry per keystroke). Stat counts come from a separate unfiltered active list.
+- UI: pagination stays the existing `PaginationBar` / `Table` pager. The search moves from `DataTable` (Table view only) into `contacts-explorer.tsx`, which filters the loaded list for all three views; `DataTable` gets the search from its parent and hides its own box (`searchValue` prop). URL state through `useSearchParams` and `router.replace` (no extra history entry per keystroke). Stat counts come from a separate unfiltered active list.
 - No API change.

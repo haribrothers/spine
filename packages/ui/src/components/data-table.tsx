@@ -30,6 +30,11 @@ export interface DataTableProps<T> {
   groupMemberLabel?: (row: T) => React.ReactNode;
   /** Passed to `Table`: a totals row keyed by column. */
   footer?: Partial<Record<string, React.ReactNode>>;
+  /** Passed to `Table`: the page, when the parent keeps it. */
+  page?: number;
+  onPageChange?: (page: number) => void;
+  /** Shown in place of the built-in search box, left of "Columns" — for a page whose own search covers every view (US-CRM-23). */
+  toolbarStart?: React.ReactNode;
 }
 
 /**
@@ -53,6 +58,9 @@ export function DataTable<T>({
   groupPrimary,
   groupMemberLabel,
   footer,
+  page,
+  onPageChange,
+  toolbarStart,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
@@ -63,7 +71,9 @@ export function DataTable<T>({
   return (
     <div className={className}>
       <div className="mb-3 flex items-center justify-between gap-3" data-print="hide">
-        {searchKey ? (
+        {toolbarStart ? (
+          toolbarStart
+        ) : searchKey ? (
           <Input
             placeholder={searchPlaceholder}
             aria-label={searchPlaceholder}
@@ -115,6 +125,8 @@ export function DataTable<T>({
         groupPrimary={groupPrimary}
         groupMemberLabel={groupMemberLabel}
         footer={footer}
+        page={page}
+        onPageChange={onPageChange}
       />
     </div>
   );

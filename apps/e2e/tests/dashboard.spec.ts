@@ -109,7 +109,10 @@ test.describe("Dashboard v2", () => {
     // Re-show it — persisted layout must survive a reload too, since
     // DashboardShell fetches it fresh via GET /users/me/dashboard-layout.
     await page.getByRole("button", { name: "Edit layout" }).click();
+    // The layout saves in the background: wait for it before reloading.
+    const saved = page.waitForResponse((res) => res.url().includes("/users/me/dashboard-layout") && res.request().method() === "PUT");
     await editModeHideToggle(page, "Money in and out").click();
+    await saved;
     await page.getByRole("button", { name: "Done" }).click();
     await expect(page.getByTestId("money-in-out")).toBeVisible();
 

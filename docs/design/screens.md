@@ -2792,6 +2792,55 @@ Links to: —
 
 Shows: KPI figures on their own line · stacked "Current · Overdue · Total" and "Collected · Input tax · Net payable" · "₹44.9L" in the ring with "Total ₹44,88,682.00" under the title · "Office block — structural works" cut short beside "−₹1,60,500.00"
 
+## Contacts list polish and toggles
+
+Drawn in Claude Design for US-OPS-36 and US-CRM-21 to US-CRM-23 (D-210): project "Spine web — refinements before Phase 10", canvas "05 Contacts polish". Every toggle group in the app uses the segmented look in `ToggleStates`; the contacts list gets search on its own row in every view (with Columns on the right in the Table view), Refresh with "Updated … ago", stat cards that filter, the existing pagination bar, and names and emails that stay inside their card or row. In the built page the chosen option's tooltip uses the `@spine/ui` `Tooltip` (no arrow). These replace the toolbar of `ContactsList` and `ContactsCards`.
+
+### ToggleStates — Toggle groups: chosen, hover, focus, tooltip, disabled
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36 · **Source:** Claude Design
+
+![ToggleStates](screens/ToggleStates.webp)
+
+Links to: —
+
+Shows: the view switcher chosen, hovered and focused · "Table view" tooltip · "Accrual" / "Cash" · "3M" / "6M" / "12M" · "Light" / "Dark" / "System" · disabled · a single toggle off and on · "Refresh list" tooltip · "Updating…"
+
+### ToggleStatesDark — Toggle groups, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36 · **Source:** Claude Design
+
+![ToggleStatesDark](screens/ToggleStatesDark.webp)
+
+Links to: —
+
+Shows: As `ToggleStates`
+
+### ContactsCardsPolish — Contacts, Card view: names that fit, search, refresh
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36, US-CRM-21, US-CRM-22, US-CRM-23 · **Source:** Claude Design
+
+![ContactsCardsPolish](screens/ContactsCardsPolish.webp)
+
+Links to: `ContactsTablePolish`, `ContactCreateDrawer`, `ImportContactsDialog`, `LeadsBoard`
+
+Shows: "Total contacts" · "Clear the type filter" · "Customers" · "Show customers" · "Vendors" · "Show vendors" · "Active leads" · "Open the pipeline" · "All types" · "Active" · "Updated just now" · "Refresh list" · "Card view" · "Import CSV" · "Add contact" · "Search contacts" · "H2Z Facades and Interiors Factory Private Limited" · "Ridgeline Equipment Rentals and Scaffolding Hire Private…" · "1–10 of 12" · "per page"
+
+### ContactsCardsPolishDark — Contacts, Card view, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-OPS-36, US-CRM-21 · **Source:** Claude Design
+
+![ContactsCardsPolishDark](screens/ContactsCardsPolishDark.webp)
+
+Links to: `ContactsCardsPolish`
+
+Shows: As `ContactsCardsPolish`
+
+### ContactsTablePolish — Contacts, Table view: a stat card's filter, in the address, while refreshing
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-21, US-CRM-22, US-CRM-23 · **Source:** Claude Design
+
+![ContactsTablePolish](screens/ContactsTablePolish.webp)
+
+Links to: `ContactsCardsPolish`
+
+Shows: "Vendors" pressed · "Showing these · press again to clear" · "/contacts?type=vendor&status=active" · "2 types" · "Updating…" · "Search contacts" · "Columns" · "accounts.payable.department@h2zfacade…" · "Status" · "1–5 of 5"
+
 ## Mobile field companion
 
 Redrawn from scratch in Claude Design for the Phase 5 rebuild (D-196, D-197): project "Spine Field — mobile app (Phase 5)", one canvas per flow (01 Today, 02 Jobs, 03 Photos and milestones, 04 Expenses, 05 Sign in and account, 06 Sync, 07 Quotes on site, 08 Search, 09 Notifications, 10 Brand and app icon, 11 Splash and Welcome, 12 Sign in). The brand canvases (D-203, D-204) hold the app icon, the splash, Welcome's motion storyboard and the redrawn Sign in; the motion plays live on the canvas. Tabs are Today · Jobs · Expenses plus Search (iOS `role="search"`, Android fourth tab); Profile opens from the avatar and Notifications from the bell on Today. iOS frames follow iOS 26 (Liquid Glass tab bar and toolbar buttons from expo-router native tabs); Android frames follow Material 3 (`@expo/ui` Jetpack Compose). Content uses the `@spine/ui-native` look and tokens. Tab icons are drawn with Lucide as stand-ins for SF Symbols. `MobExpenseNewAi` belongs to Phase 10 and wasn't redrawn.

@@ -10,17 +10,23 @@ export default function TogglePage() {
       <DocTitle>Toggle</DocTitle>
       <DocLead>
         A two-state button that can be either on or off — e.g. a rich-text formatting control.
-        Visually similar to Button but tracks on/off state rather than firing an action.
+        Visually similar to Button but tracks on/off state rather than firing an action. On is a light primary tint with a
+        primary outline (US-OPS-36), so the state shows by more than the icon&apos;s colour.
       </DocLead>
 
       <ComponentPreview>
-        <Toggle aria-label="Bold">
-          <Bold size={16} />
-        </Toggle>
+        <div className="flex gap-3">
+          <Toggle aria-label="Bold">
+            <Bold size={16} />
+          </Toggle>
+          <Toggle aria-label="Bold" defaultPressed>
+            <Bold size={16} />
+          </Toggle>
+        </div>
       </ComponentPreview>
 
       <DocSection id="features" title="Features">
-        <FeatureList items={["Can be controlled or uncontrolled.", "Supports disabled state."]} />
+        <FeatureList items={["Can be controlled or uncontrolled.", "Supports disabled state.", "An icon-only toggle shows its aria-label as a tooltip on hover and keyboard focus; pass tooltip to change the text or tooltip={false} to turn it off."]} />
       </DocSection>
 
       <DocSection id="anatomy" title="Anatomy">
@@ -36,6 +42,7 @@ export default () => <Toggle>B</Toggle>;`} />
             { prop: "defaultPressed", type: "boolean" },
             { prop: "onPressedChange", type: "(pressed: boolean) => void" },
             { prop: "size", type: "default | sm", defaultValue: "default" },
+            { prop: "tooltip", type: "string | false", description: "Defaults to the aria-label of an icon-only toggle." },
           ]}
         />
       </DocSection>

@@ -29,8 +29,9 @@ test.describe("US-INV-18", () => {
 
     await pane.getByRole("button", { name: "Preview email" }).click();
     const preview = page.getByRole("dialog", { name: "Reminder email preview" });
-    // Demo invoices take their own series (US-ONB-17).
-    await expect(preview.getByText(/Subject: Reminder: invoice DEMO-INV-\d+ is \d+ days? overdue/)).toBeVisible();
+    // The most overdue unpaid invoice: a demo one (DEMO-INV-…, US-ONB-17), or one an earlier test in this
+    // shared seeded org created after the demo's were settled (e.g. US-DASH-13's INV-0001).
+    await expect(preview.getByText(/Subject: Reminder: invoice (DEMO-)?INV-\d+ is \d+ days? overdue/)).toBeVisible();
     await expect(preview.locator("iframe")).toBeVisible();
   });
 });

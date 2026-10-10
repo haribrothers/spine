@@ -22,18 +22,28 @@ const TYPE_LABELS: Record<Contact["type"], string> = {
 export function ContactsTable({
   contacts,
   onChanged,
+  page,
+  onPageChange,
+  toolbarStart,
 }: {
   contacts: Contact[];
   onChanged: (action: "archived" | "restored" | "deleted", contact: Contact) => void;
+  /** US-CRM-23: the page lives in the address, and the search row is the page's own (it covers every view). */
+  page: number;
+  onPageChange: (page: number) => void;
+  toolbarStart: React.ReactNode;
 }) {
   const columns: TableColumn<Contact>[] = [
     {
       key: "name",
       header: "Name",
       render: (row) => (
-        <Link href={`/contacts/${row.id}`} className="flex items-center gap-2.5">
+        <Link href={`/contacts/${row.id}`} className="flex min-w-0 max-w-[15rem] items-center gap-2.5 wide-plus:max-w-[20rem]">
           <ContactLogo name={row.name} fileId={row.logoFileId} size="md" editable={false} onUploaded={() => {}} />
-          <span className="font-medium text-on-surface hover:text-primary hover:underline">{row.name}</span>
+          {/* US-CRM-21: long names and emails are cut short, the full text on hover, so every column fits. */}
+          <span className="truncate font-medium text-on-surface hover:text-primary hover:underline" title={row.name}>
+            {row.name}
+          </span>
         </Link>
       ),
       sortValue: (row) => row.name,
@@ -47,12 +57,19 @@ export function ContactsTable({
     {
       key: "email",
       header: "Email",
-      render: (row) => row.email ?? "—",
+      render: (row) =>
+        row.email ? (
+          <span className="block max-w-[13rem] truncate wide-plus:max-w-[16rem]" title={row.email}>
+            {row.email}
+          </span>
+        ) : (
+          "—"
+        ),
     },
     {
       key: "phone",
       header: "Phone",
-      render: (row) => row.phone ?? "—",
+      render: (row) => <span className="whitespace-nowrap">{row.phone ?? "—"}</span>,
     },
     {
       key: "status",
@@ -80,8 +97,9 @@ export function ContactsTable({
       columns={columns}
       data={contacts}
       rowKey={(row) => row.id}
-      searchPlaceholder="Search contacts"
-      searchKey={(row) => `${row.name} ${row.email ?? ""} ${row.phone ?? ""}`}
+      toolbarStart={toolbarStart}
+      page={page}
+      onPageChange={onPageChange}
       configurablePageSize
     />
   );

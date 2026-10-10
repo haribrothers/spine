@@ -242,11 +242,11 @@ export function ProfitAndLossTab() {
             </ReportFilter>
             <ReportFilter label="Basis">
               {(id) => (
-                <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as typeof basis)} aria-labelledby={id} className="h-10 rounded-md bg-surface-sunken p-1">
-                  <ToggleGroupItem value="accrual" className="h-8 px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as typeof basis)} aria-labelledby={id}>
+                  <ToggleGroupItem value="accrual" className="px-3">
                     Accrual
                   </ToggleGroupItem>
-                  <ToggleGroupItem value="cash" className="h-8 px-3 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+                  <ToggleGroupItem value="cash" className="px-3">
                     Cash
                   </ToggleGroupItem>
                 </ToggleGroup>

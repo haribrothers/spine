@@ -1,11 +1,25 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, AlertDescription, Button, EmptyState, MultiSelect, PaginationBar, StatCard } from "@spine/ui";
-import { Upload, Users } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  EmptyState,
+  Input,
+  MultiSelect,
+  PaginationBar,
+  StatCard,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  cn,
+} from "@spine/ui";
+import { RefreshCw, Search, Upload, Users } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
-import { usePagination } from "../../../lib/use-pagination";
 import { ContactCreateDrawer } from "./contact-create-drawer";
 import { ContactsCardView } from "./contacts-card-view";
 import { ContactsListView } from "./contacts-list-view";
@@ -13,6 +27,17 @@ import { ContactsSkeleton } from "./contacts-skeleton";
 import { ContactsTable } from "./contacts-table";
 import { ContactsViewSwitcher, VIEW_STORAGE_KEY, type ContactView } from "./contacts-view-switcher";
 import { ImportContactsDialog } from "./import/import-contacts-dialog";
+import {
+  REFRESH_ON_RETURN_MS,
+  STAT_TYPES,
+  filterContacts,
+  hasFilters,
+  isTypeSet,
+  listStateQuery,
+  parseListState,
+  updatedLabel,
+  type ContactsListState,
+} from "./contacts-list-state";
 import type { Contact, ContactType, Lead } from "./types";
 import { useContactStats } from "./use-contact-stats";
 import { useEntityToast } from "./entity-toast";
@@ -28,30 +53,40 @@ const ARCHIVED_OPTIONS = [
   { value: "archived", label: "Archived" },
 ];
 
+const DEFAULT_PAGE_SIZE = 25;
+
 /**
- * The Contacts list page's client-side body — stat cards, view switcher,
- * multiselect filters, the three views, and the create Drawer, all owned
- * here so a create/archive/delete anywhere can refresh the list without a
- * full page reload (same reasoning the original ContactsTable's own
- * comment gave for client-side loading).
+ * The Contacts list page's client-side body — stat cards, filters, search,
+ * the three views and the create Drawer, all owned here so a create /
+ * archive / delete anywhere can refresh the list without a full reload.
+ *
+ * US-CRM-22/23 (D-210): every contact (archived too) is loaded once and
+ * filtered here, so the stat cards count all active contacts whatever the
+ * filters, search works in every view, and the import's duplicate check
+ * sees archived contacts. Type, status, search and page live in the
+ * address; Refresh (and coming back to the tab after 30 s) reloads in
+ * place, keeping the list on screen.
  */
 export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
   const canCreate = useCapability("contacts.edit_own");
-  const [contacts, setContacts] = useState<Contact[] | null>(null);
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [state, setState] = useState<ContactsListState>(() => parseListState(new URLSearchParams(searchParams.toString())));
+  const [all, setAll] = useState<Contact[] | null>(null);
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [refreshFailed, setRefreshFailed] = useState(false);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  const [announcement, setAnnouncement] = useState("");
   const [view, setView] = useState<ContactView>("table");
   const [hydrated, setHydrated] = useState(false);
-  const [typeFilter, setTypeFilter] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [drawerOpen, setDrawerOpen] = useState(initialDrawerOpen);
   const [importOpen, setImportOpen] = useState(false);
-  // Deliberately separate from `contacts` above, which is filtered by the
-  // page's own type/status controls (default excludes archived) — the
-  // import wizard's duplicate check needs every contact regardless of
-  // those filters, or an archived contact's email/phone match would be
-  // missed and the same person re-imported as a new active contact.
-  const [allContactsForImport, setAllContactsForImport] = useState<Contact[]>([]);
+  const loading = useRef(false);
   const { show: showToast, toast } = useEntityToast();
 
   useEffect(() => {
@@ -65,33 +100,58 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
     window.localStorage.setItem(VIEW_STORAGE_KEY, next);
   }
 
-  const loadContacts = useCallback(() => {
-    const params = new URLSearchParams();
-    for (const t of typeFilter) params.append("type", t);
-    if (statusFilter.includes("archived")) params.set("includeArchived", "true");
-    const query = params.toString();
-    apiClient
-      .get<Contact[]>(`/contacts${query ? `?${query}` : ""}`)
-      .then((rows) => {
-        // The API's includeArchived flag is all-or-nothing (returns both
-        // active and archived together); when only "Archived" is checked
-        // (not "Active"), filter client-side rather than adding a
-        // dedicated API mode for a two-checkbox combination.
-        const onlyArchived = statusFilter.includes("archived") && !statusFilter.includes("active");
-        setContacts(onlyArchived ? rows.filter((c) => c.archivedAt) : rows);
-      })
-      .catch((err) => setError(err instanceof Error ? err.message : "Could not load contacts."));
-  }, [typeFilter, statusFilter]);
+  /** Sets part of the list state and writes it to the address (no history entry per keystroke). */
+  function update(patch: Partial<ContactsListState>) {
+    const next = { ...state, page: 1, ...patch };
+    setState(next);
+    const query = listStateQuery(next);
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }
+
+  /** The first load shows the placeholder; a refresh keeps the list on screen. */
+  const load = useCallback(async (mode: "first" | "refresh") => {
+    if (loading.current) return;
+    loading.current = true;
+    if (mode === "refresh") setRefreshing(true);
+    try {
+      const [contacts, leadRows] = await Promise.all([
+        apiClient.get<Contact[]>("/contacts?includeArchived=true"),
+        apiClient.get<Lead[]>("/leads").catch(() => [] as Lead[]),
+      ]);
+      setAll(contacts);
+      setLeads(leadRows);
+      setRefreshFailed(false);
+      setUpdatedAt(Date.now());
+      setNow(Date.now());
+      if (mode === "refresh") setAnnouncement("Contacts updated");
+    } catch (err) {
+      if (mode === "first") setError(err instanceof Error ? err.message : "Could not load contacts.");
+      else setRefreshFailed(true);
+    } finally {
+      loading.current = false;
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    loadContacts();
-  }, [loadContacts]);
+    void load("first");
+  }, [load]);
 
+  // US-CRM-22: back on the tab after 30 s or more, refresh quietly.
   useEffect(() => {
-    apiClient
-      .get<Lead[]>("/leads")
-      .then(setLeads)
-      .catch(() => setLeads([]));
+    let hiddenAt: number | null = null;
+    function onVisibility() {
+      if (document.visibilityState === "hidden") hiddenAt = Date.now();
+      else if (hiddenAt !== null && Date.now() - hiddenAt >= REFRESH_ON_RETURN_MS) void load("refresh");
+    }
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [load]);
+
+  // "Updated 2 min ago" moves on by itself.
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -107,42 +167,35 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
     }
   }, []);
 
-  const activeLeadCount = useMemo(
-    () => (leads ? leads.filter((l) => l.stageKind === "open").length : null),
-    [leads],
-  );
-  const stats = useContactStats(contacts, activeLeadCount);
+  const contacts = useMemo(() => (all ? filterContacts(all, state) : null), [all, state]);
+  const activeLeadCount = useMemo(() => (leads ? leads.filter((l) => l.stageKind === "open").length : null), [leads]);
+  const stats = useContactStats(all, activeLeadCount);
 
-  // Table view paginates itself (DataTable -> Table, configurablePageSize);
-  // List/Card have no built-in pagination, so this hook paginates the same
-  // filtered `contacts` array for those two views only.
-  const { page, pageSize, total, pageRows, setPage, setPageSize } = usePagination(contacts);
+  // List and Card views page here; the Table pages itself with the same page.
+  const total = contacts?.length ?? 0;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(state.page, pageCount);
+  const pageRows = contacts ? contacts.slice((page - 1) * pageSize, page * pageSize) : [];
 
   function handleCreated(contact: Contact) {
-    loadContacts();
+    void load("refresh");
     showToast("Contact created", `${contact.name} has been added to your contacts.`);
   }
 
   function handleRowChanged(action: "archived" | "restored" | "deleted", contact: Contact) {
-    loadContacts();
+    void load("refresh");
     if (action === "archived") showToast("Contact archived", `${contact.name} has been archived.`);
     else if (action === "restored") showToast("Contact restored", `${contact.name} is active again.`);
     else showToast("Contact deleted", `${contact.name} has been permanently removed.`);
   }
 
   function handleImported(createdCount: number) {
-    loadContacts();
+    void load("refresh");
     showToast("Contacts imported", `${createdCount} contact${createdCount === 1 ? "" : "s"} added from CSV.`);
   }
 
-  function handleImportOpenChange(next: boolean) {
-    setImportOpen(next);
-    if (next) {
-      apiClient
-        .get<Contact[]>("/contacts?includeArchived=true")
-        .then(setAllContactsForImport)
-        .catch(() => setAllContactsForImport([]));
-    }
+  function toggleStatType(set: ContactType[]) {
+    update({ types: isTypeSet(state.types, set) ? [] : set });
   }
 
   if (error) {
@@ -153,92 +206,185 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
     );
   }
 
+  const search = (
+    <div className="relative w-64">
+      <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-muted" aria-hidden />
+      <Input
+        type="search"
+        placeholder="Search contacts"
+        aria-label="Search contacts"
+        value={state.q}
+        onChange={(event) => update({ q: event.target.value })}
+        className="pl-9"
+      />
+    </div>
+  );
+
+  const statButton = (label: string, value: number | null, set: ContactType[] | null, hint: string) => {
+    const pressed = set ? isTypeSet(state.types, set) : false;
+    return (
+      <button
+        type="button"
+        aria-pressed={set ? pressed : undefined}
+        aria-label={`${hint}, ${value ?? "loading"}`}
+        onClick={() => (set ? toggleStatType(set) : update({ types: [] }))}
+        className="rounded-lg text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        <StatCard
+          label={label}
+          value={value === null ? "—" : String(value)}
+          trend={{ direction: "neutral", label: pressed ? "Showing these · press again to clear" : hint }}
+          className={cn("h-full transition-colors hover:border-border-strong", pressed && "border-primary bg-info-bg/60 ring-1 ring-primary")}
+        />
+      </button>
+    );
+  };
+
+  const filtersOn = hasFilters(state);
+  const searching = state.q.trim().length > 0;
+
   return (
     <div className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Total contacts" value={stats.total === null ? "—" : String(stats.total)} />
-        <StatCard label="Customers" value={stats.customers === null ? "—" : String(stats.customers)} />
-        <StatCard label="Vendors" value={stats.vendors === null ? "—" : String(stats.vendors)} />
-        <StatCard label="Active leads" value={stats.activeLeads === null ? "—" : String(stats.activeLeads)} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" data-testid="contact-stats">
+        {statButton("Total contacts", stats.total, null, "Clear the type filter")}
+        {statButton("Customers", stats.customers, STAT_TYPES.customers, "Show customers")}
+        {statButton("Vendors", stats.vendors, STAT_TYPES.vendors, "Show vendors")}
+        <Link href="/leads" aria-label={`Open the pipeline, ${stats.activeLeads ?? "loading"} active leads`} className="rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+          <StatCard
+            label="Active leads"
+            value={stats.activeLeads === null ? "—" : String(stats.activeLeads)}
+            trend={{ direction: "neutral", label: "Open the pipeline" }}
+            className="h-full transition-colors hover:border-border-strong"
+          />
+        </Link>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <MultiSelect
-            options={TYPE_OPTIONS}
-            value={typeFilter}
-            onValueChange={setTypeFilter}
-            placeholder="All types"
-            aria-label="Filter by type"
-            className="w-44"
-          />
-          <MultiSelect
-            options={ARCHIVED_OPTIONS}
-            value={statusFilter}
-            onValueChange={setStatusFilter}
-            placeholder="Status"
-            aria-label="Filter by status"
-            className="w-36"
-          />
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <MultiSelect
+              options={TYPE_OPTIONS}
+              value={state.types}
+              onValueChange={(types) => update({ types: types as ContactType[] })}
+              placeholder="All types"
+              aria-label="Filter by type"
+              className="w-44"
+            />
+            <MultiSelect
+              options={ARCHIVED_OPTIONS}
+              value={state.status}
+              onValueChange={(status) => update({ status })}
+              placeholder="Status"
+              aria-label="Filter by status"
+              className="w-36"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {updatedAt !== null && (
+              <span className="whitespace-nowrap text-[12px] text-on-surface-muted" data-testid="contacts-updated">
+                {refreshing ? "Updating…" : updatedLabel(updatedAt, now)}
+              </span>
+            )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="icon"
+                  aria-label="Refresh list"
+                  aria-busy={refreshing}
+                  disabled={refreshing || !all}
+                  onClick={() => void load("refresh")}
+                >
+                  <RefreshCw size={16} aria-hidden className={cn(refreshing && "text-primary motion-safe:animate-spin")} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Refresh list</TooltipContent>
+            </Tooltip>
+            <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
+            {canCreate && <span className="mx-0.5 h-6 w-px bg-border" aria-hidden />}
+            {canCreate && (
+              <Button variant="secondary" onClick={() => setImportOpen(true)}>
+                <Upload size={14} />
+                Import CSV
+              </Button>
+            )}
+            {canCreate && <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ContactsViewSwitcher value={hydrated ? view : "table"} onChange={handleViewChange} />
-          {canCreate && (
-            <Button variant="secondary" onClick={() => handleImportOpenChange(true)}>
-              <Upload size={14} />
-              Import CSV
-            </Button>
-          )}
-          {canCreate && <Button onClick={() => setDrawerOpen(true)}>Add contact</Button>}
-        </div>
+        <p role="status" className="sr-only">
+          {announcement}
+        </p>
+        {refreshFailed && (
+          <Alert variant="critical" data-testid="contacts-refresh-failed">
+            <AlertDescription className="flex flex-wrap items-center justify-between gap-3">
+              Couldn&apos;t refresh the list. Check your connection and try again.
+              <Button variant="secondary" size="sm" onClick={() => void load("refresh")}>
+                Try again
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
       </div>
 
       {!contacts ? (
         <ContactsSkeleton view={hydrated ? view : "table"} />
       ) : contacts.length === 0 ? (
-        <div className="rounded-lg border border-border bg-surface">
-          {typeFilter.length > 0 || statusFilter.length !== 1 || !statusFilter.includes("active") ? (
-            <EmptyState
-              icon={<Users />}
-              title="No contacts match these filters"
-              description="Try adjusting or clearing the filters above."
-              action={
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    setTypeFilter([]);
-                    setStatusFilter(["active"]);
-                  }}
-                >
-                  Clear filters
-                </Button>
-              }
-            />
-          ) : (
-            <EmptyState
-              icon={<Users />}
-              title="No contacts yet"
-              description="Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
-              action={canCreate ? <Button onClick={() => setDrawerOpen(true)}>Add contact</Button> : undefined}
-            />
-          )}
-        </div>
-      ) : view === "list" ? (
         <div className="flex flex-col gap-3">
-          <ContactsListView contacts={pageRows ?? []} onChanged={handleRowChanged} />
-          <PaginationBar page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          <div className="flex">{search}</div>
+          <div className="rounded-lg border border-border bg-surface">
+            {filtersOn ? (
+              <EmptyState
+                icon={<Users />}
+                title="No contacts match these filters"
+                description="Try adjusting or clearing the filters above."
+                action={
+                  <Button variant="secondary" onClick={() => update({ types: [], status: ["active"], q: "" })}>
+                    Clear filters
+                  </Button>
+                }
+              />
+            ) : searching ? (
+              <EmptyState
+                icon={<Search />}
+                title={`No contacts match "${state.q.trim()}"`}
+                description="Check the spelling, or search by email or phone."
+                action={
+                  <Button variant="secondary" onClick={() => update({ q: "" })}>
+                    Clear search
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<Users />}
+                title="No contacts yet"
+                description="Add your first customer or vendor to start tracking quotes, jobs and invoices against them."
+                action={canCreate ? <Button onClick={() => setDrawerOpen(true)}>Add contact</Button> : undefined}
+              />
+            )}
+          </div>
         </div>
-      ) : view === "card" ? (
-        <div className="flex flex-col gap-3">
-          <ContactsCardView contacts={pageRows ?? []} onChanged={handleRowChanged} />
-          <PaginationBar page={page} pageSize={pageSize} total={total} onPageChange={setPage} onPageSizeChange={setPageSize} />
-        </div>
+      ) : view === "table" ? (
+        <ContactsTable contacts={contacts} onChanged={handleRowChanged} page={state.page} onPageChange={(next) => update({ page: next })} toolbarStart={search} />
       ) : (
-        <ContactsTable contacts={contacts} onChanged={handleRowChanged} />
+        <div className="flex flex-col gap-3">
+          <div className="flex">{search}</div>
+          {view === "list" ? <ContactsListView contacts={pageRows} onChanged={handleRowChanged} /> : <ContactsCardView contacts={pageRows} onChanged={handleRowChanged} />}
+          <PaginationBar
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={(next) => update({ page: next })}
+            onPageSizeChange={(size) => {
+              setPageSize(size);
+              update({ page: 1 });
+            }}
+          />
+        </div>
       )}
 
       <ContactCreateDrawer open={drawerOpen} onOpenChange={setDrawerOpen} onCreated={handleCreated} />
-      <ImportContactsDialog open={importOpen} onOpenChange={handleImportOpenChange} existingContacts={allContactsForImport} onImported={handleImported} />
+      <ImportContactsDialog open={importOpen} onOpenChange={setImportOpen} existingContacts={all ?? []} onImported={handleImported} />
       {toast}
     </div>
   );

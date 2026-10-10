@@ -121,6 +121,7 @@ export default () => (
             { prop: "groupPrimary", type: "(rows: T[]) => T" },
             { prop: "groupMemberLabel", type: "(row: T) => ReactNode" },
             { prop: "footer", type: "Partial<Record<string, ReactNode>>", description: "A totals row under every page, keyed by column key (a report's \"Total\"). Columns left out stay blank." },
+            { prop: "page / onPageChange", type: "number / (page: number) => void", description: "The page, when the parent keeps it (e.g. in the address). Controlled, it doesn't reset when data changes, so a refresh keeps your place; a page past the end shows the last page." },
           ]}
           caption="TableColumn<T>"
         />

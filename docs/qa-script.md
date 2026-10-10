@@ -4596,6 +4596,34 @@ Use an owner on a business with Indian figures (Settings › Demo data, India, C
    - Jobs in progress shows "% billed · budget" on each job's second line (US-DASH-20).
    - Job costing's "Cost by category" ring still shows at its size beside its table (US-JOB-26).
 
+## 202. Contacts list polish and toggles (US-OPS-36, US-CRM-21 to US-CRM-23, refinements before Phase 10)
+
+Use an owner on a business with demo data, plus a contact named "H2Z Facades and Interiors Factory Private Limited" with a long email. Check 1440 px and 1280 px, light and dark, and compare with the canvas "05 Contacts polish".
+
+1. **Toggles (US-OPS-36):**
+   - On Contacts, the view switcher sits in a grey track; the chosen view is a white chip with a blue outline and blue icon (in dark, a lifted grey chip with a light-blue outline). The other two are grey.
+   - Hover each option: after a moment its name shows ("Table view", "List view", "Card view"). Tab to the switcher: the tooltip shows on focus too, and Escape hides it. VoiceOver reads "Card view, radio button, checked".
+   - The same look on: Accrual / Cash on the dashboard and on Reports, 3M / 6M / 12M on Income and expenses, the theme switch on Profile › Appearance and in the user menu (icon-only there, with tooltips), and "Enter as" on a new expense.
+2. **Long names and emails (US-CRM-21):**
+   - Card view: the long name wraps to two lines, ends with "…" if longer, and never runs under the "⋯" button; the email is cut short with "…". Hovering shows the full text. Nothing crosses the card's edge.
+   - List view: the name and email are cut short on one line, full text on hover.
+   - Table view at 1280 px: no sideways scrolling; Status and the "⋯" column are visible; the long email ends with "…".
+3. **Refresh (US-CRM-22):**
+   - Beside the view switcher: "Updated just now" and the Refresh button (tooltip "Refresh list"). After a few minutes it reads "Updated 2 min ago".
+   - Add a contact in another browser, then press Refresh: the list stays on screen, the icon turns (not with Reduce Motion), "Updating…" shows, and the new contact appears. VoiceOver says "Contacts updated".
+   - Switch to another tab for over 30 seconds and come back: the list refreshes by itself.
+   - With the API stopped, Refresh shows "Couldn't refresh the list. Check your connection and try again." with "Try again", and the list stays.
+4. **Search, filters and stat cards (US-CRM-23):**
+   - Search is on its own row under the filters in all three views; in the Table view "Columns" is on the right of that row. Typing narrows the list by name, email or phone.
+   - The address follows: `?q=…`, `?type=vendor&type=both`, `?status=archived`, `?page=2`. Open a contact and press Back: the same search, filters and page. Paste the address into a new tab: the same list.
+   - Press "Vendors": the card shows pressed ("Showing these · press again to clear") and the list shows vendors and "Customer & vendor". The counts on the cards don't change. Press it again to clear. "Total contacts" clears the type filter; "Active leads" opens the pipeline.
+   - A search that matches nothing: "No contacts match "<text>"" with "Clear search". With a filter as well: "No contacts match these filters", and "Clear filters" clears the search too.
+   - Go to page 2 of the table and press Refresh: you stay on page 2.
+5. Regression:
+   - Add contact, Import CSV (the duplicate check still sees archived contacts), Archive, Restore and Delete still work and the list updates (US-CRM-01, US-CRM-03, US-CRM-04, US-CRM-14).
+   - Accrual / Cash still switches the dashboard and reports (US-DASH-26, US-RPT-35); the expense entry mode still switches (US-PUR-23).
+   - The job costing "Cost by category" ring and reports tables look as before.
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

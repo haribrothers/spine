@@ -1,5 +1,5 @@
-import { render } from "@testing-library/react";
-import { describe, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { Table, type TableColumn } from "./table";
 
@@ -55,6 +55,18 @@ describe("Table a11y", () => {
         groupPrimary={(rows) => rows[0]!}
       />,
     );
+    await expectNoA11yViolations(container);
+  });
+
+  it("has no violations with a controlled page, which stays put when the data changes (US-CRM-23)", async () => {
+    const many = Array.from({ length: 25 }, (_, i) => ({ id: String(i), number: `INV-${i}`, contact: `Contact ${i}`, amount: i }));
+    const { container, rerender } = render(<Table columns={columns} data={many} rowKey={(row) => row.id} pageSize={10} page={2} onPageChange={() => {}} />);
+    expect(screen.getByText("INV-10")).toBeTruthy();
+    rerender(<Table columns={columns} data={[...many]} rowKey={(row) => row.id} pageSize={10} page={2} onPageChange={() => {}} />);
+    expect(screen.getByText("INV-10")).toBeTruthy();
+    // A page past the end shows the last page.
+    rerender(<Table columns={columns} data={many} rowKey={(row) => row.id} pageSize={10} page={9} onPageChange={() => {}} />);
+    expect(screen.getByText("INV-20")).toBeTruthy();
     await expectNoA11yViolations(container);
   });
 });

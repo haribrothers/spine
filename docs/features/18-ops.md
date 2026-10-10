@@ -2,7 +2,7 @@
 
 What it takes for a stranger to run Spine for years: one-command install, backups that restore, upgrades that migrate safely, health checks and an update banner — plus the cross-cutting pieces every screen relies on: error and no-access pages, the phone-width web layout, and release readiness (strings, accessibility, security, licence). Most of this module is Phase 11 (packaging and 1.0); the cross-cutting fixes are Phase 6 and global search is Phase 7.
 
-**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2)
+**Screens:** `UpgradeNotice` (P3), `NotFound` (P2), `NoAccess` (P2), `ServerError` (P2), `AppShellPhone` (P1), `AppShellPhoneNav` (P1), `MeetingScopeChoice` (P2), `ExpenseBillToCustomer` (P2), `SearchPalette` (P1), `DashboardOwnerRedesignDark` (P1), `InvoicesBulkSelectDark` (P1), `SettingsRemindersDark` (P1), `SearchPaletteDark` (P1), `DashboardOwnerConstruction` (P1), `VendorBillAttachments` (P1), `ToggleStates` (P2), `ToggleStatesDark` (P2)
 **Depends on:** every module; [11-testing-release](../prd/11-testing-release.md); [08-non-functional](../prd/08-non-functional.md).
 
 ## Features
@@ -560,7 +560,7 @@ Decision: D-156
 - API: `DELETE /attachments/:id { reason? }` (edit capability; Owner-only on locked records; audited).
 
 ### US-OPS-36 · See which toggle is on, and what each one does
-**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToggleStates`, `ContactsCardsPolish`
+**Feature:** F-OPS-04 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ToggleStates`, `ToggleStatesDark`, `ContactsCardsPolish`
 **As** any member, **I want** the chosen option in a toggle group to stand out and an icon-only toggle to tell me what it does, **so that** I can tell at a glance which view, range or basis I'm on.
 
 Decision: D-210
@@ -573,5 +573,5 @@ Decision: D-210
 - **Given** a single toggle (`Toggle`, for example a formatting button), **when** it's on, **then** it has a light primary tint and a primary outline, not just a coloured icon.
 
 **Implementation notes**
-- UI: `packages/ui` `ToggleGroup` draws the track and `ToggleGroupItem` the chip (one style, no per-screen overrides; the expense form, Profile, the user menu and the dashboard drop theirs). `Toggle` and `ToggleGroupItem` take an optional `tooltip`; an icon-only item uses its `aria-label`. `TooltipProvider` is mounted once in the web app's providers and the design-system app. Doc pages (`toggle`, `toggle-group`, `tooltip`) and a11y tests change in the same commit.
+- UI: `packages/ui` `ToggleGroup` draws the track and `ToggleGroupItem` the chip (one style, no per-screen overrides; the expense form, Profile, the user menu and the dashboard drop theirs). `Toggle` and `ToggleGroupItem` take an optional `tooltip`; an icon-only item uses its `aria-label`. The chosen style keys off `aria-checked` / `aria-pressed` (a tooltip trigger sets its own `data-state`). A new token, `control-selected` (white in light, `#2C2B26` in dark), fills the chip. `TooltipProvider` is mounted once in the web app's root layout and the design-system app, and each `ToggleGroup` carries its own so it works anywhere. Doc pages (`toggle`, `toggle-group`, `tooltip`) and a11y tests change in the same commit.
 - No API change.

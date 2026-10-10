@@ -443,10 +443,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-DASH-27 · See the dashboard take shape while it loads
 - [x] US-DASH-28 · Read big figures on calm, colour-coded cards
 - [x] US-DASH-29 · Keep cards their own height, with my tasks in a side column
-- [ ] US-OPS-36 · See which toggle is on, and what each one does
-- [ ] US-CRM-21 · Read long names and emails in every contacts view
-- [ ] US-CRM-22 · Refresh the contacts list to see changes
-- [ ] US-CRM-23 · Search, filter and come back to the same contacts list
+- [x] US-OPS-36 · See which toggle is on, and what each one does
+- [x] US-CRM-21 · Read long names and emails in every contacts view
+- [x] US-CRM-22 · Refresh the contacts list to see changes
+- [x] US-CRM-23 · Search, filter and come back to the same contacts list
 
 ## Phase 10 · AI assistant
 

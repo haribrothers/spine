@@ -37,7 +37,7 @@ export function useDashboardBasis() {
 export function BasisSwitch() {
   const { basis, setBasis } = useDashboardBasis();
   return (
-    <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as DashboardBasis)} aria-label="Profit basis" className="rounded-md border border-border p-0.5">
+    <ToggleGroup type="single" value={basis} onValueChange={(v) => v && setBasis(v as DashboardBasis)} aria-label="Profit basis">
       <ToggleGroupItem value="accrual" className="px-3">
         Accrual
       </ToggleGroupItem>

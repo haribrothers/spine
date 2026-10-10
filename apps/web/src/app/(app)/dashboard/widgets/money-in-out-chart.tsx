@@ -102,9 +102,9 @@ export function MoneyInOutChart() {
           onValueChange={(v) => v && setMonths(Number(v) as Range)}
           aria-label="Range"
         >
-          <ToggleGroupItem value="3">3M</ToggleGroupItem>
-          <ToggleGroupItem value="6">6M</ToggleGroupItem>
-          <ToggleGroupItem value="12">12M</ToggleGroupItem>
+          <ToggleGroupItem value="3" size="sm">3M</ToggleGroupItem>
+          <ToggleGroupItem value="6" size="sm">6M</ToggleGroupItem>
+          <ToggleGroupItem value="12" size="sm">12M</ToggleGroupItem>
         </ToggleGroup>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">

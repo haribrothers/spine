@@ -18,6 +18,7 @@ import { Toggle } from "@spine/ui";
 | `defaultPressed` | boolean | — |
 | `onPressedChange` | (pressed: boolean) => void | — |
 | `size` | default \| sm | default |
+| `tooltip` | string \| false | the `aria-label` of an icon-only toggle |
 
 ## Variants
 
@@ -27,6 +28,9 @@ import { Toggle } from "@spine/ui";
 
 - Can be controlled or uncontrolled.
 - Supports disabled state.
+
+- On is a light primary tint (`info-bg`) with a `primary` outline (US-OPS-36), not only a coloured icon.
+- `tooltip`: an icon-only toggle shows its `aria-label` as a tooltip on hover and focus; `tooltip={false}` turns it off.
 
 ## Exports
 

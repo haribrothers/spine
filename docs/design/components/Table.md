@@ -24,6 +24,7 @@ import { TableColumn, Table } from "@spine/ui";
 | `groupPrimary` | (rows: T[]) => T | — |
 | `groupMemberLabel` | (row: T) => ReactNode | — |
 | `footer` | Partial<Record<string, ReactNode>> | — |
+| `page` / `onPageChange` | number / (page) => void | — (uncontrolled) |
 | `key` | string | — |
 | `header` | string | — |
 | `render` | (row: T) => ReactNode | — |

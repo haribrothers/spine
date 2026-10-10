@@ -5,7 +5,7 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
-    ignores: ["dist/**", ".next/**", ".next-e2e/**", "storybook-static/**", "node_modules/**", "next-env.d.ts"],
+    ignores: ["dist/**", ".next/**", ".next-e2e/**", ".next-e2e-dev/**", "storybook-static/**", "node_modules/**", "next-env.d.ts"],
   },
   {
     rules: {

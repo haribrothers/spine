@@ -273,11 +273,11 @@ export function ExpenseForm({
             <span id="entry-mode-label" className="text-[13px] font-medium text-on-surface">
               Enter as
             </span>
-            <ToggleGroup type="single" value={entryMode} onValueChange={changeEntryMode} aria-labelledby="entry-mode-label" className="w-full rounded-md bg-surface-sunken p-1">
-              <ToggleGroupItem value="amount" className="flex-1 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+            <ToggleGroup type="single" value={entryMode} onValueChange={changeEntryMode} aria-labelledby="entry-mode-label" className="w-full">
+              <ToggleGroupItem value="amount" className="flex-1">
                 Amount
               </ToggleGroupItem>
-              <ToggleGroupItem value="labour" className="flex-1 data-[state=on]:bg-surface data-[state=on]:text-on-surface data-[state=on]:shadow-sm">
+              <ToggleGroupItem value="labour" className="flex-1">
                 Headcount × day rate
               </ToggleGroupItem>
             </ToggleGroup>

@@ -41,6 +41,13 @@ export interface TableProps<T> {
   groupMemberLabel?: (row: T) => React.ReactNode;
   /** A totals row under every page, keyed by column (a report's "Total"); columns left out stay blank. */
   footer?: Partial<Record<string, React.ReactNode>>;
+  /**
+   * The page, when the parent keeps it (e.g. in the address, US-CRM-23).
+   * Controlled, it doesn't jump back to 1 when `data` changes (a refresh
+   * keeps your place); a page past the end shows the last page.
+   */
+  page?: number;
+  onPageChange?: (page: number) => void;
 }
 
 type SortDirection = "asc" | "desc";
@@ -70,9 +77,12 @@ export function Table<T>({
   groupPrimary,
   groupMemberLabel,
   footer,
+  page: pageProp,
+  onPageChange,
 }: TableProps<T>) {
   const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
-  const [page, setPage] = useState(1);
+  const [pageState, setPageState] = useState(1);
+  const controlled = pageProp !== undefined;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   // configurablePageSize's <select> only ever offers pageSizeOptions, so the
   // initial pageSize must be one of them too — otherwise the <select> falls
@@ -81,8 +91,8 @@ export function Table<T>({
   const [pageSize, setPageSize] = useState(pageSizeProp ?? (configurablePageSize ? pageSizeOptions[0]! : 20));
 
   useEffect(() => {
-    setPage(1);
-  }, [data, pageSize]);
+    if (!controlled) setPageState(1);
+  }, [data, pageSize, controlled]);
 
   // Grouped mode: cluster `data` by `groupBy(row)` into one Group per key
   // (a group of size 1 — no siblings — behaves exactly like a flat row,
@@ -135,6 +145,12 @@ export function Table<T>({
   const pageCount = groupBy
     ? Math.max(1, Math.ceil((sortedGroups?.length ?? 0) / pageSize))
     : Math.max(1, Math.ceil(sorted.length / pageSize));
+  const page = Math.min(controlled ? Math.max(1, pageProp) : pageState, pageCount);
+  const setPage = (next: number) => (controlled ? onPageChange?.(next) : setPageState(next));
+  const changePageSize = (next: number) => {
+    setPageSize(next);
+    if (controlled) onPageChange?.(1);
+  };
   // US-RPT-34 — "Print" shows every row, not just this page.
   const printing = usePrintMode();
   const pageRows = printing ? sorted : sorted.slice((page - 1) * pageSize, page * pageSize);
@@ -304,7 +320,7 @@ export function Table<T>({
           pageSizeOptions={pageSizeOptions}
           total={groupBy ? groupTotal : data.length}
           onPageChange={setPage}
-          onPageSizeChange={setPageSize}
+          onPageSizeChange={changePageSize}
         />
       ) : (
         pageCount > 1 && <Pagination page={page} pageCount={pageCount} onPageChange={setPage} className="self-end" />

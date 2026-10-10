@@ -80,6 +80,29 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — Contacts list polish and one look for toggles (US-OPS-36, US-CRM-21 to US-CRM-23, D-210)
+
+- **Toggles (US-OPS-36):**
+  - Every toggle group is one segmented control: a grey track and the chosen option as a raised chip with a primary outline and a semibold, primary label (new token `control-selected`). The contacts view switcher, Accrual / Cash (dashboard and reports), 3M / 6M / 12M, the theme switch (Profile and the user menu) and the expense entry mode drop their own styling. A single `Toggle` that's on gets a primary tint and outline.
+  - The chosen style reads `aria-checked` / `aria-pressed`, not `data-state`, because a tooltip trigger sets its own `data-state`.
+  - Icon-only options show their name as a tooltip on hover and keyboard focus, using the `@spine/ui` `Tooltip` (`tooltip` prop on `Toggle` and `ToggleGroupItem`; defaults to the `aria-label`). `TooltipProvider` is now mounted in the web and design-system root layouts.
+- **Long names and emails (US-CRM-21):** in cards, names wrap to two lines and end with "…", clear of the "⋯" menu; emails and phones stay on one line; the full text shows on hover. In the table, names and emails are cut short so every column, Status included, fits at 1280 px.
+- **Refresh (US-CRM-22):** a Refresh button (tooltip "Refresh list") with "Updated … ago" reloads contacts, the stat cards and the lead count in place; the list also refreshes when the tab is shown again after 30 seconds away. A failed refresh keeps the list and offers "Try again"; screen readers hear "Contacts updated".
+- **Search, filters and stat cards (US-CRM-23):**
+  - Search has its own row in every view (with Columns on the right in the Table view).
+  - Type, status, search and page live in the address, so Back and bookmarks return to the same list.
+  - The page loads every contact once and filters in the browser, so the stat cards count all active contacts. "Customers" and "Vendors" filter by type, and "Active leads" opens the pipeline.
+- **Components:**
+  - `Table` and `DataTable` take a controlled `page` / `onPageChange`, so a refresh keeps your page. `DataTable` takes `toolbarStart` in place of its search box.
+  - The unused `usePagination` hook is removed.
+  - `.next-e2e-dev` is ignored by ESLint.
+- **Tests:**
+  - New: `us-crm-22` and `us-crm-23` (web unit); `us-ops-36`, `us-crm-21`, `us-crm-22` and `us-crm-23` E2E.
+  - Toggle, ToggleGroup, Table and DataTable a11y tests cover the tooltip, the controlled page and `toolbarStart`.
+  - Steadier under a busy machine: the new specs share the seeded org (no extra demo seeds, which flood the email queue); `dashboard.spec` waits for the layout to save before reloading; `us-onb-22` wheels until Continue shows; `us-inv-23` gives the reminder email 15 s; `us-inv-18` accepts whichever invoice is most overdue in the shared org.
+  - QA script section 202.
+- **Design:** canvas "05 Contacts polish"; five artboards.
+
 ### 2026-10-10 — Dashboard polish: placeholders, figures that fit, no gaps and a side column (US-DASH-27 to US-DASH-29, D-209)
 
 - **While it loads (US-DASH-27):**

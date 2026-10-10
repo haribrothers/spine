@@ -48,7 +48,8 @@ test.describe("US-INV-23", () => {
     await expect(bar.getByRole("button", { name: "Clear" })).toBeVisible();
 
     await bar.getByRole("button", { name: "Send reminders (1)" }).click();
-    await expect(page.getByText("1 reminder sent").first()).toBeVisible();
+    // Sending waits on the email going out.
+    await expect(page.getByText("1 reminder sent").first()).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(new RegExp(`${paid!.number}: Nothing is owed on it\\.`)).first()).toBeVisible();
     await expect(page.getByText(new RegExp(`${voided!.number}: It's void\\.`)).first()).toBeVisible();
     await expect(bar).toHaveCount(0);
