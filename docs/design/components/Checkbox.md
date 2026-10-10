@@ -22,7 +22,7 @@ import { Checkbox } from "@spine/ui";
 ## Rules and behaviour
 
 - Can be controlled or uncontrolled.
-- Supports indeterminate state.
+- Supports indeterminate state: `checked="indeterminate"` fills it and shows a minus, for a header box when only some rows are selected (US-CAT-12).
 - Full keyboard navigation.
 
 ## Exports

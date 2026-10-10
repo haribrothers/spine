@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -18,6 +18,7 @@ import {
   cn,
 } from "@spine/ui";
 import { RefreshCw, Search, Upload, Users } from "lucide-react";
+import { replaceQuery } from "../../../lib/replace-query";
 import { apiClient } from "../../../lib/api-client";
 import { useCapability } from "../../../lib/capabilities-context";
 import { ContactCreateDrawer } from "./contact-create-drawer";
@@ -69,7 +70,6 @@ const DEFAULT_PAGE_SIZE = 25;
  */
 export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boolean }) {
   const canCreate = useCapability("contacts.edit_own");
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [state, setState] = useState<ContactsListState>(() => parseListState(new URLSearchParams(searchParams.toString())));
@@ -105,7 +105,7 @@ export function ContactsExplorer({ initialDrawerOpen }: { initialDrawerOpen: boo
     const next = { ...state, page: 1, ...patch };
     setState(next);
     const query = listStateQuery(next);
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    replaceQuery(pathname, query);
   }
 
   /** The first load shows the placeholder; a refresh keeps the list on screen. */

@@ -17,7 +17,8 @@ import {
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { useCanEditOwnership } from "../../../lib/capabilities-context";
+import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import type { CatalogItemUsage } from "@spine/shared";
 import type { CatalogItem } from "./types";
 
 /**
@@ -36,10 +37,13 @@ import type { CatalogItem } from "./types";
 export function CatalogRowActions({
   item,
   onEdit,
+  onDuplicate,
   onChanged,
 }: {
   item: CatalogItem;
   onEdit: (item: CatalogItem) => void;
+  /** US-CAT-12 — opens Add item filled from this one. */
+  onDuplicate?: (item: CatalogItem) => void;
   onChanged: (action: "archived" | "restored" | "deleted", item: CatalogItem) => void;
 }) {
   const [busy, setBusy] = useState(false);
@@ -47,6 +51,18 @@ export function CatalogRowActions({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canEdit = useCanEditOwnership(item.createdByUserId, { own: "catalog.edit_own", others: "catalog.edit_others" });
   const canDelete = useCanEditOwnership(item.createdByUserId, { own: "catalog.delete_own", others: "catalog.delete_others" });
+  const canCreate = useCapability("catalog.edit_own");
+  const [usage, setUsage] = useState<CatalogItemUsage | null>(null);
+
+  // US-CAT-15: the delete confirmation says how many documents used the item.
+  function openConfirm() {
+    setUsage(null);
+    setConfirmOpen(true);
+    apiClient
+      .get<CatalogItemUsage>(`/catalog-items/${item.id}/usage`)
+      .then(setUsage)
+      .catch(() => setUsage(null));
+  }
 
   async function handleArchiveOrRestore() {
     setBusy(true);
@@ -73,7 +89,7 @@ export function CatalogRowActions({
     }
   }
 
-  if (!canEdit && !canDelete) {
+  if (!canEdit && !canDelete && !(canCreate && onDuplicate)) {
     return null;
   }
 
@@ -92,13 +108,14 @@ export function CatalogRowActions({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
           {canEdit && <DropdownMenuItem onSelect={() => onEdit(item)}>Edit</DropdownMenuItem>}
+          {canCreate && onDuplicate && <DropdownMenuItem onSelect={() => onDuplicate(item)}>Duplicate</DropdownMenuItem>}
           {canDelete && (
             <DropdownMenuItem disabled={busy} onSelect={handleArchiveOrRestore}>
               {item.archivedAt ? "Restore" : "Archive"}
             </DropdownMenuItem>
           )}
           {canDelete && (
-            <DropdownMenuItem destructive onSelect={() => setConfirmOpen(true)}>
+            <DropdownMenuItem destructive onSelect={openConfirm}>
               Delete
             </DropdownMenuItem>
           )}
@@ -110,8 +127,9 @@ export function CatalogRowActions({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {item.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the item. This cannot be undone. Prefer Archive if this item may be
-              referenced by a quote or invoice later.
+              {usage && usage.quotes + usage.invoices > 0
+                ? `It's on ${usage.quotes + usage.invoices} ${usage.quotes + usage.invoices === 1 ? "document" : "documents"} (quotes and invoices), and they keep their own copy of the line. Deleting can't be undone; Archive hides it from pickers instead.`
+                : "This permanently removes the item. This cannot be undone. Prefer Archive if this item may be referenced by a quote or invoice later."}
               {error && <span className="mt-2 block text-overdue">{error}</span>}
             </AlertDialogDescription>
           </AlertDialogHeader>

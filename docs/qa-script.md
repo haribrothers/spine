@@ -4691,6 +4691,40 @@ Use an owner on a business with demo data and a second member, with a few meetin
    - A date picker elsewhere (e.g. a quote's Valid until) looks and works as before.
    - The pipeline board still reaches the bottom of the window (US-CRM-24).
 
+## 205. A catalogue that's easy to keep (US-CAT-10 to US-CAT-15, refinements before Phase 10)
+
+Use an owner on a business with demo data, a Staff member, and about a dozen catalogue items: a few in each of three categories, one taxable item with no tax, one exempt item, one archived, one used on a quote and an invoice. Check one Indian (GST) business and one elsewhere, at 1440 px and 1024 px, light and dark, and compare with the canvas "08 Catalogue".
+
+1. **Setup cards (US-CAT-10):**
+   - The cards read "Total items", "Categories" (with the first two named, "and N more"), "Missing tax rate" and "No income account" ("Posts to 4100 Sales — Services"), counting active items only, whatever the filters.
+   - Press "Missing tax rate": just the taxable items with no tax show, the card reads "Showing these · press again to clear" and the address has `setup=tax`; press again to clear. On the GST business a zero-rated item doesn't count; elsewhere an untaxed item does unless it's exempt or non-taxable.
+   - Press "No income account", then "Total items": every filter clears. With a screen reader each card is a button ("Show items missing a tax rate, 1") with its pressed state.
+2. **The table (US-CAT-11):**
+   - Tax names the tax ("GST 18%", "Sales tax 8%"), says "Exempt", "Non-taxable" or (GST) "Zero-rated", and shows "No tax" with a warning icon on a taxable item without one.
+   - The description sits under the name (cut short, full text on hover). HSN/SAC shows on the GST business only (it can be turned on from Columns elsewhere). Only archived rows say "Archived".
+3. **Many at once (US-CAT-12):**
+   - Tick two rows: a dark bar reads "2 selected". The header box is part-ticked; press it to tick the page, again to clear.
+   - Set tax › a rate: "Updated 2 items" and both rows show it. On the GST business pick "GST 18%": each item's inter-state tax becomes "IGST 18%" (open one to check); "No tax" clears both.
+   - Set category (type a new one or pick one), Set income account: every selected item changes. As Staff, select one of your items and one of the owner's and change the category: "You can't change 1 of these items. Unselect them and try again." and nothing changes.
+   - Archive two items: "Archived 2 items"; show Archived and restore them. Search or change a filter: the selection clears.
+   - A row's "…" › Duplicate: "Add item" opens with "<name> (copy)" and the same fields; save it.
+   - Export: `catalogue-<today>.csv` downloads with just the rows on screen (filters applied), columns Name, Description, Unit, Category, Price, Tax, HSN/SAC code, Income account, Expense account. Import that file into another business: it maps every column, Category included.
+4. **Coming back (US-CAT-13):**
+   - Search, Status, Category, Price (Min and Max in its popover; the button then reads "$40.00 – $100.00"), a setup card, a column sort and page 2 all show in the address. Reload, or open a quote and press Back: the same list. "Clear filters" clears them.
+   - "Updated just now" ticks on; Refresh reloads in place; switch tabs for a minute and come back: it refreshes by itself.
+5. **Bundles (US-CAT-14):**
+   - The tabs read "Items N" and "Bundles N" (active ones). With no bundles, Bundles shows an icon, "No bundles yet", the two ways to make one and "Choose items", which opens Items.
+   - Select three items › Make a bundle: each has quantity 1 and its amount; change quantities and the total before tax follows. Save: "Bundle saved", the Bundles count goes up and the bundle's total includes tax. Add it to a quote from the quote's bundle picker.
+   - Select an item in another currency too: "Choose items in one currency." and Save is off.
+6. **The drawer (US-CAT-15):**
+   - Open an item: fields sit under Details, Price and tax, and Accounts; Save stays in view as you scroll. A used item says "Used on 1 quote and 1 invoice · last quoted <date>"; an unused one "Not used on a quote or invoice yet."
+   - Delete the used item: the confirmation says it's on 2 documents and they keep their own copy of the line.
+7. Regression:
+   - Add, edit, archive, restore and delete a single item; Import (US-CAT-01 to US-CAT-09).
+   - Pick a catalogue item and a bundle on a quote and an invoice; the line takes the item's price and tax (US-QUO-25, US-TAX-13).
+   - Any other table with a Columns menu (Contacts, Invoices, Reports) sorts, pages and hides columns as before; no checkboxes appear on them.
+   - Field users still can't open Catalogue's usage counts.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

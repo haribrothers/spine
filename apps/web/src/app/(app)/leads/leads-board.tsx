@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { replaceQuery } from "../../../lib/replace-query";
 import { useFillHeight } from "../../../lib/use-fill-height";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -174,7 +175,7 @@ export function LeadsBoard() {
     const next = { ...state, ...patch };
     setState(next);
     const query = pipelineQuery(next);
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    replaceQuery(pathname, query);
   }
 
   /** The first load shows the placeholder; a refresh keeps the board on screen. */

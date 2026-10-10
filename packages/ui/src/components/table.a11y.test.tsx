@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { expectNoA11yViolations } from "../test/a11y";
 import { Table, type TableColumn } from "./table";
@@ -68,5 +68,35 @@ describe("Table a11y", () => {
     rerender(<Table columns={columns} data={many} rowKey={(row) => row.id} pageSize={10} page={9} onPageChange={() => {}} />);
     expect(screen.getByText("INV-20")).toBeTruthy();
     await expectNoA11yViolations(container);
+  });
+
+  it("has no violations with selectable rows, and the header box selects the page (US-CAT-12)", async () => {
+    let selected = new Set<string>(["2"]);
+    const onSelectedChange = (next: Set<string>) => {
+      selected = next;
+    };
+    const { container, rerender } = render(
+      <Table columns={columns} data={invoices} rowKey={(row) => row.id} selected={selected} onSelectedChange={onSelectedChange} selectLabel={(row) => row.number} />,
+    );
+    await expectNoA11yViolations(container);
+    expect(screen.getByRole("checkbox", { name: "Select every row on this page" }).getAttribute("aria-checked")).toBe("mixed");
+    expect(screen.getByRole("checkbox", { name: "Select INV-2026-0042" }).getAttribute("aria-checked")).toBe("true");
+    expect(container.querySelectorAll('tr[aria-selected="true"]').length).toBe(1);
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select every row on this page" }));
+    expect([...selected].sort()).toEqual(["1", "2", "3"]);
+    rerender(<Table columns={columns} data={invoices} rowKey={(row) => row.id} selected={selected} onSelectedChange={onSelectedChange} selectLabel={(row) => row.number} />);
+    expect(screen.getByRole("checkbox", { name: "Select every row on this page" }).getAttribute("aria-checked")).toBe("true");
+    fireEvent.click(screen.getByRole("checkbox", { name: "Select every row on this page" }));
+    expect(selected.size).toBe(0);
+  });
+
+  it("keeps the sort the parent gives it (US-CAT-13)", () => {
+    let sort: { key: string; direction: "asc" | "desc" } | null = { key: "amount", direction: "desc" };
+    render(<Table columns={columns} data={invoices} rowKey={(row) => row.id} sort={sort} onSortChange={(next) => (sort = next)} />);
+    const firstCells = screen.getAllByRole("row").slice(1).map((r) => r.textContent ?? "");
+    expect(firstCells[0]).toContain("INV-2026-0043");
+    fireEvent.click(screen.getByRole("button", { name: /Invoice #/ }));
+    expect(sort).toEqual({ key: "number", direction: "asc" });
   });
 });

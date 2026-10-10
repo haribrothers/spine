@@ -25,12 +25,16 @@ import { DataTable } from "@spine/ui";
 | `footer` | Partial<Record<string, ReactNode>> | — |
 | `page` / `onPageChange` | number / (page) => void | — (uncontrolled) |
 | `toolbarStart` | ReactNode | — (the built-in search box) |
+| `selected` / `onSelectedChange` / `selectLabel` | as Table | — |
+| `sort` / `onSortChange` | as Table | — |
+| `defaultHidden` | string[] | [] |
 
 ## Rules and behaviour
 
 - `footer` adds a totals row, keyed by column, on the sunken band in the table's `<tfoot>` (a report's "Total"); columns left out stay blank (US-RPT-40).
 - Client-side search filtering via a searchKey accessor.
-- A Columns dropdown lets the user hide/show individual columns without losing sort state.
+- A Columns dropdown lets the user hide/show individual columns without losing sort state; `defaultHidden` sets which start hidden.
+- Selection and a parent-kept sort pass through to Table (US-CAT-12, US-CAT-13).
 - Composes Table underneath rather than reimplementing row rendering.
 
 ## Exports

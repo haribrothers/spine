@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { ListChecks, MoreHorizontal, PackagePlus } from "lucide-react";
 import {
   Alert,
   AlertDescription,
@@ -52,7 +52,7 @@ const STATUS_OPTIONS = [
  * and delete need `catalog.delete_*`, own or others by who saved it — the
  * same rules the API applies.
  */
-export function BundlesView() {
+export function BundlesView({ onChooseItems, onCountChange }: { onChooseItems?: () => void; onCountChange?: (active: number) => void } = {}) {
   const [bundles, setBundles] = useState<CatalogBundle[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<string[]>(["active"]);
@@ -62,9 +62,12 @@ export function BundlesView() {
   const load = useCallback(() => {
     apiClient
       .get<CatalogBundle[]>("/catalog-bundles?includeArchived=true")
-      .then(setBundles)
+      .then((rows) => {
+        setBundles(rows);
+        onCountChange?.(rows.filter((b) => !b.archivedAt).length);
+      })
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load bundles."));
-  }, []);
+  }, [onCountChange]);
 
   useEffect(() => {
     load();
@@ -131,7 +134,22 @@ export function BundlesView() {
   return (
     <div className="flex flex-col gap-4">
       {bundles.length === 0 ? (
-        <EmptyState title="No bundles yet" description="Open a quote and choose More ▾ › Save lines as a bundle… to add a group of lines you quote often." />
+        // US-CAT-14 (D-213): say how to make one, and offer the way in.
+        <div className="rounded-lg border border-border bg-surface" data-testid="bundles-empty">
+          <EmptyState
+            icon={<PackagePlus />}
+            title="No bundles yet"
+            description="Group what you quote together. Select items and choose Make a bundle, or save a quote's lines from its More menu."
+            action={
+              onChooseItems ? (
+                <Button onClick={onChooseItems}>
+                  <ListChecks size={14} aria-hidden />
+                  Choose items
+                </Button>
+              ) : undefined
+            }
+          />
+        </div>
       ) : (
         <>
           <div className="w-56">

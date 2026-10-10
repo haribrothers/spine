@@ -6,7 +6,7 @@ import type { Quote } from "./types";
 /**
  * Real counts derived client-side from the already-fetched quote list, per
  * this codebase's established rule against fabricated stat-card numbers
- * (see use-catalog-stats.ts's own comment). "Expired" counts sent quotes
+ * (see use-contact-stats.ts's own comment). "Expired" counts sent quotes
  * whose computed `isExpired` is true (S-03.11) — a real, actionable
  * number, not a placeholder.
  */

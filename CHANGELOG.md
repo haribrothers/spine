@@ -80,6 +80,19 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — A catalogue that's easy to keep (US-CAT-10 to US-CAT-15, D-213)
+
+- **Setup cards (US-CAT-10):** "Missing tax rate" and "No income account" ("Posts to 4100 Sales — Services") are filters you press, with their pressed state in the address; "Total items" clears; "Categories" names the first two. Missing tax counts taxable items with no tax; for a GST business zero-rated items don't count, elsewhere any untaxed item that isn't exempt or non-taxable does.
+- **The table (US-CAT-11):** the Tax column names the tax ("GST 18%", "Exempt", "Zero-rated"), and "No tax" on a taxable item has a warning icon in the due-soon colour; the description sits under the name; HSN/SAC shows for a GST business; only archived rows carry a badge (the Status column is gone).
+- **Many at once (US-CAT-12):** tick rows (or the header box for the page) for a bar with Set category, Set tax, Set income account, Archive or Restore, Make a bundle and Clear. One save through `POST /catalog-items/bulk` changes every item or none, checking each item's own/others rights first. For a GST business a GST group brings the matching IGST rate as the inter-state tax. Duplicate opens Add item filled from the row. Export downloads `catalogue-<date>.csv` with the list as filtered, in Import's columns plus Category, which Import now reads.
+- **Coming back (US-CAT-13):** search, status, category, price, setup card, sort and page live in the address; one Price button holds Min and Max; Refresh with "Updated … ago", and a quiet refresh after 30 s away, as on Contacts.
+- **Bundles (US-CAT-14):** the tabs show counts; Make a bundle takes a name, an optional description and a quantity per item and saves it at each item's default price and tax (`POST /catalog-bundles` with `items`); items in two currencies can't share one. Bundles has an empty state with "Choose items".
+- **The drawer (US-CAT-15):** fields grouped under Details, Price and tax, and Accounts; "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026" (`GET /catalog-items/:id/usage`, Owner and Staff); deleting a used item says how many documents keep their own copy of the line.
+- **Components:** `Table` takes `selected` / `onSelectedChange` / `selectLabel` (a checkbox column) and a controlled `sort` / `onSortChange`; `DataTable` passes them through and takes `defaultHidden`; `Checkbox` draws its indeterminate state.
+- **Fix (D-210 lists):** Pipeline, Contacts, Catalogue and Meetings now write their state to the address with the browser's `replaceState` (`lib/replace-query.ts`) instead of `router.replace`. In a production build each `router.replace` went to the server, so an earlier keystroke could land after a later one and leave a stale search in the address (US-CRM-28's Back check failed against the production build); the spec's address check is now exact.
+- **Tests:** `us-cat-10` to `us-cat-15` web unit and E2E; `us-cat-12`, `us-cat-14` and `us-cat-15` API integration tests; Table selection and sort tests. QA script section 205.
+- **Design:** canvas "08 Catalogue"; six artboards.
+
 ### 2026-10-10 — A calendar that's easy to use (US-MTG-13 to US-MTG-17, D-212)
 
 - **Mini calendar (US-MTG-13):** one dot under each day with a meeting you can see (recurring meetings on each day they occur, follow-ups too when My Activities is ticked), with the count on hover and for screen readers; the week or day on screen is shaded as one band; it follows the main view's month and loads the dots for any month it's paged to.

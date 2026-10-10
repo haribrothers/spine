@@ -33,7 +33,7 @@ test.describe("US-CRM-28", () => {
     // Away and Back returns to the same board.
     await page.goto("/contacts");
     await page.goBack();
-    await expect(page).toHaveURL(/owner=me&source=Referral/);
+    await expect(page).toHaveURL(/\/leads\?owner=me&source=Referral$/);
     await expect(card(page, "Villa extension")).toBeVisible();
     await expect(card(page, "Warehouse")).toHaveCount(0);
 

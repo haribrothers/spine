@@ -41,6 +41,7 @@ import {
   type CalendarView,
 } from "@spine/ui";
 import { Building2, CalendarDays, ChevronDown, PanelRightClose, PanelRightOpen, Plus, Users, X } from "lucide-react";
+import { replaceQuery } from "../../../lib/replace-query";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
@@ -355,7 +356,7 @@ export function MeetingsCalendar() {
   /** US-MTG-16: the address follows the view and date (no history entry per step). */
   function writeAddress(nextView: CalendarView, nextDate: Date) {
     const query = calendarQuery(nextView, nextDate, new Date());
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    replaceQuery(pathname, query);
   }
 
   function changeView(next: CalendarView) {

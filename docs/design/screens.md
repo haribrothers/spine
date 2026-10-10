@@ -541,6 +541,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 
 ![CatalogList](screens/CatalogList.webp)
 
+Refined by `CatalogListRefined` (D-213).
+
 Links to: `CatalogEmpty`
 
 Shows: "Sales › Catalogue" · "OVERVIEW" · "Catalogue" · "98 Dashboard" · "Goods and services you quote, invoice and sell." · "SALES" · "9, Contacts" · "Total items" · "Categories" · "Missing tax rate" · "Missing account mapping" · "Pipeline" · "15" · "Meetings" · "Active" · "Category" · "Min price" · "Max price" · "Add item" · "Quotes" · "JOBS" · "Search items" · "*= Columns" · "• Jobs" · "Name til" · "Category 11" · "Unit" · "Default price t" · "Tax tu" · "Status" · "BILLING" · "$ Invoices" · "Drywall installation & finishing" · "Interior" · "sq ft" · "3.50 USD" · "15%" · "• Credit Notes" · "Electrical rough-in" · "Electrical" · "room" · "450.00 USD" · "..." · "•• Payments" · "Equipment rental - mini excavator" · …
@@ -550,6 +552,8 @@ Shows: "Sales › Catalogue" · "OVERVIEW" · "Catalogue" · "98 Dashboard" · "
 
 ![CatalogEmpty](screens/CatalogEmpty.webp)
 
+Refined by `CatalogListRefined` (D-213).
+
 Links to: `CatalogList`
 
 Shows: "Sales › Catalogue" · "Catalogue" · "Goods and services you quote, invoice and sell." · "Total items" · "Categorles" · "Missing tax rate" · "Missing account mapping" · "Active" · "Category" · "Min price" · "Max price" · "Add item" · "No catalogue items yet" · "Add your first good or service to quote faster - default price" · "and tax rate prefill every new quote line."
@@ -558,6 +562,8 @@ Shows: "Sales › Catalogue" · "Catalogue" · "Goods and services you quote, in
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CAT-01, US-CAT-02 · **Source:** Captured
 
 ![CatalogItemDrawer](screens/CatalogItemDrawer.webp)
+
+Refined by `CatalogItemDrawerRefined` (D-213).
 
 Links to: —
 
@@ -2968,6 +2974,65 @@ Shows: "Today" · "From Oct 10" · the mini calendar button · "Day" "Month" "Ag
 Links to: `MeetingsWeekRefined`
 
 Shows: "Quote walkthrough — Ananya Rao" above its 4 PM block · "Attendees" · "Accepted" · "Tentative" · "No response"
+
+
+## A catalogue that's easy to keep
+
+Drawn in Claude Design for US-CAT-10 to US-CAT-15 (D-213): project "Spine web — refinements before Phase 10", canvas "08 Catalogue". The tabs show counts; "Missing tax rate" and "No income account" are filters and "Total items" clears. The table names each item's tax (flagging "No tax" with an icon), shows HSN/SAC for a GST business and the description under the name; only archived rows carry a badge. Price is one filter button; Refresh, Export, Import and Add item sit on the right, and search has its own row beside Columns. Ticked rows get a bar to set category, tax or income account, archive or make a bundle. The drawer groups its fields and says where the item is used. These refine `CatalogList`, `CatalogEmpty` and `CatalogItemDrawer`. In the built page the Price button's icon doesn't name a currency (items can be in several), the "Missing tax rate" number keeps the card's usual colour, and Set category opens a small dialog, since a category can be typed as well as chosen.
+
+### CatalogListRefined — Items: setup filters, tax names, one Price filter
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-10, US-CAT-11, US-CAT-13 · **Source:** Claude Design
+
+![CatalogListRefined](screens/CatalogListRefined.webp)
+
+Links to: `CatalogItemDrawerRefined`, `CatalogBulkSelect`, `CatalogBundlesEmpty`
+
+Shows: "Items 11" · "Bundles 0" · "Total items" "Clear the filters" · "Categories" "Labour, Materials and 4 more" · "Missing tax rate" "Show these items" · "No income account" "Posts to 4100 Sales — Services" · "Price" · "Updated just now" · "Export" · "Import" · "Add item" · "Search items" · "Columns" · "HSN/SAC" · "GST 18%" · "No tax" with a warning icon · a description under each name
+
+### CatalogListRefinedDark — Items, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-10, US-CAT-11 · **Source:** Claude Design
+
+![CatalogListRefinedDark](screens/CatalogListRefinedDark.webp)
+
+Links to: —
+
+Shows: As `CatalogListRefined`
+
+### CatalogBulkSelect — Three items selected, Set tax open
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-12 · **Source:** Claude Design
+
+![CatalogBulkSelect](screens/CatalogBulkSelect.webp)
+
+Links to: `CatalogMakeBundle`
+
+Shows: the header box part-ticked · "3 selected" · "Set category" · "Set tax" · "Set income account" · "Archive" · "Make a bundle" · "Clear" · "Intra-state tax" · "No tax" · "GST 18%" "9% + 9%" · "Inter-state tax follows" · selected rows tinted
+
+### CatalogMakeBundle — Make a bundle from the selection
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-14 · **Source:** Claude Design
+
+![CatalogMakeBundle](screens/CatalogMakeBundle.webp)
+
+Links to: `CatalogBundlesEmpty`
+
+Shows: "Make a bundle" · "Group these items so they're one pick on a quote or invoice. Prices and tax come from each item; you can change them on the document." · "Name" · "Description (optional)" · "Item" "Quantity" "Amount" · "bag · ₹410.00 · GST 18%" · "Total before tax" · "Cancel" · "Save bundle"
+
+### CatalogBundlesEmpty — Bundles, none yet
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-14 · **Source:** Claude Design
+
+![CatalogBundlesEmpty](screens/CatalogBundlesEmpty.webp)
+
+Links to: `CatalogListRefined`
+
+Shows: "No bundles yet" · "Group what you quote together. Select items and choose Make a bundle, or save a quote's lines from its More menu." · "Choose items"
+
+### CatalogItemDrawerRefined — Edit item, grouped, with where it's used
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CAT-15 · **Source:** Claude Design
+
+![CatalogItemDrawerRefined](screens/CatalogItemDrawerRefined.webp)
+
+Links to: —
+
+Shows: "Edit item" · "Used on 4 quotes and 2 invoices · last quoted 3 Oct 2026" · "DETAILS" · "PRICE AND TAX" · "Intra-state tax" · "Inter-state tax" · "Supply type" · "ACCOUNTS" · "None — posts to 4100 Sales — Services" · "Cancel" · "Save item"
 
 ## Mobile field companion
 

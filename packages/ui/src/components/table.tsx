@@ -3,6 +3,7 @@
 import { ArrowDown, ArrowUp, ArrowUpDown, ChevronRight } from "lucide-react";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { cn } from "../lib/cn";
+import { Checkbox } from "./checkbox";
 import { Pagination } from "./pagination";
 import { PaginationBar } from "./pagination-bar";
 import { usePrintMode } from "../lib/print-mode";
@@ -48,9 +49,24 @@ export interface TableProps<T> {
    */
   page?: number;
   onPageChange?: (page: number) => void;
+  /**
+   * US-CAT-12 — selectable rows: a checkbox column (named by `selectLabel`)
+   * and a header box that selects or clears the rows on this page. The
+   * parent keeps the selection (row keys).
+   */
+  selected?: ReadonlySet<string>;
+  onSelectedChange?: (next: Set<string>) => void;
+  selectLabel?: (row: T) => string;
+  /** US-CAT-13 — the sort, when the parent keeps it (e.g. in the address). */
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
 }
 
-type SortDirection = "asc" | "desc";
+export type SortDirection = "asc" | "desc";
+export interface TableSort {
+  key: string;
+  direction: SortDirection;
+}
 
 /**
  * Zero-radius, dense row height, sticky header, sortable columns, and
@@ -79,8 +95,21 @@ export function Table<T>({
   footer,
   page: pageProp,
   onPageChange,
+  selected,
+  onSelectedChange,
+  selectLabel,
+  sort: sortProp,
+  onSortChange,
 }: TableProps<T>) {
-  const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
+  const [sortState, setSortState] = useState<TableSort | null>(null);
+  const sortControlled = sortProp !== undefined;
+  const sort = sortControlled ? sortProp : sortState;
+  const setSort = (update: (current: TableSort | null) => TableSort | null) => {
+    const next = update(sort);
+    if (sortControlled) onSortChange?.(next);
+    else setSortState(next);
+  };
+  const selectable = Boolean(selected && onSelectedChange);
   const [pageState, setPageState] = useState(1);
   const controlled = pageProp !== undefined;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -125,7 +154,7 @@ export function Table<T>({
       if (av > bv) return 1 * factor;
       return 0;
     });
-  }, [data, sort]);
+  }, [data, sort, columns]);
 
   const sortedGroups = useMemo(() => {
     if (!groups) return null;
@@ -165,6 +194,23 @@ export function Table<T>({
     });
   }
 
+  const pageKeys = pageRows.map((row) => rowKey(row));
+  const pageSelected = selectable ? pageKeys.filter((k) => selected!.has(k)).length : 0;
+  function togglePage() {
+    if (!selectable) return;
+    const next = new Set(selected);
+    if (pageSelected === pageKeys.length) for (const k of pageKeys) next.delete(k);
+    else for (const k of pageKeys) next.add(k);
+    onSelectedChange!(next);
+  }
+  function toggleRow(key: string) {
+    if (!selectable) return;
+    const next = new Set(selected);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    onSelectedChange!(next);
+  }
+
   function toggleExpanded(key: string) {
     setExpanded((current) => {
       const next = new Set(current);
@@ -180,6 +226,16 @@ export function Table<T>({
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-[var(--z-sticky-header)] border-b border-border bg-surface-sunken">
             <tr>
+              {selectable && !groupBy && (
+                <th className="w-10 px-3 py-2">
+                  <Checkbox
+                    aria-label="Select every row on this page"
+                    checked={pageSelected === 0 ? false : pageSelected === pageKeys.length ? true : "indeterminate"}
+                    onCheckedChange={togglePage}
+                    disabled={pageKeys.length === 0}
+                  />
+                </th>
+              )}
               {columns.map((column) => (
                 <th
                   key={column.key}
@@ -284,8 +340,20 @@ export function Table<T>({
                     </Fragment>
                   );
                 })
-              : pageRows.map((row) => (
-                  <tr key={rowKey(row)} className="border-b border-border last:border-0 hover:bg-surface-sunken">
+              : pageRows.map((row) => {
+                  const key = rowKey(row);
+                  const isSelected = selectable && selected!.has(key);
+                  return (
+                  <tr
+                    key={key}
+                    aria-selected={selectable ? isSelected : undefined}
+                    className={cn("border-b border-border last:border-0 hover:bg-surface-sunken", isSelected && "bg-info-bg/70 hover:bg-info-bg")}
+                  >
+                    {selectable && (
+                      <td className="w-10 px-3 py-2">
+                        <Checkbox aria-label={selectLabel ? `Select ${selectLabel(row)}` : "Select row"} checked={isSelected} onCheckedChange={() => toggleRow(key)} />
+                      </td>
+                    )}
                     {columns.map((column) => (
                       <td
                         key={column.key}
@@ -298,11 +366,13 @@ export function Table<T>({
                       </td>
                     ))}
                   </tr>
-                ))}
+                  );
+                })}
           </tbody>
           {footer && (
             <tfoot>
               <tr className="border-t border-border bg-surface-sunken font-semibold text-on-surface">
+                {selectable && !groupBy && <td />}
                 {columns.map((column) => (
                   <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left")}>
                     {footer[column.key]}

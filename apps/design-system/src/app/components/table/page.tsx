@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Badge, StatusChip, Table } from "@spine/ui";
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
@@ -122,6 +123,9 @@ export default () => (
             { prop: "groupMemberLabel", type: "(row: T) => ReactNode" },
             { prop: "footer", type: "Partial<Record<string, ReactNode>>", description: "A totals row under every page, keyed by column key (a report's \"Total\"). Columns left out stay blank." },
             { prop: "page / onPageChange", type: "number / (page: number) => void", description: "The page, when the parent keeps it (e.g. in the address). Controlled, it doesn't reset when data changes, so a refresh keeps your place; a page past the end shows the last page." },
+            { prop: "selected / onSelectedChange", type: "ReadonlySet<string> / (next: Set<string>) => void", description: "Adds a checkbox column (US-CAT-12). Row keys are the ids; the header box selects or clears every row on the page and shows part-ticked when some are. Selected rows are tinted and carry aria-selected." },
+            { prop: "selectLabel", type: "(row: T) => string", description: "Names each row's checkbox: \"Select <label>\". Defaults to the row key." },
+            { prop: "sort / onSortChange", type: "TableSort | null / (sort: TableSort | null) => void", description: "The sort, when the parent keeps it (e.g. in the address, US-CAT-13). TableSort is { key, direction: \"asc\" | \"desc\" }." },
           ]}
           caption="TableColumn<T>"
         />
@@ -239,6 +243,24 @@ export default () => (
         </ComponentPreview>
       </DocSection>
 
+      <DocSection id="selection" title="Selecting rows">
+        <DocLead>Pass <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">selected</code> and <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">onSelectedChange</code> to let people tick rows for a bulk action; the page shows its bulk bar while any are ticked.</DocLead>
+        <ComponentPreview
+          code={`const [selected, setSelected] = useState<Set<string>>(new Set());
+
+<Table
+  columns={columns}
+  data={rows}
+  rowKey={(row) => row.number}
+  selected={selected}
+  onSelectedChange={setSelected}
+  selectLabel={(row) => row.number}
+/>`}
+        >
+          <SelectionExample />
+        </ComponentPreview>
+      </DocSection>
+
       <DocSection id="totals" title="Totals row">
         <DocLead>Pass <code className="rounded border border-border bg-surface-sunken px-1 py-0.5 font-mono text-[12.5px]">footer</code>, keyed by column, for a report&apos;s totals: a bold row on the sunken band under every page, in the table&apos;s footer.</DocLead>
         <ComponentPreview>
@@ -270,6 +292,27 @@ export default () => (
           elements, keyboard-activatable.
         </DocLead>
       </DocSection>
+    </div>
+  );
+}
+
+function SelectionExample() {
+  const [selected, setSelected] = useState<Set<string>>(new Set(["INV-2026-0043"]));
+  return (
+    <div className="flex w-full flex-col gap-2">
+      <p className="text-[13px] text-on-surface-muted">{selected.size} selected</p>
+      <Table<InvoiceRow>
+        rowKey={(row) => row.number}
+        columns={[
+          { key: "number", header: "Invoice", render: (row) => row.number },
+          { key: "contact", header: "Contact", render: (row) => row.contact },
+          { key: "total", header: "Total", align: "right", render: (row) => `$${row.total.toFixed(2)}` },
+        ]}
+        data={rows}
+        selected={selected}
+        onSelectedChange={setSelected}
+        selectLabel={(row) => row.number}
+      />
     </div>
   );
 }

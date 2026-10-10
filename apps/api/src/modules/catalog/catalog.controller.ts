@@ -1,6 +1,6 @@
 import { BadRequestException, Body, Controller, Delete, Get, Param, Post, Put, Query, UseInterceptors } from "@nestjs/common";
 import { OrgRoles, Session, type UserSession } from "@thallesp/nestjs-better-auth";
-import { createCatalogItemSchema, importCatalogItemsSchema, updateCatalogItemSchema } from "@spine/shared";
+import { bulkCatalogItemsSchema, createCatalogItemSchema, importCatalogItemsSchema, updateCatalogItemSchema } from "@spine/shared";
 import { RequireCapability } from "../../auth/require-capability.decorator";
 import { IdempotencyInterceptor } from "../../common/idempotency.interceptor";
 import { requireOrgId } from "../org/settings.controller";
@@ -43,6 +43,13 @@ export class CatalogController {
     return this.catalogService.list(orgId, { search, category, includeArchived: includeArchived === "true" });
   }
 
+  /** US-CAT-15 — where an item is used. Owner and Staff only: Field never sees invoice counts. */
+  @Get(":id/usage")
+  @OrgRoles(["owner", "staff"])
+  async usage(@Session() session: UserSession, @Param("id") id: string) {
+    return this.catalogService.usage(requireOrgId(session), id);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);
@@ -65,6 +72,16 @@ export class CatalogController {
     const parsed = importCatalogItemsSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the file and try again.");
     return this.catalogImport.import(requireOrgId(session), session.user.id, parsed.data.rows, parsed.data.dryRun);
+  }
+
+  /** US-CAT-12 (D-213) — change, archive or restore several items at once; rights checked per item in the service. */
+  @Post("bulk")
+  @OrgRoles(["owner", "staff"])
+  @UseInterceptors(IdempotencyInterceptor)
+  async bulk(@Session() session: UserSession, @Body() body: unknown) {
+    const parsed = bulkCatalogItemsSchema.safeParse(body);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message ?? "Check the change and try again.");
+    return this.catalogService.bulk(requireOrgId(session), session.user.id, parsed.data);
   }
 
   @Post()

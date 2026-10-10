@@ -1,10 +1,10 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { lineSupplyClass, supplyClassTaxError, type SupplyClass, type createCatalogItemSchema, type updateCatalogItemSchema } from "@spine/shared";
-import { and, asc, eq } from "drizzle-orm";
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
+import { bulkRefusedMessage, lineSupplyClass, supplyClassTaxError, type BulkCatalogItemsInput, type CatalogItemUsage, type SupplyClass, type createCatalogItemSchema, type updateCatalogItemSchema } from "@spine/shared";
+import { and, asc, countDistinct, eq, inArray, max } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { catalogItems } from "../../db/schema";
+import { accounts, catalogItems, invoiceLines, invoices, quoteLines, quotes } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { requireOwnershipCapability } from "../../auth/capability.util";
@@ -213,6 +213,99 @@ export class CatalogService {
     });
 
     return updated;
+  }
+
+  /**
+   * US-CAT-12 (D-213) — archive, restore or change several items at once,
+   * all or nothing. Every item's own/others right is checked before
+   * anything changes (edit rights to update, delete rights to archive or
+   * restore, as the single-item routes); one transaction, one audit row each.
+   */
+  async bulk(orgId: string, actorUserId: string, input: BulkCatalogItemsInput): Promise<{ updated: number }> {
+    const ids = [...new Set(input.ids)];
+    const rows = await this.db.select().from(catalogItems).where(and(eq(catalogItems.orgId, orgId), inArray(catalogItems.id, ids)));
+    if (rows.length !== ids.length) throw new NotFoundException("Some of these items no longer exist. Refresh and try again.");
+
+    const rights = input.action === "update" ? { own: "catalog.edit_own", others: "catalog.edit_others" } as const : { own: "catalog.delete_own", others: "catalog.delete_others" } as const;
+    let refused = 0;
+    for (const row of rows) {
+      try {
+        await requireOwnershipCapability(this.db, { orgId, userId: actorUserId }, row.createdByUserId, rights);
+      } catch (err) {
+        if (err instanceof ForbiddenException) refused += 1;
+        else throw err;
+      }
+    }
+    if (refused > 0) throw new ForbiddenException(bulkRefusedMessage(refused));
+
+    const changes = input.changes ?? {};
+    const taxChanged = changes.defaultTaxRateId !== undefined || changes.defaultTaxGroupId !== undefined;
+    const taxRateId = changes.defaultTaxRateId ?? null;
+    const taxGroupId = changes.defaultTaxGroupId ?? null;
+    if (taxRateId && taxGroupId) throw new BadRequestException("Choose a tax rate or a tax group, not both.");
+    const resolvedTax = taxChanged && (taxRateId || taxGroupId) ? await this.taxResolver.resolve(orgId, { taxRateId, taxGroupId }) : null;
+    const taxPercent = taxChanged ? (resolvedTax?.blendedPercentage ?? 0) : null;
+    const interChanged = changes.interTaxRateId !== undefined || changes.interTaxGroupId !== undefined;
+    const interRateId = changes.interTaxRateId ?? null;
+    const interGroupId = changes.interTaxGroupId ?? null;
+    if (interRateId && interGroupId) throw new BadRequestException("Choose a tax rate or a tax group, not both.");
+    if (interRateId || interGroupId) await this.taxResolver.resolve(orgId, { taxRateId: interRateId, taxGroupId: interGroupId });
+    if (changes.incomeAccountId) {
+      const [account] = await this.db
+        .select({ id: accounts.id })
+        .from(accounts)
+        .where(and(eq(accounts.orgId, orgId), eq(accounts.id, changes.incomeAccountId), eq(accounts.type, "income")));
+      if (!account) throw new BadRequestException("Choose one of your income accounts.");
+    }
+
+    await this.db.transaction(async (tx) => {
+      const now = new Date();
+      for (const row of rows) {
+        if (input.action === "archive" || input.action === "restore") {
+          const archivedAt = input.action === "archive" ? (row.archivedAt ?? now) : null;
+          await tx.update(catalogItems).set({ archivedAt, updatedAt: now }).where(eq(catalogItems.id, row.id));
+          await this.auditLog.record(tx, { orgId, actorUserId, action: input.action === "archive" ? "archived" : "restored", entityType: "catalog_item", entityId: row.id, contactId: null });
+          continue;
+        }
+        const set: Partial<typeof catalogItems.$inferInsert> = {};
+        if (changes.category !== undefined) set.category = changes.category || null;
+        if (taxChanged) {
+          set.defaultTaxRateId = taxRateId;
+          set.defaultTaxGroupId = taxGroupId;
+          set.defaultTaxRatePercentage = taxPercent ?? 0;
+          // A tax makes an item taxable; "No tax" leaves its supply type as it was.
+          set.supplyClass = taxPercent && taxPercent > 0 ? "taxable" : row.supplyClass;
+        }
+        if (interChanged) {
+          set.interTaxRateId = interRateId;
+          set.interTaxGroupId = interGroupId;
+        }
+        if (changes.incomeAccountId !== undefined) set.incomeAccountId = changes.incomeAccountId;
+        await tx.update(catalogItems).set({ ...set, updatedAt: now }).where(eq(catalogItems.id, row.id));
+        const diff = AuditLogService.diffFields(row as unknown as Record<string, unknown>, set as Record<string, unknown>);
+        if (diff.length) {
+          await this.auditLog.record(tx, { orgId, actorUserId, action: "updated", entityType: "catalog_item", entityId: row.id, contactId: null, changes: diff });
+        }
+      }
+    });
+    return { updated: rows.length };
+  }
+
+  /** US-CAT-15 — how many distinct quotes and invoices have a line from this item, and when it was last quoted. */
+  async usage(orgId: string, id: string): Promise<CatalogItemUsage> {
+    await this.getOne(orgId, id);
+    const [quoted] = await this.db
+      .select({ count: countDistinct(quotes.id), last: max(quotes.createdAt) })
+      .from(quoteLines)
+      .innerJoin(quotes, eq(quoteLines.quoteId, quotes.id))
+      .where(and(eq(quotes.orgId, orgId), eq(quoteLines.catalogItemId, id)));
+    const [invoiced] = await this.db
+      .select({ count: countDistinct(invoices.id) })
+      .from(invoiceLines)
+      .innerJoin(invoices, eq(invoiceLines.invoiceId, invoices.id))
+      .where(and(eq(invoices.orgId, orgId), eq(invoiceLines.catalogItemId, id)));
+    const last = quoted?.last ? new Date(quoted.last) : null;
+    return { quotes: Number(quoted?.count ?? 0), invoices: Number(invoiced?.count ?? 0), lastQuotedAt: last ? last.toISOString() : null };
   }
 
   /** Archive (soft-delete), never a hard DELETE by default — see catalog.ts's schema comment. */

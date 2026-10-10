@@ -159,12 +159,12 @@ Decision: D-161
 Decision: D-213
 
 **Acceptance criteria**
-- **Given** Catalogue › Items, **when** it shows, **then** the cards read "Total items", "Categories", "Missing tax rate" and "No income account" (with "Posts to 4100 Sales — Services" under it), counting active items. "Missing tax rate" counts taxable items with no default tax; zero-rated, exempt and non-taxable items don't count.
+- **Given** Catalogue › Items, **when** it shows, **then** the cards read "Total items", "Categories", "Missing tax rate" and "No income account" (with "Posts to 4100 Sales — Services" under it), counting active items. "Missing tax rate" counts taxable items with no default tax; exempt and non-taxable items don't count, and for a GST business zero-rated items don't either (it's a supply type chosen on the form). Elsewhere "zero-rated" is just what an untaxed item defaults to, so any untaxed item that isn't exempt or non-taxable counts.
 - **Given** "Missing tax rate" or "No income account", **when** I press it, **then** the table shows just those items, the card shows pressed ("Showing these · press again to clear") and the address keeps it; pressing it again clears it. "Total items" clears every filter.
 - **Given** a keyboard or screen reader, **when** I reach a card, **then** it's a button that says what it does ("Show items missing a tax rate, 3") with its pressed state.
 
 **Implementation notes**
-- UI: `use-catalog-stats.ts`, `catalog-explorer.tsx`; filters from the items already loaded. Closes the US-CAT-03 gap (its last criterion).
+- UI: `catalog-list-state.ts` (`catalogStats`, `isMissingTax`), `catalog-explorer.tsx`; filters from the items already loaded. Closes the US-CAT-03 gap (its last criterion).
 - No API change.
 
 ### US-CAT-11 · Read an item's tax, HSN/SAC and description in the list
@@ -192,6 +192,7 @@ Decision: D-213
 **Acceptance criteria**
 - **Given** a row's menu, **when** I choose "Duplicate", **then** the Add item drawer opens filled from that item with the name "<name> (copy)"; saving creates a new item and the original is unchanged.
 - **Given** the table, **when** I tick rows (or the header box for every row on the page), **then** a bar shows "<n> selected" with "Set category", "Set tax", "Set income account", "Archive" (or "Restore"), "Make a bundle" (US-CAT-14) and "Clear"; changing filters or the page clears the selection.
+- **Given** a GST business, **when** I set a GST group for the selection, **then** each item's inter-state tax becomes the one active IGST rate at the same total ("IGST 18%" with "GST 18%"); "No tax" clears both; without exactly one matching IGST rate the inter-state tax stays as it was. The menu says so.
 - **Given** I set a category, tax or income account for the selection, **when** I save, **then** every selected item changes in one save and a toast says "Updated <n> items"; if I may not change some of them (own/others rights), nothing changes and it says "You can't change <k> of these items. Unselect them and try again."
 - **Given** I archive or restore the selection, **when** it succeeds, **then** a toast says "Archived <n> items" (or "Restored"); the same all-or-nothing rule applies, with the delete rights.
 - **Given** "Export", **when** I press it, **then** `catalogue-<date>.csv` downloads with the items in the list as filtered, in the columns Import reads (Name, Description, Unit, Price, Tax, HSN/SAC code, Income account, Expense account) plus Category; Import reads Category too, so an exported file imports back.

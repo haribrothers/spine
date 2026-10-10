@@ -38,6 +38,7 @@ const GUESS: Record<CatalogImportField, RegExp> = {
   name: /^(item\s*)?name$|^item$|^product|^service/i,
   description: /desc/i,
   unit: /^unit|uom/i,
+  category: /^categor|^group$|^type$/i,
   price: /price|rate|amount|cost/i,
   tax: /tax|gst|vat/i,
   hsnSac: /hsn|sac/i,

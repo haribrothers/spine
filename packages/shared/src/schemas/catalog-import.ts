@@ -7,12 +7,14 @@ import { z } from "zod";
  */
 export const MAX_CATALOG_IMPORT_ROWS = 2000;
 
-export const CATALOG_IMPORT_FIELDS = ["name", "description", "unit", "price", "tax", "hsnSac", "incomeAccount", "expenseAccount"] as const;
+export const CATALOG_IMPORT_FIELDS = ["name", "description", "unit", "category", "price", "tax", "hsnSac", "incomeAccount", "expenseAccount"] as const;
 export type CatalogImportField = (typeof CATALOG_IMPORT_FIELDS)[number];
 export const CATALOG_IMPORT_FIELD_LABELS: Record<CatalogImportField, string> = {
   name: "Name",
   description: "Description",
   unit: "Unit",
+  // US-CAT-12 — so an exported file imports back.
+  category: "Category",
   price: "Price",
   tax: "Tax",
   // US-TAX-14
@@ -29,6 +31,7 @@ export const catalogImportRowSchema = z.object({
   name: cell,
   description: cell,
   unit: cell,
+  category: cell,
   price: cell,
   tax: cell,
   hsnSac: cell,

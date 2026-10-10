@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 import { Input } from "./input";
-import { Table, type TableColumn } from "./table";
+import { Table, type TableColumn, type TableSort } from "./table";
 
 export interface DataTableProps<T> {
   columns: TableColumn<T>[];
@@ -35,6 +35,15 @@ export interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   /** Shown in place of the built-in search box, left of "Columns" — for a page whose own search covers every view (US-CRM-23). */
   toolbarStart?: React.ReactNode;
+  /** Passed to `Table`: selectable rows (US-CAT-12). */
+  selected?: ReadonlySet<string>;
+  onSelectedChange?: (next: Set<string>) => void;
+  selectLabel?: (row: T) => string;
+  /** Passed to `Table`: the sort, when the parent keeps it (US-CAT-13). */
+  sort?: TableSort | null;
+  onSortChange?: (sort: TableSort | null) => void;
+  /** Columns hidden until turned on in Columns (US-CAT-11). */
+  defaultHidden?: string[];
 }
 
 /**
@@ -61,9 +70,15 @@ export function DataTable<T>({
   page,
   onPageChange,
   toolbarStart,
+  selected,
+  onSelectedChange,
+  selectLabel,
+  sort,
+  onSortChange,
+  defaultHidden,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState("");
-  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set(defaultHidden ?? []));
 
   const filtered = searchKey && query ? data.filter((row) => searchKey(row).toLowerCase().includes(query.toLowerCase())) : data;
   const visibleColumns = columns.filter((column) => !hidden.has(column.key));
@@ -127,6 +142,11 @@ export function DataTable<T>({
         footer={footer}
         page={page}
         onPageChange={onPageChange}
+        selected={selected}
+        onSelectedChange={onSelectedChange}
+        selectLabel={selectLabel}
+        sort={sort}
+        onSortChange={onSortChange}
       />
     </div>
   );
