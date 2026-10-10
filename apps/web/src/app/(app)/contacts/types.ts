@@ -1,5 +1,5 @@
 import type { GstTreatment } from "@spine/shared";
-import type { LeadStage, LeadStageKind } from "@spine/shared";
+import type { LeadStage, LeadStageKind, LostReason } from "@spine/shared";
 
 /** Mirrors apps/api/src/db/schema/contacts.ts's row shapes — apps/web has no generated SDK yet (packages/sdk is still empty), so these are hand-written to match the API's JSON response shape. */
 export type ContactType = "customer" | "vendor" | "both";
@@ -85,6 +85,17 @@ export interface Lead {
   ownerUserId: string | null;
   createdByUserId: string | null;
   title: string | null;
+  /** US-CRM-25 — when it last changed stage. */
+  stageChangedAt: string;
+  /** US-CRM-27 — YYYY-MM-DD. */
+  expectedCloseDate: string | null;
+  /** US-CRM-26 — only while in a Lost stage. */
+  lostReason: LostReason | null;
+  lostNote: string | null;
+  /** US-CRM-25 — the latest activity logged or done on the lead. */
+  lastActivityAt: string | null;
+  /** US-CRM-25 — the earliest open follow-up. */
+  nextFollowUp: { id: string; type: ActivityType; dueAt: string } | null;
   createdAt: string;
   updatedAt: string;
 }

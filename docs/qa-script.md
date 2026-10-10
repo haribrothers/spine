@@ -4624,6 +4624,44 @@ Use an owner on a business with demo data, plus a contact named "H2Z Facades and
    - Accrual / Cash still switches the dashboard and reports (US-DASH-26, US-RPT-35); the expense entry mode still switches (US-PUR-23).
    - The job costing "Cost by category" ring and reports tables look as before.
 
+## 203. A pipeline that works (US-CRM-24 to US-CRM-28, refinements before Phase 10)
+
+Use an owner on a business with demo data and a second member (Staff). Check 1440 px, 1280 px and a phone, light and dark, and compare with the canvas "06 Pipeline".
+
+1. **The board (US-CRM-24):**
+   - The header reads "Your open leads by stage, and what you've won and lost lately." Above the toolbar: Open pipeline (total and how many), Won this month, Win rate ("4 of 6 closed in the last 90 days", or "None closed in the last 90 days") and Overdue follow-ups.
+   - The open stages share the width with no sideways scroll; Won and Lost are slim columns at the right showing a dot, the count, the name and "<total> · 30 days". Every column, slim ones included, reaches the bottom of the window, whatever its cards; a column with many cards scrolls on its own.
+   - In Settings › Pipeline stages, add three open stages: six open stages still fit at 1280 px. Make the window narrower: the board scrolls sideways and a soft shadow at the right edge shows there's more.
+   - Press Won: it opens beside the open stages as "Won · last 30 days", newest first, with "Older won leads: choose Won in the stage filter." Press the "><" button to close it. Choose Won in the stage filter: only the Won column shows, with every won lead.
+   - Press Overdue follow-ups: only leads with a past-due follow-up show, the card shows pressed and the address has `overdue=1`; press it again for all leads.
+   - An empty open stage says "No leads in this stage"; a business with no leads shows "No leads yet" with Add lead.
+2. **Cards (US-CRM-25):**
+   - Each card: title (or the contact's name once, when there's no title), contact, value, "N days in stage" and the owner's initials (hover for the name; a dashed "—" for Unassigned, hover says "Unassigned"). Won cards show "Won 2 Oct", lost cards "Lost …" and the reason.
+   - Add a follow-up for tomorrow on a lead: the card shows "Call · Tomorrow 10:00". A past-due one shows "Overdue · 6 Oct" in red.
+   - An open lead with no activity or change for 14 days carries an amber "No activity for 14 days" (not red).
+   - Press "⋯": Open, Move to… (each stage, the current one ticked and greyed), Delete (only if you may delete it). Move a lead to Proposal: the counts and totals update; VoiceOver says "Moved to Proposal". On a card near the right edge the Move to… list opens to the left.
+   - Tab to a card: a focus ring shows; Enter opens the drawer; Shift+F10 (or the menu key) opens its menu. Dragging a card with the mouse still moves it, including onto a slim Won or Lost column.
+   - Delete from the menu asks first ("Delete this lead?") and says the lead's follow-ups go with it.
+3. **Won and lost (US-CRM-26):**
+   - Move a lead to Lost (drag, menu or the drawer's Stage): "Why was it lost?" with Price, Timing, Went with a competitor, No response, Other and a note. Choose one and Save reason: the card shows it, and so does the drawer. Skip: it's lost with no reason.
+   - Move a lost lead back to an open stage, then to Lost again: no reason is chosen.
+   - Move a lead to Won: "Won — <title>" with its contact, value and owner, "Not now" and "Create quote". Create quote opens a new quote with the lead's contact and currency and "For lead <title>". Change the contact: the line goes and the quote isn't linked. Save it: the lead's drawer lists it under Quotes with its status and total, and it opens the quote. Revise the quote: the new version is listed too.
+   - As a Staff member without the right to create quotes, a move to Won shows no dialog, and the drawer has no Create quote.
+4. **The lead drawer (US-CRM-27):**
+   - Open a card: the title, stage chip, contact (opens the contact), "N days in stage" and "created by …". Fields: Title, Contact, Stage, Estimated value, Currency, Owner (Unassigned and every active member), Expected close, Source. Save changes updates the card; the creator doesn't change.
+   - Follow-ups: open ones first by date, then the rest. Log activity and Add follow-up (the date is required) add to this lead and its contact; tick one done.
+   - History: "Created in New" and each "Moved to Proposal from Qualified" with who and when, newest first. Leads made before this change show what's been recorded since.
+   - Add lead (toolbar, or a column's Add lead): the drawer opens at that column's stage with just the details.
+   - Without edit rights on a lead, the fields are read-only and there's no Save.
+5. **Filters and refresh (US-CRM-28):**
+   - Owner (All owners, My leads, each member, Unassigned) and Source (the sources in use) combine with search, stage and sort; the address follows (`/leads?owner=me&source=Referral`). Open a contact and press Back, or reload: the same board.
+   - "Updated just now" and Refresh (tooltip "Refresh pipeline"): a lead added in another browser appears on Refresh, in place; VoiceOver says "Pipeline updated". Away from the tab for over 30 seconds, the board refreshes on return.
+6. Regression:
+   - Settings › Pipeline stages: renaming, reordering, adding and deleting stages (with a move) still show on the board (US-CRM-19, US-CRM-20).
+   - The contact page's Leads tab and its Add/edit lead dialog, and its Activities tab, work as before (US-CRM-10, US-CRM-13).
+   - Contacts' "Active leads" opens the pipeline; the dashboard's "Pipeline by stage" still counts every stage (US-DASH-*).
+   - New quote from Quotes (no lead) still uses the organisation's currency (US-QUO-01).
+
 ## Known gaps — don't file these as bugs
 
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.

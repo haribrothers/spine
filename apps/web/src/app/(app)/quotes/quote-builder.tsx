@@ -87,9 +87,18 @@ async function saveOneOffLinesToCatalogue(lines: EditableQuoteLine[], currency: 
   return next;
 }
 
-export function QuoteBuilder({ quote }: { quote?: Quote }) {
+/** US-CRM-26 — the lead a new quote is started from ("Create quote" on the pipeline). */
+interface QuoteLead {
+  id: string;
+  title: string | null;
+  contactId: string;
+  valueCurrency: string;
+}
+
+export function QuoteBuilder({ quote, leadId }: { quote?: Quote; leadId?: string }) {
   const router = useRouter();
   const [contactId, setContactId] = useState(quote?.contactId ?? "");
+  const [lead, setLead] = useState<QuoteLead | null>(null);
   const [currency, setCurrency] = useState(quote?.currency ?? "USD");
   const [validUntil, setValidUntil] = useState<Date | undefined>(quote?.validUntil ? new Date(quote.validUntil) : undefined);
   const [notes, setNotes] = useState(quote?.notes ?? "");
@@ -104,8 +113,23 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   const [taxRates, setTaxRates] = useState<TaxRateOption[]>([]);
   const [taxGroups, setTaxGroups] = useState<TaxGroupOption[]>([]);
 
+  // US-CRM-26: a quote started from a lead takes its contact and currency, and is linked to it.
   useEffect(() => {
-    if (quote) return; // only pre-fill the org default currency for a brand-new quote
+    if (quote || !leadId) return;
+    apiClient
+      .get<QuoteLead>(`/leads/${leadId}`)
+      .then((row) => {
+        setLead(row);
+        setContactId(row.contactId);
+        setCurrency(row.valueCurrency);
+      })
+      .catch(() => setLead(null));
+  }, [quote, leadId]);
+  // The link holds while the quote stays with the lead's contact.
+  const linkedLead = lead && lead.contactId === contactId ? lead : null;
+
+  useEffect(() => {
+    if (quote || leadId) return; // only pre-fill the org default currency for a brand-new quote (a lead's quote uses the lead's)
     apiClient
       .get<{ key: string; value: CurrencyLocaleValue | null }>("/org/settings/currency")
       .then((res) => {
@@ -140,6 +164,7 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
   function buildPayload(lines: EditableQuoteLine[]) {
     return {
       contactId,
+      ...(!quote && linkedLead ? { leadId: linkedLead.id } : {}),
       placeOfSupply: pos.active ? pos.placeOfSupply : undefined,
       currency,
       validUntil: validUntil ? validUntil.toISOString().slice(0, 10) : null,
@@ -208,6 +233,11 @@ export function QuoteBuilder({ quote }: { quote?: Quote }) {
           </FormField>
           {pos.active && <PlaceOfSupplyField value={pos.placeOfSupply} onChange={pos.setPlaceOfSupply} source={pos.source} supplyType={pos.supplyType} exportUnderLut={pos.exportUnderLut} />}
         </div>
+        {linkedLead && (
+          <p className="text-[13px] text-on-surface-muted" data-testid="quote-lead">
+            For lead <span className="font-medium text-on-surface">{linkedLead.title || "Untitled lead"}</span>. It&apos;s linked to the lead, so it shows in the lead&apos;s Quotes.
+          </p>
+        )}
       </Card>
 
       <PlaceOfSupplyNotice notice={pos.notice} />

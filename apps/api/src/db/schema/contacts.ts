@@ -1,4 +1,4 @@
-import { pgTable, uuid, text, boolean, bigint, integer, timestamp, pgEnum, index } from "drizzle-orm/pg-core";
+import { pgTable, uuid, text, boolean, bigint, integer, timestamp, date, pgEnum, index } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
 import { files } from "./files";
@@ -245,6 +245,13 @@ export const leads = pgTable(
      */
     createdByUserId: text("created_by_user_id").references(() => user.id, { onDelete: "set null" }),
     title: text("title"),
+    /** US-CRM-25 (D-211) — when the lead last changed stage ("12 days in stage"); set by LeadsService whenever `stageId` changes. */
+    stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }).notNull().defaultNow(),
+    /** US-CRM-27 — when the owner expects to close it; a plain date. */
+    expectedCloseDate: date("expected_close_date", { mode: "string" }),
+    /** US-CRM-26 — why it was lost (`price`, `timing`, `competitor`, `no_response`, `other`) and a note; kept only while the lead is in a Lost stage. */
+    lostReason: text("lost_reason"),
+    lostNote: text("lost_note"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

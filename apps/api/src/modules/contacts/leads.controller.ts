@@ -32,6 +32,13 @@ export class LeadsController {
     return this.leadsService.summaryByStage(orgId);
   }
 
+  /** US-CRM-27 — the lead's creation and stage changes, from the audit log. Readable like the lead itself. */
+  @Get(":id/history")
+  async history(@Session() session: UserSession, @Param("id") id: string) {
+    const orgId = requireOrgId(session);
+    return this.leadsService.history(orgId, id);
+  }
+
   @Get(":id")
   async getOne(@Session() session: UserSession, @Param("id") id: string) {
     const orgId = requireOrgId(session);

@@ -47,7 +47,8 @@ test.describe("US-CRM-20", () => {
     await expect(page.getByText("Saved").first()).toBeVisible();
 
     await page.goto("/leads");
-    await expect(page.locator("h3")).toHaveText(["New", "Qualified", "Won", "Lost"]);
+    const stageNames = () => page.locator("[data-stage]").evaluateAll((els) => els.map((el) => el.getAttribute("data-stage")));
+    await expect.poll(stageNames).toEqual(["New", "Qualified", "Won", "Lost"]);
     const count = (title: string) => page.locator("h3", { hasText: title }).locator("xpath=following-sibling::span[1]");
     await expect(count("Qualified")).toHaveText("3");
     await expect(page.getByText("Curtain wall")).toBeVisible();

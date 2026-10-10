@@ -7,7 +7,7 @@ import { and, desc, eq, inArray } from "drizzle-orm";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database, Transaction } from "../../db/client";
-import { quotes, quoteLines, contacts, files, jobs, jobAssignments, jobVariationOrders, user } from "../../db/schema";
+import { quotes, quoteLines, contacts, files, jobs, jobAssignments, jobVariationOrders, leads, user } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { getMemberRole, hasCapability, requireOwnershipCapability } from "../../auth/capability.util";
 import { RateBook } from "../tax/line-tax-components";
@@ -218,9 +218,11 @@ export class QuotesService {
     return value ?? DEFAULT_DISCOUNT_THRESHOLD;
   }
 
-  async list(orgId: string, options: { status?: string; contactId?: string }) {
+  async list(orgId: string, options: { status?: string; contactId?: string; leadId?: string }) {
     const conditions = [eq(quotes.orgId, orgId)];
     if (options.contactId) conditions.push(eq(quotes.contactId, options.contactId));
+    // US-CRM-26 — a lead's quotes, for the lead drawer.
+    if (options.leadId) conditions.push(eq(quotes.leadId, options.leadId));
 
     const rows = await this.db
       .select({
@@ -465,11 +467,25 @@ export class QuotesService {
       "sale",
     );
 
+    // US-CRM-26: a lead set here must match the contact; changing the contact drops a lead that no longer does.
+    const contactId = input.contactId ?? existing.contactId;
+    let leadId: string | null | undefined;
+    if (input.leadId) {
+      await this.requireLead(orgId, input.leadId, contactId);
+      leadId = input.leadId;
+    } else if (input.leadId === null) {
+      leadId = null;
+    } else if (existing.leadId && contactId !== existing.contactId) {
+      const [lead] = await this.db.select({ contactId: leads.contactId }).from(leads).where(eq(leads.id, existing.leadId));
+      if (lead?.contactId !== contactId) leadId = null;
+    }
+
     const updated = await this.db.transaction(async (tx) => {
       const [row] = await tx
         .update(quotes)
         .set({
           placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
+          ...(leadId !== undefined ? { leadId } : {}),
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.currency !== undefined ? { currency: input.currency } : {}),
           ...(input.validUntil !== undefined ? { validUntil: input.validUntil } : {}),
@@ -700,6 +716,7 @@ export class QuotesService {
           createdByUserId: actorUserId,
           placeOfSupply: existing.placeOfSupply,
           supplyType: existing.supplyType,
+          leadId: existing.leadId,
           // A revision of a demo quote must itself be demo data — otherwise
           // it would survive DemoDataService.deleteAll's isDemo-scoped
           // cleanup as an orphaned real-looking row.
@@ -1135,6 +1152,12 @@ export class QuotesService {
     });
   }
 
+  /** US-CRM-26 — a quote's lead must be in the same organisation and for the same contact. */
+  private async requireLead(orgId: string, leadId: string, contactId: string) {
+    const [lead] = await this.db.select({ contactId: leads.contactId }).from(leads).where(and(eq(leads.orgId, orgId), eq(leads.id, leadId)));
+    if (!lead || lead.contactId !== contactId) throw new BadRequestException("Choose a lead for this contact.");
+  }
+
   private async persistDraft(
     orgId: string,
     actorUserId: string,
@@ -1146,6 +1169,8 @@ export class QuotesService {
     if (!contact) {
       throw new BadRequestException("Contact not found");
     }
+
+    if (input.leadId) await this.requireLead(orgId, input.leadId, input.contactId);
 
     const totals = await computeQuoteTotals(orgId, input.currency, input.lines, this.taxResolver);
     const threshold = await this.getThreshold(orgId);
@@ -1173,6 +1198,7 @@ export class QuotesService {
           createdByUserId: actorUserId,
           isDemo,
           placeOfSupply: supply.placeOfSupply, supplyType: supply.supplyType,
+          leadId: input.leadId ?? null,
         })
         .returning();
 

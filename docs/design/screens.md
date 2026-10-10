@@ -387,6 +387,8 @@ Shows: "Sales > Contacts" · "Contacts" · "Customers and vendors you do busines
 ### LeadsBoard — Pipeline board by stage
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CRM-11, US-CRM-17, US-CRM-19 · **Source:** Captured
 
+Replaced by `PipelineBoard` (US-CRM-24 to US-CRM-28).
+
 ![LeadsBoard](screens/LeadsBoard.webp)
 
 Links to: `LeadsBoardEmpty`, `ContactActivities`, `LeadStagesSettings`
@@ -404,6 +406,8 @@ Shows: "Sales > Pipeline" · "Pipeline" · "Every open lead, grouped by stage." 
 
 ### LeadDialog — Add/edit lead
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-CRM-10, US-CRM-13 · **Source:** Captured
+
+On the board, replaced by `LeadDrawer` (US-CRM-27).
 
 ![LeadDialog](screens/LeadDialog.webp)
 
@@ -2840,6 +2844,64 @@ Shows: As `ContactsCardsPolish`
 Links to: `ContactsCardsPolish`
 
 Shows: "Vendors" pressed · "Showing these · press again to clear" · "/contacts?type=vendor&status=active" · "2 types" · "Updating…" · "Search contacts" · "Columns" · "accounts.payable.department@h2zfacade…" · "Status" · "1–5 of 5"
+
+## A pipeline that works
+
+Drawn in Claude Design for US-CRM-24 to US-CRM-28 (D-211): project "Spine web — refinements before Phase 10", canvas "06 Pipeline". The open stages share the width and every column, Won and Lost included, runs the full height of the page (a long column scrolls on its own); Won and Lost are slim columns with the last 30 days that open on press. A summary strip sits above the toolbar. Cards show the owner, days in stage, the next follow-up and a nudge for cold leads, with a "⋯" menu (Open, Move to…, Delete). Moving to Lost asks why; moving to Won offers a quote. A lead opens in a drawer. These replace `LeadsBoard` and, on the board, `LeadDialog` (the contact page's Leads tab keeps its own dialog). In the built page the column totals sit under the name, the "Move to…" submenu flips to the left near the right edge, and the drawer's expected close date is a date field.
+
+### PipelineBoard — Pipeline: open stages that fit, slim Won and Lost, summary strip
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24, US-CRM-25, US-CRM-28 · **Source:** Claude Design
+
+![PipelineBoard](screens/PipelineBoard.webp)
+
+Links to: `PipelineClosedOpen`, `LeadDrawer`, `LeadLostDialog`, `LeadWonDialog`
+
+Shows: "Your open leads by stage, and what you've won and lost lately." · "Open pipeline" · "Won this month" · "Win rate" · "4 of 6 closed in the last 90 days" · "Overdue follow-ups" · "Show these leads" · "All owners" · "All sources" · "Updated just now" · "3 days in stage" · "Call · Tomorrow 10:00" · "No activity for 16 days" · "Call · Overdue · Tue 6 Oct" · "Open" · "Move to…" · "Delete" · "Won" · "Lost" · "· 30 days"
+
+### PipelineBoardDark — Pipeline, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24, US-CRM-25 · **Source:** Claude Design
+
+![PipelineBoardDark](screens/PipelineBoardDark.webp)
+
+Links to: —
+
+Shows: As `PipelineBoard`, with a card focused by keyboard
+
+### PipelineClosedOpen — Pipeline with Won opened
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-24 · **Source:** Claude Design
+
+![PipelineClosedOpen](screens/PipelineClosedOpen.webp)
+
+Links to: `PipelineBoard`
+
+Shows: "Won · last 30 days" · "Won 2 Oct" · "Older won leads: choose Won in the stage filter"
+
+### LeadLostDialog — Why was it lost?
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26 · **Source:** Claude Design
+
+![LeadLostDialog](screens/LeadLostDialog.webp)
+
+Links to: —
+
+Shows: "Why was it lost?" · "Price" · "Timing" · "Went with a competitor" · "No response" · "Other" · "Note (optional)" · "Skip" · "Save reason"
+
+### LeadWonDialog — Won: create a quote
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26 · **Source:** Claude Design
+
+![LeadWonDialog](screens/LeadWonDialog.webp)
+
+Links to: `QuoteBuilder`
+
+Shows: "Won — Ground-floor extension" · "Start a quote for Ananya Rao? It's linked to this lead, so you'll find it in the lead's Quotes." · "Contact" · "Value" · "Owner" · "Not now" · "Create quote"
+
+### LeadDrawer — A lead: details, follow-ups, quotes and history
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-CRM-26, US-CRM-27 · **Source:** Claude Design
+
+![LeadDrawer](screens/LeadDrawer.webp)
+
+Links to: `ContactTimeline`, `QuoteDetail`
+
+Shows: "9 days in stage · created by Arjun Kumar" · "Owner" · "Expected close" · "Follow-ups" · "Log activity" · "Add follow-up" · "Quotes" · "Create quote" · "History" · "Moved to Proposal from Qualified" · "Created in New" · "Delete" · "Cancel" · "Save changes"
 
 ## Mobile field companion
 

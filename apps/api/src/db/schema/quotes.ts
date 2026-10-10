@@ -1,7 +1,7 @@
 import { pgTable, uuid, text, bigint, integer, boolean, timestamp, date, pgEnum, index, numeric } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./auth";
-import { contacts } from "./contacts";
+import { contacts, leads } from "./contacts";
 import { catalogItems } from "./catalog";
 import { files } from "./files";
 import { taxRates, taxGroups, supplyClassEnum, supplyTypeEnum } from "./tax";
@@ -181,11 +181,14 @@ export const quotes = pgTable(
     /** US-TAX-13 — GST place of supply (state code, "96" other countries) and the supply type it gave; snapshotted with the document. */
     placeOfSupply: text("place_of_supply"),
     supplyType: supplyTypeEnum("supply_type"),
+    /** US-CRM-26 (D-211) — the lead this quote was started from ("Create quote" on a won lead); same organisation and contact, checked in QuotesService. Revisions keep it. */
+    leadId: uuid("lead_id").references(() => leads.id, { onDelete: "set null" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("quotes_org_idx").on(table.orgId),
+    index("quotes_org_lead_idx").on(table.orgId, table.leadId),
     index("quotes_org_status_idx").on(table.orgId, table.status),
     index("quotes_org_demo_idx").on(table.orgId, table.isDemo),
     index("quotes_contact_idx").on(table.contactId),

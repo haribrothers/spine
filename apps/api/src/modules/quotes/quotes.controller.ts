@@ -42,9 +42,9 @@ export class QuotesController {
   ) {}
 
   @Get()
-  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string) {
+  async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string, @Query("leadId") leadId?: string) {
     const orgId = requireOrgId(session);
-    return this.quotesService.list(orgId, { status, contactId });
+    return this.quotesService.list(orgId, { status, contactId, leadId });
   }
 
   /**

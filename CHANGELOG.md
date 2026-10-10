@@ -80,6 +80,25 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — A pipeline that works (US-CRM-24 to US-CRM-28, D-211)
+
+- **The board (US-CRM-24):**
+  - Open stages share the width (six fit at 1280 px) and every column, Won and Lost included, runs the full height of the page; a long column scrolls on its own. When the stages don't fit, a shadow at the edge says there's more.
+  - Won and Lost are slim columns with the last 30 days' count and total; pressing one opens it (newest first) and "Hide" closes it. Older closed leads show by choosing that stage in the stage filter.
+  - A summary strip: open pipeline (per currency), won this month, win rate (won ÷ won and lost, closed in the last 90 days) and overdue follow-ups, which filters the board. An empty open column says "No leads in this stage".
+- **Cards (US-CRM-25):** owner initials (name on hover; "—" when unassigned), "12 days in stage", the next follow-up ("Call · Tomorrow 10:00", in the overdue colour when past due), "No activity for N days" after 14 quiet days, the lost reason on lost cards and "Won 2 Oct" on won ones. A card is one button (Tab, Enter); its "⋯" menu (or the menu key) has Open, Move to… and Delete, and a move is announced ("Moved to Proposal").
+- **Won and lost (US-CRM-26):** moving to Lost (drag, menu or drawer) asks why: Price, Timing, Went with a competitor, No response, Other, and a note; "Skip" moves it without one, and leaving Lost clears it. Moving to Won offers "Create quote" to people who can create quotes: the new quote takes the lead's contact and currency, says which lead it's for, and is linked to it (`quotes.lead_id`, kept on revisions).
+- **The lead drawer (US-CRM-27):** replaces the lead dialog on the board, with owner (any active member or Unassigned) and expected close date, the lead's follow-ups (log an activity, add a follow-up, tick one done), its quotes and its history (created and each stage change, from the audit log). "Add lead" opens it at the column's stage.
+- **Filters and refresh (US-CRM-28):** owner ("My leads", each member, "Unassigned") and source filters join search, stage, sort and View; they all live in the address (`/leads?owner=me&source=Referral`). Refresh and "Updated … ago" work as on Contacts, including a refresh after 30 seconds away.
+- **API and data:** migration `0111` adds `leads.stage_changed_at` (backfilled from `updated_at`), `expected_close_date`, `lost_reason`, `lost_note` and `quotes.lead_id`. `GET /leads` adds `stageChangedAt`, `lastActivityAt` and `nextFollowUp`; `PUT /leads/:id` takes `ownerUserId` (an active member), `expectedCloseDate`, `lostReason` and `lostNote`; `GET /leads/:id/history`; `POST /quotes` takes `leadId` (same contact) and `GET /quotes?leadId=` lists a lead's quotes. Removing a stage that still has leads also restarts their days in stage.
+- **Components:** `KanbanColumn` takes `collapsed` / `onExpand` / `expandLabel` (a slim column), `accent` and `headerAction`; `KanbanCard` takes `onOpen` / `label` (the card is one focusable button), `menu` and `onMenuKey`; `KanbanBoard` shows edge shadows. Cards no longer widen a column with long text. `ActivitiesSection` takes `leadId`, `heading` and `followUps`.
+- **Tests:**
+  - New: `us-crm-25`, `us-crm-26` and `us-crm-27` API integration; `us-crm-24`, `us-crm-25` and `us-crm-28` web unit; `us-crm-24` to `us-crm-28` E2E; Kanban a11y and keyboard tests.
+  - `us-crm-19` and `us-crm-20` read the board's stage names from the columns, since Won and Lost no longer have headings.
+  - Native drag and drop still can't be driven in Playwright, so the E2E tests move cards with the menu, which runs the same code as a drop. Cold-lead nudges need 14 days to pass, so the unit tests cover them.
+  - QA script section 203.
+- **Design:** canvas "06 Pipeline"; six artboards.
+
 ### 2026-10-10 — Contacts list polish and one look for toggles (US-OPS-36, US-CRM-21 to US-CRM-23, D-210)
 
 - **Toggles (US-OPS-36):**

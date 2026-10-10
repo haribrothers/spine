@@ -11,7 +11,7 @@ function groupPrimary(rows: Quote[]): Quote {
   return rows.reduce((newest, row) => (row.version > newest.version ? row : newest));
 }
 
-const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
+export const STATUS_BADGE_CLASS: Record<Quote["status"], string> = {
   draft: "bg-draft-bg text-draft",
   sent: "bg-due-soon-bg text-due-soon",
   accepted: "bg-paid-bg text-paid",

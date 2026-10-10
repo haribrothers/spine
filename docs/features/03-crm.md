@@ -409,7 +409,7 @@ Decision: D-211
 - **Given** a slim Won or Lost column, **when** I press it, **then** it opens to full width and lists the leads won (or lost) in the last 30 days, newest first; pressing its header again closes it. Older closed leads stay reachable by choosing that stage in the stage filter.
 - **Given** more open stages than fit, **when** the board scrolls sideways, **then** a shadow at the edge shows there's more, and the column headers stay in view while the cards scroll.
 - **Given** the board, **when** it shows, **then** a strip above it shows "Open pipeline" (the open leads' total per currency, and how many), "Won this month" (total and count), "Win rate" (won ÷ won and lost, closed in the last 90 days) and "Overdue follow-ups" (open leads with a follow-up past due); pressing "Overdue follow-ups" filters the board to those leads.
-- **Given** each column, **when** it shows, **then** its header has the stage's colour dot, name, count and total; an empty open column says "No leads in this stage" at its own height, not a full-height empty box.
+- **Given** each column, **when** it shows, **then** its header has the stage's colour dot, name, count and total, and every column (Won and Lost included) runs the full height of the page, with a long column scrolling on its own; an empty open column says "No leads in this stage" at its top.
 - **Given** the page header, **when** it shows, **then** it says "Your open leads by stage, and what you've won and lost lately."
 
 **Implementation notes**
@@ -444,12 +444,12 @@ Decision: D-211
 - **Given** I move a lead to a Lost stage (by drag, menu or the drawer), **when** it moves, **then** a dialog asks "Why was it lost?" with Price, Timing, Went with a competitor, No response and Other, and an optional note; "Save" records it and "Skip" moves it without one. The reason shows on the card and in the drawer.
 - **Given** a lost lead moves back to an open or won stage, **when** it moves, **then** its lost reason is cleared.
 - **Given** I move a lead to a Won stage and may create quotes, **when** it moves, **then** a dialog says "Won — {title}" and offers "Create quote" and "Not now".
-- **Given** I press "Create quote" (from that dialog or the drawer), **when** the new quote opens, **then** it has the lead's contact and the lead's title as its reference, and the quote is linked to the lead; the drawer lists the lead's quotes with number, status and total, each opening the quote.
+- **Given** I press "Create quote" (from that dialog or the drawer), **when** the new quote opens, **then** it has the lead's contact and currency and says which lead it's for ("For lead <title>"), and the quote is linked to the lead (a quote has no reference field, so the title isn't copied onto it); the drawer lists the lead's quotes with number, status and total, each opening the quote.
 - **Given** I lack the right to create quotes, **when** a lead is won, **then** no quote offer is shown.
 
 **Implementation notes**
 - Data: `leads.lost_reason` (`price`, `timing`, `competitor`, `no_response`, `other`, or null) and `leads.lost_note`; `quotes.lead_id uuid → leads (set null)`.
-- API: `PUT /leads/:id` accepts `lostReason`, `lostNote` (kept only while the stage is a Lost stage); `POST /quotes` accepts `leadId` (the same organisation and the same contact, else 400 "Choose a lead for this contact."); `GET /quotes?leadId=`.
+- API: `PUT /leads/:id` accepts `lostReason`, `lostNote` (kept only while the stage is a Lost stage); `POST /quotes` accepts `leadId` (the same organisation and the same contact, else 400 "Choose a lead for this contact."); `GET /quotes?leadId=`. `/quotes/new?leadId=` starts the quote from the lead; a revision keeps the link, and changing a draft's contact drops a link that no longer matches.
 - Security: creating the quote needs the quote create capability as before; `leadId` is checked in the service.
 
 ### US-CRM-27 · Work a lead from one drawer
@@ -468,7 +468,7 @@ Decision: D-211
 **Implementation notes**
 - Data: `leads.expected_close_date date`.
 - API: `PUT /leads/:id` accepts `ownerUserId` (an active member, else 400 "Choose someone in your organisation.") and `expectedCloseDate`; `GET /leads/:id/history` → `[{ at, actorName, kind: "created" | "stage", fromStage, toStage }]` from the audit log; activities use `GET /activities?leadId=` and `POST /activities` with `leadId`.
-- UI: `lead-drawer.tsx` (`Drawer`) replaces `lead-dialog.tsx` on the board; the contact page's Leads tab keeps its own dialog.
+- UI: `lead-drawer.tsx` (`Drawer`) replaces `lead-dialog.tsx` on the board; the contact page's Leads tab keeps its own dialog. Follow-ups reuse the contact page's `ActivitiesSection` (`leadId`, `followUps`). History is newest first; leads made before this change show what's been recorded since (their creation wasn't logged with a stage).
 
 ### US-CRM-28 · Filter the pipeline by owner and source, and come back to it
 **Feature:** F-CRM-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `PipelineBoard`

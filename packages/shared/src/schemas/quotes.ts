@@ -66,6 +66,8 @@ export const createQuoteSchema = z.object({
   lines: z.array(quoteLineInputSchema).default([]),
   /** US-TAX-13 — the GST place of supply (state code, or "96" for other countries); defaults from the contact. */
   placeOfSupply: placeOfSupplySchema.optional().nullable(),
+  /** US-CRM-26 — the lead this quote is for (same organisation and contact). */
+  leadId: uuidSchema.optional().nullable(),
 });
 
 /** A draft-only update — see QuotesService.update's own guard against editing a sent quote. */

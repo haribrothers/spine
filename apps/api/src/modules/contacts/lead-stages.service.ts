@@ -102,7 +102,8 @@ export class LeadStagesService {
         const name = byId.get(stageId)!.name;
         if (!target) throw new BadRequestException(`"${name}" still has ${n} ${n === 1 ? "lead" : "leads"}. Choose a stage to move ${n === 1 ? "it" : "them"} to first.`);
         if (!keptIds.has(target)) throw new BadRequestException(`Move "${name}"'s leads to a stage you're keeping.`);
-        await tx.update(leads).set({ stageId: target, updatedAt: new Date() }).where(and(eq(leads.orgId, orgId), eq(leads.stageId, stageId)));
+        const now = new Date();
+        await tx.update(leads).set({ stageId: target, stageChangedAt: now, updatedAt: now }).where(and(eq(leads.orgId, orgId), eq(leads.stageId, stageId)));
       }
       const audit = (entityId: string, action: "created" | "updated" | "deleted", changes: { field: string; from: unknown; to: unknown }[]) =>
         this.auditLog.record(tx, { orgId, actorUserId, action, entityType: "lead_stage", entityId, contactId: null, changes });

@@ -424,9 +424,9 @@ Routes the stories add. Each is created by the story named.
 |---|---|---|---|---|
 | CRM | GET | `/leads` adds `stageChangedAt`, `expectedCloseDate`, `lostReason`, `lostNote`, `lastActivityAt` and `nextFollowUp` (`{ id, type, dueAt }` or null: the earliest open activity on the lead) | Any member | US-CRM-25 |
 | CRM | PUT | `/leads/:id` accepts `lostReason` (`price`, `timing`, `competitor`, `no_response`, `other`) and `lostNote`, kept only while the stage is a Lost stage (cleared on leaving it) | roles: owner, staff (edit own/others) | US-CRM-26 |
-| SALES | POST | `/quotes` accepts `leadId` (same organisation and contact, else 400 "Choose a lead for this contact."); `GET /quotes?leadId=` lists a lead's quotes | as the route | US-CRM-26 |
+| SALES | POST | `/quotes` accepts `leadId` (same organisation and contact, else 400 "Choose a lead for this contact."); `GET /quotes?leadId=` lists a lead's quotes. `PUT /quotes/:id` (draft) accepts `leadId` too, and changing the contact drops a lead that no longer matches; `POST /quotes/:id/revise` keeps it | as the route | US-CRM-26 |
 | CRM | PUT | `/leads/:id` accepts `ownerUserId` (an active member or null, else 400 "Choose someone in your organisation.") and `expectedCloseDate` | roles: owner, staff (edit own/others) | US-CRM-27 |
-| CRM | GET | `/leads/:id/history` → `[{ at, actorName, kind: "created" \| "stage", fromStage, toStage }]`, from the audit log | Any member | US-CRM-27 |
+| CRM | GET | `/leads/:id/history` → `[{ at, actorName, kind: "created" \| "stage", fromStage, toStage }]`, newest first, from the audit log (`POST /leads` now records the starting stage; stage names are today's, null for a deleted stage); 404 for a lead in another organisation | Any member | US-CRM-27 |
 | AUTH | POST | `/api/auth/request-password-reset` (Better Auth) | Public | US-AUTH-09 |
 | AUTH | POST | `/api/auth/reset-password` (Better Auth) | Public (token) | US-AUTH-10 |
 | SET | PUT | `/org/settings/business_profile` validates the profile with `businessProfileSchema` (`@spine/shared`): `paymentInstructions` over 600 characters → 400 "Keep this under 600 characters."; other fields are kept as sent | roles: owner | US-INV-16 |

@@ -5,6 +5,7 @@ import { currencyCodeSchema, uuidSchema } from "./common.ts";
 export const contactTypeSchema = z.enum(["customer", "vendor", "both"]);
 export const addressTypeSchema = z.enum(["billing", "shipping", "site", "other"]);
 export const activityTypeSchema = z.enum(["call", "meeting", "note", "task"]);
+export type ActivityType = z.infer<typeof activityTypeSchema>;
 
 export const contactPersonInputSchema = z.object({
   id: uuidSchema.optional(),
@@ -90,6 +91,18 @@ export const updateContactSchema = z.object({
   addresses: z.array(addressInputSchema).optional(),
 });
 
+/** US-CRM-26 (D-211) — why a lead was lost. */
+export const LOST_REASONS = ["price", "timing", "competitor", "no_response", "other"] as const;
+export const lostReasonSchema = z.enum(LOST_REASONS);
+export type LostReason = z.infer<typeof lostReasonSchema>;
+export const LOST_REASON_LABELS: Record<LostReason, string> = {
+  price: "Price",
+  timing: "Timing",
+  competitor: "Went with a competitor",
+  no_response: "No response",
+  other: "Other",
+};
+
 export const createLeadSchema = z.object({
   contactId: uuidSchema,
   /** US-CRM-19 — one of the organisation's pipeline stages; the first open stage when omitted. */
@@ -97,11 +110,30 @@ export const createLeadSchema = z.object({
   valueAmount: z.coerce.bigint().optional(),
   valueCurrency: currencyCodeSchema,
   source: z.string().optional().nullable(),
+  /** US-CRM-27 — an active member of the organisation, or null for unassigned. */
   ownerUserId: z.string().optional().nullable(),
   title: z.string().optional().nullable(),
+  /** US-CRM-27 — a plain date (YYYY-MM-DD). */
+  expectedCloseDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Use a date like 2026-10-30.")
+    .optional()
+    .nullable(),
+  /** US-CRM-26 — kept only while the lead is in a Lost stage. */
+  lostReason: lostReasonSchema.optional().nullable(),
+  lostNote: z.string().max(1000, "Keep the note under 1,000 characters.").optional().nullable(),
 });
 
 export const updateLeadSchema = createLeadSchema.partial();
+
+/** US-CRM-27 — one line of `GET /leads/:id/history`, newest first. Stage names are today's; null for a stage since deleted. */
+export interface LeadHistoryEntry {
+  at: string;
+  actorName: string | null;
+  kind: "created" | "stage";
+  fromStage: string | null;
+  toStage: string | null;
+}
 
 export const createActivitySchema = z
   .object({
