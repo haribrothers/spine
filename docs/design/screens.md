@@ -844,6 +844,8 @@ Shows: "Quotes" · "Detail" · "QUO-0004" · "Harborview Construction Co. · $51
 ### JobsList — Jobs list
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-01, US-JOB-22, US-JOB-23 · **Source:** Captured
 
+Refined by `JobsListRefined` (D-215).
+
 ![JobsList](screens/JobsList.webp)
 
 Links to: `JobFromQuote`, `JobsEmpty`, `MobJobDetail`
@@ -852,6 +854,8 @@ Shows: "Jobs" · "OVERVIEW" · "98 Dashboard" · "Track work from an accepted qu
 
 ### JobsListBilling — Jobs list with billed and budget used
 **Priority:** P1 · **Phase:** 7 · **Stories:** US-JOB-25, US-JOB-27 · **Source:** Drawn
+
+Refined by `JobsListRefined` (D-215).
 
 ![JobsListBilling](screens/JobsListBilling.webp)
 
@@ -892,6 +896,8 @@ Replaces `JobEditDialog` once US-JOB-24 ships.
 
 ### JobMilestones — Job detail — Milestones (retention)
 **Priority:** P1 · **Phase:** 3 · **Stories:** US-JOB-03, US-JOB-06, US-JOB-07, US-JOB-17, US-JOB-18, US-JOB-20 · **Source:** Captured
+
+Refined by `JobDetailRefined` and `JobDetailCompleted` (D-215).
 
 ![JobMilestones](screens/JobMilestones.webp)
 
@@ -946,6 +952,8 @@ Shows: "Jobs > Detail" · "OVERVIEW" · "Job" · "B8 Dashboard" · "< Back to lo
 
 ### JobPhotos — Job detail — Photos
 **Priority:** P2 · **Phase:** 3 · **Stories:** US-JOB-11 · **Source:** Captured
+
+Refined by `JobPhotosGrouped` and `JobPhotosViewer` (D-215).
 
 ![JobPhotos](screens/JobPhotos.webp)
 
@@ -3098,6 +3106,73 @@ Shows: "Title (optional)" · "Valid until" with "+15 days" "+30 days" "+60 days"
 Links to: —
 
 Shows: "Leave without saving?" · "Your changes to this quote will be lost." · "Leave" · "Keep editing"
+
+## Jobs you can run from one place
+
+Drawn in Claude Design for US-JOB-30 to US-JOB-38 (D-215): project "Spine web — refinements before Phase 10", canvas "10 Jobs". The list has New job in the toolbar, and its cards are Active (with its contract value), Ready to bill (with the amount), Over or near budget and Retention held; the first three filter. Rows show the number and site under the name, the next milestone with its due state, complete % beside billed % (billing over the contract flagged), the end date and the contract value. The job page has the number as its title with a status menu, one primary button for the next step, a strip of figures, tab counts, milestones as progress beside the job's Activity, and photos grouped by milestone with a full-size viewer. These refine `JobsList`, `JobsListBilling`, `JobMilestones` and `JobPhotos`. In the built page, Budget used and Retention are in the list's Columns; the rows have no menu (each row opens its job); "Start from an accepted quote" fills in the contact, name and contract value (the quote's milestones aren't copied, as when converting from the quote's page); and uploads show in their own row above the groups until they finish.
+
+### JobsListRefined — Cards that filter, progress in each row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-30, US-JOB-31, US-JOB-32, US-JOB-33 · **Source:** Claude Design
+
+![JobsListRefined](screens/JobsListRefined.webp)
+
+Links to: `JobNewDrawer`, `JobDetailRefined`
+
+Shows: "Active" "5" "₹3,42,00,000" · "Ready to bill" "2" "₹47,60,000" · "Over or near budget" · "Retention held" "₹14,85,000" "Across 4 jobs" · "Updated just now" · "New job" · "Search jobs, numbers or sites" · "JOB-001 · Whitefield, Bengaluru" under the name · "Foundations" "Due in 3 days" · "Raised floor" "Overdue 2 days" · "All billed" · "Complete" and "Billed" bars · "118%" with "Billed over the contract"
+
+### JobsListRefinedDark — "Ready to bill" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-31 · **Source:** Claude Design
+
+![JobsListRefinedDark](screens/JobsListRefinedDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · the two jobs with a milestone to invoice
+
+### JobNewDrawer — New job
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-30 · **Source:** Claude Design
+
+![JobNewDrawer](screens/JobNewDrawer.webp)
+
+Links to: `JobDetailRefined`
+
+Shows: "New job" · "Start from an accepted quote" "Choose a quote" · "Contact" · "Job name" · "Site address" "From Ananya Rao's site address — change it if the work is elsewhere." · "Currency" · "Contract value" · "Retention %" · "Start date" "End date" · "Notes" · "Cancel" "Create job"
+
+### JobDetailRefined — Active, with a milestone to invoice
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-34, US-JOB-35, US-JOB-37 · **Source:** Claude Design
+
+![JobDetailRefined](screens/JobDetailRefined.webp)
+
+Links to: `JobDetailCompleted`, `JobPhotosGrouped`, `InvoiceDetail`, `QuoteDetailRefined`
+
+Shows: "JOB-002" "Active" · "Warehouse extension" · "Sahyadri Retail Pvt Ltd" · "Baner Road, Pune 411045" · "Started 22 Jul · Due 30 Nov" · "From QUO-0031" · "Edit job" "Raise variation" "Invoice Steel structure" "More" · "Contract" "incl. 1 variation (+₹4,00,000)" · "Billed" "83% of contract" · "Cost" "71% of ₹54,00,000 budget" · "Margin" · "Complete" · "Milestones 3" "Variation orders 1" "Photos 6" "Notes 2" "Crew 2" · "Billed ₹47,60,000 of ₹68,00,000" · "not invoiced yet" · "View invoice" "Raise invoice" "Mark complete" · "Activity" "3 photos added with Steel structure" "Variation applied" "Created from QUO-0031" "Show 3 earlier"
+
+### JobDetailCompleted — Completed, status menu open, Release retention next
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-34, US-JOB-35 · **Source:** Claude Design
+
+![JobDetailCompleted](screens/JobDetailCompleted.webp)
+
+Links to: `JobDetailRefined`
+
+Shows: "Active" "On hold" "Completed" "Cancelled" in the status menu · "Release retention" · "Retention held ₹3,40,000 (5%) — release it now the job is complete." · "Status changed to Completed"
+
+### JobPhotosGrouped — Photos grouped by milestone, one uploading
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-36, US-JOB-38 · **Source:** Claude Design
+
+![JobPhotosGrouped](screens/JobPhotosGrouped.webp)
+
+Links to: `JobPhotosViewer`
+
+Shows: "Add photos" · "Site photos · 2" · "Site preparation · completed 7 Aug · 2" · "Steel structure · completed 2 Oct · 3" · a tile uploading "gate-north.jpg"
+
+### JobPhotosViewer — A photo full size
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-JOB-36 · **Source:** Claude Design
+
+![JobPhotosViewer](screens/JobPhotosViewer.webp)
+
+Links to: `JobPhotosGrouped`
+
+Shows: "Steel structure · 2 of 3" · "Download" "Close" · previous and next · "Roof trusses" · "Added by Ravi Kumar with “Steel structure” · 2 Oct, 4:38 PM · ← → to move, Esc to close"
 
 ## Mobile field companion
 

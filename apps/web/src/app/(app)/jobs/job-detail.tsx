@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
   AlertDescription,
@@ -14,12 +15,11 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Badge,
+  Breadcrumb,
   Button,
-  Card,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-  DataList,
   DatePicker,
   Dialog,
   DialogBody,
@@ -27,6 +27,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   FormField,
   Input,
   Select,
@@ -40,76 +45,146 @@ import {
   TabsList,
   TabsTrigger,
   Textarea,
+  cn,
 } from "@spine/ui";
-import { ArrowLeft, ChevronDown } from "lucide-react";
+import { CalendarDays, Check, ChevronDown, Flag, GitBranch, LockOpen, MapPin, Pencil, Receipt, User } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
-import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
+import { authClient } from "../../../lib/auth-client";
+import { useCanEditOwnership, useCapabilities, useCapability } from "../../../lib/capabilities-context";
+import { replaceQuery } from "../../../lib/replace-query";
 import { HistorySection } from "../../../components/history-section";
+import { CompleteMilestoneDialog } from "./[id]/complete-milestone-dialog";
 import { CostingSection } from "./[id]/costing-section";
 import { CrewSection } from "./[id]/crew-section";
+import { JobActivity } from "./[id]/job-activity";
 import { MilestonesSection } from "./[id]/milestones-section";
 import { NotesSection } from "./[id]/notes-section";
 import { PhotosSection } from "./[id]/photos-section";
 import { VariationOrdersSection } from "./[id]/variation-orders-section";
 import { useEntityToast } from "./entity-toast";
-import { JOB_STATUS_LABELS, type Job, type JobStatus } from "./types";
-import { formatMoney } from "../../../lib/money";
+import { completePct } from "./jobs-list-state";
+import { nextStep } from "./job-page-state";
+import { STATUS_BADGE_CLASS } from "./jobs-table";
+import { calendarDate } from "../quotes/quotes-list-state";
+import { JOB_STATUS_LABELS, type Job, type JobCostingReport, type JobStatus, type JobVariationOrder, type Milestone } from "./types";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { BUDGET_NOT_NEGATIVE, PERCENT_COMPLETE_RANGE, fromDecimalString, minorUnitExponent } from "@spine/shared";
 
 const JOB_TABS = ["milestones", "variations", "photos", "notes", "crew", "costing"] as const;
 type JobTab = (typeof JOB_TABS)[number];
 
-const STATUS_BADGE_CLASS: Record<Job["status"], string> = {
-  active: "bg-due-soon-bg text-due-soon",
-  on_hold: "bg-draft-bg text-draft",
-  completed: "bg-paid-bg text-paid",
-  cancelled: "bg-overdue-bg text-overdue",
+const STATUS_DOT: Record<JobStatus, string> = {
+  active: "bg-due-soon",
+  on_hold: "bg-draft",
+  completed: "bg-paid",
+  cancelled: "bg-overdue",
 };
 
+interface Counts {
+  photos: number;
+  notes: number;
+  crew: number;
+}
+
+/** A Google Maps search for the site, opened in a new tab (US-JOB-34). */
+function mapLink(address: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address.replace(/\s*\n\s*/g, ", "))}`;
+}
+
 /**
- * Job detail — header (name, contact, site address, status, dates,
- * contract value, retention %) plus tabbed sections for Milestones,
- * Variation Orders, Photos, Notes, and Costing.
+ * Job detail. US-JOB-34 to US-JOB-37 (D-215): the number is the page title,
+ * with a status menu, the name, contact, site (opens a map), dates and the
+ * quote it came from; one primary button is the next step (invoice a
+ * completed milestone, complete the next one, or release retention); a
+ * strip of figures (Field users see only % complete); tabs with counts;
+ * milestones as progress beside the job's Activity.
  *
  * **Capability gating**: own/others split (PRD §2.1, §9 Phase 3) via
- * `useCapability`/`useCanEditOwnership` (`capabilities-context.tsx`), same
- * pattern as every other module past Phase 1. Hiding a button is UI signal
- * only — the server independently re-checks every mutating request.
+ * `useCapability`/`useCanEditOwnership` (`capabilities-context.tsx`).
+ * Hiding a button is UI signal only — the server independently re-checks
+ * every mutating request.
  */
 export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: string; currentUserId: string | null }) {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestedTab = searchParams.get("tab");
   const initialTab: JobTab = JOB_TABS.includes(requestedTab as JobTab) ? (requestedTab as JobTab) : "milestones";
   const [activeTab, setActiveTab] = useState<JobTab>(initialTab);
   const [job, setJob] = useState<Job | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[] | null>(null);
+  const [variations, setVariations] = useState<JobVariationOrder[]>([]);
+  const [counts, setCounts] = useState<Counts | null>(null);
+  const [costing, setCosting] = useState<JobCostingReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [isConstruction, setIsConstruction] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [completing, setCompleting] = useState<Milestone | null>(null);
+  const [invoicingId, setInvoicingId] = useState<string | null>(null);
+  const [raiseRequest, setRaiseRequest] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
   // US-DASH-20: the dashboard's "Release" opens ?release=1 — the dialog, once the job shows it can be released.
   const wantsRelease = searchParams.get("release") === "1";
   const { show: showToast, toast } = useEntityToast();
+  const now = useMemo(() => new Date(), []);
+  const locale = orgLocaleTag();
+
+  const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
+  const canReleaseRetention = useCapability("jobs.release_retention");
+  const canInvoice = useCapability("milestones.invoice");
+  const canRaiseVariation = useCapability("variation_orders.edit_own");
+  // US-JOB-19: job costing is financial reporting; Field never has this grant.
+  const canViewCosting = useCapability("reports.view_job_profitability");
+  const { capabilities } = useCapabilities();
+  const { data: session } = authClient.useSession();
+
+  /** Per-milestone "mark complete": `milestones.edit_own` for the milestones the person set, else `edit_others` (Field always has both). */
+  const canComplete = useCallback(
+    (m: Milestone): boolean => {
+      if (!capabilities || !session?.user?.id) return false;
+      const isOwn = m.createdByUserId !== null && m.createdByUserId === session.user.id;
+      return capabilities[isOwn ? "milestones.edit_own" : "milestones.edit_others"] ?? false;
+    },
+    [capabilities, session?.user?.id],
+  );
 
   const load = useCallback(() => {
     apiClient
-      .get<Job>(`/jobs/${jobId}`)
+      .get<Job>(`/jobs/${jobId}?include=billing`)
       .then(setJob)
       .catch((err) => setError(err instanceof Error ? err.message : "Could not load job."));
+    apiClient
+      .get<Milestone[]>(`/jobs/${jobId}/milestones`)
+      .then(setMilestones)
+      .catch(() => setMilestones([]));
+    apiClient
+      .get<JobVariationOrder[]>(`/jobs/${jobId}/variation-orders`)
+      .then(setVariations)
+      .catch(() => {});
+    // US-JOB-35: the tab counts.
+    Promise.all([apiClient.get<unknown[]>(`/jobs/${jobId}/photos`), apiClient.get<unknown[]>(`/jobs/${jobId}/notes`), apiClient.get<unknown[]>(`/jobs/${jobId}/assignees`)])
+      .then(([photos, notes, crew]) => setCounts({ photos: photos.length, notes: notes.length, crew: crew.length }))
+      .catch(() => {});
+    setRefreshKey((k) => k + 1);
   }, [jobId]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  // S-12.3 — the org's onboarding-wizard industry template, re-read here
-  // (not just at onboarding time) since it's editable later from Settings
-  // per CLAUDE.md's onboarding rules. Used only to decide whether the
-  // retention-% disclosure in EditJobDialog starts open or collapsed —
-  // see that component's own doc comment for why this is a default, not a
-  // hard gate: Jobs itself stays fully usable for every org regardless of
-  // template.
+  useEffect(() => {
+    if (!canViewCosting) return;
+    apiClient
+      .get<JobCostingReport>(`/jobs/${jobId}/costing`)
+      .then(setCosting)
+      .catch(() => {});
+  }, [jobId, canViewCosting, refreshKey]);
+
+  // S-12.3 — the org's industry template decides whether the retention-% disclosure in EditJobDialog starts open.
   useEffect(() => {
     apiClient
       .get<{ key: string; value: { template?: string } | null }>("/org/settings/industry_template")
@@ -117,17 +192,27 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
       .catch(() => {});
   }, []);
 
-  const canEditJob = useCanEditOwnership(job?.createdByUserId ?? null, { own: "jobs.edit_own", others: "jobs.edit_others" });
-  const canReleaseRetention = useCapability("jobs.release_retention");
+  // US-JOB-30: a job just created from the list says so, once.
+  const createdShown = useRef(false);
+  useEffect(() => {
+    const created = searchParams.get("created");
+    if (created === null || createdShown.current) return;
+    createdShown.current = true;
+    showToast(created ? `Job ${created} created` : "Job created", "Add its milestones to bill it as the work is done.");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("created");
+    replaceQuery(pathname, params.toString());
+  }, [searchParams, pathname, showToast]);
+
+  const held = BigInt(job?.retentionHeld ?? "0");
+  const canRelease = canReleaseRetention && held > 0n;
   const releaseAsked = useRef(false);
   useEffect(() => {
-    if (wantsRelease && !releaseAsked.current && job && canReleaseRetention && (job.retentionPct ?? 0) > 0) {
+    if (wantsRelease && !releaseAsked.current && job && canRelease) {
       releaseAsked.current = true;
       setReleaseOpen(true);
     }
-  }, [wantsRelease, job, canReleaseRetention]);
-  // US-JOB-19: job costing is financial reporting; Field never has this grant.
-  const canViewCosting = useCapability("reports.view_job_profitability");
+  }, [wantsRelease, job, canRelease]);
 
   async function handleReleaseRetention() {
     if (!job) return;
@@ -140,6 +225,40 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
       showToast("Retention released", "A retention-release invoice has been created for this job.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not release retention for this job.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleInvoice(m: Milestone) {
+    if (!job) return;
+    setError(null);
+    setInvoicingId(m.id);
+    try {
+      const invoice = await apiClient.post<{ id: string }>(`/jobs/${job.id}/milestones/${m.id}/invoice`);
+      router.push(`/invoices/${invoice.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not raise an invoice for this milestone.");
+      setInvoicingId(null);
+    }
+  }
+
+  /** US-JOB-34 — saves at once; Cancelled asks first. */
+  async function changeStatus(status: JobStatus, confirmed = false) {
+    if (!job || status === job.status) return;
+    if (status === "cancelled" && !confirmed) {
+      setCancelOpen(true);
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await apiClient.put<Job>(`/jobs/${job.id}`, { status });
+      setCancelOpen(false);
+      load();
+      showToast("Status changed", `${job.number ?? job.name} is now ${JOB_STATUS_LABELS[status].toLowerCase()}.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't change the status. Try again.");
     } finally {
       setBusy(false);
     }
@@ -161,16 +280,199 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
     );
   }
 
+  const withMoney = job.contractValueAmount !== undefined;
+  const step = milestones ? nextStep(job, milestones, { invoice: canInvoice, complete: canComplete, release: canRelease }) : null;
+  const title = job.number ?? job.name;
+  const applied = variations.filter((v) => v.appliedAt);
+  const appliedTotal = applied.reduce((sum, v) => sum + BigInt(v.quote.totalAmount), 0n);
+  const complete = completePct({ ...job, milestoneCounts: milestones ? { total: milestones.length, completed: milestones.filter((m) => m.status !== "pending").length } : undefined });
+  const dates = [job.startDate ? `${new Date(job.startDate) > now ? "Starts" : "Started"} ${calendarDate(job.startDate, now, locale)}` : null, job.endDate ? `Due ${calendarDate(job.endDate, now, locale)}` : null].filter(Boolean).join(" · ");
+
+  const stepIcon = step?.kind === "invoice" ? <Receipt size={15} aria-hidden /> : step?.kind === "complete" ? <Flag size={15} aria-hidden /> : <LockOpen size={15} aria-hidden />;
+  const count = (n: number | undefined) =>
+    n === undefined ? null : (
+      <span className="ml-1.5 rounded-full bg-surface-sunken px-1.5 text-[11px] font-semibold tabular-nums text-on-surface-muted" aria-label={`, ${n}`}>
+        {n}
+      </span>
+    );
+
+  const figure = (label: string, value: string, note: React.ReactNode, bar?: number, testId?: string) => (
+    <div className="flex min-w-0 flex-col gap-1 border-border p-4 [&:not(:last-child)]:border-b sm:[&:not(:last-child)]:border-r sm:[&:not(:last-child)]:border-b-0" data-testid={testId}>
+      <span className="text-[12.5px] text-on-surface-muted">{label}</span>
+      <span className="text-[19px] font-bold tabular-nums leading-tight text-on-surface">{value}</span>
+      <span className="text-[12px] text-on-surface-muted">{note}</span>
+      {bar !== undefined && (
+        <span className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
+          <span className={cn("block h-full rounded-full", bar > 100 ? "bg-overdue" : "bg-primary")} style={{ width: `${Math.min(100, Math.max(0, bar))}%` }} />
+        </span>
+      )}
+    </div>
+  );
+
+  const budget = costing?.budget;
+  const figures = withMoney
+    ? [
+        figure(
+          "Contract",
+          formatMoney(BigInt(job.contractValueAmount ?? "0"), job.currency),
+          applied.length ? `incl. ${applied.length} ${applied.length === 1 ? "variation" : "variations"} (+${formatMoney(appliedTotal, job.currency)})` : (job.retentionPct ?? 0) > 0 ? `${job.retentionPct}% retention` : "No variations",
+          undefined,
+          "fig-contract",
+        ),
+        figure("Billed", formatMoney(BigInt(job.billedAmount ?? "0"), job.currency), job.billedPct === null || job.billedPct === undefined ? "No contract value" : `${job.billedPct}% of contract`, job.billedPct ?? 0, "fig-billed"),
+        ...(costing
+          ? [
+              figure(
+                "Cost",
+                formatMoney(BigInt(costing.cost), job.currency),
+                budget?.amount ? (
+                  <span className={budget.state === "over" ? "font-medium text-overdue" : budget.state === "near" ? "font-medium text-due-soon" : "text-paid"}>
+                    {budget.usedPct}% of {formatMoney(BigInt(budget.amount), job.currency)} budget
+                  </span>
+                ) : (
+                  "No budget set"
+                ),
+                undefined,
+                "fig-cost",
+              ),
+              figure("Margin", formatMoney(BigInt(costing.margin), job.currency), costing.marginPct === null ? "Nothing billed yet" : `${costing.marginPct}% so far`, undefined, "fig-margin"),
+            ]
+          : []),
+        figure("Complete", complete === null ? "—" : `${complete}%`, job.percentComplete != null ? "Your estimate" : complete === null ? "Not set" : "From milestones", undefined, "fig-complete"),
+      ]
+    : [figure("Complete", complete === null ? "—" : `${complete}%`, job.percentComplete != null ? "Your estimate" : complete === null ? "Not set" : "From milestones", undefined, "fig-complete")];
+
   return (
-    <div className="flex flex-col gap-6">
-      <button
-        type="button"
-        onClick={() => router.push("/jobs")}
-        className="flex w-fit items-center gap-1.5 text-[13px] font-medium text-on-surface-muted transition-colors hover:text-on-surface"
-      >
-        <ArrowLeft size={14} />
-        Back to jobs
-      </button>
+    <div className="flex flex-col gap-5">
+      {/* US-JOB-34: the number is the page title; the breadcrumb leads back to Jobs. */}
+      <div className="flex flex-col gap-3">
+        <Breadcrumb items={[{ label: "Jobs", href: "/jobs" }, { label: title }]} />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-[18rem] flex-1 flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-[24px] font-bold leading-tight tracking-tight text-on-surface">{title}</h1>
+              {canEditJob ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      aria-label={`Status: ${JOB_STATUS_LABELS[job.status]}. Change status`}
+                      className={cn("inline-flex h-6 items-center gap-1 rounded-full px-2.5 text-[12px] font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary", STATUS_BADGE_CLASS[job.status])}
+                      data-testid="job-status"
+                    >
+                      {JOB_STATUS_LABELS[job.status]}
+                      <ChevronDown size={13} aria-hidden />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {(Object.keys(JOB_STATUS_LABELS) as JobStatus[]).map((status) => (
+                      <DropdownMenuItem key={status} onSelect={() => void changeStatus(status)}>
+                        <span className={cn("h-2 w-2 rounded-full", STATUS_DOT[status])} aria-hidden />
+                        {JOB_STATUS_LABELS[status]}
+                        {status === job.status && <Check size={14} className="ml-auto text-primary" aria-label="(current)" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Badge className={STATUS_BADGE_CLASS[job.status]} data-testid="job-status">
+                  {JOB_STATUS_LABELS[job.status]}
+                </Badge>
+              )}
+            </div>
+            {job.number && (
+              <p className="text-[15px] font-medium text-on-surface" data-testid="job-name">
+                {job.name}
+              </p>
+            )}
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-on-surface-muted" data-testid="job-meta">
+              <span className="inline-flex items-center gap-1.5">
+                <User size={14} aria-hidden />
+                <Link href={`/contacts/${job.contactId}`} className="font-medium text-primary hover:underline">
+                  {job.contactName ?? "Unknown contact"}
+                </Link>
+              </span>
+              {job.siteAddress && (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <MapPin size={14} aria-hidden />
+                  <a href={mapLink(job.siteAddress)} target="_blank" rel="noreferrer" className="truncate font-medium text-primary hover:underline" aria-label={`${job.siteAddress} (opens a map)`}>
+                    {job.siteAddress.replace(/\s*\n\s*/g, ", ")}
+                  </a>
+                </span>
+              )}
+              {dates && (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays size={14} aria-hidden />
+                  {dates}
+                </span>
+              )}
+              {job.sourceQuoteId && (
+                <span>
+                  From{" "}
+                  <Link href={`/quotes/${job.sourceQuoteId}`} className="font-medium text-primary hover:underline">
+                    {job.sourceQuoteNumber ?? "its quote"}
+                  </Link>
+                </span>
+              )}
+            </p>
+            {job.notes && <p className="mt-1 max-w-3xl whitespace-pre-wrap text-[13px] text-on-surface-muted">{job.notes}</p>}
+          </div>
+
+          <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="job-actions">
+            {canEditJob && (
+              <Button variant="secondary" onClick={() => setEditOpen(true)}>
+                <Pencil size={15} aria-hidden />
+                Edit job
+              </Button>
+            )}
+            {canRaiseVariation && withMoney && (
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  setActiveTab("variations");
+                  setRaiseRequest((n) => n + 1);
+                }}
+              >
+                <GitBranch size={15} aria-hidden />
+                Raise variation
+              </Button>
+            )}
+            {step && (
+              <Button
+                disabled={busy || invoicingId !== null}
+                onClick={() => {
+                  if (step.kind === "invoice") void handleInvoice(step.milestone);
+                  else if (step.kind === "complete") setCompleting(step.milestone);
+                  else setReleaseOpen(true);
+                }}
+                data-testid="job-next-step"
+              >
+                {invoicingId ? <Spinner size="sm" /> : stepIcon}
+                {step.label}
+              </Button>
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary">
+                  More <ChevronDown size={14} aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setActiveTab("photos")}>Add photos</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>View history</DropdownMenuItem>
+                {canRelease && step?.kind !== "release" && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => setReleaseOpen(true)}>Release retention</DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <HistorySection endpoint={`/jobs/${job.id}/history`} subjectLabel="this job" open={historyOpen} onOpenChange={setHistoryOpen} />
+          </div>
+        </div>
+      </div>
 
       {error && (
         <Alert variant="critical">
@@ -178,81 +480,46 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         </Alert>
       )}
 
-      <Card className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-[18px] font-semibold text-on-surface">{job.name}</h2>
-              <Badge className={STATUS_BADGE_CLASS[job.status]}>{JOB_STATUS_LABELS[job.status]}</Badge>
-            </div>
-            <p className="mt-1 text-[13px] text-on-surface-muted" data-testid="job-subtitle">
-              {job.number && <>{job.number} · </>}
-              {job.contactName ?? "Unknown contact"}
-              {job.siteAddress && <> · {job.siteAddress}</>}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <HistorySection endpoint={`/jobs/${job.id}/history`} subjectLabel="this job" />
-            {canEditJob && (
-              <Button variant="secondary" onClick={() => setEditOpen(true)}>
-                Edit job
-              </Button>
-            )}
-            {canReleaseRetention && (job.retentionPct ?? 0) > 0 && (
-              <Button variant="secondary" onClick={() => setReleaseOpen(true)} disabled={busy}>
-                Release retention
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <DataList
-          items={[
-            // Field users get no money fields (US-JOB-19), so these are left out for them.
-            ...(job.contractValueAmount !== undefined
-              ? [{ label: "Contract value", value: formatMoney(BigInt(job.contractValueAmount), job.currency) }]
-              : []),
-            ...(job.retentionPct !== undefined ? [{ label: "Retention", value: job.retentionPct > 0 ? `${job.retentionPct}%` : "None" }] : []),
-            { label: "Start date", value: job.startDate ? new Date(job.startDate).toLocaleDateString() : "—" },
-            { label: "End date", value: job.endDate ? new Date(job.endDate).toLocaleDateString() : "—" },
-            ...(job.sourceQuoteId
-              ? [{ label: "Source quote", value: <a href={`/quotes/${job.sourceQuoteId}`} className="text-primary hover:underline">View quote</a> }]
-              : []),
-          ]}
-        />
-
-        {job.notes && (
-          <div>
-            <h3 className="text-[13px] font-semibold text-on-surface-muted">Notes</h3>
-            <p className="mt-1 whitespace-pre-wrap text-[13px] text-on-surface">{job.notes}</p>
-          </div>
-        )}
-      </Card>
+      <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length >= 5 ? "sm:grid-cols-5" : figures.length === 3 ? "sm:grid-cols-3" : figures.length === 1 ? "sm:max-w-xs" : "sm:grid-cols-2")} data-testid="job-figures">
+        {figures}
+      </div>
 
       <Tabs value={activeTab === "costing" && !canViewCosting ? "milestones" : activeTab} onValueChange={(value) => setActiveTab(value as JobTab)}>
         <TabsList>
-          <TabsTrigger value="milestones">Milestones</TabsTrigger>
-          <TabsTrigger value="variations">Variation orders</TabsTrigger>
-          <TabsTrigger value="photos">Photos</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-          <TabsTrigger value="crew">Crew</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones{count(milestones?.length)}</TabsTrigger>
+          <TabsTrigger value="variations">Variation orders{count(variations.length)}</TabsTrigger>
+          <TabsTrigger value="photos">Photos{count(counts?.photos)}</TabsTrigger>
+          <TabsTrigger value="notes">Notes{count(counts?.notes)}</TabsTrigger>
+          <TabsTrigger value="crew">Crew{count(counts?.crew)}</TabsTrigger>
           {canViewCosting && <TabsTrigger value="costing">Costing</TabsTrigger>}
         </TabsList>
         <TabsContent value="milestones">
-          <MilestonesSection job={job} onJobChanged={load} />
+          <div className={cn("grid grid-cols-1 items-start gap-5", withMoney && "xl:grid-cols-[minmax(0,1fr)_340px]")}>
+            <MilestonesSection
+              job={job}
+              milestones={milestones}
+              onChanged={load}
+              canComplete={canComplete}
+              canInvoice={canInvoice}
+              onComplete={setCompleting}
+              onInvoice={(m) => void handleInvoice(m)}
+              invoicingId={invoicingId}
+            />
+            {/* US-JOB-37: Field users get no Activity. */}
+            {withMoney && <JobActivity jobId={job.id} currency={job.currency} refreshKey={refreshKey} onViewHistory={() => setHistoryOpen(true)} />}
+          </div>
         </TabsContent>
         <TabsContent value="variations">
-          <VariationOrdersSection job={job} onJobChanged={load} />
+          <VariationOrdersSection job={job} onJobChanged={load} raiseRequest={raiseRequest} />
         </TabsContent>
         <TabsContent value="photos">
-          <PhotosSection job={job} />
+          <PhotosSection job={job} milestones={milestones ?? []} onChanged={load} />
         </TabsContent>
         <TabsContent value="notes">
-          <NotesSection job={job} />
+          <NotesSection job={job} onChanged={load} />
         </TabsContent>
         <TabsContent value="crew">
-          <CrewSection job={job} />
+          <CrewSection job={job} onChanged={load} />
         </TabsContent>
         {canViewCosting && (
           <TabsContent value="costing">
@@ -261,26 +528,52 @@ export function JobDetail({ jobId, currentUserId: _currentUserId }: { jobId: str
         )}
       </Tabs>
 
+      <CompleteMilestoneDialog
+        job={job}
+        milestone={completing}
+        onOpenChange={(open) => !open && setCompleting(null)}
+        onCompleted={() => {
+          setCompleting(null);
+          load();
+        }}
+      />
+
       <EditJobDialog
         open={editOpen}
         onOpenChange={setEditOpen}
         job={job}
         defaultShowRetention={isConstruction}
         onSaved={(updated) => {
-          setJob(updated);
           setEditOpen(false);
+          load();
           showToast("Job updated", `${updated.name} has been updated.`);
         }}
       />
 
-      {/* Pure yes/no confirmation with a real ledger effect (posts a new invoice + journal entry) — AlertDialog, not Dialog, per that component's own "reach for this when an action can't be undone" doc comment. */}
+      <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel this job?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {title} is marked cancelled. Its milestones, invoices and costs stay as they are, and you can set it back to active later.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Keep the job</AlertDialogCancel>
+            <AlertDialogAction variant="danger" disabled={busy} onClick={() => void changeStatus("cancelled", true)}>
+              {busy ? <Spinner size="sm" /> : "Cancel the job"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Pure yes/no confirmation with a real ledger effect (posts a new invoice + journal entry) — AlertDialog, not Dialog. */}
       <AlertDialog open={releaseOpen} onOpenChange={setReleaseOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Release retention?</AlertDialogTitle>
             <AlertDialogDescription>
-              Creates a retention-release invoice for whatever retention is still outstanding across this job's issued
-              progress invoices. If nothing is currently held back, this will be rejected.
+              Creates a retention-release invoice for the {held > 0n ? formatMoney(held, job.currency) : "retention"} still held on this job&apos;s issued progress invoices.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { Inject, Injectable } from "@nestjs/common";
 import { asc, eq, inArray } from "drizzle-orm";
 import { itemTaxFor, type DemoPlan, type DemoPlanContact, type DemoPlanLine, type DemoTax, type DemoTaxRef, type SupplyClass, type SupplyType, type TaxProfile } from "@spine/shared";
@@ -30,10 +32,19 @@ import { TaxRatesService } from "../tax/tax-rates.service";
 import { TeamsService } from "../teams/teams.service";
 
 /**
- * A minimal, valid 1x1 px PNG — the demo's logo and job photos go through
- * the real `FilesService.upload`, so they're served like any other file.
+ * A minimal, valid 1x1 px PNG — the demo's logo goes through the real
+ * `FilesService.upload`, so it's served like any other file.
  */
 const PLACEHOLDER_PNG_BASE64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
+
+/**
+ * US-JOB-38 (D-215) — real site photos for the demo's jobs, bundled in
+ * `apps/api/assets/demo` (Unsplash License; sources in SOURCES.md there).
+ * The first is each job's kick-off photo in turn; the rest go with
+ * completed milestones.
+ */
+const DEMO_PHOTOS_DIR = path.resolve(__dirname, "../../../assets/demo");
+export const DEMO_SITE_PHOTOS = ["site-structure.jpg", "site-foundations.jpg", "site-framing.jpg", "site-works.jpg", "site-crew.jpg", "site-hard-hat.jpg"] as const;
 
 /** The two demo people every demo shares (real logins; their memberships are demo rows). */
 const DEMO_USER_PASSWORD = "DemoPassword123!";
@@ -254,11 +265,17 @@ export class DemoSeederService {
     }
 
     // 5. Jobs, before the timeline that invoices their milestones.
-    const photoFileId = this.filesService.isStorageConfigured()
-      ? ((await this.filesService.upload(orgId, { originalFilename: "site-progress.png", mimeType: "image/png", buffer: Buffer.from(PLACEHOLDER_PNG_BASE64, "base64"), uploadedByUserId: actorUserId }))?.id ?? null)
-      : null;
-    const jobRows = new Map<string, { id: string; name: string; contact: string; milestoneIds: string[] }>();
-    for (const seed of plan.jobs) {
+    const photoFileIds: string[] = [];
+    if (this.filesService.isStorageConfigured()) {
+      for (const name of DEMO_SITE_PHOTOS) {
+        const file = await this.filesService.upload(orgId, { originalFilename: name, mimeType: "image/jpeg", buffer: readFileSync(path.join(DEMO_PHOTOS_DIR, name)), uploadedByUserId: actorUserId });
+        if (file) photoFileIds.push(file.id);
+      }
+    }
+    const photoFor = (n: number): string | null => (photoFileIds.length ? photoFileIds[n % photoFileIds.length]! : null);
+    const jobRows = new Map<string, { id: string; name: string; contact: string; milestoneIds: string[]; index: number }>();
+    for (const [jobIndex, seed] of plan.jobs.entries()) {
+      const photoFileId = photoFor(jobIndex);
       const job = await this.jobsService.create(
         orgId,
         actorUserId,
@@ -274,7 +291,7 @@ export class DemoSeederService {
       const milestones = await this.milestonesService.setAll(orgId, job.id, actorUserId, {
         milestones: seed.milestones.map((m, i) => ({ name: m.name, sequence: i, amountType: m.amountType, amount: m.amount, dueDate: day(m.dueInDays) })),
       } as never);
-      jobRows.set(seed.key, { id: job.id, name: seed.name, contact: seed.contact, milestoneIds: milestones.map((m: { id: string }) => m.id) });
+      jobRows.set(seed.key, { id: job.id, name: seed.name, contact: seed.contact, milestoneIds: milestones.map((m: { id: string }) => m.id), index: jobIndex });
     }
 
     // 6. The timeline. Each step has a day; "dated" plans run in day order.
@@ -342,7 +359,7 @@ export class DemoSeederService {
         const invoiceDay = m.invoiceInDays;
         at(invoiceDay, async () => {
           const milestoneId = job.milestoneIds[i]!;
-          await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${m.name} — completed on schedule.`, photoFileIds: photoFileId ? [photoFileId] : [] } as never);
+          await this.milestonesService.completeMilestone(orgId, job.id, milestoneId, actorUserId, { completionNotes: `${m.name} — completed on schedule.`, photoFileIds: photoFor(job.index + i + 1) ? [photoFor(job.index + i + 1)!] : [] } as never);
           const draft = await this.milestonesService.invoiceMilestone(orgId, job.id, milestoneId, actorUserId);
           // As a person would: date the milestone's invoice and give its line the job's tax before issuing.
           if (plan.ordering === "dated") {

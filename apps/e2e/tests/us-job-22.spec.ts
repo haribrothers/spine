@@ -27,6 +27,8 @@ test.describe("US-JOB-22", () => {
     await expect(row).toContainText("Alan Brooks");
 
     await page.goto(`/jobs/${job.id}`);
-    await expect(page.getByTestId("job-subtitle")).toHaveText(/^JOB-001 · Alan Brooks/);
+    // US-JOB-34: the number is the page title, with the customer beside it.
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("JOB-001");
+    await expect(page.getByTestId("job-meta")).toContainText("Alan Brooks");
   });
 });

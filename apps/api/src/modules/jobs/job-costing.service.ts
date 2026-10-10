@@ -1,11 +1,11 @@
 import { Inject, Injectable, NotFoundException } from "@nestjs/common";
-import { billingFigures, budgetFigures, wholePercent, type BillingFigures, type BudgetFigures, type BudgetState } from "@spine/shared";
+import { billingFigures, budgetFigures, wholePercent, type BillingFigures, type BudgetFigures, type BudgetState, type JobBilling } from "@spine/shared";
 import { and, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import { hasCapability } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { creditNotes, invoices, jobs, journalEntries, journalLines, accounts } from "../../db/schema";
+import { creditNotes, invoices, jobs, journalEntries, journalLines, accounts, milestones } from "../../db/schema";
 
 export interface JobCostingReport {
   jobId: string;
@@ -61,6 +61,19 @@ export async function billedByJob(db: Database, orgId: string, jobIds: string[])
     )
     .groupBy(journalLines.jobId);
   return new Map(rows.map((r) => [r.jobId!, BigInt(r.billed)]));
+}
+
+/** US-JOB-31 (D-215) — retention held per job: the balance of its 1150 Retention Receivable lines. */
+export async function retentionHeldByJob(db: Database, orgId: string, jobIds: string[]): Promise<Map<string, bigint>> {
+  if (!jobIds.length) return new Map();
+  const rows = await db
+    .select({ jobId: journalLines.jobId, held: sql<string>`coalesce(sum(${journalLines.debit} - ${journalLines.credit}), 0)` })
+    .from(journalLines)
+    .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+    .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+    .where(and(eq(journalEntries.orgId, orgId), inArray(journalLines.jobId, jobIds), eq(accounts.code, "1150")))
+    .groupBy(journalLines.jobId);
+  return new Map(rows.map((r) => [r.jobId!, BigInt(r.held)]));
 }
 
 /** Cost per job (expense debits tagged to it), for many jobs in one query. */
@@ -142,6 +155,39 @@ export class JobCostingService {
       byCategory,
       billing: billingFigures(job.contractValueAmount, (await billedByJob(this.db, orgId, [jobId])).get(jobId) ?? 0n, job.percentComplete),
     };
+  }
+
+  /**
+   * US-JOB-31, US-JOB-33 (D-215) — `include=billing`: billed to date, the
+   * completed milestones not yet invoiced, and the retention held, all
+   * from journal lines and milestones. For Owners and Staff; the
+   * controller never calls it for Field (US-JOB-19).
+   */
+  async withBilling<T extends { id: string; contractValueAmount: bigint }>(orgId: string, rows: T[]): Promise<(T & JobBilling)[]> {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+    const [billed, held, ready] = await Promise.all([
+      billedByJob(this.db, orgId, ids),
+      retentionHeldByJob(this.db, orgId, ids),
+      this.db
+        .select({ jobId: milestones.jobId, count: sql<number>`count(*)::int`, amount: sql<string>`coalesce(sum(${milestones.resolvedAmount}), 0)` })
+        .from(milestones)
+        .where(and(eq(milestones.orgId, orgId), inArray(milestones.jobId, ids), eq(milestones.status, "completed")))
+        .groupBy(milestones.jobId),
+    ]);
+    const readyByJob = new Map(ready.map((r) => [r.jobId, r]));
+    return rows.map((row) => {
+      const billedAmount = billed.get(row.id) ?? 0n;
+      const r = readyByJob.get(row.id);
+      return {
+        ...row,
+        billedAmount: billedAmount.toString(),
+        billedPct: wholePercent(billedAmount, row.contractValueAmount),
+        readyToBillCount: r?.count ?? 0,
+        readyToBillAmount: r ? BigInt(r.amount).toString() : "0",
+        retentionHeld: (held.get(row.id) ?? 0n).toString(),
+      };
+    });
   }
 
   /**

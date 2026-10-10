@@ -17,7 +17,8 @@ import type { Job, JobAssignee } from "../types";
  * why "who can edit this job's fields" and "who decides the crew" are
  * separate questions an Owner may want to grant separately.
  */
-export function CrewSection({ job }: { job: Job }) {
+/** `onChanged` lets the job page refresh its tab count and Activity (US-JOB-35, US-JOB-37). */
+export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => void }) {
   const canAssign = useCapability("jobs.assign");
   const [assignees, setAssignees] = useState<JobAssignee[] | null>(null);
   const [members, setMembers] = useState<MemberRow[] | null>(null);
@@ -52,6 +53,7 @@ export function CrewSection({ job }: { job: Job }) {
       await apiClient.post(`/jobs/${job.id}/assignees`, { userId: selectedUserId });
       setSelectedUserId("");
       load();
+      onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not assign this user to the job.");
     } finally {
@@ -65,6 +67,7 @@ export function CrewSection({ job }: { job: Job }) {
     try {
       await apiClient.delete(`/jobs/${job.id}/assignees/${userId}`);
       load();
+      onChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not remove this user from the job.");
     } finally {

@@ -1,0 +1,60 @@
+import type { Job, JobPhoto, Milestone } from "../app/(app)/jobs/types";
+
+/** A job for the US-JOB-30 to US-JOB-38 tests. */
+export const job = (over: Partial<Job>): Job => ({
+  id: "j",
+  orgId: "o",
+  contactId: "c1",
+  contactName: "Sahyadri Retail Pvt Ltd",
+  sourceQuoteId: null,
+  number: "JOB-001",
+  name: "Warehouse extension",
+  siteAddress: null,
+  status: "active",
+  startDate: null,
+  endDate: null,
+  currency: "INR",
+  contractValueAmount: "6800000",
+  retentionPct: 5,
+  notes: null,
+  createdByUserId: "u1",
+  isDemo: false,
+  createdAt: "2026-07-22T09:00:00Z",
+  updatedAt: "2026-07-22T09:00:00Z",
+  ...over,
+});
+
+export const milestone = (over: Partial<Milestone>): Milestone => ({
+  id: "m",
+  jobId: "j",
+  orgId: "o",
+  name: "Milestone",
+  sequence: 0,
+  amountType: "percent",
+  amount: 30,
+  resolvedAmount: "2040000",
+  status: "pending",
+  dueDate: null,
+  createdByUserId: "u1",
+  completedByUserId: null,
+  completedAt: null,
+  completionNotes: null,
+  invoicedInvoiceId: null,
+  createdAt: "2026-07-22T09:00:00Z",
+  updatedAt: "2026-07-22T09:00:00Z",
+  ...over,
+});
+
+export const photo = (over: Partial<JobPhoto>): JobPhoto => ({
+  id: "p",
+  jobId: "j",
+  orgId: "o",
+  milestoneId: null,
+  fileId: "f",
+  caption: null,
+  uploadedByUserId: "u1",
+  uploadedByName: "Ravi Kumar",
+  createdByUserId: "u1",
+  createdAt: "2026-10-02T11:00:00Z",
+  ...over,
+});

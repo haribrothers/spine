@@ -40,7 +40,8 @@ const QUOTE_STATUS_BADGE_CLASS: Record<JobVariationOrder["quote"]["status"], str
  * its total into the job's contract value (S-04.9's own explicit-action
  * design, see VariationOrdersService.apply's doc comment).
  */
-export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobChanged: () => void }) {
+/** `raiseRequest` — the job page's "Raise variation" (US-JOB-34) opens the create dialog when it changes. */
+export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: { job: Job; onJobChanged: () => void; raiseRequest?: number }) {
   const canCreate = useCapability("variation_orders.edit_own");
   const canApply = useCapability("variation_orders.apply");
   const [variations, setVariations] = useState<JobVariationOrder[] | null>(null);
@@ -70,6 +71,10 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
     setCreateOpen(true);
   }
 
+  useEffect(() => {
+    if (raiseRequest > 0) openCreate();
+  }, [raiseRequest]);
+
   async function handleCreate() {
     setCreateError(null);
     if (!lines.length || lines.some((l) => l.type === "item" && !l.name.trim())) {
@@ -97,6 +102,7 @@ export function VariationOrdersSection({ job, onJobChanged }: { job: Job; onJobC
       });
       setCreateOpen(false);
       load();
+      onJobChanged();
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Could not create this variation order.");
     } finally {

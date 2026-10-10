@@ -39,6 +39,10 @@ test.describe("US-JOB-25", () => {
 
     // The Jobs list says the same in words.
     await page.goto("/jobs");
+    // D-215: "Budget used" is one of the list's Columns.
+    await page.getByRole("button", { name: "Columns" }).click();
+    await page.getByRole("menuitemcheckbox", { name: "Budget used" }).click();
+    await page.keyboard.press("Escape");
     await expect(page.getByRole("row").filter({ hasText: job.name }).first()).toContainText(/Over · \d+%/);
 
     await setBudget(page, job.id, null);

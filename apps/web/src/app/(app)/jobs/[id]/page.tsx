@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { AppShellHeader } from "@spine/ui";
 import { getSession } from "../../../../lib/get-session";
 import { JobDetail } from "../job-detail";
 
@@ -8,12 +7,10 @@ export default async function JobDetailPage({ params }: { params: Promise<{ id: 
   const session = await getSession();
 
   return (
-    <>
-      <AppShellHeader breadcrumb={[{ label: "Jobs", href: "/jobs" }, { label: "Detail" }]} title="Job" />
-      {/* JobDetail reads ?tab= (variation-order-accepted notification deep links) via useSearchParams, which requires a Suspense boundary. */}
-      <Suspense>
-        <JobDetail jobId={id} currentUserId={session?.user?.id ?? null} />
-      </Suspense>
-    </>
+    // US-JOB-34: the job renders its own header, with its number as the page title.
+    // JobDetail reads ?tab= (notification deep links) via useSearchParams, which requires a Suspense boundary.
+    <Suspense>
+      <JobDetail jobId={id} currentUserId={session?.user?.id ?? null} />
+    </Suspense>
   );
 }

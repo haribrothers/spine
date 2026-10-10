@@ -18,7 +18,7 @@ A job is the work behind an accepted quote: its contract value, billing mileston
 | F-JOB-07 | Crew assignment | P2 | 5 | `JobCrew`, `MobJobsList` |
 | F-JOB-08 | Own/others job and milestone rights | P1 | 4 | `JobMilestones`, `JobEditDialog` |
 | F-JOB-09 | Cost budget and billing progress | P1 | 7 | `JobEditDialogBudget`, `JobCostingBudget`, `JobsListBilling`, `InvoiceDetailProgressClaim` |
-| F-JOB-10 | Jobs you can run from one place: start a job from the list, cards that filter, progress in each row, a job page that says what's next, photos you can browse, and what happened | P2 | Refinements | `JobsListRefined`, `JobsListRefinedDark`, `JobNewDrawer`, `JobDetailRefined`, `JobDetailCompleted`, `JobPhotosViewer` |
+| F-JOB-10 | Jobs you can run from one place: start a job from the list, cards that filter, progress in each row, a job page that says what's next, photos you can browse, and what happened | P2 | Refinements | `JobsListRefined`, `JobsListRefinedDark`, `JobNewDrawer`, `JobDetailRefined`, `JobDetailCompleted`, `JobPhotosGrouped`, `JobPhotosViewer` |
 
 ## User stories
 
@@ -398,7 +398,7 @@ Decision: D-125
 - **Given** cost reaches 80% of the budget, **when** the card renders, **then** the bar shows the warning colour and the label "Nearing budget — 85% used" with a warning icon.
 - **Given** cost passes the budget, **when** the card renders, **then** it reads "Over budget by 1,450.00" with the danger colour and icon, "Remaining" shows "−1,450.00", and the bar is full.
 - **Given** a job with no budget, **when** the card renders, **then** it reads "No budget set" with "Set a budget" opening the edit dialog (hidden without `jobs.edit_*` on this job).
-- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Budget used" column shows each job's percentage with the same three states in text ("78%", "Nearing · 85%", "Over · 104%"), and "—" for jobs without a budget.
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Budget used" column (one of the list's Columns since D-215) shows each job's percentage with the same three states in text ("78%", "Nearing · 85%", "Over · 104%"), and "—" for jobs without a budget.
 - **Given** jobs over budget and a member with `reports.view_job_profitability`, **when** "Needs your attention" renders (US-DASH-12), **then** a row reads "<n> job(s) over budget" naming the first job and how much it is over, with "Review" opening its Costing tab; the row comes after vendor bills due.
 
 **Implementation notes**
@@ -432,7 +432,7 @@ Decision: D-127
 - **Given** a job with a 48,500.00 contract and issued progress invoices totalling 19,400.00, **when** I open "Costing", **then** a "Billing" card shows "Contract value 48,500.00", "Billed to date 19,400.00 (40%)" and "Left to bill 29,100.00" with a bar.
 - **Given** a credit note against one of those invoices, **when** I reload, **then** "Billed to date" drops by the credit note's total.
 - **Given** an advance invoice or a retention-release invoice on the job, **when** billed to date is worked out, **then** neither counts (the deposit is counted once it's offset on a progress invoice).
-- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** a "Billed" column shows each job's percentage ("40%").
+- **Given** the Jobs list and a member with `reports.view_job_profitability`, **when** it renders, **then** each job's billed percentage shows ("40%"; in the Progress column beside complete % since US-JOB-33).
 - **Given** billed to date exceeds the contract value, **when** the card renders, **then** "Left to bill" reads "Billed over contract by <amount>" so a missing variation order is noticed.
 
 **Implementation notes**
@@ -485,7 +485,7 @@ Decision: D-215
 **Acceptance criteria**
 - **Given** Jobs, **when** I have `jobs.edit_own`, **then** the toolbar and the empty state have "New job"; without the right, neither shows.
 - **Given** "New job", **when** the drawer opens, **then** it asks for Contact (required), Job name (required), Site address (filled from the contact's site address, else its billing address, and changeable), Currency (the business's), Contract value, Retention %, Start and End dates and Notes; an end date before the start says "End the job on or after its start date.".
-- **Given** the drawer, **when** I choose "Start from an accepted quote" and pick one, **then** the quote is converted as from the quote's page (its name, contact, contract value and milestones), with the repeat-conversion warning when it applies (US-QUO-16).
+- **Given** the drawer, **when** I choose "Start from an accepted quote" and pick one, **then** the quote is converted as from the quote's page (its contact and contract value, named after its first item, and linked to it), with the repeat-conversion warning when it applies (US-QUO-16); quotes that already have a job aren't offered.
 - **Given** I save, **when** the job is created, **then** its page opens on Milestones with "Set up how this job is billed" and "Add milestones"; a toast says "Job JOB-007 created".
 
 **Implementation notes**
@@ -561,7 +561,7 @@ Decision: D-215
 - UI: `milestones-section.tsx`; counts from the data the tabs already load.
 
 ### US-JOB-36 · Browse, upload and group site photos
-**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobPhotosViewer`
+**Feature:** F-JOB-10 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `JobPhotosGrouped`, `JobPhotosViewer`
 **As** a site manager, **I want** to add several photos at once and look through them full size, **so that** the job's record is easy to keep and use.
 
 Decision: D-215

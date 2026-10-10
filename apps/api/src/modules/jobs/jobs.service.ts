@@ -1,10 +1,11 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from "@nestjs/common";
-import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, updateJobSchema } from "@spine/shared";
+import type { addJobNoteSchema, addJobPhotoSchema, assignJobSchema, createJobSchema, JobActivityEntry, updateJobSchema } from "@spine/shared";
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { z } from "zod";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { jobs, jobVariationOrders, contacts, contactPersons, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines, milestones } from "../../db/schema";
+import { jobs, jobVariationOrders, contacts, contactPersons, quotes, jobPhotos, jobNotes, jobAssignments, user, quoteLines, milestones, auditLog, invoices } from "../../db/schema";
 import { AuditLogService } from "../audit/audit-log.service";
 import { QuoteConversionGuardService } from "../org/quote-conversion-guard.service";
 import { NotificationsService } from "../notifications/notifications.service";
@@ -168,14 +169,16 @@ export class JobsService {
 
   async getOne(orgId: string, id: string) {
     const [row] = await this.db
-      .select({ job: jobs, contactName: contacts.name })
+      .select({ job: jobs, contactName: contacts.name, sourceQuoteNumber: quotes.number })
       .from(jobs)
       .leftJoin(contacts, eq(jobs.contactId, contacts.id))
+      .leftJoin(quotes, eq(jobs.sourceQuoteId, quotes.id))
       .where(and(eq(jobs.orgId, orgId), eq(jobs.id, id)));
     if (!row) {
       throw new NotFoundException("Job not found");
     }
-    return { ...row.job, contactName: row.contactName };
+    // US-JOB-34: "From QUO-0031" in the job's header.
+    return { ...row.job, contactName: row.contactName, sourceQuoteNumber: row.sourceQuoteNumber ?? null };
   }
 
   /** `GET /jobs/:id/history` — confirms the job exists (org-scoped) before delegating to AuditLogService, same pattern as InvoicesService.getHistory. Only rows with `entityType: "job"` — a job's own create/update/photo_added/note_added/milestones_set events, not its milestones'/notes'/photos' own dedicated history (see getHistory on MilestonesService and the job_note/job_photo history routes below), matching QuotesService.getHistory's "no cross-entity aggregation" precedent. */
@@ -412,9 +415,123 @@ export class JobsService {
     return row;
   }
 
+  /** US-JOB-36: with who added each photo, for the viewer's "Added by Ravi Kumar". */
   async listPhotos(orgId: string, jobId: string) {
     await this.getOne(orgId, jobId);
-    return this.db.select().from(jobPhotos).where(eq(jobPhotos.jobId, jobId)).orderBy(desc(jobPhotos.createdAt));
+    const rows = await this.db
+      .select({ photo: jobPhotos, uploadedByName: user.name })
+      .from(jobPhotos)
+      .leftJoin(user, eq(jobPhotos.uploadedByUserId, user.id))
+      .where(eq(jobPhotos.jobId, jobId))
+      .orderBy(desc(jobPhotos.createdAt));
+    return rows.map((r) => ({ ...r.photo, uploadedByName: r.uploadedByName ?? null }));
+  }
+
+  /**
+   * US-JOB-37 (D-215) — `GET /jobs/:id/activity`: the job's story, newest
+   * first. The job's own audit entries (created, status and other edits,
+   * milestones set, variation orders, notes, crew), its milestones'
+   * (completed, invoiced), its photos (from `job_photos`, so photos taken
+   * when completing a milestone count too) and its retention-release
+   * invoices. Field users never reach it (the controller's roles).
+   */
+  async activity(orgId: string, jobId: string): Promise<JobActivityEntry[]> {
+    const job = await this.getOne(orgId, jobId);
+    const iso = (d: Date | string) => new Date(d).toISOString();
+    const entries: JobActivityEntry[] = [];
+    type Change = { field: string; from: unknown; to: unknown };
+
+    const jobMilestones = await this.db.select({ id: milestones.id, name: milestones.name }).from(milestones).where(eq(milestones.jobId, jobId));
+    const milestoneName = new Map(jobMilestones.map((m) => [m.id, m.name]));
+    const auditRows = await this.db
+      .select({ action: auditLog.action, entityType: auditLog.entityType, entityId: auditLog.entityId, changes: auditLog.changes, createdAt: auditLog.createdAt, actorName: user.name })
+      .from(auditLog)
+      .leftJoin(user, eq(auditLog.actorUserId, user.id))
+      .where(
+        and(
+          eq(auditLog.orgId, orgId),
+          sql`((${auditLog.entityType} = 'job' and ${auditLog.entityId} = ${jobId})${jobMilestones.length ? sql` or (${auditLog.entityType} = 'milestone' and ${inArray(auditLog.entityId, jobMilestones.map((m) => m.id))})` : sql``})`,
+        ),
+      );
+
+    // Names for the crew, and numbers for the invoices and variation quotes the entries point at.
+    const changeValues = (field: string) => auditRows.flatMap((r) => ((r.changes ?? []) as Change[]).filter((c) => c.field === field).flatMap((c) => [c.from, c.to])).filter((v): v is string => typeof v === "string");
+    const crewIds = [...new Set(changeValues("assignedUserId"))];
+    const crewNames = new Map(crewIds.length ? (await this.db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, crewIds))).map((u) => [u.id, u.name]) : []);
+    const invoiceIds = [...new Set(changeValues("invoicedInvoiceId"))];
+    const invoiceNumbers = new Map(invoiceIds.length ? (await this.db.select({ id: invoices.id, number: invoices.number }).from(invoices).where(and(eq(invoices.orgId, orgId), inArray(invoices.id, invoiceIds)))).map((i) => [i.id, i.number]) : []);
+    const variationIds = [...new Set(changeValues("variationQuoteId"))];
+    const variationNumbers = new Map(variationIds.length ? (await this.db.select({ id: quotes.id, number: quotes.number }).from(quotes).where(and(eq(quotes.orgId, orgId), inArray(quotes.id, variationIds)))).map((q) => [q.id, q.number]) : []);
+
+    for (const row of auditRows) {
+      const at = iso(row.createdAt);
+      const actorName = row.actorName ?? null;
+      const changes = (row.changes ?? []) as Change[];
+      const change = (field: string) => changes.find((c) => c.field === field);
+      if (row.entityType === "milestone") {
+        const name = milestoneName.get(row.entityId) ?? null;
+        if (row.action === "milestone_completed") entries.push({ at, type: "milestone_completed", actorName, detail: name });
+        if (row.action === "milestone_invoiced") {
+          const invoiceId = change("invoicedInvoiceId")?.to as string | undefined;
+          const number = invoiceId ? invoiceNumbers.get(invoiceId) : null;
+          entries.push({ at, type: "milestone_invoiced", actorName, detail: [name, number].filter(Boolean).join(" · ") || null, linkId: invoiceId ?? null });
+        }
+        continue;
+      }
+      switch (row.action) {
+        case "created":
+          entries.push(job.sourceQuoteId ? { at, type: "created_from_quote", actorName, detail: job.sourceQuoteNumber, linkId: job.sourceQuoteId } : { at, type: "created", actorName, detail: null });
+          break;
+        case "updated": {
+          const status = change("status");
+          if (status) entries.push({ at, type: "status_changed", actorName, detail: String(status.to) });
+          if (changes.some((c) => c.field !== "status")) entries.push({ at, type: "updated", actorName, detail: null });
+          break;
+        }
+        case "milestones_set":
+          entries.push({ at, type: "milestones_set", actorName, detail: String(change("milestoneCount")?.to ?? "") || null });
+          break;
+        case "variation_order_created": {
+          const quoteId = change("variationQuoteId")?.to as string | undefined;
+          entries.push({ at, type: "variation_order_created", actorName, detail: quoteId ? (variationNumbers.get(quoteId) ?? null) : null, linkId: quoteId ?? null });
+          break;
+        }
+        case "variation_order_applied": {
+          const value = change("contractValueAmount");
+          const delta = value ? (BigInt(String(value.to)) - BigInt(String(value.from))).toString() : null;
+          entries.push({ at, type: "variation_order_applied", actorName, detail: delta });
+          break;
+        }
+        case "note_added":
+          entries.push({ at, type: "note_added", actorName, detail: null });
+          break;
+        case "assigned":
+        case "unassigned": {
+          const who = (row.action === "assigned" ? change("assignedUserId")?.to : change("assignedUserId")?.from) as string | undefined;
+          entries.push({ at, type: row.action === "assigned" ? "crew_assigned" : "crew_unassigned", actorName, detail: who ? (crewNames.get(who) ?? null) : null });
+          break;
+        }
+        default:
+          break;
+      }
+    }
+
+    const uploader = alias(user, "uploader");
+    const photos = await this.db
+      .select({ createdAt: jobPhotos.createdAt, milestoneId: jobPhotos.milestoneId, actorName: uploader.name })
+      .from(jobPhotos)
+      .leftJoin(uploader, eq(jobPhotos.uploadedByUserId, uploader.id))
+      .where(eq(jobPhotos.jobId, jobId));
+    for (const p of photos) entries.push({ at: iso(p.createdAt), type: "photo_added", actorName: p.actorName ?? null, detail: p.milestoneId ? (milestoneName.get(p.milestoneId) ?? null) : null });
+
+    const releases = await this.db
+      .select({ id: invoices.id, number: invoices.number, createdAt: invoices.createdAt, actorName: user.name })
+      .from(invoices)
+      .leftJoin(user, eq(invoices.createdByUserId, user.id))
+      .where(and(eq(invoices.orgId, orgId), eq(invoices.jobId, jobId), eq(invoices.type, "retention_release")));
+    for (const r of releases) entries.push({ at: iso(r.createdAt), type: "retention_released", actorName: r.actorName ?? null, detail: r.number, linkId: r.id });
+
+    return entries.sort((a, b) => b.at.localeCompare(a.at));
   }
 
   /** `GET /jobs/:id/photos/:photoId/history` — confirms the photo exists (org- and job-scoped) before delegating to AuditLogService. Create-only resource, so this will show a single "created" row — still built for consistency with every other resource's History button. */
