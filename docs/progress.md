@@ -440,6 +440,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-AUTH-15 · Choose a strong password I can see
 - [x] US-ONB-22 · Set up my business in four short stages with a live preview
 - [x] US-ONB-23 · Finish setup on a screen that shows what's next
+- [ ] US-DASH-27 · See the dashboard take shape while it loads
+- [ ] US-DASH-28 · Read big figures on calm, colour-coded cards
+- [ ] US-DASH-29 · Keep cards their own height, with my tasks in a side column
 
 ## Phase 10 · AI assistant
 
