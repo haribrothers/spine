@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 449 stories.
+Total: 454 stories.
 
 ## Phase 0 · Foundation
 
@@ -797,6 +797,14 @@ Total: 449 stories.
 - US-CRM-26 · Say why a lead was lost, and quote a lead that's won (P2)
 - US-CRM-27 · Work a lead from one drawer (P2)
 - US-CRM-28 · Filter the pipeline by owner and source, and come back to it (P2)
+
+*Meetings*
+
+- US-MTG-13 · See which days have meetings in the mini calendar (P2)
+- US-MTG-14 · Start a meeting from a button, and open on the working day (P2)
+- US-MTG-15 · Get to a meeting or a contact from the sidebar lists (P2)
+- US-MTG-16 · Come back to the same calendar view and date (P2)
+- US-MTG-17 · Use the calendar on any screen size (P2)
 
 ## Phase 10 · AI assistant
 

@@ -2,7 +2,7 @@
 
 An Outlook-style calendar for meetings with contacts and colleagues: day, week, month and agenda views, private or org-wide visibility, invitations with responses, a quick-view popover, and recurring meetings whose single occurrences can be changed without touching the series. Reminders and invite notifications are in 14 Notifications.
 
-**Screens:** `MeetingsWeek` (P1), `MeetingsMonth` (P2), `MeetingsAgenda` (P3), `MeetingsEmpty` (P2), `MeetingQuickView` (P1), `MeetingQuickViewRecurring` (P2), `MeetingEditorDetails` (P1), `MeetingEditorPeople` (P1), `MeetingScopeChoice` (P2), `MeetingDeleteConfirm` (P2)
+**Screens:** `MeetingsWeek` (P1), `MeetingsMonth` (P2), `MeetingsAgenda` (P3), `MeetingsEmpty` (P2), `MeetingQuickView` (P1), `MeetingQuickViewRecurring` (P2), `MeetingEditorDetails` (P1), `MeetingEditorPeople` (P1), `MeetingScopeChoice` (P2), `MeetingDeleteConfirm` (P2), `MeetingsWeekRefined` (P2), `MeetingsWeekRefinedDark` (P2), `MeetingsMonthRefined` (P2), `MeetingsAgendaRefined` (P2), `MeetingsPhone` (P2), `MeetingQuickViewFits` (P2)
 **Depends on:** 03 Contacts (meeting ↔ contact link), 15 Team (members to invite), 14 Notifications.
 
 ## Features
@@ -13,6 +13,7 @@ An Outlook-style calendar for meetings with contacts and colleagues: day, week, 
 | F-MTG-02 | Invitations, visibility and responses | P1 | 1 | `MeetingEditorPeople`, `MeetingQuickView` |
 | F-MTG-03 | Quick view and recurring meetings | P1 | 1 | `MeetingQuickView`, `MeetingQuickViewRecurring`, `MeetingScopeChoice`, `MeetingDeleteConfirm` |
 | F-MTG-04 | Own/others meeting rights | P1 | 4 | `MeetingQuickView`, `MeetingEditorDetails` |
+| F-MTG-05 | A calendar that's easy to use: busy days in the mini calendar, a New meeting button, the working day in view, useful sidebar lists, the same place on return, and every screen size | P2 | Refinements | `MeetingsWeekRefined`, `MeetingsWeekRefinedDark`, `MeetingsMonthRefined`, `MeetingsAgendaRefined`, `MeetingsPhone`, `MeetingQuickViewFits` |
 
 ## User stories
 
@@ -199,3 +200,80 @@ Legacy: S-01.17
 
 **Implementation notes**
 - API: `MeetingsService` read filter applied before any capability check (D-024).
+
+### US-MTG-13 · See which days have meetings in the mini calendar
+**Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsWeekRefined`, `MeetingsWeekRefinedDark`, `MeetingsMonthRefined`
+**As** a member, **I want** the mini calendar to show which days are busy and where I am, **so that** I can find a free day or a meeting at a glance.
+
+Decision: D-212
+
+**Acceptance criteria**
+- **Given** the mini calendar, **when** a day has at least one meeting I can see in a calendar that's ticked, **then** a single dot shows under its date (recurring meetings count on each day they occur; cancelled occurrences don't). With "My Activities" ticked, days with my follow-ups count too.
+- **Given** a day with a dot, **when** I hover it or a screen reader reads it, **then** it says how many ("Wednesday, October 7, 2026, 2 meetings"); a day without one reads as before.
+- **Given** the main view is Week or Day, **when** the mini calendar shows, **then** that week or day is shaded; the chosen date stays filled and today keeps its colour.
+- **Given** I move the main view (arrows, Today, a mini calendar date) into another month, **when** it moves, **then** the mini calendar shows that month; **given** I page the mini calendar to another month, **when** it shows, **then** its dots load for that month.
+- **Given** I untick a person's calendar, **when** the mini calendar redraws, **then** their meetings no longer add dots; dots never come from meetings I can't read.
+
+**Implementation notes**
+- UI: `MiniCalendar` (`@spine/ui`) takes `markedDates` (counts by day), `highlightRange` and a controlled `month` / `onMonthChange`; the page counts occurrences with `expandRecurringEvent` over the meetings it has loaded and loads the mini calendar's month when it's outside the loaded window.
+- No API change (`GET /meetings?from=&to=`).
+
+### US-MTG-14 · Start a meeting from a button, and open on the working day
+**Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsWeekRefined`, `MeetingQuickViewFits`
+**As** office staff, **I want** a New meeting button and the calendar opened on my working hours, **so that** I can schedule without dragging and see my day without scrolling.
+
+Decision: D-212
+
+**Acceptance criteria**
+- **Given** I may create meetings, **when** the calendar shows, **then** the toolbar has "New meeting"; pressing it opens the new-event dialog for 30 minutes from the next half hour today, or from 9:00 AM on the shown day when that isn't today. Without the right to create meetings, there's no button (US-MTG-11).
+- **Given** Week or Day view, **when** it opens or I switch to it, **then** it's scrolled so 8 AM is at the top, or, when the view includes today and it's later than 9 AM, so the hour before now is at the top.
+- **Given** today is in the Week or Day view, **when** it shows, **then** a line in the overdue colour marks the current time on today's column and moves as time passes; other days have none.
+- **Given** a meeting near the bottom or right edge of the window, **when** I open its quick view, **then** the popover flips or shifts so all of it, attendees included, stays inside the window.
+
+**Implementation notes**
+- UI: `Calendar` (`@spine/ui`) gains a toolbar slot for the button and a way to open its create dialog with a start and end, a scroll-to-hour on Week and Day, and the now line; the quick view's `PopoverContent` uses collision padding.
+
+### US-MTG-15 · Get to a meeting or a contact from the sidebar lists
+**Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsWeekRefined`
+**As** a member, **I want** the sidebar lists to say when things are and take me there, **so that** they're worth reading.
+
+Decision: D-212
+
+**Acceptance criteria**
+- **Given** "Upcoming", **when** it shows, **then** it lists my next 8 meetings from now in the calendars that are ticked, each with its day and time ("Today · 2:00 PM", "Tomorrow · 9:00 AM", "Tue 13 Oct · 9:00 AM", "Fri 16 Oct · All day"); recurring meetings list each occurrence. With none in the next 60 days it says "Nothing in the next 60 days."
+- **Given** an upcoming meeting, **when** I press its title, **then** the calendar moves to its day and opens its quick view; the attendees button still opens the attendees panel.
+- **Given** "Meetings by contact", **when** it shows, **then** it counts the meetings in the range the calendar heading shows (the week, day or month), each contact links to its page, and with none it says "No meetings linked to a contact in this range."
+
+**Implementation notes**
+- UI: Upcoming reads from now to 60 days on, separate from the calendar's loaded window. No API change.
+
+### US-MTG-16 · Come back to the same calendar view and date
+**Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsWeekRefined`, `MeetingsMonthRefined`
+**As** a member, **I want** the calendar to keep its view and date in the address, **so that** Back, reload and bookmarks return me to the same place.
+
+Decision: D-210, D-212
+
+**Acceptance criteria**
+- **Given** I change the view or the date, **when** it changes, **then** the address follows (for example `/meetings?view=month&date=2026-10-12`); the plain `/meetings` is the default.
+- **Given** that address, **when** I reload, bookmark it or press Back from another page, **then** the same view and date show.
+- **Given** `/meetings` with no view, **when** it opens, **then** it shows the view I last used on this device, on today.
+- **Given** the dashboard's "Open calendar" (`?view=day`) or a meeting link (`?id=`), **when** it opens, **then** it works as before (US-DASH-16, US-NTF-06).
+
+**Implementation notes**
+- UI: `useSearchParams` and `router.replace`, as on Contacts (D-210); the last view in local storage.
+
+### US-MTG-17 · Use the calendar on any screen size
+**Feature:** F-MTG-05 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `MeetingsAgendaRefined`, `MeetingsPhone`
+**As** a member on a laptop or a phone, **I want** the calendar to fit my screen, **so that** I can read it without fighting the layout.
+
+Decision: D-212
+
+**Acceptance criteria**
+- **Given** a window 1024 px or wider, **when** the calendar shows, **then** it and the sidebar run to the bottom of the window, with no page scroll at 1280 × 800.
+- **Given** a window under 768 px, **when** `/meetings` opens with no view in the address, **then** it opens in Agenda; the toolbar wraps (Today, the arrows and the range on one row, the views on the next) and nothing scrolls sideways. Week isn't offered there; an address asking for Week shows Day.
+- **Given** a window under 1024 px, **when** the calendar shows, **then** a "Mini calendar" button above it opens the mini calendar and the Calendars list in a sheet.
+- **Given** Agenda, **when** a meeting row shows, **then** it has the time (or "All day"), title, location and contact; pressing it opens the quick view.
+
+**Implementation notes**
+- UI: `meetings-calendar.tsx` measures its height like the pipeline board; `Calendar`'s toolbar wraps; Agenda rows take location and contact names from the page.
+
