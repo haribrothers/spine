@@ -452,11 +452,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-CRM-26 · Say why a lead was lost, and quote a lead that's won
 - [x] US-CRM-27 · Work a lead from one drawer
 - [x] US-CRM-28 · Filter the pipeline by owner and source, and come back to it
-- [ ] US-MTG-13 · See which days have meetings in the mini calendar
-- [ ] US-MTG-14 · Start a meeting from a button, and open on the working day
-- [ ] US-MTG-15 · Get to a meeting or a contact from the sidebar lists
-- [ ] US-MTG-16 · Come back to the same calendar view and date
-- [ ] US-MTG-17 · Use the calendar on any screen size
+- [x] US-MTG-13 · See which days have meetings in the mini calendar
+- [x] US-MTG-14 · Start a meeting from a button, and open on the working day
+- [x] US-MTG-15 · Get to a meeting or a contact from the sidebar lists
+- [x] US-MTG-16 · Come back to the same calendar view and date
+- [x] US-MTG-17 · Use the calendar on any screen size
 
 ## Phase 10 · AI assistant
 

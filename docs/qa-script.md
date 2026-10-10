@@ -4662,8 +4662,38 @@ Use an owner on a business with demo data and a second member (Staff). Check 144
    - Contacts' "Active leads" opens the pipeline; the dashboard's "Pipeline by stage" still counts every stage (US-DASH-*).
    - New quote from Quotes (no lead) still uses the organisation's currency (US-QUO-01).
 
+## 204. A calendar that's easy to use (US-MTG-13 to US-MTG-17, refinements before Phase 10)
+
+Use an owner on a business with demo data and a second member, with a few meetings this month (one recurring weekly, one linked to a contact) and one about four months ahead. Check 1440 px, 1280 px, 1024 px and a phone, light and dark, and compare with the canvas "07 Meetings".
+
+1. **Mini calendar (US-MTG-13):**
+   - Each day with a meeting you can see has one dot under its date (a recurring meeting on each day it occurs; a cancelled occurrence doesn't count). Hover a dotted day: "Wednesday, October 7 · 2 meetings". VoiceOver reads "Wednesday, October 7, 2026, 2 meetings".
+   - In Week the week on screen is one shaded band; in Day just that day; in Month and Agenda nothing is shaded. The chosen day stays filled and today stays blue.
+   - Press the main arrows into next month: the mini calendar moves with it. Page the mini calendar four months ahead: the far meeting's day gets its dot.
+   - Tick My Activities: days with your follow-ups get dots too ("2 meetings and follow-ups"). Untick a colleague in Calendars: their meetings' dots go.
+2. **New meeting and the working day (US-MTG-14):**
+   - "New meeting" sits before Day / Week / Month / Agenda. On today it opens "New event" at the next half hour for 30 minutes; on another day at 9:00 AM. A Staff member without the right to create meetings has no button.
+   - Week and Day open with 8 AM at the top, or, on today after 9 AM, the hour before now; the day headers stay in view as you scroll. A red line marks the current time on today's column and moves each minute; other weeks have none.
+   - Open a meeting low on the screen or near the right edge: its quick view opens above or beside it and never runs off the window; the attendees are always readable.
+3. **Sidebar lists (US-MTG-15):**
+   - Upcoming: "Next 60 days", up to 8 meetings with "Today · 1:00 PM", "Tomorrow · 9:00 AM", "Tue 13 Oct · 9:00 AM" or "All day". Press one: the calendar moves to its day and its quick view opens. The people button still opens Manage attendees. With none: "Nothing in the next 60 days."
+   - Meetings by contact counts the range in the heading ("This week", "Week of 11 Oct", "This month", "From 10 Oct"); each name opens the contact. With none: "No meetings linked to a contact in this range."
+4. **Coming back (US-MTG-16):**
+   - Change to Month and move ahead: the address shows `?view=month&date=…`. Reload, or open a contact and press Back: the same view and month. Open plain `/meetings`: the last view you used, on today.
+   - The dashboard's "Open calendar" still opens today's Day view; a notification link (`?id=`) still opens Manage attendees and keeps the view and date.
+5. **Every screen size (US-MTG-17):**
+   - At 1280 × 800 the calendar and sidebar reach the bottom of the window with no page scroll.
+   - At 1024 px a calendar button in the toolbar opens the mini calendar, Calendars, Upcoming and Meetings by contact in a sheet; picking a day closes it.
+   - On a phone (collapse the left navigation first): it opens in Agenda; Week isn't offered (`?view=week` shows Day); the toolbar wraps and nothing scrolls sideways. Agenda rows show the time range, place and contact (or "Internal") and open the quick view.
+6. Regression:
+   - Drag to create, move and resize meetings; recurring "This event / All events"; Duplicate; delete with confirm (US-MTG-01, US-MTG-09, US-MTG-10).
+   - Owners see private meetings; Staff don't see others' private ones; responses still work (US-MTG-05 to US-MTG-07, US-MTG-12).
+   - A date picker elsewhere (e.g. a quote's Valid until) looks and works as before.
+   - The pipeline board still reaches the bottom of the window (US-CRM-24).
+
 ## Known gaps — don't file these as bugs
 
+- The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).
 - The field app's App Store link is a placeholder until the listing exists. Demo data doesn't put a quote to present on any job; add a variation order as in section 195.
 - Set up Spine's Email sending and Backups cards link to the README's self-hosting section until the docs site ships (Q-15); Backups isn't checked or counted until Phase 11 (D-194).
 - India's demo businesses don't release retention: GSTR-1 would count a retention-release invoice as a supply of its own ([Q-21](prd/13-risks-open-questions.md)). Every demo shares the same two demo people (Sarah Mendes, Staff; Marcus Webb, Field), whatever the country.

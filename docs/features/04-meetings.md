@@ -275,5 +275,6 @@ Decision: D-212
 - **Given** Agenda, **when** a meeting row shows, **then** it has the time (or "All day"), title, location and contact; pressing it opens the quick view.
 
 **Implementation notes**
-- UI: `meetings-calendar.tsx` measures its height like the pipeline board; `Calendar`'s toolbar wraps; Agenda rows take location and contact names from the page.
+- UI: `meetings-calendar.tsx` measures its height like the pipeline board (`useFillHeight`); `Calendar`'s toolbar wraps; Agenda rows take location and contact names from the page.
+- Edge: the app's left navigation has no phone layout yet, so on a phone it has to be collapsed; a phone layout for the app shell is outside this story.
 

@@ -16,7 +16,7 @@ import {
   startOfWeek,
 } from "date-fns";
 import { ChevronLeft, ChevronRight, Clock, MapPin, Repeat, Trash2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn";
 import {
   CALENDAR_EVENT_COLORS,
@@ -54,7 +54,7 @@ import { Textarea } from "./textarea";
 import { ToggleGroup, ToggleGroupItem } from "./toggle-group";
 
 export type { CalendarEvent, CalendarEventColor, CalendarEventInstance, CalendarRecurrenceRule, CalendarRecurrenceFrequency, CalendarRecurrenceEnd } from "../lib/calendar-utils";
-export { CALENDAR_EVENT_COLORS, isOccurrenceAlreadyModified } from "../lib/calendar-utils";
+export { CALENDAR_EVENT_COLORS, expandEventsInRange, isOccurrenceAlreadyModified } from "../lib/calendar-utils";
 
 export type CalendarView = "day" | "week" | "month" | "agenda";
 
@@ -259,8 +259,38 @@ export interface CalendarProps {
     onEdit: (scope?: "series" | "occurrence") => void;
     onDelete: (scope?: "series" | "occurrence") => void;
   }) => void;
+  /** US-MTG-14 — content at the right of the toolbar, before the view switch (e.g. a "New meeting" button). */
+  toolbarAction?: React.ReactNode;
+  /** US-MTG-17 — the views offered, in order; all four by default (e.g. no Week on a phone). */
+  views?: CalendarView[];
+  /**
+   * US-MTG-14 — set to a fresh object to open the create dialog for that
+   * range (identity-triggered, like `duplicateRequest`); ignored when
+   * `canCreateEvents` is false.
+   */
+  createRequest?: { start: Date; end: Date } | null;
+  /**
+   * US-MTG-15 — set to a fresh object to open an event's quick view (or,
+   * without `renderEventPopover`, its editor) once it's on screen: the
+   * caller moves `date` to its day first. Identity-triggered.
+   */
+  openRequest?: { eventId: string; occurrenceStart: Date } | null;
+  /** US-MTG-17 — extra details under an Agenda row's title, e.g. the linked contact. */
+  agendaDetails?: (instance: CalendarEventInstance) => React.ReactNode;
   className?: string;
 }
+
+/** US-MTG-14 — Day and Week open with this hour at the top, or the hour before now on a view that includes today, later than 9 AM. */
+export const CALENDAR_START_HOUR = 8;
+
+/** The hour Day and Week scroll to: 8 AM, or the hour before now when the view includes today and it's after 9 AM. */
+export function calendarScrollHour(days: Date[], now: Date): number {
+  const includesToday = days.some((d) => isSameDay(d, now));
+  if (includesToday && now.getHours() >= CALENDAR_START_HOUR + 1) return Math.max(CALENDAR_START_HOUR, Math.min(now.getHours() - 1, 23));
+  return CALENDAR_START_HOUR;
+}
+
+const ALL_VIEWS: CalendarView[] = ["day", "week", "month", "agenda"];
 
 /**
  * Outlook-style scheduling calendar: Day/Week/Month/Agenda views, drag to
@@ -292,6 +322,11 @@ export function Calendar({
   duplicateRequest,
   onRecurringMoveOrResize,
   onEventDoubleClick,
+  toolbarAction,
+  views = ALL_VIEWS,
+  createRequest,
+  openRequest,
+  agendaDetails,
   className,
 }: CalendarProps) {
   const [editorState, setEditorState] = useState<
@@ -312,6 +347,46 @@ export function Calendar({
       prefillFrom: event,
     });
   }, [duplicateRequest]);
+
+  useEffect(() => {
+    if (!createRequest || !canCreateEvents) return;
+    setEditorState({ mode: "create", range: { start: createRequest.start, end: createRequest.end } });
+    // Identity-triggered, like duplicateRequest.
+  }, [createRequest]);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // US-MTG-14: Day and Week open on the working day — 8 AM, or the hour before now on today.
+  const scrollKey = view === "week" ? startOfWeek(date).toDateString() : view === "day" ? date.toDateString() : "";
+  useLayoutEffect(() => {
+    const container = scrollRef.current;
+    if (!container || (view !== "day" && view !== "week")) return;
+    const days = view === "week" ? eachDayOfInterval({ start: startOfWeek(date), end: endOfWeek(date) }) : [date];
+    const hour = calendarScrollHour(days, new Date());
+    const row = container.querySelector<HTMLElement>(`[data-hour="${hour}"]`);
+    const sticky = container.querySelector<HTMLElement>("[data-calendar-sticky]");
+    if (!row) return;
+    // A little room above the hour, so its label clears the sticky day header.
+    const offset = row.getBoundingClientRect().top - container.getBoundingClientRect().top + container.scrollTop - (sticky?.offsetHeight ?? 0) - 10;
+    container.scrollTop = Math.max(0, offset);
+    // Only when the view or its range changes, not on every event update.
+  }, [view, scrollKey]);
+
+  // US-MTG-15: open an event's quick view once its day is on screen.
+  useEffect(() => {
+    if (!openRequest) return;
+    const instance = expandEventsInRange(events, startOfDay(openRequest.occurrenceStart), addDays(startOfDay(openRequest.occurrenceStart), 1)).find(
+      (i) => i.event.id === openRequest.eventId && i.occurrenceStart.getTime() === openRequest.occurrenceStart.getTime(),
+    );
+    if (!instance) return;
+    const frame = requestAnimationFrame(() => {
+      const target = scrollRef.current?.querySelector<HTMLElement>(`[data-instance-id="${CSS.escape(instance.instanceId)}"]`) ?? scrollRef.current ?? undefined;
+      if (target && target !== scrollRef.current) target.scrollIntoView({ block: "nearest" });
+      handleEventClick(instance, target);
+    });
+    return () => cancelAnimationFrame(frame);
+    // Identity-triggered; `events` is read at that moment.
+  }, [openRequest]);
 
   const goToday = () => onDateChange(new Date());
   const goPrev = () => onDateChange(stepDate(date, view, -1));
@@ -425,8 +500,10 @@ export function Calendar({
         onPrev={goPrev}
         onNext={goNext}
         onToday={goToday}
+        views={views}
+        action={toolbarAction}
       />
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-auto">
         {view === "day" && (
           <CalendarDayView
             date={date}
@@ -467,7 +544,7 @@ export function Calendar({
           />
         )}
         {view === "agenda" && (
-          <CalendarAgendaView date={date} events={events} onEventClick={handleEventClick} onEventDoubleClick={handleEventDoubleClick} />
+          <CalendarAgendaView date={date} events={events} onEventClick={handleEventClick} onEventDoubleClick={handleEventDoubleClick} details={agendaDetails} />
         )}
       </div>
 
@@ -493,10 +570,13 @@ export function Calendar({
           }}
         >
           <PopoverAnchor virtualRef={popoverAnchorRef} />
+          {/* US-MTG-14: the quick view flips, shifts and, if it must, scrolls so it always fits in the window. */}
           <PopoverContent
             align="start"
             side="right"
-            className="w-80 p-0"
+            collisionPadding={12}
+            sticky="always"
+            className="max-h-[var(--radix-popover-content-available-height)] w-80 overflow-y-auto p-0"
             onOpenAutoFocus={(e) => e.preventDefault()}
           >
             {popoverInstance &&
@@ -547,7 +627,11 @@ interface CalendarToolbarProps {
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  views: CalendarView[];
+  action?: React.ReactNode;
 }
+
+const VIEW_LABELS: Record<CalendarView, string> = { day: "Day", week: "Week", month: "Month", agenda: "Agenda" };
 
 function toolbarLabel(date: Date, view: CalendarView): string {
   switch (view) {
@@ -568,12 +652,12 @@ function toolbarLabel(date: Date, view: CalendarView): string {
   }
 }
 
-function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNext, onToday }: CalendarToolbarProps) {
+function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNext, onToday, views, action }: CalendarToolbarProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         <Button variant="secondary" size="sm" onClick={onToday}>
           Today
         </Button>
@@ -616,26 +700,22 @@ function CalendarToolbar({ view, onViewChange, date, onDateChange, onPrev, onNex
         </Popover>
       </div>
 
-      <ToggleGroup
-        type="single"
-        value={view}
-        onValueChange={(value) => value && onViewChange(value as CalendarView)}
-        aria-label="Calendar view"
-        className="rounded-md border border-border bg-surface p-0.5"
-      >
-        <ToggleGroupItem value="day" aria-label="Day view" className="h-8 px-3 text-[12.5px]">
-          Day
-        </ToggleGroupItem>
-        <ToggleGroupItem value="week" aria-label="Week view" className="h-8 px-3 text-[12.5px]">
-          Week
-        </ToggleGroupItem>
-        <ToggleGroupItem value="month" aria-label="Month view" className="h-8 px-3 text-[12.5px]">
-          Month
-        </ToggleGroupItem>
-        <ToggleGroupItem value="agenda" aria-label="Agenda view" className="h-8 px-3 text-[12.5px]">
-          Agenda
-        </ToggleGroupItem>
-      </ToggleGroup>
+      <div className="flex flex-wrap items-center gap-2">
+        {action}
+        <ToggleGroup
+          type="single"
+          value={view}
+          onValueChange={(value) => value && onViewChange(value as CalendarView)}
+          aria-label="Calendar view"
+          className="rounded-md border border-border bg-surface p-0.5"
+        >
+          {views.map((v) => (
+            <ToggleGroupItem key={v} value={v} aria-label={`${VIEW_LABELS[v]} view`} className="h-8 px-3 text-[12.5px]">
+              {VIEW_LABELS[v]}
+            </ToggleGroupItem>
+          ))}
+        </ToggleGroup>
+      </div>
     </div>
   );
 }
@@ -974,6 +1054,7 @@ function TimeGrid({
                     return (
                       <button
                         key={instance.instanceId}
+                        data-instance-id={instance.instanceId}
                         type="button"
                         onClick={(e) => onEventClick(instance, e.currentTarget)}
                         onDoubleClick={(e) => {
@@ -1001,7 +1082,7 @@ function TimeGrid({
       <div className="flex">
         <div className="w-16 shrink-0">
           {hours.map((hour) => (
-            <div key={hour} style={{ height: HOUR_HEIGHT }} className="relative border-r border-border">
+            <div key={hour} data-hour={hour} style={{ height: HOUR_HEIGHT }} className="relative border-r border-border">
               <span className="absolute -top-2 right-1.5 text-[10.5px] text-on-surface-muted">
                 {hour === 0 ? "" : format(new Date(2000, 0, 1, hour), "h a")}
               </span>
@@ -1056,6 +1137,8 @@ function TimeGrid({
                     onKeyboardResize={(edge, direction) => handleKeyboardResize(slot.instance, edge, direction)}
                   />
                 ))}
+
+                {isToday(day) && <NowLine gridHeight={gridHeight} />}
 
                 {isDragDay && drag && (
                   <div
@@ -1142,6 +1225,7 @@ function TimeGridEvent({
     <div
       role="button"
       tabIndex={0}
+      data-instance-id={instance.instanceId}
       aria-label={
         disableDragResize
           ? `${instance.event.title}, ${format(instance.occurrenceStart, "h:mm a")} to ${format(instance.occurrenceEnd, "h:mm a")}. Press Enter to open.`
@@ -1264,7 +1348,7 @@ function CalendarWeekView({
 
   return (
     <div className="flex flex-col">
-      <div className="flex border-b border-border">
+      <div data-calendar-sticky className="sticky top-0 z-10 flex border-b border-border bg-surface">
         <div className="w-16 shrink-0" />
         <div className="grid flex-1" style={{ gridTemplateColumns: `repeat(${days.length}, minmax(0, 1fr))` }}>
           {days.map((day) => (
@@ -1294,6 +1378,21 @@ function CalendarWeekView({
         nonEditableEventIds={nonEditableEventIds}
         canCreateEvents={canCreateEvents}
       />
+    </div>
+  );
+}
+
+/** US-MTG-14 — a line at the current time on today's column, moving each minute. */
+function NowLine({ gridHeight }: { gridHeight: number }) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const top = minutesToY(now.getHours() * 60 + now.getMinutes(), gridHeight);
+  return (
+    <div aria-hidden data-now-line className="pointer-events-none absolute left-0 right-0 z-[5] h-0.5 bg-overdue" style={{ top }}>
+      <span className="absolute -left-1 -top-1 h-2.5 w-2.5 rounded-full bg-overdue" />
     </div>
   );
 }
@@ -1400,6 +1499,7 @@ function CalendarMonthView({ date, events, onDayCreate, onEventClick, onEventDou
                       return (
                         <button
                           key={instance.instanceId}
+                          data-instance-id={instance.instanceId}
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1446,11 +1546,12 @@ interface AgendaViewProps {
   events: CalendarEvent[];
   onEventClick: (instance: CalendarEventInstance, target?: HTMLElement) => void;
   onEventDoubleClick?: (instance: CalendarEventInstance) => void;
+  details?: (instance: CalendarEventInstance) => React.ReactNode;
 }
 
 const AGENDA_WINDOW_DAYS = 60;
 
-function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick }: AgendaViewProps) {
+function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick, details }: AgendaViewProps) {
   const rangeStart = startOfDay(date);
   const rangeEnd = addDays(rangeStart, AGENDA_WINDOW_DAYS);
   const instances = useMemo(() => expandEventsInRange(events, rangeStart, rangeEnd), [events, rangeStart, rangeEnd]);
@@ -1479,39 +1580,50 @@ function CalendarAgendaView({ date, events, onEventClick, onEventDoubleClick }: 
       {grouped.map(([key, dayInstances]) => {
         const day = new Date(`${key}T00:00:00`);
         return (
-          <div key={key} className="flex gap-4 px-4 py-3">
-            <div className="w-24 shrink-0 pt-0.5">
+          <div key={key} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:gap-4">
+            <div className="flex shrink-0 items-baseline gap-2 pt-0.5 sm:block sm:w-24">
               <div className="text-[12px] font-medium text-on-surface-muted">{format(day, "EEE")}</div>
               <div className={cn("text-[15px] font-semibold", isToday(day) ? "text-primary" : "text-on-surface")}>
                 {format(day, "MMM d")}
               </div>
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               {dayInstances.map((instance) => {
                 const colors = colorClasses(instance.event.color);
+                const extra = details?.(instance);
                 return (
                   <button
                     key={instance.instanceId}
+                    data-instance-id={instance.instanceId}
                     type="button"
                     onClick={(e) => onEventClick(instance, e.currentTarget)}
                     onDoubleClick={(e) => {
                       e.stopPropagation();
                       onEventDoubleClick?.(instance);
                     }}
-                    className="flex items-center gap-2.5 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="flex flex-col gap-1 rounded-md px-2 py-2 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:flex-row sm:items-start sm:gap-3"
                   >
-                    <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", colors.dot)} />
-                    <span className="w-24 shrink-0 text-[12.5px] text-on-surface-muted">
-                      {instance.event.allDay ? "All day" : format(instance.occurrenceStart, "h:mm a")}
+                    <span className="flex shrink-0 items-center gap-2 text-[12.5px] text-on-surface-muted sm:w-44 sm:pt-0.5">
+                      <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full", colors.dot)} />
+                      {instance.event.allDay ? "All day" : `${format(instance.occurrenceStart, "h:mm a")} – ${format(instance.occurrenceEnd, "h:mm a")}`}
                     </span>
-                    <span className="truncate text-[13.5px] font-medium text-on-surface">{instance.event.title}</span>
-                    {instance.event.recurrence && <Repeat size={12} className="shrink-0 text-on-surface-muted" />}
-                    {instance.event.location && (
-                      <span className="flex shrink-0 items-center gap-1 text-[12px] text-on-surface-muted">
-                        <MapPin size={11} />
-                        {instance.event.location}
+                    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <span className="truncate text-[13.5px] font-semibold text-on-surface">{instance.event.title}</span>
+                        {instance.event.recurrence && <Repeat size={12} className="shrink-0 text-on-surface-muted" aria-label="Repeats" />}
                       </span>
-                    )}
+                      {(instance.event.location || extra) && (
+                        <span className="flex flex-wrap items-center gap-x-3.5 gap-y-0.5 text-[12.5px] text-on-surface-muted">
+                          {instance.event.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin size={12} aria-hidden />
+                              {instance.event.location}
+                            </span>
+                          )}
+                          {extra}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 );
               })}

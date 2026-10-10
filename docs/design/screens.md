@@ -439,6 +439,8 @@ Shows: "Edit contact — Spine" · "Sales" · "Contacts" · "Customers and vendo
 ### MeetingsWeek — Calendar — week view + mini-calendar sidebar
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-MTG-01, US-MTG-02, US-MTG-03 · **Source:** Captured
 
+Refined by `MeetingsWeekRefined` (D-212).
+
 ![MeetingsWeek](screens/MeetingsWeek.webp)
 
 Links to: `MeetingEditorDetails`, `MeetingsMonth`, `MeetingsAgenda`, `MeetingsEmpty`
@@ -448,6 +450,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 ### MeetingsMonth — Calendar — month view
 **Priority:** P2 · **Phase:** 1 · **Stories:** US-MTG-02 · **Source:** Captured
 
+Refined by `MeetingsMonthRefined` (D-212).
+
 ![MeetingsMonth](screens/MeetingsMonth.webp)
 
 Links to: `MeetingsWeek`, `MeetingsAgenda`, `MeetingsEmpty`
@@ -456,6 +460,8 @@ Shows: "Sales > Meetings" · "Meetings" · "Schedule and view meetings with your
 
 ### MeetingsAgenda — Calendar — agenda view
 **Priority:** P3 · **Phase:** 1 · **Stories:** US-MTG-02 · **Source:** Captured
+
+Refined by `MeetingsAgendaRefined` (D-212).
 
 ![MeetingsAgenda](screens/MeetingsAgenda.webp)
 
@@ -474,6 +480,8 @@ Shows: "Sales > Meetings" · "OVERVIEW" · "Meetings" · "98 Dashboard" · "Sche
 
 ### MeetingQuickView — Event quick-view popover (RSVP)
 **Priority:** P1 · **Phase:** 1 · **Stories:** US-MTG-07, US-MTG-08, US-MTG-10, US-MTG-11, US-MTG-12 · **Source:** Captured
+
+Refined by `MeetingQuickViewFits` (D-212).
 
 ![MeetingQuickView](screens/MeetingQuickView.webp)
 
@@ -2902,6 +2910,64 @@ Shows: "Won — Ground-floor extension" · "Start a quote for Ananya Rao? It's l
 Links to: `ContactTimeline`, `QuoteDetail`
 
 Shows: "9 days in stage · created by Arjun Kumar" · "Owner" · "Expected close" · "Follow-ups" · "Log activity" · "Add follow-up" · "Quotes" · "Create quote" · "History" · "Moved to Proposal from Qualified" · "Created in New" · "Delete" · "Cancel" · "Save changes"
+
+## A calendar that's easy to use
+
+Drawn in Claude Design for US-MTG-13 to US-MTG-17 (D-212): project "Spine web — refinements before Phase 10", canvas "07 Meetings". The mini calendar dots busy days (one dot, the count on hover), shades the week or day on screen and follows the main view's month. The toolbar has New meeting; Week and Day open on the working day with a now line on today; the quick view always fits. Upcoming says when and opens the meeting; Meetings by contact counts the range on screen and links to each contact. The calendar fills the window; a phone opens in Agenda without Week, and under 1024 px the mini calendar opens in a sheet. These refine `MeetingsWeek`, `MeetingsMonth`, `MeetingsAgenda` and `MeetingQuickView`. In the built page the shaded week is one band, event colours keep the calendar's existing category tokens, and the now line has no time label. The app's left navigation has no phone layout yet; `MeetingsPhone` shows the calendar with it collapsed.
+
+### MeetingsWeekRefined — Week: busy days, New meeting, the working day
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13, US-MTG-14, US-MTG-15 · **Source:** Claude Design
+
+![MeetingsWeekRefined](screens/MeetingsWeekRefined.webp)
+
+Links to: `MeetingQuickViewFits`, `ContactTimeline`
+
+Shows: "New meeting" · the week 4 – 10 Oct shaded in the mini calendar · a dot under each busy day · "Wednesday, October 7 · 2 meetings" · the now line on today · "Upcoming" "Next 60 days" · "Today · 1:00 PM" · "Meetings by contact" "This week"
+
+### MeetingsWeekRefinedDark — Week, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13, US-MTG-14 · **Source:** Claude Design
+
+![MeetingsWeekRefinedDark](screens/MeetingsWeekRefinedDark.webp)
+
+Links to: —
+
+Shows: As `MeetingsWeekRefined`
+
+### MeetingsMonthRefined — Month with the same dots
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-13 · **Source:** Claude Design
+
+![MeetingsMonthRefined](screens/MeetingsMonthRefined.webp)
+
+Links to: `MeetingsWeekRefined`
+
+Shows: two meetings a day and "+1 more" · titles ending in "…" inside their day · "Meetings by contact" "This month"
+
+### MeetingsAgendaRefined — Agenda with place and contact
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-17 · **Source:** Claude Design
+
+![MeetingsAgendaRefined](screens/MeetingsAgendaRefined.webp)
+
+Links to: `MeetingQuickViewFits`
+
+Shows: "1:00 PM – 2:00 PM" · "Plot 14, Whitefield, Bengaluru" · "Karthik Subramanian" · "Internal" · "All day"
+
+### MeetingsPhone — A phone in Agenda
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-17 · **Source:** Claude Design
+
+![MeetingsPhone](screens/MeetingsPhone.webp)
+
+Links to: —
+
+Shows: "Today" · "From Oct 10" · the mini calendar button · "Day" "Month" "Agenda" (no Week) · "New"
+
+### MeetingQuickViewFits — A late meeting's quick view opens upwards
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-MTG-14 · **Source:** Claude Design
+
+![MeetingQuickViewFits](screens/MeetingQuickViewFits.webp)
+
+Links to: `MeetingsWeekRefined`
+
+Shows: "Quote walkthrough — Ananya Rao" above its 4 PM block · "Attendees" · "Accepted" · "Tentative" · "No response"
 
 ## Mobile field companion
 

@@ -80,6 +80,18 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-10 — A calendar that's easy to use (US-MTG-13 to US-MTG-17, D-212)
+
+- **Mini calendar (US-MTG-13):** one dot under each day with a meeting you can see (recurring meetings on each day they occur, follow-ups too when My Activities is ticked), with the count on hover and for screen readers; the week or day on screen is shaded as one band; it follows the main view's month and loads the dots for any month it's paged to.
+- **New meeting and the working day (US-MTG-14):** a New meeting button (30 minutes from the next half hour, or 9:00 AM on another day; hidden without the right to create meetings). Week and Day open at 8 AM, or at the hour before now on today, with the day headers kept in view and a now line on today. The quick view flips, shifts and scrolls so it always fits in the window.
+- **Sidebar lists (US-MTG-15):** Upcoming lists the next 8 meetings in the next 60 days with their day and time and opens them on the calendar; Meetings by contact counts the range in the heading and links to each contact.
+- **Coming back (US-MTG-16):** the view and date live in the address (`/meetings?view=month&date=2026-10-12`) and the last view is remembered on the device; dashboard and notification links still work and a notification link keeps the view and date.
+- **Every screen (US-MTG-17):** the calendar fills the window (the pipeline shares the same `useFillHeight` hook, which now uses the page's own bottom padding). Under 768 px it opens in Agenda with no Week, the toolbar wraps and Agenda rows stack; under 1024 px a toolbar button opens the sidebar in a sheet. Agenda rows show the time range, place and contact (or "Internal").
+- **Components:** `MiniCalendar` takes `marks`, `markLabel`, `highlight` and a controlled `month` / `onMonthChange` (`miniCalendarDayKey` exported). `Calendar` takes `toolbarAction`, `views`, `createRequest`, `openRequest` and `agendaDetails`, scrolls to the working day (`calendarScrollHour`), draws the now line and exports `expandEventsInRange`.
+- **Tests:** `us-mtg-13` to `us-mtg-17` web unit and E2E; MiniCalendar and Calendar tests for marks, the band, the controlled month, views, the create request, the now line and agenda details. QA script section 204.
+- **Known gap:** the app's left navigation has no phone layout yet; on a phone it has to be collapsed to use the calendar.
+- **Design:** canvas "07 Meetings"; six artboards.
+
 ### 2026-10-10 — A pipeline that works (US-CRM-24 to US-CRM-28, D-211)
 
 - **The board (US-CRM-24):**

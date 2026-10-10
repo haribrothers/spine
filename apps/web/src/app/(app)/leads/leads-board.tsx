@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useFillHeight } from "../../../lib/use-fill-height";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Alert,
@@ -84,24 +85,6 @@ const CLOSED_COLUMN_MIN_WIDTH = 200;
 
 /** The board runs from its top to the bottom of the window (every column full height), never shorter than this. */
 const BOARD_MIN_HEIGHT = 420;
-const BOARD_BOTTOM_GAP = 24;
-
-function useFillHeight() {
-  const ref = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState<number | null>(null);
-  const measure = useCallback(() => {
-    const el = ref.current;
-    if (!el) return;
-    const top = el.getBoundingClientRect().top + (el.closest("main")?.scrollTop ?? 0);
-    setHeight(Math.max(BOARD_MIN_HEIGHT, Math.floor(window.innerHeight - top - BOARD_BOTTOM_GAP)));
-  }, []);
-  useLayoutEffect(() => {
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
-  }, [measure]);
-  return { ref, height, measure };
-}
 
 function Totals({ leads, empty }: { leads: Lead[]; empty?: string }) {
   const totals = totalsByCurrency(leads);
@@ -163,7 +146,7 @@ export function LeadsBoard() {
   const [deleting, setDeleting] = useState(false);
   const loading = useRef(false);
   const { stages, error: stagesError, reload: reloadStages } = useLeadStages();
-  const board = useFillHeight();
+  const board = useFillHeight({ minHeight: BOARD_MIN_HEIGHT });
 
   useEffect(() => {
     try {

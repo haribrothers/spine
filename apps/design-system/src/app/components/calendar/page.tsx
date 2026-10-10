@@ -380,6 +380,10 @@ export default function CalendarPage() {
             "Fully controlled — the caller owns events, view, and date; drag/resize/create interaction state stays internal.",
             "Optional contactOptions prop adds a Contact field to the event editor (a searchable Combobox) so an event can optionally link to an external record — first used by the /meetings page (S-01.9) to schedule meetings against a CRM contact.",
             "Optional readOnlyEventIds + onReadOnlyEventClick let a caller overlay events from another source Calendar shouldn't let the user drag/resize/edit through its own dialog — a matching id skips move/resize entirely and routes clicks to the caller's own handler instead of the built-in editor. First used to overlay activities (calls/notes/tasks with a due date, no time range) alongside real scheduled meetings.",
+            "US-MTG-14: Day and Week open scrolled to 8 AM, or to the hour before now when the view includes today and it's after 9 AM (calendarScrollHour); the week's day headers stay in view; a line in the overdue colour marks the current time on today's column.",
+            "US-MTG-14: toolbarAction puts a control (e.g. New meeting) before the view switch, and createRequest opens the create dialog for a range; the quick view (renderEventPopover) flips, shifts and scrolls so it always fits in the window.",
+            "US-MTG-15: openRequest opens an event's quick view once its day is on screen.",
+            "US-MTG-17: views limits the views offered (e.g. no Week on a phone); Agenda rows show the time range, place and agendaDetails, and stack on narrow screens; the toolbar wraps.",
           ]}
         />
       </DocSection>
@@ -471,6 +475,11 @@ export default function Example() {
                 type: "(ctx: { isEdit: boolean; event: CalendarEvent | null; setExtra: (extra: Record<string, unknown>) => void }) => React.ReactNode",
                 description: "Escape hatch for consumer-specific fields the built-in editor has no concept of (e.g. meeting attendees). Rendered inline in the create/edit dialog. Call setExtra with whatever your onEventCreate/onEventUpdate handler expects back as extra — Calendar never inspects it. event is null in create mode (no id exists yet).",
               },
+              { prop: "toolbarAction", type: "ReactNode", description: "US-MTG-14 — content before the view switch, e.g. a New meeting button." },
+              { prop: "views", type: "CalendarView[]", defaultValue: '["day", "week", "month", "agenda"]', description: "US-MTG-17 — the views offered, in order." },
+              { prop: "createRequest", type: "{ start: Date; end: Date } | null", description: "US-MTG-14 — set a fresh object to open the create dialog for that range (ignored when canCreateEvents is false)." },
+              { prop: "openRequest", type: "{ eventId: string; occurrenceStart: Date } | null", description: "US-MTG-15 — set a fresh object to open that occurrence's quick view; move date to its day first." },
+              { prop: "agendaDetails", type: "(instance: CalendarEventInstance) => ReactNode", description: "US-MTG-17 — extra details under an Agenda row's title, e.g. the linked contact." },
               { prop: "className", type: "string" },
             ]}
           />
@@ -527,6 +536,11 @@ export default function Example() {
                 type: "ReactNode",
                 description: "Rendered at the right end of the month-nav header row, after the next-month button — e.g. a panel-collapse toggle when MiniCalendar anchors a larger sidebar.",
               },
+              { prop: "month", type: "Date", description: "US-MTG-13 — the month shown; with onMonthChange the month is controlled, e.g. to follow a larger calendar." },
+              { prop: "onMonthChange", type: "(month: Date) => void", description: "Called with the first of the month when the arrows are pressed." },
+              { prop: "marks", type: "Map<string, number>", description: "US-MTG-13 — counts by day (keys from miniCalendarDayKey). A day above 0 gets one dot and its count on hover (Tooltip) and in its accessible name." },
+              { prop: "markLabel", type: "(count: number) => string", defaultValue: '"n events"', description: "How a count reads, e.g. \"2 meetings\"." },
+              { prop: "highlight", type: "{ start: Date; end: Date }", description: "US-MTG-13 — days shaded as one band per week, e.g. the week a larger calendar shows." },
             ]}
           />
         </DocSubsection>

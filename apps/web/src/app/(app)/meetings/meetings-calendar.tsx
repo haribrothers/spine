@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { addMonths } from "date-fns";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { addDays, addMonths, isSameMonth } from "date-fns";
 import {
   Alert,
   AlertDescription,
@@ -24,15 +25,22 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   MiniCalendar,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
   Popover,
   PopoverAnchor,
   PopoverContent,
+  cn,
+  expandEventsInRange,
   isOccurrenceAlreadyModified,
   type CalendarEvent,
   type CalendarEventInstance,
   type CalendarView,
 } from "@spine/ui";
-import { ChevronDown, PanelRightClose, PanelRightOpen, Users, X } from "lucide-react";
+import { Building2, CalendarDays, ChevronDown, PanelRightClose, PanelRightOpen, Plus, Users, X } from "lucide-react";
 import { useSession } from "../../../lib/auth-client";
 import { apiClient } from "../../../lib/api-client";
 import { useCapabilities } from "../../../lib/capabilities-context";
@@ -42,10 +50,31 @@ import { MeetingAttendeesPanel } from "./meeting-attendees-panel";
 import { MeetingQuickViewPopover } from "./meeting-quick-view-popover";
 import { MeetingScopeChoiceDialog } from "./meeting-scope-choice-dialog";
 import type { Meeting, MeetingAttendee } from "./types";
+import { useFillHeight } from "../../../lib/use-fill-height";
+import {
+  DEFAULT_VIEW,
+  UPCOMING_DAYS,
+  UPCOMING_LIMIT,
+  calendarQuery,
+  countByDay,
+  isCalendarView,
+  monthGrid,
+  newMeetingRange,
+  parseCalendarParams,
+  rangeLabel,
+  upcomingLabel,
+  viewForWidth,
+  visibleRange,
+} from "./meetings-state";
 
 const SIDEBAR_STORAGE_KEY = "spine.meetings.sidebar-collapsed";
 const MEMBERS_STORAGE_KEY = "spine.meetings.hidden-organizers";
 const ACTIVITIES_VISIBLE_KEY = "spine.meetings.show-activities";
+/** US-MTG-16 — the last view used on this device. */
+const VIEW_STORAGE_KEY = "spine.meetings.view";
+const NARROW_QUERY = "(max-width: 767px)";
+const COMPACT_QUERY = "(max-width: 1023px)";
+const CALENDAR_MIN_HEIGHT = 480;
 
 interface Member {
   id: string;
@@ -198,6 +227,7 @@ export function MeetingsCalendar() {
   const { data: session } = useSession();
   const { capabilities } = useCapabilities();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [meetings, setMeetings] = useState<Meeting[] | null>(null);
   const [activities, setActivities] = useState<Activity[] | null>(null);
@@ -207,6 +237,19 @@ export function MeetingsCalendar() {
   const [view, setView] = useState<CalendarView>("week");
   const [date, setDate] = useState(new Date());
   const [loadedWindow, setLoadedWindow] = useState<{ from: Date; to: Date } | null>(null);
+  // US-MTG-13: the month the mini calendar shows (it follows `date`), and that month's meetings when they're outside the loaded window.
+  const [miniMonth, setMiniMonth] = useState(new Date());
+  const [miniMeetings, setMiniMeetings] = useState<{ key: string; rows: Meeting[] } | null>(null);
+  // US-MTG-15: the next 60 days, separate from the calendar's window.
+  const [upcomingMeetings, setUpcomingMeetings] = useState<Meeting[] | null>(null);
+  // US-MTG-14/15: requests the Calendar acts on.
+  const [createRequest, setCreateRequest] = useState<{ start: Date; end: Date } | null>(null);
+  const [openRequest, setOpenRequest] = useState<{ eventId: string; occurrenceStart: Date } | null>(null);
+  // US-MTG-17: phone (no Week, Agenda by default) and under 1024 px (mini calendar in a sheet).
+  const [narrow, setNarrow] = useState(false);
+  const [compact, setCompact] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const fill = useFillHeight({ minHeight: CALENDAR_MIN_HEIGHT });
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [calendarsOpen, setCalendarsOpen] = useState(true);
@@ -258,9 +301,23 @@ export function MeetingsCalendar() {
     // Re-setting it post-mount, gated by `hydrated`, is a structural fix
     // regardless of that root cause: the calendar now only ever renders
     // using a client-computed "now," never a possibly-stale SSR one.
-    setDate(new Date());
-    // US-DASH-16: the dashboard's "Open calendar" opens on today's day view.
-    if (new URLSearchParams(window.location.search).get("view") === "day") setView("day");
+    // US-MTG-16: the view and date from the address; else the last view on this device (Agenda on a phone), on today.
+    // The dashboard's "Open calendar" (?view=day, US-DASH-16) is just such an address.
+    const params = parseCalendarParams(new URLSearchParams(window.location.search));
+    const isNarrow = window.matchMedia(NARROW_QUERY).matches;
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem(VIEW_STORAGE_KEY);
+    } catch {
+      // storage unavailable; use the default
+    }
+    const initialView = params.view ?? (isNarrow ? "agenda" : isCalendarView(stored) ? stored : DEFAULT_VIEW);
+    const initialDate = params.date ?? new Date();
+    setNarrow(isNarrow);
+    setCompact(window.matchMedia(COMPACT_QUERY).matches);
+    setView(viewForWidth(initialView, isNarrow));
+    setDate(initialDate);
+    setMiniMonth(initialDate);
     setHydrated(true);
   }, []);
 
@@ -294,6 +351,50 @@ export function MeetingsCalendar() {
     setShowActivities(visible);
     window.localStorage.setItem(ACTIVITIES_VISIBLE_KEY, visible ? "1" : "0");
   }
+
+  /** US-MTG-16: the address follows the view and date (no history entry per step). */
+  function writeAddress(nextView: CalendarView, nextDate: Date) {
+    const query = calendarQuery(nextView, nextDate, new Date());
+    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+  }
+
+  function changeView(next: CalendarView) {
+    setView(next);
+    writeAddress(next, date);
+    try {
+      window.localStorage.setItem(VIEW_STORAGE_KEY, next);
+    } catch {
+      // storage unavailable; the address still has it
+    }
+  }
+
+  function changeDate(next: Date) {
+    setDate(next);
+    writeAddress(view, next);
+  }
+
+  // US-MTG-13: the mini calendar follows the main view into another month.
+  useEffect(() => {
+    setMiniMonth((prev) => (isSameMonth(prev, date) ? prev : date));
+  }, [date]);
+
+  // US-MTG-17: follow the window's width (no Week on a phone).
+  useEffect(() => {
+    const narrowList = window.matchMedia(NARROW_QUERY);
+    const compactList = window.matchMedia(COMPACT_QUERY);
+    const onChange = () => {
+      setNarrow(narrowList.matches);
+      setCompact(compactList.matches);
+      if (narrowList.matches) setView((prev) => viewForWidth(prev, true));
+      if (!compactList.matches) setSheetOpen(false);
+    };
+    narrowList.addEventListener("change", onChange);
+    compactList.addEventListener("change", onChange);
+    return () => {
+      narrowList.removeEventListener("change", onChange);
+      compactList.removeEventListener("change", onChange);
+    };
+  }, []);
 
   const loadMeetings = useCallback((center: Date) => {
     const from = addMonths(center, -2);
@@ -340,19 +441,26 @@ export function MeetingsCalendar() {
   // identity can churn on navigation) so this only re-runs when the id
   // in the URL actually changes.
   const deepLinkId = searchParams.get("id");
+  // US-MTG-16: dropping ?id= keeps the view and date in the address.
+  const withoutId = () => {
+    const params = new URLSearchParams(window.location.search);
+    params.delete("id");
+    const query = params.toString();
+    return `/meetings${query ? `?${query}` : ""}`;
+  };
   useEffect(() => {
     if (!deepLinkId) return;
     apiClient
       .get<Meeting>(`/meetings/${deepLinkId}`)
       .then((meeting) => {
         setAttendeesPanel(meeting);
-        router.replace("/meetings");
+        router.replace(withoutId());
       })
       .catch(() => {
         // Meeting may have been deleted, or is no longer visible to this
         // user — silently drop the deep link rather than showing an error
         // for what's likely just a stale notification link.
-        router.replace("/meetings");
+        router.replace(withoutId());
       });
   }, [deepLinkId, router]);
 
@@ -410,6 +518,69 @@ export function MeetingsCalendar() {
     () => [...visibleMeetings.map(toCalendarEvent), ...activityEvents],
     [visibleMeetings, activityEvents],
   );
+
+  const isVisible = useCallback((m: Meeting) => !m.organizerUserId || !hiddenOrganizers.has(m.organizerUserId), [hiddenOrganizers]);
+
+  // US-MTG-13: dots for the mini calendar's month, from the loaded meetings when they cover it, else that month's own.
+  const miniGrid = useMemo(() => monthGrid(miniMonth), [miniMonth]);
+  const miniKey = miniGrid.start.toISOString();
+  const miniCovered = Boolean(loadedWindow && miniGrid.start >= loadedWindow.from && addDays(miniGrid.end, 1) <= loadedWindow.to);
+  useEffect(() => {
+    if (!hydrated || miniCovered) return;
+    const from = miniGrid.start;
+    const to = addDays(miniGrid.end, 1);
+    apiClient
+      .get<Meeting[]>(`/meetings?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`)
+      .then((rows) => setMiniMeetings({ key: miniKey, rows }))
+      .catch(() => setMiniMeetings({ key: miniKey, rows: [] }));
+  }, [hydrated, miniCovered, miniGrid, miniKey, meetings]);
+  const marks = useMemo(() => {
+    const source = miniCovered ? visibleMeetings : miniMeetings?.key === miniKey ? miniMeetings.rows.filter(isVisible) : [];
+    return countByDay([...source.map(toCalendarEvent), ...activityEvents], miniGrid.start, miniGrid.end);
+  }, [miniCovered, visibleMeetings, miniMeetings, miniKey, isVisible, activityEvents, miniGrid]);
+  const markLabel = useCallback(
+    (n: number) => (showActivities ? `${n} ${n === 1 ? "meeting or follow-up" : "meetings and follow-ups"}` : `${n} ${n === 1 ? "meeting" : "meetings"}`),
+    [showActivities],
+  );
+
+  // US-MTG-15: the next meetings from now, refreshed whenever the calendar's meetings change.
+  useEffect(() => {
+    if (!hydrated) return;
+    const from = new Date();
+    const to = addDays(from, UPCOMING_DAYS);
+    apiClient
+      .get<Meeting[]>(`/meetings?from=${encodeURIComponent(from.toISOString())}&to=${encodeURIComponent(to.toISOString())}`)
+      .then(setUpcomingMeetings)
+      .catch(() => setUpcomingMeetings([]));
+  }, [hydrated, meetings]);
+  const upcoming = useMemo(() => {
+    if (!upcomingMeetings) return null;
+    const now = new Date();
+    const byId = new Map(upcomingMeetings.map((m) => [m.id, m]));
+    return expandEventsInRange(upcomingMeetings.filter(isVisible).map(toCalendarEvent), now, addDays(now, UPCOMING_DAYS))
+      .filter((i) => i.occurrenceEnd >= now)
+      .sort((a, b) => a.occurrenceStart.getTime() - b.occurrenceStart.getTime())
+      .slice(0, UPCOMING_LIMIT)
+      .map((instance) => ({ instance, meeting: byId.get(instance.event.id)! }));
+  }, [upcomingMeetings, isVisible]);
+
+  // US-MTG-15: meetings by contact in the range the heading shows.
+  const contactCounts = useMemo(() => {
+    const range = visibleRange(view, date);
+    const counts = new Map<string, number>();
+    const linked = visibleMeetings.filter((m) => m.contactId).map(toCalendarEvent);
+    for (const instance of expandEventsInRange(linked, range.start, addDays(range.end, 1))) {
+      const id = instance.event.contactId;
+      if (id) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  }, [visibleMeetings, view, date]);
+
+  function openUpcoming(instance: CalendarEventInstance) {
+    changeDate(instance.occurrenceStart);
+    setSheetOpen(false);
+    setOpenRequest({ eventId: instance.event.id, occurrenceStart: instance.occurrenceStart });
+  }
 
   async function handleCreate(event: CalendarEvent, extra?: Record<string, unknown>) {
     const created = await apiClient.post<Meeting>("/meetings", toMeetingPayload(event, extra));
@@ -513,20 +684,182 @@ export function MeetingsCalendar() {
   // (see the mount effect above), so SSR never emits text that could differ
   // from the client's own clock.
   if (!hydrated) {
-    return <div className="h-[calc(100vh-220px)] min-h-[480px] animate-pulse rounded-lg border border-border bg-surface-sunken" />;
+    return <div ref={fill.ref} style={fill.height ? { height: fill.height } : undefined} className="min-h-[480px] animate-pulse rounded-lg border border-border bg-surface-sunken" />;
   }
 
   const allOrganizersVisible = hiddenOrganizers.size === 0;
 
+  /** The sidebar's sections: beside the calendar from 1024 px, in a sheet below that (US-MTG-17). */
+  function renderSidebar(inSheet: boolean) {
+    return (
+      <>
+          <MiniCalendar
+            selected={date}
+            onSelect={(picked) => {
+              changeDate(picked);
+              setSheetOpen(false);
+            }}
+            month={miniMonth}
+            onMonthChange={setMiniMonth}
+            marks={marks}
+            markLabel={markLabel}
+            highlight={view === "week" || view === "day" ? visibleRange(view, date) : undefined}
+            headerAction={
+              inSheet ? undefined : (
+                <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label="Hide calendar sidebar">
+                  <PanelRightClose size={16} />
+                </Button>
+              )
+            }
+          />
+
+          <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
+            <div className="flex items-center gap-2">
+              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} />
+              <CollapsibleTrigger className="flex flex-1 items-center justify-between text-[13px] font-semibold text-on-surface">
+                Calendars
+                <ChevronDown size={14} className={calendarsOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+              </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent className="mt-2 flex flex-col gap-2 pl-1">
+              {members.length === 0 ? (
+                <p className="text-[13px] text-on-surface-muted">No team members yet.</p>
+              ) : (
+                members.map((member) => (
+                  <label key={member.id} className="flex items-center gap-2 text-[13px]">
+                    <Checkbox
+                      checked={!hiddenOrganizers.has(member.userId)}
+                      onCheckedChange={(v) => toggleOrganizer(member.userId, v === true)}
+                    />
+                    <Avatar size="sm">
+                      <AvatarFallback>{member.name.slice(0, 1).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="truncate text-on-surface">{member.name}</span>
+                  </label>
+                ))
+              )}
+            </CollapsibleContent>
+          </Collapsible>
+
+          <label className="flex items-center gap-2 text-[13px] font-semibold text-on-surface">
+            <Checkbox checked={hydrated ? showActivities : false} onCheckedChange={(v) => toggleActivitiesVisible(v === true)} />
+            My Activities
+          </label>
+
+          <section className="flex flex-col gap-1.5" aria-labelledby="upcoming-heading" data-testid="meetings-upcoming">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 id="upcoming-heading" className="text-[13px] font-semibold text-on-surface">
+                Upcoming
+              </h3>
+              <span className="text-[12px] text-on-surface-muted">Next {UPCOMING_DAYS} days</span>
+            </div>
+            {upcoming === null ? (
+              <p className="text-[13px] text-on-surface-muted">Loading…</p>
+            ) : upcoming.length === 0 ? (
+              <p className="text-[13px] text-on-surface-muted">Nothing in the next {UPCOMING_DAYS} days.</p>
+            ) : (
+              <ul className="-mx-1.5 flex flex-col">
+                {upcoming.map(({ instance, meeting }) => {
+                  const when = upcomingLabel(instance.occurrenceStart, instance.event.allDay ?? false, new Date());
+                  return (
+                    <li key={instance.instanceId} className="flex items-start gap-1">
+                      <button
+                        type="button"
+                        onClick={() => openUpcoming(instance)}
+                        className="flex min-w-0 flex-1 flex-col rounded-md px-1.5 py-1 text-left transition-colors hover:bg-surface-sunken focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        <span className="flex min-w-0 items-center gap-1.5">
+                          <span className="truncate text-[13px] font-medium text-on-surface">{meeting.title}</span>
+                          {meeting.visibility === "org" && <Badge className="shrink-0">Org</Badge>}
+                        </span>
+                        <span className={cn("text-[12px]", when.startsWith("Today") ? "font-medium text-primary" : "text-on-surface-muted")}>{when}</span>
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-0.5 h-7 w-7 shrink-0 p-0"
+                        aria-label={`Attendees for ${meeting.title}`}
+                        onClick={() => setAttendeesPanel(meeting)}
+                      >
+                        <Users size={14} />
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <section className="flex flex-col gap-1.5" aria-labelledby="by-contact-heading" data-testid="meetings-by-contact">
+            <div className="flex items-baseline justify-between gap-2">
+              <h3 id="by-contact-heading" className="text-[13px] font-semibold text-on-surface">
+                Meetings by contact
+              </h3>
+              <span className="text-[12px] text-on-surface-muted">{rangeLabel(view, date, new Date())}</span>
+            </div>
+            {meetings === null ? (
+              <p className="text-[13px] text-on-surface-muted">Loading…</p>
+            ) : contactCounts.length === 0 ? (
+              <p className="text-[13px] text-on-surface-muted">No meetings linked to a contact in this range.</p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {contactCounts.map(([contactId, count]) => (
+                  <li key={contactId} className="flex items-center justify-between gap-2 text-[13px]">
+                    <Link href={`/contacts/${contactId}`} className="truncate font-medium text-primary hover:underline">
+                      {contactsById.get(contactId)?.name ?? "Unknown contact"}
+                    </Link>
+                    <span className="shrink-0 tabular-nums text-on-surface-muted">{count}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+      </>
+    );
+  }
+
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[480px] gap-4">
+    <div ref={fill.ref} style={fill.height ? { height: fill.height } : undefined} className="flex min-h-[480px] gap-4" data-testid="meetings-calendar">
       <Calendar
-        className="min-w-0 flex-1"
+        className="min-h-0 min-w-0 flex-1"
         events={events}
         view={view}
-        onViewChange={setView}
+        onViewChange={changeView}
         date={date}
-        onDateChange={setDate}
+        onDateChange={changeDate}
+        views={narrow ? ["day", "month", "agenda"] : undefined}
+        createRequest={createRequest}
+        openRequest={openRequest}
+        toolbarAction={
+          <>
+            {compact && (
+              <Button variant="secondary" size="icon" className="h-8 w-8" aria-label="Mini calendar" onClick={() => setSheetOpen(true)}>
+                <CalendarDays size={16} aria-hidden />
+              </Button>
+            )}
+            {canCreateMeetings && (
+              <Button size="sm" onClick={() => setCreateRequest(newMeetingRange(date, new Date()))} aria-label="New meeting">
+                <Plus size={14} aria-hidden />
+                {narrow ? "New" : "New meeting"}
+              </Button>
+            )}
+          </>
+        }
+        agendaDetails={(instance) => {
+          if (instance.event.id.startsWith("activity-")) return null;
+          const contact = instance.event.contactId ? contactsById.get(instance.event.contactId) : undefined;
+          return contact ? (
+            <span className="flex items-center gap-1">
+              <Building2 size={12} aria-hidden />
+              {contact.name}
+            </span>
+          ) : (
+            <span className="flex items-center gap-1">
+              <Users size={12} aria-hidden />
+              Internal
+            </span>
+          );
+        }}
         contactOptions={contactOptions}
         onEventCreate={handleCreate}
         onEventUpdate={handleUpdate}
@@ -627,6 +960,15 @@ export function MeetingsCalendar() {
         }}
       />
 
+      <Drawer open={sheetOpen} onOpenChange={setSheetOpen}>
+        <DrawerContent size="sm" aria-describedby={undefined}>
+          <DrawerHeader>
+            <DrawerTitle>Mini calendar</DrawerTitle>
+          </DrawerHeader>
+          <DrawerBody className="flex flex-col gap-5">{sheetOpen && renderSidebar(true)}</DrawerBody>
+        </DrawerContent>
+      </Drawer>
+
       <MeetingScopeChoiceDialog
         open={!!scopeChoice}
         action={scopeChoice?.action ?? "edit"}
@@ -661,114 +1003,8 @@ export function MeetingsCalendar() {
           </Button>
         </div>
       ) : (
-        <aside className="hidden w-72 shrink-0 flex-col gap-6 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex">
-          <MiniCalendar
-            selected={date}
-            onSelect={setDate}
-            headerAction={
-              <Button variant="ghost" size="sm" onClick={toggleSidebar} aria-label="Hide calendar sidebar">
-                <PanelRightClose size={16} />
-              </Button>
-            }
-          />
-
-          <Collapsible open={calendarsOpen} onOpenChange={setCalendarsOpen}>
-            <div className="flex items-center gap-2">
-              <Checkbox checked={allOrganizersVisible} onCheckedChange={(v) => toggleAllOrganizers(v === true)} />
-              <CollapsibleTrigger className="flex flex-1 items-center justify-between text-[13px] font-semibold text-on-surface">
-                Calendars
-                <ChevronDown size={14} className={calendarsOpen ? "rotate-180 transition-transform" : "transition-transform"} />
-              </CollapsibleTrigger>
-            </div>
-            <CollapsibleContent className="mt-2 flex flex-col gap-2 pl-1">
-              {members.length === 0 ? (
-                <p className="text-[13px] text-on-surface-muted">No team members yet.</p>
-              ) : (
-                members.map((member) => (
-                  <label key={member.id} className="flex items-center gap-2 text-[13px]">
-                    <Checkbox
-                      checked={!hiddenOrganizers.has(member.userId)}
-                      onCheckedChange={(v) => toggleOrganizer(member.userId, v === true)}
-                    />
-                    <Avatar size="sm">
-                      <AvatarFallback>{member.name.slice(0, 1).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <span className="truncate text-on-surface">{member.name}</span>
-                  </label>
-                ))
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-
-          <label className="flex items-center gap-2 text-[13px] font-semibold text-on-surface">
-            <Checkbox checked={hydrated ? showActivities : false} onCheckedChange={(v) => toggleActivitiesVisible(v === true)} />
-            My Activities
-          </label>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-[13px] font-semibold text-on-surface">Upcoming</h3>
-            {meetings === null ? (
-              <p className="text-[13px] text-on-surface-muted">Loading…</p>
-            ) : (
-              (() => {
-                const now = new Date();
-                const upcoming = visibleMeetings
-                  .filter((m) => new Date(m.endAt) >= now)
-                  .sort((a, b) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime())
-                  .slice(0, 8);
-                if (upcoming.length === 0) {
-                  return <p className="text-[13px] text-on-surface-muted">No upcoming meetings in this range.</p>;
-                }
-                return (
-                  <ul className="flex flex-col gap-1.5">
-                    {upcoming.map((m) => (
-                      <li key={m.id} className="flex items-center gap-2 text-[13px]">
-                        <span className="min-w-0 flex-1 truncate text-on-surface">{m.title}</span>
-                        {m.visibility === "org" && <Badge className="shrink-0">Org</Badge>}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 shrink-0 p-0"
-                          aria-label={`Attendees for ${m.title}`}
-                          onClick={() => setAttendeesPanel(m)}
-                        >
-                          <Users size={14} />
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              })()
-            )}
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <h3 className="text-[13px] font-semibold text-on-surface">Meetings by contact</h3>
-            {meetings === null ? (
-              <p className="text-[13px] text-on-surface-muted">Loading…</p>
-            ) : (
-              (() => {
-                const withContact = visibleMeetings.filter((m) => m.contactId);
-                if (withContact.length === 0) {
-                  return <p className="text-[13px] text-on-surface-muted">No meetings linked to a contact in this range.</p>;
-                }
-                const counts = new Map<string, number>();
-                for (const m of withContact) {
-                  if (m.contactId) counts.set(m.contactId, (counts.get(m.contactId) ?? 0) + 1);
-                }
-                return (
-                  <ul className="flex flex-col gap-1.5">
-                    {[...counts.entries()].map(([contactId, count]) => (
-                      <li key={contactId} className="flex items-center justify-between text-[13px]">
-                        <span className="truncate text-on-surface">{contactsById.get(contactId)?.name ?? "Unknown contact"}</span>
-                        <span className="shrink-0 text-on-surface-muted">{count}</span>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              })()
-            )}
-          </div>
+        <aside className="hidden w-72 shrink-0 flex-col gap-5 overflow-y-auto rounded-lg border border-border bg-surface p-4 lg:flex" aria-label="Calendar sidebar">
+          {renderSidebar(false)}
         </aside>
       )}
 
