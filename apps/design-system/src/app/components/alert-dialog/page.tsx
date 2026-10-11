@@ -13,6 +13,7 @@ import {
 import { ComponentPreview } from "@/components/component-preview";
 import { CodeBlock } from "@/components/code-block";
 import { ApiTable, DocLead, DocSection, DocTitle, FeatureList, KeyboardTable } from "@/components/doc-page";
+import { UseConfirmDemo } from "./use-confirm-demo";
 
 export default function AlertDialogPage() {
   return (
@@ -143,6 +144,47 @@ export default () => (
             </AlertDialogContent>
           </AlertDialog>
         </ComponentPreview>
+      </DocSection>
+
+      <DocSection id="use-confirm" title="useConfirm — ask before a major action">
+        <DocLead>
+          D-218: issuing, recording or voiding a document, deleting or removing something, emailing a customer and bulk
+          changes always ask first. <code>useConfirm()</code> gives a <code>confirm(options)</code> that opens this dialog and
+          resolves <code>true</code> when the verb is pressed, <code>false</code> on Go back, Esc or a click outside. Say what
+          happens to the person&apos;s data and whether it can be undone; the verb is primary unless it deletes, voids or
+          removes (<code>danger</code>).
+        </DocLead>
+        <ComponentPreview
+          code={`const { confirm, dialog } = useConfirm();
+
+async function record() {
+  const ok = await confirm({
+    title: "Record this bill?",
+    description: "… is posted to your books as owed. After that it can't be edited — only voided.",
+    confirmLabel: "Record bill",
+  });
+  if (!ok) return;
+  // record it
+}
+
+return (
+  <>
+    <Button onClick={record}>Record</Button>
+    {dialog}
+  </>
+);`}
+        >
+          <UseConfirmDemo />
+        </ComponentPreview>
+        <ApiTable
+          rows={[
+            { prop: "title", type: "string", description: "A question: \"Record this bill?\"" },
+            { prop: "description", type: "ReactNode", description: "What happens to the person's data, and whether it can be undone." },
+            { prop: "confirmLabel", type: "string", description: "The verb on the button: \"Record bill\"." },
+            { prop: "cancelLabel", type: "string", defaultValue: '"Go back"' },
+            { prop: "danger", type: "boolean", defaultValue: "false", description: "A red verb, for deleting, voiding or removing." },
+          ]}
+        />
       </DocSection>
 
       <DocSection id="accessibility" title="Accessibility">

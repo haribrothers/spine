@@ -21,6 +21,7 @@ import {
   Input,
   Spinner,
   StatCard,
+  useConfirm,
 } from "@spine/ui";
 import { MATCH_SUM_MISMATCH, parseStatementAmount, type MoneyAccount, type ReconciliationView, type StatementLine } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -48,6 +49,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
   // US-BANK-09
   const [creating, setCreating] = useState<StatementLine | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   // US-BANK-10
   const [finished, setFinished] = useState<{ endDate: string } | null>(null);
   const [rec, setRec] = useState<ReconciliationView | null>(null);
@@ -138,6 +140,12 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
   /** US-BANK-10 — saves the reconciliation once Spine agrees with the statement. */
   async function finish() {
     if (!rec) return;
+    const ok = await confirm({
+      title: "Finish this reconciliation?",
+      description: `Every matched entry on ${account?.name ?? rec.moneyAccount.name} up to ${formatDay(rec.statementEndDate)} is marked reconciled, and the documents behind them can't be voided or deleted. Only the newest reconciliation can be undone, from the account's history.`,
+      confirmLabel: "Finish reconciliation",
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -515,6 +523,7 @@ export function ReconcileAccount({ accountId }: { accountId: string }) {
           if (rec) void apiClient.get<ReconciliationView>(`/bank-reconciliations/${rec.id}`).then(setRec);
         }}
       />
+      {confirmDialog}
     </>
   );
 }

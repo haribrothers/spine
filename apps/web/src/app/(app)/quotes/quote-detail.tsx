@@ -24,6 +24,7 @@ import {
   Card,
   RichTextContent,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { CalendarDays, ChevronDown, Clock, Download, GitBranch, HardHat, Link2, MapPin, Pencil, Receipt, Send, User, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -37,7 +38,7 @@ import { SaveBundleDialog } from "./save-bundle-dialog";
 import { AcceptancePanel } from "./acceptance-panel";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
 import { useEntityToast } from "./entity-toast";
-import { orgLocaleTag } from "../../../lib/money";
+import { formatMoney, orgLocaleTag } from "../../../lib/money";
 import { QuoteActivity } from "./quote-activity";
 import { DocumentLinesTable } from "../../../components/document-lines-table";
 import { QuoteRelated } from "./quote-related";
@@ -104,6 +105,8 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // D-217: revising, converting and approving ask first (`confirm` is taken by the conversion guard's retry flag below).
+  const { confirm: ask, dialog: confirmDialog } = useConfirm();
   const [conversionConfirm, setConversionConfirm] = useState<{
     action: "invoice" | "job";
     body: ConversionGuardBody;
@@ -223,6 +226,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   async function handleRevise() {
     if (!quote) return;
+    if (!(await ask({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" }))) return;
     setBusy(true);
     setError(null);
     try {
@@ -246,6 +250,15 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
    */
   async function handleConvertToInvoice(confirm = false) {
     if (!quote) return;
+    if (
+      !confirm &&
+      !(await ask({
+        title: "Convert to an invoice?",
+        description: `A draft invoice for ${formatMoney(BigInt(quote.totalAmount), quote.currency)} is made for ${quote.contactName ?? "the customer"} from ${quote.number ?? "this quote"}'s lines. Nothing is issued or posted until you issue it.`,
+        confirmLabel: "Convert to invoice",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -274,6 +287,15 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
    */
   async function handleConvertToJob(confirm = false) {
     if (!quote) return;
+    if (
+      !confirm &&
+      !(await ask({
+        title: "Convert to a job?",
+        description: `A job is made for ${quote.contactName ?? "the customer"} with a contract value of ${formatMoney(BigInt(quote.totalAmount), quote.currency)} from ${quote.number ?? "this quote"}. You set up its milestones next.`,
+        confirmLabel: "Convert to job",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -293,6 +315,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
 
   async function handleApproveDiscount() {
     if (!quote) return;
+    if (
+      !(await ask({
+        title: "Approve this discount?",
+        description: `${quote.number ?? "This quote"}'s discount, above your approval threshold, is approved in your name, and the quote can then be sent.`,
+        confirmLabel: "Approve discount",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -682,6 +712,7 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
           onSend={(email) => (sendDialog === "send" ? handleMarkAsSent(email) : handleEmailAgain(email))}
         />
       )}
+      {confirmDialog}
       {toast}
     </div>
   );

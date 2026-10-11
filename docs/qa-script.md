@@ -4832,6 +4832,22 @@ Use an owner on a business with demo data, a Staff member without "Issue invoice
     - The field app is unchanged; the Field user still can't open invoices (US-JOB-19).
     - Dashboard › Needs your attention with one overdue invoice: "Send reminder" opens that invoice with the reminder email to check and send; with several, the list opens filtered to overdue with them ticked (US-DASH-13).
 
+## 210. A major action asks first (D-218, refinements before Phase 10)
+
+For each action below: press it, check the question says what happens to the data (and whether it can be undone), press "Go back" and check nothing changed, then do it again and confirm. Deleting, voiding and removing have a red button; the rest a blue one. Check light and dark, and that Esc closes the question without acting.
+
+1. **Vendor bills:** Record on a draft bill's page and from a row's menu ("Record this bill?" — the vendor, number and amount); Delete draft on the bill's page.
+2. **Vendor credits:** Record ("Record this vendor credit?"); Remove from a bill (the bill owes that much again); Delete refund (reversed in the books, stays listed as deleted).
+3. **Expenses:** tick submitted expenses and press Approve (N): "Approve N expenses?" with the total. Reject still asks for its comment (no second question).
+4. **Quotes:** Revise (on the page and from a row's menu — the new version and that this one is superseded once it's sent); Convert to invoice and Convert to job (on the page, from a row's menu, and after the repeat-conversion warning, which is the only question then); Approve discount.
+5. **Jobs:** remove someone from the crew (they stop seeing the job on the web and in the field app); Apply to job on an accepted variation (the amount added to the contract, percentage milestones worked out again).
+6. **Opening balances:** Remove an opening invoice, bill, customer credit or vendor credit (its entry is reversed).
+7. **Tax:** delete a tax payment or refund from the tax report's list.
+8. **Customer refunds:** delete a refund on a credit note or payment.
+9. **Banking:** Finish reconciliation (entries marked reconciled; their documents can't be voided or deleted; only the newest can be undone).
+10. **Team:** Cancel a pending invitation ("Keep invitation" / "Cancel invitation").
+11. Regression: Save, Save draft, creating drafts, Archive and Restore a contact, and Resend an invitation don't ask; the actions that already asked (void with a reason, delete from row menus, deactivate a user, reverse a journal, release retention, cancel a job, delete demo data) ask once, as before.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

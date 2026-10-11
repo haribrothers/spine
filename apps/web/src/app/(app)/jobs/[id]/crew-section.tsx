@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Alert, AlertDescription, Button, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner } from "@spine/ui";
+import { Alert, AlertDescription, Button, Card, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Spinner, useConfirm } from "@spine/ui";
 import { X } from "lucide-react";
 import { apiClient } from "../../../../lib/api-client";
 import { useCapability } from "../../../../lib/capabilities-context";
@@ -24,6 +24,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
   const [members, setMembers] = useState<MemberRow[] | null>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
@@ -62,6 +63,14 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
   }
 
   async function handleUnassign(userId: string) {
+    const name = assignees?.find((a) => a.userId === userId)?.name ?? "This person";
+    const ok = await confirm({
+      title: `Remove ${name} from this job?`,
+      description: `${name} stops seeing ${job.name} — on the web and in the field app — and isn't notified about it any more. You can add them back.`,
+      confirmLabel: "Remove from job",
+      danger: true,
+    });
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -140,6 +149,7 @@ export function CrewSection({ job, onChanged }: { job: Job; onChanged?: () => vo
           ))}
         </div>
       )}
+      {confirmDialog}
     </Card>
   );
 }

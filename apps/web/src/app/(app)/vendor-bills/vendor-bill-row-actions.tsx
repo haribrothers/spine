@@ -16,11 +16,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   Input,
+  useConfirm,
 } from "@spine/ui";
 import { MoreHorizontal } from "lucide-react";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import type { VendorBill } from "./types";
+import { formatMoney } from "../../../lib/money";
 
 /**
  * Row-level "more" menu, mirroring invoices/invoice-row-actions.tsx exactly.
@@ -44,6 +46,7 @@ export function VendorBillRowActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [voidOpen, setVoidOpen] = useState(false);
@@ -69,6 +72,14 @@ export function VendorBillRowActions({
   }
 
   async function handleRecord() {
+    if (
+      !(await confirm({
+        title: "Record this bill?",
+        description: `${bill.contactName ?? "The vendor"}'s bill ${bill.billNumber} for ${formatMoney(BigInt(bill.totalAmount), bill.currency)} is posted to your books as owed. After that it can't be edited — only voided.`,
+        confirmLabel: "Record bill",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -176,6 +187,7 @@ export function VendorBillRowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {confirmDialog}
     </>
   );
 }

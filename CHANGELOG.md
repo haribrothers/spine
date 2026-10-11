@@ -80,6 +80,10 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — A major action asks first (D-218)
+
+Anything that can't be taken back, changes the books, emails a customer or acts on many records asks before it happens, with `useConfirm()` — a new hook in `@spine/ui` (AlertDialog doc page and a11y test). Newly confirmed: Record and Delete draft on vendor bills (page and row menu); Record, Remove from bill and Delete refund on vendor credits; bulk Approve on expenses; Revise (page and row menu), Convert to invoice, Convert to job and Approve discount on quotes; removing someone from a job's crew and applying a variation to the contract; removing opening invoices, bills and credits; deleting tax payments and customer refunds; finishing a bank reconciliation; cancelling an invitation. Each question says what happens to the data; delete, void and remove are red (D-058). Invoices' own confirmations are in the entry below (D-217). CLAUDE.md and the design-system rules carry the rule. Tests: `useConfirm` a11y and behaviour (`@spine/ui`); E2E `d-218` (Go back changes nothing, the verb acts); the quote, banking, purchases, payments and tax specs answer the new questions. QA script section 210.
+
 ### 2026-10-11 — Invoices you can work from (US-INV-27 to US-INV-35, US-ONB-28, D-217)
 
 The invoices list, the invoice page and the builder are brought up to the refined quotes and jobs screens.

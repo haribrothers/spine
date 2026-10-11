@@ -49,6 +49,7 @@ test.describe("US-TAX-08", () => {
     await expect(page.getByTestId("tax-summary-cards")).toContainText("$18.00");
 
     await list.getByRole("button", { name: /Delete tax payment/ }).click();
+    await page.getByRole("alertdialog", { name: "Delete this tax payment?" }).getByRole("button", { name: "Delete tax payment" }).click();
     await expect(list).toContainText("Deleted");
 
     await page.getByRole("button", { name: "Record tax payment" }).click();

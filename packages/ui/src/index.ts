@@ -1,6 +1,7 @@
 export * from "./components/accordion";
 export * from "./components/alert";
 export * from "./components/alert-dialog";
+export * from "./components/use-confirm";
 export * from "./components/banner";
 export * from "./components/app-shell";
 export * from "./components/aspect-ratio";

@@ -34,6 +34,10 @@ test.describe("US-BANK-10", () => {
     await page.getByTestId("statement-line").filter({ hasText: "NEFT-MAPLE RIDGE DEV" }).getByRole("button", { name: "Match" }).click();
     await expect(footer).toContainText("Spine agrees with the statement · 1 lines matched.");
     await footer.getByRole("button", { name: "Finish reconciliation" }).click();
+    // D-218: finishing asks first, saying what it locks.
+    const ask = page.getByRole("alertdialog", { name: "Finish this reconciliation?" });
+    await expect(ask.getByTestId("confirm-description")).toContainText("can't be voided or deleted");
+    await ask.getByRole("button", { name: "Finish reconciliation" }).click();
     await expect(page.getByText(/Bank Account is reconciled to .+\. Its entries show the Reconciled tick/)).toBeVisible();
 
     await page.getByRole("link", { name: "register" }).click();

@@ -21,6 +21,8 @@ import {
   Input,
   Spinner,
   StatusChip,
+  useConfirm,
+  type ConfirmOptions,
 } from "@spine/ui";
 import { VENDOR_CREDIT_STATUS_LABELS, type VendorCreditStatus, placeOfSupplyLabel } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -52,6 +54,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
   const [credit, setCredit] = useState<VendorCredit | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const canRecord = useCapability("vendor_credits.record");
   const canApply = useCapability("vendor_credits.apply");
   const [applyOpen, setApplyOpen] = useState(false);
@@ -74,7 +77,9 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
     load();
   }, [load]);
 
-  async function act(action: () => Promise<unknown>) {
+  /** Runs an action, asking first when it's one that changes the books (D-217). */
+  async function act(action: () => Promise<unknown>, question?: ConfirmOptions) {
+    if (question && !(await confirm(question))) return;
     setBusy(true);
     setError(null);
     try {
@@ -172,7 +177,13 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
             </Button>
           )}
           {isDraft && canRecord && (
-            <Button onClick={() => act(() => apiClient.post(`/vendor-credits/${credit.id}/record`))} disabled={busy}>
+            <Button onClick={() =>
+                act(() => apiClient.post(`/vendor-credits/${credit.id}/record`), {
+                  title: "Record this vendor credit?",
+                  description: `${formatMoney(BigInt(credit.totalAmount), credit.currency)} from ${credit.contactName ?? "the vendor"} is posted to your books, lowering what you owe them. After that it can't be edited — only voided.`,
+                  confirmLabel: "Record credit",
+                })
+              } disabled={busy}>
               {busy ? <Spinner size="sm" /> : "Record"}
             </Button>
           )}
@@ -207,7 +218,14 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
               <span className="flex items-center gap-2">
                 <span className="tabular-nums text-on-surface">{formatMoney(BigInt(a.amount), credit.currency)}</span>
                 {canApply && credit.status !== "void" && (
-                  <Button variant="ghost" size="sm" aria-label={`Remove from bill ${a.billNumber}`} onClick={() => act(() => apiClient.delete(`/vendor-credits/${credit.id}/allocations/${a.id}`))} disabled={busy}>
+                  <Button variant="ghost" size="sm" aria-label={`Remove from bill ${a.billNumber}`} onClick={() =>
+                      act(() => apiClient.delete(`/vendor-credits/${credit.id}/allocations/${a.id}`), {
+                        title: `Remove this credit from bill ${a.billNumber}?`,
+                        description: `Bill ${a.billNumber} owes ${formatMoney(BigInt(a.amount), credit.currency)} more again, and the credit has that much back to use.`,
+                        confirmLabel: "Remove from bill",
+                        danger: true,
+                      })
+                    } disabled={busy}>
                     Remove
                   </Button>
                 )}
@@ -232,7 +250,14 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
                   <span className="text-on-surface-muted">Deleted</span>
                 ) : (
                   canApply && (
-                    <Button variant="ghost" size="sm" aria-label={`Delete refund of ${formatMoney(BigInt(r.amount), credit.currency)}`} onClick={() => act(() => apiClient.delete(`/vendor-refunds/${r.id}`))} disabled={busy}>
+                    <Button variant="ghost" size="sm" aria-label={`Delete refund of ${formatMoney(BigInt(r.amount), credit.currency)}`} onClick={() =>
+                        act(() => apiClient.delete(`/vendor-refunds/${r.id}`), {
+                          title: "Delete this refund?",
+                          description: `The ${formatMoney(BigInt(r.amount), credit.currency)} refund into ${r.moneyAccountName} is reversed in your books, and the credit has that much back to use. It stays listed, marked deleted.`,
+                          confirmLabel: "Delete refund",
+                          danger: true,
+                        })
+                      } disabled={busy}>
                       Delete refund
                     </Button>
                   )
@@ -280,6 +305,7 @@ export function VendorCreditDetail({ creditId }: { creditId: string }) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {confirmDialog}
     </div>
   );
 }

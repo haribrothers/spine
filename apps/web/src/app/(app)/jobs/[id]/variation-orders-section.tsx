@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { apiClient } from "../../../../lib/api-client";
 import { PlaceOfSupplyNotice, usePlaceOfSupply } from "../../../..//components/place-of-supply";
@@ -53,6 +54,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const load = useCallback(() => {
     apiClient
@@ -111,6 +113,15 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
   }
 
   async function handleApply(variationOrderId: string) {
+    const v = variations?.find((o) => o.id === variationOrderId);
+    const ok = await confirm({
+      title: "Apply this variation to the job?",
+      description: v
+        ? `${formatMoney(BigInt(v.quote.totalAmount), v.quote.currency)} from ${v.quote.number ?? "the variation quote"} is added to ${job.name}'s contract value, and its percentage milestones are worked out again. This can't be undone.`
+        : "Its amount is added to the job's contract value, and its percentage milestones are worked out again. This can't be undone.",
+      confirmLabel: "Apply to job",
+    });
+    if (!ok) return;
     setError(null);
     setApplyingId(variationOrderId);
     try {
@@ -211,6 +222,7 @@ export function VariationOrdersSection({ job, onJobChanged, raiseRequest = 0 }: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </Card>
   );
 }

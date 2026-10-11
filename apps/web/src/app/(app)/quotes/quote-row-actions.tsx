@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  useConfirm,
 } from "@spine/ui";
 import type { QuoteCustomerLink } from "@spine/shared";
 import { Copy, Download, Eye, GitBranch, HardHat, Link2, MoreHorizontal, Pencil, Receipt, Send, Trash2 } from "lucide-react";
@@ -59,6 +60,7 @@ export function QuoteRowActions({
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const canEdit = useCanEditOwnership(quote.createdByUserId, { own: "quotes.edit_own", others: "quotes.edit_others" });
@@ -149,7 +151,12 @@ export function QuoteRowActions({
           {!draft && current && canRevise && (
             <>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onSelect={() => void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote")}>
+              <DropdownMenuItem
+                onSelect={async () => {
+                  const ok = await confirm({ title: "Revise this quote?", description: `${quote.number ?? "This quote"} version ${quote.version + 1} is made as a draft from this one. Once it's sent, this version is superseded and the customer can only answer the newest.`, confirmLabel: "Revise quote" });
+                  if (ok) void post(`/quotes/${quote.id}/revise`, "Couldn't revise the quote");
+                }}
+              >
                 <GitBranch size={14} aria-hidden /> Revise
               </DropdownMenuItem>
             </>
@@ -182,6 +189,7 @@ export function QuoteRowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {confirmDialog}
     </>
   );
 }

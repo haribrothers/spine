@@ -46,6 +46,7 @@ TypeScript strict · pnpm + Turborepo · Next.js 15 App Router + Tailwind 4 + `@
 - Use the design-system components (`docs/design/components/`). A component change ships with its doc page (`apps/design-system`, or `apps/showcase-native` / `apps/design-system-native`) and its a11y test in the same change.
 - Lucide icons only, per-icon imports on native; native themed classes always carry their `dark:` pair. See `docs/prd/09-design-system.md`.
 - Copy: sentence case, verbs on buttons, say what happens to people's data, errors say what to do next.
+- A major action (issuing, recording, voiding, deleting, removing, emailing a customer, bulk changes) asks first with `useConfirm()` from `@spine/ui`; never one click from a menu (D-218).
 - Every screen works in light and dark mode: colours only from tokens (web CSS variables, native `dark:` pairs or `useNativeColors()`), text on filled controls uses `on-primary`/`on-danger`. PDFs and emails stay light.
 - Accessibility is required: WCAG 2.1 AA, keyboard, focus rings, 4.5:1 text contrast, reduce motion, no colour-only state, 44px touch targets on phone.
 

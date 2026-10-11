@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Spinner } from "@spine/ui";
+import { Badge, Button, Spinner, useConfirm } from "@spine/ui";
 import type { InvitationRow as InvitationRowData } from "../../../../lib/invitations";
 
 const ROLE_LABELS: Record<string, string> = {
@@ -24,6 +24,7 @@ export function InvitationRow({
   onCancel: (id: string) => Promise<void>;
 }) {
   const [busy, setBusy] = useState<"resend" | "cancel" | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const expired = isExpired(invitation.expiresAt);
 
   async function guarded(action: "resend" | "cancel", fn: () => Promise<void>) {
@@ -56,9 +57,19 @@ export function InvitationRow({
       >
         {busy === "resend" ? <Spinner size="sm" /> : "Resend"}
       </Button>
-      <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => guarded("cancel", () => onCancel(invitation.id))}>
+      <Button size="sm" variant="ghost" disabled={busy !== null} onClick={async () => {
+          const ok = await confirm({
+            title: "Cancel this invitation?",
+            description: `The link sent to ${invitation.email} stops working, so they can't join. You can invite them again.`,
+            confirmLabel: "Cancel invitation",
+            cancelLabel: "Keep invitation",
+            danger: true,
+          });
+          if (ok) void guarded("cancel", () => onCancel(invitation.id));
+        }}>
         {busy === "cancel" ? <Spinner size="sm" /> : "Cancel"}
       </Button>
+      {confirmDialog}
     </div>
   );
 }

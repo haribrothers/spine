@@ -45,6 +45,8 @@ test.describe("US-PUR-21", () => {
     await expect(bar.getByRole("button", { name: "Reject…" })).toBeVisible();
     await expect(bar.getByRole("button", { name: "Clear" })).toBeVisible();
     await bar.getByRole("button", { name: "Approve (2)" }).click();
+    // D-218: approving posts to the books, so it asks first.
+    await page.getByRole("alertdialog", { name: "Approve 2 expenses?" }).getByRole("button", { name: "Approve expenses" }).click();
     await expect(page.getByText("2 expenses approved").first()).toBeVisible();
     await expect(bar).toHaveCount(0);
     for (const id of [made[0]!.id, made[1]!.id]) {

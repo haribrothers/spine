@@ -29,6 +29,7 @@ test.describe("US-PUR-27", () => {
     await expect(page.getByText("Remove its 1 applications and refunds first.")).toBeVisible();
 
     await page.getByTestId("vendor-refunds").getByRole("button", { name: /Delete refund/ }).click();
+    await page.getByRole("alertdialog", { name: "Delete this refund?" }).getByRole("button", { name: "Delete refund" }).click();
     await expect(page.getByTestId("vendor-refunds")).toContainText("Deleted");
     await voidIt("Entered twice");
     await expect(page.getByText("Void — Entered twice")).toBeVisible();

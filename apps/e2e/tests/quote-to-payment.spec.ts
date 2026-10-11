@@ -69,6 +69,8 @@ test("quote → send → customer accepts → convert to invoice → issue → r
   await page.reload();
   await expect(page.getByText(/^accepted$/i).first()).toBeVisible({ timeout: 10_000 });
   await page.getByRole("button", { name: "Convert to invoice" }).click();
+  // D-218: converting asks first.
+  await page.getByRole("alertdialog", { name: "Convert to an invoice?" }).getByRole("button", { name: "Convert to invoice" }).click();
   await page.waitForURL(/\/invoices\/[a-f0-9-]+$/);
 
   // --- Issue the invoice ---

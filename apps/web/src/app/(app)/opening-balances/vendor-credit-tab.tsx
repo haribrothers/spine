@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import type { OpeningVendorCredit } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
@@ -33,6 +34,7 @@ import { formatMoney } from "../../../lib/money";
  */
 export function VendorCreditTab({ currency, locked, onChanged }: { currency: string; locked: boolean; onChanged: () => void }) {
   const [rows, setRows] = useState<OpeningVendorCredit[] | null>(null);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [vendors, setVendors] = useState<{ id: string; name: string }[]>([]);
   const [adding, setAdding] = useState(false);
   const [contactId, setContactId] = useState("");
@@ -134,7 +136,9 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
                 <td className="px-4 py-3 text-right tabular-nums">{money(r.available)}</td>
                 <td className="px-4 py-3 text-right">
                   {!locked && r.available === r.amount && (
-                    <Button variant="ghost" size="sm" aria-label={`Remove ${r.number ?? r.contactName}`} onClick={() => remove(r.id)}>
+                    <Button variant="ghost" size="sm" aria-label={`Remove ${r.number ?? r.contactName}`} onClick={async () => {
+                      if (await confirm({ title: `Remove opening credit ${r.number ?? r.contactName}?`, description: "Its entry is reversed in your books and it comes out of your opening balances. You can add it again.", confirmLabel: "Remove", danger: true })) void remove(r.id);
+                    }}>
                       Remove
                     </Button>
                   )}
@@ -189,6 +193,7 @@ export function VendorCreditTab({ currency, locked, onChanged }: { currency: str
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </div>
   );
 }

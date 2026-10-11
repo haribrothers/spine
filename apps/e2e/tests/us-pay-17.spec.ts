@@ -39,6 +39,8 @@ test.describe("US-PAY-17", () => {
     await expect(drawer.getByTestId("refunds")).toContainText("RF-0001");
     await expect(drawer).toContainText("$300.00");
     await drawer.getByRole("button", { name: "Delete refund of $200.00" }).click();
+    // D-218: deleting a refund asks first.
+    await page.getByRole("alertdialog", { name: "Delete this refund?" }).getByRole("button", { name: "Delete refund" }).click();
     await expect(drawer.getByTestId("refunds")).toContainText("Deleted");
     await expect(drawer).toContainText("$500.00");
 

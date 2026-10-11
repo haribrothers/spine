@@ -19,6 +19,7 @@ import {
   FormField,
   Input,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -52,6 +53,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
   const [bill, setBill] = useState<VendorBill | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const [voidOpen, setVoidOpen] = useState(false);
   const [voidReason, setVoidReason] = useState("");
   const [voidError, setVoidError] = useState<string | null>(null);
@@ -81,6 +83,14 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
   async function handleRecord() {
     if (!bill) return;
+    if (
+      !(await confirm({
+        title: "Record this bill?",
+        description: `${bill.contactName ?? "The vendor"}'s bill ${bill.billNumber} for ${formatMoney(BigInt(bill.totalAmount), bill.currency)} is posted to your books as owed. After that it can't be edited — only voided.`,
+        confirmLabel: "Record bill",
+      }))
+    )
+      return;
     setBusy(true);
     setError(null);
     try {
@@ -117,6 +127,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
 
   async function handleDelete() {
     if (!bill) return;
+    if (!(await confirm({ title: "Delete this draft bill?", description: `${bill.billNumber} is removed for good. This can't be undone.`, confirmLabel: "Delete draft", danger: true }))) return;
     setBusy(true);
     setError(null);
     try {
@@ -366,6 +377,7 @@ export function VendorBillDetail({ billId }: { billId: string }) {
         </DialogContent>
       </Dialog>
 
+      {confirmDialog}
       {toast}
     </div>
   );

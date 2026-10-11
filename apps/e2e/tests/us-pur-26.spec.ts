@@ -33,6 +33,8 @@ test.describe("US-PUR-26", () => {
     await expect(refunds).toContainText("Bank Account · EFT-88");
     await expect(page.getByTestId("credit-balance")).toHaveText("Open — $250.00 to use");
     await refunds.getByRole("button", { name: "Delete refund of $150.00" }).click();
+    // D-218: deleting a refund asks first.
+    await page.getByRole("alertdialog", { name: "Delete this refund?" }).getByRole("button", { name: "Delete refund" }).click();
     await expect(refunds).toContainText("Deleted");
     await expect(page.getByTestId("credit-balance")).toHaveText("Open — $400.00 to use");
   });

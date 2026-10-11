@@ -23,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
   Spinner,
+  useConfirm,
 } from "@spine/ui";
 import type { CustomerRefund } from "@spine/shared";
 import { apiClient } from "../lib/api-client";
@@ -244,9 +245,17 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
       .catch(() => setRefunds([]));
   }, [contactId, sourceId, refreshKey]);
 
+  const { confirm, dialog: confirmDialog } = useConfirm();
   if (!refunds.length) return null;
 
   async function remove(refund: CustomerRefund) {
+    const ok = await confirm({
+      title: "Delete this refund?",
+      description: `The ${formatMoney(BigInt(refund.amount), refund.currency)} refund is reversed in your books, and the customer's credit goes back up by that much.`,
+      confirmLabel: "Delete refund",
+      danger: true,
+    });
+    if (!ok) return;
     setError(null);
     setBusyId(refund.id);
     try {
@@ -287,6 +296,7 @@ export function RefundsSection({ contactId, sourceId, refreshKey, canRefund, onC
           </span>
         </div>
       ))}
+      {confirmDialog}
     </div>
   );
 }

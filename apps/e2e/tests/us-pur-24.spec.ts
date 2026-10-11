@@ -39,6 +39,7 @@ test.describe("US-PUR-24", () => {
     await expect(page.getByRole("heading", { name: "Draft vendor credit" })).toBeVisible();
     await expect(page.getByText("their CN-4471")).toBeVisible();
     await page.getByRole("button", { name: "Record", exact: true }).click();
+    await page.getByRole("alertdialog", { name: "Record this vendor credit?" }).getByRole("button", { name: "Record credit" }).click();
     await expect(page.getByRole("heading", { name: "VCR-0001" })).toBeVisible();
     await expect(page.getByTestId("credit-balance")).toHaveText("Open — $378.40 to use");
     await expect(page.getByRole("button", { name: "Edit", exact: true })).toHaveCount(0);
