@@ -2,7 +2,7 @@
 
 Money out: bills from vendors (drafted, then recorded to post), payments to vendors allocated across bills, expenses submitted by anyone (including from the field) and approved before they post — including site labour entered as headcount × day rate — billable expenses passed on to customers, and a payables view of what's due. Phase 8 adds vendor credits (applied to bills or refunded) and recurring bills.
 
-**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1), `ExpensesJobFilter` (P2), `ExpenseDialogLabour` (P1), `VendorCreditsList` (P1), `VendorCreditBuilder` (P1), `VendorCreditDetail` (P1), `ApplyVendorCreditDialog` (P1), `VendorRefundDialog` (P1), `RecurringBillDialog` (P2), `RecurringBillsList` (P2)
+**Screens:** `VendorBillsList` (P1), `VendorBillsEmpty` (P1), `VendorBillBuilder` (P1), `VendorBillDetailDraft` (P1), `VendorBillDetail` (P1), `VendorBillVoidDialog` (P1), `VendorPaymentsList` (P1), `VendorPaymentsEmpty` (P2), `NewVendorPaymentDialog` (P1), `VendorPaymentDrawer` (P2), `ExpensesList` (P1), `ExpensesEmpty` (P1), `ExpenseDialog` (P1), `ExpenseDrawerSubmitted` (P1), `ExpenseApproveConfirm` (P1), `ExpenseRejectDialog` (P1), `ExpenseDrawerApproved` (P2), `ExpenseBillToCustomer` (P2), `EmailExpenseApproved` (P3), `Payables` (P1), `PayablesEmpty` (P1), `SettingsPurchases` (P2), `ExpenseCategoryDialog` (P2), `ExpensesBulkSelect` (P2), `ExpenseCategories` (P2), `ExpenseDrawerOwn` (P1), `ExpensesJobFilter` (P2), `ExpenseDialogLabour` (P1), `VendorCreditsList` (P1), `VendorCreditBuilder` (P1), `VendorCreditDetail` (P1), `ApplyVendorCreditDialog` (P1), `VendorRefundDialog` (P1), `RecurringBillDialog` (P2), `RecurringBillsList` (P2), `VendorBillPage` (P2), `VendorBillPayDialog` (P2), `VendorBillsListRefined` (P2), `VendorBillsListDark` (P2), `VendorBillDuplicateWarning` (P2), `VendorBillsBulkRecord` (P2)
 **Depends on:** 03 Contacts (vendors), 07 Jobs (costing), 11 Tax, 08 Invoicing (billing expenses on), 17 Mobile (field submission).
 
 ## Features
@@ -19,6 +19,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-08 | Job filter and labour expenses | P1 | 7 | `ExpensesJobFilter`, `ExpenseDialogLabour` |
 | F-PUR-09 | Vendor credits | P1 | 8 | `VendorCreditsList`, `VendorCreditBuilder`, `VendorCreditDetail`, `ApplyVendorCreditDialog`, `VendorRefundDialog`, `TeamPrivilegesBooks` |
 | F-PUR-10 | Recurring bills | P2 | 8 | `RecurringBillDialog`, `RecurringBillsList` |
+| F-PUR-11 | Vendor bills you can work from: a page per bill, paying from it, a list that shows money, safer entry | P2 | Refinements | `VendorBillPage`, `VendorBillPayDialog`, `VendorBillsListRefined`, `VendorBillsListDark`, `VendorBillDuplicateWarning`, `VendorBillsBulkRecord` |
 
 ## User stories
 
@@ -463,3 +464,81 @@ Decision: D-159
 
 **Implementation notes**
 - API: `POST /recurring-bills/:id/pause`, `/resume`.
+
+### US-PUR-32 · See a bill at a glance, with one next step
+**Feature:** F-PUR-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorBillPage`
+**As** office staff, **I want** a bill's page to say where it stands and what to do next, **so that** I don't piece it together.
+
+Decision: D-218, D-222, D-223, D-225
+
+**Acceptance criteria**
+- **Given** a bill, **when** its page opens, **then** the breadcrumb and title are its number, its state shows in words — Draft, Unpaid, Partly paid, Paid, Overdue or Void — and under the title: the vendor (opening the contact), the bill date, the due date with how late ("12 days late", "Due in 5 days"), the job and the place of supply, dates in the business's format.
+- **Given** the bill's state, **when** the page shows, **then** there's one primary action — Record bill for a draft, Pay bill while money is owed — and the rest (Edit and Delete draft, Make recurring, Duplicate, Void, View history) sit in "More" with their icons; destructive ones last.
+- **Given** a recorded bill, **when** the page shows, **then** a strip reads Total, Paid, Credits applied and Balance due; a void bill's balance shows "—" with the reason it was voided.
+- **Given** the Activity panel, **when** it renders, **then** it lists, newest first, created, recorded, each payment (amount, payment number) and credit applied (amount, credit number), and voided (with the reason), each with who and when.
+- **Given** Record bill, Delete draft or Void, **when** I choose it, **then** it asks first (D-218) and the toast says what happened (D-223).
+
+**Implementation notes**
+- API: `GET /vendor-bills/:id/activity` → `[{ type: created|recorded|paid|credit_applied|voided, at, actorName, amount?, detail?, linkId? }]` from the audit log, `vendor_payment_allocations` and vendor credit allocations (the same access as `GET /vendor-bills/:id`).
+- UI: `vendor-bill-detail.tsx` rebuilt on the payment page's layout (D-221).
+
+### US-PUR-33 · Pay a bill from its page
+**Feature:** F-PUR-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorBillPayDialog`
+**As** office staff, **I want** to pay a bill, or put the vendor's credit against it, without leaving it, **so that** paying takes one step.
+
+Decision: D-218, D-223, D-225
+
+**Acceptance criteria**
+- **Given** a recorded bill with a balance, **when** I press "Pay bill", **then** the vendor payment dialog opens on this vendor with this bill ticked for its balance; recording the payment refreshes the page and the toast names the payment.
+- **Given** the vendor has open credit, **when** the bill's page shows, **then** "Apply credit" is offered; it opens a dialog listing the vendor's credits, oldest first, filled up to the bill's balance; confirming applies them and says how much now counts against the bill.
+- **Given** the bill's payments, **when** they're listed, **then** each opens that payment (`/vendor-payments?id=`), with its date in the business's format.
+- **Given** a member without the right to pay or apply credit, **when** they open the bill, **then** those actions aren't offered.
+
+**Implementation notes**
+- UI: `NewVendorPaymentDialog` gains `initialBillId` (that bill ticked); a new apply dialog calls `POST /vendor-credits/:id/apply` once per credit used. No new API.
+
+### US-PUR-34 · See what we owe vendors at a glance
+**Feature:** F-PUR-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorBillsListRefined`, `VendorBillsListDark`
+**As** an owner, **I want** the bills list to show money and what's due, **so that** I know what to pay next.
+
+Decision: D-210, D-222, D-225
+
+**Acceptance criteria**
+- **Given** the list, **when** it shows, **then** the cards read "To pay" (the balance on recorded bills, how many bills), "Overdue" (amount and count), "Due in 7 days" (amount and count) and "Drafts to record" (count and total); Overdue, Due in 7 days and Drafts filter the list when pressed, and pressing again clears.
+- **Given** a bill row, **when** it shows, **then** it has the bill number, the vendor (opening the contact), the bill date, the due date with how late in words, the job, the state in words (as on the page), the total and the balance — "—" for a void bill.
+- **Given** no sort chosen, **when** the list shows, **then** the newest bill comes first.
+- **Given** the list layout every refined list shares, **when** it shows, **then** the filters (status, vendor, job) sit on the left of the filter bar with Updated, Refresh, Recurring bills and New vendor bill on the right, and search (bill number, vendor or job) with Columns below; filters, card, search, sort and page are kept in the address.
+- **Given** a row's menu, **when** I open it, **then** it offers View, Edit and Record (draft), Pay bill (balance owed), Duplicate, Void (recorded) and Delete (draft), each with its icon and right, destructive last; Record, Void and Delete ask first.
+
+**Implementation notes**
+- UI only: the list, the cards and the state come from `GET /vendor-bills`; the job's name from the job filter's options.
+
+### US-PUR-35 · Enter a bill faster, without entering it twice
+**Feature:** F-PUR-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorBillDuplicateWarning`
+**As** office staff, **I want** help entering bills and a warning before I enter the same one again, **so that** we never pay a bill twice.
+
+Decision: D-218, D-225
+
+**Acceptance criteria**
+- **Given** a vendor and a bill number, **when** this vendor already has a bill (not void) with the same number, ignoring case and spaces, **then** a warning names it with its date and amount and a link; I can still save.
+- **Given** I choose a vendor on a new bill, **when** the due date is empty, **then** it's suggested from that vendor's last bill (the same number of days after the bill date), saying so.
+- **Given** the builder, **when** I press "Save and record", **then** it asks "Record this bill?" (as Record does) and, on yes, saves the draft and records it; the bill's page opens with its toast.
+- **Given** "Duplicate" on a bill, **when** I choose it, **then** a new bill opens with the same vendor, job, currency, place of supply and lines, today's date and an empty bill number.
+
+**Implementation notes**
+- API: `GET /vendor-bills/possible-duplicates?contactId=&billNumber=&excludeId=` → `[{ id, billNumber, date, totalAmount, currency, status }]` (the same access as `GET /vendor-bills`).
+- UI: `/vendor-bills/new?from=<id>` prefills from that bill.
+
+### US-PUR-36 · Record several draft bills at once
+**Feature:** F-PUR-11 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `VendorBillsBulkRecord`
+**As** office staff, **I want** to record checked drafts together, **so that** a month's bills post in one go.
+
+Decision: D-218, D-223, D-225
+
+**Acceptance criteria**
+- **Given** draft bills ticked, **when** I choose "Record (n)", **then** "Record n bills?" asks first with their total and says they can't be edited afterwards; confirming records them, the toast says how many, and any that couldn't be recorded are named with why.
+- **Given** non-draft bills among those ticked, **when** the bar shows, **then** Record counts only the drafts.
+- **Given** a member without the right to record, **when** they tick bills, **then** Record isn't offered.
+
+**Implementation notes**
+- API: `POST /vendor-bills/bulk/record { ids }` (1–100) → `BulkResult` `{ done, skipped: [{ id, label, reason }] }` (`vendor_bills.record`; Idempotency-Key); each bill records in its own transaction (P11), reasons "It's already recorded.", "It's void.", "Not found." or the record's own error.

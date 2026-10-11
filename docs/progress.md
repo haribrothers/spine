@@ -523,6 +523,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PAY-29 · Filter receivables by age
 - [x] US-PAY-30 · Read a receivable at a glance
 - [x] US-PAY-31 · Trust what Receivables counts
+- [ ] US-PUR-32 · See a bill at a glance, with one next step
+- [ ] US-PUR-33 · Pay a bill from its page
+- [ ] US-PUR-34 · See what we owe vendors at a glance
+- [ ] US-PUR-35 · Enter a bill faster, without entering it twice
+- [ ] US-PUR-36 · Record several draft bills at once
 
 ## Phase 10 · AI assistant
 

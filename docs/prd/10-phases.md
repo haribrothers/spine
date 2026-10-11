@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 520 stories.
+Total: 525 stories.
 
 ## Phase 0 · Foundation
 
@@ -904,6 +904,14 @@ Total: 520 stories.
 - US-PAY-29 · Filter receivables by age (P2)
 - US-PAY-30 · Read a receivable at a glance (P2)
 - US-PAY-31 · Trust what Receivables counts (P2)
+
+*Vendor bills*
+
+- US-PUR-32 · See a bill at a glance, with one next step (P2)
+- US-PUR-33 · Pay a bill from its page (P2)
+- US-PUR-34 · See what we owe vendors at a glance (P2)
+- US-PUR-35 · Enter a bill faster, without entering it twice (P2)
+- US-PUR-36 · Record several draft bills at once (P3)
 
 ## Phase 10 · AI assistant
 
