@@ -922,6 +922,13 @@ Total: 525 stories.
 - US-PUR-40 · Raise and use a credit from its bill (P2)
 - US-PUR-41 · Record several draft credits at once (P3)
 
+*Expenses*
+
+- US-PUR-42 · See what's waiting and what it's cost at a glance (P2)
+- US-PUR-43 · Review an expense on its own page (P2)
+- US-PUR-44 · Submit an expense faster (P2)
+- US-PUR-45 · Fix and resubmit a rejected expense (P2)
+
 ## Phase 10 · AI assistant
 
 **Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.

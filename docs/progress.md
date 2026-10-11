@@ -534,6 +534,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-39 · Enter a vendor credit like a bill
 - [x] US-PUR-40 · Raise and use a credit from its bill
 - [x] US-PUR-41 · Record several draft credits at once
+- [ ] US-PUR-42 · See what's waiting and what it's cost at a glance
+- [ ] US-PUR-43 · Review an expense on its own page
+- [ ] US-PUR-44 · Submit an expense faster
+- [ ] US-PUR-45 · Fix and resubmit a rejected expense
 
 ## Phase 10 · AI assistant
 

@@ -21,6 +21,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-10 | Recurring bills | P2 | 8 | `RecurringBillDialog`, `RecurringBillsList` |
 | F-PUR-11 | Vendor bills you can work from: a page per bill, paying from it, a list that shows money, safer entry | P2 | Refinements | `VendorBillPage`, `VendorBillPayDialog`, `VendorBillsListRefined`, `VendorBillsListDark`, `VendorBillDuplicateWarning`, `VendorBillsBulkRecord` |
 | F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsListDark`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditReplaceLines`, `VendorBillRecordCredit`, `VendorCreditApplyRefined` |
+| F-PUR-13 | Expenses you can work from: a list that shows money, a page per expense with its receipt, faster entry, fixing a rejected one | P2 | Refinements | `ExpensesListRefined`, `ExpensesListDark`, `ExpensePage`, `ExpenseRejectedResubmit`, `ExpenseFormRefined` |
 
 ## User stories
 
@@ -159,11 +160,11 @@ Legacy: S-07.4
 
 **Acceptance criteria**
 - **Given** my submitted expense, **when** I edit and save it, **then** it updates and stays "Submitted".
-- **Given** an approved or rejected expense, **when** I try to edit it, **then** I see "Only a submitted expense can be edited — an approved expense has already posted to the ledger.".
+- **Given** an approved expense, **when** I try to edit it, **then** I see "Only a waiting or rejected expense can be edited — an approved expense has already posted to the ledger.". A rejected one can be fixed and resubmitted (US-PUR-45, D-227).
 - **Given** my submitted expense, **when** I delete it and confirm "Delete this expense?", **then** it's removed.
 
 **Implementation notes**
-- API: `PUT/DELETE /expenses/:id` (submitted only).
+- API: `PUT /expenses/:id` (submitted, or rejected to resubmit — US-PUR-45), `DELETE /expenses/:id` (submitted only).
 
 ### US-PUR-11 · Bill an approved expense to the customer
 **Feature:** F-PUR-04 · **Priority:** P2 · **Phase:** 4 · **Screens:** `ExpenseDrawerApproved`, `ExpenseBillToCustomer`
@@ -628,3 +629,67 @@ Decision: D-218, D-223, D-226
 
 **Implementation notes**
 - API: `POST /vendor-credits/bulk/record { ids }` (1–100) → `BulkResult` `{ done, skipped: [{ id, label, reason }] }` (`vendor_credits.record`; Idempotency-Key); each credit records in its own transaction (P11), reasons "It's already recorded.", "It's void.", "Not found." or the record's own error.
+
+### US-PUR-42 · See what's waiting and what it's cost at a glance
+**Feature:** F-PUR-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpensesListRefined`, `ExpensesListDark`
+**As** an owner, **I want** the expenses list to show money and what's waiting on me, **so that** I approve, bill and fix expenses without hunting.
+
+Decision: D-210, D-222, D-227
+
+**Acceptance criteria**
+- **Given** the list, **when** it shows, **then** the cards read "Waiting for approval" (amount and count — for an approver, other people's only), "Approved this month" (amount and count), "Ready to bill" (approved, billable and not on an invoice yet) and "Rejected" (count); all but "Approved this month" filter the list when pressed, and pressing again clears. "Ready to bill" replaces the dashboard's banner (`?card=bill`; the old `?billable=unbilled` link still works).
+- **Given** an expense row, **when** it shows, **then** it has the date in the business's format, the number once approved, the description over the category, the job, who submitted it, who paid (Company or Employee), the state in words — Waiting for approval, Approved, Billed or Rejected, never colour alone — and the amount; newest first by date.
+- **Given** the list layout every refined list shares, **when** it shows, **then** the filters (state, category, submitted by — with "Me" first — and job) sit on the left of the filter bar with Updated, Refresh and Submit expense on the right, and search (number, description, category, job or person) with Columns below; filters, card, search, sort and page are kept in the address.
+- **Given** a row's menu, **when** I open it, **then** it offers View, Edit (waiting or rejected, mine or with the right), Approve and Reject (waiting, not my own unless I'm an Owner), Bill to customer (ready to bill) and Delete (waiting), each with its icon and right, destructive last; Approve, Reject, Bill to customer and Delete ask first.
+
+**Implementation notes**
+- API: `GET /expenses` gains `submittedByName`, `jobName` and `billedInvoiceId`/`billedInvoiceNumber`, and sorts by date, newest first.
+- UI: the cards and states come from the list; "Submitted by" options from the list's people.
+
+### US-PUR-43 · Review an expense on its own page
+**Feature:** F-PUR-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpensePage`
+**As** an approver, **I want** an expense's page to show the receipt next to what was claimed, **so that** I check it and move on in one place.
+
+Decision: D-218, D-222, D-223, D-227
+
+**Acceptance criteria**
+- **Given** an expense, **when** I open it from the list, a link or search, **then** it opens at `/expenses/<id>` with the breadcrumb, the number (or "Expense" before approval) as the title and its state in words; under it the category, date, who submitted it, the job and who paid, dates in the business's format. Old `/expenses?id=` links open the page.
+- **Given** the page, **when** it shows, **then** a strip reads Amount, Tax (with its rate), Paid from (not shown to Field) and Billable (with the invoice it's on, as a link, once billed); the description; the labour rows for a labour expense; the review comment when there is one.
+- **Given** a receipt, **when** the page shows, **then** it's previewed beside the details — the photo, or the first page of a PDF — and opens full size; the receipt is listed first under Attachments, marked "Receipt", with the expense's other files.
+- **Given** the Activity panel, **when** it renders, **then** it lists, newest first, submitted, edited, rejected (with the comment), resubmitted, approved (with the comment and account) and billed (with the invoice), each with who and when.
+- **Given** a waiting expense and the right to review it, **when** the page shows, **then** Approve is the primary action and Reject beside it; approving asks first (with the account and an optional comment), and "Approve and next" approves and opens the next expense waiting for approval, oldest first, or says there are none left.
+- **Given** an approved, billable expense not yet billed, **when** the page shows, **then** "Bill to customer" is the primary action (it asks first); the rest — Edit, View history, Delete — sit in "More" with their icons.
+
+**Implementation notes**
+- API: `GET /expenses/:id/activity` → `[{ type: submitted|edited|rejected|resubmitted|approved|billed, at, actorName, detail?, linkId? }]`, newest first, from the audit log and the billing invoice (the same access as `GET /expenses/:id`, so Field sees only their own).
+- UI: `app/(app)/expenses/[id]/page.tsx` replaces the detail drawer; the dashboard, the account register and search link to it.
+
+### US-PUR-44 · Submit an expense faster
+**Feature:** F-PUR-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseFormRefined`
+**As** anyone who spends the business's money, **I want** submitting an expense to take seconds, **so that** receipts get in on the day.
+
+Decision: D-218, D-227
+
+**Acceptance criteria**
+- **Given** the form, **when** it opens, **then** the currency is a picker set to the business's currency.
+- **Given** a tax rate, **when** I choose it or change the amount, **then** the tax amount is worked out as included in the amount (rounded once, half-up), and I can still change it; it says "Worked out from <rate>" until I do.
+- **Given** a photo or PDF, **when** I drop it on the form or choose it, **then** it uploads as the receipt and shows a preview, with Replace and Remove.
+- **Given** I've already submitted an expense with the same amount on the same day (not rejected), **when** I enter it again, **then** a warning names it with a link; I can still submit.
+- **Given** the form, **when** I submit, **then** the button reads "Submit expense", and "Submit and add another" submits and opens a fresh form with the same date, currency, paid-by and job.
+
+**Implementation notes**
+- API: `GET /expenses/possible-duplicates?amount=&date=&excludeId=` → `[{ id, number, date, amount, currency, categoryName, status }]` — my own expenses only, not rejected.
+
+### US-PUR-45 · Fix and resubmit a rejected expense
+**Feature:** F-PUR-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `ExpenseRejectedResubmit`
+**As** someone whose expense was rejected, **I want** to fix it and send it back, **so that** I don't enter it again from scratch.
+
+Decision: D-227
+
+**Acceptance criteria**
+- **Given** a rejected expense of mine (or with the right to edit others'), **when** I open it, **then** the rejection comment is shown at the top and "Fix and resubmit" is the primary action.
+- **Given** I change it and press "Resubmit", **when** it saves, **then** it's Waiting for approval again, the reviewer's fields are cleared, and Activity keeps the rejection with its comment and adds "Resubmitted".
+- **Given** an approved expense, **when** I open it, **then** it still can't be edited.
+
+**Implementation notes**
+- API: `PUT /expenses/:id` on a rejected expense resubmits it (`expenses.edit_own`/`edit_others`, as for a waiting one): status back to `submitted`, `rejected_by_user_id`/`rejected_at`/`review_comment` cleared, audit `resubmitted`. Nothing posts.
