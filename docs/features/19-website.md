@@ -113,7 +113,7 @@ Decision: D-113
 - **Given** "Self-hosting › Install", **when** I follow it on a clean machine with Docker, **then** I reach a running Spine and issue a first invoice in under 5 minutes (NFR-MNT-01).
 - **Given** "Configuration", **when** it renders, **then** it lists every environment variable with its default, whether it's required, and what happens without it.
 - **Given** "HTTPS and domains", **when** I follow it, **then** Caddy serves Spine on my domain with automatic HTTPS.
-- **Given** "Troubleshooting", **when** it renders, **then** it covers the health check, logs, the email queue and the most common install errors with what to do.
+- **Given** "Troubleshooting", **when** it renders, **then** it covers the health check, logs, the email log (D-220) and the most common install errors with what to do.
 
 **Implementation notes**
 - The README's install section links here; the site is the long version (US-OPS-19).

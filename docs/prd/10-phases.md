@@ -17,7 +17,7 @@ Phases 0–9 are built; Phases 10 and 11 follow ([D-098](12-decisions.md) split 
 | 10 | AI assistant | 14 | An owner switches on an AI assistant, with their own provider, that fills in forms and drafts emails for a person to check and save |
 | 11 | Packaging & 1.0 | 32 | A stranger installs from the README and issues their first invoice |
 
-Total: 500 stories.
+Total: 504 stories.
 
 ## Phase 0 · Foundation
 
@@ -869,6 +869,13 @@ Total: 500 stories.
 - US-INV-39 · Follow what happened to a credit note (P2)
 - US-INV-40 · See where each credit went, at a glance (P2)
 - US-INV-41 · Search, filter and come back to the same credit notes list (P2)
+
+*Email log*
+
+- US-SET-27 · See every email Spine sends (P2)
+- US-SET-28 · Retry or cancel an email (P2)
+- US-SET-29 · Know when email isn't set up (P2)
+- US-DASH-30 · See failed emails in Needs your attention (P2)
 
 ## Phase 10 · AI assistant
 

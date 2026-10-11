@@ -19,6 +19,7 @@ One dashboard that adapts to who's looking: a pinned row of key figures, charts 
 | F-DASH-08 | Staff and field layouts (redesign A) | P1 | 7 | `DashboardStaffRedesign`, `DashboardFieldRedesign` |
 | F-DASH-09 | Books cards: payables, top expenses, account balances, ready to bill, tax, cash basis | P1 | 8 | `DashboardOwnerBooks` |
 | F-DASH-10 | Polish: loading placeholders, figures that fit, packed cards and a side column | P2 | Refinements | `DashboardLoading`, `DashboardWide`, `DashboardLaptop`, `DashboardBigFigures` |
+| F-DASH-11 | Failed emails in Needs your attention | P2 | Refinements | `DashboardAttentionEmails` |
 
 ## User stories
 
@@ -454,4 +455,17 @@ Decision: D-209
 **Implementation notes**
 - UI: the card grid uses CSS grid with small rows and `grid-auto-flow: dense`; each card's row span comes from its measured height (`ResizeObserver`). Wide cards are placed first (a stable sort, so the saved order is untouched), then each one-column card lands in the first column with room, which is the shortest. DOM order stays the layout order. Only `money-in-out` is wide now; `jobs-in-progress` becomes one column with a two-line row (name and number, then the bar with "% billed · budget"), and the activity widgets (`activity-feed`, `my-activity`) no longer fill their row. The side column is a sticky grid area (`max-height: 100vh`, sticky only when it fits) from a new `wide-plus` breakpoint (1440 px) in `tokens.json` and the Tailwind preset. `mergeDashboardLayout` and the saved layout are unchanged.
 - No API change.
+
+### US-DASH-30 · See failed emails in Needs your attention
+**Feature:** F-DASH-11 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `DashboardAttentionEmails`
+**As** an owner, **I want** failed emails on my dashboard, **so that** I notice a customer didn't get a quote or invoice.
+
+Decision: D-220
+
+**Acceptance criteria**
+- **Given** emails that failed in the last 7 days and haven't been retried or cancelled, **when** an Owner's dashboard shows, **then** "Needs your attention" has "<n> emails failed" naming the first ("Quote QUO-0031 to accounts@…"), with "Review" opening the email log filtered to Failed.
+- **Given** Staff or Field, **when** their dashboard shows, **then** there's no such row.
+
+**Implementation notes**
+- API: `GET /dashboard/attention` kind `emails_failed` (Owner only), from `email_log`.
 

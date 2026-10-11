@@ -21,6 +21,7 @@ Organisation configuration in one Owner-only Settings dialog (business profile, 
 | F-SET-10 | Email templates | P1 | 9 | `SettingsEmailTemplates` |
 | F-SET-11 | Modules | P1 | 9 | `SettingsModules`, `ModuleOffConfirm` |
 | F-SET-12 | The Spine brand on the web | P2 | Refinements | `BrandSidebar`, `BrandSidebarDark`, `BrandSignIn`, `BrandBrowserIcons`, `BrandPublicQuoteFooter` |
+| F-SET-13 | The email log: every email Spine sends, what happened to it, retry and cancel, and a warning when email isn't set up | P2 | Refinements | `EmailLog`, `EmailLogDark`, `EmailLogNoSmtp`, `EmailLogRetryConfirm` |
 
 ## User stories
 
@@ -404,4 +405,49 @@ Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
 - `SpineLogo` in `@spine/ui`: inline SVG from the `docs/logos` paths (the same as `@spine/ui-native`'s), mark, horizontal or vertical, clamped to the brand minimums (20 px mark, 96 px wide lockup), read as "Spine" unless `decorative`.
 - Brand tokens in `packages/config`: `--color-brand-teal`, `--color-brand-sky`, `--color-brand-deep` and `--color-brand-wordmark` (light `#2954E5`, dark `#F3F2EE`), outside the `[data-brand]` theme rules so no theme changes them; for the logo and icons only (US-MOB-27).
 - Icons through Next.js's file conventions: `app/icon.svg`, `app/favicon.ico`, `app/apple-icon.png`, and `app/manifest.ts` (`display: "browser"`). `public/sw.js` uses `/icons/notification-192.png` and `/icons/badge-96.png`. `themeColor` in the root layout's viewport, per colour scheme.
+
+### US-SET-27 · See every email Spine sends
+**Feature:** F-SET-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `EmailLog`, `EmailLogDark`
+**As** an owner, **I want** one list of every email Spine has sent or is about to send, **so that** I know whether a customer or my team got it, and why not.
+
+Decision: D-220
+
+**Acceptance criteria**
+- **Given** I'm an Owner, **when** I open Settings › Emails, **then** "Email log" opens the page `/emails`; from a quote's, invoice's or credit note's "Email failed" message, "See it in the email log" opens it filtered to that record. Staff and Field don't see the link and get "not found" at the address.
+- **Given** the page, **when** it shows, **then** the cards read "Waiting" (queued or retrying), "Failed in the last 7 days" (in the overdue colour above 0) and "Sent today"; Waiting and Failed filter the list, pressed and kept in the address.
+- **Given** an email, **when** its row shows, **then** it has when (queued, or sent), who it went to, the subject, the kind (Quote, Invoice, Reminder, Credit note, Receipt, Refund, Statement, Notification, Daily digest, Invitation, Password reset, Data export, Test), the record it's about (a link, e.g. QUO-0031), the status (Queued, Retrying, Sending, Sent, Failed, Cancelled — each a word, not just a colour), the attempts ("2 of 4") and, when it failed or is retrying, the last error.
+- **Given** every kind of email — queued ones (quote, invoice, reminder, notification, digest, data export) and ones sent straight away (credit note, receipt, refund, statement, invitation, password reset, test) — **when** it's sent or fails, **then** it's in the log; message bodies aren't stored.
+- **Given** a search, a status, a kind, a date range, a record, a card, a sort or a page, **when** I set it, **then** the address keeps it; Refresh reloads in place, and coming back after 30 seconds away refreshes quietly (D-210). Search matches the recipient, the subject and the record's number.
+- **Given** an email older than 180 days, **when** the nightly clean-up runs, **then** it's removed from the log.
+
+**Implementation notes**
+- Data: `email_log` — see 04-data-model. API: `GET /emails` (Owner) → rows, newest first. Every send goes through `EmailService`, which writes and updates the row; queued kinds create it when the job is queued (status `queued`), the worker moves it through `sending` to `sent` or `retrying`/`failed`. A daily `email-log-cleanup` job removes rows older than 180 days.
+
+### US-SET-28 · Retry or cancel an email
+**Feature:** F-SET-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `EmailLog`, `EmailLogRetryConfirm`
+**As** an owner, **I want** to send a failed email again or stop one that's waiting, **so that** I fix delivery without re-sending the whole document by hand.
+
+Decision: D-218, D-220
+
+**Acceptance criteria**
+- **Given** a failed or retrying email that went through the queue, **when** I choose "Retry now" in its row's menu, **then** "Retry this email?" says who it goes to and what it is; confirming queues it again straight away (attempts start over) and the row shows "Queued".
+- **Given** a failed email that was sent straight away (credit note, receipt, refund, statement, invitation, password reset, test), **when** I open its menu, **then** "Retry now" isn't offered; "Open the record" is, to send it again from there.
+- **Given** a queued or retrying email not yet being sent, **when** I choose "Cancel", **then** "Cancel this email?" says it won't be sent; confirming stops it, the row shows "Cancelled · by <me>", and a quote's or invoice's own email status says "Email not sent — cancelled".
+- **Given** an email that's sending or sent, **when** I open its menu, **then** there's no Cancel.
+
+**Implementation notes**
+- API: `POST /emails/:id/retry`, `POST /emails/:id/cancel` (Owner; Idempotency-Key). Retry re-queues the job with its stored queue name and payload; cancel uses pg-boss `cancel`. Both write the audit log.
+
+### US-SET-29 · Know when email isn't set up
+**Feature:** F-SET-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `EmailLogNoSmtp`
+**As** an owner, **I want** to be told when Spine can't send email, **so that** emails don't sit unsent without anyone knowing.
+
+Decision: D-015, D-220
+
+**Acceptance criteria**
+- **Given** no SMTP server configured, **when** I open the email log or Settings › Emails, **then** a warning reads "Email isn't set up — <n> emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." with a link to the install guide.
+- **Given** SMTP is configured, **when** emails keep failing, **then** the warning reads "Emails are failing — the last error was: <error>." when the last 3 queued emails in a row failed.
+
+**Implementation notes**
+- API: `GET /emails/status` → `{ smtpConfigured, waiting, lastError? }` (Owner).
 

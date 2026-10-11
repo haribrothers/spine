@@ -10,7 +10,7 @@ Multi-line quotes with sections, discounts and per-line tax; a branded PDF; emai
 | ID | Feature | Priority | Phase | Screens |
 |---|---|---|---|---|
 | F-QUO-01 | Build and manage quotes | P1 | 1 | `QuoteBuilder`, `QuoteBuilderDraft`, `QuotesList`, `QuotesEmpty`, `QuoteDeleteConfirm` |
-| F-QUO-02 | PDF and email | P1 | 1 | `QuotePdf`, `EmailQuote`, `QuoteDetail`, `EmailQueueDialog` |
+| F-QUO-02 | PDF and email | P1 | 1 | `QuotePdf`, `EmailQuote`, `QuoteDetail` (`EmailQueueDialog` retired by US-SET-27) |
 | F-QUO-03 | Customer response by link | P1 | 1 | `PublicQuote`, `PublicQuotePhone`, `PublicQuoteResult`, `PublicQuoteDeclined`, `QuoteDetailAccepted`, `QuoteDetailRejected` |
 | F-QUO-04 | Versions, discount approval and expiry | P1 | 1 | `QuoteDetail`, `QuoteDetailApproval`, `QuotesList` |
 | F-QUO-05 | Convert to invoice | P1 | 2 | `QuoteDetailAccepted` |
@@ -120,6 +120,8 @@ Legacy: S-03.4
 - Edge: numbering in-transaction (D-007).
 
 ### US-QUO-07 · See emails waiting to go out
+**Retired** by the email log (US-SET-27, D-220): the quotes list's "Email queue", its dialog and `GET /quotes/email-queue` are removed; a quote's "Email failed" message links to the email log filtered to the quote.
+
 **Feature:** F-QUO-02 · **Priority:** P3 · **Phase:** 1 · **Screens:** `EmailQueueDialog`
 **As** office staff, **I want** to see quote emails still queued or retrying, **so that** I know if a customer hasn't received one.
 
@@ -441,7 +443,7 @@ Decision: D-214
 Decision: D-210, D-214
 
 **Acceptance criteria**
-- **Given** the toolbar, **when** it shows, **then** it has Status and Contact filters (Contact lists only contacts with a quote), "Updated … ago", Refresh, "Email queue" and "New quote", with search on its own row beside Columns.
+- **Given** the toolbar, **when** it shows, **then** it has Status and Contact filters (Contact lists only contacts with a quote), "Updated … ago", Refresh and "New quote" ("Email queue" moved to the email log, US-SET-27), with search on its own row beside Columns.
 - **Given** a search, filter, card, sort or page, **when** I set it, **then** the address keeps it (for example `/quotes?status=sent&contact=<id>&q=villa`), so Back and bookmarks return to the same list; "Clear filters" clears them.
 - **Given** a search, **when** I type, **then** it matches the number, title, contact and line names.
 - **Given** no sort chosen, **when** the list shows, **then** the newest quote is first.
