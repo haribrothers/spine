@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { createDb, type Database } from "../../db/client";
-import { accounts, member, user } from "../../db/schema";
+import { accounts, emailLog, member, user } from "../../db/schema";
 import { createTestApp, signUp, type TestApp } from "../../test-utils/test-app";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -172,6 +172,29 @@ describe("Demo data that shows the refined screens (requires local Postgres)", (
           const month = new Date().toISOString().slice(0, 7);
           expect(notes.every((n) => n.issuedAt.slice(0, 7) === month)).toBe(true);
         }
+      });
+
+      it("D-221 · demo payments read in order on their page, and no receipts go to demo customers", async () => {
+        const payments = await get<{ id: string; date: string; appliedTo: { invoiceId: string }[] }[]>("/payments");
+        expect(payments.length).toBeGreaterThan(0);
+        // Newest first.
+        expect([...payments].sort((a, b) => b.date.localeCompare(a.date)).map((p) => p.date)).toEqual(payments.map((p) => p.date));
+        const applied_ = payments.filter((p) => p.appliedTo.length);
+        expect(applied_.length).toBeGreaterThan(0);
+        for (const p of applied_) {
+          const activity = await get<{ type: string; at: string; actorName: string | null }[]>(`/payments/${p.id}/activity`);
+          const recorded = activity.find((a) => a.type === "recorded")!;
+          const applied = activity.filter((a) => a.type === "applied");
+          // Recorded on its day, with the applying at the same moment and named.
+          expect(recorded.at.slice(0, 10)).toBe(p.date.slice(0, 10));
+          for (const a of applied) {
+            expect(a.at.slice(0, 10)).toBe(p.date.slice(0, 10));
+            expect(a.actorName).toBe("Demo Owner");
+          }
+          expect(activity.some((a) => a.type === "emailed")).toBe(false);
+        }
+        const receipts = await db.select({ id: emailLog.id }).from(emailLog).where(and(eq(emailLog.orgId, orgId), eq(emailLog.kind, "receipt")));
+        expect(receipts).toHaveLength(0);
       });
 
       it("deletes the demo's bundles with it", async () => {

@@ -492,13 +492,15 @@ export class DemoSeederService {
       const payment = await this.paymentsService.create(
         orgId,
         actorUserId,
-        { contactId: contactIds.get(contactKey)!, date: onDay === null ? new Date() : day(onDay), method, reference: null, currency, amount: payAmount, allocations: [{ invoiceId, amount: payAmount }] } as never,
+        // D-221: demo customers aren't emailed a receipt.
+        { contactId: contactIds.get(contactKey)!, date: onDay === null ? new Date() : day(onDay), method, reference: null, currency, amount: payAmount, allocations: [{ invoiceId, amount: payAmount }], sendReceipt: false } as never,
         true,
       );
-      // US-ONB-28: recorded on its day, so the invoice's Activity shows it then.
+      // US-ONB-28: recorded on its day, so the invoice's Activity shows it then — and the payment's own (US-PAY-20).
       if (onDay !== null) {
         await this.db.update(payments).set({ createdAt: when(onDay) }).where(eq(payments.id, payment.id));
         await this.db.update(paymentAllocations).set({ createdAt: when(onDay) }).where(eq(paymentAllocations.paymentId, payment.id));
+        await backdateAudit(payment.id, when(onDay), ["created"]);
       }
       count("paymentsCreated");
     };
