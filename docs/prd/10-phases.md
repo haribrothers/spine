@@ -913,6 +913,14 @@ Total: 525 stories.
 - US-PUR-35 · Enter a bill faster, without entering it twice (P2)
 - US-PUR-36 · Record several draft bills at once (P3)
 
+*Vendor credits*
+
+- US-PUR-37 · See where a vendor credit stands, with one next step (P2)
+- US-PUR-38 · See what credit vendors owe us at a glance (P2)
+- US-PUR-39 · Enter a vendor credit like a bill (P2)
+- US-PUR-40 · Raise and use a credit from its bill (P2)
+- US-PUR-41 · Record several draft credits at once (P3)
+
 ## Phase 10 · AI assistant
 
 **Goal:** An owner switches on an AI assistant, with their own local or cloud provider, that fills in bills and expenses, drafts emails and quote lines and suggests bank matches — and nothing is saved until a person saves.

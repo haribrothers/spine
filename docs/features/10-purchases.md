@@ -20,6 +20,7 @@ Money out: bills from vendors (drafted, then recorded to post), payments to vend
 | F-PUR-09 | Vendor credits | P1 | 8 | `VendorCreditsList`, `VendorCreditBuilder`, `VendorCreditDetail`, `ApplyVendorCreditDialog`, `VendorRefundDialog`, `TeamPrivilegesBooks` |
 | F-PUR-10 | Recurring bills | P2 | 8 | `RecurringBillDialog`, `RecurringBillsList` |
 | F-PUR-11 | Vendor bills you can work from: a page per bill, paying from it, a list that shows money, safer entry | P2 | Refinements | `VendorBillPage`, `VendorBillPayDialog`, `VendorBillsListRefined`, `VendorBillsListDark`, `VendorBillDuplicateWarning`, `VendorBillsBulkRecord` |
+| F-PUR-12 | Vendor credits you can work from: a page per credit, a list that shows money, entry like a bill, raised and used from the bill | P2 | Refinements | `VendorCreditPage`, `VendorCreditsListRefined`, `VendorCreditsBulkRecord`, `VendorCreditBuilderRefined`, `VendorCreditApplyRefined` |
 
 ## User stories
 
@@ -545,3 +546,85 @@ Decision: D-218, D-223, D-225
 
 **Implementation notes**
 - API: `POST /vendor-bills/bulk/record { ids }` (1–100) → `BulkResult` `{ done, skipped: [{ id, label, reason }] }` (`vendor_bills.record`; Idempotency-Key); each bill records in its own transaction (P11), reasons "It's already recorded.", "It's void.", "Not found." or the record's own error.
+
+### US-PUR-37 · See where a vendor credit stands, with one next step
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditPage`
+**As** office staff, **I want** a vendor credit's page to say how much is left and what to do with it, **so that** no credit sits unused.
+
+Decision: D-218, D-222, D-223, D-226
+
+**Acceptance criteria**
+- **Given** a credit, **when** its page opens, **then** the breadcrumb and title are its number ("Draft vendor credit" before it's recorded), its state shows in words — Draft, Open, Partly used, Used or Void — and under the title: the vendor (opening the contact), their credit note number, the date, the bill it's against (opening it), the job and the place of supply, dates in the business's format.
+- **Given** the credit's state, **when** the page shows, **then** there's one primary action — Record credit for a draft, Apply to bills while credit is left — with Record refund beside it while credit is left, and the rest (Edit and Delete draft, View history, Void credit) in "More" with their icons, destructive last.
+- **Given** a recorded credit, **when** the page shows, **then** a strip reads Total, Applied to bills, Refunded and Left to use; a void credit's Left to use shows "—" with the reason it was voided.
+- **Given** the lines, **when** they show, **then** each has its quantity, price, tax, account and HSN/SAC, with the subtotal, tax and total below.
+- **Given** the credit has been applied or refunded, **when** the page shows, **then** "Applied to bills" lists each bill (opening it), its date and the amount, and "Refunds" each refund's date, method, money account, reference and amount; each can be removed or deleted, asking first.
+- **Given** the Activity panel, **when** it renders, **then** it lists, newest first, created, recorded, each application (amount, bill), removal from a bill, refund, refund deleted and voided (with the reason), each with who and when.
+- **Given** Record credit, Delete draft, Void, Apply, Record refund, Remove from a bill or Delete refund, **when** I choose it, **then** a major one asks first (D-218) and every one says what happened in a toast (D-223).
+
+**Implementation notes**
+- API: `GET /vendor-credits/:id/activity` → `[{ type: created|recorded|applied|unapplied|refunded|refund_deleted|voided, at, actorName, amount?, detail?, linkId? }]`, newest first, from the audit log, `vendor_credit_allocations` and `vendor_refunds` (the same access as `GET /vendor-credits/:id`); `GET /vendor-credits/:id` gains `jobName`.
+- UI: `vendor-credit-detail.tsx` rebuilt on the bill page's layout (D-225). "Partly used" is worked out from the balance and the total, never stored; the API's status stays `draft|open|used|void`.
+
+### US-PUR-38 · See what credit vendors owe us at a glance
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditsListRefined`
+**As** an owner, **I want** the credits list to show money and old unused credit, **so that** I use it or ask for a refund.
+
+Decision: D-210, D-222, D-226
+
+**Acceptance criteria**
+- **Given** the list, **when** it shows, **then** the cards read "Credit to use" (left to use on open and partly used credits, in the business's currency, and how many), "Drafts to record" (count and total), "Partly used" (amount left and count) and "Unused 60+ days" (open credit dated 60 or more days ago, amount and count); the last three filter the list when pressed, and pressing again clears.
+- **Given** a credit row, **when** it shows, **then** it has the number, the vendor's credit note number, the vendor (opening the contact), the date, the bill it's against, the job, the state in words (as on the page), the total and Left to use — "—" for a void credit.
+- **Given** no sort chosen, **when** the list shows, **then** the newest credit by date comes first.
+- **Given** the list layout every refined list shares, **when** it shows, **then** the title is "Vendor credits", the filters (status, vendor, job) sit on the left of the filter bar with Updated, Refresh and New vendor credit on the right, and search (number, vendor's number, vendor or bill) with Columns below; filters, card, search, sort and page are kept in the address.
+- **Given** a row's menu, **when** I open it, **then** it offers View, Edit and Record (draft), Apply to bills and Record refund (credit left), Void (recorded) and Delete (draft), each with its icon and right, destructive last; Record, Void and Delete ask first.
+
+**Implementation notes**
+- API: `GET /vendor-credits` gains `billNumber` and `jobName`, and sorts by date, newest first.
+- UI: the cards and the state come from the list.
+
+### US-PUR-39 · Enter a vendor credit like a bill
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditBuilderRefined`
+**As** office staff, **I want** entering a credit to work like entering a bill, **so that** I don't learn two forms or enter one twice.
+
+Decision: D-218, D-223, D-225, D-226
+
+**Acceptance criteria**
+- **Given** the new or edit credit page, **when** it opens, **then** it works like the bill builder: the header fields in one card (Vendor, Vendor's credit note number, Against bill, Currency; Date, Job, Place of supply), compact item rows (Item, Qty, Rate, Tax, Account, Amount, with the description and HSN/SAC under each, no headings or text lines), notes and attachments below the lines, and a bar that stays at the bottom with Subtotal, tax and Total credit, "Unsaved changes", Cancel, Save draft and Save and record.
+- **Given** unsaved changes, **when** I leave the page, **then** "Leave without saving?" asks first.
+- **Given** a vendor and a credit note number, **when** this vendor already has a credit (not void) with the same number, ignoring case and spaces, **then** a warning names it with its date and amount and a link; I can still save.
+- **Given** I've entered lines, **when** I choose a bill under "Against bill", **then** it asks "Replace your lines with bill <number>'s?" before copying them; with no lines entered it copies them straight away.
+- **Given** "Save and record", **when** I press it, **then** it asks "Record this vendor credit?" (as Record does) and, on yes, saves the draft and records it; the credit's page opens with its toast.
+
+**Implementation notes**
+- API: `GET /vendor-credits/possible-duplicates?contactId=&vendorReference=&excludeId=` → `[{ id, number, vendorReference, date, totalAmount, currency, status }]` (the same access as `GET /vendor-credits`).
+- UI: the builder reuses the bill builder's `VendorBillLines`, `DocumentBuilderBar` and `useUnsavedGuard`.
+
+### US-PUR-40 · Raise and use a credit from its bill
+**Feature:** F-PUR-12 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `VendorCreditApplyRefined`
+**As** office staff, **I want** to start a credit from the bill it's for and use it there first, **so that** a return comes off the right bill.
+
+Decision: D-222, D-223, D-226
+
+**Acceptance criteria**
+- **Given** a recorded bill, **when** I open its "More" menu, **then** "Record vendor credit" opens a new credit with the vendor, the bill under "Against bill", its currency, job and place of supply, and its lines copied to edit down.
+- **Given** "Apply to bills" on a credit raised against a bill, **when** the dialog opens, **then** that bill comes first, marked "Against this credit", and is filled first; the vendor's other open bills follow, oldest first.
+- **Given** the apply dialog, **when** it shows, **then** each bill has its date, due date with how late and balance, and the dialog reads "Applying <amount> · <amount> left" as I change the amounts.
+- **Given** I apply the credit, **when** it's done, **then** the toast says how much went to how many bills.
+
+**Implementation notes**
+- UI: `/vendor-credits/new?billId=<id>` prefills from that bill; the "Record vendor credit" item uses D-222's `issueCreditNote` icon (FileMinus). No new API.
+
+### US-PUR-41 · Record several draft credits at once
+**Feature:** F-PUR-12 · **Priority:** P3 · **Phase:** Refinements · **Screens:** `VendorCreditsBulkRecord`
+**As** office staff, **I want** to record checked draft credits together, **so that** a month's credit notes post in one go.
+
+Decision: D-218, D-223, D-226
+
+**Acceptance criteria**
+- **Given** draft credits ticked, **when** I choose "Record (n)", **then** "Record n vendor credits?" asks first with their total and says they can't be edited afterwards; confirming records them, the toast says how many, and any that couldn't be recorded are named with why.
+- **Given** non-draft credits among those ticked, **when** the bar shows, **then** Record counts only the drafts.
+- **Given** a member without the right to record, **when** they tick credits, **then** Record isn't offered.
+
+**Implementation notes**
+- API: `POST /vendor-credits/bulk/record { ids }` (1–100) → `BulkResult` `{ done, skipped: [{ id, label, reason }] }` (`vendor_credits.record`; Idempotency-Key); each credit records in its own transaction (P11), reasons "It's already recorded.", "It's void.", "Not found." or the record's own error.
