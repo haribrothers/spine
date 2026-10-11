@@ -499,6 +499,7 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-ONB-29 · Explore credit notes at every stage
 - [x] US-ONB-30 · Explore bills and vendor credits at every stage
 - [x] US-ONB-31 · Explore expenses with their receipts
+- [ ] US-ONB-32 · Explore expense categories that guide
 - [x] US-INV-36 · Credit an invoice's lines, with their tax
 - [x] US-INV-37 · Start a credit note from the credit notes list
 - [x] US-INV-38 · See a credit note at a glance, with one next step
@@ -539,6 +540,9 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-PUR-43 · Review an expense on its own page
 - [x] US-PUR-44 · Submit an expense faster
 - [x] US-PUR-45 · Fix and resubmit a rejected expense
+- [ ] US-PUR-46 · See every expense category and how it's used
+- [ ] US-PUR-47 · Add, change and remove categories safely
+- [ ] US-PUR-48 · Pick the right category when submitting
 
 ## Phase 10 · AI assistant
 

@@ -130,6 +130,7 @@ Generated from the controllers' decorators (230 routes, class- and method-level 
 | Method | Path | Access | Idempotent |
 |---|---|---|---|
 | GET | `/expense-categories` | Any member | — |
+| GET | `/expense-categories/usage` | roles: owner, staff | — |
 | POST | `/expense-categories` | roles: owner, staff; `expense_categories.edit_own` | Yes |
 | DELETE | `/expense-categories/:id` | roles: owner, staff | Yes |
 | GET | `/expense-categories/:id` | Any member | — |
@@ -615,6 +616,8 @@ Routes the stories add. Each is created by the story named.
 | PUR | GET | `/expenses/:id/activity` → `[{ type: submitted\|edited\|rejected\|resubmitted\|approved\|billed, at, actorName, detail?, linkId? }]`, newest first, from the audit log and the billing invoice | as `GET /expenses/:id` | US-PUR-43 |
 | PUR | GET | `/expenses/possible-duplicates?amount=&date=&excludeId=` → `[{ id, number, date, amount, currency, categoryName, status }]`: the caller's own expenses with that amount on that day, not rejected | roles: owner, staff, field | US-PUR-44 |
 | PUR | PUT | `/expenses/:id` on a rejected expense resubmits it: back to `submitted`, the reviewer's fields cleared, audit `resubmitted`; an approved expense still can't be edited | `expenses.edit_own` / `expenses.edit_others` | Yes · US-PUR-45 |
+| PUR | GET | `/expense-categories/usage` → `[{ categoryId, expenseCount, approvedThisMonth }]`: every expense using each category, and what was approved in it this month by approval date, in the business's currency (minor units) | roles: owner, staff (Field 403) | US-PUR-46 |
+| PUR | — | `GET /expense-categories` rows gain `description`, `defaultTaxRateId` and `defaultTaxRateName`; `POST/PUT /expense-categories` accept `description` (≤ 120 characters, else 400 "Keep what it's for under 120 characters.") and `defaultTaxRateId` (an active rate of the business, else 400 "Choose an active tax rate."); names are trimmed, and a name another category has (ignoring case, archived included) → 409 "<Name> is already a category." with `{ existingId, archived }` | as the route | US-PUR-46, US-PUR-47 |
 | DASH | — | `GET /dashboard/attention` kind `emails_failed` — emails failed in the last 7 days, not retried or cancelled; `items[0]` names the first (`{ id, party: the kind's label, number: the record's number, name: the address }`) | roles: owner | US-DASH-30 |
 | SET | — | Every route of a switched-off module answers 403 `{ statusCode: 403, error: "MODULE_OFF", message: "<Module> is switched off. An owner can switch it on in Settings › Modules." }` before capability checks (`ModuleGuard`, `packages/shared/src/modules.ts`) | — | US-SET-24 |
 | ONB | GET/PUT | `/org/setup-status` → `{ cards: [{ key, done: boolean \| null, hidden }], demoLoaded }` (`SetupStatus`; `done` is null for Backups, and Field app is left out while Jobs & field is off, D-194); `PUT /org/setup-status/:key/hidden { hidden }` returns the same shape, 400 for an unknown card. `GET /dashboard/checklist` gains `setupLeft` (cards still to do) for Owners | roles: owner | US-ONB-15 |

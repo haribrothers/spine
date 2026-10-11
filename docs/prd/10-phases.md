@@ -850,6 +850,7 @@ Total: 525 stories.
 - US-ONB-29 · Explore credit notes at every stage (P2)
 - US-ONB-30 · Explore bills and vendor credits at every stage (P2)
 - US-ONB-31 · Explore expenses with their receipts (P2)
+- US-ONB-32 · Explore expense categories that guide (P2)
 
 *Invoices*
 
@@ -929,6 +930,9 @@ Total: 525 stories.
 - US-PUR-43 · Review an expense on its own page (P2)
 - US-PUR-44 · Submit an expense faster (P2)
 - US-PUR-45 · Fix and resubmit a rejected expense (P2)
+- US-PUR-46 · See every expense category and how it's used (P2)
+- US-PUR-47 · Add, change and remove categories safely (P2)
+- US-PUR-48 · Pick the right category when submitting (P2)
 
 ## Phase 10 · AI assistant
 

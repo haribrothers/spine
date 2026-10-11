@@ -16,7 +16,7 @@ A linear setup wizard that runs after the first owner signs up, configures the b
 | F-ONB-05 | Setup checklist on the dashboard | P1 | 1 | `DashboardSetupChecklist` |
 | F-ONB-06 | Set up Spine page | P1 | 9 | `SetupSpine` |
 | F-ONB-07 | Setup in four stages: live preview, tips, time left and a finish screen | P2 | Refinements | `OnbStart`, `OnbStageBusiness`, `OnbStageMoney`, `OnbStageDocuments`, `OnbStageBooks`, `OnbFinish` |
-| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
+| F-ONB-08 | Demo data that shows the refined screens: a worked pipeline, quotes at every stage, jobs that need something, a kept catalogue and a busy calendar, invoices, credit notes, bills and vendor credits at every stage, expenses with their receipts, categories that guide | P2 | Refinements | — (data; the refined screens of D-211 to D-215) |
 
 ## User stories
 
@@ -574,3 +574,19 @@ Decision: D-216, D-227
 **Implementation notes**
 - Shared: plan expenses gain `receipt?: { merchant, place }`; industry plans pick the merchant from the category and description (`receiptMerchant`) and the place from the country's business town.
 - API: the seeder prints each receipt with `@react-pdf` (`demo-receipt.tsx`, 80 mm wide, light) and stores it through `FilesService.upload` before creating the expense with `receiptFileId`; the created, approved and rejected audit entries and `approvedAt` / `rejectedAt` are set to the plan's days. Deleting the demo removes each deleted demo expense's receipt once nothing else points at it (`FilesService.deleteStored`).
+
+### US-ONB-32 · Explore expense categories that guide
+**Feature:** F-ONB-08 · **Priority:** P2 · **Phase:** Refinements · **Screens:** — (`ExpenseCategoriesRefined`, `ExpenseFormCategoryHint` with demo data)
+**As** an evaluator, **I want** the demo's categories to say what they're for and carry their usual tax, **so that** the Categories table and the expense form show what they do.
+
+Decision: D-129, D-216, D-228
+
+**Acceptance criteria**
+- **Given** an industry template, **when** it seeds its categories (US-ONB-13), **then** each comes with its "What it's for" line ("Diesel, petrol, tolls and parking for site vehicles"); a category the business already had keeps its own line.
+- **Given** an industry demo loaded into a business without records of its own, **when** it's loaded, **then** the goods and tools categories default to the country's standard tax rate, and the table shows counts and this month's approved amounts from the demo's expenses. A business with records of its own keeps its categories as they are.
+- **Given** any demo, **when** it's loaded, **then** it adds one category no expense uses, archived ("Client entertainment"), so the Archived filter shows something.
+- **Given** "Delete all demo data", **when** it runs, **then** the category the demo added goes, and the defaults it set are cleared; the template's categories stay, as before.
+
+**Implementation notes**
+- Shared: template categories gain `description`; plans gain `categoryDefaults` (category names whose default is the standard rate) and `archivedCategory`.
+- API: the seeder sets the defaults and adds the archived category through `ExpenseCategoriesService`, recording what it did in the demo setting (`createdCategoryIds`, `defaultedCategoryIds`) so deleting the demo undoes exactly that.
