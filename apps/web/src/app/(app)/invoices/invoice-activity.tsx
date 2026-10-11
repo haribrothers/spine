@@ -34,7 +34,8 @@ export function invoiceActivityText(item: InvoiceActivityEntry, currency: string
     case "emailed":
       return { text: item.detail ? `Emailed to ${item.detail}` : "Emailed" };
     case "email_failed":
-      return { text: item.detail ? `Email failed: ${item.detail}` : "Email failed" };
+      // US-SET-28: cancelled in the email log.
+      return { text: item.detail === "Cancelled" ? "Email not sent — cancelled" : item.detail ? `Email failed: ${item.detail}` : "Email failed" };
     case "reminder_sent":
       return { text: "Reminder sent" };
     case "auto_reminder_sent":

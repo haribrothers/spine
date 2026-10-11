@@ -413,15 +413,16 @@ Decisions: [D-203](../prd/12-decisions.md), [D-206](../prd/12-decisions.md)
 Decision: D-220
 
 **Acceptance criteria**
-- **Given** I'm an Owner, **when** I open Settings › Emails, **then** "Email log" opens the page `/emails`; from a quote's, invoice's or credit note's "Email failed" message, "See it in the email log" opens it filtered to that record. Staff and Field don't see the link and get "not found" at the address.
+- **Given** I'm an Owner, **when** I open Settings › Emails, **then** "Email log" opens the page `/emails`; from a quote's or invoice's "Email failed" message, "See it in the email log" opens it filtered to that record ("Emails for INV-0039", with a button to show all). Staff and Field don't see the link and get the no-access page at the address (US-OPS-12).
 - **Given** the page, **when** it shows, **then** the cards read "Waiting" (queued or retrying), "Failed in the last 7 days" (in the overdue colour above 0) and "Sent today"; Waiting and Failed filter the list, pressed and kept in the address.
 - **Given** an email, **when** its row shows, **then** it has when (queued, or sent), who it went to, the subject, the kind (Quote, Invoice, Reminder, Credit note, Receipt, Refund, Statement, Notification, Daily digest, Invitation, Password reset, Data export, Test), the record it's about (a link, e.g. QUO-0031), the status (Queued, Retrying, Sending, Sent, Failed, Cancelled — each a word, not just a colour), the attempts ("2 of 4") and, when it failed or is retrying, the last error.
-- **Given** every kind of email — queued ones (quote, invoice, reminder, notification, digest, data export) and ones sent straight away (credit note, receipt, refund, statement, invitation, password reset, test) — **when** it's sent or fails, **then** it's in the log; message bodies aren't stored.
+- **Given** every kind of email — queued ones (quote, invoice, reminder, notification) and ones sent straight away or by their own scheduled job (credit note, receipt, refund, statement, invitation, password reset, test, daily digest, data export) — **when** it's sent or fails, **then** it's in the log; message bodies aren't stored. An invitation or password reset that couldn't go because email isn't set up is in the log as Failed with that reason.
 - **Given** a search, a status, a kind, a date range, a record, a card, a sort or a page, **when** I set it, **then** the address keeps it; Refresh reloads in place, and coming back after 30 seconds away refreshes quietly (D-210). Search matches the recipient, the subject and the record's number.
 - **Given** an email older than 180 days, **when** the nightly clean-up runs, **then** it's removed from the log.
 
 **Implementation notes**
-- Data: `email_log` — see 04-data-model. API: `GET /emails` (Owner) → rows, newest first. Every send goes through `EmailService`, which writes and updates the row; queued kinds create it when the job is queued (status `queued`), the worker moves it through `sending` to `sent` or `retrying`/`failed`. A daily `email-log-cleanup` job removes rows older than 180 days.
+- Data: `email_log` — see 04-data-model. API: `GET /emails` (Owner) → rows, newest first. Queued kinds go through `EmailLogService.enqueue`, which writes the row (status `queued`, the recipient and "Quote QUO-0031"-style subject from the document) and the job together; the worker wraps each try in `EmailLogService.attempt`, which moves it through `sending` to `sent`, `retrying` or `failed` (attempts counted on the row), and `EmailService.send` fills in the real recipient and subject. Emails sent straight away pass `log` to `EmailService.send`, which writes the row as `sent` or `failed`. A daily `email-log-cleanup` job (03:40) removes rows older than 180 days.
+- UI: `/emails` (`emails-explorer.tsx`, `emails-list-state.ts`); the range is Last 7, 30 (default), 90 or 180 days; the address keeps `q`, `status`, `kind`, `range`, `record`, `card`, `sort`, `page`. `EmailFailedAlert` on the quote and invoice pages.
 
 ### US-SET-28 · Retry or cancel an email
 **Feature:** F-SET-13 · **Priority:** P2 · **Phase:** Refinements · **Screens:** `EmailLog`, `EmailLogRetryConfirm`
@@ -431,7 +432,7 @@ Decision: D-218, D-220
 
 **Acceptance criteria**
 - **Given** a failed or retrying email that went through the queue, **when** I choose "Retry now" in its row's menu, **then** "Retry this email?" says who it goes to and what it is; confirming queues it again straight away (attempts start over) and the row shows "Queued".
-- **Given** a failed email that was sent straight away (credit note, receipt, refund, statement, invitation, password reset, test), **when** I open its menu, **then** "Retry now" isn't offered; "Open the record" is, to send it again from there.
+- **Given** a failed email that was sent straight away (credit note, receipt, refund, statement, invitation, password reset, test, daily digest, data export), **when** I open its menu, **then** "Retry now" isn't offered; "Open <record>" is, when it has one, to send it again from there.
 - **Given** a queued or retrying email not yet being sent, **when** I choose "Cancel", **then** "Cancel this email?" says it won't be sent; confirming stops it, the row shows "Cancelled · by <me>", and a quote's or invoice's own email status says "Email not sent — cancelled".
 - **Given** an email that's sending or sent, **when** I open its menu, **then** there's no Cancel.
 
@@ -445,9 +446,10 @@ Decision: D-218, D-220
 Decision: D-015, D-220
 
 **Acceptance criteria**
-- **Given** no SMTP server configured, **when** I open the email log or Settings › Emails, **then** a warning reads "Email isn't set up — <n> emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." with a link to the install guide.
+- **Given** no SMTP server configured, **when** I open the email log or Settings › Emails, **then** a warning reads "Email isn't set up — <n> emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." (The link to the install guide comes with the docs site, Phase 11.)
+- **Given** no SMTP server configured, **when** a queued email's turn comes, **then** it isn't tried: it stays Queued ("Waiting for email to be set up", no attempts used) and is queued again when Spine next starts with email set up.
 - **Given** SMTP is configured, **when** emails keep failing, **then** the warning reads "Emails are failing — the last error was: <error>." when the last 3 queued emails in a row failed.
 
 **Implementation notes**
-- API: `GET /emails/status` → `{ smtpConfigured, waiting, lastError? }` (Owner).
+- API: `GET /emails/status` → `{ smtpConfigured, waiting, failedRecently, sentToday, lastError }` (Owner); the page's cards use the same counts. `EmailLogService.releaseWaiting` runs at start-up.
 

@@ -6,10 +6,10 @@ import type { Database } from "../../db/client";
 import { contacts, invoiceReminders, invoices, settings } from "../../db/schema";
 import { daysBetween, orgClock } from "../../common/org-clock";
 import { AuditLogService } from "../audit/audit-log.service";
-import { QueueService } from "../queue/queue.service";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { loadEmailBrand } from "../email/email-brand";
 import { EMAIL_LOGO_CID, renderEmail } from "../email/email-layout";
+import { EmailLogService } from "../email/email-log.service";
 import { invoiceEmail } from "../email/email-templates";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -26,8 +26,8 @@ export class InvoiceRemindersService {
 
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly queue: QueueService,
     private readonly auditLog: AuditLogService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   /**
@@ -83,7 +83,7 @@ export class InvoiceRemindersService {
         return true;
       });
       if (!recorded) continue;
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: invoice.id, isReminder: true, daysOverdue });
+      await this.emailLog.enqueue(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: invoice.id, isReminder: true, daysOverdue }, { orgId, kind: "invoice_reminder", entityType: "invoice", entityId: invoice.id });
       sent.push(invoice.id);
     }
     return { sent };

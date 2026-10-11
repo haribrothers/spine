@@ -12,6 +12,8 @@ import { NumberingService } from "../numbering/numbering.service";
 import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 const PROVENANCE = { ipAddress: "127.0.0.1", userAgent: "vitest" };
@@ -58,9 +60,9 @@ describe("PublicQuotesService view-notification throttle (requires local Postgre
     // writes (quote_events, notifications), not real email delivery.
     const fakeQueue = { send: async () => {} };
     const fakePush = { isConfigured: () => false };
-    const notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    const notificationsService = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
 
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, new PlaceOfSupplyService(db), notificationsService);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, tokens, taxResolver, new PlaceOfSupplyService(db), notificationsService, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
     publicQuotesService = new PublicQuotesService(db, tokens, auditLog, notificationsService, settings);
 
     const ownerEmail = `qview-owner-${randomUUID()}@example.com`;

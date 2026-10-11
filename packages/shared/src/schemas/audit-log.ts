@@ -47,6 +47,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   gstr1_export: "GSTR-1 file",
   tally_export: "Tally export",
   modules: "Modules",
+  email: "Email",
 };
 
 function sentenceCase(key: string): string {

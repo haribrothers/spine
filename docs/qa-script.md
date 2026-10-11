@@ -201,8 +201,9 @@ before considering that work's QA "done."
    rather than mutating the sent one.
 9. On a quote past its `validUntil` date, confirm it's flagged
    "Expired" in the UI.
-10. Open the **email queue** dialog from the quotes page — confirm it
-    shows pending/sent/failed email jobs.
+10. Open **Settings › Emails › Email log** (the quotes page's email
+    queue was retired by US-SET-27, section 212) — confirm the quote's
+    email shows as queued, sent or failed.
 11. On an **accepted** quote, click **Convert to invoice**. Confirm you
     land on a new **draft** invoice whose lines, quantities, prices, and
     total exactly match the quote. Confirm the invoice is NOT
@@ -4877,6 +4878,27 @@ Use an owner on a GST business (India demo) and a non-GST one, a Staff member wi
    - Apply credit on an invoice (US-PAY-16), refunds from a payment (US-PAY-17), the customer statement's credit lines, Receivables and the Credit notes and refunds report (US-RPT-31) read the same figures.
    - Emailing a credit note from the invoice's credit notes section (US-SET-21) still works.
    - The invoice page's Paid bar counts payments only; credit notes show under Credited.
+
+## 212. The email log (US-SET-27 to US-SET-29, US-DASH-30, refinements before Phase 10)
+
+Use an owner with email set up (MailDev locally), a Staff member and the demo Field user. Have a contact with an email address and one without. Check 1440 px, 1280 px and 1024 px, light and dark, and compare with the canvas "13 Email log".
+
+1. **Every email (US-SET-27):**
+   - Send a quote, email an invoice, send a reminder, record a payment with a receipt, email a credit note, send a statement, invite a member and send a test from Settings › Emails. Open Settings › Emails › "Email log": each one is there with the time ("Today"), the address and who it belongs to (a contact, or "<name> · team"), the kind beside the subject, the record (a link) and "Sent" with "1 of 4" (queued) or "1 of 1" (sent straight away).
+   - Email an invoice to the contact without an address: within seconds it's "Retrying" with "Retrying at … · … has no email address on file", then "Failed" with "4 of 4" after its tries.
+   - Cards: Waiting and Failed in the last 7 days filter the list ("Showing these · press again to clear", `card=` in the address); Failed is red above 0. Sent today counts what went out since midnight.
+   - Filter by status and kind; change the range; search by address, subject or record number. Reload, or open a record and press Back: the same list. "Clear filters"; Refresh and "Updated just now".
+   - As Staff or Field, `/emails` shows the no-access page and Settings has no Email log link.
+2. **Retry and cancel (US-SET-28):**
+   - On a failed or retrying invoice email, the menu has Retry now, Cancel (retrying only) and Open INV-…. Retry now asks "Retry this email?" with who it goes to and the last error; Go back does nothing; Retry email queues it ("Email queued again") with attempts from 0.
+   - Cancel asks "Cancel this email?"; Cancel email shows "Cancelled" and "Cancelled by <you>"; the invoice's page says "Email not sent — cancelled" with "See it in the email log", which opens the log showing "Emails for INV-…". Its Activity says "Email not sent — cancelled".
+   - A sent email has no Retry now or Cancel; a failed credit note, receipt, statement or invitation has only Open <record>.
+3. **Not set up (US-SET-29):** stop the API, unset `SMTP_HOST`, start it. Send a quote: the log and Settings › Emails warn "Email isn't set up — 1 email is waiting. …"; the email stays Queued with "Waiting for email to be set up" and "0 of 4". Emailing a credit note says email isn't set up. Set `SMTP_HOST` again and restart: the waiting email goes out and the warning goes. With a wrong SMTP password, after three queued emails fail, the warning reads "Emails are failing — the last error was: …".
+4. **Dashboard (US-DASH-30):** with a failed email in the last 7 days, the owner's Needs your attention shows "1 email failed" with "Invoice INV-… to …" and Review, which opens the log filtered to Failed. Staff and Field don't see it. The owner's daily digest lists "Emails that failed".
+5. Regression:
+   - The quotes list has no "Email queue" button; a quote's "Email delivery failed" message links to the email log (owners) instead.
+   - Sending a quote, emailing or reminding an invoice and automatic reminders still send, and the quote's and invoice's email status and Activity still update.
+   - Notifications by email, the daily digest, data export's "ready" email and password reset emails still arrive.
 
 ## Known gaps — don't file these as bugs
 

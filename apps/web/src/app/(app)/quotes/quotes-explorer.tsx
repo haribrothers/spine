@@ -23,7 +23,6 @@ import { useCapability } from "../../../lib/capabilities-context";
 import { formatMoney } from "../../../lib/money";
 import { replaceQuery } from "../../../lib/replace-query";
 import { REFRESH_ON_RETURN_MS, updatedLabel } from "../contacts/contacts-list-state";
-import { EmailQueueButton } from "./email-queue-dialog";
 import { useEntityToast } from "./entity-toast";
 import { QuotesSkeleton } from "./quotes-skeleton";
 import { QuotesTable } from "./quotes-table";
@@ -232,7 +231,6 @@ export function QuotesExplorer() {
               </TooltipTrigger>
               <TooltipContent>Refresh list</TooltipContent>
             </Tooltip>
-            <EmailQueueButton />
             {canCreate && (
               <Button asChild>
                 <Link href="/quotes/new">

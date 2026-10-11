@@ -32,6 +32,8 @@ import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { PeriodsService } from "../ledger/periods.service";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
@@ -100,8 +102,8 @@ describe("Purchases ownership split (requires local Postgres)", () => {
     const ledger = new LedgerService(db, new PeriodsService(db));
     const taxResolver = new TaxResolverService(db);
     const queue = new QueueService(db);
-    const notifications = new NotificationsService(db, queue, new PushService(db));
-    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver, new PlaceOfSupplyService(db));
+    const notifications = new NotificationsService(db, new PushService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
+    const invoices = new InvoicesService(db, auditLog, numbering, ledger, queue, new QuoteConversionGuardService(db, new SettingsService(db)), taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
 
     expensesService = new ExpensesService(db, auditLog, numbering, ledger, notifications, invoices, new MoneyAccountsService(db, auditLog));
     expenseCategoriesService = new ExpenseCategoriesService(db, auditLog);

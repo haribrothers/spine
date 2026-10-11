@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button, Card, Spinner, cn } from "@spine/ui";
 import { describeAttention, type AttentionItem, type AttentionKind } from "@spine/shared";
-import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, OctagonAlert, Percent } from "lucide-react";
+import { ArrowUpRight, Check, CircleAlert, Clock, DollarSign, MailX, OctagonAlert, Percent } from "lucide-react";
 import { formatMoney } from "../../../lib/money";
 import { WidgetSkeleton } from "./dashboard-skeleton";
 
@@ -18,6 +18,7 @@ const KIND_STYLE: Record<AttentionKind, { icon: React.ComponentType<{ size?: num
   followups_overdue: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
   milestones_due: { icon: Clock, tone: "bg-due-soon-bg text-due-soon" },
   expenses_rejected: { icon: CircleAlert, tone: "bg-overdue-bg text-overdue" },
+  emails_failed: { icon: MailX, tone: "bg-overdue-bg text-overdue" },
 };
 
 /** Where a row's button goes (US-DASH-13 turns some into one-click actions). */
@@ -45,6 +46,9 @@ export function attentionHref(item: AttentionItem): string {
       return first?.contactId ? `/contacts/${first.contactId}` : "/leads";
     case "expenses_rejected":
       return one ? `/expenses?id=${first.id}` : "/expenses?mine=true&status=rejected";
+    case "emails_failed":
+      // US-DASH-30: the email log, filtered to the failed ones.
+      return "/emails?card=failed";
   }
 }
 

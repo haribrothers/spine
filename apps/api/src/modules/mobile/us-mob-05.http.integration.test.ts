@@ -26,7 +26,7 @@ describe("US-MOB-05 · open a job's details on site (requires local Postgres)", 
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     ctx = await ownerWithFieldUser(testApp.baseUrl, db, emails);
     ({ jobId, contactId } = await customerWithJob(db, ctx.orgId, { job: { number: "JOB-001" } }));

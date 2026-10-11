@@ -36,7 +36,7 @@ import {
   RichTextContent,
   Spinner,
 } from "@spine/ui";
-import { Banknote, Bell, CalendarDays, ChevronDown, Clock, Download, HardHat, MapPin, Pencil, Receipt, Send, User, XCircle } from "lucide-react";
+import { Banknote, Bell, CalendarDays, ChevronDown, Clock, Download, HardHat, MapPin, Pencil, Receipt, Send, User } from "lucide-react";
 import Link from "next/link";
 import { apiClient } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
@@ -56,6 +56,7 @@ import { DocumentLinesTable, type AfterTotalRow } from "../../../components/docu
 import { InvoiceActivity } from "./invoice-activity";
 import { STATE_BADGE_CLASS } from "./invoices-table";
 import { INVOICE_STATE_LABELS, dueNote, invoiceState } from "./invoices-list-state";
+import { EmailFailedAlert } from "../../../components/email-failed-alert";
 import { calendarDate } from "../quotes/quotes-list-state";
 
 /**
@@ -615,17 +616,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           Sending email to {invoice.contactName ?? "the contact"}…
         </p>
       )}
-      {invoice.emailStatus === "failed" && (
-        <Alert variant="critical">
-          <AlertDescription className="flex flex-col gap-1">
-            <span className="flex items-center gap-1.5 font-medium">
-              <XCircle size={14} className="shrink-0" />
-              Email delivery failed
-            </span>
-            {invoice.emailError && <span className="text-[13px]">{invoice.emailError}</span>}
-          </AlertDescription>
-        </Alert>
-      )}
+      {invoice.emailStatus === "failed" && <EmailFailedAlert error={invoice.emailError} recordId={invoice.id} />}
 
       {figures.length > 0 && (
         <div className={cn("grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-surface", figures.length === 4 ? "sm:grid-cols-4" : "sm:grid-cols-3")} data-testid="invoice-figures">

@@ -69,14 +69,14 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
    * SMTP being down for a minute must not lose the email, it should retry
    * automatically without another user action.
    */
-  async send(queueName: string, data: object, retry?: { retryLimit: number; retryDelay: number; retryDelayMax?: number }) {
+  async send(queueName: string, data: object, retry?: { retryLimit: number; retryDelay: number; retryDelayMax?: number }): Promise<string | null> {
     const boss = this.getBoss();
     await boss.createQueue(queueName).catch(() => {
       // createQueue is idempotent per pg-boss docs but throws if the queue
       // already exists in some versions/race conditions — swallow rather
       // than fail the enqueue over a harmless "already exists".
     });
-    await boss.send(queueName, data, {
+    return boss.send(queueName, data, {
       retryLimit: retry?.retryLimit ?? 3,
       retryDelay: retry?.retryDelay ?? 5,
       ...(retry?.retryDelayMax !== undefined ? { retryDelayMax: retry.retryDelayMax } : {}),
@@ -113,55 +113,29 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Read-only listing of a queue's not-yet-completed jobs, for the "pending
-   * emails" view (S-03.4 follow-up) — queries `pgboss.job` directly rather
-   * than `PgBoss.fetch()`, since `fetch()` claims/dequeues jobs (moves them
-   * to `active`), which would be a real side effect for what's meant to be
-   * a passive status check. pg-boss has no public "peek without claiming"
-   * API, so a direct read against its own schema (which it documents as
-   * stable/inspectable — `pgboss.job` is not a private implementation
-   * detail, other pg-boss tooling like its own dashboard reads it the same
-   * way) is the correct approach here, not a hack around the library.
-   * Filtered to `created`/`retry`/`active` — `completed`/`cancelled`/
-   * `failed` are terminal and each already has its own durable signal
-   * elsewhere (`quotes.emailStatus`), so this view is specifically "what's
-   * still in flight," not a full job history.
+   * US-SET-28 (D-220) — stop a job that hasn't started. pg-boss only cancels
+   * jobs still `created` or `retry`; an `active` one carries on.
    */
-  async listPendingJobs(queueName: string, orgId: string): Promise<QueueJobSummary[]> {
-    const result = await this.db.execute<{
-      id: string;
-      data: unknown;
-      state: string;
-      retry_count: number;
-      retry_limit: number;
-      created_on: Date;
-      start_after: Date;
-    }>(sql`
-      SELECT id, data, state, retry_count, retry_limit, created_on, start_after
-      FROM pgboss.job
-      WHERE name = ${queueName}
-        AND state IN ('created', 'retry', 'active')
-        AND data->>'orgId' = ${orgId}
-      ORDER BY created_on ASC
-    `);
-    return result.map((row) => ({
-      id: row.id,
-      data: row.data,
-      state: row.state,
-      retryCount: row.retry_count,
-      retryLimit: row.retry_limit,
-      createdOn: row.created_on,
-      startAfter: row.start_after,
-    }));
+  async cancel(queueName: string, id: string): Promise<void> {
+    await this.getBoss().cancel(queueName, id);
   }
-}
 
-export interface QueueJobSummary {
-  id: string;
-  data: unknown;
-  state: string;
-  retryCount: number;
-  retryLimit: number;
-  createdOn: Date;
-  startAfter: Date;
+  /**
+   * The state and next start of the given jobs, read from `pgboss.job`
+   * directly: pg-boss has no public "peek without claiming" API, and its
+   * own tooling reads the table the same way. A job that's gone (archived
+   * or deleted) is missing from the map.
+   */
+  async jobStates(ids: string[]): Promise<Map<string, { state: string; startAfter: Date }>> {
+    if (!ids.length) return new Map();
+    const result = await this.db.execute<{ id: string; state: string; start_after: Date }>(sql`
+      SELECT id::text AS id, state::text AS state, start_after
+      FROM pgboss.job
+      WHERE id::text IN (${sql.join(
+        ids.map((id) => sql`${id}`),
+        sql`, `,
+      )})
+    `);
+    return new Map(result.map((row) => [row.id, { state: row.state, startAfter: new Date(row.start_after) }]));
+  }
 }

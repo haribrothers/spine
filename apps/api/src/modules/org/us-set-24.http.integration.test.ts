@@ -40,7 +40,7 @@ describe("US-SET-24 / US-SET-25 · hide a switched-off module, and switch it bac
     const owner = await signUp(testApp.baseUrl, { email: `us-set-24-${randomUUID()}@example.com`, password: "testpassword123", name: "Owner" });
     cookie = owner.cookie;
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     contactId = (await json<{ id: string }>(await call("POST", "/contacts", { type: "customer", name: "Harbour Café", email: "harbour@example.com" }))).id;
     jobId = (await json<{ id: string }>(await call("POST", "/jobs", { name: "Kitchen refit Harbour", contactId, currency: "USD" }))).id;
     const schedule = await json<{ id: string }>(

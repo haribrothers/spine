@@ -25,6 +25,7 @@ import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
 import { FilesService } from "../files/files.service";
 import { MoneyAccountsService } from "../banking/money-accounts.service";
+import { EmailLogService } from "../email/email-log.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
@@ -66,7 +67,7 @@ describe("Invoices/Payments/Credit Notes history (requires local Postgres)", () 
     const queue = new QueueService(db);
     const settings = new SettingsService(db);
     const conversionGuard = new QuoteConversionGuardService(db, settings);
-    const notifications = new NotificationsService(db, queue, new PushService(db));
+    const notifications = new NotificationsService(db, new PushService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     const email = new EmailService();
     const files = new FilesService(db);
     const issuedPdf = new IssuedPdfService(
@@ -79,7 +80,7 @@ describe("Invoices/Payments/Credit Notes history (requires local Postgres)", () 
       new PaymentPdfService(db, settings, files),
     );
 
-    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db));
+    invoicesService = new InvoicesService(db, auditLog, numbering, ledger, queue, conversionGuard, taxResolver, new PlaceOfSupplyService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     paymentsService = new PaymentsService(db, auditLog, numbering, ledger, email, notifications, settings, issuedPdf, new MoneyAccountsService(db, auditLog));
     creditNotesService = new CreditNotesService(db, auditLog, numbering, ledger, queue);
 

@@ -56,7 +56,7 @@ const SECTIONS: SettingsSection[] = [
   // US-SET-17–US-SET-19
   { key: "documents", label: "Documents", icon: <Files size={16} />, render: () => <DocumentsPane /> },
   // US-SET-21
-  { key: "emails", label: "Emails", icon: <Mail size={16} />, render: () => <EmailsPane /> },
+  { key: "emails", label: "Emails", icon: <Mail size={16} />, render: (close) => <EmailsPane onOpenLog={close} /> },
   { key: "reminders", label: "Automatic reminders", icon: <BellRing size={16} />, render: () => <RemindersPane /> },
   // US-SET-23
   { key: "modules", label: "Modules", icon: <ToggleRight size={16} />, render: () => <ModulesPane /> },

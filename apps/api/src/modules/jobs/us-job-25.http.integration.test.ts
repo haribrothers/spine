@@ -42,7 +42,7 @@ describe("US-JOB-25 · see budget spent and get warned before going over (requir
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     Object.assign(owner, await newUser("owner"));
     orgId = (await db.select().from(member).where(eq(member.userId, owner.userId)))[0]!.organizationId;

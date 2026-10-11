@@ -142,16 +142,3 @@ export interface TaxGroupOption {
   archivedAt: string | null;
   taxRates: TaxRateOption[];
 }
-
-/** Mirrors QuotesService.enrichEmailQueueJobs's response shape (GET /quotes/email-queue) — item 7, user feedback. */
-export interface QuoteEmailQueueJob {
-  jobId: string;
-  quoteId: string;
-  quoteNumber: string | null;
-  contactName: string | null;
-  state: string;
-  retryCount: number;
-  retryLimit: number;
-  createdOn: string;
-  startAfter: string;
-}

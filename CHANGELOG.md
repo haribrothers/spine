@@ -80,6 +80,16 @@ Verified end-to-end against a live local instance: seeded demo data, confirmed P
 
 ## Completed
 
+### 2026-10-11 — The email log (US-SET-27 to US-SET-29, US-DASH-30, D-220)
+
+- **Every email, recorded (US-SET-27):** a new `email_log` table (migration 0114) holds every email Spine sends — when, to whom, the subject, the kind, the record it's about, the status, attempts and the last error; no bodies. Queued emails (quote, invoice, reminder, notification) go through `EmailLogService.enqueue`, and their workers wrap each try in `attempt`, which moves the row through Sending to Sent, Retrying or Failed. Emails sent straight away or by their own job (credit note, receipt, refund, statement, invitation, password reset, test, daily digest, data export) pass `log` to `EmailService.send`. A nightly `email-log-cleanup` job removes rows older than 180 days.
+- **The page (US-SET-27):** `/emails`, Owner-only, from Settings › Emails ("Email log") and from a quote's or invoice's "Email failed" message ("See it in the email log", filtered to the record). Cards for Waiting, Failed in the last 7 days (filters) and Sent today; status, kind, range and search; the list in the address with Refresh (D-210).
+- **Retry and cancel (US-SET-28):** "Retry now" on a failed or retrying queued email re-queues it with its stored job (attempts start over); "Cancel" stops a queued or retrying one before it sends, and the quote or invoice says "Email not sent — cancelled". Each asks first (D-218) and is audited. `POST /emails/:id/retry`, `POST /emails/:id/cancel`.
+- **Not set up (US-SET-29):** with no SMTP server, the log and Settings › Emails say so and how many emails are waiting; a queued email isn't tried meanwhile (no attempts used) and goes out when Spine starts with SMTP set. When the last 3 queued emails in a row failed, the warning gives the error. `GET /emails/status`.
+- **Dashboard (US-DASH-30):** an Owner's Needs your attention lists "<n> emails failed", naming the first; Review opens the log filtered to Failed. The digest's table names it "Emails that failed".
+- **Retired (US-QUO-07):** the quotes list's "Email queue" dialog, `GET /quotes/email-queue` and `QueueService.listPendingJobs`.
+- **Tests:** API integration `us-set-27-29` (with US-DASH-30); web unit `us-set-27`, `us-set-28`, `us-set-29`, `us-dash-30`; E2E `us-set-27-28`. Tests that build services by hand pass the email log. QA script section 212.
+
 ### 2026-10-11 — The meeting quick view opens in place (US-MTG-14 fix)
 
 A late meeting's quick view opened without its attendees, which load a moment later; when they arrived it grew past the bottom of the window for a frame, then jumped up to fit. It now shows the Attendees heading with a placeholder row while they load, so it opens at its full height and is placed once. This is what made "a late meeting's quick view stays inside the window" fail about half the time. The test now records the quick view's edges on every frame from the click, so a jump past the window fails it every time. QA script section 204 notes the check.

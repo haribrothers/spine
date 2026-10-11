@@ -88,7 +88,8 @@ describe("US-INV-19 · send reminders on schedule without double-sending (requir
     const { sent } = await reminders.runForOrg(orgId, TODAY, CONFIG);
     expect(sent).toEqual(expect.arrayContaining([overdue, dueSoon]));
     expect(sent).not.toContain(offSchedule);
-    expect(reminderJobs(overdue)).toEqual([[INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: overdue, isReminder: true, daysOverdue: 7 }]]);
+    // US-SET-27: each queued email carries its email log row.
+    expect(reminderJobs(overdue).map(([, data]) => data)).toEqual([{ orgId, invoiceId: overdue, isReminder: true, daysOverdue: 7, emailLogId: expect.any(String) }]);
     expect(reminderJobs(dueSoon)[0]![1]).toMatchObject({ daysOverdue: -3 });
     expect(await remindedOn(overdue)).toEqual([expect.objectContaining({ sentOn: TODAY, kind: "auto" })]);
   });

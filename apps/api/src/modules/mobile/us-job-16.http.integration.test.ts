@@ -34,7 +34,7 @@ describe("US-JOB-16 · show field crew only their assigned jobs (requires local 
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     ctx = await ownerWithFieldUser(testApp.baseUrl, db, emails);
     for (let i = 0; i < 3; i++) jobIds.push((await customerWithJob(db, ctx.orgId)).jobId);

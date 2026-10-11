@@ -26,14 +26,14 @@ import {
   Spinner,
   useConfirm,
 } from "@spine/ui";
-import { CalendarDays, ChevronDown, Clock, Download, GitBranch, HardHat, Link2, MapPin, Pencil, Receipt, Send, User, XCircle } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock, Download, GitBranch, HardHat, Link2, MapPin, Pencil, Receipt, Send, User } from "lucide-react";
 import Link from "next/link";
 import { apiClient, ApiError } from "../../../lib/api-client";
 import { useCanEditOwnership, useCapability } from "../../../lib/capabilities-context";
 import { HistorySection } from "../../../components/history-section";
 import { SendEmailDialog } from "../../../components/send-email-dialog";
 import { useModule, useModules } from "../../../lib/modules-context";
-import { EmailQueueDialog } from "./email-queue-dialog";
+import { EmailFailedAlert } from "../../../components/email-failed-alert";
 import { SaveBundleDialog } from "./save-bundle-dialog";
 import { AcceptancePanel } from "./acceptance-panel";
 import { QUOTE_STATUS_LABELS, type Quote } from "./types";
@@ -568,34 +568,14 @@ export function QuoteDetail({ quoteId, currentUserId }: { quoteId: string; curre
             </Alert>
           )}
 
-          {/* Item 7, user feedback — "was the email sent?" without the Email queue screen. */}
+          {/* Item 7, user feedback — "was the email sent?"; the email log has the detail (US-SET-27). */}
           {quote.emailStatus === "pending" && (
             <p className="flex items-center gap-1.5 text-[13px] text-on-surface-muted">
               <Clock size={14} className="shrink-0" />
               Sending email to {quote.contactName ?? "the contact"}…
             </p>
           )}
-          {quote.emailStatus === "failed" && (
-            <Alert variant="critical">
-              <AlertDescription className="flex flex-col gap-1">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <XCircle size={14} className="shrink-0" />
-                  Email delivery failed
-                </span>
-                {quote.emailError && <span className="text-[13px]">{quote.emailError}</span>}
-                <span className="text-[13px]">
-                  <EmailQueueDialog
-                    trigger={
-                      <button type="button" className="underline hover:text-on-surface">
-                        Check the email queue
-                      </button>
-                    }
-                  />{" "}
-                  — a retry may still be in progress.
-                </span>
-              </AlertDescription>
-            </Alert>
-          )}
+          {quote.emailStatus === "failed" && <EmailFailedAlert error={quote.emailError} recordId={quote.id} />}
 
           <AcceptancePanel quote={quote} />
 

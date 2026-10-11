@@ -169,7 +169,9 @@ export class CustomerRefundsService {
       const brand = await loadEmailBrand(this.db, orgId);
       const template = refundEmail({ businessName: brand.name, locale: brand.locale, contactName: contact.name, amount: row.amount, currency: refund.currency, date: row.date, reference: row.reference });
       const email = renderEmail(brand, template.content);
-      await this.email.send({ to: contact.email, fromName: brand.name, subject: template.subject, text: email.text, html: email.html, attachments: email.attachments });
+      // US-SET-27: logged against the credit note or payment the money came from.
+      const source = row.sourceCreditNoteId ? { entityType: "credit_note", entityId: row.sourceCreditNoteId } : { entityType: "payment", entityId: row.sourcePaymentId };
+      await this.email.send({ to: contact.email, fromName: brand.name, subject: template.subject, text: email.text, html: email.html, attachments: email.attachments, log: { orgId, kind: "refund", ...source, userId: row.createdByUserId } });
       return { sent: true };
     } catch (err) {
       this.logger.warn(`Refund confirmation for ${row.id} failed: ${(err as Error).message}`);

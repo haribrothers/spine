@@ -11,12 +11,13 @@ import { SettingsService } from "../org/settings.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { renderEmail } from "../email/email-layout";
 import { invoiceEmail } from "../email/email-templates";
+import { EmailLogService, type LoggedJobData } from "../email/email-log.service";
 import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 
 export const INVOICE_SEND_EMAIL_QUEUE = "invoice-send-email";
 
 
-export interface InvoiceSendEmailJobData {
+export interface InvoiceSendEmailJobData extends LoggedJobData {
   orgId: string;
   invoiceId: string;
   /** S-05.10 — same worker, reminder-specific subject/body (see attemptSend's own branch) instead of the standard "here's your invoice" copy. Does not affect emailStatus/pdfFileId bookkeeping, which stays identical either way. */
@@ -51,6 +52,7 @@ export class InvoiceEmailWorker implements OnModuleInit {
     private readonly email: EmailService,
     private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   async onModuleInit() {
@@ -72,6 +74,18 @@ export class InvoiceEmailWorker implements OnModuleInit {
       return;
     }
 
+    // US-SET-27: each try is recorded in the email log; with email not set up the email waits there, untried.
+    await this.emailLog.attempt(data.emailLogId, () => this.tryOnce(orgId, invoiceId, row, isReminder, daysOverdue, override));
+  }
+
+  private async tryOnce(
+    orgId: string,
+    invoiceId: string,
+    row: { invoice: typeof invoices.$inferSelect; contactName: string | null; contactEmail: string | null },
+    isReminder: boolean,
+    daysOverdue: number | undefined,
+    override?: EmailJobOverride,
+  ): Promise<void> {
     try {
       await this.attemptSend(orgId, invoiceId, row, isReminder, daysOverdue, override);
       await this.db

@@ -53,7 +53,7 @@ export class EmailTemplatePreviewController {
     const built = await this.build(orgId, kind, text);
     const rendered = renderEmail(brand, built.template.content);
     // Only to the person who asked — never the customer on the document it was made from.
-    await this.email.send({ to: session.user.email, fromName: brand.name, subject: `[Test] ${built.template.subject}`, text: rendered.text, html: rendered.html, attachments: rendered.attachments });
+    await this.email.send({ to: session.user.email, fromName: brand.name, subject: `[Test] ${built.template.subject}`, text: rendered.text, html: rendered.html, attachments: rendered.attachments, log: { orgId, kind: "test", userId: session.user.id } });
     return { sentTo: session.user.email };
   }
 

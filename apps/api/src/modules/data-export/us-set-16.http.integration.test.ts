@@ -75,7 +75,7 @@ describe("US-SET-16 · keep data exports private (requires local Postgres)", () 
     testApp = await createTestApp();
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     service = testApp.app.get(DataExportService);
-    vi.spyOn(testApp.app.get(QueueService), "send").mockImplementation(async () => {});
+    vi.spyOn(testApp.app.get(QueueService), "send").mockImplementation(async () => null);
     const emailService = testApp.app.get(EmailService);
     vi.spyOn(emailService, "isConfigured").mockReturnValue(true);
     vi.spyOn(emailService, "send").mockImplementation(async (input) => void sent.push(input));

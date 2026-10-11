@@ -5,12 +5,12 @@ import { and, desc, eq, inArray, isNull, notInArray, or } from "drizzle-orm";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
 import { member, notifications, user } from "../../db/schema";
-import { QueueService } from "../queue/queue.service";
+import { EmailLogService, type LoggedJobData } from "../email/email-log.service";
 import { PushService } from "./push.service";
 
 export const NOTIFY_EMAIL_QUEUE = "notify-email";
 
-export interface NotifyEmailJobData {
+export interface NotifyEmailJobData extends LoggedJobData {
   to: string;
   subject: string;
   text: string;
@@ -19,6 +19,24 @@ export interface NotifyEmailJobData {
   orgId?: string;
   /** The in-app link (e.g. `/jobs/<id>`), used for the email's button. */
   link?: string;
+}
+
+/** US-SET-27 — the record a notification is about, from its link ("/jobs/<id>" → a job), for the email log. */
+const LINKED_RECORDS: Record<string, string> = {
+  quotes: "quote",
+  invoices: "invoice",
+  "credit-notes": "credit_note",
+  payments: "payment",
+  contacts: "contact",
+  jobs: "job",
+  "vendor-bills": "vendor_bill",
+  expenses: "expense",
+  meetings: "meeting",
+};
+export function recordOfLink(link: string | null | undefined): { entityType?: string; entityId?: string } {
+  const match = link?.match(/^\/([a-z-]+)\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  const type = match ? LINKED_RECORDS[match[1]!] : undefined;
+  return type ? { entityType: type, entityId: match![2]! } : {};
 }
 
 /**
@@ -50,8 +68,8 @@ export class NotificationsService {
 
   constructor(
     @Inject(DATABASE) private readonly db: Database,
-    private readonly queue: QueueService,
     private readonly push: PushService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   /**
@@ -124,15 +142,20 @@ export class NotificationsService {
         return;
       }
 
+      const record = recordOfLink(params.inApp?.link);
       await Promise.all(
         recipients.map((recipient) =>
-          this.queue.send(NOTIFY_EMAIL_QUEUE, {
-            to: recipient.email,
-            subject: params.subject,
-            text: params.text,
-            orgId,
-            link: params.inApp?.link,
-          } satisfies NotifyEmailJobData),
+          this.emailLog.enqueue(
+            NOTIFY_EMAIL_QUEUE,
+            {
+              to: recipient.email,
+              subject: params.subject,
+              text: params.text,
+              orgId,
+              link: params.inApp?.link,
+            } satisfies NotifyEmailJobData,
+            { orgId, kind: "notification", toAddress: recipient.email, subject: params.subject, ...record },
+          ),
         ),
       );
 

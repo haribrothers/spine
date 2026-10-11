@@ -10,6 +10,8 @@ import { AuditLogService } from "../audit/audit-log.service";
 import { SettingsService } from "../org/settings.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { QueueService } from "../queue/queue.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PushService } from "../notifications/push.service";
 
 /**
@@ -66,7 +68,7 @@ describe("Meetings ownership split (requires local Postgres)", () => {
   beforeEach(async () => {
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const queue = new QueueService(db);
-    const notifications = new NotificationsService(db, queue, new PushService(db));
+    const notifications = new NotificationsService(db, new PushService(db), new EmailLogService(db, queue, new EmailService(db), new AuditLogService(db)));
     meetingsService = new MeetingsService(db, new AuditLogService(db), new SettingsService(db), notifications);
 
     const ownerEmail = `meeting-owner-${randomUUID()}@example.com`;

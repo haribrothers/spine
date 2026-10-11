@@ -48,7 +48,7 @@ describe("US-SET-21 · edit the text of each customer email (requires local Post
     vi.spyOn(queue, "send").mockImplementation(async (name, data, retry) => {
       if (name === INVOICE_SEND_EMAIL_QUEUE || name === QUOTE_SEND_EMAIL_QUEUE) {
         queued.push({ name, data });
-        return;
+        return null;
       }
       return original(name, data, retry);
     });

@@ -6,6 +6,9 @@ import { createDb, type Database } from "../../db/client";
 import { meetingAttendees, meetings, member, notifications, user } from "../../db/schema";
 import { SettingsService } from "../org/settings.service";
 import { MeetingReminderWorker } from "./meeting-reminder.worker";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
+import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "./notifications.service";
 
 /**
@@ -39,7 +42,7 @@ describe("MeetingReminderWorker.tick (requires local Postgres)", () => {
     settingsService = new SettingsService(db);
     const fakeQueue = { send: async () => {}, schedule: async () => {}, work: async () => {} };
     const fakePush = { isConfigured: () => false };
-    const notificationsService = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    const notificationsService = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
     worker = new MeetingReminderWorker(fakeQueue as never, settingsService, notificationsService, db);
 
     const organizerEmail = `reminder-organizer-${randomUUID()}@example.com`;

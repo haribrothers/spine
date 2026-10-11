@@ -502,6 +502,7 @@ export class PaymentsService {
           text: email.text,
           html: email.html,
           attachments: email.attachments,
+          log: { orgId, kind: "receipt", entityType: "payment", entityId: paymentId },
         });
       } catch (err) {
         this.logger.warn(`Could not send payment confirmation email for payment ${paymentId}: ${(err as Error).message}`);
@@ -568,6 +569,7 @@ export class PaymentsService {
       text: email.text,
       html: email.html,
       attachments: [...(override.attachPdf === false ? [] : [{ filename, content: buffer, contentType: "application/pdf" }]), ...email.attachments],
+      log: { orgId, kind: "receipt", entityType: "payment", entityId: paymentId },
     });
 
     return { sent: true };

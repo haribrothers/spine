@@ -44,7 +44,8 @@ export function activityText(item: ActivityItem): string {
     case "emailed":
       return item.detail ? `Emailed to ${item.detail}` : "Emailed";
     case "email_failed":
-      return item.detail ? `Email failed: ${item.detail}` : "Email failed";
+      // US-SET-28: cancelled in the email log.
+      return item.detail === "Cancelled" ? "Email not sent — cancelled" : item.detail ? `Email failed: ${item.detail}` : "Email failed";
     case "link_copied":
       return "Link copied";
     case "viewed":

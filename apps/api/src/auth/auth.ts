@@ -71,7 +71,7 @@ export const auth = betterAuth({
         .where(eq(member.userId, user.id))
         .orderBy(desc(member.createdAt))
         .limit(1);
-      await sendResetPasswordEmail({ user, token }, membership ? await loadEmailBrand(db, membership.orgId) : undefined);
+      await sendResetPasswordEmail({ user, token }, membership ? await loadEmailBrand(db, membership.orgId) : undefined, { db, orgId: membership?.orgId ?? null });
     },
     resetPasswordTokenExpiresIn: RESET_TOKEN_TTL_SECONDS,
     revokeSessionsOnPasswordReset: true,
@@ -146,13 +146,18 @@ export const auth = betterAuth({
        * accept-invite page, which calls auth.api.acceptInvitation with it.
        */
       sendInvitationEmail: async (data) => {
-        const emailService = new EmailService();
-        if (!emailService.isConfigured()) return;
+        const emailService = new EmailService(db);
         const acceptUrl = appUrl(`/accept-invite/${data.id}`);
         // US-NTF-11: the business name from the business profile, not the
         // organisation row ("<Owner>'s Organisation" until US-TEAM-15).
         const brand = await loadEmailBrand(db, data.organization.id);
         const template = invitationEmail({ businessName: brand.name, inviterName: data.inviter.user.name, role: data.role, acceptUrl });
+        // US-SET-27 (D-220): recorded in the email log, sent or not.
+        const log = { orgId: data.organization.id, kind: "invitation" as const, userId: data.inviter.user.id };
+        if (!emailService.isConfigured()) {
+          await emailService.recordNotSent(log, data.email, template.subject);
+          return;
+        }
         const email = renderEmail(brand, template.content);
         await emailService.send({
           to: data.email,
@@ -161,6 +166,7 @@ export const auth = betterAuth({
           text: email.text,
           html: email.html,
           attachments: email.attachments,
+          log,
         });
       },
     }),

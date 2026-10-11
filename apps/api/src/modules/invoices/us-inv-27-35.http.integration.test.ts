@@ -48,7 +48,7 @@ describe("Invoices you can work from (requires local Postgres)", () => {
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     const owner = await signUp(testApp.baseUrl, { email, password: "testpassword123", name: "Priya Raman" });
     cookie = owner.cookie;

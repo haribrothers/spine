@@ -12,6 +12,8 @@ import { SettingsService } from "../org/settings.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { QuotePublicTokenService } from "../quotes/quote-public-token.service";
 import { NotificationsService } from "../notifications/notifications.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
@@ -52,10 +54,10 @@ describe("Catalogue/Quotes history (requires local Postgres)", () => {
     // quote-send-email job isn't what this test cares about.
     const fakeQueue = { send: async () => {} };
     const fakePush = { isConfigured: () => false };
-    const notifications = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    const notifications = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
 
     catalogService = new CatalogService(db, auditLog, taxResolver);
-    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver, new PlaceOfSupplyService(db), notifications);
+    quotesService = new QuotesService(db, auditLog, numbering, settings, fakeQueue as never, publicTokens, taxResolver, new PlaceOfSupplyService(db), notifications, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
 
     const ownerEmail = `catquote-history-owner-${randomUUID()}@example.com`;
     createdEmails.push(ownerEmail);

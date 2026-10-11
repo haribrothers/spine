@@ -503,10 +503,10 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-INV-39 · Follow what happened to a credit note
 - [x] US-INV-40 · See where each credit went, at a glance
 - [x] US-INV-41 · Search, filter and come back to the same credit notes list
-- [ ] US-SET-27 · See every email Spine sends
-- [ ] US-SET-28 · Retry or cancel an email
-- [ ] US-SET-29 · Know when email isn't set up
-- [ ] US-DASH-30 · See failed emails in Needs your attention
+- [x] US-SET-27 · See every email Spine sends
+- [x] US-SET-28 · Retry or cancel an email
+- [x] US-SET-29 · Know when email isn't set up
+- [x] US-DASH-30 · See failed emails in Needs your attention
 
 ## Phase 10 · AI assistant
 

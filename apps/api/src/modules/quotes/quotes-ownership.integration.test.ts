@@ -14,6 +14,8 @@ import { QuotePublicTokenService } from "./quote-public-token.service";
 import { TaxResolverService } from "../tax/tax-resolver.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { PushService } from "../notifications/push.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 
 /**
@@ -76,7 +78,8 @@ describe("Quotes ownership split (requires local Postgres)", () => {
       new QueueService(db),
       new QuotePublicTokenService(db),
       new TaxResolverService(db), new PlaceOfSupplyService(db),
-      new NotificationsService(db, new QueueService(db), new PushService(db)),
+      new NotificationsService(db, new PushService(db), new EmailLogService(db, new QueueService(db), new EmailService(db), auditLog)),
+      new EmailLogService(db, new QueueService(db), new EmailService(db), auditLog),
     );
 
     const ownerEmail = `quote-owner-${randomUUID()}@example.com`;

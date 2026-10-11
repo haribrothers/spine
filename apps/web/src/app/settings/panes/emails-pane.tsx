@@ -36,6 +36,10 @@ import {
   type EmailTemplateType,
 } from "@spine/shared";
 import { apiClient } from "../../../lib/api-client";
+import Link from "next/link";
+import type { EmailLogStatusSummary } from "@spine/shared";
+import { ScrollText } from "lucide-react";
+import { EmailSetupWarning } from "../../(app)/emails/email-setup-warning";
 import { SavedToast } from "../saved-toast";
 
 type Templates = Record<EmailTemplateType, EmailTemplateText>;
@@ -48,7 +52,9 @@ const same = (a: EmailTemplateText, b: EmailTemplateText) => a.subject.trim() ==
  * customer email, with a placeholder menu. The branded layout around them
  * stays the same. Emails already sent don't change.
  */
-export function EmailsPane() {
+export function EmailsPane({ onOpenLog }: { onOpenLog?: () => void } = {}) {
+  // US-SET-27/29 (D-220): the email log, and whether email is set up.
+  const [emailStatus, setEmailStatus] = useState<EmailLogStatusSummary | null>(null);
   const [templates, setTemplates] = useState<Templates | null>(null);
   const [type, setType] = useState<EmailTemplateType>("quote");
   const [saving, setSaving] = useState(false);
@@ -73,6 +79,13 @@ export function EmailsPane() {
     subjectRef.current?.focus();
     subjectRef.current?.setSelectionRange(pending.at, pending.at);
   });
+
+  useEffect(() => {
+    apiClient
+      .get<EmailLogStatusSummary>("/emails/status")
+      .then(setEmailStatus)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     apiClient
@@ -185,10 +198,19 @@ export function EmailsPane() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-[15px] font-semibold text-on-surface">Emails</h2>
-        <p className="text-[13px] text-on-surface-muted">Your own words in the emails customers get. The branded layout around them stays the same.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-[15px] font-semibold text-on-surface">Emails</h2>
+          <p className="text-[13px] text-on-surface-muted">Your own words in the emails customers get. The branded layout around them stays the same.</p>
+        </div>
+        <Button asChild variant="secondary" size="sm" onClick={onOpenLog}>
+          <Link href="/emails">
+            <ScrollText size={14} aria-hidden />
+            Email log
+          </Link>
+        </Button>
       </div>
+      <EmailSetupWarning status={emailStatus} />
 
       <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)]">
         <nav aria-label="Customer emails">

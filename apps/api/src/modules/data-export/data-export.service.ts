@@ -245,7 +245,7 @@ export class DataExportService {
     };
     const email = renderEmail(brand, content);
     await this.email
-      .send({ to: who.email, fromName: brand.name, subject: `Your ${brand.name} data export is ready`, text: email.text, html: email.html, attachments: email.attachments })
+      .send({ to: who.email, fromName: brand.name, subject: `Your ${brand.name} data export is ready`, text: email.text, html: email.html, attachments: email.attachments, log: { orgId, kind: "data_export", userId } })
       .catch((err) => this.logger.warn(`Data export email failed: ${(err as Error).message}`));
   }
 

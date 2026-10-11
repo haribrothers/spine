@@ -80,7 +80,7 @@ describe("Credit notes you can work from (requires local Postgres)", () => {
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     cookie = (await signUp(testApp.baseUrl, { email, password: "testpassword123", name: "Priya Raman" })).cookie;
     contactId = (await ok<{ id: string }>(await call("POST", "/contacts", { type: "customer", name: "Sahyadri Retail Pvt Ltd", email: "accounts@sahyadri.example" }))).id;

@@ -8,6 +8,8 @@ import { member, meetingAttendees, meetingOccurrenceExceptions, meetings, teamMe
 import { AuditLogService } from "../audit/audit-log.service";
 import { NotificationsService } from "../notifications/notifications.service";
 import { SettingsService } from "../org/settings.service";
+import { EmailLogService } from "../email/email-log.service";
+import { EmailService } from "../email/email.service";
 import { MeetingsService } from "./meetings.service";
 
 /**
@@ -50,7 +52,7 @@ describe("MeetingsService visibility (requires local Postgres)", () => {
     // we never assert on delivery here (see class doc comment above).
     const fakeQueue = { send: async () => {} };
     const fakePush = { isConfigured: () => false };
-    const notifications = new NotificationsService(db, fakeQueue as never, fakePush as never);
+    const notifications = new NotificationsService(db, fakePush as never, new EmailLogService(db, fakeQueue as never, new EmailService(db), new AuditLogService(db)));
     meetingsService = new MeetingsService(db, auditLog, settingsService, notifications);
 
     const ownerEmail = `meetings-vis-owner-${randomUUID()}@example.com`;

@@ -18,6 +18,8 @@ export const ATTENTION_KINDS = [
   // US-DASH-18 — Field: milestones due on their jobs, their rejected expenses.
   "milestones_due",
   "expenses_rejected",
+  // US-DASH-30 — Owner: emails that failed in the last 7 days (D-220).
+  "emails_failed",
 ] as const;
 
 export type AttentionKind = (typeof ATTENTION_KINDS)[number];
@@ -170,6 +172,13 @@ export function describeAttention(item: AttentionItem, money: (minor: string) =>
         title: n === 1 ? "Your expense was rejected" : `${n} of your expenses were rejected`,
         detail: join([first.party, amount, first.note && `“${first.note}”${first.name ? ` — ${first.name}` : ""}`, more]),
         action: "Fix and resubmit",
+      };
+    case "emails_failed":
+      // `party` is the email's kind ("Quote"), `number` its record, `name` the address.
+      return {
+        title: `${n} ${plural(n, "email", "emails")} failed`,
+        detail: join([[first.party, first.number].filter(Boolean).join(" ") + (first.name ? ` to ${first.name}` : ""), more]),
+        action: "Review",
       };
   }
 }

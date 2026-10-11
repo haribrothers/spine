@@ -21,6 +21,8 @@ const RULES: PageRule[] = [
   // US-PUR-19: more specific than "/expenses", which every role can open.
   { prefix: "/expenses/categories", name: "Expense categories", anyOf: ["expense_categories.edit_own", "expense_categories.edit_others"] },
   { prefix: "/team", name: "Team", ownerOnly: true },
+  // US-SET-27 (D-220): every customer and team email.
+  { prefix: "/emails", name: "Email log", ownerOnly: true },
   // US-RPT-16 (D-137)
   { prefix: "/opening-balances", name: "Opening balances", ownerOnly: true },
   { prefix: "/receivables", name: "Receivables", anyOf: ["reports.view_receivables"] },
@@ -54,6 +56,7 @@ const PAGE_NAMES: Record<string, string> = {
   "/journals": "Journals",
   "/reports": "Reports",
   "/team": "Team",
+  "/emails": "Email log",
   "/expenses/categories": "Expense categories",
 };
 

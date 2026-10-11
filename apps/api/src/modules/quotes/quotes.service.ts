@@ -21,6 +21,7 @@ import { NotificationsService } from "../notifications/notifications.service";
 import type { QuotePdfBusinessProfile } from "../pdf/quote-pdf.template";
 import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { QuotePublicTokenService } from "./quote-public-token.service";
+import { EmailLogService } from "../email/email-log.service";
 import { appUrl } from "../email/email-layout";
 
 export type CreateQuoteInput = z.infer<typeof createQuoteSchema>;
@@ -212,6 +213,7 @@ export class QuotesService {
     private readonly taxResolver: TaxResolverService,
     private readonly placeOfSupply: PlaceOfSupplyService,
     private readonly notifications: NotificationsService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   private async getThreshold(orgId: string): Promise<DiscountApprovalThreshold> {
@@ -296,45 +298,6 @@ export class QuotesService {
     }
 
     return result;
-  }
-
-  /**
-   * Item 7 (user feedback) — joins pg-boss's own pending-job rows (from
-   * `QueueService.listPendingJobs`, already org-scoped) against `quotes`
-   * for display (quote number, contact name) — the job's own `data` blob
-   * only carries `quoteId`, nothing human-readable.
-   */
-  async enrichEmailQueueJobs(orgId: string, jobs: { id: string; data: unknown; state: string; retryCount: number; retryLimit: number; createdOn: Date; startAfter: Date }[]) {
-    const quoteIds = jobs
-      .map((job) => (job.data as { quoteId?: string } | null)?.quoteId)
-      .filter((id): id is string => Boolean(id));
-    if (!quoteIds.length) return [];
-
-    const rows = await this.db
-      .select({ id: quotes.id, number: quotes.number, contactName: contacts.name })
-      .from(quotes)
-      .leftJoin(contacts, eq(quotes.contactId, contacts.id))
-      .where(eq(quotes.orgId, orgId));
-    const byId = new Map(rows.map((r) => [r.id, r]));
-
-    return jobs
-      .map((job) => {
-        const quoteId = (job.data as { quoteId?: string } | null)?.quoteId;
-        const quote = quoteId ? byId.get(quoteId) : undefined;
-        if (!quote) return null; // job for a quote outside this org, or since deleted
-        return {
-          jobId: job.id,
-          quoteId: quote.id,
-          quoteNumber: quote.number,
-          contactName: quote.contactName,
-          state: job.state,
-          retryCount: job.retryCount,
-          retryLimit: job.retryLimit,
-          createdOn: job.createdOn,
-          startAfter: job.startAfter,
-        };
-      })
-      .filter((row): row is NonNullable<typeof row> => row !== null);
   }
 
   async getOne(orgId: string, id: string) {
@@ -662,7 +625,7 @@ export class QuotesService {
     });
 
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
+      await this.emailLog.enqueue(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) }, { orgId, kind: "quote", entityType: "quote", entityId: id, toAddress: override?.to, userId: actorUserId });
     } catch (err) {
       // Never let a queue-enqueue failure fail an already-committed send —
       // see this method's own doc comment above.
@@ -904,7 +867,7 @@ export class QuotesService {
       return this.publicTokens.issue(tx, orgId, id);
     });
     try {
-      await this.queue.send(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) });
+      await this.emailLog.enqueue(QUOTE_SEND_EMAIL_QUEUE, { orgId, quoteId: id, publicToken: token, ...(override ? { override } : {}) }, { orgId, kind: "quote", entityType: "quote", entityId: id, toAddress: override?.to, userId: actorUserId });
     } catch (err) {
       this.logger.error(`Failed to enqueue quote-send-email job for quote ${id}`, err instanceof Error ? err.stack : String(err));
     }

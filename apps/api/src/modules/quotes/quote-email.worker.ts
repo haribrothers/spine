@@ -10,12 +10,13 @@ import { SettingsService } from "../org/settings.service";
 import { loadEmailBrand } from "../email/email-brand";
 import { appUrl, renderEmail } from "../email/email-layout";
 import { quoteEmail } from "../email/email-templates";
+import { EmailLogService, type LoggedJobData } from "../email/email-log.service";
 import { loadEmailText, type EmailJobOverride } from "../email/email-text";
 
 export const QUOTE_SEND_EMAIL_QUEUE = "quote-send-email";
 
 
-export interface QuoteSendEmailJobData {
+export interface QuoteSendEmailJobData extends LoggedJobData {
   orgId: string;
   quoteId: string;
   /**
@@ -79,6 +80,7 @@ export class QuoteEmailWorker implements OnModuleInit {
     private readonly email: EmailService,
     private readonly issuedPdf: IssuedPdfService,
     private readonly settings: SettingsService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   async onModuleInit() {
@@ -100,6 +102,17 @@ export class QuoteEmailWorker implements OnModuleInit {
       return;
     }
 
+    // US-SET-27: each try is recorded in the email log; with email not set up the email waits there, untried.
+    await this.emailLog.attempt(data.emailLogId, () => this.tryOnce(orgId, quoteId, row, publicToken, override));
+  }
+
+  private async tryOnce(
+    orgId: string,
+    quoteId: string,
+    row: { quote: typeof quotes.$inferSelect; contactName: string | null; contactEmail: string | null },
+    publicToken: string | undefined,
+    override?: EmailJobOverride,
+  ): Promise<void> {
     try {
       await this.attemptSend(orgId, quoteId, row, publicToken, override);
       await this.db

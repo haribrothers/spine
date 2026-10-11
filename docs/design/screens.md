@@ -716,6 +716,8 @@ Shows: "Sales > Quotes > Detail" · "OVERVIEW" · "Quote" · "B8 Dashboard" · "
 ### EmailQueueDialog — Email queue
 **Priority:** P3 · **Phase:** 1 · **Stories:** US-QUO-07 · **Source:** Captured
 
+**Retired** by the email log (US-SET-27, D-220): see `EmailLog`.
+
 ![EmailQueueDialog](screens/EmailQueueDialog.webp)
 
 Links to: —
@@ -3296,6 +3298,55 @@ Shows: "Issue a credit note" · "Against INV-0041 · Sahyadri Retail Pvt Ltd · 
 Links to: `CreditNoteDetailRefined`
 
 Shows: "Amount · tax included" · "Spread over the invoice's lines by what's left to credit on each; each part's tax is taken back at that line's rate." · "Left to credit" "Before tax" "Tax" "Part" · the totals and the split
+
+## The email log
+
+Drawn in Claude Design for US-SET-27 to US-SET-29 and US-DASH-30 (D-220): project "Spine web — refinements before Phase 10", canvas "13 Email log". One Owner-only list of every email Spine sends — queued or sent straight away — with when, to whom, the kind and subject, the record, the status in words, attempts and the error; Retry now and Cancel for queued emails, each asking first; a warning when email isn't set up; and failed emails in an Owner's Needs your attention. It replaces `EmailQueueDialog` (US-QUO-07, retired). In the built screens the range is a "Last 30 days" select (7, 30, 90 or 180 days), and the setup warning has no "How to set up email" link until the docs site ships (Phase 11).
+
+### EmailLog — Every email, a retrying email's menu
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-27, US-SET-28 · **Source:** Claude Design
+
+![EmailLog](screens/EmailLog.webp)
+
+Links to: `EmailLogRetryConfirm`, the record's page
+
+Shows: "Settings › Email log" · "Email log" · "Every email Spine sends — to customers and your team — and what happened to it. Kept for 180 days." · "Waiting" "Queued or retrying" "Show these emails" · "Failed in the last 7 days" "Not retried or cancelled" · "Sent today" "Since midnight" · "Status" "Kind" "Last 30 days" · "Updated just now" · "Search recipient, subject or record" · "When" "To" "Subject" "Record" "Status" "Attempts" · the kind beside the subject ("Quote", "Reminder", "Daily digest") · "Retrying at 12:28 PM · Connection timed out" · "550 5.1.1 Mailbox unavailable" · "Cancelled by Priya Raman" · "Sent" "Retrying" "Failed" "Cancelled" · "2 of 4" · the row menu "Retry now" "Cancel" "Open QUO-0034"
+
+### EmailLogDark — "Failed in the last 7 days" pressed, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-27 · **Source:** Claude Design
+
+![EmailLogDark](screens/EmailLogDark.webp)
+
+Links to: —
+
+Shows: "Showing these · press again to clear" · only emails that failed in the last 7 days
+
+### EmailLogRetryConfirm — Retry now asks first
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-28 · **Source:** Claude Design
+
+![EmailLogRetryConfirm](screens/EmailLogRetryConfirm.webp)
+
+Links to: `EmailLog`
+
+Shows: "Retry this email?" · "The payment reminder for INV-0039 goes to accounts@halcyontech.example again now, with four attempts. Last time it failed: “550 5.1.1 Mailbox unavailable” — check the address on the contact first if it's wrong." · "Go back" · "Retry email"
+
+### EmailLogNoSmtp — Email isn't set up
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-SET-29 · **Source:** Claude Design
+
+![EmailLogNoSmtp](screens/EmailLogNoSmtp.webp)
+
+Links to: —
+
+Shows: "Email isn't set up — 12 emails are waiting. Set SMTP_HOST (and SMTP_USER, SMTP_PASSWORD, SMTP_FROM) on the server, then restart Spine; waiting emails go out once it's set." · "Queued" "0 of 4" · "Waiting for email to be set up" · a credit note "Failed" with "Email isn't set up (SMTP_HOST is unset)"
+
+### DashboardAttentionEmails — Failed emails in Needs your attention
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-DASH-30 · **Source:** Claude Design
+
+![DashboardAttentionEmails](screens/DashboardAttentionEmails.webp)
+
+Links to: `EmailLog` (filtered to Failed)
+
+Shows: "2 emails failed" · "Reminder INV-0039 to accounts@halcyontech.example" · "Review"
 
 ## Mobile field companion
 

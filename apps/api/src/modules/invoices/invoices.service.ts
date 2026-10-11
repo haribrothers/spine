@@ -18,6 +18,7 @@ import { PlaceOfSupplyService } from "../tax/place-of-supply.service";
 import { RateBook } from "../tax/line-tax-components";
 import { INVOICE_SEND_EMAIL_QUEUE } from "./invoice-email.worker";
 import { requireOwnershipCapability } from "../../auth/capability.util";
+import { EmailLogService } from "../email/email-log.service";
 import type { EmailJobOverride } from "../email/email-text";
 
 export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
@@ -203,6 +204,7 @@ export class InvoicesService {
     private readonly conversionGuard: QuoteConversionGuardService,
     private readonly taxResolver: TaxResolverService,
     private readonly placeOfSupply: PlaceOfSupplyService,
+    private readonly emailLog: EmailLogService,
   ) {}
 
   async list(orgId: string, options: { status?: string; contactId?: string }) {
@@ -1230,7 +1232,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, ...(override ? { override } : {}) });
+      await this.emailLog.enqueue(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, ...(override ? { override } : {}) }, { orgId, kind: "invoice", entityType: "invoice", entityId: id, toAddress: override?.to, userId: actorUserId });
     } catch (err) {
       this.logger.error(`Failed to enqueue invoice-send-email job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }
@@ -1302,7 +1304,7 @@ export class InvoicesService {
       }
       const due = inv.dueDate ? new Date(inv.dueDate).toISOString().slice(0, 10) : null;
       try {
-        await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(due ? { daysOverdue: daysBetween(due, today) } : {}) });
+        await this.emailLog.enqueue(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(due ? { daysOverdue: daysBetween(due, today) } : {}) }, { orgId, kind: "invoice_reminder", entityType: "invoice", entityId: id, userId: actorUserId });
       } catch (err) {
         this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
       }
@@ -1348,7 +1350,7 @@ export class InvoicesService {
     });
 
     try {
-      await this.queue.send(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(override ? { override } : {}) });
+      await this.emailLog.enqueue(INVOICE_SEND_EMAIL_QUEUE, { orgId, invoiceId: id, isReminder: true, ...(override ? { override } : {}) }, { orgId, kind: "invoice_reminder", entityType: "invoice", entityId: id, toAddress: override?.to, userId: actorUserId });
     } catch (err) {
       this.logger.error(`Failed to enqueue reminder job for invoice ${id}`, err instanceof Error ? err.stack : String(err));
     }

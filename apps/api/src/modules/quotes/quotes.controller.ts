@@ -10,8 +10,6 @@ import { requireOrgId } from "../org/settings.controller";
 import { QuotesService } from "./quotes.service";
 import { IssuedPdfService } from "../pdf/issued-pdf.service";
 import { QuotePdfService } from "../pdf/quote-pdf.service";
-import { QueueService } from "../queue/queue.service";
-import { QUOTE_SEND_EMAIL_QUEUE } from "./quote-email.worker";
 import { AcceptQuoteInPersonDto, RejectQuoteInPersonDto } from "./quotes.dto";
 
 /**
@@ -40,28 +38,12 @@ export class QuotesController {
     private readonly quotesService: QuotesService,
     private readonly issuedPdf: IssuedPdfService,
     private readonly quotePdf: QuotePdfService,
-    private readonly queue: QueueService,
   ) {}
 
   @Get()
   async list(@Session() session: UserSession, @Query("status") status?: string, @Query("contactId") contactId?: string, @Query("leadId") leadId?: string) {
     const orgId = requireOrgId(session);
     return this.quotesService.list(orgId, { status, contactId, leadId });
-  }
-
-  /**
-   * Item 7 (user feedback) — a cross-quote view of every not-yet-resolved
-   * `quote-send-email` job, for a "what's still sending?" screen. MUST come
-   * before `@Get(":id")` below — otherwise Nest would match the literal
-   * path segment "email-queue" as `:id` and route here into `getOne`
-   * instead, since route matching is declaration-order-sensitive for
-   * overlapping patterns on the same HTTP method.
-   */
-  @Get("email-queue")
-  async emailQueue(@Session() session: UserSession) {
-    const orgId = requireOrgId(session);
-    const jobs = await this.queue.listPendingJobs(QUOTE_SEND_EMAIL_QUEUE, orgId);
-    return this.quotesService.enrichEmailQueueJobs(orgId, jobs);
   }
 
   /** Field reads a quote to present on an assigned job (US-MOB-16), checked in the service. */

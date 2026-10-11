@@ -31,7 +31,7 @@ describe("US-MOB-03 · see today's jobs with addresses and tap-to-call (requires
 
   beforeAll(async () => {
     testApp = await createTestApp();
-    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(undefined);
+    vi.spyOn(testApp.app.get(QueueService), "send").mockResolvedValue(null);
     db = createDb(process.env.DATABASE_URL ?? "postgres://spine:spine@localhost:5432/spine");
     ctx = await ownerWithFieldUser(testApp.baseUrl, db, emails);
     const [owner] = await db.select().from(user).where(inArray(user.email, emails.slice(0, 1)));

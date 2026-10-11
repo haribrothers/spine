@@ -1,12 +1,12 @@
 import { ownedByOffModule } from "@spine/shared";
 import { loadModules } from "../../common/modules";
 import { Inject, Injectable } from "@nestjs/common";
-import { budgetFigures, type AttentionItem, type AttentionKind, type AttentionRecord } from "@spine/shared";
-import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
+import { EMAIL_KIND_LABELS, budgetFigures, type AttentionItem, type AttentionKind, type AttentionRecord } from "@spine/shared";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import { getEffectiveCapabilities, getMemberRole } from "../../auth/capability.util";
 import { DATABASE } from "../../db/db.module";
 import type { Database } from "../../db/client";
-import { activities, contacts, expenseCategories, expenses, invoices, jobAssignments, jobs, leads, milestones, quotes, settings, user, vendorBills } from "../../db/schema";
+import { activities, contacts, creditNotes, emailLog, expenseCategories, expenses, invoices, jobAssignments, jobs, leads, milestones, payments, quotes, settings, user, vendorBills } from "../../db/schema";
 import { orgClock } from "../../common/org-clock";
 import { costByJob } from "../jobs/job-costing.service";
 
@@ -61,6 +61,8 @@ export class AttentionService {
 
     const rows: (AttentionItem | null)[] = [
       await this.invoicesOverdue(orgId, today, currency),
+      // US-DASH-30 (D-220): the email log is Owner-only, so is this row.
+      role === "owner" ? await this.emailsFailed(orgId, currency) : null,
       can["expenses.approve"] ? await this.expensesAwaitingApproval(orgId, role === "owner" ? null : userId, currency) : null,
       can["quotes.approve_discount"] ? await this.quotesDiscountApproval(orgId, currency) : null,
       can["milestones.invoice"] ? await this.milestonesToInvoice(orgId, currency) : null,
@@ -91,6 +93,31 @@ export class AttentionService {
       currency,
       rows.map((r) => ({ id: r.id, number: r.number, name: r.name, amount: r.balance, date: isoDate(r.dueDate) })),
     );
+  }
+
+  /** US-DASH-30 — emails that failed in the last 7 days and weren't retried or cancelled, newest first. */
+  private async emailsFailed(orgId: string, currency: string): Promise<AttentionItem> {
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+    const rows = await this.db
+      .select({ id: emailLog.id, kind: emailLog.kind, toAddress: emailLog.toAddress, entityType: emailLog.entityType, entityId: emailLog.entityId })
+      .from(emailLog)
+      .where(and(eq(emailLog.orgId, orgId), eq(emailLog.status, "failed"), gte(emailLog.failedAt, weekAgo)))
+      .orderBy(desc(emailLog.failedAt));
+    const first = rows[0];
+    const number = first?.entityId ? await this.recordNumber(first.entityType, first.entityId) : null;
+    return this.item(
+      "emails_failed",
+      rows.length,
+      currency,
+      rows.map((r, i) => ({ id: r.id, party: EMAIL_KIND_LABELS[r.kind], name: r.toAddress, number: i === 0 ? number : null })),
+    );
+  }
+
+  private async recordNumber(entityType: string | null, entityId: string): Promise<string | null> {
+    const table = entityType === "quote" ? quotes : entityType === "invoice" ? invoices : entityType === "credit_note" ? creditNotes : entityType === "payment" ? payments : null;
+    if (!table) return null;
+    const [row] = await this.db.select({ number: table.number }).from(table).where(eq(table.id, entityId));
+    return row?.number ?? null;
   }
 
   /** Staff never see their own expenses here (D-085); Owners may approve their own. */

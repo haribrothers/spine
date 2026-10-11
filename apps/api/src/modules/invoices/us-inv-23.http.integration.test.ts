@@ -114,8 +114,8 @@ describe("US-INV-23 · send reminders for several invoices at once (requires loc
     ]);
     expect(body.skipped.find((s) => s.id === paid)?.label).toMatch(/^INV-\d+$/);
     expect(queued.mock.calls.filter(([q]) => q === INVOICE_SEND_EMAIL_QUEUE).map(([, d]) => d)).toEqual([
-      { orgId, invoiceId: overdue, isReminder: true, daysOverdue: 10 },
-      { orgId, invoiceId: dueSoon, isReminder: true, daysOverdue: -3 },
+      { orgId, invoiceId: overdue, isReminder: true, daysOverdue: 10, emailLogId: expect.any(String) },
+      { orgId, invoiceId: dueSoon, isReminder: true, daysOverdue: -3, emailLogId: expect.any(String) },
     ]);
     expect(await db.select().from(invoiceReminders).where(eq(invoiceReminders.invoiceId, overdue))).toEqual([expect.objectContaining({ kind: "manual", sentOn: orgClock().date })]);
 

@@ -98,6 +98,7 @@ export class StatementDocumentsService {
       html: rendered.html,
       text: rendered.text,
       attachments: [...rendered.attachments, { filename: doc.filename, content: doc.buffer, contentType: "application/pdf" }],
+      log: { orgId, kind: "statement", entityType: "contact", entityId: contactId, userId: actorUserId },
     });
 
     await this.db.transaction(async (tx) => {
