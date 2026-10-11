@@ -17,6 +17,8 @@ import {
   creditNotes,
   settings,
   taxPayments,
+  payments,
+  invoiceReminders,
 } from "../../db/schema";
 import { cashAccountCodes } from "../banking/cash-accounts";
 import { loadTaxBreakdown, type TaxBreakdownLine } from "../tax/tax-breakdown";
@@ -34,6 +36,30 @@ export interface ReceivablesInvoiceRow {
   balanceDue: string;
   daysOverdue: number;
   bucket: AgingBucket;
+  /** US-PAY-30 — the issue date, the kind (a deposit is `advance`), what's been paid and credited, the job, and the last reminder (organisation date). */
+  issueDate: string | null;
+  type: string;
+  paidAmount: string;
+  jobId: string | null;
+  jobName: string | null;
+  lastReminderOn: string | null;
+  remindedToday: boolean;
+  contactHasEmail: boolean;
+}
+
+/** US-PAY-27 — one customer who owes: the open invoices added up, their credit and the last reminder. */
+export interface ReceivablesCustomerRow {
+  contactId: string;
+  name: string | null;
+  email: string | null;
+  invoiceCount: number;
+  overdueAmount: string;
+  totalOutstanding: string;
+  /** Days late of the oldest overdue invoice; 0 or less when nothing is overdue yet. */
+  oldestDaysOverdue: number;
+  /** Unapplied payments (amount − applied − refunded) and issued credit notes' remaining credit. */
+  credit: string;
+  lastReminderOn: string | null;
 }
 
 export interface ReceivablesReport {
@@ -41,6 +67,9 @@ export interface ReceivablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   invoices: ReceivablesInvoiceRow[];
+  customers: ReceivablesCustomerRow[];
+  /** US-PAY-31 — retention held on jobs (1150), never part of the aging. */
+  retention: { held: string; jobCount: number };
 }
 
 export interface PayablesBillRow {
@@ -98,10 +127,18 @@ export class ReportsService {
 
   async receivables(orgId: string): Promise<ReceivablesReport> {
     const rows = await this.db
-      .select({ invoice: invoices, contactName: contacts.name })
+      .select({
+        invoice: invoices,
+        contactName: contacts.name,
+        contactEmail: contacts.email,
+        jobName: jobs.name,
+        lastReminderOn: sql<string | null>`(select max(${invoiceReminders.sentOn})::text from ${invoiceReminders} where ${invoiceReminders.invoiceId} = ${invoices.id})`,
+      })
       .from(invoices)
       .leftJoin(contacts, eq(invoices.contactId, contacts.id))
+      .leftJoin(jobs, eq(invoices.jobId, jobs.id))
       .where(and(eq(invoices.orgId, orgId), eq(invoices.status, "issued")));
+    const reminderToday = orgClock().date;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -115,6 +152,7 @@ export class ReportsService {
     };
 
     const invoiceRows: ReceivablesInvoiceRow[] = [];
+    const emails = new Map<string, string | null>();
     let totalOutstanding = 0n;
 
     for (const row of rows) {
@@ -138,10 +176,21 @@ export class ReportsService {
         balanceDue: balanceDue.toString(),
         daysOverdue,
         bucket,
+        issueDate: row.invoice.issueDate ? new Date(row.invoice.issueDate).toISOString().slice(0, 10) : null,
+        type: row.invoice.type,
+        paidAmount: (row.invoice.amountPaid + row.invoice.creditedAmount).toString(),
+        jobId: row.invoice.jobId,
+        jobName: row.jobName,
+        lastReminderOn: row.lastReminderOn,
+        remindedToday: row.lastReminderOn === reminderToday,
+        contactHasEmail: Boolean(row.contactEmail?.trim()),
       });
+      emails.set(row.invoice.contactId, row.contactEmail?.trim() || null);
     }
 
     invoiceRows.sort((a, b) => b.daysOverdue - a.daysOverdue);
+    const customers = await this.receivablesCustomers(orgId, invoiceRows, emails);
+    const retention = await this.retentionHeldTotal(orgId);
 
     return {
       asOf: today.toISOString().slice(0, 10),
@@ -154,7 +203,79 @@ export class ReportsService {
         "90+": buckets["90+"].toString(),
       },
       invoices: invoiceRows,
+      customers,
+      retention,
     };
+  }
+
+  /**
+   * US-PAY-27 — the open invoices added up per customer, with the credit
+   * they can still use (unapplied payments less refunds, and issued credit
+   * notes' remaining credit) and their last reminder. Most overdue money
+   * first, then the most owed.
+   */
+  private async receivablesCustomers(orgId: string, rows: ReceivablesInvoiceRow[], emails: Map<string, string | null>): Promise<ReceivablesCustomerRow[]> {
+    const byContact = new Map<string, ReceivablesCustomerRow & { overdue: bigint; total: bigint }>();
+    for (const row of rows) {
+      const c = byContact.get(row.contactId) ?? {
+        contactId: row.contactId,
+        name: row.contactName,
+        email: emails.get(row.contactId) ?? null,
+        invoiceCount: 0,
+        overdueAmount: "0",
+        totalOutstanding: "0",
+        oldestDaysOverdue: Number.NEGATIVE_INFINITY,
+        credit: "0",
+        lastReminderOn: null,
+        overdue: 0n,
+        total: 0n,
+      };
+      const balance = BigInt(row.balanceDue);
+      c.invoiceCount += 1;
+      c.total += balance;
+      if (row.bucket !== "current") c.overdue += balance;
+      c.oldestDaysOverdue = Math.max(c.oldestDaysOverdue, row.daysOverdue);
+      if (row.lastReminderOn && (!c.lastReminderOn || row.lastReminderOn > c.lastReminderOn)) c.lastReminderOn = row.lastReminderOn;
+      byContact.set(row.contactId, c);
+    }
+    const ids = [...byContact.keys()];
+    const credit = new Map<string, bigint>();
+    if (ids.length) {
+      const fromPayments = await this.db
+        .select({ contactId: payments.contactId, left: sql<string>`coalesce(sum(${payments.amount} - ${payments.allocatedAmount} - ${payments.refundedAmount}), 0)` })
+        .from(payments)
+        .where(and(eq(payments.orgId, orgId), inArray(payments.contactId, ids)))
+        .groupBy(payments.contactId);
+      const fromNotes = await this.db
+        .select({ contactId: creditNotes.contactId, left: sql<string>`coalesce(sum(${creditNotes.creditRemainingAmount}), 0)` })
+        .from(creditNotes)
+        .where(and(eq(creditNotes.orgId, orgId), eq(creditNotes.status, "issued"), inArray(creditNotes.contactId, ids)))
+        .groupBy(creditNotes.contactId);
+      for (const r of [...fromPayments, ...fromNotes]) credit.set(r.contactId, (credit.get(r.contactId) ?? 0n) + BigInt(r.left));
+    }
+    const out = [...byContact.values()].map(({ overdue, total, ...c }) => ({
+      ...c,
+      overdueAmount: overdue.toString(),
+      totalOutstanding: total.toString(),
+      credit: (credit.get(c.contactId) ?? 0n).toString(),
+      _overdue: overdue,
+      _total: total,
+    }));
+    out.sort((a, b) => (b._overdue !== a._overdue ? (b._overdue > a._overdue ? 1 : -1) : b._total > a._total ? 1 : b._total < a._total ? -1 : 0));
+    return out.map(({ _overdue, _total, ...c }) => c);
+  }
+
+  /** US-PAY-31 — retention held on jobs: the balance of 1150 per job, as the dashboard's Retention held card (US-DASH-20). */
+  private async retentionHeldTotal(orgId: string): Promise<{ held: string; jobCount: number }> {
+    const rows = await this.db
+      .select({ jobId: journalLines.jobId, held: sql<string>`sum(${journalLines.debit} - ${journalLines.credit})` })
+      .from(journalLines)
+      .innerJoin(journalEntries, eq(journalLines.entryId, journalEntries.id))
+      .innerJoin(accounts, eq(journalLines.accountId, accounts.id))
+      .where(and(eq(journalEntries.orgId, orgId), eq(accounts.code, "1150"), sql`${journalLines.jobId} is not null`))
+      .groupBy(journalLines.jobId);
+    const holding = rows.map((r) => BigInt(r.held)).filter((h) => h > 0n);
+    return { held: holding.reduce((sum, h) => sum + h, 0n).toString(), jobCount: holding.length };
   }
 
   /**

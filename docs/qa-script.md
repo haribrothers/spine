@@ -4955,6 +4955,22 @@ Use an owner with the India demo. Check light and dark, a phone-width window, an
 11. A failed action (e.g. stop the API, then delete a payment, retry an email, revise a quote from a row, or Set tax on items) shows a red message above the page or list saying what went wrong, with a × — no toast; a failed bulk change keeps the items ticked.
 12. Regression: an action you're not allowed to do still shows the permission toast; failed actions in dialogs still show their error in the dialog; Settings' "Saved" toast still shows; toasts don't cover a dialog's buttons.
 
+## 216. Receivables you can chase from (US-PAY-27 to US-PAY-31, refinements before Phase 10)
+
+Use an owner with the India demo. Check light and dark, and compare with the canvas "17 Receivables".
+
+1. Open Receivables: the header says "as of" today in the business's format; tabs "By customer" and "By invoice" with counts; the cards, the age bar, then the filter bar (age on the left; Updated, Refresh, Export on the right) and the search bar with Columns — laid out like Payments and Catalogue.
+2. By customer: one row per customer who owes, most overdue money first, with open invoices, oldest ("45 days late" / "Not due yet"), overdue, total owed, credit to use and last reminded; the totals row adds up. Open a customer — their invoices show under it, oldest due first, each opening the invoice.
+3. With retention held on a job, the note under the bar gives the amount and the number of jobs, with "See jobs"; the cards and bar don't include it.
+4. Press Overdue — the list narrows, the card is outlined, Current fades on the bar, the filter reads "Overdue" and the address has `?age=overdue`; press it again to clear. Press "31–60 days" on the bar — the same for that age. Choose "90+ days" with nothing in it — "Nothing 90+ days late." with Show all. The dashboard's Overdue card still opens Receivables on Overdue.
+5. By invoice: each row has the job (and Deposit), the customer as a link, the due date with "Last reminded …" or "Never reminded", and the coloured age with "12 days late" / "Due in 5 days"; Columns adds Issued, Invoice total and Paid so far.
+6. An invoice's menu: Record payment opens "Record a payment" with that invoice ticked; Apply credit shows only when the customer has credit; Send reminder opens the reminder email (asks before sending) — or is greyed with "Already reminded today." / "The customer has no email address."; Download PDF; Open invoice. Each finishes with a toast and the page refreshes in place.
+7. A customer's menu: Send statement opens the statement dialog; Record payment opens the dialog with the customer chosen; Open contact.
+8. Tick invoices — "Send reminders (n)" counts the ones that can go; it asks first, naming what it skips and why; the toast says how many were sent and the selection clears.
+9. Search, a tab, an age, a sort and a page survive opening an invoice and going Back; Refresh says "Updated just now"; after 30 seconds on another tab the page refreshes.
+10. Export with an age chosen — the CSV, Excel and PDF hold only that age's invoices.
+11. Regression: Payables still shows its "Show" filter and unpressable cards; the dashboard's Receivables and Overdue cards still open this page; a Staff member without "View receivables" sees the no-access page.
+
 ## Known gaps — don't file these as bugs
 
 - The app's left navigation has no phone layout yet; on a phone, collapse it to use the calendar (section 204).

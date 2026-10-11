@@ -60,6 +60,14 @@ export interface TableProps<T> {
   /** US-CAT-13 — the sort, when the parent keeps it (e.g. in the address). */
   sort?: TableSort | null;
   onSortChange?: (sort: TableSort | null) => void;
+  /**
+   * US-PAY-27 — rows that open to show more under them (a customer's
+   * invoices): a chevron button (`aria-expanded`) in a first column, and a
+   * full-width row under an open one. Flat tables only (not with `groupBy`).
+   */
+  renderExpanded?: (row: T) => React.ReactNode;
+  /** The chevron's accessible name, e.g. "Show Halcyon's invoices"; defaults to "Show more" / "Show less". */
+  expandLabel?: (row: T, expanded: boolean) => string;
 }
 
 export type SortDirection = "asc" | "desc";
@@ -100,6 +108,8 @@ export function Table<T>({
   selectLabel,
   sort: sortProp,
   onSortChange,
+  renderExpanded,
+  expandLabel,
 }: TableProps<T>) {
   const [sortState, setSortState] = useState<TableSort | null>(null);
   const sortControlled = sortProp !== undefined;
@@ -110,6 +120,7 @@ export function Table<T>({
     else setSortState(next);
   };
   const selectable = Boolean(selected && onSelectedChange);
+  const expandable = Boolean(renderExpanded) && !groupBy;
   const [pageState, setPageState] = useState(1);
   const controlled = pageProp !== undefined;
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -226,6 +237,11 @@ export function Table<T>({
         <table className="w-full border-collapse text-[13px]">
           <thead className="sticky top-0 z-[var(--z-sticky-header)] border-b border-border bg-surface-sunken">
             <tr>
+              {expandable && (
+                <th className="w-10 px-2 py-2">
+                  <span className="sr-only">Open</span>
+                </th>
+              )}
               {selectable && !groupBy && (
                 <th className="w-10 px-3 py-2">
                   <Checkbox
@@ -343,12 +359,27 @@ export function Table<T>({
               : pageRows.map((row) => {
                   const key = rowKey(row);
                   const isSelected = selectable && selected!.has(key);
+                  const isOpen = expandable && expanded.has(key);
                   return (
+                  <Fragment key={key}>
                   <tr
-                    key={key}
                     aria-selected={selectable ? isSelected : undefined}
-                    className={cn("border-b border-border last:border-0 hover:bg-surface-sunken", isSelected && "bg-info-bg/70 hover:bg-info-bg")}
+                    className={cn("border-b border-border last:border-0 hover:bg-surface-sunken", isSelected && "bg-info-bg/70 hover:bg-info-bg", isOpen && "bg-surface-sunken/60")}
                   >
+                    {expandable && (
+                      <td className="w-10 px-2 py-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(key)}
+                          aria-expanded={isOpen}
+                          aria-controls={`${key}-more`}
+                          aria-label={expandLabel ? expandLabel(row, isOpen) : isOpen ? "Show less" : "Show more"}
+                          className="flex h-7 w-7 items-center justify-center rounded-sm text-on-surface-muted transition-colors hover:bg-surface-sunken hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        >
+                          <ChevronRight size={16} aria-hidden className={cn("motion-safe:transition-transform", isOpen && "rotate-90")} />
+                        </button>
+                      </td>
+                    )}
                     {selectable && (
                       <td className="w-10 px-3 py-2">
                         <Checkbox aria-label={selectLabel ? `Select ${selectLabel(row)}` : "Select row"} checked={isSelected} onCheckedChange={() => toggleRow(key)} />
@@ -366,12 +397,21 @@ export function Table<T>({
                       </td>
                     ))}
                   </tr>
+                  {isOpen && (
+                    <tr id={`${key}-more`} className="border-b border-border bg-surface-sunken/30 last:border-0">
+                      <td colSpan={columns.length + (selectable ? 1 : 0) + 1} className="p-0">
+                        {renderExpanded!(row)}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                   );
                 })}
           </tbody>
           {footer && (
             <tfoot>
               <tr className="border-t border-border bg-surface-sunken font-semibold text-on-surface">
+                {expandable && <td />}
                 {selectable && !groupBy && <td />}
                 {columns.map((column) => (
                   <td key={column.key} className={cn("whitespace-nowrap px-3 py-2.5", column.align === "right" ? "text-right tabular-nums" : "text-left")}>

@@ -99,4 +99,24 @@ describe("Table a11y", () => {
     fireEvent.click(screen.getByRole("button", { name: /Invoice #/ }));
     expect(sort).toEqual({ key: "number", direction: "asc" });
   });
+
+  it("has no violations with rows that open, and the chevron shows what's under a row (US-PAY-27)", async () => {
+    const { container } = render(
+      <Table
+        columns={columns}
+        data={invoices}
+        rowKey={(row) => row.id}
+        renderExpanded={(row) => <p>Lines of {row.number}</p>}
+        expandLabel={(row, open) => (open ? `Hide ${row.number}'s lines` : `Show ${row.number}'s lines`)}
+      />,
+    );
+    await expectNoA11yViolations(container);
+    const toggle = screen.getByRole("button", { name: "Show INV-2026-0042's lines" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Hide INV-2026-0042's lines" }).getAttribute("aria-expanded")).toBe("true");
+    expect(screen.getByText("Lines of INV-2026-0042")).toBeTruthy();
+    expect(screen.queryByText("Lines of INV-2026-0043")).toBeNull();
+    await expectNoA11yViolations(container);
+  });
 });

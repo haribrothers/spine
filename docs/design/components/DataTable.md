@@ -26,6 +26,7 @@ import { DataTable } from "@spine/ui";
 | `page` / `onPageChange` | number / (page) => void | — (uncontrolled) |
 | `toolbarStart` | ReactNode | — (the built-in search box) |
 | `selected` / `onSelectedChange` / `selectLabel` | as Table | — |
+| `renderExpanded` / `expandLabel` | as Table | — |
 | `sort` / `onSortChange` | as Table | — |
 | `defaultHidden` | string[] | [] |
 

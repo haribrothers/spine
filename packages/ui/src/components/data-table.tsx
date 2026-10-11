@@ -44,6 +44,9 @@ export interface DataTableProps<T> {
   onSortChange?: (sort: TableSort | null) => void;
   /** Columns hidden until turned on in Columns (US-CAT-11). */
   defaultHidden?: string[];
+  /** Passed to `Table`: rows that open to show more under them (US-PAY-27). */
+  renderExpanded?: (row: T) => React.ReactNode;
+  expandLabel?: (row: T, expanded: boolean) => string;
 }
 
 /**
@@ -76,6 +79,8 @@ export function DataTable<T>({
   sort,
   onSortChange,
   defaultHidden,
+  renderExpanded,
+  expandLabel,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(() => new Set(defaultHidden ?? []));
@@ -147,6 +152,8 @@ export function DataTable<T>({
         selectLabel={selectLabel}
         sort={sort}
         onSortChange={onSortChange}
+        renderExpanded={renderExpanded}
+        expandLabel={expandLabel}
       />
     </div>
   );

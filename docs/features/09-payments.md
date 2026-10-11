@@ -412,7 +412,7 @@ Decision: D-080, D-218, D-221
 Decision: D-224
 
 **Acceptance criteria**
-- **Given** open invoices, **when** I open Receivables, **then** tabs "By customer" and "By invoice" sit above the list and "By customer" is open (the tab is kept in the address; the dashboard's links still open the page).
+- **Given** open invoices, **when** I open Receivables, **then** tabs "By customer" and "By invoice" sit under the header (as Catalogue's Items and Bundles) and "By customer" is open; below them, as on every list, come the cards, the age bar, the filter bar (the age on the left; "Updated", Refresh and Export on the right) and the search bar (search on the left, Columns on the right). The tab is kept in the address; the dashboard's links still open the page.
 - **Given** "By customer", **when** it shows, **then** each customer who owes has one row: the customer (opening the contact), how many open invoices ("3 invoices"), the oldest ("45 days late", or "Not due yet"), the overdue amount, the total owed, credit to use (unapplied payments and credit notes; "—" when none) and when they were last sent a reminder ("3 Oct", or "Never").
 - **Given** no sort chosen, **when** the list shows, **then** the most overdue money comes first, then the most owed; a totals row adds up overdue, owed and credit.
 - **Given** a customer row, **when** I expand it, **then** their open invoices show under it, oldest due first — number, due date, how late, balance — each opening the invoice.
@@ -447,7 +447,7 @@ Decision: D-180, D-224
 **Acceptance criteria**
 - **Given** the cards, **when** I press Current, Overdue or 90+ days, **then** both tabs show only that age (Overdue: every overdue age); pressing it again shows all; the chosen card is outlined and announced as pressed.
 - **Given** the age bar, **when** I press an age (or reach it with Tab and press Enter), **then** the list shows that age.
-- **Given** "Show", **when** I open it, **then** it offers All outstanding, Overdue, Current, 1–30 days, 31–60 days, 61–90 days and 90+ days; the age is kept in the address (`?age=31-60`; the dashboard's `?overdue=1` still opens Overdue).
+- **Given** the age filter in the filter bar, **when** I open it, **then** it offers All ages, Overdue, Current, 1–30 days, 31–60 days, 61–90 days and 90+ days; the age is kept in the address (`?age=31-60`; the dashboard's `?overdue=1` still opens Overdue). It replaces the report-style "Show" row.
 - **Given** an age with nothing in it, **when** it's chosen, **then** the list says "Nothing 31–60 days late." with "Show all".
 - **Given** an age is chosen, **when** I export, **then** the file has only that age.
 - **Given** the cards and bar, **when** an age is chosen, **then** they still show every age — only the list narrows.
@@ -479,7 +479,7 @@ Decision: D-210, D-224
 **Acceptance criteria**
 - **Given** the page, **when** it opens, **then** the description reads "What customers owe you, by how late it is · as of 11 Oct 2026".
 - **Given** retention held on jobs, **when** the page shows, **then** a note under the age bar reads "₹2,40,000.00 retention held on 3 jobs isn't counted here — it's owed once you release it on the job." with "See jobs".
-- **Given** the toolbar, **when** it shows, **then** it has Refresh with "Updated just now"; the page also refreshes after 30 seconds away.
+- **Given** the filter bar, **when** it shows, **then** it has "Updated just now" and Refresh beside Export; the page also refreshes after 30 seconds away.
 - **Given** a tab, search, sort, page or age, **when** I open an invoice and go Back, **then** the page comes back the same.
 
 **Implementation notes**

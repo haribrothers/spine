@@ -1386,6 +1386,8 @@ Shows: "Prıya Nalr pald 7009.25 USD (RCP-0001)•"
 
 ![Receivables](screens/Receivables.webp)
 
+Superseded by `ReceivablesByCustomer` and `ReceivablesByInvoice` (D-224).
+
 Links to: `ReceivablesEmpty`
 
 Shows: "Billing > Receivables" · "Receivables" · "Outstanding invoice balances, bucketed by how overdue they are." · "Current" · "1-30 days" · "31-60 days" · "61-90 days" · "90+ days" · "30623.00" · "4542.50" · "USD" · "Total outstanding" · "35165.50 USD" · "Search receivables" · "* Columns" · "Invoice tu" · "Contact t" · "Due date t" · "Aging N" · "Balance due T" · "INV-0002" · "Harborview Construction Co." · "9/28/2026" · "4542.50 USD" · "INV-0005" · "Maple Ridge Developments" · "3937.50 USD" · "INV-0006" · "INV-0007" · "Bluewater Hospitality Group" · "4830.00 USD" · "INV-0008" · "9660.00 USD" · "INV-0009" · "INV-0010" · "1680.00 USD" · "INV-0003" · "10/24/2026" · "1748.00 USD" · "1-8 of 8 per page" · "10"
@@ -3513,6 +3515,46 @@ Shows: two toasts spanning the bottom of the screen — "RCP-0032 recorded", "Re
 Links to: `CatalogBulkSelect`
 
 Shows: "3 selected" · "Change the tax on 3 items?" "They'll use GST 18% (9% + 9%) on new quotes and invoices. Quotes and invoices already issued keep their tax." · "Go back" "Change tax"
+
+## Receivables you can chase from
+
+Drawn in Claude Design for US-PAY-27 to US-PAY-31 (D-224): project "Spine web — refinements before Phase 10", canvas "17 Receivables". The list layout every refined list shares — tabs (By customer, By invoice) under the header, the cards and the age bar (both pressable, to filter by age), the filter bar (an age filter; Updated, Refresh and Export) and the search bar with Columns. Rows act through the existing dialogs; ticked invoices get Send reminders.
+
+### ReceivablesByCustomer — Who owes most, customer by customer
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-27, US-PAY-31 · **Source:** Claude Design
+
+![ReceivablesByCustomer](screens/ReceivablesByCustomer.webp)
+
+Links to: `ReceivablesByInvoice`, `ContactStatementDialog`
+
+Shows: "What customers owe you, by how late it is · as of 11 Oct 2026" · "By customer 6" "By invoice 10" · "Total outstanding" "₹13,48,584.00" "10 invoices · 6 customers" · "Current" "Overdue" "90+ days" · "Outstanding by age" · "₹2,40,000.00 retention held on 3 jobs isn't counted here — it's owed once you release it on the job." "See jobs" · "All ages" "Updated just now" "Export" · "Search customers" "Columns" · "Customer" "Open" "Oldest" "Overdue" "Total owed" "Credit to use" "Last reminded" · Halcyon expanded: "INV-0031 · Wing B fit-out" "Due 8 Aug" "61–90 days" "64 days late" · "6 customers" "10 invoices" totals
+
+### ReceivablesByInvoice — Filter by age, act from the row
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-28, US-PAY-29, US-PAY-30 · **Source:** Claude Design
+
+![ReceivablesByInvoice](screens/ReceivablesByInvoice.webp)
+
+Links to: `InvoiceDetail`, `RecordPaymentRefined`
+
+Shows: "Overdue" pressed, "Showing these · press again to clear", Current faded on the bar · "Overdue" in the age filter · "Invoice" "Customer" "Due" "How late" "Balance due" · "Store 14 refit · Deposit" · "Last reminded 3 Oct" "Never reminded" · "64 days late" · INV-0031's menu: "Record payment" "Apply credit" "Send reminder" "Download PDF" "Open invoice"
+
+### ReceivablesRemindConfirm — Remind several at once
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-28 · **Source:** Claude Design
+
+![ReceivablesRemindConfirm](screens/ReceivablesRemindConfirm.webp)
+
+Links to: —
+
+Shows: "4 selected" "Send reminders (3)" "Clear" · "Send 3 payment reminders?" "Each customer gets the reminder email with the invoice attached, straight away. 1 of the selected invoices is skipped: INV-0040 — the customer has no email address." · "Go back" "Send reminders"
+
+### ReceivablesDark — By customer, dark
+**Priority:** P2 · **Phase:** Refinements · **Stories:** US-PAY-27 · **Source:** Claude Design
+
+![ReceivablesDark](screens/ReceivablesDark.webp)
+
+Links to: —
+
+Shows: the By customer view on the dark app, every row closed
 
 ## Mobile field companion
 

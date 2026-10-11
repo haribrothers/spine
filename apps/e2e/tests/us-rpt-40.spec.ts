@@ -18,7 +18,7 @@ const REPORTS: { path: string; title: string; range: RegExp | null }[] = [
   { path: "/reports/payments-made", title: "Payments made", range: /· .+\d{4}/ },
   { path: "/reports/credit-notes-and-refunds", title: "Credit notes and refunds", range: /· .+\d{4}/ },
   { path: "/reports/vendor-credits", title: "Vendor credits", range: /· .+\d{4}/ },
-  { path: "/receivables", title: "Receivables", range: null },
+  // Receivables uses the list layout every refined list shares since D-224 (US-PAY-27 to US-PAY-31).
   { path: "/payables", title: "Payables", range: null },
 ];
 
@@ -66,13 +66,13 @@ test.describe("US-RPT-40", () => {
     await expect(actions.last()).toHaveText("Record tax payment");
     await expect(actions.nth(-2)).toHaveText(/Export/);
 
-    // Receivables: Show filter, four cards and the age bar naming every bucket.
+    // Receivables: four cards and the age bar naming every bucket; the age filter sits in the list's filter bar (D-224).
     await page.goto("/receivables");
     const chart = page.getByTestId("aging-chart");
     for (const bucket of ["Current", "1–30 days", "31–60 days", "61–90 days", "90+ days"]) await expect(chart).toContainText(bucket);
     await expect(page.getByTestId("aging-cards")).toContainText("Total outstanding");
-    await page.getByRole("combobox", { name: "Show" }).click();
-    await page.getByRole("option", { name: "Overdue only" }).click();
-    await expect(page).toHaveURL(/\/receivables\?overdue=1$/);
+    await page.getByRole("combobox", { name: "Show by age" }).click();
+    await page.getByRole("option", { name: "Overdue" }).click();
+    await expect(page).toHaveURL(/\/receivables\?age=overdue$/);
   });
 });

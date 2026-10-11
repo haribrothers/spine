@@ -25,9 +25,11 @@ import {
   Pencil,
   Receipt,
   RotateCw,
+  ScrollText,
   Send,
   Trash2,
   Undo2,
+  User,
   type LucideIcon,
 } from "lucide-react";
 
@@ -74,4 +76,8 @@ export const MENU_ICONS = {
   retry: RotateCw,
   moveUp: ArrowUp,
   moveDown: ArrowDown,
+  /** Send a customer a statement (US-PAY-28). */
+  statement: ScrollText,
+  /** Open a customer's or vendor's contact page. */
+  contact: User,
 } satisfies Record<string, LucideIcon>;

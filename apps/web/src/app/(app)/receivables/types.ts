@@ -11,6 +11,28 @@ export interface ReceivablesInvoiceRow {
   balanceDue: string;
   daysOverdue: number;
   bucket: AgingBucket;
+  /** US-PAY-30 (D-224). */
+  issueDate: string | null;
+  type: string;
+  paidAmount: string;
+  jobId: string | null;
+  jobName: string | null;
+  lastReminderOn: string | null;
+  remindedToday: boolean;
+  contactHasEmail: boolean;
+}
+
+/** US-PAY-27 — one customer who owes (GET /reports/receivables `customers`). */
+export interface ReceivablesCustomerRow {
+  contactId: string;
+  name: string | null;
+  email: string | null;
+  invoiceCount: number;
+  overdueAmount: string;
+  totalOutstanding: string;
+  oldestDaysOverdue: number;
+  credit: string;
+  lastReminderOn: string | null;
 }
 
 export interface ReceivablesReport {
@@ -18,6 +40,9 @@ export interface ReceivablesReport {
   totalOutstanding: string;
   buckets: Record<AgingBucket, string>;
   invoices: ReceivablesInvoiceRow[];
+  customers: ReceivablesCustomerRow[];
+  /** US-PAY-31 — retention held on jobs, never in the aging. */
+  retention: { held: string; jobCount: number };
 }
 
 export const AGING_BUCKET_LABELS: Record<AgingBucket, string> = {

@@ -518,11 +518,11 @@ Tick a story only when its acceptance criteria pass with tests named after the s
 - [x] US-OPS-37 · See what each menu action does at a glance
 - [x] US-OPS-38 · Know an action worked, wherever it takes me
 - [x] US-CAT-16 · Confirm a change to many items before it happens
-- [ ] US-PAY-27 · See who owes me most, customer by customer
-- [ ] US-PAY-28 · Chase a customer without leaving Receivables
-- [ ] US-PAY-29 · Filter receivables by age
-- [ ] US-PAY-30 · Read a receivable at a glance
-- [ ] US-PAY-31 · Trust what Receivables counts
+- [x] US-PAY-27 · See who owes me most, customer by customer
+- [x] US-PAY-28 · Chase a customer without leaving Receivables
+- [x] US-PAY-29 · Filter receivables by age
+- [x] US-PAY-30 · Read a receivable at a glance
+- [x] US-PAY-31 · Trust what Receivables counts
 
 ## Phase 10 · AI assistant
 
