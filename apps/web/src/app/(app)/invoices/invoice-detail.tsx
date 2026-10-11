@@ -202,6 +202,8 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
   }
 
   const issueWithCredit = () => handleIssue(true);
+  // The HSN/SAC question's "Issue anyway" is the confirmation, so the credit offer (if any) follows, not a second question.
+  const issueAnyway = () => offerCreditOrIssue(true);
 
   async function handleIssue(applyCredit: boolean) {
     if (!invoice) return;
@@ -736,7 +738,7 @@ export function InvoiceDetail({ invoiceId }: { invoiceId: string }) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Go back</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void offerCreditOrIssue(true)}>Issue anyway</AlertDialogAction>
+            <AlertDialogAction onClick={issueAnyway}>Issue anyway</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
